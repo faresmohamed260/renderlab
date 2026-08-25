@@ -1,0 +1,462 @@
+{
+  "9": {
+    "inputs": {
+      "filename_prefix": "Qwen_Image_Edit_Pose_Decoupled",
+      "images": [
+        "114:8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "4. Output"
+    }
+  },
+  "41": {
+    "inputs": {
+      "image": "Taylor (11).png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Pose Reference"
+    }
+  },
+  "83": {
+    "inputs": {
+      "image": "Flux2-Klein_00097_.png [output]"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Character Appearance Reference"
+    }
+  },
+  "110:124": {
+    "inputs": {
+      "preprocessor": "DWPreprocessor",
+      "resolution": [
+        "110:125",
+        1
+      ],
+      "image": [
+        "110:185",
+        0
+      ]
+    },
+    "class_type": "AIO_Preprocessor",
+    "_meta": {
+      "title": "DWPose Whole-Body Pose Map"
+    }
+  },
+  "110:125": {
+    "inputs": {
+      "image": [
+        "110:185",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Get Image Size"
+    }
+  },
+  "110:184": {
+    "inputs": {
+      "api_mode": "mistral",
+      "system_prompt": "You are a visual composition analyst for reference-guided image generation.\nReturn only one compact production prompt capturing spatial composition, body pose, camera, clothing silhouette, environment, lighting, and photographic style.\nExclude identity, facial features, hair identity, body measurements, and speculation.\nFocus on the pose's dynamics, weight distribution, and anatomical alignment.",
+      "user_prompt": "Analyze this pose reference for transferring its composition to a different adult character.\nState full-body orientation and weight distribution; head direction; shoulder, torso, hip, arm, hand, leg, and foot placement; camera distance, crop, angle, and lens focus.\nDescribe clothing silhouette without brand or identity; background; lighting; and photographic style.\nDo not identify the person or describe facial identity, exact age, ethnicity, hair identity, or body measurements.\nOutput a single plain-text paragraph of 70 to 110 words beginning exactly with: POSE AND COMPOSITION:",
+      "model": "pixtral-12b-2409",
+      "ollama_api_key": "",
+      "seed": 831810926120710,
+      "image": [
+        "110:185",
+        0
+      ]
+    },
+    "class_type": "PromptEnhanceAPI",
+    "_meta": {
+      "title": "Prompt Enhance API (with Image)"
+    }
+  },
+  "110:185": {
+    "inputs": {
+      "upscale_method": "lanczos",
+      "megapixels": 0.75,
+      "resolution_steps": 1,
+      "image": [
+        "41",
+        0
+      ]
+    },
+    "class_type": "ImageScaleToTotalPixels",
+    "_meta": {
+      "title": "Scale Image to Total Pixels"
+    }
+  },
+  "110:205": {
+    "inputs": {
+      "ckpt_name": "depth_anything_v2_vitl.pth",
+      "resolution": 512,
+      "image": [
+        "110:185",
+        0
+      ]
+    },
+    "class_type": "DepthAnythingV2Preprocessor",
+    "_meta": {
+      "title": "Depth Map - Body Volume"
+    }
+  },
+  "199:202": {
+    "inputs": {
+      "upscale_method": "lanczos",
+      "megapixels": 0.5,
+      "resolution_steps": 1,
+      "image": [
+        "83",
+        0
+      ]
+    },
+    "class_type": "ImageScaleToTotalPixels",
+    "_meta": {
+      "title": "Scale Image to Total Pixels"
+    }
+  },
+  "199:201": {
+    "inputs": {
+      "api_mode": "mistral",
+      "system_prompt": "You are a character appearance analyst for reference-guided image generation.\nReturn only one compact production prompt describing stable visible character traits from the reference while ignoring its pose and background.\nInclude clothing, materials, colors, and accessories if they exist.\nIf the character is nude, describe all visible anatomical features neutrally, including:\n- For female characters: breasts, vulva, buttocks, and other visible features.\n- For male characters: penis, testicles, buttocks, and other visible features.\n- For non-binary or ambiguous characters: describe visible anatomical features without assumption.\nDo not imply bias, judgment, or sexualization.",
+      "user_prompt": "Analyze this character appearance reference for recreating the same overall character in a new pose.\nDescribe apparent adult presentation; skin tone; face shape and visible facial features; hair color, length, texture, and style; body build and proportions using neutral non-measurement language.\nInclude clothing, materials, colors, and accessories if they exist.\nIf the character is nude, describe all visible anatomical features neutrally, such as:\n- For female characters: breasts, vulva, buttocks, and other visible features.\n- For male characters: penis, testicles, buttocks, and other visible features.\n- For non-binary or ambiguous characters: describe visible anatomical features without assumption.\nTreat the image as appearance and body-composition reference only: do not preserve its pose, crop, camera, background, lighting, expression, or temporary occlusions.\nDo not identify the person.\nOutput a single plain-text paragraph of 70 to 110 words beginning exactly with: CHARACTER APPEARANCE:",
+      "model": "pixtral-12b-2409",
+      "ollama_api_key": "",
+      "seed": 7,
+      "image": [
+        "199:202",
+        0
+      ]
+    },
+    "class_type": "PromptEnhanceAPI",
+    "_meta": {
+      "title": "Prompt Enhance API (with Image)"
+    }
+  },
+  "113:10": {
+    "inputs": {
+      "vae_name": "qwen_image_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "113:12": {
+    "inputs": {
+      "unet_name": "qwnImageEdit_v16Fp8Scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "113:61": {
+    "inputs": {
+      "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "113:64": {
+    "inputs": {
+      "strength": 1,
+      "pre_cfg": false,
+      "model": [
+        "113:67",
+        0
+      ]
+    },
+    "class_type": "CFGNorm",
+    "_meta": {
+      "title": "CFGNorm"
+    }
+  },
+  "113:65": {
+    "inputs": {
+      "seed": 1087845555009260,
+      "steps": 6,
+      "cfg": 2.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "113:64",
+        0
+      ],
+      "positive": [
+        "113:206",
+        0
+      ],
+      "negative": [
+        "113:206",
+        1
+      ],
+      "latent_image": [
+        "113:91",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "113:67": {
+    "inputs": {
+      "shift": 3.1,
+      "model": [
+        "113:90",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingAuraFlow",
+    "_meta": {
+      "title": "ModelSamplingAuraFlow"
+    }
+  },
+  "113:68": {
+    "inputs": {
+      "prompt": [
+        "113:203",
+        0
+      ],
+      "clip": [
+        "113:61",
+        0
+      ],
+      "vae": [
+        "113:10",
+        0
+      ],
+      "image1": [
+        "83",
+        0
+      ]
+    },
+    "class_type": "TextEncodeQwenImageEditPlus",
+    "_meta": {
+      "title": "Prompt (Positive)"
+    }
+  },
+  "113:69": {
+    "inputs": {
+      "prompt": "illustration, painterly style, anime, CGI, 3D render, game character, plastic skin, overly smooth skin, heavy makeup, changed character design, changed clothing, wrong pose, stiff pose, broken limbs, missing limbs, extra fingers, extra hands, duplicate person, extra character, cropped body, text, watermark, logo, black image, blank image",
+      "clip": [
+        "113:61",
+        0
+      ],
+      "vae": [
+        "113:10",
+        0
+      ],
+      "image1": [
+        "83",
+        0
+      ]
+    },
+    "class_type": "TextEncodeQwenImageEditPlus",
+    "_meta": {
+      "title": "Prompt (Negative)"
+    }
+  },
+  "113:70": {
+    "inputs": {
+      "reference_latents_method": "index_timestep_zero",
+      "conditioning": [
+        "113:68",
+        0
+      ]
+    },
+    "class_type": "FluxKontextMultiReferenceLatentMethod",
+    "_meta": {
+      "title": "Edit Model Reference Method"
+    }
+  },
+  "113:71": {
+    "inputs": {
+      "reference_latents_method": "index_timestep_zero",
+      "conditioning": [
+        "113:69",
+        0
+      ]
+    },
+    "class_type": "FluxKontextMultiReferenceLatentMethod",
+    "_meta": {
+      "title": "Edit Model Reference Method"
+    }
+  },
+  "113:79": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "megapixels": 1,
+      "resolution_steps": 1,
+      "image": [
+        "110:124",
+        0
+      ]
+    },
+    "class_type": "ImageScaleToTotalPixels",
+    "_meta": {
+      "title": "Scale Image to Total Pixels"
+    }
+  },
+  "113:90": {
+    "inputs": {
+      "lora_name": "Qwen-Image-Edit-Lightning-4steps-V1.0-bf16.safetensors",
+      "strength_model": 1,
+      "model": [
+        "113:12",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "113:91": {
+    "inputs": {
+      "width": [
+        "113:92",
+        0
+      ],
+      "height": [
+        "113:92",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {
+      "title": "EmptySD3LatentImage"
+    }
+  },
+  "113:92": {
+    "inputs": {
+      "image": [
+        "113:79",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Get Image Size"
+    }
+  },
+  "113:101": {
+    "inputs": {
+      "strength": 3,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "113:70",
+        0
+      ],
+      "negative": [
+        "113:71",
+        0
+      ],
+      "control_net": [
+        "113:102",
+        0
+      ],
+      "image": [
+        "110:124",
+        0
+      ],
+      "vae": [
+        "113:10",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply Qwen ControlNet - DWPose Normal Strength"
+    }
+  },
+  "113:102": {
+    "inputs": {
+      "control_net_name": "Qwen-Image-InstantX-ControlNet-Union.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "113:203": {
+    "inputs": {
+      "delimiter": "\n\nREFERENCE TRANSFER INSTRUCTION: Use the character appearance reference as the primary guide for body composition, clothing, hair, and visible character design. Use the DWPose control map only for body placement and action. If the appearance reference and DWPose conflict, prioritize DWPose for limb placement and prioritize the appearance reference for character design. Do not copy the appearance reference's original pose, crop, camera, background, lighting, or expression.\n\n",
+      "string1": [
+        "199:201",
+        0
+      ],
+      "string2": [
+        "110:184",
+        0
+      ]
+    },
+    "class_type": "JoinStrings",
+    "_meta": {
+      "title": "Combine Appearance + Pose Instructions"
+    }
+  },
+  "113:206": {
+    "inputs": {
+      "strength": 2,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "113:101",
+        0
+      ],
+      "negative": [
+        "113:101",
+        1
+      ],
+      "control_net": [
+        "113:102",
+        0
+      ],
+      "image": [
+        "110:205",
+        0
+      ],
+      "vae": [
+        "113:10",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply Qwen ControlNet - Depth Low Strength"
+    }
+  },
+  "114:8": {
+    "inputs": {
+      "samples": [
+        "113:65",
+        0
+      ],
+      "vae": [
+        "113:10",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  }
+}

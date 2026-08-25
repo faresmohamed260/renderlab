@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "renderlab"
+version = "0.1.0"
+description = "RenderLab image and video generation platform backend/runtime."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "alembic",
+  "fastapi",
+  "keyring",
+  "modal",
+  "Pillow",
+  "psycopg[binary]",
+  "pydantic",
+  "requests",
+  "sqlalchemy",
+  "uvicorn",
+  "websocket-client",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx",
+  "pytest",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+namespaces = true
+include = [
+  "apps",
+  "apps.*",
+  "packages",
+  "packages.*",
+  "integrations",
+  "integrations.*",
+]
+
+[project.scripts]
+renderlab-api = "apps.studio_api.app:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "id": "qwen-image-edit",
+  "version": "1.0.0",
+  "display_name": "Qwen Image Edit",
+  "description": "Quantized pose-guided image editing with separate appearance and pose references, LoRA, and ControlNet guidance.",
+  "category": "image",
+  "model_family": "qwen-image-edit",
+  "tags": ["edit", "references", "controlnet", "quantized"],
+  "enabled": true,
+  "workflow": {"path": "../workflows/reference_exports/qwen-image-edit.api.json"},
+  "capabilities": ["image_edit", "multi_reference", "pose_reference", "appearance_reference", "controlnet", "lora", "model_selection"],
+  "result_actions": ["view", "download", "reuse_prompt", "reuse_settings", "use_as_reference", "favorite", "details"],
+  "inputs": [
+    {"id": "prompt", "type": "text", "required": true, "label": "Edit instruction", "help": "Describe the desired edit.", "mapping": {"node": "113:68", "input": "prompt"}},
+    {"id": "negative_prompt", "type": "text", "required": false, "label": "Avoid", "section": "advanced", "mapping": {"node": "113:69", "input": "prompt"}},
+    {"id": "pose_reference", "type": "asset", "required": true, "label": "Pose reference", "role": "pose", "accepted_media": ["image/*"], "multiplicity": {"min": 1, "max": 1}, "mapping": {"node": "41", "input": "image"}},
+    {"id": "appearance_reference", "type": "asset", "required": true, "label": "Image to edit", "role": "appearance", "accepted_media": ["image/*"], "multiplicity": {"min": 1, "max": 1}, "mapping": {"node": "83", "input": "image"}}
+  ],
+  "parameters": [
+    {"id": "seed", "type": "integer", "default": -1, "minimum": -1, "maximum": 9223372036854775807, "label": "Seed", "section": "advanced", "control": "seed", "mapping": {"node": "113:65", "input": "seed", "transform": "random_if_negative", "targets": [{"node": "113:65", "input": "seed"}]}},
+    {"id": "steps", "type": "integer", "default": 6, "minimum": 1, "maximum": 50, "label": "Steps", "section": "advanced", "control": "slider", "mapping": {"node": "113:65", "input": "steps"}},
+    {"id": "cfg", "type": "number", "default": 2.5, "minimum": 0, "maximum": 20, "step": 0.1, "label": "Guidance", "section": "advanced", "control": "slider", "mapping": {"node": "113:65", "input": "cfg"}},
+    {"id": "model", "type": "string", "default": "qwnImageEdit_v16Fp8Scaled.safetensors", "label": "Diffusion model", "section": "advanced", "control": "model", "mapping": {"node": "113:12", "input": "unet_name"}},
+    {"id": "lora", "type": "string", "default": "Qwen-Image-Edit-Lightning-4steps-V1.0-bf16.safetensors", "label": "LoRA", "section": "advanced", "control": "lora", "mapping": {"node": "113:90", "input": "lora_name"}},
+    {"id": "lora_strength", "type": "number", "default": 1.0, "minimum": -2, "maximum": 2, "step": 0.05, "label": "LoRA strength", "section": "advanced", "control": "slider", "mapping": {"node": "113:90", "input": "strength_model"}},
+    {"id": "control_strength", "type": "number", "default": 0.8, "minimum": 0, "maximum": 2, "step": 0.05, "label": "Control strength", "section": "advanced", "control": "slider", "mapping": {"targets": [{"node": "113:101", "input": "strength"}, {"node": "113:206", "input": "strength"}], "transform": "broadcast"}}
+  ],
+  "outputs": [{"id": "images", "media_type": "image", "node": "9", "field": "images", "multiple": true}],
+  "ui": {"icon": "edit", "speed": "Medium", "quality": "High", "recommended": true}
+}

@@ -35,7 +35,7 @@ Server-side only:
 
 ## Next migration task
 
-Move the `/studio/*` backend contract out of the S.A.G.A. monorepo and into RenderLab-owned Vercel API routes or a RenderLab backend service.
+The migrated API currently keeps the `/studio/*` route contract for frontend compatibility. Production should run those routes from RenderLab-owned infrastructure, then move to a `/renderlab/*` or `/api/*` contract only when we can version the client and backend together.
 
 ## GitHub Actions deployment secrets
 
