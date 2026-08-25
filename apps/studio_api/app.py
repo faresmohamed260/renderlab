@@ -117,7 +117,8 @@ def runtime():
 
 def _build_runtime():
     mode = str(os.getenv("RENDERLAB_DB_MODE") or "test_harness").strip()
-    local_root = str(os.getenv("RENDERLAB_STORAGE_ROOT") or ROOT / "analysis_outputs" / "renderlab_storage")
+    default_storage_root = Path("/tmp/renderlab_storage") if os.getenv("VERCEL") else ROOT / "analysis_outputs" / "renderlab_storage"
+    local_root = str(os.getenv("RENDERLAB_STORAGE_ROOT") or default_storage_root)
     Path(local_root).mkdir(parents=True, exist_ok=True)
     database_url = str(os.getenv("RENDERLAB_DB_URL") or "").strip()
     if not database_url:
