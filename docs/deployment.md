@@ -36,3 +36,13 @@ Server-side only:
 ## Next migration task
 
 Move the `/studio/*` backend contract out of the S.A.G.A. monorepo and into RenderLab-owned Vercel API routes or a RenderLab backend service.
+
+## GitHub Actions deployment secrets
+
+The production deployment workflow expects these GitHub repository secrets:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+Create/link the Vercel project to `faresmohamed260/renderlab`, then copy the org/project IDs into the repository secrets. The workflow uses `vercel build` plus `vercel deploy --prebuilt --prod` so CI tests/build and deployment remain reproducible.
