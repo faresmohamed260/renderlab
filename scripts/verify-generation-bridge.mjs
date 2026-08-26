@@ -15,6 +15,11 @@ const r2Client = new S3Client({
   responseChecksumValidation: "WHEN_REQUIRED",
 });
 
+const referencePng = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAATUlEQVR42u3PQQ0AAAgEIDX5RTeFDzdoQCepz6aeExAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQELi3oiwCAJt186UAAAAASUVORK5CYII=",
+  "base64",
+);
+
 async function jsonRequest(url, init = {}) {
   const response = await fetch(url, init);
   const text = await response.text();
@@ -45,7 +50,7 @@ async function loadAssets(jobId) {
   return rows(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}&select=id,storage_key,thumbnail_storage_key,mime_type`);
 }
 
-async function cleanup(jobId) {
+async function cleanupJob(jobId) {
   if (!jobId) return;
   const assets = await loadAssets(jobId).catch(() => []);
   const keys = new Set();
@@ -58,62 +63,158 @@ async function cleanup(jobId) {
   }
   await supabase(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" }).catch(() => {});
   await supabase(`generation_jobs?id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" }).catch(() => {});
-  console.log(`Cleaned native generation integration fixture job=${jobId} objects=${keys.size}`);
+  console.log(`Cleaned generation fixture job=${jobId} objects=${keys.size}`);
 }
 
-let jobId = "";
-try {
-  console.log(`Submitting RenderLab native integration generation through ${baseUrl}`);
-  const submission = await jsonRequest(`${baseUrl}/api/generation/jobs`, {
+async function cleanupSource(sourceId) {
+  if (!sourceId) return;
+  const source = (await rows(`generation_sources?id=eq.${encodeURIComponent(sourceId)}&select=id,storage_key&limit=1`).catch(() => []))[0];
+  if (source?.storage_key) {
+    await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: source.storage_key })).catch(() => {});
+  }
+  await supabase(`generation_sources?id=eq.${encodeURIComponent(sourceId)}`, { method: "DELETE" }).catch(() => {});
+  console.log(`Cleaned reference fixture source=${sourceId}`);
+}
+
+async function uploadReferenceFixture() {
+  const ticket = await jsonRequest(`${baseUrl}/api/assets/reference/upload-tickets`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      prompt: "RenderLab integration verification: a simple blue sphere centered on a neutral studio background",
-      output: { kind: "image", aspectRatio: "1:1" },
-      inputs: [],
+      filename: "renderlab-native-edit-reference.png",
+      mimeType: "image/png",
+      sizeBytes: referencePng.length,
     }),
   });
-
-  if (submission.response.status !== 202 || !submission.payload?.ok || !submission.payload?.job?.id) {
-    throw new Error(`Generation submit failed (${submission.response.status}): ${JSON.stringify(submission.payload)}`);
+  if (!ticket.response.ok || !ticket.payload?.ok || !ticket.payload?.ticket?.sourceId) {
+    throw new Error(`Reference ticket failed (${ticket.response.status}): ${JSON.stringify(ticket.payload)}`);
   }
-  jobId = submission.payload.job.id;
-  console.log(`Generation accepted. job=${jobId}`);
 
+  const { sourceId, uploadUrl, method, headers } = ticket.payload.ticket;
+  const upload = await fetch(uploadUrl, { method, headers, body: referencePng });
+  if (!upload.ok) throw new Error(`Reference R2 upload failed (${upload.status}).`);
+
+  const completion = await jsonRequest(`${baseUrl}/api/assets/reference/upload-completions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ sourceId, width: 64, height: 64 }),
+  });
+  if (!completion.response.ok || !completion.payload?.ok || completion.payload.source?.status !== "ready") {
+    throw new Error(`Reference completion failed (${completion.response.status}): ${JSON.stringify(completion.payload)}`);
+  }
+  console.log(`Reference fixture ready. source=${sourceId}`);
+  return sourceId;
+}
+
+async function verifyMediaAsset(assetId, expectedKind) {
+  const metadata = await jsonRequest(`${baseUrl}/api/media/assets/${encodeURIComponent(assetId)}`, {
+    headers: { accept: "application/json" },
+  });
+  if (!metadata.response.ok || !metadata.payload?.ok || metadata.payload.asset?.id !== assetId) {
+    throw new Error(`Media metadata failed (${metadata.response.status}): ${JSON.stringify(metadata.payload)}`);
+  }
+  if (metadata.payload.asset.kind !== expectedKind || !metadata.payload.asset.contentUrl) {
+    throw new Error(`Media metadata has the wrong product shape: ${JSON.stringify(metadata.payload.asset)}`);
+  }
+
+  const content = await fetch(`${baseUrl}${metadata.payload.asset.contentUrl}`, { redirect: "follow" });
+  if (!content.ok) throw new Error(`Media content failed (${content.status}).`);
+  const contentType = String(content.headers.get("content-type") || "").toLowerCase();
+  if (expectedKind === "image" && !contentType.startsWith("image/")) {
+    throw new Error(`Media content is not an image: ${contentType}`);
+  }
+  if (expectedKind === "video" && !contentType.startsWith("video/")) {
+    throw new Error(`Media content is not a video: ${contentType}`);
+  }
+}
+
+async function verifyGeneration(request, expectedOperation, label) {
+  console.log(`Submitting ${label} through ${baseUrl}`);
+  const submission = await jsonRequest(`${baseUrl}/api/generation/jobs`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (submission.response.status !== 202 || !submission.payload?.ok || !submission.payload?.job?.id) {
+    throw new Error(`${label} submit failed (${submission.response.status}): ${JSON.stringify(submission.payload)}`);
+  }
+
+  const jobId = submission.payload.job.id;
+  console.log(`${label} accepted. job=${jobId}`);
   const deadline = Date.now() + 12 * 60 * 1000;
   let lastStatus = "";
+
   while (Date.now() < deadline) {
     const poll = await jsonRequest(`${baseUrl}/api/generation/jobs/${encodeURIComponent(jobId)}`, {
       headers: { accept: "application/json" },
     });
     if (!poll.response.ok || !poll.payload?.ok || !poll.payload?.job) {
-      throw new Error(`Generation poll failed (${poll.response.status}): ${JSON.stringify(poll.payload)}`);
+      throw new Error(`${label} poll failed (${poll.response.status}): ${JSON.stringify(poll.payload)}`);
     }
     const job = poll.payload.job;
     if (job.status !== lastStatus) {
       lastStatus = job.status;
-      console.log(`RenderLab job status: ${job.status}`);
+      console.log(`${label} status: ${job.status}`);
     }
-    if (job.status === "failed") throw new Error(`Generation failed: ${job.error?.message || "unknown error"}`);
+    if (job.operation !== expectedOperation) {
+      throw new Error(`${label} resolved to ${job.operation}, expected ${expectedOperation}.`);
+    }
+    if (job.status === "failed") throw new Error(`${label} failed: ${job.error?.message || "unknown error"}`);
     if (job.status === "succeeded") {
-      if (!Array.isArray(job.outputAssetIds) || job.outputAssetIds.length < 1) {
-        throw new Error(`Succeeded job did not expose a persisted output asset: ${JSON.stringify(job)}`);
+      if (!Array.isArray(job.outputAssetIds) || job.outputAssetIds.length !== 1) {
+        throw new Error(`${label} did not expose exactly one persisted output asset: ${JSON.stringify(job)}`);
       }
       const row = await loadJob(jobId);
       const assets = await loadAssets(jobId);
-      if (!row || row.status !== "succeeded" || assets.length !== 1 || !assets[0].storage_key || !assets[0].mime_type.startsWith("image/")) {
-        throw new Error(`Native persisted state is incomplete: ${JSON.stringify({ row, assets })}`);
+      if (!row || row.status !== "succeeded" || row.operation !== expectedOperation || assets.length !== 1 || !assets[0].storage_key) {
+        throw new Error(`${label} persisted state is incomplete: ${JSON.stringify({ row, assets })}`);
       }
       if (!job.outputAssetIds.includes(assets[0].id)) {
-        throw new Error(`Job output IDs do not match the persisted media asset: ${JSON.stringify({ job, assets })}`);
+        throw new Error(`${label} output IDs do not match persisted media: ${JSON.stringify({ job, assets })}`);
       }
-      console.log(`Native generation verified successfully. job=${jobId} asset=${assets[0].id}`);
-      break;
+      await verifyMediaAsset(assets[0].id, request.output.kind);
+      console.log(`${label} verified. job=${jobId} asset=${assets[0].id}`);
+      return jobId;
     }
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 
-  if (lastStatus !== "succeeded") throw new Error("Generation integration timed out before persistence completed.");
+  throw new Error(`${label} timed out before persistence completed.`);
+}
+
+let createJobId = "";
+let editJobId = "";
+let sourceId = "";
+try {
+  createJobId = await verifyGeneration(
+    {
+      prompt: "RenderLab integration verification: a simple blue sphere centered on a neutral studio background",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [],
+    },
+    "create-image",
+    "Create Image",
+  );
+
+  sourceId = await uploadReferenceFixture();
+  editJobId = await verifyGeneration(
+    {
+      prompt: "Change the sphere to red while keeping the simple studio composition",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [
+        {
+          source: { type: "temporary-source", id: sourceId },
+          role: "primary-image",
+        },
+      ],
+    },
+    "edit-image",
+    "Edit Image",
+  );
+
+  console.log("Native Create Image + Edit Image integration verified successfully.");
 } finally {
-  await cleanup(jobId);
+  await cleanupJob(editJobId);
+  await cleanupJob(createJobId);
+  await cleanupSource(sourceId);
 }
