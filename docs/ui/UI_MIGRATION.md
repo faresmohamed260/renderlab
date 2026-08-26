@@ -45,21 +45,25 @@ Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.
 - [x] Establish accessibility expectations.
 - [x] Establish naming/folder conventions.
 - [x] Define the initial application-shell direction from the approved information architecture.
-- [ ] Visually review/iterate the shell exploration before marking the shell design approved.
+- [x] Visually review and iterate the shell exploration in Figma. v0.2 separates persistent shell chrome from feature-owned Create/Library UI and removes unnecessary idle status chrome.
 - [ ] Establish the RenderLab component catalog with actual components as they are implemented.
 
 Visual/design-system authority: `docs/ui/UI_SYSTEM.md`.  
-Working visual exploration: Figma `RenderLab Design System`, file key `PHqgsDctOsEXX4EFR0SS7i`. Current pages include `Foundation` and `Application Shell`. Figma is not the source of truth; approved rules must be reflected in the repository.  
+Working visual exploration: Figma `RenderLab Design System`, file key `PHqgsDctOsEXX4EFR0SS7i`. `Application Shell` now contains v0.1 and reviewed v0.2 desktop/mobile explorations. Figma is not the source of truth; approved rules must be reflected in the repository.  
 Approved source policy: `docs/ui/COMPONENT_CATALOG.md`.
 
 ## Phase 2 — Application Shell
-Exact implementation begins after the shell exploration is reviewed.
-- [ ] Primary navigation
-- [ ] Workspace shell
-- [ ] Responsive navigation/layout
-- [ ] Dialog/sheet system
-- [ ] Toast/notification system
-- [ ] Global loading/error conventions
+Implementation begins from the reviewed v0.2 shell candidate and remains subject to rendered review before approval.
+- [ ] Scaffold the Next.js/TypeScript/Tailwind application without importing Saga application code.
+- [ ] Implement primary navigation.
+- [ ] Implement workspace shell and route-content boundary.
+- [ ] Implement responsive desktop/mobile navigation behavior.
+- [ ] Implement account/activity utility affordances with accessible semantics.
+- [ ] Establish dialog/sheet primitive only when the first shell/feature interaction requires it.
+- [ ] Establish toast/notification primitive only when the first real notification behavior requires it.
+- [ ] Establish global loading/error conventions as actual routes/features require them.
+- [ ] Add remote build/render validation that does not require Vercel preview deployments.
+- [ ] Render and visually inspect the implemented shell before marking it `APPROVED`.
 
 ## Phase 3 — Creation Experience
 The creation UI must be task-oriented and progressively disclose complexity.
@@ -104,10 +108,10 @@ Exact screens are not predetermined.
 11. Update component/screen/decision documentation based on verified implementation.
 
 ## Current Work
-**Current phase:** Phase 1 — Design & Frontend Foundation  
-**Current status:** Frontend architecture, component-source policy, visual foundation, accessibility rules, initial primitive roles, naming/folder conventions, and an experimental desktop/mobile application-shell direction are documented. The shell has been drawn in Figma but is not yet approved or locked.  
+**Current phase:** Phase 2 — Application Shell  
+**Current status:** Phase 1 foundation is sufficient to start shell implementation. The Figma shell was visually reviewed and revised to v0.2. Persistent shell ownership is now explicitly separated from Create/Library feature UI. No application implementation exists yet.  
 **Known blockers:** None recorded.  
-**Next recommended task:** Review and iterate the Figma application-shell direction, then either approve it or revise it before scaffolding Phase 2 application-shell code.
+**Next recommended task:** Scaffold the fresh Next.js/TypeScript/Tailwind app and implement only the persistent desktop/mobile shell from the v0.2 candidate, with remote GitHub-based build/render validation before any Vercel preview dependency.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
