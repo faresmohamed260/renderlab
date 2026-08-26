@@ -32,10 +32,24 @@ RenderLab is organized around user goals, not backend workflow types.
 
 These concepts may be selectable or contextual inside Create when they provide user value. Adding a backend workflow does not create a new top-level screen by default.
 
+## Application Shell
+**Status:** EXPERIMENTAL design direction; no implementation exists yet.  
+**Figma reference:** `RenderLab Design System` → `Application Shell` page, exploration v0.1.  
+
+Current direction:
+- Desktop uses a persistent compact left navigation.
+- Create and Library are primary; Activity and Settings are visually secondary utilities.
+- Main workspace/media receives substantially more space than application chrome.
+- Compact top-level status may surface running generation activity without requiring navigation to Activity.
+- Create controls cluster around the composer/workspace rather than occupying a permanent large settings sidebar.
+- Narrow/mobile layouts replace the desktop sidebar with an appropriate compact navigation treatment; they do not simply shrink the same sidebar.
+
+This is intentionally not `APPROVED` or `LOCKED` yet. It must be reviewed as rendered design/implementation before those statuses are used.
+
 ## Screens
 
 ### Create
-**Route:** `/` (preferred initial default; final router implementation will verify)  
+**Route:** `/`  
 **Status:** PLANNED  
 **Purpose:** Start and continue creative operations from one task-oriented workspace.  
 **Primary experience:** A unified composer/workspace that lets the user express intent, attach/select relevant media, choose the intended output/task when necessary, set essential output controls, generate, observe real job state, and continue from results.  
@@ -72,11 +86,12 @@ These operations map onto the currently verified image and video workflow capabi
 
 **Internal/not user-facing by default:** provider, worker, ecosystem, storage transport, workflow graph/node IDs, failover bookkeeping.  
 **Result behavior:** Generated media appears in the same creative flow with actions derived from compatibility, such as Edit, Animate, Reuse settings, Download, or View in Library. Completion means the durable result has been persisted, not merely returned by the provider.  
+**Current shell exploration:** large media/result canvas with a compact composer anchored near the working area; desktop navigation remains separate from creation controls. This is a design exploration, not a locked layout.  
 **Reference pattern:** Fresh RenderLab design; Saga supplies behavioral/backend evidence only.  
 **Do not change:** Do not turn the default Create workspace into a generic ComfyUI/workflow parameter form.
 
 ### Library
-**Route:** `/library` (planned; verify during router implementation)  
+**Route:** `/library`  
 **Status:** PLANNED  
 **Purpose:** Find, inspect, organize, reuse, and continue from durable media assets.  
 **Content:** Generated images/videos and persistent uploaded assets should be represented as media assets while preserving their provenance/type distinctions where relevant.  
@@ -95,7 +110,7 @@ These operations map onto the currently verified image and video workflow capabi
 **Do not change:** Library is not merely generation history; reusable uploads and generated outputs are both durable creative assets.
 
 ### Media Viewer
-**Route:** Contextual asset route, exact pattern to be selected with the router architecture  
+**Route:** `/library/[assetId]`  
 **Status:** PLANNED  
 **Purpose:** Inspect one media asset in detail and take the next meaningful action.  
 **Primary capabilities:**
@@ -110,7 +125,7 @@ These operations map onto the currently verified image and video workflow capabi
 **Do not change:** Continuation actions should be capability-derived rather than hard-coded independently in every media surface.
 
 ### Activity
-**Route:** `/activity` (planned; verify during router implementation)  
+**Route:** `/activity`  
 **Status:** PLANNED  
 **Purpose:** Provide visibility into current/recent asynchronous generation work and actionable failures without forcing users to manage infrastructure.  
 **Primary capabilities:**
@@ -125,7 +140,7 @@ These operations map onto the currently verified image and video workflow capabi
 **Do not change:** Do not expose worker selection, failover controls, or provider infrastructure as routine user responsibilities.
 
 ### Settings
-**Route:** `/settings` (planned; verify during router implementation)  
+**Route:** `/settings`  
 **Status:** PLANNED  
 **Purpose:** Hold persistent application/account preferences that do not belong in the creative workflow.  
 **Initial scope:** Not yet defined; create only settings backed by actual product requirements.  
@@ -140,7 +155,7 @@ The operation is resolved from user intent and inputs where practical, while exp
 - Prompt + video output intent, no image → Create Video.
 - Prompt + image reference + video output intent → Animate Image.
 
-The exact interaction control for operation selection is a design-system/implementation decision and is not fixed by this registry.
+The exact interaction control for operation selection remains experimental until the Create design is reviewed.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or as continuation actions. They should receive a new top-level product surface only when the user workflow genuinely requires a distinct workspace.
