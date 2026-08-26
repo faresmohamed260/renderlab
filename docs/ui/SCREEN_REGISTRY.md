@@ -3,53 +3,32 @@
 Tracks approved product surfaces and actual route/status/component composition.
 
 ## Statuses
-- `PLANNED` — approved product surface, not yet implemented beyond temporary route scaffolding
+- `PLANNED` — approved surface, not yet implemented beyond temporary scaffolding
 - `UNAUDITED` — implementation exists but has not been audited
 - `MIGRATING` — implementation is actively being brought to the approved RenderLab design
 - `APPROVED` — rendered implementation has been reviewed and approved
 - `LOCKED` — approved surface whose established design should not change without explicit product reason
 
 ## Initial Information Architecture
-RenderLab is organized around user goals, not backend workflow types.
+Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextual: **Media Viewer**.
 
-### Primary navigation
-1. **Create** — the main creative workspace and default entry point.
-2. **Library** — durable generated and uploaded media, discovery, organization, and continuation.
-
-### Utility surfaces
-- **Activity** — generation jobs and operational status.
-- **Settings** — persistent product/account/application preferences as introduced.
-
-### Contextual surfaces
-- **Media Viewer** — focused inspection and continuation of a selected asset.
-
-### Not initial top-level destinations
-- Models
-- Workflows
-- Separate Image and Video applications
-- Separate Edit/Animate/Upscale applications
-- ComfyUI graph/node surfaces
-
-Adding a backend workflow does not create a new top-level screen by default.
+Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps, and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default.
 
 ## Application Shell
 **Status:** APPROVED  
 **Implementation:** `src/components/shell/app-shell.tsx`  
-**Historical design reference:** previous Figma `RenderLab Design System` → `Application Shell` → v0.2 desktop/mobile. Figma is no longer the ongoing design workspace.  
-**Verification:** GitHub Actions production build + Playwright desktop/mobile checks passed on 2026-08-27. Generated 1440×1024 and 390×844 screenshots were visually inspected against the reviewed shell direction.  
+**Verification:** GitHub production build + Playwright desktop/mobile checks and rendered screenshot review.
 
 Approved behavior:
-- Desktop uses a persistent compact left navigation (`w-52`, approximately 208px).
-- Create and Library are primary; Activity and Settings are visually secondary utilities.
-- Compact 56px top bar provides route context plus Activity/account affordances.
-- Main route content owns the overwhelming majority of screen area.
-- Idle shell state does not show a permanent “Ready” status pill.
-- The persistent shell stops at the route-content boundary. Create composer, references, generation controls/results, Library cards/grids, and feature-specific settings belong to their own feature designs.
-- Narrow/mobile layouts hide the desktop sidebar and use bottom navigation for Create, Library, and Activity.
-- Settings remains accessible through top utility/account access on narrow layouts rather than occupying persistent bottom navigation.
-- Essential nav controls have touch-friendly sizing and semantic navigation landmarks.
+- compact persistent desktop left navigation;
+- Create/Library primary, Activity/Settings secondary;
+- compact top bar for route context/utilities;
+- route content owns the overwhelming majority of screen area;
+- shell stops at route-content boundary and does not own Create/Library feature UI;
+- narrow layouts hide desktop sidebar and use bottom navigation for Create/Library/Activity;
+- touch-friendly semantic navigation.
 
-`APPROVED` does not mean `LOCKED`; changes are allowed when product needs justify them, but they require rendered responsive review.
+`APPROVED` does not mean `LOCKED`.
 
 ## Screens
 
@@ -57,98 +36,78 @@ Approved behavior:
 **Route:** `/`  
 **Status:** MIGRATING  
 **Implementation:** `src/features/create/create-workspace.tsx`  
-**Current design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`  
+**Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`  
 **Purpose:** Start and continue creative operations from one task-oriented workspace.  
-**Initial production operations:** Create Image, Edit Image, Create Video, Animate Image.  
+**Initial operations:** Create Image, Edit Image, Create Video, Animate Image.
 
-**Implemented and CI-verified:**
+**Implemented and verified:**
 - focused prompt composer;
-- Image/Video output choice with Image as default;
-- concrete essential aspect value;
-- contextual video duration value;
-- responsive two-row mobile composer with full-width Generate action;
-- typed `/api/generation/jobs` submission boundary;
-- truthful generation-backend availability state;
-- request validation and application-level generation/job types;
-- local submission/error/job-status feedback without fabricated percentage progress;
-- reference selection UI for PNG/JPEG/WebP up to 25 MB;
-- signed direct-R2 upload ticket/completion contract;
-- server-side object type/size verification;
-- opaque temporary-source IDs rather than R2-key identity;
+- Image/Video output choice with Image default;
+- concrete aspect and contextual video duration values;
+- responsive two-row mobile composer;
+- reference selection for PNG/JPEG/WebP up to 25 MB;
+- signed direct-R2 upload with server verification and opaque source identity;
 - reference preview/removal/replacement;
-- Image + reference → Edit context;
-- Video + reference → Animate context;
-- production build + responsive Playwright/API checks and rendered screenshot review.
+- Image + reference → Edit and Video + reference → Animate context resolution;
+- typed `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]` boundaries;
+- real RenderLab job polling without fabricated percentage progress;
+- RenderLab-owned `generation_jobs` + `media_assets` persistence and private media-delivery APIs;
+- native Create Image end-to-end generation/persistence;
+- native reference-driven Edit Image end-to-end generation/persistence (GitHub run `33021843503`);
+- native Create Video end-to-end generation/persistence (GitHub run `33021977765`);
+- production build + responsive Playwright/API validation.
 
-**Implemented but not production-configured/E2E-verified yet:**
-- `generation_sources` Supabase schema migration;
-- actual reference upload to a RenderLab R2 bucket;
-- actual persistence into a RenderLab Supabase target;
-- reference-driven generation submission to a real generation backend.
+**Still open before approval:**
+- render persisted output asset directly in Create;
+- capability-derived continuation actions;
+- native reference-driven Animate Image verification;
+- bounded retry/backoff for transient client polling failures;
+- safe poll-time reassignment semantics without duplicate-generation risk;
+- Advanced controls from verified capability definitions;
+- final responsive review with real persisted-result lifecycle visible.
 
-**Intentionally not implemented yet:**
-- Advanced controls;
-- user-facing model/workflow chooser;
-- real configured generation backend adapter;
-- job polling/realtime synchronization after submission;
-- persisted result presentation and continuation actions.
+**Accepted design direction:**
+- one focused workspace rather than separate Image/Edit/Video/Animate screens;
+- Image/Video is the main explicit output choice;
+- compatible reference changes operation context automatically;
+- essential controls show useful current values such as `1:1`, `16:9`, `5 s`;
+- technical/model-specific controls remain contextual or Advanced;
+- runtime states derive from real asynchronous state; no fake progress;
+- result is complete only after durable persistence.
 
-**Current accepted design direction:**
-- One focused composer rather than separate Image/Edit/Video/Animate screens.
-- `Image` / `Video` is the main explicit output choice.
-- Image is the default output.
-- A compatible image reference changes context automatically: Image + reference → Edit; Video + reference → Animate.
-- Essential controls show useful current values such as `1:1`, `16:9`, and `5 s`.
-- Technical/model-specific controls remain contextual or Advanced.
-- Runtime states derive from real asynchronous job state; no fake progress.
-- A result is complete only after durable persistence succeeds.
-
-**Default controls:** Prompt, Add/reference input, Image/Video output choice, operation-specific essential values, Generate.  
-**Contextual controls:** attached reference context/removal/replacement, video duration/aspect, and other supported task-relevant controls.  
-**Advanced controls:** seed, negative prompt, steps where genuinely variable/useful, CFG/guidance where useful, frame rate, and other deliberately advanced tuning.  
-**Internal/not user-facing by default:** provider, worker, ecosystem, storage transport, R2 key, workflow graph/node IDs, failover bookkeeping.  
-**Shell boundary:** Create owns its composer, references, controls, results, and feature-specific layout.  
-**Do not change:** Do not turn the default Create workspace into a generic ComfyUI/workflow parameter form or wire fake generation behavior merely to make the screen look complete.
+**Default controls:** Prompt, reference input, Image/Video, operation-specific essential values, Generate.  
+**Contextual controls:** attached reference context/removal/replacement, video duration/aspect, other supported task-relevant controls.  
+**Advanced controls:** seed, negative prompt, steps/guidance where genuinely useful, frame rate, and other deliberately advanced tuning.  
+**Internal:** provider, worker, ecosystem, R2 key, workflow graph/node IDs, failover bookkeeping.  
+**Do not change:** Do not turn Create into a generic ComfyUI parameter form or wire fake behavior merely to make it look complete.
 
 ### Library
 **Route:** `/library`  
-**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
-**Purpose:** Find, inspect, organize, reuse, and continue from durable media assets.  
-**Content:** Generated images/videos and persistent uploaded assets.  
-**Primary capabilities:** browse, search/filter/sort as approved, preview, organize/favorite where retained, download, delete, open viewer, start compatible continuation actions, reuse assets as inputs.  
-**Do not change:** Library is not merely generation history.
+**Status:** PLANNED; temporary route placeholder  
+**Purpose:** Find, inspect, organize, reuse, and continue from durable RenderLab `media_assets`. Library is not merely generation history.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
-**Purpose:** Inspect one media asset in detail and take the next meaningful action.  
-**Primary capabilities:** large media presentation, essential metadata, media actions, provenance/settings when relevant, capability-derived continuation actions, return to originating context.  
-**Do not change:** continuation actions should be capability-derived rather than hard-coded independently in every media surface.
+**Status:** PLANNED; temporary route placeholder  
+**Purpose:** Inspect one durable media asset and take capability-derived continuation/media actions.
 
 ### Activity
 **Route:** `/activity`  
-**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
-**Purpose:** Provide visibility into current/recent asynchronous generation work and actionable failures without forcing users to manage infrastructure.  
-**Primary capabilities:** running/queued/recent jobs, real execution state, terminal states, useful failure explanation/action, completed output access, retry/cancel only when supported.  
-**Do not change:** do not expose worker selection, failover controls, or provider infrastructure as routine user responsibilities.
+**Status:** PLANNED; temporary route placeholder  
+**Purpose:** Show current/recent RenderLab `generation_jobs`, real execution state and actionable failures without exposing worker infrastructure as user responsibility.
 
 ### Settings
 **Route:** `/settings`  
-**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
-**Purpose:** Hold persistent application/account preferences that do not belong in the creative workflow.  
-**Initial scope:** Not yet defined; create only settings backed by actual requirements.  
-**Do not change:** do not use Settings as a dumping ground for workflow parameters or model controls.
+**Status:** PLANNED; temporary route placeholder  
+**Purpose:** Persistent application/account preferences backed by actual requirements; not a dumping ground for workflow/model parameters.
 
 ## Creation Experience Resolution
-The initial Create experience uses a single workspace instead of separate top-level Image, Video, Edit, and Animate applications.
-
-Operation is resolved from user intent and inputs while explicit output selection remains available:
-- Prompt + Image output → Create Image.
-- Prompt + ready image reference + Image output → Edit Image.
-- Prompt + Video output, no image → Create Video.
-- Prompt + ready image reference + Video output → Animate Image.
+- Prompt + Image → Create Image.
+- Prompt + ready image reference + Image → Edit Image.
+- Prompt + Video, no reference → Create Video.
+- Prompt + ready image reference + Video → Animate Image.
 
 Current interaction/runtime decisions are documented in UI-015 through UI-019.
 
 ## Growth Rule
-Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or as continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
+Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
