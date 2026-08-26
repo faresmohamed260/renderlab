@@ -1,80 +1,98 @@
-# UI Migration
+# RenderLab Product & UI Foundation
 
 ## Objective
-Migrate independently implemented UI into a reusable, registry-driven design system without rebuilding the application.
+Build RenderLab as a new, extensible application using the proven behavior, backend capabilities, product knowledge, and lessons from Saga as reference material while deliberately re-evaluating architecture and UX.
 
-## Principles
-- Preserve working behavior.
-- Migrate one coherent surface at a time.
-- Prefer reuse over replacement.
-- Search before creating.
-- Approve/document reusable results.
-- Avoid unrelated redesign.
-- Validate rendered UI.
+This is not a direct UI migration and not a visual reconstruction of Saga.
 
-## Phase 0 — Repository Governance
-- [ ] Audit current frontend.
-- [ ] Populate `COMPONENT_CATALOG.md` from real code.
-- [ ] Populate `SCREEN_REGISTRY.md` from real routes.
-- [ ] Populate `FRONTEND_ARCHITECTURE.md`.
-- [ ] Record durable decisions in `UI_DECISIONS.md`.
-- [ ] Confirm ChatGPT Project instructions point to `AGENTS.md`.
+## Core Principles
+- Saga is a reference implementation, not the RenderLab specification.
+- Preserve proven behavior and backend knowledge where valuable; do not preserve flawed UI or architecture by default.
+- Design for future ComfyUI capabilities without exposing backend complexity directly to average users.
+- Simple by default, powerful when needed.
+- Use progressive disclosure for advanced and model-specific controls.
+- Organize the product around user goals rather than ComfyUI terminology or node graphs.
+- Reuse approved RenderLab components before inventing alternatives.
+- Validate rendered UI, not only compilation.
+- Record durable decisions in the repository.
 
-## Phase 1 — Foundation
-- [ ] Identify styling systems.
-- [ ] Define/normalize design tokens.
-- [ ] Normalize UI primitives.
-- [ ] Identify duplicate components.
-- [ ] Establish approved external registries.
+## Phase 0 — Product & Capability Baseline
+- [x] Audit the current Saga Studio frontend at a high level.
+- [x] Confirm ChatGPT Project instructions point to repository governance and prioritize the repository as source of truth.
+- [ ] Document Saga's proven product behaviors and backend contracts worth carrying forward.
+- [ ] Document Saga UX and frontend architecture problems that should not be copied automatically.
+- [ ] Audit existing production ComfyUI workflows and backend capabilities.
+- [ ] Identify likely capability categories that RenderLab architecture must be able to support later without requiring their immediate implementation.
+- [ ] Define RenderLab's workflow/capability domain model.
+- [ ] Define the boundary between default controls, contextual controls, and advanced controls.
+- [ ] Define RenderLab information architecture from user goals rather than copying Saga routes.
+- [ ] Populate `FRONTEND_ARCHITECTURE.md` with the chosen RenderLab architecture once decisions are verified.
+- [ ] Record durable product/UI decisions in `UI_DECISIONS.md`.
+
+## Phase 1 — Design & Frontend Foundation
+- [ ] Select and document the concrete frontend framework and routing approach.
+- [ ] Define design tokens.
+- [ ] Establish typography, spacing, surfaces, color roles, radii, motion, and responsive rules.
+- [ ] Define core UI primitives and approved component sources.
+- [ ] Establish accessibility expectations.
 - [ ] Establish naming/folder conventions.
+- [ ] Define application shell based on approved information architecture.
+- [ ] Establish the RenderLab component catalog with only deliberately approved components.
 
 ## Phase 2 — Application Shell
-- [ ] Sidebar
-- [ ] Top navigation
+Exact surfaces depend on the approved information architecture.
+- [ ] Primary navigation
 - [ ] Workspace shell
-- [ ] Responsive layout
-- [ ] Dialog system
-- [ ] Toast system
+- [ ] Responsive navigation/layout
+- [ ] Dialog/sheet system
+- [ ] Toast/notification system
+- [ ] Global loading/error conventions
 
-## Phase 3 — Generation Workspace
-- [ ] Prompt editor
-- [ ] Model picker
-- [ ] Generation settings
-- [ ] Upload/reference media
+## Phase 3 — Creation Experience
+The creation UI must be task-oriented and progressively disclose complexity.
+- [ ] Prompt/composer experience
+- [ ] Task/mode selection where needed
+- [ ] Reference/input media
+- [ ] Essential output controls
+- [ ] Contextual workflow controls
+- [ ] Advanced controls
+- [ ] Model/workflow selection only where it provides user value
 - [ ] Generate controls
-- [ ] Job progress
-- [ ] Generation cards
+- [ ] Job/progress feedback
+- [ ] Output and continuation actions
 
-## Phase 4 — Media
-- [ ] Gallery
+## Phase 4 — Media & Continuation
+- [ ] Media library/gallery
 - [ ] Media viewer
-- [ ] History
-- [ ] Metadata
+- [ ] Search/filter/history behavior
+- [ ] Metadata presentation
+- [ ] Favorites/collections or approved organizational model
 - [ ] Media actions
+- [ ] Continuation actions such as edit, animate, upscale, or other supported operations
 
-## Phase 5 — Secondary Screens
-- [ ] Models
-- [ ] Workflows
-- [ ] Queue
+## Phase 5 — Operational & Secondary Experiences
+Exact screens are not predetermined.
+- [ ] Jobs/queue
+- [ ] Models/workflows if user-facing surfaces are justified
 - [ ] Settings
+- [ ] Additional capability-specific experiences approved during product design
 
-## Per-Surface Procedure
-1. Audit existing implementation.
-2. Identify reusable components.
-3. Identify duplicated/problematic UI.
-4. Search approved libraries/registries.
-5. Choose smallest viable migration.
-6. Implement without unrelated redesign.
+## Feature/Surface Procedure
+1. Establish the user goal and required behavior.
+2. Inspect applicable RenderLab decisions and approved components.
+3. Inspect Saga only when it provides useful behavioral/backend reference.
+4. Inspect the relevant backend/workflow contract.
+5. Decide which complexity belongs in the default experience and which should be contextual or advanced.
+6. Implement the smallest coherent experience that satisfies the approved product design.
 7. Build and visually verify.
-8. Check responsive behavior.
-9. Mark reusable components `APPROVED`/`LOCKED`.
-10. Update migration/catalog/screen docs.
+8. Check responsive and accessibility behavior.
+9. Update component/screen/decision documentation based on verified implementation.
 
 ## Current Work
-**Current phase:** Phase 0 — Repository Governance  
-**Current surface:** Not yet audited  
-**Known blockers:** None recorded  
-**Next recommended task:** Audit the existing frontend and populate repository-specific documentation without changing the visual UI.
+**Current phase:** Phase 0 — Product & Capability Baseline  
+**Current status:** Saga frontend high-level audit completed; fresh-build direction established.  
+**Known blockers:** None recorded.  
+**Next recommended task:** Audit and document proven Saga/backend capabilities plus existing ComfyUI workflow capabilities, then define the RenderLab capability/domain model before designing screens.
 
 ## Session Handoff
-Before ending meaningful migration work, update completed items, current phase/surface, blockers, and next recommended task.
+Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
