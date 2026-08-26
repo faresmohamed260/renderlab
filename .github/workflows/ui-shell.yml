@@ -3,7 +3,25 @@ name: UI Shell Validation
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "tests/ui/**"
+      - "package.json"
+      - "tsconfig.json"
+      - "next-env.d.ts"
+      - "postcss.config.mjs"
+      - "playwright.config.ts"
+      - ".github/workflows/ui-shell.yml"
   pull_request:
+    paths:
+      - "src/**"
+      - "tests/ui/**"
+      - "package.json"
+      - "tsconfig.json"
+      - "next-env.d.ts"
+      - "postcss.config.mjs"
+      - "playwright.config.ts"
+      - ".github/workflows/ui-shell.yml"
 
 permissions:
   contents: read
