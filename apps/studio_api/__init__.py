@@ -1,1 +1,0 @@
-"""RenderLab API application."""
