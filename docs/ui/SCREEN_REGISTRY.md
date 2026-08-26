@@ -35,8 +35,8 @@ Adding a backend workflow does not create a new top-level screen by default.
 ## Application Shell
 **Status:** APPROVED  
 **Implementation:** `src/components/shell/app-shell.tsx`  
-**Figma reference:** `RenderLab Design System` → `Application Shell` → v0.2 desktop/mobile  
-**Verification:** GitHub Actions production build + Playwright desktop/mobile checks passed on 2026-08-27. Generated 1440×1024 and 390×844 screenshots were visually inspected against the v0.2 direction.  
+**Historical design reference:** previous Figma `RenderLab Design System` → `Application Shell` → v0.2 desktop/mobile. Figma is no longer the ongoing design workspace.  
+**Verification:** GitHub Actions production build + Playwright desktop/mobile checks passed on 2026-08-27. Generated 1440×1024 and 390×844 screenshots were visually inspected against the reviewed shell direction.  
 
 Approved behavior:
 - Desktop uses a persistent compact left navigation (`w-52`, approximately 208px).
@@ -55,23 +55,32 @@ Approved behavior:
 
 ### Create
 **Route:** `/`  
-**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
+**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only; active visual design continues in Penpot  
 **Purpose:** Start and continue creative operations from one task-oriented workspace.  
 **Initial production operations:** Create Image, Edit Image, Create Video, Animate Image.  
 
+**Current accepted design direction:**
+- One focused composer rather than separate Image/Edit/Video/Animate screens.
+- `Image` / `Video` is the main explicit output choice.
+- Image is the default output.
+- A compatible image reference changes context automatically: Image + reference → Edit; Video + reference → Animate.
+- Essential controls show useful current values such as `1:1`, `16:9`, and `5 s`.
+- Technical/model-specific controls remain contextual or Advanced.
+- Historical Figma v0.2 desktop states were reviewed; current responsive design must be carried forward and reviewed in Penpot before implementation.
+
 **Default controls:**
 - Prompt
-- Reference/input media when relevant
-- Operation/output intent when it cannot be inferred safely
-- Small set of operation-specific essential output choices
+- Add/reference input
+- Image/Video output choice
+- Small set of operation-specific essential current values
 - Generate
 
 **Contextual controls:**
-- Image/reference inputs for edit/animate
+- Attached reference context/removal/replacement
 - Video duration
 - Video aspect ratio/output shape
 - Video resolution when meaningful
-- Audio toggle for video
+- Audio toggle for video when surfaced
 - Other controls only when supported and useful for the current task
 
 **Advanced controls:** seed, negative prompt, steps where genuinely variable/useful, CFG/guidance where useful, frame rate, and other deliberately advanced tuning.  
@@ -111,13 +120,13 @@ Approved behavior:
 ## Creation Experience Resolution
 The initial Create experience uses a single workspace instead of separate top-level Image, Video, Edit, and Animate applications.
 
-Operation is resolved from user intent and inputs where practical, while explicit selection remains available when ambiguity matters:
-- Prompt + image output intent → Create Image.
-- Prompt + reference image + edit intent → Edit Image.
-- Prompt + video output intent, no image → Create Video.
-- Prompt + image reference + video output intent → Animate Image.
+Operation is resolved from user intent and inputs where practical, while explicit output selection remains available when ambiguity matters:
+- Prompt + Image output → Create Image.
+- Prompt + image reference + Image output → Edit Image.
+- Prompt + Video output, no image → Create Video.
+- Prompt + image reference + Video output → Animate Image.
 
-The exact interaction control for operation selection remains experimental until the Create design is reviewed.
+The current interaction direction is documented in UI-015 through UI-017. Penpot is the ongoing visual workspace for responsive refinement.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or as continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
