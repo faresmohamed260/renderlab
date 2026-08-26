@@ -13,6 +13,7 @@ This is not a direct UI migration and not a visual reconstruction of Saga.
 - Use progressive disclosure for advanced and model-specific controls.
 - Organize the product around user goals rather than ComfyUI terminology or node graphs.
 - Reuse approved RenderLab components before inventing alternatives.
+- Prefer maintained approved component/interaction mechanics over rebuilding solved generic mechanics from scratch.
 - Validate rendered UI, not only compilation.
 - Record durable decisions in the repository.
 
@@ -38,11 +39,14 @@ Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.
 - [x] Select and document the concrete frontend framework and routing approach.
 - [ ] Define design tokens.
 - [ ] Establish typography, spacing, surfaces, color roles, radii, motion, and responsive rules.
-- [ ] Define core UI primitives and approved component sources.
+- [x] Define approved external primitive/component sources and adoption policy.
+- [ ] Define the initial core RenderLab primitive set after design tokens are established.
 - [ ] Establish accessibility expectations.
 - [ ] Establish naming/folder conventions.
 - [ ] Define application shell based on approved information architecture.
-- [ ] Establish the RenderLab component catalog with only deliberately approved components.
+- [ ] Establish the RenderLab component catalog with actual components as they are implemented.
+
+Approved source policy: `docs/ui/COMPONENT_CATALOG.md`. Sources include shadcn/ui + Radix, Motion for React, Motion Primitives, Aceternity UI, Magic UI, React Bits, and individually reviewed shadcn-compatible registries.
 
 ## Phase 2 — Application Shell
 Exact surfaces depend on the approved information architecture.
@@ -85,19 +89,20 @@ Exact screens are not predetermined.
 ## Feature/Surface Procedure
 1. Establish the user goal and required behavior.
 2. Inspect applicable RenderLab decisions and approved components.
-3. Inspect Saga only when it provides useful behavioral/backend reference.
-4. Inspect the relevant backend/workflow contract.
-5. Decide which complexity belongs in the default experience and which should be contextual or advanced.
-6. Implement the smallest coherent experience that satisfies the approved product design.
-7. Build and visually verify.
-8. Check responsive and accessibility behavior.
-9. Update component/screen/decision documentation based on verified implementation.
+3. Search the approved external component ecosystem before implementing generic mechanics from scratch.
+4. Inspect Saga only when it provides useful behavioral/backend reference.
+5. Inspect the relevant backend/workflow contract.
+6. Decide which complexity belongs in the default experience and which should be contextual or advanced.
+7. Implement the smallest coherent experience that satisfies the approved product design.
+8. Build and visually verify.
+9. Check responsive and accessibility behavior.
+10. Update component/screen/decision documentation based on verified implementation.
 
 ## Current Work
 **Current phase:** Phase 1 — Design & Frontend Foundation  
-**Current status:** Next.js App Router + React + TypeScript + Tailwind + shadcn/ui-where-appropriate architecture is approved and documented. Server Components are the default composition model with deliberate Client Components for interactive creative features. Initial routes are `/`, `/library`, `/library/[assetId]`, `/activity`, and `/settings`.  
+**Current status:** Next.js App Router + React + TypeScript + Tailwind architecture is approved. The external component-source policy is also approved: use project components first, then established shadcn/Radix and modern motion/component ecosystems before custom-building generic mechanics.  
 **Known blockers:** None recorded.  
-**Next recommended task:** Define the RenderLab visual/design-system foundation: semantic tokens, typography, spacing, surfaces, control metrics, responsive rules, motion, accessibility expectations, and the approved primitive/component-source policy before scaffolding application code.
+**Next recommended task:** Define RenderLab semantic design tokens and visual rules—typography, spacing, surfaces, color roles, radii, control metrics, responsive behavior, motion, and accessibility—then select the initial concrete primitives from the approved component ecosystem.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
