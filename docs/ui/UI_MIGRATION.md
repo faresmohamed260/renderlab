@@ -75,19 +75,23 @@ The component was subsequently filename-normalized to match the documented kebab
 
 ## Phase 3 — Creation Experience
 The creation UI must be task-oriented and progressively disclose complexity.
-- [ ] Design the default Create experience in Figma before feature implementation.
-- [ ] Define prompt/composer interaction.
-- [ ] Define operation selection/resolution behavior.
-- [ ] Define reference/input media interaction.
-- [ ] Define essential output controls.
-- [ ] Define contextual workflow controls.
-- [ ] Define advanced-control disclosure.
-- [ ] Define model/workflow selection only where it provides user value.
-- [ ] Define Generate action and disabled/error states.
+- [ ] Design the default Create experience in Figma before feature implementation. v0.2 desktop states are visually reviewed; final mobile v0.2 review remains blocked by the Figma Starter MCP call limit.
+- [x] Define prompt/composer direction: one focused prompt surface with compact task-relevant controls and Generate action.
+- [x] Define operation selection/resolution behavior: explicit Image/Video output choice; compatible references resolve Edit/Animate context.
+- [x] Define reference/input media interaction direction: add reference from the composer; attached reference communicates resolved context and can be removed/replaced.
+- [x] Define essential output-control direction: show concrete current values such as `1:1`, `16:9`, and `5 s` rather than abstract setting-category labels.
+- [x] Define contextual-control direction: only controls relevant to the current output/operation remain on the primary surface.
+- [x] Define advanced-control disclosure direction: technical/model-specific tuning stays behind Advanced rather than becoming a permanent secondary settings panel.
+- [x] Define model/workflow default behavior: automatic/internal unless an explicit model choice provides concrete user value.
+- [ ] Define Generate disabled/error states.
 - [ ] Define real job/progress feedback in the Create flow.
 - [ ] Define output and continuation actions.
 - [ ] Implement the smallest approved Create slice after design review.
 - [ ] Build and visually verify desktop/mobile implementation.
+
+Figma Create exploration currently contains v0.1 and refined v0.2 states for default Image, reference-driven Edit, Video, and mobile. Desktop v0.2 states were visually inspected. The v0.1 mobile review exposed toolbar clipping/competition between controls and Generate; v0.2 was revised to a two-row mobile composer with Generate separated from compact settings. The v0.2 mobile frame exists in Figma, but its final screenshot could not be retrieved because the Figma Starter MCP tool-call limit was reached. Do not mark the Create design approved or begin implementation until that responsive state is visually verified.
+
+Durable Create decisions are recorded in `docs/ui/UI_DECISIONS.md` as UI-015 through UI-017.
 
 ## Phase 4 — Media & Continuation
 - [ ] Media library/gallery
@@ -120,9 +124,9 @@ Exact screens are not predetermined.
 
 ## Current Work
 **Current phase:** Phase 3 — Creation Experience design  
-**Current status:** Fresh app scaffold and persistent responsive application shell are implemented, remotely built, tested, screenshot-verified, and documented. `AppShell` is `APPROVED`; route feature content is still intentionally represented by temporary placeholders. No Saga application implementation was copied.  
-**Known blockers:** None recorded.  
-**Next recommended task:** Design the first Create experience in Figma from the approved capability model, beginning with the default/empty state and operation-resolution model. Keep the default path minimal and move model-specific/technical parameters behind contextual or advanced disclosure before implementing it.
+**Current status:** Phase 2 shell is approved. Create v0.2 establishes the current desktop design direction and the durable product rules for output selection, reference-driven context, concrete essential values, and progressive disclosure. Desktop v0.2 states are visually reviewed. The final v0.2 mobile screenshot has not been reviewed because the Figma Starter MCP call limit is currently exhausted. No Create feature implementation has begun.  
+**Known blockers:** Figma Starter MCP tool-call limit prevents final responsive visual verification of the existing Create v0.2 mobile frame. This is a design-approval blocker, not an application/runtime blocker.  
+**Next recommended task:** When Figma MCP access is available, retrieve and inspect Create v0.2 mobile (`8:125`). If it passes, record the Create design candidate as reviewed and continue with Generate states, job/progress, and result/continuation design before implementing the first approved Create slice. Do not bypass the responsive visual checkpoint by treating the unreviewed mobile frame as approved.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
