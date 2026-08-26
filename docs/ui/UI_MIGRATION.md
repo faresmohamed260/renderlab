@@ -41,18 +41,19 @@ Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.
 - [x] Define initial semantic design tokens.
 - [x] Establish initial typography, spacing, surfaces, color roles, radii, motion, and responsive rules.
 - [x] Define approved external primitive/component sources and adoption policy.
-- [ ] Define the initial core RenderLab primitive set and select concrete source implementations.
+- [x] Define the initial core RenderLab primitive roles. Concrete package/source adoption is deferred until the first implementation requires each primitive.
 - [x] Establish accessibility expectations.
-- [ ] Establish naming/folder conventions.
-- [ ] Define application shell based on approved information architecture.
+- [x] Establish naming/folder conventions.
+- [x] Define the initial application-shell direction from the approved information architecture.
+- [ ] Visually review/iterate the shell exploration before marking the shell design approved.
 - [ ] Establish the RenderLab component catalog with actual components as they are implemented.
 
 Visual/design-system authority: `docs/ui/UI_SYSTEM.md`.  
-Working visual exploration: Figma `RenderLab Design System`, file key `PHqgsDctOsEXX4EFR0SS7i`. Figma is not the source of truth; approved rules must be reflected in the repository.  
+Working visual exploration: Figma `RenderLab Design System`, file key `PHqgsDctOsEXX4EFR0SS7i`. Current pages include `Foundation` and `Application Shell`. Figma is not the source of truth; approved rules must be reflected in the repository.  
 Approved source policy: `docs/ui/COMPONENT_CATALOG.md`.
 
 ## Phase 2 — Application Shell
-Exact surfaces depend on the approved information architecture.
+Exact implementation begins after the shell exploration is reviewed.
 - [ ] Primary navigation
 - [ ] Workspace shell
 - [ ] Responsive navigation/layout
@@ -104,9 +105,9 @@ Exact screens are not predetermined.
 
 ## Current Work
 **Current phase:** Phase 1 — Design & Frontend Foundation  
-**Current status:** Frontend architecture, approved component ecosystems, initial dark-first visual foundation, semantic token roles, typography, spacing, radii, control metrics, motion guidance, responsive principles, and accessibility baseline are documented. A working Figma foundation board has been created for visual exploration.  
+**Current status:** Frontend architecture, component-source policy, visual foundation, accessibility rules, initial primitive roles, naming/folder conventions, and an experimental desktop/mobile application-shell direction are documented. The shell has been drawn in Figma but is not yet approved or locked.  
 **Known blockers:** None recorded.  
-**Next recommended task:** Select the initial concrete primitive set from approved component ecosystems, define naming/folder conventions, and design the application shell in Figma before scaffolding implementation.
+**Next recommended task:** Review and iterate the Figma application-shell direction, then either approve it or revise it before scaffolding Phase 2 application-shell code.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
