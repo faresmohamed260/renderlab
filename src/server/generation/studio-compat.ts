@@ -3,7 +3,7 @@ import type { GenerationJob, GenerationRequest } from "@/lib/capabilities/genera
 import { resolveCreativeOperation } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
-import { putR2Object } from "@/server/storage/r2";
+import { createSignedUploadUrl } from "@/server/storage/r2";
 
 type SourceRow = {
   id: string;
@@ -59,7 +59,19 @@ async function resolveTemporarySources(request: GenerationRequest) {
 async function createTextImageSource(request: GenerationRequest): Promise<SourceRow> {
   const storageKey = nowSourceKey();
   const bytes = Buffer.from(placeholderPngByAspect[request.output.aspectRatio], "base64");
-  await putR2Object({ key: storageKey, contentType: "image/png", body: bytes });
+  const uploadUrl = await createSignedUploadUrl({
+    key: storageKey,
+    contentType: "image/png",
+    expiresIn: 300,
+  });
+  const uploadResponse = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "content-type": "image/png" },
+    body: bytes,
+  });
+  if (!uploadResponse.ok) {
+    throw new Error(`Synthetic generation source upload failed (${uploadResponse.status}).`);
+  }
   return {
     id: "synthetic",
     storage_key: storageKey,
