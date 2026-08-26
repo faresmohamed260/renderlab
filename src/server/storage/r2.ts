@@ -54,6 +54,25 @@ export async function createSignedUploadUrl({
   });
 }
 
+export async function putR2Object({
+  key,
+  contentType,
+  body,
+}: {
+  key: string;
+  contentType: string;
+  body: Uint8Array;
+}) {
+  await getClient().send(
+    new PutObjectCommand({
+      Bucket: bucketName!,
+      Key: key,
+      ContentType: contentType,
+      Body: body,
+    }),
+  );
+}
+
 export async function headR2Object(key: string) {
   const object = await getClient().send(
     new HeadObjectCommand({
