@@ -14,7 +14,10 @@ For frontend/UI work also read the relevant current versions of:
 - `docs/ui/COMPONENT_CATALOG.md`
 - `docs/ui/SCREEN_REGISTRY.md`
 
-For architectural work also read `docs/architecture/FRONTEND_ARCHITECTURE.md`.
+For architectural work also read:
+- `docs/architecture/FRONTEND_ARCHITECTURE.md`
+- `docs/architecture/PRODUCT_CAPABILITIES.md` when capability/generation behavior is involved
+- `docs/architecture/INFRASTRUCTURE.md` when Supabase, R2, deployment secrets, generation adapters, or shared resources are involved
 
 Do not fill unfinished documentation from assumptions. Verify repository state and relevant reference implementation/backend behavior first.
 
@@ -37,6 +40,13 @@ Use Saga to understand:
 - lessons learned and known problems.
 
 Do not assume Saga's visual design, navigation, routes, component hierarchy, frontend architecture, or implementation patterns should be copied.
+
+## Shared Infrastructure Rule
+RenderLab deliberately reuses the existing Saga/Studio Supabase and Cloudflare R2 resources. Reuse is an infrastructure decision, not permission to couple RenderLab to legacy `studio_*` application tables or Saga contracts.
+
+Follow `docs/architecture/INFRASTRUCTURE.md` for the approved shared project, applied RenderLab migrations, required environment variables, and security boundaries.
+
+Do not create replacement Supabase/R2 resources unless the user explicitly changes this decision. Do not mutate or repurpose legacy Saga tables merely because they share the same Supabase project.
 
 ## Product UX Rule
 **Simple by default, powerful when needed.**
@@ -137,6 +147,7 @@ Durable decisions must update the appropriate source-of-truth file. Examples:
 - design-system rule → `UI_SYSTEM.md`
 - important product/UI decision → `UI_DECISIONS.md`
 - frontend architecture → `FRONTEND_ARCHITECTURE.md`
+- infrastructure/resource/secret contract → `docs/architecture/INFRASTRUCTURE.md`
 
 Update existing authoritative documentation rather than creating competing sources of truth.
 
