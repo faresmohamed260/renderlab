@@ -38,6 +38,10 @@ These sources are approved defaults to search before implementing reusable UI me
 **Default uses:** morphing, magnetic/physics-like interactions, animated galleries/cards/navigation, text motion, cursor/direct-manipulation effects, and other mechanics not already solved cleanly by higher-priority sources.  
 **Policy:** Use when it materially improves a creative-tool interaction. Review accessibility, performance, mobile/touch behavior, and dependency cost before adoption.
 
+### Lucide React
+**Role:** Initial application icon source.  
+**Policy:** Use consistent Lucide line icons for generic application chrome unless an approved product-specific icon/asset exists. Do not mix competing icon families casually.
+
 ### shadcn Registry Directory / additional registries
 **Role:** Discovery layer for additional maintained components compatible with the shadcn ownership model.  
 **Policy:** A registry being listed does not automatically approve every component. Review implementation quality, maintenance, licensing, accessibility, dependencies, and fit before adopting it into RenderLab.
@@ -90,6 +94,29 @@ Before copying/installing an external component:
 ---
 
 ## Components
-> No RenderLab application components exist yet. Add components here only after they actually exist in the repository.
+
+### AppShell
+**Status:** EXPERIMENTAL  
+**Source:** `src/components/shell/AppShell.tsx`  
+**Origin:** RenderLab composition using Next.js navigation + Lucide React icons  
+**Purpose:** Persistent responsive application chrome: desktop sidebar, compact top bar, mobile bottom navigation, route context, and utility navigation.  
+**Variants:** Responsive desktop/mobile behavior is internal to the component.  
+**Used by:** root layout  
+**Dependencies:** Next.js `Link`/`usePathname`, Lucide React  
+**Reuse rules:** This is the single shell/navigation implementation while Phase 2 is active. Extend it rather than creating page-specific shells.  
+**Do not:** Add Create composer, Library cards, workflow controls, or feature-owned layout into the persistent shell.  
+**Notes:** Based on reviewed Figma shell v0.2. Remains experimental until GitHub render screenshots are inspected and approved.
+
+### RoutePlaceholder
+**Status:** EXPERIMENTAL  
+**Source:** `src/components/shell/RoutePlaceholder.tsx`  
+**Origin:** RenderLab  
+**Purpose:** Temporary route-content placeholder used only while validating the persistent shell boundary.  
+**Variants:** Text content only.  
+**Used by:** Create, Library, Activity, Settings, Media Viewer placeholder routes  
+**Dependencies:** none  
+**Reuse rules:** Temporary Phase 2 validation helper.  
+**Do not:** Promote this placeholder layout into final feature UI or treat it as a generic empty-state component.  
+**Notes:** Deprecate/remove as real feature surfaces replace placeholders.
 
 Do not treat examples, registry listings, Saga components, or desired product concepts as proof that a RenderLab component exists.
