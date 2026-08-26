@@ -181,7 +181,7 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, sources
   if (workflow.kind === "image") {
     const imageSources = sources.length ? sources : [{ bytes: grayPng, contentType: "image/png", filename: "canvas.png" }];
     for (const source of imageSources) {
-      form.append("image_files", new Blob([source.bytes], { type: source.contentType }), source.filename);
+      form.append("image_files", new Blob([Uint8Array.from(source.bytes).buffer], { type: source.contentType }), source.filename);
     }
     form.append("prompt", request.prompt);
     form.append("negative_prompt", request.advanced?.negativePrompt ?? "");
@@ -193,7 +193,7 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, sources
   }
 
   const source = sources[0];
-  if (source) form.append("image_file", new Blob([source.bytes], { type: source.contentType }), source.filename);
+  if (source) form.append("image_file", new Blob([Uint8Array.from(source.bytes).buffer], { type: source.contentType }), source.filename);
   form.append("prompt", request.prompt);
   form.append("negative_prompt", request.advanced?.negativePrompt ?? "");
   form.append("seed", String(request.advanced?.seed ?? workflow.defaults.seed));
