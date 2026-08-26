@@ -116,6 +116,12 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 
 ### UI-018 — Penpot is the ongoing visual design workspace
 **Status:** Accepted  
-**Decision:** Penpot is the default ongoing visual UI/UX design workspace for RenderLab. The previous Figma `RenderLab Design System` file is retained as historical reference only. The repository remains authoritative over either design tool.  
-**Reason:** The project requires a free/open visual-design workflow that does not block progress on proprietary free-tier MCP/tool-call limits. RenderLab also needs the option to keep the design workflow portable and independent of a single vendor quota.  
-**Consequences:** New meaningful visual design work should be carried forward in Penpot and follow `docs/ui/DESIGN_WORKFLOW.md`. Existing repository decisions extracted from Figma remain valid. Unrecorded Figma content is not authoritative, and future sessions must not wait for Figma quota access to continue the project. A Penpot frame by itself still does not make implementation `APPROVED`; real responsive rendered verification remains required.
+**Decision:** Penpot is the default ongoing visual UI/UX design workspace for RenderLab when a direct workspace is available. Open SVG handoff artifacts under `design/penpot/` are an approved repository-backed fallback and import source. The previous Figma `RenderLab Design System` file is retained as historical reference only. The repository remains authoritative over every design tool/artifact.  
+**Reason:** The project requires a free/open visual-design workflow that does not block progress on proprietary free-tier MCP/tool-call limits or connector availability.  
+**Consequences:** New meaningful visual design work should use Penpot when practical or versioned interoperable SVG handoff artifacts when direct Penpot automation is unavailable. Existing repository decisions extracted from Figma remain valid. A design artifact alone still does not make implementation `APPROVED`; real responsive rendered verification remains required.
+
+### UI-019 — Create runtime states reflect real execution and preserve user work
+**Status:** Accepted  
+**Decision:** Generate is disabled when required task inputs are missing and while a submission is already in progress. Running-state copy/progress must be derived from real job/orchestration state when available rather than fabricated percentage progress. Submission/runtime errors appear locally without clearing the user's prompt, references, or settings. A generation is presented as complete only after the durable media result has been persisted.  
+**Reason:** Saga proved that generation is asynchronous and persistence/worker state are meaningful product concepts; fake progress or destructive error handling would reduce trust and make recovery harder.  
+**Consequences:** The Create UI must preserve task state across recoverable errors, expose concise actionable failure feedback, surface meaningful runtime state, and transition to result/continuation UI only after persistence succeeds. Result actions are capability-derived rather than hard-coded to one workflow.
