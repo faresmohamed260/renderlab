@@ -54,15 +54,39 @@ Design internal contracts so new workflows, models, media inputs, parameters, ou
 
 This does not mean exposing every supported capability immediately. Product surfaces must remain curated and intuitive.
 
-## Reuse Rule
-Do not invent UI when an approved RenderLab implementation already exists.
+## Component Source Policy
+Do **not** build generic UI primitives or sophisticated interaction mechanics from scratch when a suitable, production-appropriate implementation exists in an approved source.
 
-Priority:
+Default approved ecosystems:
+1. **shadcn/ui + Radix primitives** — foundational accessible application UI such as buttons, dialogs, menus, popovers, tabs, forms, selects, sheets, tooltips, and related primitives.
+2. **Motion for React** — underlying animation/gesture/layout-motion engine for deliberate custom interaction when a prebuilt component is not the right abstraction.
+3. **Motion Primitives** — preferred source for reusable application-friendly motion patterns such as Magnetic, Morphing Dialog/Popover, Transition Panel, animated groups/backgrounds, toolbars, carousel, cursor, progressive blur, tilt, spotlight, and related motion primitives.
+4. **Aceternity UI** — approved source for modern interactive/motion components and selected shadcn-compatible blocks when they fit the product experience.
+5. **Magic UI** — approved source for selected animated React/Tailwind/Motion components and effects; use carefully because much of its catalog is marketing-oriented.
+6. **React Bits** — approved source for selected creative interactions, galleries, navigation, cards, morphing/physics-like effects, and other advanced components when they are suitable for a production creative application.
+
+These sources are peers in the approved toolkit, not a requirement to use every library on every screen. Choose the smallest suitable dependency/component for the interaction.
+
+### Component sourcing priority
 1. Existing approved RenderLab component
 2. Existing RenderLab primitive
-3. Approved component library/registry
-4. Adapt an approved RenderLab component
-5. Create a new component only when necessary
+3. Suitable component from the approved ecosystems above
+4. Adapt/wrap an approved-source component to RenderLab tokens and behavior
+5. Compose a RenderLab-specific product component from approved primitives
+6. Build interaction mechanics from scratch only when no suitable implementation exists and the product requirement justifies the maintenance/debugging cost
+
+### Source evaluation
+Before adopting a third-party/copy-owned component, verify:
+- compatibility with the current Next.js/React/TypeScript/Tailwind stack;
+- keyboard and screen-reader behavior for interactive controls;
+- reduced-motion behavior where motion is involved;
+- responsive behavior;
+- performance and bundle/dependency impact;
+- that its license/usage terms are acceptable;
+- that the component can be brought under RenderLab tokens and visual language;
+- that it is suitable for an application workspace rather than merely visually impressive in a marketing demo.
+
+Prefer official documentation/registries for installation and implementation. Do not recreate a library component from memory when its maintained source can be used.
 
 Saga/legacy components do not enter this priority automatically. They are references until deliberately approved or reimplemented for RenderLab.
 
@@ -70,7 +94,17 @@ Saga/legacy components do not enter this priority automatically. They are refere
 During the fresh-build foundation phase, the old Saga design is not authoritative. Once a RenderLab component, pattern, or surface is explicitly approved and documented, do not casually redesign it, introduce competing styles, or change its interaction behavior without a product reason or explicit user request.
 
 ## Before Creating a Component
-Search for an existing approved RenderLab implementation, similar component, approved primitive, and approved registry component. Reuse or extend when appropriate.
+Search in this order:
+1. approved RenderLab components;
+2. RenderLab primitives;
+3. shadcn/ui/Radix;
+4. Motion Primitives / Motion;
+5. Aceternity UI;
+6. Magic UI;
+7. React Bits;
+8. only then consider a custom implementation.
+
+When an external component is adopted and becomes part of the product, record the local RenderLab component/wrapper and source in `COMPONENT_CATALOG.md`.
 
 ## Design Tokens
 Once RenderLab tokens exist, never introduce arbitrary visual values when an appropriate project token exists. Prefer tokens for colors, surfaces, spacing, typography, radii, shadows, control heights, breakpoints, animation timing, and z-index.
