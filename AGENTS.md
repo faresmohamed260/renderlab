@@ -9,6 +9,7 @@ Before substantial project work, read:
 3. `docs/ui/UI_DECISIONS.md`
 
 For frontend/UI work also read the relevant current versions of:
+- `docs/ui/DESIGN_WORKFLOW.md`
 - `docs/ui/UI_SYSTEM.md`
 - `docs/ui/COMPONENT_CATALOG.md`
 - `docs/ui/SCREEN_REGISTRY.md`
@@ -53,6 +54,11 @@ RenderLab should support sophisticated and expanding ComfyUI capabilities withou
 Design internal contracts so new workflows, models, media inputs, parameters, outputs, continuation actions, and post-processing capabilities can be added without repeatedly redesigning the application.
 
 This does not mean exposing every supported capability immediately. Product surfaces must remain curated and intuitive.
+
+## Visual Design Workflow
+Penpot is the default ongoing visual design workspace. The previous Figma file is historical reference only. Follow `docs/ui/DESIGN_WORKFLOW.md` for the design → repository → GitHub render-validation loop.
+
+A design-tool artifact is never more authoritative than the repository. Do not mark UI approved because a design exists; implementation requires responsive rendered verification.
 
 ## Component Source Policy
 Do **not** build generic UI primitives or sophisticated interaction mechanics from scratch when a suitable, production-appropriate implementation exists in an approved source.
@@ -127,6 +133,7 @@ Durable decisions must update the appropriate source-of-truth file. Examples:
 - approved reusable component → `COMPONENT_CATALOG.md`
 - foundation/migration progress → `UI_MIGRATION.md`
 - screen/information architecture → `SCREEN_REGISTRY.md`
+- design workflow/tooling → `DESIGN_WORKFLOW.md`
 - design-system rule → `UI_SYSTEM.md`
 - important product/UI decision → `UI_DECISIONS.md`
 - frontend architecture → `FRONTEND_ARCHITECTURE.md`
