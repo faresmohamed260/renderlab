@@ -51,7 +51,7 @@ export async function writeR2Object({ key, contentType, body }: { key: string; c
   const response = await fetch(await createSignedUploadUrl({ key, contentType }), {
     method: "PUT",
     headers: { "content-type": contentType },
-    body,
+    body: Uint8Array.from(body).buffer,
   });
   if (!response.ok) throw new Error(`R2 object could not be written (${response.status}).`);
 }
