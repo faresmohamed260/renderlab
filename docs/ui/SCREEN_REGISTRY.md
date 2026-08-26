@@ -55,9 +55,32 @@ Approved behavior:
 
 ### Create
 **Route:** `/`  
-**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only; active visual design continues in Penpot  
+**Status:** MIGRATING  
+**Implementation:** `src/features/create/create-workspace.tsx`  
+**Current design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`  
 **Purpose:** Start and continue creative operations from one task-oriented workspace.  
 **Initial production operations:** Create Image, Edit Image, Create Video, Animate Image.  
+
+**Implemented now:**
+- focused prompt composer;
+- Image/Video output choice with Image as default;
+- concrete essential aspect value;
+- contextual video duration value;
+- responsive two-row mobile composer with full-width Generate action;
+- typed `/api/generation/jobs` submission boundary;
+- truthful backend availability state;
+- request validation and application-level generation/job types;
+- local submission/error/job-status feedback that does not fabricate percentage progress;
+- production build + responsive Playwright checks and rendered screenshot review.
+
+**Intentionally not implemented yet:**
+- reference upload/asset binding;
+- reference-driven Edit/Animate runtime behavior;
+- Advanced controls;
+- workflow/model chooser;
+- real configured generation backend adapter;
+- job polling/realtime synchronization after submission;
+- persisted result presentation and continuation actions.
 
 **Current accepted design direction:**
 - One focused composer rather than separate Image/Edit/Video/Animate screens.
@@ -66,7 +89,8 @@ Approved behavior:
 - A compatible image reference changes context automatically: Image + reference → Edit; Video + reference → Animate.
 - Essential controls show useful current values such as `1:1`, `16:9`, and `5 s`.
 - Technical/model-specific controls remain contextual or Advanced.
-- Historical Figma v0.2 desktop states were reviewed; current responsive design must be carried forward and reviewed in Penpot before implementation.
+- Runtime states derive from real asynchronous job state; no fake progress.
+- A result is complete only after durable persistence succeeds.
 
 **Default controls:**
 - Prompt
@@ -86,7 +110,7 @@ Approved behavior:
 **Advanced controls:** seed, negative prompt, steps where genuinely variable/useful, CFG/guidance where useful, frame rate, and other deliberately advanced tuning.  
 **Internal/not user-facing by default:** provider, worker, ecosystem, storage transport, workflow graph/node IDs, failover bookkeeping.  
 **Shell boundary:** Create owns its composer, references, controls, results, and feature-specific layout.  
-**Do not change:** Do not turn the default Create workspace into a generic ComfyUI/workflow parameter form.
+**Do not change:** Do not turn the default Create workspace into a generic ComfyUI/workflow parameter form or wire fake generation behavior merely to make the screen look complete.
 
 ### Library
 **Route:** `/library`  
@@ -126,7 +150,7 @@ Operation is resolved from user intent and inputs where practical, while explici
 - Prompt + Video output, no image → Create Video.
 - Prompt + image reference + Video output → Animate Image.
 
-The current interaction direction is documented in UI-015 through UI-017. Penpot is the ongoing visual workspace for responsive refinement.
+Current interaction/runtime decisions are documented in UI-015 through UI-019.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or as continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
