@@ -34,7 +34,8 @@ This is not a direct UI migration and not a visual reconstruction of Saga.
 
 Capability/domain baseline: `docs/architecture/PRODUCT_CAPABILITIES.md`.  
 Approved information architecture and actual screen status: `docs/ui/SCREEN_REGISTRY.md`.  
-Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.
+Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.  
+Shared infrastructure authority: `docs/architecture/INFRASTRUCTURE.md`.
 
 ## Phase 1 — Design & Frontend Foundation
 - [x] Select and document the concrete frontend framework and routing approach.
@@ -105,6 +106,9 @@ The creation UI must be task-oriented and progressively disclose complexity.
 - [x] Implement the reference upload/asset contract using opaque source IDs.
 - [x] Implement direct signed R2 reference upload ticket/completion APIs with server-side HEAD verification.
 - [x] Add `generation_sources` Supabase migration with RLS enabled and server-owned access intent.
+- [x] Apply `0001_generation_sources.sql` to the explicitly approved shared Supabase project `AI Studio` (`rashyleshocuvpgcooxy`) as migration `renderlab_generation_sources`.
+- [x] Verify `public.generation_sources` exists with RLS enabled and starts empty; legacy `studio_*` tables remain present and were not modified by the RenderLab migration.
+- [x] Document the deliberate shared Supabase/R2 resource decision in `docs/architecture/INFRASTRUCTURE.md`.
 - [x] Implement reference preview/removal/replacement behavior in Create.
 - [x] Implement reference-driven Create context in the UI: Image + reference → Edit; Video + reference → Animate.
 - [x] Bind generation inputs through `{ type: "temporary-source", id }` instead of R2 storage keys.
@@ -112,8 +116,8 @@ The creation UI must be task-oriented and progressively disclose complexity.
 - [x] Visually inspect the latest generated 1440×1024 Image/Video and 390×844 mobile Create screenshots after the reference-contract changes.
 
 ### Still open before Create can become APPROVED
-- [ ] Establish the intended RenderLab Supabase target and apply `0001_generation_sources.sql` there; do not apply it to the legacy `AI Studio` project by assumption.
-- [ ] Establish/configure the RenderLab R2 target and verify a real signed reference upload end-to-end.
+- [ ] Configure shared Supabase/R2 environment values in the deployment/integration secret store.
+- [ ] Verify a real signed reference upload end-to-end against the shared R2 bucket and `generation_sources` table.
 - [ ] Validate configured reference-driven Edit/Animate submission end-to-end.
 - [ ] Implement Advanced controls from real capability definitions.
 - [ ] Connect a real generation backend adapter.
@@ -155,9 +159,9 @@ Exact screens are not predetermined.
 
 ## Current Work
 **Current phase:** Phase 3 — Creation Experience implementation  
-**Current status:** The Create composer, typed generation product boundary, reference-source upload/binding contract, and reference-driven Edit/Animate context are implemented and remotely verified in the unconfigured CI environment. Create remains `MIGRATING`; no fake backend behavior is used.  
-**Known blockers:** The only connected Supabase project currently visible is the legacy `AI Studio` database containing `studio_*` tables, so the new RenderLab migration was not applied there by assumption. A dedicated/approved RenderLab Supabase target, R2 target, and real generation adapter endpoint still need to be established before configured end-to-end generation can be verified.  
-**Next recommended task:** Establish the intended RenderLab infrastructure targets (Supabase + R2 + generation adapter), apply the committed migration only to the approved database, then perform a real signed reference upload and text-to-image/text-to-video submission through the new RenderLab product boundaries. After that, implement job synchronization and persisted result presentation.
+**Current status:** The Create composer, typed generation boundary, reference-source upload/binding contract, and reference-driven Edit/Animate context are implemented. Shared infrastructure reuse is now explicit: RenderLab uses the existing AI Studio Supabase project and Saga/Studio R2 resource while maintaining RenderLab-owned contracts. The `generation_sources` migration is applied and verified. Create remains `MIGRATING`; configured end-to-end infrastructure execution has not yet been verified.  
+**Known blockers:** Required server environment secrets are not available in the RenderLab integration/deployment context yet. A real generation adapter endpoint also remains to be connected.  
+**Next recommended task:** Configure the exact Supabase/R2 server environment variables documented in `docs/architecture/INFRASTRUCTURE.md`, then perform a real signed reference upload. In parallel, establish `RENDERLAB_GENERATION_BACKEND_URL` so real generation submission can be validated before job synchronization and persisted-result presentation are added.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
