@@ -53,3 +53,27 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 **Decision:** RenderLab's internal architecture should anticipate additional workflows, models, media inputs, parameters, outputs, continuation actions, and post-processing capabilities without requiring all of them to appear in the initial UI.  
 **Reason:** ComfyUI provides substantial capabilities beyond the currently productionized Saga workflows, and hard-coding the application around today's small workflow set would recreate existing limitations.  
 **Consequences:** Architecture should be capability-driven; product surfaces remain intentionally curated and can expose capabilities incrementally as they become production-ready and useful.
+
+### UI-008 — Create and Library are the primary product destinations
+**Status:** Accepted  
+**Decision:** The initial top-level information architecture centers on `Create` and `Library`. Activity and Settings are utility surfaces; Media Viewer is contextual. Models, workflows, media types, and individual creative operations are not separate top-level destinations by default.  
+**Reason:** The primary user loop is creating media and working with durable media. Backend/workflow taxonomy should not dominate navigation.  
+**Consequences:** Application-shell design should make Create and Library primary. New backend workflows do not automatically add navigation destinations.
+
+### UI-009 — One creation workspace, multiple creative operations
+**Status:** Accepted  
+**Decision:** The initial product uses one Create workspace for Create Image, Edit Image, Create Video, and Animate Image rather than four separate applications/screens. Operation resolution may use intent and supplied inputs, with explicit selection available when ambiguity matters.  
+**Reason:** These operations share the same core loop—intent, inputs, relevant controls, asynchronous generation, durable result, continuation—and separating them prematurely would fragment the experience.  
+**Consequences:** Create must adapt contextually to the resolved operation. Future operations should first be evaluated as additions/continuations within this workspace before receiving dedicated top-level surfaces.
+
+### UI-010 — Library represents reusable creative assets, not only history
+**Status:** Accepted  
+**Decision:** Library is the durable media workspace for both generated outputs and persistent uploaded assets.  
+**Reason:** Verified Saga behavior shows references are reusable assets, and RenderLab's domain model treats media as reusable inputs/outputs rather than disposable generation attachments.  
+**Consequences:** Library design should support discovery, organization, inspection, reuse as inputs, and compatible continuation actions; it should not be reduced to a chronological generation-history screen.
+
+### UI-011 — Operational complexity stays secondary
+**Status:** Accepted  
+**Decision:** Generation jobs and meaningful runtime state remain visible through Activity and global status where useful, but worker/provider/failover infrastructure is not a routine user-facing management surface.  
+**Reason:** Asynchronous execution state is valuable to users; infrastructure routing is not part of their creative task.  
+**Consequences:** Surface actionable states and failures while keeping worker selection, provider routing, and failover bookkeeping internal.
