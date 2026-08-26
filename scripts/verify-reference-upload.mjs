@@ -21,28 +21,29 @@ async function request(path, init) {
 
 console.log(`Checking RenderLab reference upload at ${baseUrl}`);
 
-const ticket = await request("/api/assets/reference/upload-tickets", {
+const ticketResponse = await request("/api/assets/reference/upload-tickets", {
   method: "POST",
   headers: { "content-type": "application/json" },
   body: JSON.stringify({
     filename: "renderlab-integration-1x1.png",
-    contentType: "image/png",
+    mimeType: "image/png",
     sizeBytes: pngBytes.length,
   }),
 });
 
-if (!ticket.response.ok) {
-  throw new Error(`Upload ticket failed (${ticket.response.status}): ${JSON.stringify(ticket.payload)}`);
+if (!ticketResponse.response.ok) {
+  throw new Error(`Upload ticket failed (${ticketResponse.response.status}): ${JSON.stringify(ticketResponse.payload)}`);
 }
 
-const { sourceId, uploadUrl, method, contentType } = ticket.payload ?? {};
-if (!sourceId || !uploadUrl || method !== "PUT" || contentType !== "image/png") {
-  throw new Error(`Upload ticket returned an invalid contract: ${JSON.stringify(ticket.payload)}`);
+const ticket = ticketResponse.payload?.ticket;
+const { sourceId, uploadUrl, method, headers } = ticket ?? {};
+if (!sourceId || !uploadUrl || method !== "PUT" || headers?.["content-type"] !== "image/png") {
+  throw new Error(`Upload ticket returned an invalid contract: ${JSON.stringify(ticketResponse.payload)}`);
 }
 
 const uploadResponse = await fetch(uploadUrl, {
   method: "PUT",
-  headers: { "content-type": "image/png" },
+  headers,
   body: pngBytes,
 });
 
@@ -53,7 +54,7 @@ if (!uploadResponse.ok) {
 const completion = await request("/api/assets/reference/upload-completions", {
   method: "POST",
   headers: { "content-type": "application/json" },
-  body: JSON.stringify({ sourceId }),
+  body: JSON.stringify({ sourceId, width: 1, height: 1 }),
 });
 
 if (!completion.response.ok) {
