@@ -19,15 +19,18 @@ This is not a direct UI migration and not a visual reconstruction of Saga.
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit the current Saga Studio frontend at a high level.
 - [x] Confirm ChatGPT Project instructions point to repository governance and prioritize the repository as source of truth.
-- [ ] Document Saga's proven product behaviors and backend contracts worth carrying forward.
-- [ ] Document Saga UX and frontend architecture problems that should not be copied automatically.
-- [ ] Audit existing production ComfyUI workflows and backend capabilities.
-- [ ] Identify likely capability categories that RenderLab architecture must be able to support later without requiring their immediate implementation.
-- [ ] Define RenderLab's workflow/capability domain model.
-- [ ] Define the boundary between default controls, contextual controls, and advanced controls.
+- [x] Document Saga's proven product behaviors and backend contracts worth carrying forward.
+- [x] Document Saga UX and frontend architecture problems that should not be copied automatically.
+- [x] Audit the production workflow registry and generation/orchestration capabilities currently represented in Saga.
+- [x] Identify capability categories that RenderLab architecture should be able to represent later without requiring their immediate implementation.
+- [x] Define the initial RenderLab workflow/capability domain model.
+- [x] Define the boundary between default controls, contextual controls, advanced controls, and internal execution controls.
 - [ ] Define RenderLab information architecture from user goals rather than copying Saga routes.
+- [ ] Define the first production creation experience and which capabilities it exposes initially.
 - [ ] Populate `FRONTEND_ARCHITECTURE.md` with the chosen RenderLab architecture once decisions are verified.
-- [ ] Record durable product/UI decisions in `UI_DECISIONS.md`.
+- [x] Record current durable product/UI decisions in `UI_DECISIONS.md`.
+
+Capability/domain baseline: `docs/architecture/PRODUCT_CAPABILITIES.md`.
 
 ## Phase 1 — Design & Frontend Foundation
 - [ ] Select and document the concrete frontend framework and routing approach.
@@ -90,9 +93,9 @@ Exact screens are not predetermined.
 
 ## Current Work
 **Current phase:** Phase 0 — Product & Capability Baseline  
-**Current status:** Saga frontend high-level audit completed; fresh-build direction established.  
-**Known blockers:** None recorded.  
-**Next recommended task:** Audit and document proven Saga/backend capabilities plus existing ComfyUI workflow capabilities, then define the RenderLab capability/domain model before designing screens.
+**Current status:** Saga frontend/backend and current production workflow capability baseline documented; initial RenderLab capability/domain model and progressive-disclosure tiers established.  
+**Known blockers:** None recorded. The wider set of future ComfyUI features remains intentionally uncommitted until concrete production workflows are selected/audited.  
+**Next recommended task:** Define RenderLab's initial user-facing information architecture and first production creation experience from the capability baseline, without copying Saga's route structure.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
