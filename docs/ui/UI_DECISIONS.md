@@ -93,7 +93,7 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 ### UI-014 — Persistent shell does not own feature UI
 **Status:** Accepted  
 **Decision:** The persistent application shell owns navigation, compact route context, account access, lightweight Activity/global-attention access, and the route-content region. Feature-specific UI such as the Create composer, references, generation controls/results, Library grids/cards, and feature toolbars remain owned by their feature surfaces.  
-**Reason:** The first Figma shell exploration mixed persistent chrome with Create-specific composition, which would prematurely couple Phase 2 shell implementation to Phase 3 product design. Figma v0.2 separates these concerns.  
+**Reason:** The first historical Figma shell exploration mixed persistent chrome with Create-specific composition, which would prematurely couple Phase 2 shell implementation to Phase 3 product design. The reviewed v0.2 refinement separated these concerns before implementation.  
 **Consequences:** Phase 2 may implement stable shell chrome without locking the Create or Library layout. Idle shell state should not show an unnecessary persistent “ready” status; global status becomes prominent only when user attention is useful.
 
 ### UI-015 — Output media is the primary Create-mode choice
@@ -111,5 +111,11 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 ### UI-017 — Default Create controls show useful values, not backend categories
 **Status:** Accepted  
 **Decision:** Essential controls in the default Create composer should communicate their current user-relevant value (for example `1:1`, `16:9`, `5 s`) instead of abstract category labels such as “Aspect”, “Format”, or “Duration” when the value can be shown directly. Model-specific and technical tuning stays contextual or Advanced.  
-**Reason:** Concrete values are faster to understand and reduce the visual/mental cost of the default composer. Figma v0.1 review showed category labels created unnecessary indirection.  
+**Reason:** Concrete values are faster to understand and reduce the visual/mental cost of the default composer. Historical v0.1 visual review showed category labels created unnecessary indirection.  
 **Consequences:** Essential control chips/buttons should display current values and open an appropriate selector when activated. Advanced disclosure must not become a second always-visible settings panel.
+
+### UI-018 — Penpot is the ongoing visual design workspace
+**Status:** Accepted  
+**Decision:** Penpot is the default ongoing visual UI/UX design workspace for RenderLab. The previous Figma `RenderLab Design System` file is retained as historical reference only. The repository remains authoritative over either design tool.  
+**Reason:** The project requires a free/open visual-design workflow that does not block progress on proprietary free-tier MCP/tool-call limits. RenderLab also needs the option to keep the design workflow portable and independent of a single vendor quota.  
+**Consequences:** New meaningful visual design work should be carried forward in Penpot and follow `docs/ui/DESIGN_WORKFLOW.md`. Existing repository decisions extracted from Figma remain valid. Unrecorded Figma content is not authoritative, and future sessions must not wait for Figma quota access to continue the project. A Penpot frame by itself still does not make implementation `APPROVED`; real responsive rendered verification remains required.
