@@ -14,6 +14,7 @@ This is not a direct UI migration and not a visual reconstruction of Saga.
 - Organize the product around user goals rather than ComfyUI terminology or node graphs.
 - Reuse approved RenderLab components before inventing alternatives.
 - Prefer maintained approved component/interaction mechanics over rebuilding solved generic mechanics from scratch.
+- Use real design tools for visual exploration/verification when practical, while keeping repository documentation authoritative.
 - Validate rendered UI, not only compilation.
 - Record durable decisions in the repository.
 
@@ -37,16 +38,18 @@ Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.
 
 ## Phase 1 — Design & Frontend Foundation
 - [x] Select and document the concrete frontend framework and routing approach.
-- [ ] Define design tokens.
-- [ ] Establish typography, spacing, surfaces, color roles, radii, motion, and responsive rules.
+- [x] Define initial semantic design tokens.
+- [x] Establish initial typography, spacing, surfaces, color roles, radii, motion, and responsive rules.
 - [x] Define approved external primitive/component sources and adoption policy.
-- [ ] Define the initial core RenderLab primitive set after design tokens are established.
-- [ ] Establish accessibility expectations.
+- [ ] Define the initial core RenderLab primitive set and select concrete source implementations.
+- [x] Establish accessibility expectations.
 - [ ] Establish naming/folder conventions.
 - [ ] Define application shell based on approved information architecture.
 - [ ] Establish the RenderLab component catalog with actual components as they are implemented.
 
-Approved source policy: `docs/ui/COMPONENT_CATALOG.md`. Sources include shadcn/ui + Radix, Motion for React, Motion Primitives, Aceternity UI, Magic UI, React Bits, and individually reviewed shadcn-compatible registries.
+Visual/design-system authority: `docs/ui/UI_SYSTEM.md`.  
+Working visual exploration: Figma `RenderLab Design System`, file key `PHqgsDctOsEXX4EFR0SS7i`. Figma is not the source of truth; approved rules must be reflected in the repository.  
+Approved source policy: `docs/ui/COMPONENT_CATALOG.md`.
 
 ## Phase 2 — Application Shell
 Exact surfaces depend on the approved information architecture.
@@ -93,16 +96,17 @@ Exact screens are not predetermined.
 4. Inspect Saga only when it provides useful behavioral/backend reference.
 5. Inspect the relevant backend/workflow contract.
 6. Decide which complexity belongs in the default experience and which should be contextual or advanced.
-7. Implement the smallest coherent experience that satisfies the approved product design.
-8. Build and visually verify.
-9. Check responsive and accessibility behavior.
-10. Update component/screen/decision documentation based on verified implementation.
+7. Use Figma or another appropriate design tool for meaningful visual/interaction exploration when it reduces implementation churn.
+8. Implement the smallest coherent experience that satisfies the approved product design.
+9. Build and visually verify.
+10. Check responsive and accessibility behavior.
+11. Update component/screen/decision documentation based on verified implementation.
 
 ## Current Work
 **Current phase:** Phase 1 — Design & Frontend Foundation  
-**Current status:** Next.js App Router + React + TypeScript + Tailwind architecture is approved. The external component-source policy is also approved: use project components first, then established shadcn/Radix and modern motion/component ecosystems before custom-building generic mechanics.  
+**Current status:** Frontend architecture, approved component ecosystems, initial dark-first visual foundation, semantic token roles, typography, spacing, radii, control metrics, motion guidance, responsive principles, and accessibility baseline are documented. A working Figma foundation board has been created for visual exploration.  
 **Known blockers:** None recorded.  
-**Next recommended task:** Define RenderLab semantic design tokens and visual rules—typography, spacing, surfaces, color roles, radii, control metrics, responsive behavior, motion, and accessibility—then select the initial concrete primitives from the approved component ecosystem.
+**Next recommended task:** Select the initial concrete primitive set from approved component ecosystems, define naming/folder conventions, and design the application shell in Figma before scaffolding implementation.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
