@@ -1,4 +1,4 @@
-import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const accountId = process.env.R2_ACCOUNT_ID?.trim();
@@ -13,80 +13,54 @@ export function isR2Configured() {
 }
 
 function getClient() {
-  if (!isR2Configured()) {
-    throw new Error("R2 storage is not configured.");
-  }
-
+  if (!isR2Configured()) throw new Error("R2 storage is not configured.");
   if (!client) {
     client = new S3Client({
       region: "auto",
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: accessKeyId!,
-        secretAccessKey: secretAccessKey!,
-      },
+      credentials: { accessKeyId: accessKeyId!, secretAccessKey: secretAccessKey! },
       requestChecksumCalculation: "WHEN_REQUIRED",
       responseChecksumValidation: "WHEN_REQUIRED",
     });
   }
-
   return client;
 }
 
-export async function createSignedUploadUrl({
-  key,
-  contentType,
-  expiresIn = 300,
-}: {
-  key: string;
-  contentType: string;
-  expiresIn?: number;
-}) {
-  const command = new PutObjectCommand({
-    Bucket: bucketName!,
-    Key: key,
-    ContentType: contentType,
-  });
-
-  return getSignedUrl(getClient(), command, {
-    expiresIn,
-    signableHeaders: new Set(["content-type"]),
-  });
+export async function createSignedUploadUrl({ key, contentType, expiresIn = 300 }: { key: string; contentType: string; expiresIn?: number }) {
+  return getSignedUrl(
+    getClient(),
+    new PutObjectCommand({ Bucket: bucketName!, Key: key, ContentType: contentType }),
+    { expiresIn, signableHeaders: new Set(["content-type"]) },
+  );
 }
 
-export async function putR2Object({
-  key,
-  contentType,
-  body,
-}: {
-  key: string;
-  contentType: string;
-  body: Uint8Array;
-}) {
-  await getClient().send(
-    new PutObjectCommand({
-      Bucket: bucketName!,
-      Key: key,
-      ContentType: contentType,
-      Body: body,
-    }),
-  );
+export async function createSignedReadUrl(key: string, expiresIn = 300) {
+  return getSignedUrl(getClient(), new GetObjectCommand({ Bucket: bucketName!, Key: key }), { expiresIn });
+}
+
+export async function readR2Object(key: string) {
+  const response = await fetch(await createSignedReadUrl(key), { cache: "no-store" });
+  if (!response.ok) throw new Error(`R2 object could not be read (${response.status}).`);
+  return {
+    bytes: Buffer.from(await response.arrayBuffer()),
+    contentType: String(response.headers.get("content-type") || "application/octet-stream").split(";")[0].trim().toLowerCase(),
+  };
+}
+
+export async function writeR2Object({ key, contentType, body }: { key: string; contentType: string; body: Uint8Array }) {
+  const response = await fetch(await createSignedUploadUrl({ key, contentType }), {
+    method: "PUT",
+    headers: { "content-type": contentType },
+    body,
+  });
+  if (!response.ok) throw new Error(`R2 object could not be written (${response.status}).`);
 }
 
 export async function headR2Object(key: string) {
-  const object = await getClient().send(
-    new HeadObjectCommand({
-      Bucket: bucketName!,
-      Key: key,
-    }),
-  );
-
+  const object = await getClient().send(new HeadObjectCommand({ Bucket: bucketName!, Key: key }));
   return {
     sizeBytes: Number(object.ContentLength ?? 0),
-    contentType: String(object.ContentType ?? "application/octet-stream")
-      .split(";")[0]
-      .trim()
-      .toLowerCase(),
+    contentType: String(object.ContentType ?? "application/octet-stream").split(";")[0].trim().toLowerCase(),
     etag: String(object.ETag ?? "").replace(/^"|"$/g, ""),
   };
 }
