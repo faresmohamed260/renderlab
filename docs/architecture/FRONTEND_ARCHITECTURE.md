@@ -8,7 +8,7 @@ This document defines the approved RenderLab frontend architecture. It describes
 **Routing:** Next.js file-system routing via `app/`  
 **Rendering model:** Server Components by default; Client Components only for interactive creative/workspace behavior  
 **Styling:** Tailwind CSS + project design tokens  
-**Component foundation:** shadcn/ui where appropriate, adapted into approved RenderLab primitives/components rather than treated as the product design itself
+**Component foundation:** shadcn/ui/Radix for conventional primitives plus approved motion/component ecosystems documented in `docs/ui/UI_SYSTEM.md` and `docs/ui/COMPONENT_CATALOG.md`
 
 Do not pin this document to a framework version until the application is scaffolded and the installed version is verified from `package.json`.
 
@@ -21,7 +21,7 @@ Next.js is selected because RenderLab already targets Vercel and requires more t
 - direct compatibility with the selected Vercel deployment stack;
 - layouts and nested routes suitable for the persistent creative application shell;
 - ability to keep data-fetching/server concerns out of highly interactive client components;
-- straightforward integration with Tailwind and shadcn/ui.
+- straightforward integration with Tailwind and the approved component ecosystem.
 
 The selection does **not** mean RenderLab should become server-rendered everywhere. The creation workspace, media interactions, upload controls, live job state, dialogs, and other interaction-heavy features will intentionally use Client Components where required.
 
@@ -29,11 +29,11 @@ The selection does **not** mean RenderLab should become server-rendered everywhe
 Initial approved product routes:
 
 ```text
-/                 Create
-/library          Library
+/                  Create
+/library           Library
 /library/[assetId] Media Viewer / deep-linked asset view
-/activity         Activity
-/settings         Settings
+/activity          Activity
+/settings          Settings
 ```
 
 Route groups/layouts may be used internally to organize shared application chrome without changing public URLs.
@@ -45,7 +45,7 @@ Rules:
 - Context such as selected operation, asset, filters, or continuation source may use URL/search state when sharing/bookmarking meaningfully benefits the user.
 - Do not encode transient implementation state into URLs merely because routing makes it possible.
 
-## Proposed Directory Structure
+## Directory Structure and Ownership
 The exact tree may evolve during implementation, but ownership boundaries should follow this model:
 
 ```text
@@ -58,9 +58,9 @@ src/
 │   │   └── [assetId]/page.tsx
 │   ├── activity/page.tsx
 │   ├── settings/page.tsx
-│   └── api/                        # only product-facing HTTP handlers that belong in the web app
+│   └── api/                        # product-facing HTTP handlers owned by web app
 ├── components/
-│   ├── ui/                         # approved primitives / shadcn-derived components
+│   ├── ui/                         # approved primitives / normalized external components
 │   ├── shell/                      # navigation, app shell, global status
 │   ├── media/                      # reusable media presentation/actions
 │   └── feedback/                   # shared progress/error/empty/loading patterns
@@ -83,6 +83,35 @@ src/
 ```
 
 Do not create folders merely to match this diagram before code needs them. The structure defines ownership, not a requirement for empty scaffolding.
+
+## Naming Conventions
+These conventions are approved before scaffolding so generated code remains predictable across sessions.
+
+### Files
+- React components: `kebab-case.tsx` (`app-shell.tsx`, `media-card.tsx`).
+- Hooks: `use-*.ts` (`use-generation-job.ts`).
+- Libraries/services/schema modules: `kebab-case.ts`.
+- Next.js reserved route files keep framework names (`page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `route.ts`).
+- Tests follow the source filename plus `.test.ts[x]` or the test framework convention selected later.
+
+### Symbols
+- React component exports: `PascalCase` (`AppShell`, `MediaCard`).
+- hooks/functions/variables: `camelCase`.
+- types/interfaces/schema names: `PascalCase`.
+- constants: descriptive `camelCase` by default; use `UPPER_SNAKE_CASE` only for true environment/protocol constants where it improves clarity.
+- semantic token names: lowercase kebab-case at the CSS/Tailwind variable boundary.
+
+### Component ownership
+- `components/ui`: generic reusable primitives with no feature-specific data contract.
+- `components/shell`: persistent application chrome shared across routes.
+- `components/media`: reusable asset presentation/actions shared by multiple features.
+- `components/feedback`: generic shared state/feedback UI.
+- `features/<feature>`: product-specific compositions and feature behavior. Do not promote a feature component globally before a real second reuse case or clear stable primitive role exists.
+
+### External components
+Copy-owned registry components are normalized into project-owned files before feature use. Feature code should import the RenderLab wrapper/local component rather than reaching directly into multiple external registries.
+
+Do not preserve demo-library names when the RenderLab role is clearer. Preserve source attribution in `COMPONENT_CATALOG.md`.
 
 ## Component Boundaries
 ### Server Components by default
@@ -225,7 +254,7 @@ A provider reporting completion is not product completion until the durable resu
 ## Styling Architecture
 - Tailwind CSS is the primary composition/styling mechanism.
 - RenderLab design tokens define semantic colors, surfaces, spacing, typography, radii, motion, layout and control metrics.
-- shadcn/ui components are implementation starting points for primitives when suitable, not automatic visual authority.
+- shadcn/Radix and the approved component ecosystems are implementation starting points, not automatic visual authority.
 - App-specific reusable components are promoted into `COMPONENT_CATALOG.md` only after implementation and review.
 - Avoid Saga's pattern of large feature-specific global CSS files and repeated inline visual values.
 
@@ -257,6 +286,7 @@ The specific runtime schema library is not selected yet; choose during implement
 6. Do not make a generic workflow-form renderer the default Create experience.
 7. Do not move all components client-side merely because the application is highly interactive.
 8. Keep infrastructure replaceable behind stable product/domain contracts.
+9. Do not scatter raw third-party registry imports through feature code; normalize adopted components into RenderLab ownership first.
 
 ## Decisions Still Open
 These are intentionally deferred until implementation evidence exists:
@@ -265,5 +295,4 @@ These are intentionally deferred until implementation evidence exists:
 - runtime schema/validation library;
 - authentication implementation;
 - realtime transport vs polling strategy for jobs;
-- whether any orchestration service must be deployed outside Vercel runtime limits;
-- concrete visual design tokens and component variants.
+- whether any orchestration service must be deployed outside Vercel runtime limits.
