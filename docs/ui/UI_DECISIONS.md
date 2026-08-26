@@ -95,3 +95,21 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 **Decision:** The persistent application shell owns navigation, compact route context, account access, lightweight Activity/global-attention access, and the route-content region. Feature-specific UI such as the Create composer, references, generation controls/results, Library grids/cards, and feature toolbars remain owned by their feature surfaces.  
 **Reason:** The first Figma shell exploration mixed persistent chrome with Create-specific composition, which would prematurely couple Phase 2 shell implementation to Phase 3 product design. Figma v0.2 separates these concerns.  
 **Consequences:** Phase 2 may implement stable shell chrome without locking the Create or Library layout. Idle shell state should not show an unnecessary persistent “ready” status; global status becomes prominent only when user attention is useful.
+
+### UI-015 — Output media is the primary Create-mode choice
+**Status:** Accepted  
+**Decision:** The default Create experience presents the primary explicit choice as output media—`Image` or `Video`—rather than exposing backend workflow IDs, model ecosystems, or separate top-level Edit/Animate modes. Image is the initial default output.  
+**Reason:** Average users understand the output they want more readily than backend workflow taxonomy, and the same Create workspace can resolve the appropriate operation from output intent plus supplied inputs.  
+**Consequences:** The primary composer may expose a compact Image/Video selector. Workflow and model resolution remains behind product capability logic unless a user-facing model choice provides concrete value.
+
+### UI-016 — Reference media resolves Create context
+**Status:** Accepted  
+**Decision:** Supplying compatible reference media changes the creative operation context without requiring a separate screen: Image output + image reference resolves to image editing; Video output + image reference resolves to image animation/video generation from the reference. The UI must communicate this resolved context and allow the reference to be removed or replaced.  
+**Reason:** References are first-class reusable inputs, and automatic contextual resolution keeps the default workflow simple while preserving explicit control over the intended output type.  
+**Consequences:** Create should display concise contextual language such as editing/animating the attached reference rather than adding permanent Edit/Animate navigation or mode clutter.
+
+### UI-017 — Default Create controls show useful values, not backend categories
+**Status:** Accepted  
+**Decision:** Essential controls in the default Create composer should communicate their current user-relevant value (for example `1:1`, `16:9`, `5 s`) instead of abstract category labels such as “Aspect”, “Format”, or “Duration” when the value can be shown directly. Model-specific and technical tuning stays contextual or Advanced.  
+**Reason:** Concrete values are faster to understand and reduce the visual/mental cost of the default composer. Figma v0.1 review showed category labels created unnecessary indirection.  
+**Consequences:** Essential control chips/buttons should display current values and open an appropriate selector when activated. Advanced disclosure must not become a second always-visible settings panel.
