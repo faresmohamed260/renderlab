@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="430" height="900" viewBox="0 0 430 900">
+  <defs>
+    <style><![CDATA[
+      .t{font-family:Inter,Arial,sans-serif;fill:#F4F5F7}.m{font-family:Inter,Arial,sans-serif;fill:#9CA3AF}.b{font-weight:600}.title{font-size:26px;font-weight:600}.body{font-size:15px}.chip{font-size:13px}.nav{font-size:13px}.brand{font-size:18px;font-weight:600}
+    ]]></style>
+  </defs>
+  <rect width="390" height="844" x="20" y="20" rx="18" fill="#090A0C"/>
+  <line x1="20" x2="410" y1="76" y2="76" stroke="#2B303A"/>
+  <text class="t brand" x="36" y="56">RenderLab</text>
+  <rect x="312" y="30" width="36" height="36" rx="10" fill="#171A20"/><circle cx="374" cy="48" r="18" fill="#20242C"/>
+
+  <text class="t title" x="40" y="148">What do you want to create?</text>
+  <text class="m body" x="40" y="180">Start with an idea. References are optional.</text>
+
+  <!-- revised two-row mobile composer -->
+  <rect x="36" y="420" width="358" height="190" rx="18" fill="#111318" stroke="#2B303A"/>
+  <text class="m body" x="54" y="452">Describe what you want to create...</text>
+
+  <!-- row 1: settings -->
+  <rect x="50" y="520" width="40" height="40" rx="10" fill="#171A20"/><text class="m title" x="62" y="550">+</text>
+  <rect x="98" y="520" width="156" height="40" rx="10" fill="#171A20"/>
+  <rect x="104" y="525" width="74" height="30" rx="8" fill="#20242C"/><text class="t chip b" x="125" y="545">Image</text><text class="m chip" x="196" y="545">Video</text>
+  <rect x="262" y="520" width="64" height="40" rx="10" fill="#171A20"/><text class="m chip" x="283" y="545">1:1</text>
+  <rect x="334" y="520" width="40" height="40" rx="10" fill="#171A20"/><text class="m body b" x="346" y="544">•••</text>
+
+  <!-- row 2: full-width primary action -->
+  <rect x="50" y="568" width="324" height="42" rx="11" fill="#7C6CF2"/><text class="t chip b" x="184" y="594">Generate</text>
+
+  <!-- bottom nav -->
+  <rect x="20" y="788" width="390" height="76" fill="#111318"/>
+  <text class="t nav b" x="70" y="832">Create</text><text class="m nav" x="178" y="832">Library</text><text class="m nav" x="292" y="832">Activity</text>
+</svg>
