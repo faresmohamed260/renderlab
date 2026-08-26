@@ -77,3 +77,9 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 **Decision:** Generation jobs and meaningful runtime state remain visible through Activity and global status where useful, but worker/provider/failover infrastructure is not a routine user-facing management surface.  
 **Reason:** Asynchronous execution state is valuable to users; infrastructure routing is not part of their creative task.  
 **Consequences:** Surface actionable states and failures while keeping worker selection, provider routing, and failover bookkeeping internal.
+
+### UI-012 — Next.js App Router is the frontend foundation
+**Status:** Accepted  
+**Decision:** RenderLab uses Next.js with React, TypeScript, and the App Router. Server Components are the default composition model; Client Components are introduced deliberately for interactive creative/workspace behavior. Tailwind CSS is the primary styling mechanism and shadcn/ui is an approved primitive source where appropriate.  
+**Reason:** The architecture fits the Vercel deployment target, provides real routing/layouts and server/client boundaries, removes the need for Saga-style manual hash routing, and supports a highly interactive application without forcing the entire frontend into a client-only SPA.  
+**Consequences:** Public product routes follow the App Router. Product APIs and server-only integrations can be colocated behind stable application boundaries. Broad `'use client'` trees, route-per-workflow design, and direct browser-to-worker integrations are not approved patterns.
