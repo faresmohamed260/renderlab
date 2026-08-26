@@ -28,6 +28,10 @@ async function readImageDimensions(file: File) {
   }
 }
 
+function isTerminalJob(job: GenerationJob | null) {
+  return Boolean(job && ["succeeded", "failed", "cancelled"].includes(job.status));
+}
+
 export function CreateWorkspace({
   generationAvailable,
   referenceUploadAvailable,
@@ -54,6 +58,52 @@ export function CreateWorkspace({
     };
   }, [referencePreviewUrl]);
 
+  useEffect(() => {
+    if (!job || isTerminalJob(job)) return;
+
+    let cancelled = false;
+    let timeoutId: number | undefined;
+
+    async function poll() {
+      try {
+        const response = await fetch(`/api/generation/jobs/${encodeURIComponent(job!.id)}`, {
+          method: "GET",
+          headers: { accept: "application/json" },
+          cache: "no-store",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | { ok: true; job: GenerationJob }
+          | { ok: false; error?: { message?: string } }
+          | null;
+
+        if (cancelled) return;
+        if (!response.ok || !payload?.ok) {
+          setError(
+            payload && !payload.ok && payload.error?.message
+              ? payload.error.message
+              : "Generation status could not be updated. Your work is unchanged.",
+          );
+          return;
+        }
+
+        setJob(payload.job);
+        if (!isTerminalJob(payload.job)) {
+          timeoutId = window.setTimeout(poll, 2000);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Generation status could not be updated. Your work is unchanged.");
+        }
+      }
+    }
+
+    timeoutId = window.setTimeout(poll, 1200);
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, [job?.id, job?.status]);
+
   const aspectRatio = outputKind === "image" ? imageAspect : videoAspect;
   const hasReference = Boolean(reference);
   const heading = hasReference
@@ -69,12 +119,13 @@ export function CreateWorkspace({
       ? "Start with an idea. Add a reference only when you need one."
       : "Only the essentials stay visible. More control is available when you ask for it.";
 
+  const jobActive = Boolean(job && !isTerminalJob(job));
   const canSubmit =
-    generationAvailable && Boolean(prompt.trim()) && !submitting && !referenceUploading;
+    generationAvailable && Boolean(prompt.trim()) && !submitting && !referenceUploading && !jobActive;
 
   const statusText = useMemo(() => {
     if (!job) return null;
-    if (job.status === "queued") return "Generation queued.";
+    if (job.status === "queued") return "Waiting for generation capacity.";
     if (job.status === "preparing") return "Preparing generation.";
     if (job.status === "running") return "Generating.";
     if (job.status === "persisting") return "Saving result.";
@@ -87,7 +138,6 @@ export function CreateWorkspace({
     if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
     setReferencePreviewUrl(null);
     setReference(null);
-    setJob(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -107,7 +157,6 @@ export function CreateWorkspace({
 
     setReferenceUploading(true);
     setError(null);
-    setJob(null);
 
     const previewUrl = URL.createObjectURL(file);
     if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
@@ -283,7 +332,6 @@ export function CreateWorkspace({
                     onClick={() => {
                       setOutputKind(kind);
                       setError(null);
-                      setJob(null);
                     }}
                     className={[
                       "min-h-8 min-w-20 rounded-md px-3 text-sm font-medium transition-colors duration-150",
@@ -334,8 +382,8 @@ export function CreateWorkspace({
               disabled={!canSubmit}
               className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             >
-              {submitting ? <LoaderCircle aria-hidden="true" className="animate-spin" size={17} /> : null}
-              {submitting ? "Submitting" : "Generate"}
+              {submitting || jobActive ? <LoaderCircle aria-hidden="true" className="animate-spin" size={17} /> : null}
+              {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
             </button>
           </div>
         </form>
