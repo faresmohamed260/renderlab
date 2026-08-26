@@ -10,8 +10,12 @@ export type AspectRatio = "1:1" | "16:9" | "9:16" | "4:3" | "3:4";
 
 export type GenerationInputRole = "reference" | "primary-image" | "first-frame";
 
+export type GenerationInputSource =
+  | { type: "temporary-source"; id: string }
+  | { type: "media-asset"; id: string };
+
 export type GenerationInput = {
-  assetId: string;
+  source: GenerationInputSource;
   role: GenerationInputRole;
 };
 
