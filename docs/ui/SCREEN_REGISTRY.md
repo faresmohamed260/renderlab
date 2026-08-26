@@ -33,18 +33,20 @@ RenderLab is organized around user goals, not backend workflow types.
 These concepts may be selectable or contextual inside Create when they provide user value. Adding a backend workflow does not create a new top-level screen by default.
 
 ## Application Shell
-**Status:** EXPERIMENTAL design direction; no implementation exists yet.  
-**Figma reference:** `RenderLab Design System` → `Application Shell` page, exploration v0.1.  
+**Status:** REVIEWED DESIGN CANDIDATE; no implementation exists yet. It is not `APPROVED` or `LOCKED` implementation.  
+**Figma reference:** `RenderLab Design System` → `Application Shell` page → v0.2 desktop/mobile frames.  
 
-Current direction:
-- Desktop uses a persistent compact left navigation.
+Reviewed direction:
+- Desktop uses a persistent compact left navigation around 200–216px.
 - Create and Library are primary; Activity and Settings are visually secondary utilities.
-- Main workspace/media receives substantially more space than application chrome.
-- Compact top-level status may surface running generation activity without requiring navigation to Activity.
-- Create controls cluster around the composer/workspace rather than occupying a permanent large settings sidebar.
-- Narrow/mobile layouts replace the desktop sidebar with an appropriate compact navigation treatment; they do not simply shrink the same sidebar.
+- A compact ~52–56px top bar carries route context plus account/activity affordances.
+- Main route content owns the overwhelming majority of screen area.
+- Idle shell state does not show a permanent “Ready” status pill; global status becomes prominent only for active jobs, actionable failures, degraded states, or similar attention-worthy conditions.
+- The persistent shell stops at the route-content boundary. Create composer, references, generation controls/results, Library cards/grids, and feature-specific settings belong to their own feature designs.
+- Narrow/mobile layouts use a compact bottom navigation for Create, Library, and Activity, with Settings reachable through utility/account UI unless later evidence justifies persistent placement.
+- The desktop sidebar is not simply shrunk for mobile.
 
-This is intentionally not `APPROVED` or `LOCKED` yet. It must be reviewed as rendered design/implementation before those statuses are used.
+This shell direction has been visually reviewed in Figma and is suitable to scaffold as a Phase 2 implementation candidate, but implementation must still be rendered and reviewed before `APPROVED` or `LOCKED` status.
 
 ## Screens
 
@@ -86,7 +88,7 @@ These operations map onto the currently verified image and video workflow capabi
 
 **Internal/not user-facing by default:** provider, worker, ecosystem, storage transport, workflow graph/node IDs, failover bookkeeping.  
 **Result behavior:** Generated media appears in the same creative flow with actions derived from compatibility, such as Edit, Animate, Reuse settings, Download, or View in Library. Completion means the durable result has been persisted, not merely returned by the provider.  
-**Current shell exploration:** large media/result canvas with a compact composer anchored near the working area; desktop navigation remains separate from creation controls. This is a design exploration, not a locked layout.  
+**Shell boundary:** Create owns its composer, references, controls, results, and feature-specific layout. The persistent application shell only provides route chrome and content space.  
 **Reference pattern:** Fresh RenderLab design; Saga supplies behavioral/backend evidence only.  
 **Do not change:** Do not turn the default Create workspace into a generic ComfyUI/workflow parameter form.
 
