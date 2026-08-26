@@ -10,7 +10,7 @@ Initial design exploration is maintained in the Figma file `RenderLab Design Sys
 
 Current Figma pages:
 - `Foundation` — token and visual-system exploration
-- `Application Shell` — shell exploration v0.1 for desktop and mobile
+- `Application Shell` — desktop/mobile shell explorations v0.1 and reviewed refinement v0.2
 
 Figma explorations are not automatically `APPROVED` or `LOCKED`. They become authoritative only when the corresponding rules are accepted and documented here or in the appropriate repository file.
 
@@ -83,32 +83,52 @@ Prefer separation through tonal surfaces and borders before shadows. Shadows sho
 Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first.
 
 ## Application Shell Direction
-The current shell direction is **EXPERIMENTAL**, not yet implementation-approved.
+The shell structure has been visually reviewed in Figma v0.2 and is the current **implementation candidate**, but it is not `LOCKED`. Feature-specific layouts remain separate decisions.
+
+### Shell/feature boundary
+The persistent application shell owns:
+- global/product navigation;
+- page/route context in compact chrome where useful;
+- account access;
+- lightweight access to Activity/global generation attention state;
+- the route-content region.
+
+The shell does **not** own:
+- Create prompt/composer layout;
+- operation/model controls;
+- references/uploads;
+- generation results;
+- Library grids/cards;
+- feature-specific toolbars or settings.
+
+Those belong to their feature surfaces and are designed in the relevant later phase. The first Figma shell exploration mixed shell and Create UI; v0.2 corrected that boundary.
 
 ### Desktop
 - Persistent compact left navigation.
 - `Create` and `Library` are visually primary destinations.
 - `Activity` and `Settings` remain utility destinations and sit lower in the navigation hierarchy.
-- Main content occupies the largest possible area; navigation chrome should remain narrow.
-- A compact top bar may carry page context and global generation/activity status.
-- Create controls should cluster around the composer rather than live in a permanent large settings sidebar.
-- The central canvas/result area remains visually dominant.
+- Main route content occupies the largest possible area; navigation chrome stays narrow.
+- A compact top bar carries route context plus account/activity affordances.
+- Idle state should not show a persistent “ready” status pill. Global status becomes more explicit only when a job, failure, degraded state, or other meaningful attention condition exists.
+- The shell must not reserve a permanent settings rail for Create.
 
 ### Mobile / narrow layouts
 - Do not shrink the desktop sidebar into an unusable strip.
-- Primary navigation moves into an appropriate compact mobile navigation treatment or sheet.
-- Keep prompt/composer, attached inputs, Generate, generation state, and current result immediately reachable.
-- Secondary settings move into contextual sheets/disclosures.
+- Primary destinations use compact bottom navigation or an equivalent touch-friendly treatment.
+- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings can remain reachable through account/utility UI unless later product evidence justifies a fourth persistent destination.
+- Feature content owns its own responsive controls/sheets.
 - Avoid reproducing the entire desktop chrome vertically.
 
-### Shell density targets from the first Figma exploration
+### Shell density targets from reviewed Figma v0.2
 These are design targets, not implementation constants:
-- desktop sidebar: approximately 220–240px
+- desktop sidebar: approximately 200–216px
+- compact top bar: approximately 52–56px
+- primary nav item height: approximately 40px with at least 44px effective touch target where relevant
 - application chrome gaps: approximately 12–16px
-- compact top bar: approximately 52–60px
-- floating/anchored composer: sized to content, not full-width by default on wide desktop
+- mobile top bar: approximately 56px
+- mobile bottom navigation: approximately 56–64px plus device safe-area handling
 
-Implementation may tune these values after rendered review while preserving the hierarchy above.
+Implementation may tune these values after rendered review while preserving the hierarchy and boundary above.
 
 ## Initial Primitive Set
 The following primitive **roles** are approved as the first implementation set. Concrete source components are selected during scaffold/implementation and then recorded in `COMPONENT_CATALOG.md`.
@@ -173,7 +193,7 @@ Desktop is primary, but responsive behavior is required from the start rather th
 
 - Wide desktop: allow creative workspace and supporting controls to coexist without excessive line lengths.
 - Standard desktop/tablet landscape: compress secondary chrome before reducing media/workspace usefulness.
-- Narrow/tablet portrait/mobile: move secondary controls into sheets/disclosures; preserve the prompt, current inputs, primary action, generation state, and result access.
+- Narrow/tablet portrait/mobile: move secondary controls into sheets/disclosures; preserve the current task, primary action, generation state, and result access.
 - Never require hover for an essential action.
 - Avoid a separate mobile product/navigation model unless evidence shows it is necessary.
 
