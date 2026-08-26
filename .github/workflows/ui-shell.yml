@@ -1,0 +1,61 @@
+name: UI Shell Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start application
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
+          echo $! > /tmp/renderlab-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-next.log
+          exit 1
+
+      - name: Run shell visual checks
+        run: npm run test:ui
+
+      - name: Upload shell screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-shell-screenshots
+          path: |
+            artifacts/*.png
+            test-results/**
+          if-no-files-found: warn
+          retention-days: 14
