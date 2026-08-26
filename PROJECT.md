@@ -43,7 +43,8 @@ Exact package versions are recorded from the repository after scaffolding rather
 - Capability-driven workflow contracts designed to grow beyond the initial production workflows
 
 ### Visual Design
-- **Penpot** is the default ongoing visual design workspace.
+- **Penpot** is the preferred richer visual design workspace when available.
+- Open SVG design handoff artifacts under `design/penpot/` are the repository-backed interoperable fallback/import source.
 - The repository remains authoritative for accepted UI/product decisions.
 - The previous Figma `RenderLab Design System` file is historical reference only.
 - GitHub Actions + Playwright screenshots provide remote implementation validation without relying on Vercel previews.
@@ -70,18 +71,24 @@ The initial approved information architecture is:
 Image, Video, Edit, Animate, Models, and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Phase 3 — Creation Experience design.**
+**Phase 3 — Creation Experience implementation.**
+
+Verified current state:
+- the application shell is implemented and `APPROVED`;
+- the first real Create composer slice is implemented and `MIGRATING`;
+- Image/Video prompt composition and essential aspect/duration state are implemented responsively;
+- a typed RenderLab generation/job domain and `POST /api/generation/jobs` product boundary now exist;
+- Generate does not fabricate work when no backend is configured;
+- GitHub production build, Playwright checks, and rendered desktop/mobile screenshot review pass for the current slice.
 
 Current focus:
-1. Continue the Create v0.2 visual design in Penpot rather than depending on Figma.
-2. Verify narrow/mobile composition before design approval.
-3. Define Generate disabled/error states.
-4. Define real job/progress behavior inside Create.
-5. Define result and continuation actions.
-6. Implement only after the coherent Create design candidate is reviewed and documented.
-7. Validate implementation through GitHub production build + Playwright desktop/mobile screenshots.
-
-The application shell is already implemented and `APPROVED`. Create feature implementation has not begun.
+1. Define and implement the reference-asset upload/binding contract.
+2. Implement reference-driven Edit/Animate behavior on top of that contract.
+3. Establish/connect the real RenderLab generation backend adapter behind the product API boundary.
+4. Implement real job-state synchronization after submission.
+5. Implement persisted result presentation and capability-derived continuation actions.
+6. Introduce Advanced controls only from verified capability definitions.
+7. Continue to validate through GitHub production build + Playwright desktop/mobile screenshots.
 
 See `docs/ui/UI_MIGRATION.md` for current phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, and `docs/architecture/FRONTEND_ARCHITECTURE.md` for the approved frontend architecture.
 
