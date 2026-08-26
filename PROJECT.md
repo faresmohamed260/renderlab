@@ -26,10 +26,10 @@ ComfyUI is the generation engine, not the product interface.
 - React
 - TypeScript
 - Tailwind CSS
-- shadcn/ui where applicable
+- shadcn/ui/Radix plus the approved modern component ecosystem where appropriate
 - Server Components by default; Client Components for interactive creative/workspace behavior
 
-Exact package versions are recorded from the repository after scaffolding rather than hard-coded into planning documentation.
+Exact installed package versions are recorded in `docs/architecture/FRONTEND_ARCHITECTURE.md`.
 
 ### Infrastructure
 - Vercel
@@ -49,7 +49,7 @@ Shared-infrastructure authority: `docs/architecture/INFRASTRUCTURE.md`.
 - primary/standby worker submission routing
 - capability-driven workflow contracts designed to grow beyond the initial production workflows
 
-The deployed Studio/Vercel runtime is not intended to be a RenderLab production dependency. A transitional compatibility adapter exists only as a fallback/debugging aid while native RenderLab orchestration is being verified.
+The deployed Studio/Vercel runtime is not intended to be a RenderLab production dependency. A transitional compatibility adapter exists only as a fallback/debugging aid while native RenderLab orchestration is completed and verified.
 
 ### Visual Design
 - **Penpot** is the preferred richer visual design workspace when available.
@@ -84,36 +84,28 @@ Image, Video, Edit, Animate, Models, and Workflows are not separate top-level de
 ## Current Priority
 **Phase 3 — Creation Experience implementation.**
 
-Verified current state:
+### Verified current state
 - application shell is implemented and `APPROVED`;
-- Create is implemented and `MIGRATING`;
-- Image/Video prompt composition and essential aspect/duration state are responsive and screenshot-verified;
-- reference source upload/binding is implemented and real shared-resource integration is verified end-to-end;
-- reference integration is self-cleaning and leaves no test source row/object behind;
-- Create supports reference preview/removal/replacement and resolves Image + reference → Edit and Video + reference → Animate;
+- Create is implemented and remains `MIGRATING` until persisted-result UX and final responsive review are complete;
+- Image/Video prompt composition, aspect/duration controls, reference preview/removal/replacement, and responsive composer behavior are implemented;
+- reference upload is verified end-to-end against the reused shared R2 + Supabase resources and self-cleans;
 - RenderLab reuses Supabase project `AI Studio` (`rashyleshocuvpgcooxy`), the shared R2 resource, and the existing worker fleet by explicit product decision;
-- `generation_sources`, `generation_jobs`, and `media_assets` migrations are applied to the shared Supabase project with RLS enabled;
-- legacy `studio_*` tables remain separate and are not the RenderLab application data model;
-- `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]` are RenderLab product boundaries;
-- Create now submits and polls real RenderLab job state rather than stopping at job acceptance;
-- RenderLab-native worker submission, polling, R2 persistence, media records, and private media-delivery APIs are implemented;
-- production build/UI validation remains GitHub-based and passes after the current native-generation TypeScript normalization changes.
+- RenderLab-owned `generation_sources`, `generation_jobs`, and `media_assets` tables are applied with RLS enabled; legacy `studio_*` tables remain separate;
+- `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]` are the browser-facing RenderLab generation boundaries;
+- RenderLab-native worker submission, primary/standby routing, polling, R2 persistence, media records, and private media-delivery APIs are implemented;
+- **native Create Image is verified end-to-end**, including persisted `media_assets` + R2 output and self-cleaning integration;
+- **native reference-driven Edit Image is verified end-to-end** in GitHub Actions run `33021843503` (commit `f374d711f99b2a68c0e7ea43cbce42052380b0cb`);
+- **native Create Video is verified end-to-end** in GitHub Actions run `33021977765` (commit `638e312fdbbf5aa126faa9d2a91dbca68b026d48`);
+- production build/UI validation remains GitHub-based rather than depending on Vercel preview deployments.
 
-Native generation integration status:
-- real reference upload: **verified**;
-- real native text-to-image worker submission: **in active verification**;
-- a live integration job has reached the FLUX worker fleet and demonstrated primary/standby routing plus real `loading` → `generating` worker states;
-- do not mark native image persistence fully verified until that integration reaches `succeeded`, validates its RenderLab `media_assets` record/R2 object, and self-cleans.
-
-Current focus:
-1. Complete native text-to-image generation/persistence verification.
-2. Surface the persisted `media_assets` result in Create.
-3. Verify reference-driven Edit natively.
-4. Verify text-to-video and Animate natively.
-5. Reintroduce proven safe poll-time failover semantics without risking duplicate accepted generations.
-6. Introduce Advanced controls only from verified capability definitions.
-7. Remove the Studio compatibility fallback after native coverage is sufficient.
-8. Continue validation through GitHub production build + Playwright desktop/mobile screenshots.
+### Still open
+1. Surface persisted `media_assets` results directly in Create and add capability-derived continuation actions.
+2. Verify reference-driven **Animate Image** natively.
+3. Make transient Create polling/network failures retry with bounded backoff.
+4. Reintroduce proven safe poll-time reassignment only where there is strong evidence no worker accepted the job; do not risk duplicate generations.
+5. Introduce Advanced controls only from verified capability definitions.
+6. Perform final desktop/mobile Create review with real persisted-result lifecycle visible.
+7. Remove the Studio compatibility fallback after native operation coverage is sufficient.
 
 See `docs/ui/UI_MIGRATION.md` for phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, `docs/architecture/FRONTEND_ARCHITECTURE.md` for frontend architecture, and `docs/architecture/INFRASTRUCTURE.md` for shared-resource and generation ownership rules.
 
