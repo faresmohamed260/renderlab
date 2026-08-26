@@ -1,4 +1,4 @@
-import { RoutePlaceholder } from "@/components/shell/RoutePlaceholder";
+import { RoutePlaceholder } from "@/components/shell/route-placeholder";
 
 export default function MediaViewerPage() {
   return (
