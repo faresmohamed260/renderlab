@@ -35,6 +35,9 @@ Exact package versions are recorded from the repository after scaffolding rather
 - Vercel
 - Cloudflare R2
 - Supabase
+- RenderLab deliberately reuses the existing Saga/Studio Supabase and R2 resources while keeping RenderLab schema, storage prefixes, APIs, and product contracts independently named.
+
+Shared-infrastructure authority: `docs/architecture/INFRASTRUCTURE.md`.
 
 ### Generation
 - Cloud-hosted ComfyUI
@@ -83,22 +86,23 @@ Verified current state:
 - a server generation-adapter boundary exists and does not expose worker endpoints to the browser;
 - reference source upload/binding contracts exist using signed direct R2 PUTs, server HEAD verification and opaque source IDs;
 - Create supports reference preview/removal/replacement and resolves Image + reference → Edit and Video + reference → Animate;
-- `supabase/migrations/0001_generation_sources.sql` is committed with server-owned/RLS intent;
+- RenderLab reuses Supabase project `AI Studio` (`rashyleshocuvpgcooxy`) and the existing Saga/Studio R2 resource by explicit product decision;
+- `supabase/migrations/0001_generation_sources.sql` has been applied to the shared Supabase project as migration `renderlab_generation_sources`;
+- `public.generation_sources` exists with RLS enabled; legacy `studio_*` tables were not modified by that migration;
 - latest production build, Playwright/API checks, and desktop/mobile rendered review pass at CI run `33018346650` / commit `8332597f65aa85725f7395e10407dce4682ac025`;
 - CI deliberately runs without production infrastructure credentials, so unavailable controls are truthful rather than simulated.
 
 Current focus:
-1. Establish the intended RenderLab Supabase target. The only currently connected project discovered is the legacy `AI Studio` database with `studio_*` tables; do not apply RenderLab migrations there by assumption.
-2. Establish the RenderLab R2 target and environment configuration.
+1. Configure the shared Supabase/R2 environment values in the appropriate secret store.
+2. Verify a real signed reference upload against the shared resources.
 3. Establish/connect the real RenderLab generation backend adapter endpoint.
-4. Apply the committed source migration only to the approved RenderLab database target.
-5. Verify real signed reference upload and text-to-image/text-to-video submission end-to-end.
-6. Implement job-state synchronization after submission.
-7. Implement persisted result presentation and capability-derived continuation actions.
-8. Introduce Advanced controls only from verified capability definitions.
-9. Continue validation through GitHub production build + Playwright desktop/mobile screenshots.
+4. Verify text-to-image/text-to-video and reference-driven Edit/Animate submission end-to-end.
+5. Implement job-state synchronization after submission.
+6. Implement persisted result presentation and capability-derived continuation actions.
+7. Introduce Advanced controls only from verified capability definitions.
+8. Continue validation through GitHub production build + Playwright desktop/mobile screenshots.
 
-See `docs/ui/UI_MIGRATION.md` for current phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, and `docs/architecture/FRONTEND_ARCHITECTURE.md` for the approved frontend architecture.
+See `docs/ui/UI_MIGRATION.md` for current phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, `docs/architecture/FRONTEND_ARCHITECTURE.md` for frontend architecture, and `docs/architecture/INFRASTRUCTURE.md` for shared-resource and secret contracts.
 
 ## Source of Truth
 The `renderlab` repository is the primary source of truth. ChatGPT Project context is secondary continuity context. Current chat sessions are temporary working context.
