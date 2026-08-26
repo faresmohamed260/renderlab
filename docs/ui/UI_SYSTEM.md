@@ -8,6 +8,12 @@ Create a consistent, reusable, predictable UI system for a professional AI image
 
 Initial design exploration is maintained in the Figma file `RenderLab Design System` (file key `PHqgsDctOsEXX4EFR0SS7i`). Figma is a working design/verification surface; this repository document is authoritative for approved design rules.
 
+Current Figma pages:
+- `Foundation` — token and visual-system exploration
+- `Application Shell` — shell exploration v0.1 for desktop and mobile
+
+Figma explorations are not automatically `APPROVED` or `LOCKED`. They become authoritative only when the corresponding rules are accepted and documented here or in the appropriate repository file.
+
 ## Design Priorities
 - Generated media first
 - Speed and clarity
@@ -75,6 +81,69 @@ Interactive touch target: **44×44px minimum** where practical, including icon-o
 Prefer separation through tonal surfaces and borders before shadows. Shadows should be subtle in the dark UI and used primarily for floating layers such as dialogs, popovers, sheets, drag previews, and contextual overlays.
 
 Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first.
+
+## Application Shell Direction
+The current shell direction is **EXPERIMENTAL**, not yet implementation-approved.
+
+### Desktop
+- Persistent compact left navigation.
+- `Create` and `Library` are visually primary destinations.
+- `Activity` and `Settings` remain utility destinations and sit lower in the navigation hierarchy.
+- Main content occupies the largest possible area; navigation chrome should remain narrow.
+- A compact top bar may carry page context and global generation/activity status.
+- Create controls should cluster around the composer rather than live in a permanent large settings sidebar.
+- The central canvas/result area remains visually dominant.
+
+### Mobile / narrow layouts
+- Do not shrink the desktop sidebar into an unusable strip.
+- Primary navigation moves into an appropriate compact mobile navigation treatment or sheet.
+- Keep prompt/composer, attached inputs, Generate, generation state, and current result immediately reachable.
+- Secondary settings move into contextual sheets/disclosures.
+- Avoid reproducing the entire desktop chrome vertically.
+
+### Shell density targets from the first Figma exploration
+These are design targets, not implementation constants:
+- desktop sidebar: approximately 220–240px
+- application chrome gaps: approximately 12–16px
+- compact top bar: approximately 52–60px
+- floating/anchored composer: sized to content, not full-width by default on wide desktop
+
+Implementation may tune these values after rendered review while preserving the hierarchy above.
+
+## Initial Primitive Set
+The following primitive **roles** are approved as the first implementation set. Concrete source components are selected during scaffold/implementation and then recorded in `COMPONENT_CATALOG.md`.
+
+### Foundation primitives — default shadcn/Radix candidates
+- Button / IconButton
+- Input / Textarea
+- Select
+- Dropdown Menu
+- Popover
+- Tooltip
+- Dialog
+- Sheet / Drawer
+- Tabs or segmented selection primitive
+- Switch / Checkbox
+- Slider where a real workflow needs continuous numeric input
+- Separator
+- Scroll Area only where native overflow behavior is insufficient
+- Command interface only when a searchable command/model/action surface is justified
+
+### Feedback primitives
+- Toast / Sonner-style notification
+- Inline Alert
+- Skeleton / loading placeholder
+- Empty state composition
+- Progress/status indicator driven by real job state
+
+### Motion primitives — adopt only where interaction benefits
+- layout/shared-element transition
+- morphing dialog/popover
+- disclosure/transition panel
+- draggable/reorder interaction
+- magnetic behavior only for deliberate tactile affordances, not ordinary buttons
+
+Do not install every primitive up front. Add a primitive when the first real feature requires it, then normalize it into RenderLab tokens and record it.
 
 ## Motion
 Motion communicates continuity, hierarchy, direct manipulation, and state.
