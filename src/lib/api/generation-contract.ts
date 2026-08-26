@@ -29,6 +29,7 @@ export type SubmitGenerationResponse = SubmitGenerationSuccess | SubmitGeneratio
 const aspectRatios = new Set<AspectRatio>(["1:1", "16:9", "9:16", "4:3", "3:4"]);
 const outputKinds = new Set<OutputKind>(["image", "video"]);
 const inputRoles = new Set<GenerationInput["role"]>(["reference", "primary-image", "first-frame"]);
+const inputSourceTypes = new Set<GenerationInput["source"]["type"]>(["temporary-source", "media-asset"]);
 const frameRates = new Set([24, 25, 30]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -40,10 +41,21 @@ function parseInputs(value: unknown): GenerationInput[] | null {
 
   const inputs: GenerationInput[] = [];
   for (const item of value) {
-    if (!isRecord(item)) return null;
-    if (typeof item.assetId !== "string" || !item.assetId.trim()) return null;
+    if (!isRecord(item) || !isRecord(item.source)) return null;
     if (typeof item.role !== "string" || !inputRoles.has(item.role as GenerationInput["role"])) return null;
-    inputs.push({ assetId: item.assetId.trim(), role: item.role as GenerationInput["role"] });
+
+    const sourceType = item.source.type;
+    const sourceId = item.source.id;
+    if (typeof sourceType !== "string" || !inputSourceTypes.has(sourceType as GenerationInput["source"]["type"])) return null;
+    if (typeof sourceId !== "string" || !sourceId.trim()) return null;
+
+    inputs.push({
+      role: item.role as GenerationInput["role"],
+      source: {
+        type: sourceType as GenerationInput["source"]["type"],
+        id: sourceId.trim(),
+      },
+    });
   }
   return inputs;
 }
