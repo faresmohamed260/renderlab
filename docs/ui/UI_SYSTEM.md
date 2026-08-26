@@ -6,13 +6,11 @@ Create a consistent, reusable, predictable UI system for a professional AI image
 ## Design Direction
 **Simple by default, powerful when needed.** RenderLab is a dark-first creative workspace where generated media is visually dominant and interface chrome stays restrained, tactile, and precise.
 
-Initial design exploration is maintained in the Figma file `RenderLab Design System` (file key `PHqgsDctOsEXX4EFR0SS7i`). Figma is a working design/verification surface; this repository document is authoritative for approved design rules.
+Ongoing visual design exploration uses **Penpot** as defined in `docs/ui/DESIGN_WORKFLOW.md`. This repository document remains authoritative for approved design rules.
 
-Current Figma pages:
-- `Foundation` — token and visual-system exploration
-- `Application Shell` — desktop/mobile shell explorations v0.1 and reviewed refinement v0.2
+The previous Figma file `RenderLab Design System` (`PHqgsDctOsEXX4EFR0SS7i`) is historical reference only. It contains prior Foundation, Application Shell, and Create Experience explorations. Decisions already extracted from those designs and documented in the repository remain valid; future work must not depend on Figma access.
 
-Figma explorations are not automatically `APPROVED` or `LOCKED`. They become authoritative only when the corresponding rules are accepted and documented here or in the appropriate repository file.
+Design-tool explorations are not automatically `APPROVED` or `LOCKED`. They become authoritative only when the corresponding rules are accepted and documented here or in the appropriate repository file, and implemented surfaces still require rendered verification.
 
 ## Design Priorities
 - Generated media first
@@ -83,7 +81,7 @@ Prefer separation through tonal surfaces and borders before shadows. Shadows sho
 Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first.
 
 ## Application Shell Direction
-The shell structure has been visually reviewed in Figma v0.2 and is the current **implementation candidate**, but it is not `LOCKED`. Feature-specific layouts remain separate decisions.
+The shell structure originated in the historical Figma v0.2 exploration and has since been implemented, remotely built, and responsive-render reviewed. The repository implementation/documentation is now authoritative; the old design file is only supporting history. The shell is `APPROVED`, not `LOCKED`.
 
 ### Shell/feature boundary
 The persistent application shell owns:
@@ -101,7 +99,7 @@ The shell does **not** own:
 - Library grids/cards;
 - feature-specific toolbars or settings.
 
-Those belong to their feature surfaces and are designed in the relevant later phase. The first Figma shell exploration mixed shell and Create UI; v0.2 corrected that boundary.
+Those belong to their feature surfaces and are designed in the relevant later phase. The first historical shell exploration mixed shell and Create UI; the v0.2 refinement corrected that boundary before implementation.
 
 ### Desktop
 - Persistent compact left navigation.
@@ -119,8 +117,8 @@ Those belong to their feature surfaces and are designed in the relevant later ph
 - Feature content owns its own responsive controls/sheets.
 - Avoid reproducing the entire desktop chrome vertically.
 
-### Shell density targets from reviewed Figma v0.2
-These are design targets, not implementation constants:
+### Shell density targets from the historical v0.2 design and verified implementation
+These are design targets, not immutable constants:
 - desktop sidebar: approximately 200–216px
 - compact top bar: approximately 52–56px
 - primary nav item height: approximately 40px with at least 44px effective touch target where relevant
