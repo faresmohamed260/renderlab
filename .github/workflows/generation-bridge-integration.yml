@@ -1,4 +1,4 @@
-name: Generation Bridge Integration
+name: Generation Integration
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  generation-bridge:
+  generation:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -24,7 +24,6 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-      RENDERLAB_STUDIO_COMPAT_URL: https://studio.faresuniform.uk
 
     steps:
       - name: Checkout
@@ -68,7 +67,7 @@ jobs:
           cat /tmp/renderlab-next.log
           exit 1
 
-      - name: Verify real generation bridge
+      - name: Verify native generation
         run: node scripts/verify-generation-bridge.mjs
 
       - name: Print server log on failure
