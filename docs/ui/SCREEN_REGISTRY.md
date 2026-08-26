@@ -61,23 +61,34 @@ Approved behavior:
 **Purpose:** Start and continue creative operations from one task-oriented workspace.  
 **Initial production operations:** Create Image, Edit Image, Create Video, Animate Image.  
 
-**Implemented now:**
+**Implemented and CI-verified:**
 - focused prompt composer;
 - Image/Video output choice with Image as default;
 - concrete essential aspect value;
 - contextual video duration value;
 - responsive two-row mobile composer with full-width Generate action;
 - typed `/api/generation/jobs` submission boundary;
-- truthful backend availability state;
+- truthful generation-backend availability state;
 - request validation and application-level generation/job types;
-- local submission/error/job-status feedback that does not fabricate percentage progress;
-- production build + responsive Playwright checks and rendered screenshot review.
+- local submission/error/job-status feedback without fabricated percentage progress;
+- reference selection UI for PNG/JPEG/WebP up to 25 MB;
+- signed direct-R2 upload ticket/completion contract;
+- server-side object type/size verification;
+- opaque temporary-source IDs rather than R2-key identity;
+- reference preview/removal/replacement;
+- Image + reference → Edit context;
+- Video + reference → Animate context;
+- production build + responsive Playwright/API checks and rendered screenshot review.
+
+**Implemented but not production-configured/E2E-verified yet:**
+- `generation_sources` Supabase schema migration;
+- actual reference upload to a RenderLab R2 bucket;
+- actual persistence into a RenderLab Supabase target;
+- reference-driven generation submission to a real generation backend.
 
 **Intentionally not implemented yet:**
-- reference upload/asset binding;
-- reference-driven Edit/Animate runtime behavior;
 - Advanced controls;
-- workflow/model chooser;
+- user-facing model/workflow chooser;
 - real configured generation backend adapter;
 - job polling/realtime synchronization after submission;
 - persisted result presentation and continuation actions.
@@ -92,23 +103,10 @@ Approved behavior:
 - Runtime states derive from real asynchronous job state; no fake progress.
 - A result is complete only after durable persistence succeeds.
 
-**Default controls:**
-- Prompt
-- Add/reference input
-- Image/Video output choice
-- Small set of operation-specific essential current values
-- Generate
-
-**Contextual controls:**
-- Attached reference context/removal/replacement
-- Video duration
-- Video aspect ratio/output shape
-- Video resolution when meaningful
-- Audio toggle for video when surfaced
-- Other controls only when supported and useful for the current task
-
+**Default controls:** Prompt, Add/reference input, Image/Video output choice, operation-specific essential values, Generate.  
+**Contextual controls:** attached reference context/removal/replacement, video duration/aspect, and other supported task-relevant controls.  
 **Advanced controls:** seed, negative prompt, steps where genuinely variable/useful, CFG/guidance where useful, frame rate, and other deliberately advanced tuning.  
-**Internal/not user-facing by default:** provider, worker, ecosystem, storage transport, workflow graph/node IDs, failover bookkeeping.  
+**Internal/not user-facing by default:** provider, worker, ecosystem, storage transport, R2 key, workflow graph/node IDs, failover bookkeeping.  
 **Shell boundary:** Create owns its composer, references, controls, results, and feature-specific layout.  
 **Do not change:** Do not turn the default Create workspace into a generic ComfyUI/workflow parameter form or wire fake generation behavior merely to make the screen look complete.
 
@@ -144,11 +142,11 @@ Approved behavior:
 ## Creation Experience Resolution
 The initial Create experience uses a single workspace instead of separate top-level Image, Video, Edit, and Animate applications.
 
-Operation is resolved from user intent and inputs where practical, while explicit output selection remains available when ambiguity matters:
+Operation is resolved from user intent and inputs while explicit output selection remains available:
 - Prompt + Image output → Create Image.
-- Prompt + image reference + Image output → Edit Image.
+- Prompt + ready image reference + Image output → Edit Image.
 - Prompt + Video output, no image → Create Video.
-- Prompt + image reference + Video output → Animate Image.
+- Prompt + ready image reference + Video output → Animate Image.
 
 Current interaction/runtime decisions are documented in UI-015 through UI-019.
 
