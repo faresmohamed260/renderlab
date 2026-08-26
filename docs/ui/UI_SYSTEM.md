@@ -3,15 +3,128 @@
 ## Objective
 Create a consistent, reusable, predictable UI system for a professional AI image/video creative workspace while avoiding unnecessary custom implementation and debugging of solved interaction patterns.
 
+## Design Direction
+**Simple by default, powerful when needed.** RenderLab is a dark-first creative workspace where generated media is visually dominant and interface chrome stays restrained, tactile, and precise.
+
+Initial design exploration is maintained in the Figma file `RenderLab Design System` (file key `PHqgsDctOsEXX4EFR0SS7i`). Figma is a working design/verification surface; this repository document is authoritative for approved design rules.
+
 ## Design Priorities
-- Generated media
-- Speed
-- Clarity
-- Dense but understandable controls
+- Generated media first
+- Speed and clarity
+- Compact professional density
 - Progressive disclosure
 - Minimal visual noise
 - Consistency
 - High-quality direct manipulation and motion where it improves understanding
+- Strong accessibility and touch/keyboard parity
+
+## Semantic Color Foundation
+Dark theme is the initial product theme. Values below are the initial approved baseline and may be tuned through visual implementation review without changing their semantic roles.
+
+| Token | Initial value | Role |
+|---|---:|---|
+| `canvas` | `#090A0C` | application background |
+| `surface-1` | `#111318` | primary panels/navigation |
+| `surface-2` | `#171A20` | raised controls/cards |
+| `surface-3` | `#20242C` | hover/selected/stronger elevation |
+| `border` | `#2B303A` | default separation |
+| `text` | `#F4F5F7` | primary text |
+| `text-muted` | `#9CA3AF` | secondary/supporting text |
+| `accent` | `#7C6CF2` | primary action, focus, active selection |
+| `success` | `#3FBF8A` | successful/completed state |
+| `warning` | `#D9A441` | attention/degraded state |
+| `danger` | `#E06464` | destructive/error state |
+
+Accent/status colors are semantic, not decoration. Do not flood large surfaces with accent color or use multiple competing brand accents.
+
+## Typography
+Initial UI typeface: **Inter** or its platform-appropriate bundled/web equivalent. Typography should be compact and functional rather than editorial/marketing-sized.
+
+- Display: 36px / semibold — rare, major empty/onboarding moments only
+- Page title: 28px / semibold
+- Section heading: 20px / semibold
+- Body: 15px / regular
+- UI label: 13px / semibold
+- Caption/metadata: 12px / regular
+
+Avoid oversized headings and excessive weight. Prompts, media, and task state should command more attention than application chrome.
+
+## Spacing
+Base unit: **4px**.
+
+Preferred spacing sequence: `4, 8, 12, 16, 20, 24, 32, 40, 48, 64`.
+
+Use semantic spacing roles in implementation rather than arbitrary pixel values. Creative surfaces should feel compact but not cramped.
+
+## Shape & Radius
+Preferred radius scale: `6, 8, 12, 16, 20px`.
+
+- Small controls/chips: 6–8px
+- Standard controls/cards: 8–12px
+- Panels/media containers: 12–16px
+- Large sheets/hero containers: up to 20px
+
+Avoid pill-shaped treatment as a universal default. Pills are appropriate for tags, compact segmented states, or controls whose semantics benefit from them.
+
+## Control Metrics
+Preferred visual control heights: `32, 36, 40, 44px` depending on density and importance.
+
+Interactive touch target: **44×44px minimum** where practical, including icon-only actions. A visually smaller control may use a larger hit area.
+
+## Surfaces & Elevation
+Prefer separation through tonal surfaces and borders before shadows. Shadows should be subtle in the dark UI and used primarily for floating layers such as dialogs, popovers, sheets, drag previews, and contextual overlays.
+
+Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first.
+
+## Motion
+Motion communicates continuity, hierarchy, direct manipulation, and state.
+
+Timing guidance:
+- Micro feedback: **120–180ms**
+- Standard UI transition: **180–260ms**
+- Large spatial/morphing transition: **260–420ms**
+
+Prefer spring/layout transitions for morphing, drag/drop, snapping, and spatial continuity. Prefer short easing for ordinary hover, disclosure, and feedback.
+
+Good candidates:
+- media card → viewer spatial continuity;
+- reference media snapping/moving into input slots;
+- contextual controls entering/exiting without layout confusion;
+- Create operation transitions;
+- drag/drop and reorder feedback;
+- sheets/popovers/dialogs with coherent origin/destination motion;
+- generation results entering without disruptive layout jumps.
+
+Avoid persistent decorative motion, excessive glow/parallax, distracting cursor effects, or stacking expensive visual effects merely to look modern.
+
+Always honor `prefers-reduced-motion`; essential state changes must remain understandable without animation.
+
+## Responsive Rules
+Desktop is primary, but responsive behavior is required from the start rather than retrofitted later.
+
+- Wide desktop: allow creative workspace and supporting controls to coexist without excessive line lengths.
+- Standard desktop/tablet landscape: compress secondary chrome before reducing media/workspace usefulness.
+- Narrow/tablet portrait/mobile: move secondary controls into sheets/disclosures; preserve the prompt, current inputs, primary action, generation state, and result access.
+- Never require hover for an essential action.
+- Avoid a separate mobile product/navigation model unless evidence shows it is necessary.
+
+Exact breakpoints will follow Tailwind defaults initially unless implementation evidence justifies project-specific breakpoints.
+
+## Accessibility Baseline
+Target WCAG 2.2 AA behavior for normal product UI.
+
+Required:
+- keyboard-operable interactive UI;
+- visible focus treatment using the semantic accent/focus role;
+- semantic HTML/Radix behavior for menus, dialogs, popovers, tabs, forms, and disclosures;
+- text/status meaning must not depend on color alone;
+- minimum touch targets as above;
+- reduced-motion support;
+- meaningful accessible names for icon-only controls;
+- no hover-only essential actions;
+- appropriate focus trapping/restoration for modal surfaces;
+- sufficient text and control contrast;
+- media controls usable by keyboard/touch where applicable.
 
 ## Design Authority
 1. Existing approved RenderLab component
@@ -24,7 +137,6 @@ Create a consistent, reusable, predictable UI system for a professional AI image
 Creating generic UI or complex motion mechanics from scratch is the final option.
 
 ## Approved Component Ecosystems
-
 ### shadcn/ui + Radix
 Default foundation for accessible application primitives and conventional controls. Prefer for dialogs, menus, popovers, tabs, forms, inputs, selects, sheets, tooltips, toggles, and similar UI infrastructure.
 
@@ -44,7 +156,6 @@ Approved source for selected animated React/TypeScript/Tailwind/Motion component
 Approved source for selected creative interactions and advanced components, including galleries, navigation, cards, morphing interactions, magnetic/physics-like effects, and other visually rich patterns. Evaluate performance, accessibility, reduced motion, and production suitability before adoption.
 
 ## Component Selection Rule
-The approved sources are a toolkit, not a visual mandate. For each requirement:
 1. Search approved RenderLab components first.
 2. Search shadcn/Radix for conventional accessible UI.
 3. Search Motion Primitives and Motion for interaction/motion requirements.
@@ -56,7 +167,7 @@ Do not spend project time recreating magnetic behavior, morphing transitions, dr
 
 ## Adoption Requirements
 An external/copy-owned component must be evaluated before becoming an approved RenderLab component:
-- compatible with Next.js, React, TypeScript, and Tailwind as currently adopted;
+- compatible with Next.js, React, TypeScript, and Tailwind;
 - keyboard-accessible where interactive;
 - screen-reader semantics appropriate to its role;
 - reduced-motion handling for nonessential motion;
@@ -66,7 +177,7 @@ An external/copy-owned component must be evaluated before becoming an approved R
 - adaptable to RenderLab tokens rather than retaining a competing visual system;
 - appropriate for a production creative workspace.
 
-Once adopted, record the local component/wrapper, source, purpose, and status in `COMPONENT_CATALOG.md` so future sessions reuse the same implementation instead of selecting a new library component.
+Once adopted, record the local component/wrapper, source, purpose, and status in `COMPONENT_CATALOG.md`.
 
 ## Component Statuses
 - `EXPERIMENTAL` — still being designed
@@ -74,41 +185,8 @@ Once adopted, record the local component/wrapper, source, purpose, and status in
 - `LOCKED` — visually finalized; do not redesign without explicit instruction
 - `DEPRECATED` — do not use for new work
 
-## Reuse
-Once an application-specific component is approved, it becomes authoritative. Prefer variants of shared components over page-specific duplicates.
-
-External components become RenderLab components after adoption: normalize their API where useful, apply RenderLab tokens, and avoid scattering raw third-party variants throughout feature code.
-
-## Tokens
-Use project tokens for backgrounds, surfaces, borders, text, accents, status, spacing, radii, typography, control sizes, shadows, animation, and layout. Avoid arbitrary values.
-
 ## Interaction Consistency
 Established actions must behave consistently: model selection, media actions, expansion, menus, tooltips, dialogs, confirmations, progress, loading states, drag/drop, and continuation actions.
-
-## Hierarchy
-Generated media is usually the primary visual focus. Controls should support rather than compete with it. Use progressive disclosure for advanced controls.
-
-## Density
-This is a desktop creative tool, not a marketing site. Prefer efficient density over oversized whitespace, headings, cards, controls, or padding.
-
-## Motion & Direct Manipulation
-Motion should communicate state, progress, hierarchy, navigation, spatial continuity, or direct manipulation—not decoration.
-
-Modern motion patterns are encouraged when they make the product easier to understand or more tactile. Good candidates include:
-- media card → viewer morphing/spatial continuity;
-- reference media moving/snapping into input slots;
-- contextual controls entering/exiting without layout confusion;
-- Create operation transitions;
-- drag/drop and reorder feedback;
-- sheets/popovers/dialogs with coherent origin/destination motion;
-- generation results entering the workspace without disruptive layout jumps.
-
-Avoid persistent decorative motion, excessive glow/parallax, cursor effects that interfere with interaction, or stacking expensive visual effects merely to look modern.
-
-Honor reduced-motion preferences and provide non-motion fallbacks for essential interactions.
-
-## Responsive Design
-Desktop is primary. Smaller layouts must remain functional without creating a separate visual language. Touch interactions must not depend on hover-only behavior.
 
 ## New Component Procedure
 1. Search approved RenderLab components.
