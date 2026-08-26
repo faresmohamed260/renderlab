@@ -14,7 +14,7 @@ This is not a direct UI migration and not a visual reconstruction of Saga.
 - Organize the product around user goals rather than ComfyUI terminology or node graphs.
 - Reuse approved RenderLab components before inventing alternatives.
 - Prefer maintained approved component/interaction mechanics over rebuilding solved generic mechanics from scratch.
-- Use real design tools for visual exploration/verification when practical, while keeping repository documentation authoritative.
+- Use real visual-design artifacts for exploration/verification when practical, while keeping repository documentation authoritative.
 - Validate rendered UI, not only compilation.
 - Record durable decisions in the repository.
 
@@ -47,11 +47,12 @@ Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.
 - [x] Define the initial application-shell direction from the approved information architecture.
 - [x] Visually review and iterate the shell exploration in the historical Figma artifact.
 - [x] Establish the component catalog/index and begin populating them from verified implementation.
-- [x] Replace Figma as the ongoing design dependency with Penpot and document the visual design workflow.
+- [x] Replace Figma as the ongoing design dependency with Penpot/open design handoff and document the visual design workflow.
 
 Visual/design-system authority: `docs/ui/UI_SYSTEM.md`.  
 Visual workflow authority: `docs/ui/DESIGN_WORKFLOW.md`.  
-Default ongoing design workspace: **Penpot**.  
+Default ongoing design workspace: **Penpot when available**.  
+Open repository handoff artifacts: `design/penpot/`.  
 Historical design reference only: Figma `RenderLab Design System`, file key `PHqgsDctOsEXX4EFR0SS7i`.  
 Approved source/component policy: `docs/ui/COMPONENT_CATALOG.md`.
 
@@ -72,13 +73,12 @@ Deferred until a real interaction requires them; do not install speculative prim
 - Route/global loading and error components
 
 Verified shell implementation: `src/components/shell/app-shell.tsx`.  
-Remote validation: `.github/workflows/ui-shell.yml` + `tests/ui/shell.spec.ts`.  
-Latest verified shell CI commit: `e0e24a08b18d1c0964bd6dd60f93aeaa1d395752` (successful production build + responsive Playwright checks).  
-The component was subsequently filename-normalized to match the documented kebab-case convention; the post-normalization CI run also passed.
+Remote validation: `.github/workflows/ui-shell.yml` + `tests/ui/shell.spec.ts`.
 
 ## Phase 3 — Creation Experience
 The creation UI must be task-oriented and progressively disclose complexity.
-- [ ] Complete the default Create design in Penpot before feature implementation. Historical Figma v0.2 desktop states were visually reviewed; the current responsive design must be carried forward and verified in Penpot rather than waiting on Figma quota access.
+- [x] Establish an open Create v0.2 design handoff before feature implementation. Desktop states are versioned in `design/penpot/create-v0.2-desktop.svg`; revised mobile state is versioned in `design/penpot/create-v0.2-mobile.svg`.
+- [x] Visually verify the revised narrow/mobile two-row composer from the open SVG handoff. It resolves the v0.1 clipping/competition issue and keeps Generate as a clear full-width primary action.
 - [x] Define prompt/composer direction: one focused prompt surface with compact task-relevant controls and Generate action.
 - [x] Define operation selection/resolution behavior: explicit Image/Video output choice; compatible references resolve Edit/Animate context.
 - [x] Define reference/input media interaction direction: add reference from the composer; attached reference communicates resolved context and can be removed/replaced.
@@ -89,12 +89,10 @@ The creation UI must be task-oriented and progressively disclose complexity.
 - [ ] Define Generate disabled/error states.
 - [ ] Define real job/progress feedback in the Create flow.
 - [ ] Define output and continuation actions.
-- [ ] Implement the smallest approved Create slice after design review.
+- [ ] Implement the smallest approved Create slice after state-design review.
 - [ ] Build and visually verify desktop/mobile implementation.
 
-Historical Figma Create exploration contains v0.1 and refined v0.2 states for default Image, reference-driven Edit, Video, and mobile. Desktop v0.2 states were visually inspected. The v0.1 mobile review exposed toolbar clipping/competition between controls and Generate; v0.2 was revised to a two-row mobile composer with Generate separated from compact settings. The historical v0.2 mobile frame was not retrieved before Figma's Starter MCP limit was reached. That old quota is no longer a project blocker because Figma is not the ongoing design tool.
-
-The current design task is to reproduce/carry forward the accepted v0.2 direction in Penpot and perform the responsive review there. Do not mark Create `APPROVED` until the Penpot design candidate and subsequent real implementation have both passed the required responsive checks.
+The open SVG handoff is deliberately importable into Penpot but does not require Penpot automation to remain useful. Repository documentation is authoritative; Penpot is an optional richer editing workspace, not a critical-path dependency. Historical Figma work remains reference only.
 
 Durable Create decisions are recorded in `docs/ui/UI_DECISIONS.md` as UI-015 through UI-017.
 
@@ -121,7 +119,7 @@ Exact screens are not predetermined.
 4. Inspect Saga only when it provides useful behavioral/backend reference.
 5. Inspect the relevant backend/workflow contract.
 6. Decide which complexity belongs in the default experience and which should be contextual or advanced.
-7. Use Penpot for meaningful visual/interaction exploration when it reduces implementation churn; follow `DESIGN_WORKFLOW.md`.
+7. Use Penpot or repository-backed open SVG design artifacts for meaningful visual/interaction exploration when it reduces implementation churn; follow `DESIGN_WORKFLOW.md`.
 8. Implement the smallest coherent experience that satisfies the approved product design.
 9. Build and visually verify through the remote GitHub validation path.
 10. Check responsive and accessibility behavior.
@@ -129,9 +127,9 @@ Exact screens are not predetermined.
 
 ## Current Work
 **Current phase:** Phase 3 — Creation Experience design  
-**Current status:** Phase 2 shell is approved. Create v0.2 established the current desktop design direction and durable product rules for output selection, reference-driven context, concrete essential values, and progressive disclosure. Penpot is now the default ongoing design workspace; Figma is historical reference only. No Create feature implementation has begun.  
-**Known blockers:** No application/runtime blocker. A Penpot design workspace/artifact for the current Create candidate still needs to be established before final responsive design approval. Direct Penpot canvas automation is not currently available in this ChatGPT session, so the project must not pretend that a Penpot review has occurred until it actually has.  
-**Next recommended task:** Carry the documented Create v0.2 direction into Penpot, verify the mobile two-row composer there, then define Generate states, job/progress, and result/continuation behavior before implementing the first approved Create slice. Continue to use GitHub Actions + Playwright screenshots for implementation verification.
+**Current status:** Phase 2 shell is approved. Create v0.2 now has open, versioned desktop/mobile design handoff artifacts under `design/penpot/`. The revised mobile two-row composer has been independently rendered and visually reviewed, so Penpot/Figma connector availability is no longer a design-approval blocker. No Create feature implementation has begun yet.  
+**Known blockers:** None recorded.  
+**Next recommended task:** Define Generate disabled/error states, real job/progress feedback, and result/continuation behavior using the same open visual-handoff workflow. Then implement the smallest reviewed Create slice and verify it through GitHub Actions + Playwright screenshots.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
