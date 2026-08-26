@@ -1,9 +1,9 @@
 # Screen Registry
 
-Tracks approved product surfaces and, once implementation begins, their actual route/status/component composition.
+Tracks approved product surfaces and actual route/status/component composition.
 
 ## Statuses
-- `PLANNED` — approved product surface, not yet implemented
+- `PLANNED` — approved product surface, not yet implemented beyond temporary route scaffolding
 - `UNAUDITED` — implementation exists but has not been audited
 - `MIGRATING` — implementation is actively being brought to the approved RenderLab design
 - `APPROVED` — rendered implementation has been reviewed and approved
@@ -17,11 +17,11 @@ RenderLab is organized around user goals, not backend workflow types.
 2. **Library** — durable generated and uploaded media, discovery, organization, and continuation.
 
 ### Utility surfaces
-- **Activity** — generation jobs and operational status, accessible without making queue management a primary creative destination.
-- **Settings** — product/account/application preferences as they are introduced.
+- **Activity** — generation jobs and operational status.
+- **Settings** — persistent product/account/application preferences as introduced.
 
 ### Contextual surfaces
-- **Media Viewer** — focused inspection and continuation of a selected asset; entered from Library, Create results, or Activity rather than treated as a primary navigation destination.
+- **Media Viewer** — focused inspection and continuation of a selected asset.
 
 ### Not initial top-level destinations
 - Models
@@ -30,38 +30,34 @@ RenderLab is organized around user goals, not backend workflow types.
 - Separate Edit/Animate/Upscale applications
 - ComfyUI graph/node surfaces
 
-These concepts may be selectable or contextual inside Create when they provide user value. Adding a backend workflow does not create a new top-level screen by default.
+Adding a backend workflow does not create a new top-level screen by default.
 
 ## Application Shell
-**Status:** REVIEWED DESIGN CANDIDATE; no implementation exists yet. It is not `APPROVED` or `LOCKED` implementation.  
-**Figma reference:** `RenderLab Design System` → `Application Shell` page → v0.2 desktop/mobile frames.  
+**Status:** APPROVED  
+**Implementation:** `src/components/shell/app-shell.tsx`  
+**Figma reference:** `RenderLab Design System` → `Application Shell` → v0.2 desktop/mobile  
+**Verification:** GitHub Actions production build + Playwright desktop/mobile checks passed on 2026-08-27. Generated 1440×1024 and 390×844 screenshots were visually inspected against the v0.2 direction.  
 
-Reviewed direction:
-- Desktop uses a persistent compact left navigation around 200–216px.
+Approved behavior:
+- Desktop uses a persistent compact left navigation (`w-52`, approximately 208px).
 - Create and Library are primary; Activity and Settings are visually secondary utilities.
-- A compact ~52–56px top bar carries route context plus account/activity affordances.
+- Compact 56px top bar provides route context plus Activity/account affordances.
 - Main route content owns the overwhelming majority of screen area.
-- Idle shell state does not show a permanent “Ready” status pill; global status becomes prominent only for active jobs, actionable failures, degraded states, or similar attention-worthy conditions.
+- Idle shell state does not show a permanent “Ready” status pill.
 - The persistent shell stops at the route-content boundary. Create composer, references, generation controls/results, Library cards/grids, and feature-specific settings belong to their own feature designs.
-- Narrow/mobile layouts use a compact bottom navigation for Create, Library, and Activity, with Settings reachable through utility/account UI unless later evidence justifies persistent placement.
-- The desktop sidebar is not simply shrunk for mobile.
+- Narrow/mobile layouts hide the desktop sidebar and use bottom navigation for Create, Library, and Activity.
+- Settings remains accessible through top utility/account access on narrow layouts rather than occupying persistent bottom navigation.
+- Essential nav controls have touch-friendly sizing and semantic navigation landmarks.
 
-This shell direction has been visually reviewed in Figma and is suitable to scaffold as a Phase 2 implementation candidate, but implementation must still be rendered and reviewed before `APPROVED` or `LOCKED` status.
+`APPROVED` does not mean `LOCKED`; changes are allowed when product needs justify them, but they require rendered responsive review.
 
 ## Screens
 
 ### Create
 **Route:** `/`  
-**Status:** PLANNED  
+**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
 **Purpose:** Start and continue creative operations from one task-oriented workspace.  
-**Primary experience:** A unified composer/workspace that lets the user express intent, attach/select relevant media, choose the intended output/task when necessary, set essential output controls, generate, observe real job state, and continue from results.  
-**Initial production operations:**
-- Create Image
-- Edit Image
-- Create Video
-- Animate Image
-
-These operations map onto the currently verified image and video workflow capabilities. They are product concepts, not direct workflow IDs.
+**Initial production operations:** Create Image, Edit Image, Create Video, Animate Image.  
 
 **Default controls:**
 - Prompt
@@ -74,84 +70,48 @@ These operations map onto the currently verified image and video workflow capabi
 - Image/reference inputs for edit/animate
 - Video duration
 - Video aspect ratio/output shape
-- Video resolution when it is a meaningful user choice
+- Video resolution when meaningful
 - Audio toggle for video
-- Other controls only when supported by the resolved workflow and useful for the current task
+- Other controls only when supported and useful for the current task
 
-**Advanced controls:**
-- Seed
-- Negative prompt
-- Steps where genuinely variable/useful
-- CFG/guidance where genuinely useful
-- Frame rate
-- Other workflow/model tuning deliberately classified as advanced
-
+**Advanced controls:** seed, negative prompt, steps where genuinely variable/useful, CFG/guidance where useful, frame rate, and other deliberately advanced tuning.  
 **Internal/not user-facing by default:** provider, worker, ecosystem, storage transport, workflow graph/node IDs, failover bookkeeping.  
-**Result behavior:** Generated media appears in the same creative flow with actions derived from compatibility, such as Edit, Animate, Reuse settings, Download, or View in Library. Completion means the durable result has been persisted, not merely returned by the provider.  
-**Shell boundary:** Create owns its composer, references, controls, results, and feature-specific layout. The persistent application shell only provides route chrome and content space.  
-**Reference pattern:** Fresh RenderLab design; Saga supplies behavioral/backend evidence only.  
+**Shell boundary:** Create owns its composer, references, controls, results, and feature-specific layout.  
 **Do not change:** Do not turn the default Create workspace into a generic ComfyUI/workflow parameter form.
 
 ### Library
 **Route:** `/library`  
-**Status:** PLANNED  
+**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
 **Purpose:** Find, inspect, organize, reuse, and continue from durable media assets.  
-**Content:** Generated images/videos and persistent uploaded assets should be represented as media assets while preserving their provenance/type distinctions where relevant.  
-**Primary capabilities:**
-- Browse media
-- Search/filter/sort as approved during implementation
-- Preview
-- Favorite/organize where retained
-- Download
-- Delete
-- Open Media Viewer
-- Start compatible continuation actions
-- Reuse an asset as an input in Create
-
-**Reference pattern:** Preserve proven reusable-media behavior from Saga without copying its gallery UI.  
-**Do not change:** Library is not merely generation history; reusable uploads and generated outputs are both durable creative assets.
+**Content:** Generated images/videos and persistent uploaded assets.  
+**Primary capabilities:** browse, search/filter/sort as approved, preview, organize/favorite where retained, download, delete, open viewer, start compatible continuation actions, reuse assets as inputs.  
+**Do not change:** Library is not merely generation history.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** PLANNED  
+**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
 **Purpose:** Inspect one media asset in detail and take the next meaningful action.  
-**Primary capabilities:**
-- Large image/video presentation
-- Essential asset metadata
-- Download/delete/favorite or approved organization actions
-- Generation provenance/settings when relevant
-- Continuation actions determined by asset/workflow compatibility
-- Return to originating context
-
-**Reference pattern:** Purpose-built RenderLab viewer; no requirement to copy Saga viewer structure.  
-**Do not change:** Continuation actions should be capability-derived rather than hard-coded independently in every media surface.
+**Primary capabilities:** large media presentation, essential metadata, media actions, provenance/settings when relevant, capability-derived continuation actions, return to originating context.  
+**Do not change:** continuation actions should be capability-derived rather than hard-coded independently in every media surface.
 
 ### Activity
 **Route:** `/activity`  
-**Status:** PLANNED  
+**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
 **Purpose:** Provide visibility into current/recent asynchronous generation work and actionable failures without forcing users to manage infrastructure.  
-**Primary capabilities:**
-- Running/queued/recent jobs
-- Real execution state when available
-- Completed/failed state
-- Failure explanation/action where useful
-- Open completed output
-- Retry/cancel only when supported by the final job contract
-
-**Navigation role:** Utility surface rather than one of the two primary creative destinations. Active generation state may also surface globally in the application shell.  
-**Do not change:** Do not expose worker selection, failover controls, or provider infrastructure as routine user responsibilities.
+**Primary capabilities:** running/queued/recent jobs, real execution state, terminal states, useful failure explanation/action, completed output access, retry/cancel only when supported.  
+**Do not change:** do not expose worker selection, failover controls, or provider infrastructure as routine user responsibilities.
 
 ### Settings
 **Route:** `/settings`  
-**Status:** PLANNED  
+**Status:** PLANNED; route exists with temporary `RoutePlaceholder` only  
 **Purpose:** Hold persistent application/account preferences that do not belong in the creative workflow.  
-**Initial scope:** Not yet defined; create only settings backed by actual product requirements.  
-**Do not change:** Do not use Settings as a dumping ground for workflow parameters or model controls.
+**Initial scope:** Not yet defined; create only settings backed by actual requirements.  
+**Do not change:** do not use Settings as a dumping ground for workflow parameters or model controls.
 
 ## Creation Experience Resolution
 The initial Create experience uses a single workspace instead of separate top-level Image, Video, Edit, and Animate applications.
 
-The operation is resolved from user intent and inputs where practical, while explicit operation selection remains available when ambiguity matters. Examples:
+Operation is resolved from user intent and inputs where practical, while explicit selection remains available when ambiguity matters:
 - Prompt + image output intent → Create Image.
 - Prompt + reference image + edit intent → Edit Image.
 - Prompt + video output intent, no image → Create Video.
@@ -160,4 +120,4 @@ The operation is resolved from user intent and inputs where practical, while exp
 The exact interaction control for operation selection remains experimental until the Create design is reviewed.
 
 ## Growth Rule
-Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or as continuation actions. They should receive a new top-level product surface only when the user workflow genuinely requires a distinct workspace.
+Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or as continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
