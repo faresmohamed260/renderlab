@@ -25,12 +25,13 @@ This is not a direct UI migration and not a visual reconstruction of Saga.
 - [x] Identify capability categories that RenderLab architecture should be able to represent later without requiring their immediate implementation.
 - [x] Define the initial RenderLab workflow/capability domain model.
 - [x] Define the boundary between default controls, contextual controls, advanced controls, and internal execution controls.
-- [ ] Define RenderLab information architecture from user goals rather than copying Saga routes.
-- [ ] Define the first production creation experience and which capabilities it exposes initially.
-- [ ] Populate `FRONTEND_ARCHITECTURE.md` with the chosen RenderLab architecture once decisions are verified.
+- [x] Define RenderLab information architecture from user goals rather than copying Saga routes.
+- [x] Define the first production creation experience and which capabilities it exposes initially.
+- [ ] Populate `FRONTEND_ARCHITECTURE.md` with the chosen RenderLab architecture once framework/routing decisions are verified.
 - [x] Record current durable product/UI decisions in `UI_DECISIONS.md`.
 
-Capability/domain baseline: `docs/architecture/PRODUCT_CAPABILITIES.md`.
+Capability/domain baseline: `docs/architecture/PRODUCT_CAPABILITIES.md`.  
+Approved information architecture and planned surfaces: `docs/ui/SCREEN_REGISTRY.md`.
 
 ## Phase 1 — Design & Frontend Foundation
 - [ ] Select and document the concrete frontend framework and routing approach.
@@ -92,10 +93,10 @@ Exact screens are not predetermined.
 9. Update component/screen/decision documentation based on verified implementation.
 
 ## Current Work
-**Current phase:** Phase 0 — Product & Capability Baseline  
-**Current status:** Saga frontend/backend and current production workflow capability baseline documented; initial RenderLab capability/domain model and progressive-disclosure tiers established.  
-**Known blockers:** None recorded. The wider set of future ComfyUI features remains intentionally uncommitted until concrete production workflows are selected/audited.  
-**Next recommended task:** Define RenderLab's initial user-facing information architecture and first production creation experience from the capability baseline, without copying Saga's route structure.
+**Current phase:** Phase 1 — Design & Frontend Foundation  
+**Current status:** Phase 0 product baseline is complete except for frontend architecture details that depend on the framework/routing selection. Initial IA is Create + Library as primary destinations, with Activity and Settings as utilities and Media Viewer contextual. The initial Create workspace covers Create Image, Edit Image, Create Video, and Animate Image through contextual operation resolution and progressive disclosure.  
+**Known blockers:** None recorded.  
+**Next recommended task:** Select the concrete frontend framework/routing approach, document the architecture, then establish the design-system foundation and application shell around the approved IA.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
