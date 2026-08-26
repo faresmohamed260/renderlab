@@ -47,8 +47,6 @@ These sources are approved defaults to search before implementing reusable UI me
 **Policy:** A registry being listed does not automatically approve every component. Review implementation quality, maintenance, licensing, accessibility, dependencies, and fit before adopting it into RenderLab.
 
 ## External Source Search Order
-For a new component or interaction, use this order unless the requirement clearly points to a more specialized source:
-
 1. Existing `APPROVED` or `LOCKED` RenderLab component
 2. Existing RenderLab primitive
 3. shadcn/ui + Radix
@@ -96,20 +94,20 @@ Before copying/installing an external component:
 ## Components
 
 ### AppShell
-**Status:** EXPERIMENTAL  
-**Source:** `src/components/shell/AppShell.tsx`  
+**Status:** APPROVED  
+**Source:** `src/components/shell/app-shell.tsx`  
 **Origin:** RenderLab composition using Next.js navigation + Lucide React icons  
 **Purpose:** Persistent responsive application chrome: desktop sidebar, compact top bar, mobile bottom navigation, route context, and utility navigation.  
 **Variants:** Responsive desktop/mobile behavior is internal to the component.  
 **Used by:** root layout  
 **Dependencies:** Next.js `Link`/`usePathname`, Lucide React  
-**Reuse rules:** This is the single shell/navigation implementation while Phase 2 is active. Extend it rather than creating page-specific shells.  
+**Reuse rules:** This is the authoritative application shell/navigation implementation. Extend it rather than creating page-specific shells.  
 **Do not:** Add Create composer, Library cards, workflow controls, or feature-owned layout into the persistent shell.  
-**Notes:** Based on reviewed Figma shell v0.2. Remains experimental until GitHub render screenshots are inspected and approved.
+**Notes:** Based on reviewed Figma shell v0.2. Verified by successful GitHub Actions production build + Playwright desktop/mobile checks on 2026-08-27, and the generated 1440×1024 and 390×844 screenshots were visually inspected. Approved, not locked; later shell changes still require rendered review.
 
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  
-**Source:** `src/components/shell/RoutePlaceholder.tsx`  
+**Source:** `src/components/shell/route-placeholder.tsx`  
 **Origin:** RenderLab  
 **Purpose:** Temporary route-content placeholder used only while validating the persistent shell boundary.  
 **Variants:** Text content only.  
