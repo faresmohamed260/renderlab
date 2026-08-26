@@ -22,10 +22,14 @@ ComfyUI is the generation engine, not the product interface.
 
 ## Stack
 ### Frontend
+- Next.js with the App Router
+- React
 - TypeScript
 - Tailwind CSS
 - shadcn/ui where applicable
-- Select the concrete frontend framework during foundation work and document the decision before implementation depends on it
+- Server Components by default; Client Components for interactive creative/workspace behavior
+
+Exact package versions are recorded from the repository after scaffolding rather than hard-coded into planning documentation.
 
 ### Infrastructure
 - Vercel
@@ -48,18 +52,25 @@ A workflow may define supported media inputs, models, required and optional para
 This internal flexibility must not become a generic technical form in the default UI. RenderLab should translate backend capabilities into task-oriented experiences such as creating an image, creating a video, editing an image, animating a reference, upscaling, or other understandable creative operations.
 
 ## Product Areas
-The exact information architecture is intentionally not locked yet. Expected capability areas include creation, jobs/queue, media library/gallery, media viewer, models/workflows where useful, and settings. Phase 0 must determine the appropriate RenderLab information architecture rather than copying Saga's screen structure automatically.
+The initial approved information architecture is:
+- **Create** — default creative workspace
+- **Library** — durable generated and uploaded media
+- **Activity** — job/execution utility surface
+- **Settings** — application/account preferences as required
+- **Media Viewer** — contextual asset detail/continuation surface
+
+Image, Video, Edit, Animate, Models, and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-Establish the fresh-build product and architecture baseline before implementation:
-1. Audit Saga for proven capabilities, behavior, backend contracts, and lessons learned.
-2. Audit existing ComfyUI/workflow capabilities and identify likely extensibility needs.
-3. Define RenderLab product architecture and workflow capability contracts.
-4. Define an intuitive information architecture using progressive disclosure.
-5. Establish the design-system foundation.
-6. Begin implementation only after those foundations are documented.
+Phase 1 — Design & Frontend Foundation:
+1. Define design tokens and visual foundations.
+2. Define core UI primitives and approved component sources.
+3. Establish accessibility and responsive expectations.
+4. Establish naming/folder conventions.
+5. Define the application shell around the approved Create + Library information architecture.
+6. Scaffold implementation only after these foundation decisions are recorded.
 
-See `docs/ui/UI_MIGRATION.md` for the current foundation plan.
+See `docs/ui/UI_MIGRATION.md` for the current foundation plan and `docs/architecture/FRONTEND_ARCHITECTURE.md` for the approved frontend architecture.
 
 ## Source of Truth
 The `renderlab` repository is the primary source of truth. ChatGPT Project context is secondary continuity context. Current chat sessions are temporary working context.
