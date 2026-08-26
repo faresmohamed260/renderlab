@@ -2,6 +2,17 @@ name: Reference Upload Integration
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/reference-upload-integration.yml"
+      - "scripts/verify-reference-upload.mjs"
+      - "src/app/api/assets/reference/**"
+      - "src/server/storage/**"
+      - "src/server/data/**"
+      - "src/lib/api/reference-source-contract.ts"
+      - "supabase/migrations/**"
+      - "package.json"
 
 permissions:
   contents: read
