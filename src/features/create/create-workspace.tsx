@@ -1,33 +1,76 @@
 "use client";
 
-import { LoaderCircle, MoreHorizontal, Plus } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { ImageIcon, LoaderCircle, MoreHorizontal, Plus, X } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { AspectRatio, GenerationJob, OutputKind } from "@/lib/capabilities/generation";
 import { imageAspectRatios, videoAspectRatios, videoDurations } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
+import type {
+  CompleteReferenceUploadResponse,
+  CreateReferenceUploadTicketResponse,
+  ReferenceSource,
+} from "@/lib/api/reference-upload-contract";
+import { maxReferenceUploadBytes, supportedReferenceMimeTypes } from "@/lib/api/reference-upload-contract";
 
 function nextValue<T>(values: readonly T[], current: T) {
   const currentIndex = values.indexOf(current);
   return values[(currentIndex + 1) % values.length];
 }
 
-export function CreateWorkspace({ generationAvailable }: { generationAvailable: boolean }) {
+async function readImageDimensions(file: File) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const dimensions = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return dimensions;
+  } catch {
+    return {};
+  }
+}
+
+export function CreateWorkspace({
+  generationAvailable,
+  referenceUploadAvailable,
+}: {
+  generationAvailable: boolean;
+  referenceUploadAvailable: boolean;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [prompt, setPrompt] = useState("");
   const [outputKind, setOutputKind] = useState<OutputKind>("image");
   const [imageAspect, setImageAspect] = useState<AspectRatio>("1:1");
   const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
+  const [reference, setReference] = useState<ReferenceSource | null>(null);
+  const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
+  const [referenceUploading, setReferenceUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<GenerationJob | null>(null);
 
-  const aspectRatio = outputKind === "image" ? imageAspect : videoAspect;
-  const heading = outputKind === "image" ? "What do you want to create?" : "Create a video";
-  const supportingText = outputKind === "image"
-    ? "Start with an idea. Add a reference only when you need one."
-    : "Only the essentials stay visible. More control is available when you ask for it.";
+  useEffect(() => {
+    return () => {
+      if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
+    };
+  }, [referencePreviewUrl]);
 
-  const canSubmit = generationAvailable && Boolean(prompt.trim()) && !submitting;
+  const aspectRatio = outputKind === "image" ? imageAspect : videoAspect;
+  const hasReference = Boolean(reference);
+  const heading = hasReference
+    ? outputKind === "image"
+      ? "Edit an image"
+      : "Animate an image"
+    : outputKind === "image"
+      ? "What do you want to create?"
+      : "Create a video";
+  const supportingText = hasReference
+    ? "Your reference sets the creative context automatically."
+    : outputKind === "image"
+      ? "Start with an idea. Add a reference only when you need one."
+      : "Only the essentials stay visible. More control is available when you ask for it.";
+
+  const canSubmit =
+    generationAvailable && Boolean(prompt.trim()) && !submitting && !referenceUploading;
 
   const statusText = useMemo(() => {
     if (!job) return null;
@@ -39,6 +82,86 @@ export function CreateWorkspace({ generationAvailable }: { generationAvailable: 
     if (job.status === "cancelled") return "Generation cancelled.";
     return job.error?.message ?? "Generation failed.";
   }, [job]);
+
+  function clearReference() {
+    if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
+    setReferencePreviewUrl(null);
+    setReference(null);
+    setJob(null);
+    setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function uploadReference(file: File) {
+    if (!referenceUploadAvailable) return;
+
+    const mimeType = file.type.toLowerCase();
+    if (!(supportedReferenceMimeTypes as readonly string[]).includes(mimeType)) {
+      setError("References must be PNG, JPEG, or WebP images.");
+      return;
+    }
+    if (file.size < 1 || file.size > maxReferenceUploadBytes) {
+      setError("Reference images must be no larger than 25 MB.");
+      return;
+    }
+
+    setReferenceUploading(true);
+    setError(null);
+    setJob(null);
+
+    const previewUrl = URL.createObjectURL(file);
+    if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
+    setReferencePreviewUrl(previewUrl);
+    setReference(null);
+
+    try {
+      const ticketResponse = await fetch("/api/assets/reference/upload-tickets", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          mimeType,
+          sizeBytes: file.size,
+        }),
+      });
+      const ticketPayload = (await ticketResponse.json()) as CreateReferenceUploadTicketResponse;
+      if (!ticketResponse.ok || !ticketPayload.ok) {
+        throw new Error(ticketPayload.ok ? "Reference upload could not be prepared." : ticketPayload.error.message);
+      }
+
+      const uploadResponse = await fetch(ticketPayload.ticket.uploadUrl, {
+        method: ticketPayload.ticket.method,
+        headers: ticketPayload.ticket.headers,
+        body: file,
+      });
+      if (!uploadResponse.ok) {
+        throw new Error("Reference image could not be uploaded.");
+      }
+
+      const dimensions = await readImageDimensions(file);
+      const completionResponse = await fetch("/api/assets/reference/upload-completions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sourceId: ticketPayload.ticket.sourceId,
+          ...dimensions,
+        }),
+      });
+      const completionPayload = (await completionResponse.json()) as CompleteReferenceUploadResponse;
+      if (!completionResponse.ok || !completionPayload.ok) {
+        throw new Error(
+          completionPayload.ok ? "Reference upload could not be verified." : completionPayload.error.message,
+        );
+      }
+
+      setReference(completionPayload.source);
+    } catch (uploadError) {
+      setReference(null);
+      setError(uploadError instanceof Error ? uploadError.message : "Reference upload failed.");
+    } finally {
+      setReferenceUploading(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,7 +182,14 @@ export function CreateWorkspace({ generationAvailable }: { generationAvailable: 
             aspectRatio,
             ...(outputKind === "video" ? { durationSeconds } : {}),
           },
-          inputs: [],
+          inputs: reference
+            ? [
+                {
+                  source: { type: "temporary-source", id: reference.id },
+                  role: outputKind === "image" ? "primary-image" : "first-frame",
+                },
+              ]
+            : [],
         }),
       });
 
@@ -71,7 +201,7 @@ export function CreateWorkspace({ generationAvailable }: { generationAvailable: 
 
       setJob(payload.job);
     } catch {
-      setError("Generation could not be submitted. Your prompt and settings are unchanged.");
+      setError("Generation could not be submitted. Your prompt, reference, and settings are unchanged.");
     } finally {
       setSubmitting(false);
     }
@@ -91,20 +221,57 @@ export function CreateWorkspace({ generationAvailable }: { generationAvailable: 
             id="create-prompt"
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
-            placeholder={outputKind === "image" ? "Describe what you want to create…" : "Describe the video you want to create…"}
+            placeholder={hasReference ? "Describe the change or result you want…" : outputKind === "image" ? "Describe what you want to create…" : "Describe the video you want to create…"}
             className="min-h-32 w-full resize-none bg-transparent px-1 py-1 text-[16px] leading-6 text-text outline-none placeholder:text-text-muted sm:min-h-28"
           />
 
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
+          {referencePreviewUrl ? (
+            <div className="mb-3 flex items-center gap-3 rounded-lg border border-border bg-surface-2 p-2">
+              <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-surface-3">
+                <img src={referencePreviewUrl} alt="Reference preview" className="size-full object-cover" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-text">
+                  {referenceUploading ? "Uploading reference…" : outputKind === "image" ? "Editing this image" : "Animating this image"}
+                </p>
+                <p className="truncate text-xs text-text-muted">
+                  {reference?.filename ?? "Reference image"}
+                </p>
+              </div>
               <button
                 type="button"
-                disabled
-                aria-label="Add reference (coming next)"
-                title="Reference upload integration is the next Create slice."
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-muted opacity-70"
+                onClick={clearReference}
+                disabled={referenceUploading}
+                aria-label="Remove reference"
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text disabled:opacity-50"
               >
-                <Plus aria-hidden="true" size={18} strokeWidth={1.8} />
+                <X aria-hidden="true" size={18} />
+              </button>
+            </div>
+          ) : null}
+
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                aria-label="Reference image file"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadReference(file);
+                }}
+              />
+              <button
+                type="button"
+                disabled={!referenceUploadAvailable || referenceUploading}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label={hasReference ? "Replace reference" : "Add reference"}
+                title={referenceUploadAvailable ? "Add a reference image" : "Reference upload storage is not configured in this environment."}
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-muted transition-colors hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {referenceUploading ? <LoaderCircle aria-hidden="true" className="animate-spin" size={17} /> : hasReference ? <ImageIcon aria-hidden="true" size={18} /> : <Plus aria-hidden="true" size={18} strokeWidth={1.8} />}
               </button>
 
               <div className="flex shrink-0 rounded-lg bg-surface-2 p-1" aria-label="Output type">
@@ -173,10 +340,11 @@ export function CreateWorkspace({ generationAvailable }: { generationAvailable: 
           </div>
         </form>
 
-        {!generationAvailable ? (
-          <p className="mt-3 text-sm text-text-muted" role="status">
-            Generation backend is not connected in this environment yet. Your Create UI and request contract are ready for the backend adapter.
-          </p>
+        {!generationAvailable || !referenceUploadAvailable ? (
+          <div className="mt-3 space-y-1 text-sm text-text-muted" role="status">
+            {!generationAvailable ? <p>Generation is not connected in this environment yet.</p> : null}
+            {!referenceUploadAvailable ? <p>Reference uploads are not connected in this environment yet.</p> : null}
+          </div>
         ) : null}
 
         {error ? (
