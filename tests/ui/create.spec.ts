@@ -12,8 +12,10 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Image" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: "Video" })).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByRole("button", { name: /Aspect ratio 1:1/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add reference" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Generate" })).toBeDisabled();
-  await expect(page.getByText(/Generation backend is not connected/)).toBeVisible();
+  await expect(page.getByText("Generation is not connected in this environment yet.")).toBeVisible();
+  await expect(page.getByText("Reference uploads are not connected in this environment yet.")).toBeVisible();
 
   await page.getByRole("textbox", { name: "Prompt" }).fill("A quiet futuristic coastal city at blue hour");
   await expect(page.getByRole("button", { name: "Generate" })).toBeDisabled();
@@ -65,4 +67,23 @@ test("generation API validates requests and reports backend availability truthfu
   const body = await invalid.json();
   expect(body.ok).toBe(false);
   expect(body.error.code).toBe("invalid_request");
+});
+
+test("reference upload API validates tickets and reports storage availability truthfully", async ({ request }) => {
+  const availability = await request.get("/api/assets/reference/upload-tickets");
+  expect(availability.ok()).toBeTruthy();
+  expect(await availability.json()).toEqual({ available: false });
+
+  const invalid = await request.post("/api/assets/reference/upload-tickets", {
+    data: {
+      filename: "reference.gif",
+      mimeType: "image/gif",
+      sizeBytes: 100,
+    },
+  });
+
+  expect(invalid.status()).toBe(400);
+  const body = await invalid.json();
+  expect(body.ok).toBe(false);
+  expect(body.error.code).toBe("invalid_upload");
 });
