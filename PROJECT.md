@@ -5,7 +5,7 @@ RenderLab is an AI image/video creation platform using cloud-hosted ComfyUI work
 ## Product Direction
 RenderLab is a fresh application, not a direct migration or visual clone of the previous Studio implementation in `saga`.
 
-The previous Studio application is a **reference implementation**. Use it to understand proven behavior, backend integration, generation workflows, persistence, job lifecycle, media actions, and lessons learned. Do not treat its visual design, navigation, component hierarchy, routing, or frontend architecture as the RenderLab specification.
+The previous Studio application is a **reference implementation**. Use it to understand proven behavior, backend integration, generation workflows, persistence, job lifecycle, media actions, and lessons learned. Do not treat its visual design, navigation, component hierarchy, routing, frontend architecture, deployed runtime, or legacy application tables as the RenderLab specification.
 
 **Saga is a reference implementation, not the RenderLab specification.**
 
@@ -35,15 +35,21 @@ Exact package versions are recorded from the repository after scaffolding rather
 - Vercel
 - Cloudflare R2
 - Supabase
-- RenderLab deliberately reuses the existing Saga/Studio Supabase and R2 resources while keeping RenderLab schema, storage prefixes, APIs, and product contracts independently named.
+- existing cloud-hosted ComfyUI/Modal worker fleet
+
+RenderLab deliberately reuses the existing Saga/Studio Supabase, R2, and worker resources while keeping RenderLab schema, storage prefixes, orchestration, APIs, and product contracts independently named and owned.
 
 Shared-infrastructure authority: `docs/architecture/INFRASTRUCTURE.md`.
 
 ### Generation
-- Cloud-hosted ComfyUI
-- Multiple workflows
-- Multiple image/video models
-- Capability-driven workflow contracts designed to grow beyond the initial production workflows
+- RenderLab server-owned generation orchestration
+- cloud-hosted ComfyUI worker ecosystems
+- persistent RenderLab `generation_jobs`
+- durable RenderLab `media_assets`
+- primary/standby worker submission routing
+- capability-driven workflow contracts designed to grow beyond the initial production workflows
+
+The deployed Studio/Vercel runtime is not intended to be a RenderLab production dependency. A transitional compatibility adapter exists only as a fallback/debugging aid while native RenderLab orchestration is being verified.
 
 ### Visual Design
 - **Penpot** is the preferred richer visual design workspace when available.
@@ -82,27 +88,34 @@ Verified current state:
 - application shell is implemented and `APPROVED`;
 - Create is implemented and `MIGRATING`;
 - Image/Video prompt composition and essential aspect/duration state are responsive and screenshot-verified;
-- typed RenderLab generation/job contracts and `POST /api/generation/jobs` exist;
-- a server generation-adapter boundary exists and does not expose worker endpoints to the browser;
-- reference source upload/binding contracts exist using signed direct R2 PUTs, server HEAD verification and opaque source IDs;
+- reference source upload/binding is implemented and real shared-resource integration is verified end-to-end;
+- reference integration is self-cleaning and leaves no test source row/object behind;
 - Create supports reference preview/removal/replacement and resolves Image + reference → Edit and Video + reference → Animate;
-- RenderLab reuses Supabase project `AI Studio` (`rashyleshocuvpgcooxy`) and the existing Saga/Studio R2 resource by explicit product decision;
-- `supabase/migrations/0001_generation_sources.sql` has been applied to the shared Supabase project as migration `renderlab_generation_sources`;
-- `public.generation_sources` exists with RLS enabled; legacy `studio_*` tables were not modified by that migration;
-- latest production build, Playwright/API checks, and desktop/mobile rendered review pass at CI run `33018346650` / commit `8332597f65aa85725f7395e10407dce4682ac025`;
-- CI deliberately runs without production infrastructure credentials, so unavailable controls are truthful rather than simulated.
+- RenderLab reuses Supabase project `AI Studio` (`rashyleshocuvpgcooxy`), the shared R2 resource, and the existing worker fleet by explicit product decision;
+- `generation_sources`, `generation_jobs`, and `media_assets` migrations are applied to the shared Supabase project with RLS enabled;
+- legacy `studio_*` tables remain separate and are not the RenderLab application data model;
+- `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]` are RenderLab product boundaries;
+- Create now submits and polls real RenderLab job state rather than stopping at job acceptance;
+- RenderLab-native worker submission, polling, R2 persistence, media records, and private media-delivery APIs are implemented;
+- production build/UI validation remains GitHub-based and passes after the current native-generation TypeScript normalization changes.
+
+Native generation integration status:
+- real reference upload: **verified**;
+- real native text-to-image worker submission: **in active verification**;
+- a live integration job has reached the FLUX worker fleet and demonstrated primary/standby routing plus real `loading` → `generating` worker states;
+- do not mark native image persistence fully verified until that integration reaches `succeeded`, validates its RenderLab `media_assets` record/R2 object, and self-cleans.
 
 Current focus:
-1. Configure the shared Supabase/R2 environment values in the appropriate secret store.
-2. Verify a real signed reference upload against the shared resources.
-3. Establish/connect the real RenderLab generation backend adapter endpoint.
-4. Verify text-to-image/text-to-video and reference-driven Edit/Animate submission end-to-end.
-5. Implement job-state synchronization after submission.
-6. Implement persisted result presentation and capability-derived continuation actions.
-7. Introduce Advanced controls only from verified capability definitions.
+1. Complete native text-to-image generation/persistence verification.
+2. Surface the persisted `media_assets` result in Create.
+3. Verify reference-driven Edit natively.
+4. Verify text-to-video and Animate natively.
+5. Reintroduce proven safe poll-time failover semantics without risking duplicate accepted generations.
+6. Introduce Advanced controls only from verified capability definitions.
+7. Remove the Studio compatibility fallback after native coverage is sufficient.
 8. Continue validation through GitHub production build + Playwright desktop/mobile screenshots.
 
-See `docs/ui/UI_MIGRATION.md` for current phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, `docs/architecture/FRONTEND_ARCHITECTURE.md` for frontend architecture, and `docs/architecture/INFRASTRUCTURE.md` for shared-resource and secret contracts.
+See `docs/ui/UI_MIGRATION.md` for phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, `docs/architecture/FRONTEND_ARCHITECTURE.md` for frontend architecture, and `docs/architecture/INFRASTRUCTURE.md` for shared-resource and generation ownership rules.
 
 ## Source of Truth
 The `renderlab` repository is the primary source of truth. ChatGPT Project context is secondary continuity context. Current chat sessions are temporary working context.
