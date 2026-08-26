@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4520" height="1120" viewBox="0 0 4520 1120">
+  <defs><style><![CDATA[
+    .t{font-family:Inter,Arial,sans-serif;fill:#F4F5F7}.m{font-family:Inter,Arial,sans-serif;fill:#9CA3AF}.b{font-weight:600}.title{font-size:26px;font-weight:600}.body{font-size:15px}.chip{font-size:13px}.cap{font-size:12px}
+  ]]></style></defs>
+  <!-- shared background helper represented per board -->
+
+  <!-- 1 Disabled / incomplete -->
+  <g id="disabled" transform="translate(20 20)">
+    <rect width="1080" height="1024" rx="18" fill="#090A0C"/>
+    <text class="t title" x="140" y="210">Create an image</text><text class="m body" x="140" y="242">Describe the result you want.</text>
+    <rect x="140" y="430" width="800" height="176" rx="18" fill="#111318" stroke="#2B303A"/>
+    <text class="m body" x="160" y="466">Describe what you want to create...</text>
+    <rect x="156" y="548" width="40" height="40" rx="10" fill="#171A20"/><text class="m title" x="168" y="578">+</text>
+    <rect x="204" y="548" width="168" height="40" rx="10" fill="#171A20"/><rect x="210" y="553" width="78" height="30" rx="8" fill="#20242C"/><text class="t chip b" x="232" y="573">Image</text><text class="m chip" x="312" y="573">Video</text>
+    <rect x="380" y="548" width="68" height="40" rx="10" fill="#171A20"/><text class="m chip" x="401" y="573">1:1</text>
+    <rect x="456" y="548" width="40" height="40" rx="10" fill="#171A20"/><text class="m body b" x="468" y="572">•••</text>
+    <rect x="792" y="548" width="132" height="40" rx="10" fill="#20242C"/><text class="m chip b" x="830" y="573">Generate</text>
+    <text class="m cap" x="140" y="636">Generate is unavailable until required task input is present.</text>
+  </g>
+
+  <!-- 2 Generating -->
+  <g id="generating" transform="translate(1140 20)">
+    <rect width="1080" height="1024" rx="18" fill="#090A0C"/>
+    <text class="t title" x="140" y="210">Create an image</text><text class="m body" x="140" y="242">Your request is running.</text>
+    <rect x="140" y="430" width="800" height="210" rx="18" fill="#111318" stroke="#2B303A"/>
+    <text class="t body" x="160" y="466">A quiet cinematic portrait lit by warm window light</text>
+    <rect x="156" y="548" width="40" height="40" rx="10" fill="#171A20"/><text class="m title" x="168" y="578">+</text>
+    <rect x="204" y="548" width="168" height="40" rx="10" fill="#171A20"/><rect x="210" y="553" width="78" height="30" rx="8" fill="#20242C"/><text class="t chip b" x="232" y="573">Image</text><text class="m chip" x="312" y="573">Video</text>
+    <rect x="380" y="548" width="68" height="40" rx="10" fill="#171A20"/><text class="m chip" x="401" y="573">1:1</text>
+    <rect x="456" y="548" width="40" height="40" rx="10" fill="#171A20"/><text class="m body b" x="468" y="572">•••</text>
+    <rect x="776" y="548" width="148" height="40" rx="10" fill="#5E54BC"/><text class="t chip b" x="811" y="573">Generating…</text>
+    <circle cx="164" cy="614" r="6" fill="#7C6CF2"/><text class="m cap" x="180" y="618">Waking generation worker…</text>
+  </g>
+
+  <!-- 3 Error -->
+  <g id="error" transform="translate(2260 20)">
+    <rect width="1080" height="1024" rx="18" fill="#090A0C"/>
+    <text class="t title" x="140" y="210">Create an image</text><text class="m body" x="140" y="242">Your request needs attention.</text>
+    <rect x="140" y="430" width="800" height="176" rx="18" fill="#111318" stroke="#2B303A"/>
+    <text class="t body" x="160" y="466">A quiet cinematic portrait lit by warm window light</text>
+    <rect x="156" y="548" width="40" height="40" rx="10" fill="#171A20"/><text class="m title" x="168" y="578">+</text><rect x="204" y="548" width="168" height="40" rx="10" fill="#171A20"/><rect x="210" y="553" width="78" height="30" rx="8" fill="#20242C"/><text class="t chip b" x="232" y="573">Image</text><text class="m chip" x="312" y="573">Video</text><rect x="380" y="548" width="68" height="40" rx="10" fill="#171A20"/><text class="m chip" x="401" y="573">1:1</text><rect x="456" y="548" width="40" height="40" rx="10" fill="#171A20"/><text class="m body b" x="468" y="572">•••</text><rect x="792" y="548" width="132" height="40" rx="10" fill="#7C6CF2"/><text class="t chip b" x="830" y="573">Generate</text>
+    <rect x="140" y="622" width="800" height="72" rx="12" fill="#1D1517" stroke="#E06464"/><text class="t chip b" x="160" y="650">Generation failed</text><text class="m cap" x="160" y="674">The request could not start. Try again; your prompt and settings are preserved.</text>
+  </g>
+
+  <!-- 4 Persisted result -->
+  <g id="result" transform="translate(3380 20)">
+    <rect width="1080" height="1024" rx="18" fill="#090A0C"/>
+    <text class="t title" x="140" y="150">Your result</text><text class="m body" x="140" y="182">Saved to Library and ready to continue.</text>
+    <rect x="140" y="220" width="520" height="520" rx="18" fill="#171A20" stroke="#2B303A"/><rect x="164" y="244" width="472" height="400" rx="14" fill="#20242C"/><text class="m body" x="330" y="448">Persisted image preview</text>
+    <text class="t body b" x="164" y="682">A quiet cinematic portrait lit by warm window light</text><text class="m cap" x="164" y="708">1:1 · Image · Saved</text>
+    <rect x="690" y="220" width="250" height="52" rx="12" fill="#7C6CF2"/><text class="t chip b" x="785" y="251">Edit</text>
+    <rect x="690" y="286" width="250" height="52" rx="12" fill="#171A20"/><text class="t chip b" x="773" y="317">Animate</text>
+    <rect x="690" y="352" width="250" height="52" rx="12" fill="#171A20"/><text class="t chip b" x="756" y="383">Reuse settings</text>
+    <rect x="690" y="418" width="250" height="52" rx="12" fill="#171A20"/><text class="t chip b" x="763" y="449">View in Library</text>
+    <text class="m cap" x="690" y="500">Continuation actions derive from asset/workflow compatibility.</text>
+  </g>
+</svg>
