@@ -42,6 +42,14 @@ Exact package versions are recorded from the repository after scaffolding rather
 - Multiple image/video models
 - Capability-driven workflow contracts designed to grow beyond the initial production workflows
 
+### Visual Design
+- **Penpot** is the default ongoing visual design workspace.
+- The repository remains authoritative for accepted UI/product decisions.
+- The previous Figma `RenderLab Design System` file is historical reference only.
+- GitHub Actions + Playwright screenshots provide remote implementation validation without relying on Vercel previews.
+
+See `docs/ui/DESIGN_WORKFLOW.md` for the authoritative design workflow.
+
 ## Product Architecture Direction
 The internal system should model generation around concepts such as:
 
@@ -62,15 +70,20 @@ The initial approved information architecture is:
 Image, Video, Edit, Animate, Models, and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-Phase 1 — Design & Frontend Foundation:
-1. Define design tokens and visual foundations.
-2. Define core UI primitives and approved component sources.
-3. Establish accessibility and responsive expectations.
-4. Establish naming/folder conventions.
-5. Define the application shell around the approved Create + Library information architecture.
-6. Scaffold implementation only after these foundation decisions are recorded.
+**Phase 3 — Creation Experience design.**
 
-See `docs/ui/UI_MIGRATION.md` for the current foundation plan and `docs/architecture/FRONTEND_ARCHITECTURE.md` for the approved frontend architecture.
+Current focus:
+1. Continue the Create v0.2 visual design in Penpot rather than depending on Figma.
+2. Verify narrow/mobile composition before design approval.
+3. Define Generate disabled/error states.
+4. Define real job/progress behavior inside Create.
+5. Define result and continuation actions.
+6. Implement only after the coherent Create design candidate is reviewed and documented.
+7. Validate implementation through GitHub production build + Playwright desktop/mobile screenshots.
+
+The application shell is already implemented and `APPROVED`. Create feature implementation has not begun.
+
+See `docs/ui/UI_MIGRATION.md` for current phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, and `docs/architecture/FRONTEND_ARCHITECTURE.md` for the approved frontend architecture.
 
 ## Source of Truth
 The `renderlab` repository is the primary source of truth. ChatGPT Project context is secondary continuity context. Current chat sessions are temporary working context.
