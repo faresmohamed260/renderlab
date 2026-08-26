@@ -75,22 +75,6 @@ Before copying/installing an external component:
 - Preserve the component's proven interaction mechanic rather than rewriting it without reason.
 - Record the adopted RenderLab component below once it exists in the repository.
 
-## Component Template
-
-### ComponentName
-**Status:** EXPERIMENTAL  
-**Source:** `src/...`  
-**Origin:** RenderLab | shadcn/Radix | Motion Primitives | Aceternity | Magic UI | React Bits | other reviewed source  
-**Purpose:**  
-**Variants:**  
-**Used by:**  
-**Dependencies:**  
-**Reuse rules:**  
-**Do not:**  
-**Notes:**
-
----
-
 ## Components
 
 ### AppShell
@@ -103,17 +87,29 @@ Before copying/installing an external component:
 **Dependencies:** Next.js `Link`/`usePathname`, Lucide React  
 **Reuse rules:** This is the authoritative application shell/navigation implementation. Extend it rather than creating page-specific shells.  
 **Do not:** Add Create composer, Library cards, workflow controls, or feature-owned layout into the persistent shell.  
-**Notes:** Based on reviewed Figma shell v0.2. Verified by successful GitHub Actions production build + Playwright desktop/mobile checks on 2026-08-27, and the generated 1440×1024 and 390×844 screenshots were visually inspected. Approved, not locked; later shell changes still require rendered review.
+**Notes:** Verified by successful GitHub Actions production build + Playwright desktop/mobile checks and rendered screenshot review. Approved, not locked; later shell changes still require rendered review.
+
+### CreateWorkspace
+**Status:** EXPERIMENTAL  
+**Source:** `src/features/create/create-workspace.tsx`  
+**Origin:** RenderLab product composition based on the versioned Create v0.2 open design handoff  
+**Purpose:** Own the initial task-oriented Create composer: prompt draft, Image/Video output choice, essential aspect/duration values, truthful backend availability, typed generation submission, and local job/error feedback.  
+**Variants:** Image and Video states; responsive desktop/mobile layout. Reference-driven Edit/Animate states are not implemented yet.  
+**Used by:** `/`  
+**Dependencies:** React client state, Lucide React, RenderLab generation capability/API contracts  
+**Reuse rules:** Keep this feature-owned until stable subcomponents have a real reuse case. Use the typed generation contract rather than direct provider/worker calls.  
+**Do not:** Treat the current slice as the finished Create product, expose backend workflow IDs, fabricate progress, or clear prompt/settings on recoverable errors.  
+**Notes:** Production build and Playwright Create/shell checks passed on CI run `33017608788`; generated 1440×1024 Image/Video and 390×844 mobile screenshots were visually inspected. Generate remains disabled in CI because no `RENDERLAB_GENERATION_BACKEND_URL` is configured. Reference upload and Advanced controls are intentionally disabled until backed by real contracts.
 
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  
 **Source:** `src/components/shell/route-placeholder.tsx`  
 **Origin:** RenderLab  
-**Purpose:** Temporary route-content placeholder used only while validating the persistent shell boundary.  
+**Purpose:** Temporary route-content placeholder used while validating/incrementally replacing feature surfaces.  
 **Variants:** Text content only.  
-**Used by:** Create, Library, Activity, Settings, Media Viewer placeholder routes  
+**Used by:** Library, Activity, Settings, Media Viewer placeholder routes. Create no longer uses it.  
 **Dependencies:** none  
-**Reuse rules:** Temporary Phase 2 validation helper.  
+**Reuse rules:** Temporary validation helper only.  
 **Do not:** Promote this placeholder layout into final feature UI or treat it as a generic empty-state component.  
 **Notes:** Deprecate/remove as real feature surfaces replace placeholders.
 
