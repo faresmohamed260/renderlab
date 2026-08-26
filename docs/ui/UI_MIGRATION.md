@@ -45,11 +45,14 @@ Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.
 - [x] Establish accessibility expectations.
 - [x] Establish naming/folder conventions.
 - [x] Define the initial application-shell direction from the approved information architecture.
-- [x] Visually review and iterate the shell exploration in Figma.
+- [x] Visually review and iterate the shell exploration in the historical Figma artifact.
 - [x] Establish the component catalog/index and begin populating them from verified implementation.
+- [x] Replace Figma as the ongoing design dependency with Penpot and document the visual design workflow.
 
 Visual/design-system authority: `docs/ui/UI_SYSTEM.md`.  
-Working visual exploration: Figma `RenderLab Design System`, file key `PHqgsDctOsEXX4EFR0SS7i`.  
+Visual workflow authority: `docs/ui/DESIGN_WORKFLOW.md`.  
+Default ongoing design workspace: **Penpot**.  
+Historical design reference only: Figma `RenderLab Design System`, file key `PHqgsDctOsEXX4EFR0SS7i`.  
 Approved source/component policy: `docs/ui/COMPONENT_CATALOG.md`.
 
 ## Phase 2 — Application Shell
@@ -75,7 +78,7 @@ The component was subsequently filename-normalized to match the documented kebab
 
 ## Phase 3 — Creation Experience
 The creation UI must be task-oriented and progressively disclose complexity.
-- [ ] Design the default Create experience in Figma before feature implementation. v0.2 desktop states are visually reviewed; final mobile v0.2 review remains blocked by the Figma Starter MCP call limit.
+- [ ] Complete the default Create design in Penpot before feature implementation. Historical Figma v0.2 desktop states were visually reviewed; the current responsive design must be carried forward and verified in Penpot rather than waiting on Figma quota access.
 - [x] Define prompt/composer direction: one focused prompt surface with compact task-relevant controls and Generate action.
 - [x] Define operation selection/resolution behavior: explicit Image/Video output choice; compatible references resolve Edit/Animate context.
 - [x] Define reference/input media interaction direction: add reference from the composer; attached reference communicates resolved context and can be removed/replaced.
@@ -89,7 +92,9 @@ The creation UI must be task-oriented and progressively disclose complexity.
 - [ ] Implement the smallest approved Create slice after design review.
 - [ ] Build and visually verify desktop/mobile implementation.
 
-Figma Create exploration currently contains v0.1 and refined v0.2 states for default Image, reference-driven Edit, Video, and mobile. Desktop v0.2 states were visually inspected. The v0.1 mobile review exposed toolbar clipping/competition between controls and Generate; v0.2 was revised to a two-row mobile composer with Generate separated from compact settings. The v0.2 mobile frame exists in Figma, but its final screenshot could not be retrieved because the Figma Starter MCP tool-call limit was reached. Do not mark the Create design approved or begin implementation until that responsive state is visually verified.
+Historical Figma Create exploration contains v0.1 and refined v0.2 states for default Image, reference-driven Edit, Video, and mobile. Desktop v0.2 states were visually inspected. The v0.1 mobile review exposed toolbar clipping/competition between controls and Generate; v0.2 was revised to a two-row mobile composer with Generate separated from compact settings. The historical v0.2 mobile frame was not retrieved before Figma's Starter MCP limit was reached. That old quota is no longer a project blocker because Figma is not the ongoing design tool.
+
+The current design task is to reproduce/carry forward the accepted v0.2 direction in Penpot and perform the responsive review there. Do not mark Create `APPROVED` until the Penpot design candidate and subsequent real implementation have both passed the required responsive checks.
 
 Durable Create decisions are recorded in `docs/ui/UI_DECISIONS.md` as UI-015 through UI-017.
 
@@ -116,7 +121,7 @@ Exact screens are not predetermined.
 4. Inspect Saga only when it provides useful behavioral/backend reference.
 5. Inspect the relevant backend/workflow contract.
 6. Decide which complexity belongs in the default experience and which should be contextual or advanced.
-7. Use Figma or another appropriate design tool for meaningful visual/interaction exploration when it reduces implementation churn.
+7. Use Penpot for meaningful visual/interaction exploration when it reduces implementation churn; follow `DESIGN_WORKFLOW.md`.
 8. Implement the smallest coherent experience that satisfies the approved product design.
 9. Build and visually verify through the remote GitHub validation path.
 10. Check responsive and accessibility behavior.
@@ -124,9 +129,9 @@ Exact screens are not predetermined.
 
 ## Current Work
 **Current phase:** Phase 3 — Creation Experience design  
-**Current status:** Phase 2 shell is approved. Create v0.2 establishes the current desktop design direction and the durable product rules for output selection, reference-driven context, concrete essential values, and progressive disclosure. Desktop v0.2 states are visually reviewed. The final v0.2 mobile screenshot has not been reviewed because the Figma Starter MCP call limit is currently exhausted. No Create feature implementation has begun.  
-**Known blockers:** Figma Starter MCP tool-call limit prevents final responsive visual verification of the existing Create v0.2 mobile frame. This is a design-approval blocker, not an application/runtime blocker.  
-**Next recommended task:** When Figma MCP access is available, retrieve and inspect Create v0.2 mobile (`8:125`). If it passes, record the Create design candidate as reviewed and continue with Generate states, job/progress, and result/continuation design before implementing the first approved Create slice. Do not bypass the responsive visual checkpoint by treating the unreviewed mobile frame as approved.
+**Current status:** Phase 2 shell is approved. Create v0.2 established the current desktop design direction and durable product rules for output selection, reference-driven context, concrete essential values, and progressive disclosure. Penpot is now the default ongoing design workspace; Figma is historical reference only. No Create feature implementation has begun.  
+**Known blockers:** No application/runtime blocker. A Penpot design workspace/artifact for the current Create candidate still needs to be established before final responsive design approval. Direct Penpot canvas automation is not currently available in this ChatGPT session, so the project must not pretend that a Penpot review has occurred until it actually has.  
+**Next recommended task:** Carry the documented Create v0.2 direction into Penpot, verify the mobile two-row composer there, then define Generate states, job/progress, and result/continuation behavior before implementing the first approved Create slice. Continue to use GitHub Actions + Playwright screenshots for implementation verification.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
