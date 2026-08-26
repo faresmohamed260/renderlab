@@ -93,11 +93,24 @@ R2 object keys are server implementation details and are not accepted as product
 ## CI and Secrets
 Default GitHub UI CI intentionally works without production infrastructure secrets and verifies truthful unavailable states.
 
-A separate configured end-to-end path may use GitHub repository/environment secrets when real integration validation is required. Do not make ordinary UI validation dependent on production credentials.
+A separate manual integration workflow now exists at `.github/workflows/reference-upload-integration.yml`. It is triggered only with `workflow_dispatch` and does not run on normal pushes/PRs.
+
+For this real reference-upload check, configure these GitHub repository/environment secrets using the same existing values already used by Saga/Studio:
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
+
+`SUPABASE_URL` is fixed in the integration workflow to the approved shared project URL and therefore does not need to be stored as a GitHub secret for this check.
+
+The verifier `scripts/verify-reference-upload.mjs` performs a real ticket → signed R2 PUT → completion/HEAD verification cycle against the configured application. It intentionally creates a tiny real reference source so the storage/data path is tested rather than mocked.
+
+Do not make ordinary UI validation dependent on production credentials.
 
 ## Next Infrastructure Work
-1. Add the approved shared Supabase/R2 environment values to the appropriate deployment/integration secret store.
-2. Verify a real signed reference upload against the shared R2 bucket and `generation_sources` table.
+1. Add the five approved shared-resource GitHub secrets listed above.
+2. Run `Reference Upload Integration` manually and verify the real signed upload path.
 3. Define/connect the generation adapter endpoint behind `RENDERLAB_GENERATION_BACKEND_URL`.
 4. Verify text-to-image, text-to-video, Edit, and Animate submission through the RenderLab contract.
 5. Add job synchronization and persisted-result contracts without exposing worker/provider details to browser feature code.
