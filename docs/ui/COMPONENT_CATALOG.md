@@ -93,13 +93,13 @@ Before copying/installing an external component:
 **Status:** EXPERIMENTAL  
 **Source:** `src/features/create/create-workspace.tsx`  
 **Origin:** RenderLab product composition based on the versioned Create v0.2 open design handoff  
-**Purpose:** Own the initial task-oriented Create composer: prompt draft, Image/Video output choice, essential aspect/duration values, truthful backend availability, typed generation submission, and local job/error feedback.  
-**Variants:** Image and Video states; responsive desktop/mobile layout. Reference-driven Edit/Animate states are not implemented yet.  
+**Purpose:** Own the task-oriented Create composer: prompt draft, Image/Video output choice, essential aspect/duration values, reference-source upload/context, truthful backend availability, typed generation submission, and local job/error feedback.  
+**Variants:** Create Image, Create Video, reference-driven Edit Image, reference-driven Animate Image; responsive desktop/mobile layout.  
 **Used by:** `/`  
-**Dependencies:** React client state, Lucide React, RenderLab generation capability/API contracts  
-**Reuse rules:** Keep this feature-owned until stable subcomponents have a real reuse case. Use the typed generation contract rather than direct provider/worker calls.  
-**Do not:** Treat the current slice as the finished Create product, expose backend workflow IDs, fabricate progress, or clear prompt/settings on recoverable errors.  
-**Notes:** Production build and Playwright Create/shell checks passed on CI run `33017608788`; generated 1440×1024 Image/Video and 390×844 mobile screenshots were visually inspected. Generate remains disabled in CI because no `RENDERLAB_GENERATION_BACKEND_URL` is configured. Reference upload and Advanced controls are intentionally disabled until backed by real contracts.
+**Dependencies:** React client state, Lucide React, RenderLab generation capability/API contracts, RenderLab reference-upload contract  
+**Reuse rules:** Keep this feature-owned until stable subcomponents have a real reuse case. Use opaque product source IDs and the typed generation contract rather than storage keys or direct provider/worker calls.  
+**Do not:** Treat the current slice as the finished Create product, expose backend workflow IDs/R2 keys, fabricate progress, or clear prompt/reference/settings on recoverable errors.  
+**Notes:** Production build and Playwright Create/shell/API checks pass at CI run `33018346650` / commit `8332597f65aa85725f7395e10407dce4682ac025`; generated desktop/mobile screenshots were visually inspected. In credential-free CI, Generate and Add Reference are intentionally disabled because the external generation backend and Supabase/R2 upload targets are not configured. The reference code path, server validation, signed-upload service boundary and operation-context logic compile/test, but real configured upload/Edit/Animate still require infrastructure E2E verification. Advanced controls remain intentionally disabled until backed by capability definitions.
 
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  
