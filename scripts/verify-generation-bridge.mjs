@@ -31,34 +31,39 @@ async function supabase(path, init = {}) {
   return fetch(`${supabaseUrl}/rest/v1/${path}`, { ...init, headers });
 }
 
-async function loadStudioRow(jobId) {
-  const response = await supabase(
-    `studio_generations?id=eq.${encodeURIComponent(jobId)}&select=id,status,r2_key,thumbnail_r2_key,metadata,media_url&limit=1`,
-  );
-  if (!response.ok) throw new Error(`Could not read Studio integration row (${response.status}).`);
-  return (await response.json())[0] ?? null;
+async function rows(path) {
+  const response = await supabase(path);
+  if (!response.ok) throw new Error(`Supabase integration query failed (${response.status}).`);
+  return response.json();
+}
+
+async function loadJob(jobId) {
+  return (await rows(`generation_jobs?id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`))[0] ?? null;
+}
+
+async function loadAssets(jobId) {
+  return rows(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}&select=id,storage_key,thumbnail_storage_key,mime_type`);
 }
 
 async function cleanup(jobId) {
   if (!jobId) return;
-  const row = await loadStudioRow(jobId).catch(() => null);
+  const assets = await loadAssets(jobId).catch(() => []);
   const keys = new Set();
-  if (row?.r2_key) keys.add(row.r2_key);
-  if (row?.thumbnail_r2_key) keys.add(row.thumbnail_r2_key);
-  const metadata = row?.metadata && typeof row.metadata === "object" ? row.metadata : {};
-  for (const key of Array.isArray(metadata.sourceR2Keys) ? metadata.sourceR2Keys : []) if (key) keys.add(key);
-  if (metadata.sourceR2Key) keys.add(metadata.sourceR2Key);
-
+  for (const asset of assets) {
+    if (asset.storage_key) keys.add(asset.storage_key);
+    if (asset.thumbnail_storage_key) keys.add(asset.thumbnail_storage_key);
+  }
   for (const key of keys) {
     await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: key })).catch(() => {});
   }
-  await supabase(`studio_generations?id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" }).catch(() => {});
-  console.log(`Cleaned generation integration fixture job=${jobId} objects=${keys.size}`);
+  await supabase(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" }).catch(() => {});
+  await supabase(`generation_jobs?id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" }).catch(() => {});
+  console.log(`Cleaned native generation integration fixture job=${jobId} objects=${keys.size}`);
 }
 
 let jobId = "";
 try {
-  console.log(`Submitting RenderLab integration generation through ${baseUrl}`);
+  console.log(`Submitting RenderLab native integration generation through ${baseUrl}`);
   const submission = await jsonRequest(`${baseUrl}/api/generation/jobs`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -91,14 +96,18 @@ try {
     }
     if (job.status === "failed") throw new Error(`Generation failed: ${job.error?.message || "unknown error"}`);
     if (job.status === "succeeded") {
-      if (!Array.isArray(job.outputAssetIds) || !job.outputAssetIds.includes(jobId)) {
-        throw new Error(`Succeeded job did not expose its persisted output asset: ${JSON.stringify(job)}`);
+      if (!Array.isArray(job.outputAssetIds) || job.outputAssetIds.length < 1) {
+        throw new Error(`Succeeded job did not expose a persisted output asset: ${JSON.stringify(job)}`);
       }
-      const row = await loadStudioRow(jobId);
-      if (!row || row.status !== "completed" || !row.media_url || !row.r2_key) {
-        throw new Error(`Persisted Studio row is incomplete: ${JSON.stringify(row)}`);
+      const row = await loadJob(jobId);
+      const assets = await loadAssets(jobId);
+      if (!row || row.status !== "succeeded" || assets.length !== 1 || !assets[0].storage_key || !assets[0].mime_type.startsWith("image/")) {
+        throw new Error(`Native persisted state is incomplete: ${JSON.stringify({ row, assets })}`);
       }
-      console.log(`Generation bridge verified successfully. job=${jobId}`);
+      if (!job.outputAssetIds.includes(assets[0].id)) {
+        throw new Error(`Job output IDs do not match the persisted media asset: ${JSON.stringify({ job, assets })}`);
+      }
+      console.log(`Native generation verified successfully. job=${jobId} asset=${assets[0].id}`);
       break;
     }
     await new Promise((resolve) => setTimeout(resolve, 5000));
