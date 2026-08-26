@@ -1,5 +1,6 @@
 import type { CreativeOperation, GenerationJob } from "@/lib/capabilities/generation";
 import { supabaseRest } from "@/server/data/supabase-rest";
+import { isNativeGenerationConfigured, pollNativeGeneration } from "@/server/generation/native-generation";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
 const studioCompatUrl = process.env.RENDERLAB_STUDIO_COMPAT_URL?.trim();
@@ -56,18 +57,13 @@ async function pollStudio(jobId: string): Promise<GenerationJob | null> {
     { method: "GET", headers: { accept: "application/json" }, cache: "no-store" },
   );
   const payload = await response.json().catch(() => null) as { status?: string; generationId?: string; error?: string } | null;
-
   const after = await getStudioRow(jobId);
   if (!after) return null;
 
   if (response.status === 202) return jobFromStudioRow(after);
-  if (response.ok && payload?.status === "completed" && payload.generationId) {
-    return jobFromStudioRow(after, [payload.generationId]);
-  }
+  if (response.ok && payload?.status === "completed" && payload.generationId) return jobFromStudioRow(after, [payload.generationId]);
   if (after.status === "failed" || response.status === 409) {
-    return {
-      ...jobFromStudioRow({ ...after, status: "failed", error_message: after.error_message || payload?.error || "Generation failed." }),
-    };
+    return jobFromStudioRow({ ...after, status: "failed", error_message: after.error_message || payload?.error || "Generation failed." });
   }
   if (!response.ok) throw new Error(payload?.error || `Generation status failed (${response.status}).`);
   return jobFromStudioRow(after);
@@ -96,6 +92,7 @@ export async function pollGenerationJob(jobId: string): Promise<GenerationJob | 
     const payload: unknown = await response.json().catch(() => null);
     return isRecord(payload) && "job" in payload ? parseBackendJob(payload.job) : null;
   }
+  if (isNativeGenerationConfigured()) return pollNativeGeneration(jobId);
   if (studioCompatUrl) return pollStudio(jobId);
   throw new Error("Generation backend is not configured.");
 }
