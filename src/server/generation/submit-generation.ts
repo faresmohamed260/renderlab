@@ -1,12 +1,13 @@
 import type { GenerationJob, GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
+import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
 import { submitThroughStudioCompatibility } from "@/server/generation/studio-compat";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
 const studioCompatUrl = process.env.RENDERLAB_STUDIO_COMPAT_URL?.trim();
 
 export function isGenerationBackendConfigured() {
-  return Boolean(backendUrl || studioCompatUrl);
+  return Boolean(backendUrl || isNativeGenerationConfigured() || studioCompatUrl);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -50,49 +51,36 @@ async function submitToRenderLabBackend(request: GenerationRequest): Promise<Sub
     });
 
     const payload: unknown = await response.json().catch(() => null);
-
     if (!response.ok) {
       const message = isRecord(payload) && typeof payload.message === "string"
         ? payload.message
         : "The generation backend rejected the request.";
-      return {
-        ok: false,
-        error: { code: "generation_submission_failed", message },
-      };
+      return { ok: false, error: { code: "generation_submission_failed", message } };
     }
 
     const job = isRecord(payload) && "job" in payload ? parseGenerationJob(payload.job) : null;
     if (!job) {
       return {
         ok: false,
-        error: {
-          code: "generation_submission_failed",
-          message: "The generation backend returned an invalid job response.",
-        },
+        error: { code: "generation_submission_failed", message: "The generation backend returned an invalid job response." },
       };
     }
-
     return { ok: true, job };
   } catch {
     return {
       ok: false,
-      error: {
-        code: "generation_backend_unavailable",
-        message: "The generation backend could not be reached.",
-      },
+      error: { code: "generation_backend_unavailable", message: "The generation backend could not be reached." },
     };
   }
 }
 
 export async function submitGeneration(request: GenerationRequest): Promise<SubmitGenerationResponse> {
   if (backendUrl) return submitToRenderLabBackend(request);
+  if (isNativeGenerationConfigured()) return submitNativeGeneration(request);
   if (studioCompatUrl) return submitThroughStudioCompatibility(request, studioCompatUrl);
 
   return {
     ok: false,
-    error: {
-      code: "generation_backend_unavailable",
-      message: "Generation is not connected to a backend yet.",
-    },
+    error: { code: "generation_backend_unavailable", message: "Generation is not connected to a backend yet." },
   };
 }
