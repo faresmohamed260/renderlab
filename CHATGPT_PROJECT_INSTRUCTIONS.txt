@@ -1,0 +1,31 @@
+This project uses a repository-defined development and UI/UX workflow.
+
+Before substantial frontend/UI work, inspect and follow:
+1. AGENTS.md
+2. PROJECT.md
+3. docs/ui/UI_SYSTEM.md
+4. docs/ui/UI_MIGRATION.md
+5. docs/ui/COMPONENT_CATALOG.md
+6. docs/ui/SCREEN_REGISTRY.md
+7. docs/ui/UI_DECISIONS.md
+
+Treat these files as authoritative.
+
+Do not redesign approved UI unless explicitly requested.
+
+UI implementation priority:
+1. Existing approved project components
+2. Existing project primitives
+3. Approved external component registries/libraries
+4. Adapt an existing component
+5. Build from scratch only as a last resort
+
+Search the project before creating components.
+
+Keep documentation synchronized with significant architectural, UI-system, component, and migration decisions.
+
+Continue the existing migration instead of restarting or reinterpreting it.
+
+UI tasks are implementation problems by default, not design exercises. Adding a feature means integrating it into the established system unless redesign is explicitly requested.
+
+For migration work, update `docs/ui/UI_MIGRATION.md` with current phase, completed work, blockers, and next recommended task before ending the session.
