@@ -27,14 +27,15 @@ This is not a direct UI migration and not a visual reconstruction of Saga.
 - [x] Define the boundary between default controls, contextual controls, advanced controls, and internal execution controls.
 - [x] Define RenderLab information architecture from user goals rather than copying Saga routes.
 - [x] Define the first production creation experience and which capabilities it exposes initially.
-- [ ] Populate `FRONTEND_ARCHITECTURE.md` with the chosen RenderLab architecture once framework/routing decisions are verified.
+- [x] Populate `FRONTEND_ARCHITECTURE.md` with the chosen RenderLab architecture.
 - [x] Record current durable product/UI decisions in `UI_DECISIONS.md`.
 
 Capability/domain baseline: `docs/architecture/PRODUCT_CAPABILITIES.md`.  
-Approved information architecture and planned surfaces: `docs/ui/SCREEN_REGISTRY.md`.
+Approved information architecture and planned surfaces: `docs/ui/SCREEN_REGISTRY.md`.  
+Approved frontend architecture: `docs/architecture/FRONTEND_ARCHITECTURE.md`.
 
 ## Phase 1 — Design & Frontend Foundation
-- [ ] Select and document the concrete frontend framework and routing approach.
+- [x] Select and document the concrete frontend framework and routing approach.
 - [ ] Define design tokens.
 - [ ] Establish typography, spacing, surfaces, color roles, radii, motion, and responsive rules.
 - [ ] Define core UI primitives and approved component sources.
@@ -94,9 +95,9 @@ Exact screens are not predetermined.
 
 ## Current Work
 **Current phase:** Phase 1 — Design & Frontend Foundation  
-**Current status:** Phase 0 product baseline is complete except for frontend architecture details that depend on the framework/routing selection. Initial IA is Create + Library as primary destinations, with Activity and Settings as utilities and Media Viewer contextual. The initial Create workspace covers Create Image, Edit Image, Create Video, and Animate Image through contextual operation resolution and progressive disclosure.  
+**Current status:** Next.js App Router + React + TypeScript + Tailwind + shadcn/ui-where-appropriate architecture is approved and documented. Server Components are the default composition model with deliberate Client Components for interactive creative features. Initial routes are `/`, `/library`, `/library/[assetId]`, `/activity`, and `/settings`.  
 **Known blockers:** None recorded.  
-**Next recommended task:** Select the concrete frontend framework/routing approach, document the architecture, then establish the design-system foundation and application shell around the approved IA.
+**Next recommended task:** Define the RenderLab visual/design-system foundation: semantic tokens, typography, spacing, surfaces, control metrics, responsive rules, motion, accessibility expectations, and the approved primitive/component-source policy before scaffolding application code.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
