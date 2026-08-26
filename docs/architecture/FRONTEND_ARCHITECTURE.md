@@ -1,19 +1,31 @@
 # Frontend Architecture
 
-This document defines the approved RenderLab frontend architecture. It describes the target architecture for the fresh build; no application implementation exists yet beyond repository governance/documentation.
+This document defines the approved RenderLab frontend architecture and records the verified implementation state of the fresh build.
+
+## Verified Scaffold
+The application is now scaffolded and remotely verified through GitHub Actions.
+
+Installed versions from `package.json`:
+- Next.js `16.3.3`
+- React `19.2.8`
+- React DOM `19.2.8`
+- TypeScript `7.0.2`
+- Tailwind CSS `4.3.3`
+- Lucide React `1.34.0`
+- Playwright `1.62.1`
+
+The production build and responsive shell checks pass in GitHub Actions. The verified routes are `/`, `/library`, `/library/[assetId]`, `/activity`, and `/settings`.
 
 ## Framework
-**Framework:** Next.js with React and the App Router  
-**Language:** TypeScript  
-**Routing:** Next.js file-system routing via `app/`  
+**Framework:** Next.js `16.3.3` with React `19.2.8` and the App Router  
+**Language:** TypeScript `7.0.2`  
+**Routing:** Next.js file-system routing via `src/app/`  
 **Rendering model:** Server Components by default; Client Components only for interactive creative/workspace behavior  
-**Styling:** Tailwind CSS + project design tokens  
+**Styling:** Tailwind CSS `4.3.3` + project semantic design tokens  
 **Component foundation:** shadcn/ui/Radix for conventional primitives plus approved motion/component ecosystems documented in `docs/ui/UI_SYSTEM.md` and `docs/ui/COMPONENT_CATALOG.md`
 
-Do not pin this document to a framework version until the application is scaffolded and the installed version is verified from `package.json`.
-
 ## Why Next.js
-Next.js is selected because RenderLab already targets Vercel and requires more than a static SPA:
+Next.js is selected because RenderLab targets Vercel and requires more than a static SPA:
 - first-class application routing without recreating Saga's manual hash navigation;
 - colocated server and client boundaries;
 - route handlers/server-side code for product API boundaries where appropriate;
@@ -26,7 +38,7 @@ Next.js is selected because RenderLab already targets Vercel and requires more t
 The selection does **not** mean RenderLab should become server-rendered everywhere. The creation workspace, media interactions, upload controls, live job state, dialogs, and other interaction-heavy features will intentionally use Client Components where required.
 
 ## Routing Architecture
-Initial approved product routes:
+Approved and currently scaffolded routes:
 
 ```text
 /                  Create
@@ -45,20 +57,30 @@ Rules:
 - Context such as selected operation, asset, filters, or continuation source may use URL/search state when sharing/bookmarking meaningfully benefits the user.
 - Do not encode transient implementation state into URLs merely because routing makes it possible.
 
-## Directory Structure and Ownership
-The exact tree may evolve during implementation, but ownership boundaries should follow this model:
+## Current Directory Structure and Ownership
+Current implementation begins with:
 
 ```text
 src/
 ├── app/
 │   ├── layout.tsx
-│   ├── page.tsx                    # Create
+│   ├── globals.css
+│   ├── page.tsx
 │   ├── library/
 │   │   ├── page.tsx
 │   │   └── [assetId]/page.tsx
 │   ├── activity/page.tsx
-│   ├── settings/page.tsx
-│   └── api/                        # product-facing HTTP handlers owned by web app
+│   └── settings/page.tsx
+└── components/
+    └── shell/
+        ├── app-shell.tsx
+        └── route-placeholder.tsx
+```
+
+Future ownership boundaries should follow this model as code actually requires them:
+
+```text
+src/
 ├── components/
 │   ├── ui/                         # approved primitives / normalized external components
 │   ├── shell/                      # navigation, app shell, global status
@@ -82,17 +104,15 @@ src/
 └── types/
 ```
 
-Do not create folders merely to match this diagram before code needs them. The structure defines ownership, not a requirement for empty scaffolding.
+Do not create folders merely to match the future diagram before code needs them. The structure defines ownership, not a requirement for empty scaffolding.
 
 ## Naming Conventions
-These conventions are approved before scaffolding so generated code remains predictable across sessions.
-
 ### Files
 - React components: `kebab-case.tsx` (`app-shell.tsx`, `media-card.tsx`).
 - Hooks: `use-*.ts` (`use-generation-job.ts`).
 - Libraries/services/schema modules: `kebab-case.ts`.
 - Next.js reserved route files keep framework names (`page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `route.ts`).
-- Tests follow the source filename plus `.test.ts[x]` or the test framework convention selected later.
+- Tests follow the source filename plus `.test.ts[x]` or the test framework convention.
 
 ### Symbols
 - React component exports: `PascalCase` (`AppShell`, `MediaCard`).
@@ -133,7 +153,7 @@ Use for:
 - dialogs, sheets, popovers, menus and client-only accessibility interactions;
 - optimistic interaction where justified.
 
-Do not add `'use client'` to broad layout/page trees just for convenience. Keep the interactive boundary as narrow as practical without fragmenting cohesive features into unreadable micro-components.
+`AppShell` is currently a Client Component because active route styling uses `usePathname`; feature route pages remain Server Components. Do not add `'use client'` to broad route/page trees just for convenience.
 
 ## State Architecture
 ### URL state
@@ -169,8 +189,6 @@ Persistent preferences should have explicit ownership. Do not scatter unrelated 
 ## Capability Architecture
 The frontend must consume the domain defined in `PRODUCT_CAPABILITIES.md` rather than hard-code UI directly around ComfyUI workflow IDs.
 
-Core concepts:
-
 ```text
 Creative Operation
       ↓ resolves against
@@ -190,11 +208,7 @@ Continuation Actions
 The UI is free to provide purpose-built experiences for important operations. Capability-driven architecture does not mean rendering generic forms from raw workflow metadata.
 
 ## API and Backend Boundary
-RenderLab should keep browser code behind stable product-level APIs.
-
-The browser should not communicate directly with ComfyUI workers or provider infrastructure.
-
-Preferred boundary:
+RenderLab keeps browser code behind stable product-level APIs. The browser should not communicate directly with ComfyUI workers or provider infrastructure.
 
 ```text
 Browser UI
@@ -253,10 +267,25 @@ A provider reporting completion is not product completion until the durable resu
 
 ## Styling Architecture
 - Tailwind CSS is the primary composition/styling mechanism.
+- Initial semantic tokens are implemented in `src/app/globals.css` using Tailwind v4 `@theme` values derived from `docs/ui/UI_SYSTEM.md`.
 - RenderLab design tokens define semantic colors, surfaces, spacing, typography, radii, motion, layout and control metrics.
 - shadcn/Radix and the approved component ecosystems are implementation starting points, not automatic visual authority.
 - App-specific reusable components are promoted into `COMPONENT_CATALOG.md` only after implementation and review.
 - Avoid Saga's pattern of large feature-specific global CSS files and repeated inline visual values.
+
+## Remote Validation Architecture
+UI development must not depend on Vercel preview deployments for every iteration.
+
+Current GitHub validation:
+- `.github/workflows/ui-shell.yml`
+- production `next build`
+- Playwright Chromium against `next start`
+- desktop viewport `1440×1024`
+- mobile viewport `390×844`
+- uploaded screenshot artifact for visual inspection
+- path filtering so documentation-only changes do not consume UI CI runs
+
+This is the default remote implementation-validation path until a more capable GitHub-based preview mechanism is added.
 
 ## Error and Loading Architecture
 The product must distinguish:
@@ -290,7 +319,6 @@ The specific runtime schema library is not selected yet; choose during implement
 
 ## Decisions Still Open
 These are intentionally deferred until implementation evidence exists:
-- exact Next.js/framework version;
 - server-state synchronization library, if any;
 - runtime schema/validation library;
 - authentication implementation;
