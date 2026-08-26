@@ -51,7 +51,7 @@ test("mobile Create keeps Generate on its own row and preserves touch navigation
 test("generation API validates requests and reports backend availability truthfully", async ({ request }) => {
   const availability = await request.get("/api/generation/jobs");
   expect(availability.ok()).toBeTruthy();
-  await expect(availability.json()).resolves.toEqual({ available: false });
+  expect(await availability.json()).toEqual({ available: false });
 
   const invalid = await request.post("/api/generation/jobs", {
     data: {
