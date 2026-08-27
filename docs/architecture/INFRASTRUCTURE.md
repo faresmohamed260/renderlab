@@ -66,20 +66,24 @@ The server-generated R2 key is opaque and independent of the human filename. `or
 
 `media_assets.storage_key` remains unique. Concurrent completion requests recover to an already-created asset when another request wins that unique insert, while repeated completion after success returns the same durable asset.
 
-### Browser CORS requirement and current blocker
-Presigned browser PUT still requires an R2 bucket CORS policy for the requesting browser origin.
+### Browser CORS requirement and verified current state
+Presigned browser PUT requires an R2 bucket CORS policy for the requesting browser origin.
 
-Current RenderLab object credentials are sufficient for object PUT/HEAD/DELETE but are **not** authorized for bucket CORS management: `GetBucketCors` returned `403 AccessDenied` in GitHub Actions. `CLOUDFLARE_API_TOKEN` is not currently configured.
+The R2 API token backing `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` now has **Admin Read & Write** capability. Current-state browser lifecycle run `33066999350` verified that the existing GitHub secrets can successfully call R2 `GetBucketCors`/`PutBucketCors` through the S3-compatible API. `scripts/ensure-r2-browser-cors.mjs` reconciled the managed rule `renderlab-browser-uploads` while preserving one unrelated existing rule.
 
-`scripts/ensure-r2-browser-cors.mjs` is an optional idempotent management helper. When an appropriately scoped Cloudflare/R2 admin credential is available it preserves unrelated rules and manages the `renderlab-browser-uploads` rule. CI does not require retaining an admin credential: `.github/workflows/library-lifecycle-visual.yml` skips the management step when `CLOUDFLARE_API_TOKEN` is absent and lets the actual Chromium upload prove whether bucket CORS is correct.
-
-For the GitHub-hosted configured browser verifier the narrow test origins are:
+The managed rule currently permits `PUT` with `Content-Type` and exposes `ETag` for:
 - `http://127.0.0.1:3000`
 - `http://localhost:3000`
+- `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
+- `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
-The rule permits `PUT` with `Content-Type` and may expose `ETag`. Production browser origins must be explicitly included when production browser upload is enabled; do not use a broad wildcard merely to make tests pass.
+Run `33066999350` returned successful `204` preflight for all four origins, then completed the actual browser Upload → Library → Viewer → Create lifecycle from `http://127.0.0.1:3000`. The workflow self-cleaned its R2/object/database fixture and uploaded six screenshots.
 
-Browser lifecycle run `33037773015` proved the current shared bucket is not browser-ready: the actual Library Upload control created a ticket, but Chromium could not complete the signed R2 PUT and never reached the completion endpoint. The test timed out, self-cleaned its upload-session fixture and produced no approval screenshots. Do not merge PR #9 or bypass browser security until this infrastructure prerequisite is resolved.
+The temporary diagnostic approach that served RenderLab through a local TLS alias for `https://studio.faresuniform.uk` has been removed. CI/browser verification now uses the RenderLab localhost origin directly and does not depend on the Studio origin string or deployed Studio runtime.
+
+`CLOUDFLARE_API_TOKEN` remains an optional Cloudflare REST-API fallback for bucket-CORS management. It is not required while the R2 S3 access-key token retains Admin Read & Write permission.
+
+The connected Vercel RenderLab project is currently `live=false`. Its two stable Vercel project origins listed above are already in the managed CORS rule. If RenderLab later adopts a custom domain or any different user-facing origin, add that exact origin to the managed rule before enabling direct browser uploads there. Do not use a broad wildcard merely to avoid origin management.
 
 ## Generation Worker Fleet
 RenderLab reuses the existing ComfyUI/Modal workers while the **RenderLab server owns orchestration**.
@@ -134,8 +138,9 @@ PR #5 implemented this rule; post-merge live generation regression run `33027861
 - Durable generated media continuation → run `33027460976`.
 - Configured complete Create browser lifecycle → run `33031817744`.
 - Configured Library/Viewer generated-media lifecycle → run `33034606396`.
-- Persistent media backend integration → original run `33035954398`; hardened run `33037773016` including concurrent completion recovery, sequential idempotency, Unicode filename preservation, ordinary media API visibility/content and cleanup.
-- Persistent media browser lifecycle → **not yet approved**; run `33037773015` is blocked at direct browser R2 PUT by bucket CORS.
+- Persistent media backend integration → original run `33035954398`; current-state run `33066999365` including concurrent completion recovery, sequential idempotency, Unicode filename preservation, ordinary media API visibility/content and cleanup.
+- Persistent media credential-free production/UI regression → current-state run `33066999317`.
+- Persistent media browser lifecycle + R2 CORS reconciliation → current-state run `33066999350`; real browser signed PUT, Library → Viewer → Create continuation, six responsive screenshots and cleanup all passed.
 
 The persistent media verifier does not invoke ComfyUI or spend a generation.
 
@@ -181,14 +186,16 @@ Viewer → Create continuation carries only opaque asset identity plus action in
 - `SUPABASE_URL` = `https://rashyleshocuvpgcooxy.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY` — secret, server only
 
-### Cloudflare R2 object access
+### Cloudflare R2 object + bucket configuration access
 - `R2_ACCOUNT_ID`
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 - `R2_BUCKET_NAME`
 
-### Optional bucket-CORS management
-- `CLOUDFLARE_API_TOKEN` — optional; requires appropriate R2 bucket configuration permission. Do not expose to browser code.
+The R2 access-key token currently requires Admin Read & Write because the configured browser lifecycle reconciles the managed bucket CORS rule before testing direct browser upload.
+
+### Optional Cloudflare REST fallback
+- `CLOUDFLARE_API_TOKEN` — optional; may be used by `scripts/ensure-r2-browser-cors.mjs` instead of the S3 bucket-CORS API when intentionally configured. Do not expose it to browser code.
 
 ### Optional external RenderLab generation service
 - `RENDERLAB_GENERATION_BACKEND_URL`
@@ -200,7 +207,8 @@ Viewer → Create continuation carries only opaque asset identity plus action in
 - Never commit Supabase service-role keys, R2 access keys or provider credentials.
 - Never expose server credentials through `NEXT_PUBLIC_*`.
 - Keep RLS enabled on RenderLab tables.
-- Direct browser uploads use short-lived signed URLs and require origin-restricted bucket CORS.
+- Direct browser uploads use short-lived signed URLs and origin-restricted bucket CORS.
+- Restrict CORS to exact known origins; do not use broad wildcard origins merely for CI/deployment convenience.
 - Worker/provider routing remains server-owned operational state.
 - Shared resources do not authorize mutation of legacy Saga contracts without an explicit decision.
 - Raw R2 keys and worker IDs are internal implementation metadata.
@@ -213,13 +221,12 @@ Configured workflows use GitHub Secrets and keep production credentials out of b
 
 Key workflows:
 - `scripts/verify-create-lifecycle.mjs` + `.github/workflows/create-lifecycle-visual.yml` — real generation browser lifecycle.
-- `scripts/verify-media-upload.mjs` + `.github/workflows/persistent-media-upload-integration.yml` — server/API persistent upload contract without ComfyUI.
-- `scripts/verify-library-lifecycle.mjs` + `.github/workflows/library-lifecycle-visual.yml` — actual browser persistent Upload → Library → Viewer → Create continuation, no ComfyUI.
-- `scripts/ensure-r2-browser-cors.mjs` — optional CORS reconciliation when admin permission is available.
+- `scripts/verify-media-upload.mjs` + `.github/workflows/media-upload-integration.yml` — server/API persistent upload contract without ComfyUI.
+- `scripts/verify-library-lifecycle.mjs` + `.github/workflows/library-lifecycle-visual.yml` — reconciles/verifies exact-origin R2 CORS, then performs actual browser persistent Upload → Library → Viewer → Create continuation, no ComfyUI.
+- `scripts/ensure-r2-browser-cors.mjs` — idempotent CORS reconciliation through the Cloudflare REST API when `CLOUDFLARE_API_TOKEN` is present, otherwise through the R2 S3 API using the admin-capable R2 access-key token.
 
 ## Next Infrastructure Work
-1. Establish the shared R2 browser CORS policy required by persistent direct uploads, then rerun and inspect the configured browser lifecycle before PR #9 can merge.
-2. After a successful browser run, confirm R2 + `media_assets` + `media_upload_sessions` fixtures are clean and record the approval run in source-of-truth docs.
-3. Remove the transitional Studio compatibility adapter when no migration/debugging need depends on it.
-4. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
-5. Preserve the conservative duplicate-avoidance rule if worker routing evolves.
+1. If the eventual public RenderLab custom/domain origin differs from the two currently configured stable Vercel domains, add that exact origin to the managed R2 CORS rule before deployment.
+2. Remove the transitional Studio compatibility adapter when no migration/debugging need depends on it.
+3. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
+4. Preserve the conservative duplicate-avoidance rule if worker routing evolves.
