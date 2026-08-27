@@ -15,7 +15,7 @@ Core stack from `package.json`:
 - Playwright `1.62.1`
 - AWS SDK S3 client/request presigner `3.1116.0`
 
-Create, Library v0.1 and Media Viewer v0.1 are approved product surfaces. Activity and Settings remain placeholders. The persistent Library upload extension exists in PR #9 but is not visually approved while its real browser direct-R2 lifecycle is blocked by bucket CORS.
+Create, Library v0.1, the persistent Library Upload extension and Media Viewer v0.1 are approved product surfaces. Activity and Settings remain placeholders. Persistent uploads passed current-state backend, credential-free UI/API and real-browser verification in runs `33066999365`, `33066999317` and `33066999350` respectively.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -235,16 +235,16 @@ Rules:
 - Repeated completion is idempotent; concurrent insert races recover to the unique `media_assets.storage_key` winner.
 - No parallel public Uploads asset type/tab is introduced.
 
-Backend integration run `33037773016` verifies this contract against shared R2/Supabase, including Unicode filename preservation, concurrent completion, repeated completion, ordinary media API visibility/content and cleanup.
+Current-state backend integration run `33066999365` verifies this contract against shared R2/Supabase, including Unicode filename preservation, concurrent completion recovery, sequential idempotency, ordinary media API visibility/content and cleanup.
 
-The real browser lifecycle is **not yet approved**. Run `33037773015` used the actual Upload control/native file chooser and created a ticket, but Chromium could not complete the signed R2 PUT because the shared R2 bucket lacks usable CORS for the test browser origin. Its upload-session fixture self-cleaned and no approval screenshots were produced.
+Current-state browser lifecycle run `33066999350` is approved. It first reconciled bucket CORS through the R2 S3 API, then used the actual Library Upload control/native file chooser from `http://127.0.0.1:3000`, completed the direct signed R2 PUT, promoted the asset, verified Library/Viewer/Create media geometry and continuation, captured six desktop/mobile screenshots and self-cleaned. The screenshots were visually inspected.
 
 ## Media Delivery and Continuation
 Product media APIs expose metadata/content/thumbnail without exposing raw storage identity.
 
 Library cards deep-link to `/library/[assetId]`. Media Viewer derives compatible continuation actions from `src/lib/capabilities/generation.ts`.
 
-Persisted image assets—generated or uploaded—use the same continuation model. Viewer links carry opaque `media-asset` identity plus action intent; the Create server route validates the durable record and capability before initializing workspace state.
+Persisted image assets—generated or uploaded—use the same continuation model. Viewer links carry opaque `media-asset` identity plus action intent; the Create server route validates the durable record and capability before initializing workspace state. Uploaded media preserves its uploaded display name in Create instead of being mislabeled as generated.
 
 ## Supabase Boundary
 RenderLab reuses `AI Studio` (`rashyleshocuvpgcooxy`) while keeping RenderLab tables separate from legacy `studio_*`.
@@ -262,10 +262,13 @@ Migration `0003_persistent_media_uploads.sql` is already applied as version `202
 - Generated outputs use `renderlab/generations/...`; persistent uploads use `renderlab/uploads/...`.
 - R2 credentials stay server-only.
 - Browser uploads use short-lived signed PUT URLs.
-- Direct browser PUT additionally requires an origin-appropriate bucket CORS rule.
-- Existing object-level credentials cannot manage that CORS rule (`403 AccessDenied`); optional `CLOUDFLARE_API_TOKEN`/R2 Admin configuration is documented in `docs/architecture/INFRASTRUCTURE.md`.
+- Direct browser PUT requires an origin-appropriate bucket CORS rule.
+- The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` now has bucket-admin capability. Run `33066999350` successfully reconciled the managed CORS rule through `GetBucketCors`/`PutBucketCors` while preserving one unrelated existing rule.
+- The managed origins are `http://127.0.0.1:3000`, `http://localhost:3000`, `https://renderlab-faresmohamed260-6733s-projects.vercel.app` and `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`; all four passed preflight in `33066999350`.
+- `CLOUDFLARE_API_TOKEN` remains an optional REST-API fallback for CORS management but is not required while the R2 S3 token retains admin permission.
+- If the eventual public custom/different RenderLab origin changes, add that exact origin before serving direct uploads there.
 
-Do not disable browser security, proxy the transfer through RenderLab solely to satisfy CI, or replace real browser proof with Node-only integration.
+Do not disable browser security, use broad wildcard CORS merely for convenience, proxy the transfer through RenderLab solely to satisfy CI, or replace real browser proof with Node-only integration.
 
 ## Remote Validation Architecture
 UI iteration remains GitHub-based and does not require Vercel preview deployments.
@@ -273,25 +276,28 @@ UI iteration remains GitHub-based and does not require Vercel preview deployment
 ### Credential-free validation
 `.github/workflows/ui-shell.yml` covers production build, Playwright Chromium, desktop/mobile rendering, product API contracts and truthful unavailable states.
 
-Hardened persistent-upload code head run `33037773014` passed this gate.
+Current-state persistent-upload run `33066999317` passed this gate.
 
 ### Configured Create lifecycle
 `scripts/verify-create-lifecycle.mjs` + `.github/workflows/create-lifecycle-visual.yml` drive one real generation through the browser, verify durable persistence/continuation, capture responsive screenshots and self-clean. Approval run: `33031817744`.
 
 ### Configured persistent upload API integration
-`scripts/verify-media-upload.mjs` + `.github/workflows/persistent-media-upload-integration.yml` exercise ticket → signed PUT → completion → durable media contract directly without ComfyUI. Hardened run `33037773016` passed and self-cleaned.
+`scripts/verify-media-upload.mjs` + `.github/workflows/media-upload-integration.yml` exercise ticket → signed PUT → completion → durable media contract directly without ComfyUI. Current-state run `33066999365` passed and self-cleaned.
 
 ### Configured persistent upload browser lifecycle
-`scripts/verify-library-lifecycle.mjs` + `.github/workflows/library-lifecycle-visual.yml` are now the required browser-visible persistent upload gate. The verifier uses the actual Library Upload control/native file chooser and is intended to verify:
-1. ticket + browser signed R2 PUT + completion;
-2. uploaded Library card/display name;
-3. Viewer uploaded metadata and media geometry;
-4. capability-derived Edit/Animate;
-5. Edit → server-validated Create continuation using the durable uploaded `media-asset` ID;
-6. desktop/mobile screenshots;
-7. R2 + `media_assets` + `media_upload_sessions` cleanup.
+`scripts/verify-library-lifecycle.mjs` + `.github/workflows/library-lifecycle-visual.yml` are the browser-visible persistent upload gate. The workflow first runs `scripts/ensure-r2-browser-cors.mjs`, then serves RenderLab directly at `http://127.0.0.1:3000`; the temporary Studio-origin TLS/hosts alias used during diagnosis has been removed.
 
-It does not invoke ComfyUI. The current shared bucket CORS blocker must be resolved before this gate can approve PR #9.
+The verifier checks:
+1. managed-origin R2 CORS reconciliation/preflight;
+2. ticket + browser signed R2 PUT + completion;
+3. uploaded Library card/display name;
+4. Viewer uploaded metadata and media geometry;
+5. capability-derived Edit/Animate;
+6. Edit → server-validated Create continuation using the durable uploaded `media-asset` ID;
+7. desktop/mobile screenshots;
+8. R2 + `media_assets` + `media_upload_sessions` cleanup.
+
+It does not invoke ComfyUI. Current-state approval run: `33066999350`.
 
 ## Naming Conventions
 - React files: `kebab-case.tsx`.
@@ -308,5 +314,6 @@ It does not invoke ComfyUI. The current shared bucket CORS blocker must be resol
 - Shared capability logic owns continuation eligibility.
 - Browser does not talk directly to worker providers.
 - Shared infrastructure reuse never authorizes legacy `studio_*` coupling.
-- Approved Create/Library/Viewer visual language is not redesigned by this upload slice.
-- Persistent upload implementation is not `APPROVED` until the configured browser lifecycle and screenshot review pass.
+- Approved Create/Library/Viewer visual language is not redesigned by the upload extension.
+- Persistent uploads remain one durable-media contract rather than a parallel upload product model.
+- Any future public origin change must be reflected in exact origin-restricted R2 CORS before browser upload is considered deployable there.
