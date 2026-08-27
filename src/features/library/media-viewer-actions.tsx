@@ -3,6 +3,10 @@
 import { useId, useState, type FormEvent } from "react";
 import { Check, Download, Pencil, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import {
   MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH,
   type RenameMediaAssetResponse,
@@ -67,23 +71,24 @@ export function MediaViewerActions({
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="lg"
         onClick={beginEditing}
         aria-expanded={editing}
         aria-controls={panelId}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="w-full"
       >
-        <Pencil aria-hidden="true" size={16} />
+        <Pencil aria-hidden="true" data-icon="inline-start" />
         Rename
-      </button>
-      <a
-        href={`/api/media/assets/${encodeURIComponent(assetId)}/download`}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        <Download aria-hidden="true" size={16} />
-        Download
-      </a>
+      </Button>
+      <Button asChild variant="secondary" size="lg" className="w-full">
+        <a href={`/api/media/assets/${encodeURIComponent(assetId)}/download`}>
+          <Download aria-hidden="true" data-icon="inline-start" />
+          Download
+        </a>
+      </Button>
 
       {editing ? (
         <form
@@ -91,42 +96,29 @@ export function MediaViewerActions({
           onSubmit={submitRename}
           className="col-span-2 rounded-lg border border-border bg-surface-2 p-3"
         >
-          <label htmlFor={inputId} className="text-xs font-semibold text-text">
-            Media name
-          </label>
-          <input
-            id={inputId}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            maxLength={MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH}
-            placeholder={fallbackTitle}
-            autoFocus
-            disabled={saving}
-            className="mt-2 min-h-10 w-full rounded-lg border border-border bg-surface-1 px-3 text-sm text-text outline-none transition-colors placeholder:text-text-muted focus:border-accent focus:ring-2 focus:ring-accent/25 disabled:opacity-60"
-          />
-          {error ? (
-            <p className="mt-2 text-xs leading-5 text-danger" role="alert">
-              {error}
-            </p>
-          ) : null}
+          <Field data-invalid={Boolean(error)}>
+            <FieldLabel htmlFor={inputId} className="text-text">Media name</FieldLabel>
+            <Input
+              id={inputId}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              maxLength={MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH}
+              placeholder={fallbackTitle}
+              autoFocus
+              disabled={saving}
+              aria-invalid={Boolean(error)}
+            />
+            <FieldError>{error}</FieldError>
+          </Field>
           <div className="mt-3 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={cancelEditing}
-              disabled={saving}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-3 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60"
-            >
-              <X aria-hidden="true" size={15} />
+            <Button type="button" variant="ghost" onClick={cancelEditing} disabled={saving}>
+              <X aria-hidden="true" data-icon="inline-start" />
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Check aria-hidden="true" size={15} />
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? <Spinner data-icon="inline-start" /> : <Check aria-hidden="true" data-icon="inline-start" />}
               {saving ? "Saving…" : "Save"}
-            </button>
+            </Button>
           </div>
         </form>
       ) : null}
