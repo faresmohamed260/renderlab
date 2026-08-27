@@ -65,3 +65,41 @@ test("media list API validates requests before reporting configured availability
   expect(limitBody.ok).toBe(false);
   expect(limitBody.error.code).toBe("invalid_request");
 });
+
+test("persistent media upload API validates requests and reports availability truthfully", async ({ request }) => {
+  const availability = await request.get("/api/media/uploads/upload-tickets");
+  expect(availability.ok()).toBeTruthy();
+  expect(await availability.json()).toEqual({ available: false });
+
+  const invalidMime = await request.post("/api/media/uploads/upload-tickets", {
+    data: { filename: "clip.mp4", mimeType: "video/mp4", sizeBytes: 1024 },
+  });
+  expect(invalidMime.status()).toBe(400);
+  const mimeBody = await invalidMime.json();
+  expect(mimeBody.ok).toBe(false);
+  expect(mimeBody.error.code).toBe("invalid_upload");
+
+  const invalidSize = await request.post("/api/media/uploads/upload-tickets", {
+    data: { filename: "image.png", mimeType: "image/png", sizeBytes: 25 * 1024 * 1024 + 1 },
+  });
+  expect(invalidSize.status()).toBe(400);
+  const sizeBody = await invalidSize.json();
+  expect(sizeBody.ok).toBe(false);
+  expect(sizeBody.error.code).toBe("invalid_upload");
+
+  const unavailable = await request.post("/api/media/uploads/upload-tickets", {
+    data: { filename: "image.png", mimeType: "image/png", sizeBytes: 1024 },
+  });
+  expect(unavailable.status()).toBe(503);
+  const unavailableBody = await unavailable.json();
+  expect(unavailableBody.ok).toBe(false);
+  expect(unavailableBody.error.code).toBe("upload_backend_unavailable");
+
+  const invalidCompletion = await request.post("/api/media/uploads/upload-completions", {
+    data: { uploadId: "not-an-upload-id" },
+  });
+  expect(invalidCompletion.status()).toBe(400);
+  const completionBody = await invalidCompletion.json();
+  expect(completionBody.ok).toBe(false);
+  expect(completionBody.error.code).toBe("invalid_upload");
+});
