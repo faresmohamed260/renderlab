@@ -1,6 +1,12 @@
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { chromium } from "@playwright/test";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  configuredTestAccountIdentity,
+  createConfiguredTestAccount,
+  deleteConfiguredTestAccount,
+  routeLocalAppRequestsWithAccount,
+} from "./lib/configured-test-account.mjs";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -9,10 +15,12 @@ const r2Bucket = process.env.R2_BUCKET_NAME;
 const artifactDir = process.env.RENDERLAB_LIFECYCLE_ARTIFACT_DIR || "artifacts";
 const fixturePath = process.env.RENDERLAB_LIFECYCLE_FIXTURE_PATH || "/tmp/renderlab-create-lifecycle-fixture.json";
 const cleanupOnly = process.argv.includes("--cleanup-only");
+const fixtureAccount = configuredTestAccountIdentity("create-lifecycle");
 
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
   SUPABASE_SERVICE_ROLE_KEY: supabaseKey,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -46,12 +54,12 @@ async function supabase(path, init = {}) {
 
 async function rows(path) {
   const response = await supabase(path);
-  if (!response.ok) throw new Error(`Supabase lifecycle query failed (${response.status}).`);
+  if (!response.ok) throw new Error(`Supabase lifecycle query failed (${response.status}): ${await response.text()}`);
   return response.json();
 }
 
 async function loadAssets(jobId) {
-  return rows(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}&select=id,storage_key,thumbnail_storage_key`);
+  return rows(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}&select=id,storage_key,thumbnail_storage_key,owner_id`);
 }
 
 async function cleanupJob(jobId) {
@@ -94,9 +102,11 @@ async function readFixtureJobId() {
 
 async function cleanupFixtureFile() {
   const jobId = await readFixtureJobId();
-  if (!jobId) return;
-  await cleanupJob(jobId);
-  await rm(fixturePath, { force: true });
+  if (jobId) {
+    await cleanupJob(jobId);
+    await rm(fixturePath, { force: true });
+  }
+  await deleteConfiguredTestAccount(fixtureAccount);
 }
 
 if (cleanupOnly) {
@@ -113,9 +123,12 @@ let jobId = null;
 let primaryError = null;
 
 try {
+  await cleanupFixtureFile();
+  const account = await createConfiguredTestAccount("create-lifecycle");
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark" });
   const page = await context.newPage();
+  await routeLocalAppRequestsWithAccount(page, baseUrl, account);
 
   await page.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
 
@@ -124,7 +137,7 @@ try {
   await prompt.fill("A clean studio photograph of a matte cobalt-blue sphere centered on a warm gray background, soft even light, no text");
 
   const generate = page.getByRole("button", { name: "Generate", exact: true });
-  assert(await generate.isEnabled(), "Configured Create did not enable Generate with a valid prompt.");
+  assert(await generate.isEnabled(), "Configured Create did not enable Generate with a valid prompt for an authenticated account.");
 
   const submissionPromise = page.waitForResponse(
     (response) => {
@@ -142,7 +155,9 @@ try {
 
   jobId = submissionPayload.job.id;
   await writeFile(fixturePath, JSON.stringify({ jobId }), "utf8");
-  console.log(`Configured Create lifecycle accepted. job=${jobId}`);
+  const jobRows = await rows(`generation_jobs?id=eq.${encodeURIComponent(jobId)}&select=id,owner_id&limit=1`);
+  assert(jobRows[0]?.owner_id === account.id, "Create generation job was not owned by the authenticated fixture account.");
+  console.log(`Configured Create lifecycle accepted. owner=${account.id} job=${jobId}`);
 
   const result = page.getByRole("article", { name: "Generated result" });
   try {
@@ -154,6 +169,10 @@ try {
       `Configured Create did not reach a persisted result. alerts=${JSON.stringify(alertText)} statuses=${JSON.stringify(statusText)}`,
     );
   }
+
+  const assets = await loadAssets(jobId);
+  assert(assets.length > 0, "Configured Create did not persist a durable media asset.");
+  assert(assets.every((asset) => asset.owner_id === account.id), "Persisted Create media did not inherit the generation account owner.");
 
   const resultImage = page.getByRole("img", { name: "Generated result" });
   await resultImage.waitFor({ state: "visible", timeout: 60_000 });
@@ -201,20 +220,21 @@ try {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-edit-continuation.png`, fullPage: true });
 
-  console.log("Configured Create generation -> persisted result -> Edit continuation rendered successfully at desktop and mobile widths.");
+  console.log("Configured Create generation -> owned persisted result -> Edit continuation rendered successfully at desktop and mobile widths.");
 } catch (error) {
   primaryError = error;
 } finally {
   if (browser) await browser.close().catch(() => {});
 
-  if (jobId) {
-    try {
+  try {
+    if (jobId) {
       await cleanupJob(jobId);
       await rm(fixturePath, { force: true });
-    } catch (cleanupError) {
-      console.error(cleanupError);
-      if (!primaryError) primaryError = cleanupError;
     }
+    await deleteConfiguredTestAccount(fixtureAccount);
+  } catch (cleanupError) {
+    console.error(cleanupError);
+    if (!primaryError) primaryError = cleanupError;
   }
 }
 
