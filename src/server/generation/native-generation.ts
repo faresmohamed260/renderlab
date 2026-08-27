@@ -31,6 +31,7 @@ type WorkflowConfig = {
 
 type JobRow = {
   id: string;
+  owner_id: string;
   status: GenerationJob["status"];
   operation: CreativeOperation;
   output_kind: "image" | "video";
@@ -142,12 +143,13 @@ function toGenerationJob(row: JobRow): GenerationJob {
   };
 }
 
-async function insertJob(request: GenerationRequest, workflow: WorkflowConfig) {
+async function insertJob(ownerId: string, request: GenerationRequest, workflow: WorkflowConfig) {
   const operation = resolveCreativeOperation(request);
   const rows = await supabaseRest<JobRow[]>("generation_jobs?select=*", {
     method: "POST",
     headers: { Prefer: "return=representation" },
     body: JSON.stringify({
+      owner_id: ownerId,
       status: "queued",
       operation,
       output_kind: request.output.kind,
@@ -163,29 +165,33 @@ async function insertJob(request: GenerationRequest, workflow: WorkflowConfig) {
   return rows[0];
 }
 
-async function getJobRow(jobId: string) {
-  const rows = await supabaseRest<JobRow[]>(`generation_jobs?id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`, {
-    method: "GET",
-  });
+async function getJobRow(ownerId: string, jobId: string) {
+  const rows = await supabaseRest<JobRow[]>(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`,
+    { method: "GET" },
+  );
   return rows?.[0] ?? null;
 }
 
-async function patchJob(jobId: string, patch: Record<string, unknown>) {
-  const rows = await supabaseRest<JobRow[]>(`generation_jobs?id=eq.${encodeURIComponent(jobId)}&select=*`, {
-    method: "PATCH",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
-  });
+async function patchJob(ownerId: string, jobId: string, patch: Record<string, unknown>) {
+  const rows = await supabaseRest<JobRow[]>(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
+    },
+  );
   if (!rows?.[0]) throw new Error("Generation job could not be updated.");
   return rows[0];
 }
 
-async function resolveInputs(request: GenerationRequest): Promise<InputBytes[]> {
+async function resolveInputs(ownerId: string, request: GenerationRequest): Promise<InputBytes[]> {
   const resolved: InputBytes[] = [];
   for (const input of request.inputs) {
     if (input.source.type === "temporary-source") {
       const rows = await supabaseRest<Array<{ storage_key: string; filename: string; mime_type: string; status: string }>>(
-        `generation_sources?id=eq.${encodeURIComponent(input.source.id)}&select=storage_key,filename,mime_type,status&limit=1`,
+        `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(input.source.id)}&select=storage_key,filename,mime_type,status&limit=1`,
         { method: "GET" },
       );
       const source = rows?.[0];
@@ -196,7 +202,7 @@ async function resolveInputs(request: GenerationRequest): Promise<InputBytes[]> 
     }
 
     const assets = await supabaseRest<Array<{ storage_key: string; mime_type: string }>>(
-      `media_assets?id=eq.${encodeURIComponent(input.source.id)}&select=storage_key,mime_type&limit=1`,
+      `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(input.source.id)}&select=storage_key,mime_type&limit=1`,
       { method: "GET" },
     );
     const asset = assets?.[0];
@@ -309,7 +315,7 @@ async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest
   throw new Error("No configured generation worker is currently available.");
 }
 
-export async function submitNativeGeneration(request: GenerationRequest): Promise<SubmitGenerationResponse> {
+export async function submitNativeGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
   if (!isNativeGenerationConfigured()) {
     return { ok: false, error: { code: "generation_backend_unavailable", message: "Native generation infrastructure is not configured." } };
   }
@@ -317,10 +323,10 @@ export async function submitNativeGeneration(request: GenerationRequest): Promis
   const workflow = workflowFor(request);
   let job: JobRow | null = null;
   try {
-    job = await insertJob(request, workflow);
-    const sources = await resolveInputs(request);
+    job = await insertJob(ownerId, request, workflow);
+    const sources = await resolveInputs(ownerId, request);
     const submitted = await submitWorker(workflow, request, sources);
-    job = await patchJob(job.id, {
+    job = await patchJob(ownerId, job.id, {
       status: "running",
       worker_id: submitted.worker.id,
       provider_job_id: submitted.callId,
@@ -332,7 +338,7 @@ export async function submitNativeGeneration(request: GenerationRequest): Promis
   } catch (error) {
     if (job) {
       try {
-        job = await patchJob(job.id, {
+        job = await patchJob(ownerId, job.id, {
           status: "failed",
           error_code: "generation_submission_failed",
           error_message: error instanceof Error ? error.message : "Generation submission failed.",
@@ -377,6 +383,7 @@ async function persistResult(row: JobRow, bytes: Buffer, contentType: string, po
     method: "POST",
     body: JSON.stringify({
       id: assetId,
+      owner_id: row.owner_id,
       generation_job_id: row.id,
       kind: row.output_kind,
       mime_type: contentType,
@@ -392,7 +399,7 @@ async function persistResult(row: JobRow, bytes: Buffer, contentType: string, po
     }),
   });
 
-  return patchJob(row.id, {
+  return patchJob(row.owner_id, row.id, {
     status: "succeeded",
     worker_state: "ready",
     output_asset_ids: [assetId],
@@ -454,7 +461,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
     throw new Error("Stored generation workflow no longer matches the job routing contract.");
   }
 
-  const sources = await resolveInputs(request);
+  const sources = await resolveInputs(row.owner_id, request);
   const excluded = attemptedWorkerIds(row);
   const candidate = workersForEcosystem(workflow.ecosystem).find((worker) => !excluded.has(worker.id));
   if (!candidate) return null;
@@ -468,7 +475,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
     code: failure.code,
     at,
   };
-  const attempted = await patchJob(row.id, {
+  const attempted = await patchJob(row.owner_id, row.id, {
     failover_history: [...(row.failover_history || []), attemptEntry],
   });
 
@@ -493,7 +500,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
     throw new Error("Standby worker did not return a call ID; RenderLab will not retry the ambiguous reassignment automatically.");
   }
 
-  return patchJob(row.id, {
+  return patchJob(row.owner_id, row.id, {
     status: "running",
     worker_id: candidate.id,
     provider_job_id: payload.call_id,
@@ -513,7 +520,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
 }
 
 async function failJob(row: JobRow, code: string, message: string) {
-  return patchJob(row.id, {
+  return patchJob(row.owner_id, row.id, {
     status: "failed",
     error_code: code,
     error_message: message,
@@ -521,8 +528,8 @@ async function failJob(row: JobRow, code: string, message: string) {
   });
 }
 
-export async function pollNativeGeneration(jobId: string): Promise<GenerationJob | null> {
-  const row = await getJobRow(jobId);
+export async function pollNativeGeneration(ownerId: string, jobId: string): Promise<GenerationJob | null> {
+  const row = await getJobRow(ownerId, jobId);
   if (!row) return null;
   if (["succeeded", "failed", "cancelled"].includes(row.status)) return toGenerationJob(row);
   if (!row.worker_id || !row.provider_job_id) return toGenerationJob(row);
@@ -538,7 +545,7 @@ export async function pollNativeGeneration(jobId: string): Promise<GenerationJob
 
   if (response.status === 202) {
     const payload = await response.json().catch(() => ({})) as { worker_state?: string; workerState?: string };
-    const next = await patchJob(row.id, {
+    const next = await patchJob(row.owner_id, row.id, {
       status: "running",
       worker_state: payload.worker_state || payload.workerState || "generating",
     });
@@ -585,7 +592,7 @@ export async function pollNativeGeneration(jobId: string): Promise<GenerationJob
   if (row.output_kind === "image" && !contentType.startsWith("image/")) throw new Error("Worker returned a non-image result.");
   if (row.output_kind === "video" && !contentType.startsWith("video/")) throw new Error("Worker returned a non-video result.");
 
-  const persisting = await patchJob(row.id, { status: "persisting", worker_state: "finalizing" });
+  const persisting = await patchJob(row.owner_id, row.id, { status: "persisting", worker_state: "finalizing" });
   const bytes = Buffer.from(await response.arrayBuffer());
   const poster = row.output_kind === "video" ? await fetchPoster(worker, row.provider_job_id) : null;
   const completed = await persistResult(persisting, bytes, contentType, poster);
