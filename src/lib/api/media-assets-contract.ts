@@ -3,6 +3,13 @@ import type { CreativeOperation } from "@/lib/capabilities/generation";
 export type MediaAssetKind = "image" | "video";
 export type MediaAssetOrigin = "generated" | "uploaded";
 
+export const MEDIA_ASSET_SEARCH_MAX_LENGTH = 120;
+
+export function normalizeMediaAssetSearchQuery(value: string | null | undefined) {
+  const normalized = value?.trim().replace(/\s+/g, " ") ?? "";
+  return normalized || null;
+}
+
 export type PublicMediaAsset = {
   id: string;
   generationJobId: string | null;
