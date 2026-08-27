@@ -10,7 +10,7 @@ These sources are approved defaults to search before implementing reusable UI me
 
 ### shadcn/ui + Radix
 **Role:** Foundational accessible application primitives.  
-**Default uses:** buttons, inputs, selects, dialogs, sheets, dropdown menus, popovers, tabs, tooltips, command interfaces, forms, toggles, navigation primitives, and other standard application controls.  
+**Default uses:** buttons, inputs, selects, dialogs, sheets, dropdown menus, popovers, tabs, tooltips, command interfaces, forms, toggles, navigation primitives, disclosures, and other standard application controls.  
 **Policy:** First external stop for conventional UI primitives. Adapt styling to RenderLab tokens rather than creating competing primitive implementations.
 
 ### Motion for React
@@ -89,17 +89,39 @@ Before copying/installing an external component:
 **Do not:** Add Create composer, Library cards, workflow controls, or feature-owned layout into the persistent shell.  
 **Notes:** Verified by successful GitHub Actions production build + Playwright desktop/mobile checks and rendered screenshot review. Approved, not locked; later shell changes still require rendered review.
 
+### Collapsible
+**Status:** APPROVED  
+**Source:** `src/components/ui/collapsible.tsx`  
+**Origin:** normalized wrapper over `@radix-ui/react-collapsible` `1.1.20`  
+**Purpose:** Generic accessible disclosure primitive exposing Root/Trigger/Content without feature-specific state or styling assumptions.  
+**Used by:** Create Advanced disclosure  
+**Dependencies:** Radix Collapsible  
+**Reuse rules:** Reuse this primitive for ordinary disclosure behavior instead of implementing custom expand/collapse mechanics. Keep feature labels, layout, and fields outside the primitive.  
+**Do not:** Add Create-specific capability logic or product copy to this wrapper.  
+**Notes:** Adopted in PR #6 after production build, keyboard/interaction Playwright coverage through its Create usage, and desktop/mobile rendered review.
+
 ### CreateWorkspace
 **Status:** EXPERIMENTAL  
 **Source:** `src/features/create/create-workspace.tsx`  
-**Origin:** RenderLab product composition based on the versioned Create v0.2 open design handoff  
-**Purpose:** Own the task-oriented Create experience: prompt draft, Image/Video output choice, essential aspect/duration values, reference-source upload/context, typed generation submission/polling, truthful asynchronous feedback, and persisted result presentation.  
+**Origin:** RenderLab product composition based on the versioned Create v0.2/v0.3 open design handoff  
+**Purpose:** Own the task-oriented Create experience: prompt draft, Image/Video output choice, essential aspect/duration values, reference context, typed generation submission/polling, truthful asynchronous feedback, persisted result presentation, continuation actions, and Advanced disclosure.  
 **Variants:** Create Image, Create Video, reference-driven Edit Image, reference-driven Animate Image; responsive desktop/mobile layout.  
 **Used by:** `/`  
-**Dependencies:** React client state, Lucide React, RenderLab generation capability/API contracts, RenderLab reference-upload contract, RenderLab media asset product APIs  
+**Dependencies:** React client state, Lucide React, RenderLab generation capability/API contracts, RenderLab reference-upload contract, RenderLab media asset product APIs, normalized Radix `Collapsible`  
 **Reuse rules:** Keep this feature-owned until stable subcomponents have a real reuse case. Use opaque product source/media IDs and typed RenderLab APIs rather than storage keys or direct provider/worker calls.  
-**Do not:** Treat the current slice as the finished Create product, expose backend workflow IDs/R2 keys, fabricate progress, or clear prompt/reference/settings on recoverable errors.  
-**Notes:** All four initial native operations are verified end-to-end against the reused production resources: Create Image, Edit Image, Create Video and Animate Image. Reference uploads are also verified and self-cleaning. After a successful job, Create loads the persisted `media_assets` record through `/api/media/assets/[assetId]` and renders the real image/video through the product media URL; that implementation passed production build + Playwright shell validation in PR #1 before merge. Bounded transient polling recovery is being validated separately and should not be treated as complete until its PR is green/merged. Create remains `EXPERIMENTAL` until continuation actions, Advanced controls where justified, and final real-lifecycle responsive visual review are complete.
+**Do not:** Expose backend workflow IDs/R2 keys, fabricate progress, clear prompt/reference/settings on recoverable errors, or add technical controls to the default composer merely because workers support them.  
+**Notes:** All four initial native operations are live-verified. Persisted results render through product APIs. Image results support capability-derived Edit/Animate continuation; the durable `media-asset` continuation path passed live integration run `33027460976`. Bounded polling recovery and conservative worker reassignment are merged. Advanced v0.3 passed CI/run `33030364272`. Create remains `EXPERIMENTAL`/screen `MIGRATING` until final configured real-lifecycle responsive review.
+
+### CreateAdvancedPanel
+**Status:** EXPERIMENTAL  
+**Source:** `src/features/create/create-advanced-panel.tsx`  
+**Origin:** RenderLab feature composition using the reviewed `design/penpot/create-v0.3-advanced.svg` candidate and normalized Radix Collapsible  
+**Purpose:** Present deliberately Advanced generation controls without turning the default composer into a technical form.  
+**Current fields:** negative prompt, seed, steps, guidance; frame rate only when output is Video.  
+**Dependencies:** RenderLab generation capability definitions, native HTML form controls, Lucide React, `CollapsibleContent`  
+**Reuse rules:** Feature-owned. If future screens need the same parameter editing model, extract shared field primitives only after a real reuse case appears.  
+**Do not:** Add provider/worker/model identifiers or unverified workflow parameters.  
+**Notes:** Separate Image/Video drafts preserve operation-specific defaults and edits. Invalid Advanced values block submission locally while preserving user work. PR #6 passed production build, behavior tests, API validation tests, and desktop/mobile screenshot review.
 
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  
