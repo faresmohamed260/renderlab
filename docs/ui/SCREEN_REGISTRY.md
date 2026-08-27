@@ -52,7 +52,7 @@ Approved behavior:
 - durable `media-asset` continuation verified in run `33027460976`;
 - Advanced controls from verified capability definitions;
 - complete configured browser lifecycle approval run `33031817744` with responsive screenshots and cleanup;
-- persistent uploaded-image continuation verified in run `33065020778`; Create reloads the durable uploaded asset through the existing server-validated handoff and preserves the uploaded display name in the reference summary rather than mislabeling it as generated.
+- persistent uploaded-image continuation verified in run `33066999350`; Create reloads the durable uploaded asset through the existing server-validated handoff and preserves the uploaded display name in the reference summary rather than mislabeling it as generated.
 
 **Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 
@@ -90,13 +90,13 @@ Approved direction:
 - existing approved Library grid remains the durable media surface.
 
 **Approval evidence:**
-- final backend integration `33065020704` passed direct upload, promotion, concurrent-completion recovery, sequential idempotency, public media/list/content behavior and cleanup;
-- final credential-free production/UI run `33065020735` passed;
-- final configured browser run `33065020778` used the actual Upload control and native file chooser, completed the real signed R2 PUT, promoted the upload to a normal `media_assets` row, rendered it in Library at desktop/mobile widths, and continued through Viewer → Create Edit;
+- current-state backend integration `33066999365` passed direct upload, promotion, concurrent-completion recovery, sequential idempotency, public media/list/content behavior and cleanup;
+- current-state credential-free production/UI run `33066999317` passed;
+- current-state configured browser run `33066999350` reconciled the shared R2 CORS rule through the S3 API, used the actual Upload control/native file chooser from `http://127.0.0.1:3000`, completed the real signed R2 PUT, promoted the upload to a normal `media_assets` row, rendered it in Library at desktop/mobile widths, and continued through Viewer → Create Edit;
 - uploaded image decode/geometry was verified as 400×300 and six screenshots were visually inspected;
-- workflow cleanup plus direct Supabase verification left `0` upload sessions and `0` uploaded assets.
+- the browser workflow self-cleaned its fixture; prior direct Supabase verification also confirmed no persistent-upload integration fixture remained.
 
-The configured browser run uses a CI-only HTTPS loopback alias for the already-authorized `https://studio.faresuniform.uk` origin while serving the local RenderLab build. It does not call the deployed Studio runtime. Actual RenderLab user-facing origins still require shared R2 CORS before deployment; see `docs/architecture/INFRASTRUCTURE.md`.
+The managed R2 CORS rule now includes both localhost CI origins plus the two current stable RenderLab Vercel domains. The temporary Studio-origin TLS/hosts alias used during diagnosis has been removed; the browser lifecycle no longer depends on the Studio origin string or deployed Studio runtime. See `docs/architecture/INFRASTRUCTURE.md`.
 
 **Still intentionally open:** search, favorites/collections, richer history controls, rename/delete/download/batch management and drag/drop mechanics unless separately justified.
 
@@ -121,7 +121,7 @@ The configured browser run uses a CI-only HTTPS loopback alias for the already-a
 - uploaded assets use their display name and truthful `Uploaded image`/Upload metadata rather than generated-media fallback copy;
 - original filename/size/source metadata appears when available;
 - uploaded images derive Edit/Animate from the same capability model and ordinary `media-asset` identity;
-- uploaded-media Viewer → Create Edit lifecycle is visually approved in run `33065020778` at desktop/mobile widths.
+- uploaded-media Viewer → Create Edit lifecycle is visually approved in run `33066999350` at desktop/mobile widths.
 
 **Do not change:** Provider/worker/R2 identity stays internal. Viewer actions remain capability-derived and use opaque product media identity; URL parameters are navigation intent, not authoritative asset state.
 
