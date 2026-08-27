@@ -26,8 +26,8 @@ function EmptyMedia({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="empty-title" className={cn("mt-4 text-base font-semibold text-text", className)} {...props} />;
+function EmptyTitle({ className, ...props }: React.ComponentProps<"h3">) {
+  return <h3 data-slot="empty-title" className={cn("mt-4 text-base font-semibold text-text", className)} {...props} />;
 }
 
 function EmptyDescription({ className, ...props }: React.ComponentProps<"div">) {
