@@ -137,6 +137,10 @@ async function mediaApi(query) {
   return payload;
 }
 
+function cardForAsset(page, assetId) {
+  return page.locator(`a[href="/library/${encodeURIComponent(assetId)}"]`);
+}
+
 if (cleanupOnly) {
   await cleanupFixture();
   process.exit(0);
@@ -181,9 +185,10 @@ try {
   await searchbox.waitFor({ state: "visible", timeout: 30_000 });
   assert(await searchbox.inputValue() === "cobalt aurora", "Library search input did not reflect URL-owned query state.");
 
-  const generatedCard = page.getByRole("link", { name: `Open ${generatedPrompt}`, exact: true });
+  const generatedCard = cardForAsset(page, generated.id);
   await generatedCard.waitFor({ state: "visible", timeout: 30_000 });
-  assert(await page.getByRole("link", { name: `Open ${uploadedDisplayName}`, exact: true }).count() === 0, "Browser prompt search rendered an unrelated upload.");
+  assert(await generatedCard.getAttribute("aria-label") === `Open ${generatedPrompt}`, "Generated search result did not preserve its expected human label.");
+  assert(await cardForAsset(page, uploaded.id).count() === 0, "Browser prompt search rendered the current unrelated upload fixture.");
   const imageFilterHref = await page.getByRole("link", { name: "Images", exact: true }).getAttribute("href");
   assert(imageFilterHref === "/library?kind=image&q=cobalt+aurora", `Media-kind link did not preserve search query: ${imageFilterHref}`);
 
@@ -200,9 +205,10 @@ try {
   await searchbox.fill("画像.png");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("q") === "画像.png", { timeout: 30_000 });
-  const uploadedCard = page.getByRole("link", { name: `Open ${uploadedDisplayName}`, exact: true });
+  const uploadedCard = cardForAsset(page, uploaded.id);
   await uploadedCard.waitFor({ state: "visible", timeout: 30_000 });
-  assert(await page.getByRole("link", { name: `Open ${generatedPrompt}`, exact: true }).count() === 0, "Browser filename search rendered an unrelated generated asset.");
+  assert(await uploadedCard.getAttribute("aria-label") === `Open ${uploadedDisplayName}`, "Uploaded search result did not preserve its expected human label.");
+  assert(await cardForAsset(page, generated.id).count() === 0, "Browser filename search rendered the current unrelated generated fixture.");
 
   await searchbox.fill("not-present-in-renderlab");
   await page.getByRole("button", { name: "Search", exact: true }).click();
