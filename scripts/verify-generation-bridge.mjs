@@ -15,11 +15,6 @@ const r2Client = new S3Client({
   responseChecksumValidation: "WHEN_REQUIRED",
 });
 
-const referencePng = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAATUlEQVR42u3PQQ0AAAgEIDX5RTeFDzdoQCepz6aeExAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQELi3oiwCAJt186UAAAAASUVORK5CYII=",
-  "base64",
-);
-
 async function jsonRequest(url, init = {}) {
   const response = await fetch(url, init);
   const text = await response.text();
@@ -64,46 +59,6 @@ async function cleanupJob(jobId) {
   await supabase(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" }).catch(() => {});
   await supabase(`generation_jobs?id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" }).catch(() => {});
   console.log(`Cleaned generation fixture job=${jobId} objects=${keys.size}`);
-}
-
-async function cleanupSource(sourceId) {
-  if (!sourceId) return;
-  const source = (await rows(`generation_sources?id=eq.${encodeURIComponent(sourceId)}&select=id,storage_key&limit=1`).catch(() => []))[0];
-  if (source?.storage_key) {
-    await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: source.storage_key })).catch(() => {});
-  }
-  await supabase(`generation_sources?id=eq.${encodeURIComponent(sourceId)}`, { method: "DELETE" }).catch(() => {});
-  console.log(`Cleaned reference fixture source=${sourceId}`);
-}
-
-async function uploadReferenceFixture() {
-  const ticket = await jsonRequest(`${baseUrl}/api/assets/reference/upload-tickets`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      filename: "renderlab-native-edit-reference.png",
-      mimeType: "image/png",
-      sizeBytes: referencePng.length,
-    }),
-  });
-  if (!ticket.response.ok || !ticket.payload?.ok || !ticket.payload?.ticket?.sourceId) {
-    throw new Error(`Reference ticket failed (${ticket.response.status}): ${JSON.stringify(ticket.payload)}`);
-  }
-
-  const { sourceId, uploadUrl, method, headers } = ticket.payload.ticket;
-  const upload = await fetch(uploadUrl, { method, headers, body: referencePng });
-  if (!upload.ok) throw new Error(`Reference R2 upload failed (${upload.status}).`);
-
-  const completion = await jsonRequest(`${baseUrl}/api/assets/reference/upload-completions`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ sourceId, width: 64, height: 64 }),
-  });
-  if (!completion.response.ok || !completion.payload?.ok || completion.payload.source?.status !== "ready") {
-    throw new Error(`Reference completion failed (${completion.response.status}): ${JSON.stringify(completion.payload)}`);
-  }
-  console.log(`Reference fixture ready. source=${sourceId}`);
-  return sourceId;
 }
 
 async function verifyMediaAsset(assetId, expectedKind) {
@@ -174,7 +129,7 @@ async function verifyGeneration(request, expectedOperation, label) {
       }
       await verifyMediaAsset(assets[0].id, request.output.kind);
       console.log(`${label} verified. job=${jobId} asset=${assets[0].id}`);
-      return jobId;
+      return { jobId, assetId: assets[0].id };
     }
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
@@ -182,11 +137,10 @@ async function verifyGeneration(request, expectedOperation, label) {
   throw new Error(`${label} timed out before persistence completed.`);
 }
 
-let createJobId = "";
-let editJobId = "";
-let sourceId = "";
+let createResult = null;
+let editResult = null;
 try {
-  createJobId = await verifyGeneration(
+  createResult = await verifyGeneration(
     {
       prompt: "RenderLab integration verification: a simple blue sphere centered on a neutral studio background",
       output: { kind: "image", aspectRatio: "1:1" },
@@ -196,25 +150,23 @@ try {
     "Create Image",
   );
 
-  sourceId = await uploadReferenceFixture();
-  editJobId = await verifyGeneration(
+  editResult = await verifyGeneration(
     {
       prompt: "Change the sphere to red while keeping the simple studio composition",
       output: { kind: "image", aspectRatio: "1:1" },
       inputs: [
         {
-          source: { type: "temporary-source", id: sourceId },
+          source: { type: "media-asset", id: createResult.assetId },
           role: "primary-image",
         },
       ],
     },
     "edit-image",
-    "Edit Image",
+    "Edit Image from persisted media asset",
   );
 
-  console.log("Native Create Image + Edit Image integration verified successfully.");
+  console.log("Native Create Image -> persisted media asset -> Edit Image continuation verified successfully.");
 } finally {
-  await cleanupJob(editJobId);
-  await cleanupJob(createJobId);
-  await cleanupSource(sourceId);
+  await cleanupJob(editResult?.jobId);
+  await cleanupJob(createResult?.jobId);
 }
