@@ -123,16 +123,40 @@ Before copying/installing an external component:
 **Do not:** Add provider/worker/model identifiers or unverified workflow parameters.  
 **Notes:** Separate Image/Video drafts preserve operation-specific defaults and edits. Invalid Advanced values block submission locally while preserving user work. PR #6 passed production build, behavior tests, API validation tests, and desktop/mobile screenshot review; the complete Create lifecycle subsequently passed run `33031817744`.
 
+### LibraryView
+**Status:** APPROVED  
+**Source:** `src/features/library/library-view.tsx`  
+**Origin:** RenderLab product composition based on `design/penpot/library-v0.1.svg`  
+**Purpose:** Present the durable-media Library surface with compact kind filtering, responsive browsing, product metadata, pagination and deep links into Media Viewer.  
+**Variants:** `All`, `Images`, `Videos`; configured, unavailable, empty and paginated states; responsive desktop/mobile layout.  
+**Used by:** `/library`  
+**Dependencies:** Next.js `Link`, Lucide React, `PublicMediaAsset`/media-list product contracts  
+**Reuse rules:** This is the authoritative Library v0.1 composition. Extend it as real Library requirements/data contracts are approved rather than creating a competing gallery. Extract reusable media-card mechanics only after another surface has a genuine shared need.  
+**Do not:** Couple cards/filters to legacy `studio_*` records, expose R2 storage identity, or add fake organization controls without persistent RenderLab data.  
+**Notes:** Credential-free desktop/mobile rendering passed run `33034606323`. Configured run `33034606396` verified a real R2-backed 400×300 `media_assets` fixture, correct card geometry, Viewer navigation and cleanup. Approved, not locked.
+
+### MediaViewer
+**Status:** APPROVED  
+**Source:** `src/features/library/media-viewer.tsx`  
+**Origin:** RenderLab product composition based on `design/penpot/media-viewer-v0.1.svg`  
+**Purpose:** Present one durable media asset as the visually primary object, show basic product metadata, and expose compatible continuation actions from the shared capability model.  
+**Variants:** image/video media presentation; optional dimensions/duration; continuation actions only when supported.  
+**Used by:** `/library/[assetId]`  
+**Dependencies:** Next.js `Link`, Lucide React, `PublicMediaAsset`, shared generation continuation capability definitions  
+**Reuse rules:** This is the authoritative contextual media-detail surface. Keep continuation action derivation in the shared capability model and pass only opaque product media identity plus intent across routes.  
+**Do not:** Hard-code a second action registry, expose worker/provider/R2 identity, or treat URL query parameters as trusted asset state.  
+**Notes:** Configured run `33034606396` verified a real 400×300 R2-backed image, correct Viewer geometry, capability-derived Edit/Animate links and a server-validated Viewer → Create Edit handoff at desktop/mobile widths. Fixture cleanup passed. Approved, not locked.
+
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  
 **Source:** `src/components/shell/route-placeholder.tsx`  
 **Origin:** RenderLab  
 **Purpose:** Temporary route-content placeholder used while validating/incrementally replacing feature surfaces.  
 **Variants:** Text content only.  
-**Used by:** Library, Activity, Settings, Media Viewer placeholder routes. Create no longer uses it.  
+**Used by:** Activity and Settings placeholder routes. Create, Library and Media Viewer no longer use it.  
 **Dependencies:** none  
 **Reuse rules:** Temporary validation helper only.  
 **Do not:** Promote this placeholder layout into final feature UI or treat it as a generic empty-state component.  
-**Notes:** Deprecate/remove as real feature surfaces replace placeholders.
+**Notes:** Deprecate/remove once the remaining placeholder surfaces are replaced.
 
 Do not treat examples, registry listings, Saga components, or desired product concepts as proof that a RenderLab component exists.
