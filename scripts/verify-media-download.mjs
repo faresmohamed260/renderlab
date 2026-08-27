@@ -2,6 +2,12 @@ import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client
 import { chromium } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  configuredTestAccountIdentity,
+  createConfiguredTestAccount,
+  deleteConfiguredTestAccount,
+  routeLocalAppRequestsWithAccount,
+} from "./lib/configured-test-account.mjs";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -10,6 +16,7 @@ const r2Bucket = process.env.R2_BUCKET_NAME;
 const artifactDir = process.env.RENDERLAB_MEDIA_DOWNLOAD_ARTIFACT_DIR || "artifacts";
 const fixturePath = process.env.RENDERLAB_MEDIA_DOWNLOAD_FIXTURE_PATH || "/tmp/renderlab-media-download-fixture.json";
 const cleanupOnly = process.argv.includes("--cleanup-only");
+const fixtureAccount = configuredTestAccountIdentity("media-download");
 const uploadedFilename = "RenderLab-Download-画像.PNG";
 const uploadedDisplayName = "RenderLab Download 画像";
 const expectedUploadedFilename = "RenderLab-Download-画像.png";
@@ -23,6 +30,7 @@ const pngBytes = Buffer.from(
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
   SUPABASE_SERVICE_ROLE_KEY: supabaseKey,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -68,33 +76,34 @@ async function writeFixture(fixture) {
 
 async function cleanupFixture() {
   const fixture = await readFixture();
-  if (!fixture) return;
-
-  for (const asset of fixture.assets || []) {
-    if (asset.id) {
-      const response = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}`, { method: "DELETE" });
-      if (!response.ok) {
-        throw new Error(`Could not remove media download fixture (${response.status}): ${await response.text()}`);
+  if (fixture) {
+    for (const asset of fixture.assets || []) {
+      if (asset.id) {
+        const response = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}`, { method: "DELETE" });
+        if (!response.ok) {
+          throw new Error(`Could not remove media download fixture (${response.status}): ${await response.text()}`);
+        }
+      }
+      if (asset.storageKey) {
+        await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: asset.storageKey })).catch(() => {});
       }
     }
-    if (asset.storageKey) {
-      await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: asset.storageKey })).catch(() => {});
+
+    for (const asset of fixture.assets || []) {
+      if (!asset.id) continue;
+      const response = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}&select=id`);
+      if (!response.ok) throw new Error(`Could not verify media download cleanup (${response.status}): ${await response.text()}`);
+      const rows = await response.json();
+      if (rows.length) throw new Error(`Media download cleanup left asset ${asset.id}.`);
     }
-  }
 
-  for (const asset of fixture.assets || []) {
-    if (!asset.id) continue;
-    const response = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}&select=id`);
-    if (!response.ok) throw new Error(`Could not verify media download cleanup (${response.status}): ${await response.text()}`);
-    const rows = await response.json();
-    if (rows.length) throw new Error(`Media download cleanup left asset ${asset.id}.`);
+    await rm(fixturePath, { force: true });
+    console.log(`Cleaned configured media download fixtures assets=${(fixture.assets || []).map((asset) => asset.id).filter(Boolean).join(",")}.`);
   }
-
-  await rm(fixturePath, { force: true });
-  console.log(`Cleaned configured media download fixtures assets=${(fixture.assets || []).map((asset) => asset.id).filter(Boolean).join(",")}.`);
+  await deleteConfiguredTestAccount(fixtureAccount);
 }
 
-async function createAsset({ origin, originalFilename = null, displayName = null, prompt = null }) {
+async function createAsset(account, { origin, originalFilename = null, displayName = null, prompt = null }) {
   const id = randomUUID();
   const storageKey = `renderlab/download-fixtures/${new Date().toISOString().slice(0, 7).replace("-", "/")}/${id}.png`;
   const fixture = await readFixture() || { assets: [] };
@@ -113,6 +122,7 @@ async function createAsset({ origin, originalFilename = null, displayName = null
     headers: { prefer: "return=representation" },
     body: JSON.stringify({
       id,
+      owner_id: account.id,
       generation_job_id: null,
       origin,
       kind: "image",
@@ -157,12 +167,13 @@ let primaryError = null;
 
 try {
   await cleanupFixture();
-  const uploaded = await createAsset({
+  const account = await createConfiguredTestAccount("media-download");
+  const uploaded = await createAsset(account, {
     origin: "uploaded",
     originalFilename: uploadedFilename,
     displayName: uploadedDisplayName,
   });
-  const generated = await createAsset({
+  const generated = await createAsset(account, {
     origin: "generated",
     prompt: generatedPrompt,
   });
@@ -174,6 +185,7 @@ try {
     acceptDownloads: true,
   });
   const page = await context.newPage();
+  await routeLocalAppRequestsWithAccount(page, baseUrl, account);
 
   await page.goto(`${baseUrl}/library/${uploaded.id}`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("heading", { name: uploadedDisplayName, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
@@ -197,7 +209,7 @@ try {
   await page.screenshot({ path: `${artifactDir}/media-download-desktop-generated.png`, fullPage: true });
   await verifyDownload(page, expectedGeneratedFilename, "Generated media download");
 
-  console.log(`Configured Media Viewer downloads verified. uploaded=${uploaded.id} generated=${generated.id}`);
+  console.log(`Configured Media Viewer downloads verified. owner=${account.id} uploaded=${uploaded.id} generated=${generated.id}`);
 } catch (error) {
   primaryError = error;
 } finally {
