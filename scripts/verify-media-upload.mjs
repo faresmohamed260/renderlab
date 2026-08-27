@@ -74,21 +74,27 @@ async function rows(path) {
 
 async function cleanupFixtures() {
   const sessions = await rows(
-    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,media_asset_id`,
+    `media_upload_sessions?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,media_asset_id`,
   );
 
   for (const session of sessions) {
     await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: session.storage_key })).catch(() => {});
-    const sessionDelete = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(session.id)}`, { method: "DELETE" });
+    const sessionDelete = await supabase(
+      `media_upload_sessions?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&id=eq.${encodeURIComponent(session.id)}`,
+      { method: "DELETE" },
+    );
     if (!sessionDelete.ok) throw new Error(`Could not remove media upload session fixture (${sessionDelete.status}).`);
     if (session.media_asset_id) {
-      const assetDelete = await supabase(`media_assets?id=eq.${encodeURIComponent(session.media_asset_id)}`, { method: "DELETE" });
+      const assetDelete = await supabase(
+        `media_assets?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&id=eq.${encodeURIComponent(session.media_asset_id)}`,
+        { method: "DELETE" },
+      );
       if (!assetDelete.ok) throw new Error(`Could not remove uploaded media asset fixture (${assetDelete.status}).`);
     }
   }
 
   await deleteConfiguredTestAccount(fixtureAccount);
-  if (sessions.length) console.log(`Cleaned ${sessions.length} persistent media upload fixture(s).`);
+  if (sessions.length) console.log(`Cleaned ${sessions.length} persistent media upload fixture(s) for owner=${fixtureAccount.id}.`);
 }
 
 await cleanupFixtures();
