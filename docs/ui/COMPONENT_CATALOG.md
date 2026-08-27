@@ -101,27 +101,27 @@ Before copying/installing an external component:
 **Notes:** Adopted in PR #6 after production build, keyboard/interaction Playwright coverage through its Create usage, and desktop/mobile rendered review.
 
 ### CreateWorkspace
-**Status:** EXPERIMENTAL  
+**Status:** APPROVED  
 **Source:** `src/features/create/create-workspace.tsx`  
 **Origin:** RenderLab product composition based on the versioned Create v0.2/v0.3 open design handoff  
 **Purpose:** Own the task-oriented Create experience: prompt draft, Image/Video output choice, essential aspect/duration values, reference context, typed generation submission/polling, truthful asynchronous feedback, persisted result presentation, continuation actions, and Advanced disclosure.  
 **Variants:** Create Image, Create Video, reference-driven Edit Image, reference-driven Animate Image; responsive desktop/mobile layout.  
 **Used by:** `/`  
 **Dependencies:** React client state, Lucide React, RenderLab generation capability/API contracts, RenderLab reference-upload contract, RenderLab media asset product APIs, normalized Radix `Collapsible`  
-**Reuse rules:** Keep this feature-owned until stable subcomponents have a real reuse case. Use opaque product source/media IDs and typed RenderLab APIs rather than storage keys or direct provider/worker calls.  
+**Reuse rules:** This is the authoritative Create workspace. Extend it or extract deliberately reusable subcomponents rather than creating competing Create surfaces. Use opaque product source/media IDs and typed RenderLab APIs rather than storage keys or direct provider/worker calls.  
 **Do not:** Expose backend workflow IDs/R2 keys, fabricate progress, clear prompt/reference/settings on recoverable errors, or add technical controls to the default composer merely because workers support them.  
-**Notes:** All four initial native operations are live-verified. Persisted results render through product APIs. Image results support capability-derived Edit/Animate continuation; the durable `media-asset` continuation path passed live integration run `33027460976`. Bounded polling recovery and conservative worker reassignment are merged. Advanced v0.3 passed CI/run `33030364272`. Create remains `EXPERIMENTAL`/screen `MIGRATING` until final configured real-lifecycle responsive review.
+**Notes:** All four initial native operations are live-verified. Persisted results render through product APIs. Image results support capability-derived Edit/Animate continuation; the durable `media-asset` continuation path passed live integration run `33027460976`. Bounded polling recovery and conservative worker reassignment are merged. Advanced v0.3 passed run `33030364272`. Final configured browser-driven result/continuation review passed run `33031817744` at desktop/mobile widths and self-cleaned its production fixture. Approved, not locked.
 
 ### CreateAdvancedPanel
-**Status:** EXPERIMENTAL  
+**Status:** APPROVED  
 **Source:** `src/features/create/create-advanced-panel.tsx`  
 **Origin:** RenderLab feature composition using the reviewed `design/penpot/create-v0.3-advanced.svg` candidate and normalized Radix Collapsible  
 **Purpose:** Present deliberately Advanced generation controls without turning the default composer into a technical form.  
 **Current fields:** negative prompt, seed, steps, guidance; frame rate only when output is Video.  
 **Dependencies:** RenderLab generation capability definitions, native HTML form controls, Lucide React, `CollapsibleContent`  
-**Reuse rules:** Feature-owned. If future screens need the same parameter editing model, extract shared field primitives only after a real reuse case appears.  
+**Reuse rules:** This is the approved Create Advanced implementation. If future screens need the same parameter editing model, extract shared field primitives only after a real reuse case appears.  
 **Do not:** Add provider/worker/model identifiers or unverified workflow parameters.  
-**Notes:** Separate Image/Video drafts preserve operation-specific defaults and edits. Invalid Advanced values block submission locally while preserving user work. PR #6 passed production build, behavior tests, API validation tests, and desktop/mobile screenshot review.
+**Notes:** Separate Image/Video drafts preserve operation-specific defaults and edits. Invalid Advanced values block submission locally while preserving user work. PR #6 passed production build, behavior tests, API validation tests, and desktop/mobile screenshot review; the complete Create lifecycle subsequently passed run `33031817744`.
 
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  

@@ -6,13 +6,13 @@ Fast lookup table for humans and AI agents. Populate from the real repository.
 |---|---|---|---|
 | Application shell / navigation | `AppShell` | `src/components/shell/app-shell.tsx` | APPROVED |
 | Generic disclosure / expand-collapse | `Collapsible` | `src/components/ui/collapsible.tsx` (`@radix-ui/react-collapsible`) | APPROVED |
-| Create workspace | `CreateWorkspace` | `src/features/create/create-workspace.tsx` | EXPERIMENTAL |
-| Create Advanced settings group | `CreateAdvancedPanel` | `src/features/create/create-advanced-panel.tsx` | EXPERIMENTAL |
-| Prompt input | Feature-owned textarea in `CreateWorkspace` | Create feature | EXPERIMENTAL |
-| Reference media input/context | Feature-owned composition in `CreateWorkspace` | Create feature | EXPERIMENTAL |
-| Persisted image/video preview | Feature-owned result composition in `CreateWorkspace` | Create feature + media product API | EXPERIMENTAL |
-| Result continuation actions | Capability-derived composition in `CreateWorkspace` | Create feature | EXPERIMENTAL |
-| Job progress/status | Create runtime status in `CreateWorkspace`; Activity surface still planned | Create/Activity | EXPERIMENTAL |
+| Create workspace | `CreateWorkspace` | `src/features/create/create-workspace.tsx` | APPROVED |
+| Create Advanced settings group | `CreateAdvancedPanel` | `src/features/create/create-advanced-panel.tsx` | APPROVED |
+| Prompt input | Feature-owned textarea in `CreateWorkspace` | Create feature | APPROVED within Create |
+| Reference media input/context | Feature-owned composition in `CreateWorkspace` | Create feature | APPROVED within Create |
+| Persisted image/video preview | Feature-owned result composition in `CreateWorkspace` | Create feature + media product API | APPROVED within Create |
+| Result continuation actions | Capability-derived composition in `CreateWorkspace` | Create feature | APPROVED within Create |
+| Job progress/status | Create runtime status in `CreateWorkspace`; Activity surface still planned | Create/Activity | APPROVED within Create |
 | Temporary route placeholder | `RoutePlaceholder` | `src/components/shell/route-placeholder.tsx` | EXPERIMENTAL |
 | Generic Button primitive | Not adopted yet | approved source policy | NOT IMPLEMENTED |
 | Dialog | Not adopted yet | approved source policy | NOT IMPLEMENTED |
@@ -23,5 +23,7 @@ Fast lookup table for humans and AI agents. Populate from the real repository.
 Before creating reusable UI, check this index and `docs/ui/COMPONENT_CATALOG.md`. Update both when components become approved, locked, or deprecated.
 
 Feature-owned HTML controls are acceptable product composition; generic interaction mechanics should still follow the repository sourcing order. `Collapsible` is the first normalized Radix primitive adopted into `src/components/ui`.
+
+Create was promoted after the configured production-resource lifecycle review in GitHub Actions run `33031817744`; approved feature-owned controls above are not automatically generic reusable primitives.
 
 Do not treat `RoutePlaceholder` as a final empty-state primitive; it exists only to validate the Phase 2 shell boundary.

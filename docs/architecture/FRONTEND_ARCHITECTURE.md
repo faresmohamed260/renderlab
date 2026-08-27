@@ -176,7 +176,7 @@ Use only for navigation/deep-link state that benefits from reload/shareability.
 `generation_jobs`, `media_assets`, `generation_sources` and future persistent product data remain server-owned state accessed through application boundaries.
 
 ### Client feature state
-Create currently owns ephemeral state such as:
+Create owns ephemeral state such as:
 - prompt draft;
 - output kind and essential values;
 - local reference preview;
@@ -309,7 +309,7 @@ Persisted product media is exposed through stable RenderLab APIs rather than raw
 - content: `/api/media/assets/[assetId]/content`;
 - thumbnail: `/api/media/assets/[assetId]/thumbnail`.
 
-Create uses returned `contentUrl` for image/video presentation. Persisted image results currently expose capability-derived Edit and Animate actions. Continuation rebinds the durable asset as a `media-asset` input. Live run `33027460976` verified `Create Image → persisted media asset → Edit Image` and self-cleaned both output objects/records.
+Create uses returned `contentUrl` for image/video presentation. Persisted image results expose capability-derived Edit and Animate actions. Continuation rebinds the durable asset as a `media-asset` input. Live run `33027460976` verified `Create Image → persisted media asset → Edit Image` and self-cleaned both output objects/records.
 
 ## Supabase Boundary
 RenderLab deliberately reuses shared project `AI Studio` (`rashyleshocuvpgcooxy`) while keeping RenderLab tables separate from legacy `studio_*`.
@@ -344,7 +344,7 @@ RenderLab reuses the shared R2 resource by explicit decision.
 ## Remote Validation Architecture
 UI iteration does not require Vercel preview deployments.
 
-`.github/workflows/ui-shell.yml` currently performs:
+`.github/workflows/ui-shell.yml` performs ordinary credential-free validation:
 - production `next build`;
 - Playwright Chromium against `next start`;
 - desktop `1440×1024` checks;
@@ -355,6 +355,18 @@ UI iteration does not require Vercel preview deployments.
 Create Advanced PR #6 was verified in final PR run `33030364272`, including progressive-disclosure interaction, per-output Advanced drafts, invalid Advanced API validation, and reviewed desktop/mobile screenshot artifacts.
 
 Configured real-infrastructure workflows separately verify reference uploads and generation without placing production secrets into ordinary UI CI.
+
+For full Create visual lifecycle verification, `scripts/verify-create-lifecycle.mjs` plus `.github/workflows/create-lifecycle-visual.yml` use the existing server-side infrastructure secrets to:
+1. launch the production build;
+2. drive Create through Chromium;
+3. submit one real Create Image request;
+4. wait for durable persistence and the rendered result;
+5. capture desktop/mobile result screenshots;
+6. select the capability-derived Edit continuation from the persisted asset;
+7. capture desktop/mobile continuation screenshots;
+8. delete the generated R2 object plus `media_assets`/`generation_jobs` fixture.
+
+GitHub Actions run `33031817744` passed this configured lifecycle check and supplied the final Phase 3 visual approval evidence.
 
 ## Error and Loading Architecture
 The product distinguishes:
@@ -371,10 +383,9 @@ No synthetic percentage progress is permitted. Recoverable errors preserve promp
 
 ## Current Frontend Status
 - AppShell: `APPROVED`.
-- Create: screen status `MIGRATING`; core implementation is feature-owned/experimental.
-- Create core native functionality, persistence, continuations, polling recovery, worker hardening and Advanced disclosure are implemented and verified.
-- Remaining Create approval gate: render and review the complete **configured real generation → persisted result → continuation** lifecycle responsively.
+- Create: `APPROVED` after configured real-lifecycle responsive review in run `33031817744`.
 - Library, Media Viewer, Activity and Settings remain planned/placeholder surfaces.
+- Current product phase: Phase 4 — Media & Continuation.
 
 ## Architecture Rules
 - Do not rebuild Saga's frontend architecture.

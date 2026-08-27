@@ -75,7 +75,7 @@ Worker completion is not product completion. `succeeded` occurs only after durab
 Initial submission may try another compatible worker when a worker clearly rejects/is unavailable before a provider call ID is accepted. The accepted provider job is then pinned to its assigned worker.
 
 ### Poll-time reassignment safety
-RenderLab now carries forward the proven Saga safety distinction rather than treating every worker error as failover-safe.
+RenderLab carries forward the proven Saga safety distinction rather than treating every worker error as failover-safe.
 
 Safe automatic reassignment requires explicit evidence such as:
 - credit/budget/quota exhaustion;
@@ -101,8 +101,9 @@ PR #5 implemented this rule. Its production build/Playwright checks passed, and 
 - Animate Image with reference → **verified end-to-end** in the same run `33021977765`.
 - Durable media continuation → **verified end-to-end** in run `33027460976`: a persisted Create Image `media_assets` result was loaded from shared R2 by opaque product identity and used as the next Edit Image input; both generation fixtures were cleaned afterward.
 - Post-hardening regression → **verified** in run `33027861292` after conservative poll-time reassignment was merged.
+- Configured browser lifecycle → **verified** in run `33031817744`: one real Create Image request was submitted from the rendered Create UI, reached durable persistence, rendered through the product media API, exposed Edit/Animate, transitioned into Edit from the durable asset at desktop/mobile widths, and removed its generated R2/media/job fixture afterward.
 
-All four initial Create operations plus durable image continuation now have native live-infrastructure integration coverage.
+All four initial Create operations plus durable image continuation and the complete browser-visible Create lifecycle now have live shared-infrastructure coverage.
 
 ## Studio Compatibility Boundary
 A temporary isolated compatibility adapter exists at `src/server/generation/studio-compat.ts` for migration/debugging only. It is not the preferred production path.
@@ -169,15 +170,21 @@ Durable media assets can also become generation inputs via `{ type: "media-asset
 ## CI / Integration Validation
 Default GitHub UI CI intentionally runs without production infrastructure secrets and validates truthful unavailable states.
 
-Configured integration workflows run automatically on relevant `main` pushes and may also support manual dispatch. Current integration coverage includes:
+Configured integration workflows use the existing server-side GitHub Secrets and keep production credentials out of browser/client code. Current integration coverage includes:
 - signed reference upload;
 - Create Image;
 - Edit Image;
 - Create Video;
 - Animate Image;
-- persisted `media-asset` → Edit continuation.
+- persisted `media-asset` → Edit continuation;
+- browser-driven Create result/continuation rendering at desktop/mobile widths.
 
 Integration fixtures self-clean rather than pollute shared production resources.
+
+### Configured Create visual lifecycle
+`scripts/verify-create-lifecycle.mjs` and `.github/workflows/create-lifecycle-visual.yml` provide the repeatable visual lifecycle check used for final Create approval. It uses one real generation, captures four screenshots, then deletes its generated R2 object and associated RenderLab media/job rows. The workflow is separate from ordinary credential-free UI CI and can also be manually dispatched when future Create changes justify a configured regression review.
+
+Approval run: `33031817744`.
 
 Required GitHub secrets:
 - `SUPABASE_SERVICE_ROLE_KEY`

@@ -83,11 +83,12 @@ The initial approved information architecture is:
 Image, Video, Edit, Animate, Models, and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Phase 3 — Creation Experience implementation.**
+**Phase 4 — Media & Continuation.**
 
 ### Verified current state
 - application shell is implemented and `APPROVED`;
-- Create is implemented and remains `MIGRATING` until final real-lifecycle responsive review is complete;
+- Create is implemented and `APPROVED` after the complete configured desktop/mobile lifecycle review in GitHub Actions run `33031817744`;
+- the configured lifecycle review exercised one real Create Image request through the browser, waited for durable `media_assets` persistence, rendered the persisted image, verified **Edit** and **Animate**, selected **Edit** from the durable result, captured desktop/mobile result and continuation states, and self-cleaned the generated R2/media/job fixture;
 - Image/Video prompt composition, aspect/duration controls, reference preview/removal/replacement, responsive composer behavior, persisted-result presentation, continuation actions, and Advanced disclosure are implemented;
 - reference upload is verified end-to-end against the reused shared R2 + Supabase resources and self-cleans;
 - RenderLab reuses Supabase project `AI Studio` (`rashyleshocuvpgcooxy`), shared R2, and the existing worker fleet by explicit product decision;
@@ -95,18 +96,22 @@ Image, Video, Edit, Animate, Models, and Workflows are not separate top-level de
 - `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]` are the browser-facing RenderLab generation boundaries;
 - RenderLab-native worker submission, primary/standby routing, polling, R2 persistence, media records, and private media-delivery APIs are implemented;
 - all four initial native operations are verified end-to-end: Create Image, Edit Image, Create Video, and Animate Image;
-- Create loads the persisted RenderLab `media_assets` result after success and renders the real image/video through product media APIs;
-- transient Create status-poll failures retry automatically with bounded backoff; PR #2 passed production build + Playwright validation before merge;
-- capability-derived continuation actions are implemented centrally: persisted image results expose **Edit** and **Animate**, and the next generation binds the durable result as a `media-asset` input rather than an R2 key; PR #3 passed validation before merge;
-- durable-media continuation is live-verified in GitHub Actions run `33027460976`: `Create Image → persisted media asset → Edit Image` succeeded and both generated fixtures were removed afterward;
-- conservative poll-time worker reassignment is implemented: explicit credit exhaustion or explicit worker-unavailable evidence may reassign, while generic 429/5xx/network failures never trigger automatic duplicate-risk reassignment; PR #5 passed UI/build validation and post-merge live generation regression run `33027861292` succeeded;
-- Create Advanced v0.3 is implemented from verified capabilities and is collapsed by default. It exposes negative prompt, seed, steps, guidance, and video-only frame rate. The disclosure uses the normalized Radix Collapsible primitive rather than a bespoke interaction mechanic; PR #6 passed production build, interaction tests, desktop/mobile screenshot review, and was merged as `0aa5344a20d321f364f44eb0666d41a861b5ca5a`;
-- production build/UI validation remains GitHub-based rather than depending on Vercel preview deployments.
+- transient Create status-poll failures retry automatically with bounded backoff;
+- capability-derived continuation actions are implemented centrally and durable `media-asset` continuation is live-verified in run `33027460976`;
+- conservative poll-time worker reassignment is implemented and post-merge live generation regression run `33027861292` succeeded;
+- Create Advanced v0.3 is implemented from verified capabilities using the normalized Radix Collapsible primitive and was reviewed in run `33030364272`;
+- production build/UI validation remains GitHub-based rather than depending on Vercel preview deployments;
+- `scripts/verify-create-lifecycle.mjs` plus `.github/workflows/create-lifecycle-visual.yml` provide a repeatable configured real-lifecycle visual check when future Create changes justify rerunning it.
 
-### Still open
-1. Perform final desktop/mobile Create review with a **real configured persisted-result and continuation lifecycle** visible, not only credential-free UI states.
-2. Decide/remove the transitional Studio compatibility fallback once no migration/debugging requirement still needs it.
-3. Keep capability definitions and native workflow defaults aligned as Advanced capability metadata evolves; do not expose new controls merely because a worker accepts them.
+### Current Phase 4 work
+1. Design and implement Library against RenderLab-owned `media_assets`, preserving Library as a reusable creative-asset workspace rather than generation history only.
+2. Implement the contextual Media Viewer on `/library/[assetId]` using the existing media delivery and capability-derived continuation contracts.
+3. Add search/filter/history/metadata/media actions only from actual product requirements and verified data contracts.
+4. Keep Create continuation logic centralized so Library/Media Viewer reuse the same capability model rather than hard-coding duplicate action rules.
+
+### Infrastructure cleanup still open
+- Decide/remove the transitional Studio compatibility fallback once no migration/debugging requirement still needs it.
+- Keep capability definitions and native workflow defaults aligned as capability metadata evolves; do not expose new controls merely because a worker accepts them.
 
 See `docs/ui/UI_MIGRATION.md` for phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, `docs/architecture/FRONTEND_ARCHITECTURE.md` for frontend architecture, and `docs/architecture/INFRASTRUCTURE.md` for shared-resource and generation ownership rules.
 
