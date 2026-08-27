@@ -67,6 +67,7 @@ jobs:
         run: npm run build
 
       - name: Ensure R2 browser upload CORS
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
         run: node scripts/ensure-r2-browser-cors.mjs
 
       - name: Install Chromium
