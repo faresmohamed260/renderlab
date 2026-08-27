@@ -1,5 +1,7 @@
 import {
+  MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH,
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
+  normalizeMediaAssetDisplayName,
   normalizeMediaAssetSearchQuery,
   type MediaAssetKind,
   type MediaAssetOrigin,
@@ -119,6 +121,27 @@ export async function getMediaAsset(assetId: string) {
   const rows = await supabaseRest<MediaAssetRecord[]>(
     `media_assets?id=eq.${encodeURIComponent(assetId)}&select=*&limit=1`,
     { method: "GET" },
+  );
+  return rows?.[0] ?? null;
+}
+
+export async function renameMediaAsset(assetId: string, requestedDisplayName: string) {
+  const displayName = normalizeMediaAssetDisplayName(requestedDisplayName);
+  if (!displayName) throw new RangeError("A media name is required.");
+  if (displayName.length > MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH) {
+    throw new RangeError(`Media names may not exceed ${MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH} characters.`);
+  }
+
+  const rows = await supabaseRest<MediaAssetRecord[]>(
+    `media_assets?id=eq.${encodeURIComponent(assetId)}&select=*`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        display_name: displayName,
+        updated_at: new Date().toISOString(),
+      }),
+    },
   );
   return rows?.[0] ?? null;
 }
