@@ -6,7 +6,7 @@ on:
       - "scripts/verify-media-rename.mjs"
       - ".github/workflows/media-rename-visual.yml"
       - "src/app/api/media/assets/**"
-      - "src/features/library/media-rename-control.tsx"
+      - "src/features/library/media-viewer-actions.tsx"
       - "src/features/library/media-viewer.tsx"
       - "src/lib/api/media-assets-contract.ts"
       - "src/server/media/media-assets.ts"
