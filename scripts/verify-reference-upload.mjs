@@ -9,6 +9,7 @@ import {
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const fixtureFilename = "renderlab-integration-1x1.png";
 const fixtureAccount = configuredTestAccountIdentity("reference-upload");
+const cleanupOnly = process.argv.includes("--cleanup-only");
 
 // 1×1 transparent PNG. The integration verifies RenderLab's signed-upload/storage
 // contract rather than image processing, so a tiny deterministic fixture is enough.
@@ -85,6 +86,7 @@ async function cleanupIntegrationFixtures() {
 
 console.log(`Checking RenderLab reference upload at ${baseUrl}`);
 await cleanupIntegrationFixtures();
+if (cleanupOnly) process.exit(0);
 
 let verified = false;
 try {
