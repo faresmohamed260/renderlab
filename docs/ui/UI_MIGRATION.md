@@ -76,22 +76,29 @@ UI-022 is accepted: durable user uploads become ordinary `media_assets`; pending
 - [x] Present uploaded media truthfully in Media Viewer.
 - [x] Expose capability-derived Edit/Animate for uploaded images.
 - [x] Keep uploaded display identity truthful when Viewer initializes Create continuation.
-- [x] Final backend integration run `33065020704` passed production build, signed PUT/promotion, Unicode filename preservation, concurrent completion recovery, sequential idempotency, media-list/content behavior and cleanup.
-- [x] Final production build + credential-free UI/API run `33065020735` passed.
-- [x] Real Chromium Upload → Library → Viewer → Create continuation passed against shared infrastructure in run `33065020778`.
-- [x] Desktop/mobile upload-extension screenshots were captured and visually inspected from run `33065020778`.
-- [x] Final upload fixture cleanup was confirmed by the workflow and direct Supabase verification (`0` upload sessions, `0` uploaded assets).
+- [x] Current-state backend integration run `33066999365` passed production build, signed PUT/promotion, Unicode filename preservation, concurrent completion recovery, sequential idempotency, media-list/content behavior and cleanup.
+- [x] Current-state production build + credential-free UI/API run `33066999317` passed.
+- [x] Current-state Chromium Upload → Library → Viewer → Create continuation passed against shared infrastructure in run `33066999350`.
+- [x] R2 bucket CORS was reconciled in `33066999350` through the S3 API using the existing admin-capable R2 access-key token; both localhost origins and both current stable RenderLab Vercel domains passed preflight.
+- [x] Desktop/mobile upload-extension screenshots were captured and visually inspected from run `33066999350`.
+- [x] Upload fixture cleanup was confirmed by the workflow; prior direct Supabase verification also found `0` upload sessions and `0` uploaded assets after the configured lifecycle.
 - [x] Source-of-truth approval docs record the verified implementation and run IDs.
 - [ ] Merge PR #9 and verify `main` after the documentation-finalized head is green and mergeable.
 
 **Persistent Library upload extension status: `APPROVED FOR MERGE` pending final documentation-head CI.**
 
 ### Browser verification / production-origin boundary
-The shared R2 bucket currently accepts browser PUT from `https://studio.faresuniform.uk` but rejects localhost and the currently known RenderLab Vercel origins. Existing object credentials cannot manage bucket CORS and no Cloudflare admin token is configured in RenderLab Actions.
+The previous browser-CORS blocker is resolved. The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` now has bucket-admin capability, and `scripts/ensure-r2-browser-cors.mjs` successfully reconciles the managed `renderlab-browser-uploads` rule through the R2 S3 API.
 
-For configured browser approval, GitHub Actions serves the local RenderLab build through a CI-only HTTPS loopback alias for `https://studio.faresuniform.uk`. This does **not** route to or depend on the deployed Studio runtime; it only supplies an already-authorized browser origin while the actual Upload control performs the real signed PUT to shared R2.
+The currently managed origins are:
+- `http://127.0.0.1:3000`
+- `http://localhost:3000`
+- `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
+- `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
-Before any real RenderLab production/preview origin is used by users, that exact origin must be added to shared R2 CORS for `PUT` with `Content-Type`. This remains a deployment/infrastructure prerequisite and is not permission to proxy durable uploads through the RenderLab server.
+Run `33066999350` verified successful preflight for all four origins and then ran the real browser lifecycle directly from `http://127.0.0.1:3000`. The temporary Studio-origin TLS/hosts alias used during diagnosis has been removed; configured upload verification no longer depends on the Studio origin string or deployed Studio runtime.
+
+The connected Vercel project remains `live=false`. If a future custom domain or different user-facing production origin is adopted, add that exact origin to the managed R2 CORS rule before serving direct browser uploads there. Do not use a broad wildcard and do not proxy durable uploads through RenderLab merely to avoid correct CORS configuration.
 
 ### Still intentionally open after this slice
 - [ ] Search and broader history controls.
@@ -124,9 +131,9 @@ These are not implied by persistent upload support and must be designed against 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
 **Current slice:** Persistent uploaded media, PR #9.  
-**Verified:** durable upload architecture/migration, filename/race hardening, backend integration, credential-free regressions, actual browser direct-R2 upload, Library/Viewer/Create continuation, desktop/mobile screenshots and cleanup.  
+**Verified:** durable upload architecture/migration, filename/race hardening, backend integration, credential-free regressions, admin-capable R2 CORS reconciliation, actual browser direct-R2 upload, Library/Viewer/Create continuation, desktop/mobile screenshots and cleanup.  
 **Merge gate:** final documentation-head CI + mergeability only.  
-**Deployment prerequisite:** add the actual RenderLab user-facing origin(s) to shared R2 browser PUT CORS before deployment.  
+**Deployment note:** the two current stable RenderLab Vercel origins are already in the managed CORS rule; add any future custom/different public origin explicitly before use.  
 **Next Phase 4 product slice after merge:** define the durable Library search contract before implementing search UI.
 
 ## Session Handoff Rule
