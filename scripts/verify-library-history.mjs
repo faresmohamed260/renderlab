@@ -182,7 +182,7 @@ try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1024 }, colorScheme: "dark" });
   const page = await context.newPage();
-  await page.goto(`${baseUrl}/library?q=${query}&sort=oldest`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.goto(`${baseUrl}/library?q=${query}&sort=oldest`, { waitUntil: "domcontentloaded", timeout: 60_000 });
 
   const sortButton = page.getByRole("button", { name: "Oldest first", exact: true });
   await sortButton.waitFor({ state: "visible", timeout: 30_000 });
