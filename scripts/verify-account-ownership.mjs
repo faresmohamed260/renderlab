@@ -197,6 +197,31 @@ try {
   const anonymousList = await appFetch("/api/media/assets", null);
   await assertStatus(anonymousList, 401, "Signed-out Library API");
 
+  const anonymousAsset = await appFetch(`/api/media/assets/${assetA}`, null);
+  await assertStatus(anonymousAsset, 401, "Signed-out media read");
+
+  const anonymousUpload = await appFetch("/api/media/uploads/upload-tickets", null, {
+    method: "POST",
+    body: JSON.stringify({ filename: `anonymous-${runToken}.png`, mimeType: "image/png", sizeBytes: 68 }),
+  });
+  await assertStatus(anonymousUpload, 401, "Signed-out persistent upload ticket");
+
+  const anonymousReference = await appFetch("/api/assets/reference/upload-tickets", null, {
+    method: "POST",
+    body: JSON.stringify({ filename: `anonymous-reference-${runToken}.png`, mimeType: "image/png", sizeBytes: 68 }),
+  });
+  await assertStatus(anonymousReference, 401, "Signed-out reference upload ticket");
+
+  const anonymousGeneration = await appFetch("/api/generation/jobs", null, {
+    method: "POST",
+    body: JSON.stringify({
+      prompt: "ownership verifier signed-out generation",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [],
+    }),
+  });
+  await assertStatus(anonymousGeneration, 401, "Signed-out generation submission");
+
   const ownAsset = await appFetch(`/api/media/assets/${assetA}`, tokenA);
   await assertStatus(ownAsset, 200, "Owner A own media read");
   const ownAssetPayload = await json(ownAsset);
@@ -208,6 +233,18 @@ try {
   const ownerAIds = new Set(ownerAListPayload?.items?.map((item) => item.id) || []);
   assert(ownerAIds.has(assetA), "Owner A Library did not include its own media asset.");
   assert(!ownerAIds.has(assetB), "Owner A Library leaked Owner B media.");
+
+  const ownerBOwnAsset = await appFetch(`/api/media/assets/${assetB}`, tokenB);
+  await assertStatus(ownerBOwnAsset, 200, "Owner B own media read");
+  const ownerBOwnPayload = await json(ownerBOwnAsset);
+  assert(ownerBOwnPayload?.ok === true && ownerBOwnPayload.asset?.id === assetB, "Owner B could not resolve its own media asset.");
+
+  const ownerBList = await appFetch("/api/media/assets?limit=24", tokenB);
+  await assertStatus(ownerBList, 200, "Owner B media list");
+  const ownerBListPayload = await json(ownerBList);
+  const ownerBIds = new Set(ownerBListPayload?.items?.map((item) => item.id) || []);
+  assert(ownerBIds.has(assetB), "Owner B Library did not include its own media asset.");
+  assert(!ownerBIds.has(assetA), "Owner B Library leaked Owner A media.");
 
   const foreignRead = await appFetch(`/api/media/assets/${assetA}`, tokenB);
   await assertStatus(foreignRead, 404, "Owner B foreign media read");
@@ -261,25 +298,36 @@ try {
   });
   await assertStatus(foreignReferenceCompletion, 404, "Owner B foreign reference completion");
 
-  const uploadOwnerCheck = await serviceRest(`media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=owner_id&limit=1`);
+  const uploadOwnerCheck = await serviceRest(
+    `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=owner_id,status&limit=1`,
+  );
   assert(uploadOwnerCheck.ok, `Could not verify upload owner (${uploadOwnerCheck.status}).`);
   const uploadRows = await uploadOwnerCheck.json();
   assert(uploadRows?.[0]?.owner_id === ownerA, "Upload ticket was not persisted with Owner A.");
+  assert(uploadRows?.[0]?.status === "pending", "Foreign upload completion changed Owner A upload state.");
 
-  const sourceOwnerCheck = await serviceRest(`generation_sources?id=eq.${encodeURIComponent(sourceId)}&select=owner_id&limit=1`);
+  const sourceOwnerCheck = await serviceRest(
+    `generation_sources?id=eq.${encodeURIComponent(sourceId)}&select=owner_id,status&limit=1`,
+  );
   assert(sourceOwnerCheck.ok, `Could not verify reference owner (${sourceOwnerCheck.status}).`);
   const sourceRows = await sourceOwnerCheck.json();
   assert(sourceRows?.[0]?.owner_id === ownerA, "Reference ticket was not persisted with Owner A.");
+  assert(sourceRows?.[0]?.status === "pending", "Foreign reference completion changed Owner A reference state.");
 
   const renameCheck = await serviceRest(`media_assets?id=eq.${encodeURIComponent(assetA)}&select=display_name&limit=1`);
   assert(renameCheck.ok, `Could not verify foreign rename result (${renameCheck.status}).`);
   const renameRows = await renameCheck.json();
   assert(renameRows?.[0]?.display_name === `Owner A ${runToken}`, "Foreign rename changed Owner A media.");
 
-  const rawDataApi = await rawUserRest("media_assets?select=id&limit=1", tokenA);
-  assert(!rawDataApi.ok, `Authenticated browser role unexpectedly received raw media_assets access (HTTP ${rawDataApi.status}).`);
+  for (const table of ["generation_sources", "generation_jobs", "media_assets", "media_upload_sessions"]) {
+    const rawDataApi = await rawUserRest(`${table}?select=*&limit=1`, tokenA);
+    assert(
+      !rawDataApi.ok,
+      `Authenticated browser role unexpectedly received raw ${table} access (HTTP ${rawDataApi.status}).`,
+    );
+  }
 
-  console.log(`Configured account ownership verified owners=${ownerA},${ownerB} asset=${assetA} job=${jobA}.`);
+  console.log(`Configured account ownership verified owners=${ownerA},${ownerB} assetA=${assetA} assetB=${assetB} job=${jobA}.`);
 } catch (error) {
   primaryError = error;
 } finally {
