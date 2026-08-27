@@ -57,7 +57,7 @@ async function loadAssets(jobId) {
 async function cleanupJob(jobId) {
   if (!jobId) return;
 
-  const assets = await loadAssets(jobId).catch(() => []);
+  const assets = await loadAssets(jobId);
   const keys = new Set();
   for (const asset of assets) {
     if (asset.storage_key) keys.add(asset.storage_key);
