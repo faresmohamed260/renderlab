@@ -88,7 +88,7 @@ Durable Download (UI-024):
 GET /api/media/assets/:assetId/download
   -> reload durable media_assets row
   -> derive safe product filename from durable metadata + MIME
-  -> sign short-lived R2 GetObject with ResponseContentDisposition=attachment
+  -> sign R2 GetObject with ResponseContentDisposition=attachment
   -> 302 private/no-store
   -> browser downloads directly from R2
 ```
@@ -121,9 +121,9 @@ Infrastructure invariants:
 
 Configured Media Rename Visual `33074480356` used real generated/uploaded R2-backed durable assets and Chromium. It verified bounded validation, Unicode/whitespace normalization, durable persistence, Search discovery, unchanged uploaded Download filename/bytes and preservation of original filename/storage/provenance. Direct cleanup verification found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions.
 
-During PR #12 verification, one Library lifecycle run found an older leaked lifecycle asset sharing the fixed fixture display name. The run cleaned its own new fixture correctly; the stale database row was then removed, and one-off cleanup run `33075125636` explicitly deleted the exact orphaned R2 object `renderlab/uploads/2026/08/508af8e8-da64-4f30-8866-29b0fb63d308.png`. The temporary cleanup script/workflow was removed from the branch afterward. The ordinary Library lifecycle subsequently passed.
+During PR #12 verification, two older leaked Library lifecycle assets surfaced with the same fixed human fixture name. Each failing run cleaned its own newly created upload correctly; the stale database rows were removed separately. One-off cleanup run `33075125636` deleted the first orphaned R2 object. One-off cleanup run `33076888858` deleted and then HEAD-verified absence of the second orphaned R2 object `renderlab/uploads/2026/08/dde3c1c0-d65e-498a-a4b1-78cc9cbd0264.png`. The temporary cleanup script/workflow was removed from the branch after each cleanup.
 
-Because the configured Library lifecycle mutates shared Supabase/R2 fixture state, `.github/workflows/library-lifecycle-visual.yml` now uses `concurrency: renderlab-library-lifecycle-shared` with `cancel-in-progress: false` so those mutable lifecycle fixture windows do not overlap across workflow runs.
+The configured Library lifecycle is now hardened at both orchestration and identity boundaries. `.github/workflows/library-lifecycle-visual.yml` uses `concurrency: renderlab-library-lifecycle-shared` with `cancel-in-progress: false` so shared mutable lifecycle windows do not overlap for workflow revisions that include the rule. Independently, `scripts/verify-library-lifecycle.mjs` locates the exact Library card by the durable `media-asset` ID returned by its own upload completion and separately asserts the expected display name. Same-name durable assets therefore cannot make the verifier ambiguous even if unrelated stale state exists.
 
 ## Generation Worker Fleet
 RenderLab reuses existing ComfyUI/Modal workers while the **RenderLab server owns orchestration**. Public routing metadata lives in `src/server/generation/worker-fleet.ts`; credentials never belong there.
@@ -245,7 +245,7 @@ Ordinary UI CI runs without production secrets and validates truthful unavailabl
 Key workflows:
 - `verify-create-lifecycle.mjs` + `create-lifecycle-visual.yml`
 - `verify-media-upload.mjs` + `media-upload-integration.yml`
-- `verify-library-lifecycle.mjs` + `library-lifecycle-visual.yml` — shared-resource lifecycle is serialized via workflow concurrency
+- `verify-library-lifecycle.mjs` + `library-lifecycle-visual.yml` — shared-resource lifecycle is serialized and exact durable fixture identity is used for browser targeting
 - `verify-library-search.mjs` + `library-search-visual.yml`
 - `verify-media-download.mjs` + `media-download-visual.yml`
 - `verify-media-rename.mjs` + `media-rename-visual.yml`
