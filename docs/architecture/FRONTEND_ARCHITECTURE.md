@@ -12,6 +12,8 @@ Core stack from `package.json`:
 - Tailwind CSS `4.3.3`
 - Lucide React `1.34.0`
 - `radix-ui` `1.6.7`
+- `@supabase/ssr` `0.12.5`
+- `@supabase/supabase-js` `2.112.4`
 - `class-variance-authority` `0.7.1`
 - `clsx` `2.1.1`
 - `tailwind-merge` `3.6.0`
@@ -20,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; PR #15 merged Library drag/drop upload/UI-028 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8` after exact-head five-gate CI, clean fixture verification and green post-merge `main` validation. Activity and Settings remain placeholders.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; PR #15 merged Library drag/drop upload/UI-028 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`. Account Identity Foundation/UI-029 is implementation-approved on PR #16 and replaces the Settings placeholder with a real account surface without yet changing media/job ownership. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -62,7 +64,7 @@ Rules:
 /library           Library
 /library/[assetId] Media Viewer
 /activity          Activity
-/settings          Settings
+/settings          Settings / Account
 ```
 
 Rules:
@@ -74,6 +76,7 @@ Rules:
 - Durable Download uses the Viewer asset route context and a product API; the browser never treats an R2 key/signed URL as durable identity.
 - Durable Rename stays on the Viewer asset identity; the client submits a bounded display-name mutation and refreshes server-rendered asset state.
 - Library drag/drop is transient browser interaction state only; it does not become URL or durable media-management state.
+- Settings owns requirement-backed account/application state. UI-029 uses it for Supabase Auth identity; it does not become a login gate around other routes.
 
 ## Product API Boundaries
 ```text
@@ -95,12 +98,16 @@ POST     /api/media/uploads/upload-completions
 
 `GET /api/media/assets` accepts bounded `kind`, `q`, `sort`, `limit`, `offset`; `sort` accepts only `newest|oldest` and defaults to newest. `PATCH /api/media/assets/[assetId]` currently owns the UI-025 durable display-name Rename mutation only. Picker and drag/drop persistent uploads both use the same existing media-upload ticket/completion APIs. Browser components do not call workers, Supabase service-role APIs or raw R2 credentials directly.
 
+UI-029 account operations use the maintained Supabase Auth client contract rather than adding parallel RenderLab password/session APIs. The next ownership slice must explicitly thread verified account identity through the product APIs/services above before any of those resources are considered account-private.
+
 ## Ownership Structure
 ```text
+proxy.ts
 src/
 ├── app/
 │   ├── page.tsx
 │   ├── library/
+│   ├── settings/
 │   └── api/
 │       ├── generation/jobs/
 │       ├── assets/reference/
@@ -110,6 +117,8 @@ src/
 │   ├── shell/
 │   └── ui/
 ├── features/
+│   ├── account/
+│   │   └── account-settings.tsx
 │   ├── create/
 │   └── library/
 │       ├── library-view.tsx
@@ -121,7 +130,12 @@ src/
 │       └── media-viewer-actions.tsx
 ├── lib/
 │   ├── api/
-│   └── capabilities/
+│   ├── capabilities/
+│   └── supabase/
+│       ├── config.ts
+│       ├── browser.ts
+│       ├── server.ts
+│       └── proxy.ts
 └── server/
     ├── data/
     ├── generation/
@@ -130,32 +144,39 @@ src/
 ```
 
 Ownership rules:
+- root `proxy.ts` + `lib/supabase/proxy.ts` — Supabase Auth cookie refresh only; not product authorization policy;
 - `components/ui` — normalized generic maintained primitives without feature data contracts;
 - `components/shell` — persistent application chrome composed from approved primitives;
+- `features/account` — product-facing Settings account composition, not session infrastructure or media authorization;
 - `features/<feature>` — product-specific composition/behavior composed from approved primitives;
+- `lib/supabase` — public/server Supabase Auth client/session boundary; browser code never receives service-role credentials;
 - `lib/capabilities` — user-facing capability definitions/resolution;
 - `lib/api` — typed product API/query contracts;
 - `server/generation` — orchestration/worker boundaries;
 - `server/media` — durable media/query/upload/download/rename services;
 - `server/storage` — R2 implementation;
-- `server/data` — Supabase/repository access.
+- `server/data` — server-only Supabase/repository access.
 
-Do not extract generic upload/search/history/download/rename/dropzone frameworks from single feature needs. Reuse follows a second real product need. UI-026 applies to generic conventional control mechanics, not to feature-domain extraction.
+Do not extract generic upload/search/history/download/rename/dropzone/auth-form frameworks from single feature needs. Reuse follows a second real product need. UI-026 applies to generic conventional control mechanics, not to feature-domain extraction.
 
 ## Component / Client Boundaries
 ### Server Components by default
-Library route composition, Library search/history query resolution, Media Viewer loading and root Create continuation validation are server-owned.
+Library route composition, Library search/history query resolution, Media Viewer loading, root Create continuation validation and Settings account-state loading are server-owned.
 
 ### Client Components deliberately
-Use for Create workspace/polling, temporary reference interaction, Library upload file selection/feedback, Library transient drag/drop interaction, the small Library sort navigation menu, Rename edit/saving state and interactions that truly require browser state.
+Use for Create workspace/polling, temporary reference interaction, Library upload file selection/feedback, Library transient drag/drop interaction, the small Library sort navigation menu, Rename edit/saving state, Settings account form actions and interactions that truly require browser state.
 
-Library picker/drop interactions share feature-owned `library-upload-client.ts`; that client owns validation and the existing ticket → signed PUT → completion transaction, while the Library dataset itself remains server-owned and is refreshed after successful completion. `LibraryDropUploadSurface` owns only transient DragEvent/DataTransfer state and local feedback; it does not copy Library media into a global client store or create a second upload contract. Library search remains a URL-owned native GET form while its visible input/actions use maintained primitives and its hidden kind/sort state remains native plumbing. `LibrarySortMenu` uses a small client component only for Radix menu interaction + URL navigation; actual ordering remains server-owned. Media Viewer Download uses normal product-route navigation. Rename uses one small Viewer-owned client component, submits to the product API, then calls router refresh so the server-rendered Viewer title/metadata stays authoritative. No global media-management client store exists.
+Library picker/drop interactions share feature-owned `library-upload-client.ts`; that client owns validation and the existing ticket → signed PUT → completion transaction, while the Library dataset itself remains server-owned and is refreshed after successful completion. `LibraryDropUploadSurface` owns only transient DragEvent/DataTransfer state and local feedback; it does not copy Library media into a global client store or create a second upload contract. Library search remains a URL-owned native GET form while its visible input/actions use maintained primitives and its hidden kind/sort state remains native plumbing. `LibrarySortMenu` uses a small client component only for Radix menu interaction + URL navigation; actual ordering remains server-owned. Media Viewer Download uses normal product-route navigation. Rename uses one small Viewer-owned client component, submits to the product API, then calls router refresh so the server-rendered Viewer title/metadata stays authoritative. AccountSettings calls Supabase Auth through the public browser client for sign-in/create-account/sign-out, then refreshes the server-rendered Settings account state. No global media-management or auth client store exists.
 
 ## State Architecture
 ### URL state
 - Library `kind` / `q` / `sort` / `offset`;
 - durable asset ID in `/library/[assetId]`;
 - Viewer → Create `source` / `action` intent.
+
+### Auth/session state
+- Supabase Auth cookie session;
+- verified server account principal from Auth claims (`sub` / `auth.users.id`).
 
 ### Server state
 - `generation_jobs`;
@@ -166,9 +187,32 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 ### Local transient browser state
 - Create form/runtime interaction state;
 - Library file-picker/drop uploading, drag-active and local feedback state;
-- Viewer Rename editor state.
+- Viewer Rename editor state;
+- Settings account-form fields/busy/local feedback state.
 
-Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. Favorites/Collections must not be introduced as global media flags before an account/user ownership model is defined.
+Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-029 establishes account identity only; it does not make existing core rows owner-scoped. Favorites/Collections must remain deferred until the verified account principal is persisted/enforced across generation/reference/upload/media boundaries and cross-account denial is proven.
+
+## Account Identity Flow
+UI-029:
+```text
+Settings
+  -> public Supabase Auth client
+  -> email/password sign-in or sign-up
+  -> Supabase cookie session
+  -> root proxy refreshes session cookies
+  -> Settings Server Component calls getCurrentRenderLabAccount()
+  -> server client verifies claims
+  -> RenderLab account identity = claims.sub
+```
+
+Rules:
+- public browser configuration is `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`;
+- service-role credentials stay in server/CI boundaries and are never used by the account browser component;
+- server identity is derived from verified Supabase claims, not a browser-provided owner UUID;
+- Create/Library remain accessible in UI-029 so identity introduction does not silently redesign the approved product loop;
+- account identity and data ownership are separate contracts: owner columns, account-scoped product queries, cross-account denial and RLS policy work are explicitly next.
+
+Configured Account Identity Visual `33111299356` created a deterministic run-owned confirmed Auth fixture through the server-only admin API, exercised real Settings sign-in, verified session persistence after reload, rendered desktop/mobile signed-in states, signed out, rendered mobile signed-out state and deleted the exact test user. Direct verification found zero matching CI account users afterward.
 
 ## Capability Architecture
 ```text
@@ -211,7 +255,7 @@ Create
   -> render durable result + continuation
 ```
 
-Worker completion is not product completion; success requires durable persistence. All four initial operations are live verified.
+Worker completion is not product completion; success requires durable persistence. All four initial operations are live verified. UI-029 does not change this flow yet; owner enforcement is intentionally deferred to the next slice so a partial principal check cannot create false isolation.
 
 ## Persistent Library Upload Flow
 UI-022 + UI-028:
@@ -330,7 +374,7 @@ Product media APIs expose metadata/content/thumbnail/download plus bounded metad
 ## Supabase Boundary
 RenderLab reuses shared Supabase project `AI Studio` (`rashyleshocuvpgcooxy`) while keeping RenderLab tables separate from legacy `studio_*`.
 
-Applied RenderLab tables: `generation_sources`, `generation_jobs`, `media_assets`, `media_upload_sessions`. Migration `0003_persistent_media_uploads.sql` is applied as `20260827031630`. RLS remains enabled; service-role credentials are server-only. Search, Download, Rename, history ordering, drag/drop and UI-026 add no schema migration.
+Applied RenderLab tables: `generation_sources`, `generation_jobs`, `media_assets`, `media_upload_sessions`. Migration `0003_persistent_media_uploads.sql` is applied as `20260827031630`. RLS remains enabled. Product application-table mutations still use server-only service-role credentials. UI-029 introduces maintained Supabase Auth clients/session refresh using public URL/publishable-key configuration and verified server claims but adds no schema migration or owner-scoped policy yet. Search, Download, Rename, history ordering, drag/drop and UI-026 also add no schema migration.
 
 ## Cloudflare R2 Boundary
 - shared R2 is deliberately reused;
@@ -359,7 +403,8 @@ Key workflows:
 - `.github/workflows/library-history-visual.yml` — real R2/Supabase-backed controlled-timestamp fixtures, newest/oldest API + pagination/kind composition, real Dropdown Menu navigation, responsive screenshots and cleanup;
 - `.github/workflows/library-drag-drop-visual.yml` — real DataTransfer drag/drop into the persistent upload contract, multi-file rejection before network, exact request/session/asset/card uniqueness, clean desktop/mobile screenshots and cleanup; shares the serialized Library upload fixture lock;
 - `.github/workflows/media-download-visual.yml` — real uploaded/generated R2-backed downloads, exact filenames/bytes, Viewer screenshots, cleanup;
-- `.github/workflows/media-rename-visual.yml` — real generated/uploaded durable Rename, Search/Download invariants, desktop/mobile edit/renamed screenshots, cleanup.
+- `.github/workflows/media-rename-visual.yml` — real generated/uploaded durable Rename, Search/Download invariants, desktop/mobile edit/renamed screenshots, cleanup;
+- `.github/workflows/account-identity-visual.yml` — real Supabase Auth fixture, Settings sign-in/session persistence/sign-out, responsive screenshots and exact fixture cleanup.
 
 Shared primitive/config/package paths are included in the affected visual workflow triggers. A change to `src/components/ui`, `components.json`, `package.json` or the shared primitive contract must not bypass Create/Library/Viewer regression coverage merely because a feature file itself was untouched.
 
@@ -411,14 +456,21 @@ Implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed all five a
 
 The configured drag/drop lifecycle rejected multi-file DataTransfer without network upload, then verified exactly one ticket, completion, upload session, durable asset and Library card for one dropped run-unique Unicode PNG. The clean artifact showed the temporary desktop drag affordance, one valid completed desktop card and the normal mobile Upload baseline. The serialized pre-run cleanup also removed a stale historical Library lifecycle fixture from Supabase/R2; direct verification found zero drag/drop and legacy-lifecycle fixture rows.
 
-Final exact PR head `ddb522ad71615e8c489043c54581ca78f8a3330a` passed all five affected gates on the restored UI-028-only scope:
-- UI Shell Validation `33109026794`;
-- Library Search Visual `33109026806`;
-- Library History Visual `33109026871`;
-- Library Drag Drop Visual `33109026739`;
-- Library Lifecycle Visual `33109026758`.
+Final exact PR head `ddb522ad71615e8c489043c54581ca78f8a3330a` passed UI Shell `33109026794`, Library Search `33109026806`, Library History `33109026871`, Library Drag Drop `33109026739`, and Library Lifecycle `33109026758`. Drag Drop `33109026739` verified pre-run cleanup, real DataTransfer upload through the existing lifecycle and post-run cleanup. PR #15 merged with the expected-head SHA guard as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; push-triggered merged `main` UI Shell `33109435978` passed.
 
-Drag Drop `33109026739` verified successful pre-run fixture namespace cleanup, real DataTransfer upload through the existing persistent upload lifecycle, exactly one upload session/durable asset/rendered card, and post-run cleanup for `renderlab-drop-33109026739-اختبار-画像.png`. Exact-head desktop drag-active/completed and mobile completed screenshots were re-reviewed without hierarchy or responsive drift. Direct Supabase cleanup after the five-gate suite found `0` drag/drop sessions, `0` drag/drop assets, `0` legacy lifecycle sessions and `0` legacy lifecycle assets. PR #15 merged with the expected-head SHA guard as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; the push-triggered merged `main` UI Shell `33109435978` passed.
+### PR #16 Account identity verification
+Code head `e87e1c89e339c5ca1a4c29dc414500072a71a3c5` passed all nine affected gates triggered by the shared package/auth changes:
+- Account Identity Visual `33111299356`;
+- UI Shell Validation `33111299265`;
+- Create Lifecycle Visual `33111299305`;
+- Library Search Visual `33111299144`;
+- Library History Visual `33111299040`;
+- Library Lifecycle Visual `33111299250`;
+- Library Drag Drop Visual `33111299309`;
+- Media Download Visual `33111299155`;
+- Media Rename Visual `33111299172`.
+
+The account verifier created an exact run-owned confirmed Supabase Auth user through the server-only admin API, signed in through the actual Settings form, verified the cookie session survived reload, captured clean desktop/mobile signed-in and mobile signed-out states, signed out and removed the exact fixture. Direct Supabase verification afterward found `0` matching CI users. The screenshots preserved the approved shell hierarchy and responsive bottom navigation.
 
 ## Naming Conventions
 - React files: `kebab-case.tsx`
@@ -435,12 +487,13 @@ Drag Drop `33109026739` verified successful pre-run fixture namespace cleanup, r
 - Shared capability logic owns continuation eligibility.
 - Browser does not talk directly to workers.
 - Shared infrastructure reuse never authorizes legacy `studio_*` coupling.
-- Approved Create/Library/Viewer visual language is not redesigned by incremental media features or primitive maintenance.
+- Approved Create/Library/Viewer visual language is not redesigned by incremental media features, primitive maintenance or account identity work.
 - Conventional visible feature/shell controls compose the approved maintained primitive layer; raw native controls are plumbing-only exceptions defined by UI-026.
+- Supabase Auth `auth.users.id` is the approved account principal; browser-supplied user IDs are never authoritative.
+- Account identity alone does not imply data ownership. Owner scoping across generation/reference/upload/media plus cross-account denial is the next required contract before Favorites/Collections.
 - Search remains server-owned durable discovery.
 - Library chronological ordering remains URL/server-owned over the durable corpus; do not replace it with page-only client sorting or expand it into a generic filter console by implication.
 - Library drag/drop remains a feature-owned optional path into the existing persistent upload transaction; do not infer batch upload, a global dropzone framework or new storage semantics from it.
-- Favorites/Collections require an explicit account/user ownership model; do not encode global durable-media flags prematurely.
 - Delete requires explicit database/R2/reference-history cleanup and recovery/tombstone semantics before product approval.
 - Download remains a Viewer-contextual product action through a stable media route; raw signed R2 URLs are ephemeral only.
 - Rename remains a bounded durable display-name mutation; do not reinterpret it as file/storage rename or broader management approval.

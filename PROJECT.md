@@ -63,6 +63,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Maintained UI primitive foundation / UI-026: `APPROVED`, merged through PR #13 as `5953934d5f67c16304be7493eda27c88e24c02cc`.
 - Library history ordering v0.1 / UI-027: `APPROVED`, merged through PR #14 as `a7ecaa6a704e4378b31e694e5f21c5629920b520` after final documentation-head eight-gate CI, responsive screenshot review, clean fixture verification and green post-merge `main` UI Shell `33097463519`.
 - Library drag-and-drop upload v0.1 / UI-028: `APPROVED`, merged through PR #15 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`. Final exact head `ddb522ad71615e8c489043c54581ca78f8a3330a` passed UI Shell `33109026794`, Library Search `33109026806`, Library History `33109026871`, Library Drag Drop `33109026739`, and Library Lifecycle `33109026758`; responsive screenshots were re-reviewed, shared fixtures were verified clean, and merged `main` UI Shell `33109435978` passed.
+- Account Identity Foundation v0.1 / UI-029: implementation `APPROVED` on PR #16. Code head `e87e1c89e339c5ca1a4c29dc414500072a71a3c5` passed Account Identity `33111299356`, UI Shell `33111299265`, Create Lifecycle `33111299305`, Library Search `33111299144`, Library History `33111299040`, Library Lifecycle `33111299250`, Library Drag Drop `33111299309`, Media Download `33111299155`, and Media Rename `33111299172`; responsive Settings screenshots and exact auth-fixture cleanup were reviewed clean. Documentation-finalized merge remains.
 - Create supports Create Image, Edit Image, Create Video and Animate Image.
 - Durable generated and uploaded media share RenderLab `media_assets`, product APIs and opaque `media-asset` identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
@@ -84,6 +85,18 @@ UI-026 makes maintained conventional controls a repository-enforced frontend fou
 PR #13 was foundation-only and preserved approved Create/Library/Viewer/shell product behavior. Implementation head `36ee8e8eb80645d1389afa749a36b493e2abbb61` passed UI Shell `33088086901`, Create Lifecycle `33088086892`, Library Search `33088086914`, Library Lifecycle `33088086872`, Media Download `33088086907`, and Media Rename `33088086871`. Final-code UI Shell and Library lifecycle desktop/mobile screenshots were visually inspected with no unintended hierarchy/layout drift. Library lifecycle verified real Upload → Library → Viewer → Edit continuation, correct Radix Image selection, 400×300 media geometry and self-cleanup.
 
 Final exact PR head `89dc69e394bf467227e0131432c301050d718999` passed UI Shell `33089808029`, Create Lifecycle `33089808086`, Library Search `33089807606`, Library Lifecycle `33089807890`, Media Download `33089807786`, and Media Rename `33089807776`. Create Lifecycle attempt 1 was blocked before browser execution by a transient Microsoft Ubuntu apt-repository 403 during Playwright dependency installation; unchanged attempt 2 completed successfully. Direct pre-merge cleanup found `0` upload sessions, no recent RenderLab-named test media assets and no remaining configured Create lifecycle test job. PR #13 merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; post-merge `main` UI Shell `33092354072` and Reference Upload Integration `33092353971` both passed.
+
+## Account Identity Foundation v0.1 Contract
+UI-029 establishes a real RenderLab account principal while deliberately leaving media/job ownership enforcement to the next slice.
+
+- Supabase Auth `auth.users.id` is the canonical account identity.
+- Settings owns the initial email/password sign-in, account-creation and sign-out experience.
+- Browser/server sessions use maintained Supabase SSR cookie handling; root `proxy.ts` refreshes sessions and server identity is read from verified claims.
+- Browser code receives only the public Supabase project URL and publishable key; service-role credentials remain server-only.
+- Existing Create and Library behavior is not gated or redesigned by this slice.
+- UI-029 does not add owner columns, account-scoped media queries, Favorites/Collections, Delete/batch behavior or a schema migration.
+
+Configured Account Identity Visual `33111299356` created an exact run-owned confirmed Supabase user through the server-only admin API, signed in through the real Settings form, verified cookie persistence across reload, rendered desktop/mobile signed-in states, signed out, rendered the mobile signed-out state and deleted the exact fixture. Direct Supabase verification afterward found `0` `renderlab-account-%@example.com` CI users. The shared package change also passed UI Shell `33111299265`, Create Lifecycle `33111299305`, Library Search `33111299144`, Library History `33111299040`, Library Lifecycle `33111299250`, Library Drag Drop `33111299309`, Media Download `33111299155`, and Media Rename `33111299172`.
 
 ## Persistent Media Upload Contract
 UI-022 defines the approved durable upload model.
@@ -166,7 +179,7 @@ Implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed Library Hi
 
 Final exact documentation head `cae17cb2850f3a995bbe3d106669ce651e3e0aa1` passed UI Shell `33097006928`, Create Lifecycle `33097006913`, Persistent Media Upload Integration `33097007064`, Library Lifecycle `33097006853`, Library Search `33097007092`, Library History `33097006833`, Media Download `33097006968`, and Media Rename `33097006959`. PR #14 merged as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; the merged `main` UI Shell run `33097463519` passed.
 
-Favorites/Collections are deliberately deferred because RenderLab does not yet have a user/account ownership model; do not encode them as global durable-media flags. Delete is deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
+Account identity now exists under UI-029, but Favorites/Collections remain deferred until RenderLab owner-scopes the core generation/reference/upload/media records and verifies cross-account isolation; do not encode them as global durable-media flags. Delete remains deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
 
 ## R2 Browser CORS State
 The admin-capable R2 access-key credentials manage the exact-origin `renderlab-browser-uploads` rule through the S3 API for:
@@ -180,12 +193,13 @@ Download uses product-route → signed-R2 top-level GET navigation. Rename is a 
 If a future user-facing production origin changes, add that exact origin before serving direct browser uploads there. Do not use broad wildcard CORS or replace direct-to-R2 transfers with an application-server proxy merely for convenience.
 
 ## Still Open in Phase 4
-Completed upload/search/download/rename/history ordering/drag-drop do **not** approve broader organization or destructive behavior. Still open:
-- favorites/collections or another organization model after user/account ownership is explicit;
+Completed upload/search/download/rename/history ordering/drag-drop plus account identity do **not** approve broader organization or destructive behavior. Still open, in order:
+- owner-scope `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions`; thread the verified account principal through all relevant server APIs/services and verify cross-account denial;
+- favorites/collections or another personal organization model after that owner-scoped boundary is verified;
 - delete and batch management after durable storage/reference/recovery semantics are explicit;
 - other Library interaction enhancements only when separately justified.
 
-The next slice must define a RenderLab-owned contract before implementation. Do not infer Saga organization/destructive-action schemas automatically.
+The next slice must define a RenderLab-owned ownership contract before implementation. Do not infer Saga organization/destructive-action schemas automatically.
 
 ## Infrastructure Cleanup Still Open
 - Remove the transitional Studio compatibility adapter once no migration/debugging requirement depends on it.
