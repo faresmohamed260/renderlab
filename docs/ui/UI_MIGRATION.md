@@ -183,7 +183,7 @@ UI-027: chronological direction is URL-owned server-side durable-media state, no
 
 **Library history ordering v0.1 status: `APPROVED` and merged.**
 
-### Library drag-and-drop upload v0.1 — PR #15 / UI-028
+### Library drag-and-drop upload v0.1 — merged PR #15 / UI-028
 UI-028: drag/drop is an optional interaction path into the existing persistent upload contract, not a new media or storage model.
 
 - [x] Keep the visible Upload button + native file picker as the keyboard/touch/mobile baseline.
@@ -197,11 +197,14 @@ UI-028: drag/drop is an optional interaction path into the existing persistent u
 - [x] Harden configured fixtures with run-unique drag/drop filenames and pre-run cleanup of the `renderlab-drop-*` namespace plus the known stale legacy lifecycle fixture.
 - [x] Implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed UI Shell `33102672560`, Library Search `33102672572`, Library History `33102672507`, Library Lifecycle `33102672568`, and Library Drag Drop `33102672468`.
 - [x] Visually inspect clean desktop drag-active/completed and mobile completed screenshots; drop affordance is temporary, completed desktop has exactly one current run-owned card with valid preview, and mobile preserves the ordinary Upload baseline.
-- [x] Direct Supabase cleanup verified `0` drag/drop sessions, `0` drag/drop assets, `0` legacy lifecycle sessions and `0` legacy lifecycle assets.
-- [ ] Require the documentation-finalized exact head to pass all five affected workflows before PR #15 merge.
-- [ ] Merge PR #15 and verify merged `main`.
+- [x] Final exact PR head `ddb522ad71615e8c489043c54581ca78f8a3330a` passed UI Shell `33109026794`, Library Search `33109026806`, Library History `33109026871`, Library Drag Drop `33109026739`, and Library Lifecycle `33109026758`.
+- [x] Drag Drop `33109026739` verified pre-run namespace cleanup, real DataTransfer upload through the existing ticket → signed R2 PUT → completion path, exact one upload session/durable asset/rendered card, and post-run cleanup for `renderlab-drop-33109026739-اختبار-画像.png`.
+- [x] Re-review exact-head desktop drag-active/completed and mobile completed screenshots; no redesign or responsive hierarchy drift found.
+- [x] Direct Supabase cleanup after the exact-head suite verified `0` drag/drop sessions, `0` drag/drop assets, `0` legacy lifecycle sessions and `0` legacy lifecycle assets.
+- [x] Merge PR #15 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8` using the expected exact-head SHA guard.
+- [x] Verify merged `main`: push-triggered UI Shell `33109435978` passed on merge commit `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`.
 
-**Library drag-and-drop upload v0.1 status: `APPROVED` implementation, pending final exact-head CI and merge.**
+**Library drag-and-drop upload v0.1 status: `APPROVED` and merged.**
 
 ### R2 browser-origin boundary
 Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement. Drag/drop reuses the persistent direct-browser upload path and adds no new R2/CORS contract.
@@ -234,10 +237,10 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** Library drag-and-drop upload v0.1 / UI-028 is implementation-approved on PR #15 after exact configured upload validation, clean visual review and shared-resource cleanup; final documentation-head CI and merge remain.  
-**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12 and History Ordering PR #14 are merged and approved.  
+**Current product slice:** none selected; Library drag-and-drop upload v0.1 / UI-028 is complete, approved and merged through PR #15 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`.  
+**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14 and Drag/drop Upload PR #15 are merged and approved.  
 **Completed foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`.  
-**Next product slice after PR #15:** do not choose Favorites/Collections until an account/user ownership contract exists; do not choose Delete until durable storage/reference/recovery semantics are explicit. Select the next Phase 4 capability only from a verified RenderLab-owned contract.
+**Next product slice:** do not choose Favorites/Collections until an account/user ownership contract exists; do not choose Delete until durable storage/reference/recovery semantics are explicit. Select the next Phase 4 capability only from a verified RenderLab-owned contract.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

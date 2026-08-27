@@ -20,7 +20,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`. UI-028 / PR #15 adds only an optional drag interaction into the existing persistent upload contract; final documentation-head CI/merge remain. Activity and Settings remain placeholders.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; PR #15 merged Library drag/drop upload/UI-028 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8` after exact-head five-gate CI, clean fixture verification and green post-merge `main` validation. Activity and Settings remain placeholders.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -232,7 +232,7 @@ Library picker OR one-file desktop drop
 
 Rules: no browser R2 credentials; storage key opaque; human filename Unicode-preserving after cleanup; only verified completion creates durable media; completion is idempotent/race-safe; no public Uploads asset type/tab. UI-028 adds no persistent drop state: the Upload button remains the keyboard/touch/mobile baseline, drag affordance is visible only during a compatible file drag, and multiple-file drops are rejected before ticket creation. Picker/drop share one feature-owned browser transaction rather than parallel implementations.
 
-PR #9 final verification passed `33067469516`, `33067469518`, `33067469527`; merged as `d306f2abd1831538c51692545d72db1e5e9e0814`. UI-028 implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed UI Shell `33102672560`, Library Search `33102672572`, Library History `33102672507`, Library Lifecycle `33102672568`, and Library Drag Drop `33102672468`; clean responsive screenshots and zero shared fixture counts were verified.
+PR #9 final verification passed `33067469516`, `33067469518`, `33067469527`; merged as `d306f2abd1831538c51692545d72db1e5e9e0814`. UI-028 final exact PR head `ddb522ad71615e8c489043c54581ca78f8a3330a` passed UI Shell `33109026794`, Library Search `33109026806`, Library History `33109026871`, Library Drag Drop `33109026739`, and Library Lifecycle `33109026758`; exact-head responsive screenshots and zero shared fixture counts were verified. PR #15 merged as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; push-triggered merged `main` UI Shell `33109435978` passed.
 
 ## Library Search Flow
 UI-023:
@@ -409,7 +409,16 @@ Implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed all five a
 - Library Lifecycle Visual `33102672568`;
 - Library Drag Drop Visual `33102672468`.
 
-The configured drag/drop lifecycle rejected multi-file DataTransfer without network upload, then verified exactly one ticket, completion, upload session, durable asset and Library card for one dropped run-unique Unicode PNG. The final clean artifact showed the temporary desktop drag affordance, one valid completed desktop card and the normal mobile Upload baseline. The serialized pre-run cleanup also removed a stale historical Library lifecycle fixture from Supabase/R2; direct post-run verification found zero drag/drop and legacy-lifecycle fixture rows. Final documentation-head regression is required before PR #15 merge.
+The configured drag/drop lifecycle rejected multi-file DataTransfer without network upload, then verified exactly one ticket, completion, upload session, durable asset and Library card for one dropped run-unique Unicode PNG. The clean artifact showed the temporary desktop drag affordance, one valid completed desktop card and the normal mobile Upload baseline. The serialized pre-run cleanup also removed a stale historical Library lifecycle fixture from Supabase/R2; direct verification found zero drag/drop and legacy-lifecycle fixture rows.
+
+Final exact PR head `ddb522ad71615e8c489043c54581ca78f8a3330a` passed all five affected gates on the restored UI-028-only scope:
+- UI Shell Validation `33109026794`;
+- Library Search Visual `33109026806`;
+- Library History Visual `33109026871`;
+- Library Drag Drop Visual `33109026739`;
+- Library Lifecycle Visual `33109026758`.
+
+Drag Drop `33109026739` verified successful pre-run fixture namespace cleanup, real DataTransfer upload through the existing persistent upload lifecycle, exactly one upload session/durable asset/rendered card, and post-run cleanup for `renderlab-drop-33109026739-اختبار-画像.png`. Exact-head desktop drag-active/completed and mobile completed screenshots were re-reviewed without hierarchy or responsive drift. Direct Supabase cleanup after the five-gate suite found `0` drag/drop sessions, `0` drag/drop assets, `0` legacy lifecycle sessions and `0` legacy lifecycle assets. PR #15 merged with the expected-head SHA guard as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; the push-triggered merged `main` UI Shell `33109435978` passed.
 
 ## Naming Conventions
 - React files: `kebab-case.tsx`
