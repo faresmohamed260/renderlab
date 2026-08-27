@@ -61,6 +61,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Durable Media Download v0.1: `APPROVED`, merged through PR #11 as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`.
 - Durable Media Rename v0.1: `APPROVED`, merged through PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4` after exact-head six-gate CI and clean shared-resource verification.
 - Maintained UI primitive foundation / UI-026: `APPROVED`, merged through PR #13 as `5953934d5f67c16304be7493eda27c88e24c02cc`.
+- Library history ordering v0.1 / UI-027: `APPROVED FOR MERGE` on PR #14 after implementation-head eight-gate CI, responsive screenshot review and clean fixture verification; final documentation-head exact regression remains the merge gate.
 - Create supports Create Image, Edit Image, Create Video and Animate Image.
 - Durable generated and uploaded media share RenderLab `media_assets`, product APIs and opaque `media-asset` identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
@@ -71,13 +72,13 @@ Do not redesign these approved surfaces merely because new media capabilities ar
 UI-026 makes maintained conventional controls a repository-enforced frontend foundation rule.
 
 - `components.json` configures shadcn `radix-nova`.
-- `src/components/ui` owns normalized Alert, Button, Collapsible, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle and ToggleGroup primitives.
+- `src/components/ui` owns normalized Alert, Button, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle and ToggleGroup primitives.
 - Conventional visible controls in `src/features` and `src/components/shell` compose those approved primitives rather than hand-styled raw native controls.
 - Native `file` and `hidden` inputs remain allowed as browser/form plumbing.
 - Local wrappers own RenderLab tokens, variants, spacing, required semantic elements and product accessibility adaptations; features should not rebuild the same mechanic independently.
-- Correct maintained accessibility semantics are authoritative. Create Image/Video is a required Radix single-choice `radiogroup` with checked `radio` items.
+- Correct maintained accessibility semantics are authoritative. Create Image/Video is a required Radix single-choice `radiogroup` with checked `radio` items; Library history ordering uses maintained Radix Dropdown Menu radio items.
 - `npm run verify:ui-purity` rejects raw visible button/select/textarea/ordinary-input controls in feature/shell code and runs in UI Shell CI.
-- Shared primitive/config/package changes retrigger the dependent Create, Library Search, Library Lifecycle, Download, Rename and Shell regressions.
+- Shared primitive/config/package changes retrigger the dependent Create, Library Search, Library Lifecycle, Library History, Download, Rename and Shell regressions.
 
 PR #13 was foundation-only and preserved approved Create/Library/Viewer/shell product behavior. Implementation head `36ee8e8eb80645d1389afa749a36b493e2abbb61` passed UI Shell `33088086901`, Create Lifecycle `33088086892`, Library Search `33088086914`, Library Lifecycle `33088086872`, Media Download `33088086907`, and Media Rename `33088086871`. Final-code UI Shell and Library lifecycle desktop/mobile screenshots were visually inspected with no unintended hierarchy/layout drift. Library lifecycle verified real Upload → Library → Viewer → Edit continuation, correct Radix Image selection, 400×300 media geometry and self-cleanup.
 
@@ -102,7 +103,7 @@ UI-023 defines durable-media discovery.
 - Search is server-owned against durable `media_assets`, not a client-only current-page filter.
 - Queries are whitespace-normalized and capped at 120 characters.
 - Matching is case-insensitive literal substring search across `display_name`, `original_filename`, and generated `provenance.prompt`.
-- Search composes with All/Images/Videos and newest-first pagination.
+- Search composes with All/Images/Videos and URL-owned chronological ordering/pagination.
 - v0.1 adds no relevance ranking, model/date filters, command palette, collection schema or dedicated search service/index.
 
 PR #10 passed implementation and documentation-finalized Search/upload/lifecycle/UI gates before merge. Post-merge main shell `33070215358` passed.
@@ -136,6 +137,21 @@ Final exact-head `70cbcc4daeafb9a48c0253df38796811d4cf4f03` passed UI Shell `330
 
 The configured Library lifecycle is serialized with `concurrency: renderlab-library-lifecycle-shared` and targets the exact durable asset ID returned by its own upload completion while separately asserting the expected human display name. Fixture-name uniqueness is not a correctness assumption.
 
+## Library History Ordering v0.1 Contract
+UI-027 defines the approved chronological history control.
+
+- URL state is `sort=newest|oldest`; Newest first is canonical and omitted from clean links.
+- Ordering is server-owned against durable `media_assets`; it is not client-only sorting of the current page.
+- `created_at` and `id` use the same direction to keep pagination deterministic.
+- Sort composes with `q`, All/Images/Videos, Clear and `offset`; changing sort drops stale offset.
+- Pagination labels follow the active direction so `Newer` / `Older` remain truthful.
+- The visible selector is feature-owned `LibrarySortMenu` composed from the maintained shadcn/Radix Dropdown Menu primitive.
+- No schema migration, global client media store, relevance ranking, model/date filter console, Favorites/Collections, Delete or batch framework is introduced.
+
+Implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed Library History `33094977896`, UI Shell `33094977929`, Library Search `33094977911`, Library Lifecycle `33094977899`, Media Download `33094977913` after unchanged rerun, Media Rename `33094977895`, Create Lifecycle `33094977825`, and Persistent Media Upload Integration `33094978022`. Desktop Oldest, open Dropdown menu and mobile Newest screenshots were visually reviewed without unintended hierarchy drift. Direct Supabase verification found `0` history fixtures and `0` upload sessions. PR #14 remains unmerged until the documentation-finalized exact head passes the full affected regression set.
+
+Favorites/Collections are deliberately deferred because RenderLab does not yet have a user/account ownership model; do not encode them as global durable-media flags. Delete is deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
+
 ## R2 Browser CORS State
 The admin-capable R2 access-key credentials manage the exact-origin `renderlab-browser-uploads` rule through the S3 API for:
 - `http://127.0.0.1:3000`
@@ -143,15 +159,15 @@ The admin-capable R2 access-key credentials manage the exact-origin `renderlab-b
 - `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
 - `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
-Download uses product-route → signed-R2 top-level GET navigation. Rename is a server-side Supabase metadata mutation and introduces no R2 object write/move or new CORS requirement.
+Download uses product-route → signed-R2 top-level GET navigation. Rename is a server-side Supabase metadata mutation and introduces no R2 object write/move or new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement.
 
 If a future user-facing production origin changes, add that exact origin before serving direct browser uploads there. Do not use broad wildcard CORS or replace direct-to-R2 transfers with an application-server proxy merely for convenience.
 
 ## Still Open in Phase 4
-Completed upload/search/download/rename do **not** approve broader organization or destructive behavior. Still open:
-- broader history controls where a real product need is defined;
-- favorites/collections or another approved organization model;
-- delete and batch management.
+Completed upload/search/download/rename/history ordering do **not** approve broader organization or destructive behavior. Still open:
+- favorites/collections or another organization model after user/account ownership is explicit;
+- delete and batch management after durable storage/reference/recovery semantics are explicit;
+- other Library interaction enhancements only when separately justified.
 
 The next slice must define a RenderLab-owned contract before implementation. Do not infer Saga organization/destructive-action schemas automatically.
 
