@@ -73,6 +73,16 @@ A design-tool artifact is never more authoritative than the repository. Do not m
 ## Component Source Policy
 Do **not** build generic UI primitives or sophisticated interaction mechanics from scratch when a suitable, production-appropriate implementation exists in an approved source.
 
+For conventional visible controls, this is now an enforceable implementation rule, not merely a preference:
+- feature and shell code must compose approved shared primitives from `src/components/ui` rather than hand-styling raw native controls;
+- raw visible `<button>`, `<select>`, `<textarea>`, and ordinary visible `<input>` elements are not allowed in `src/features` or `src/components/shell`;
+- native `file` and `hidden` inputs may remain as browser/form plumbing when a maintained primitive would not replace the underlying platform behavior;
+- use the maintained primitive's semantics rather than forcing legacy DOM semantics when the maintained component provides the correct accessible contract (for example, Radix single-choice ToggleGroup uses radiogroup/radio semantics);
+- local wrappers may normalize RenderLab tokens, variants, spacing, semantic elements, and product-required accessibility behavior without reimplementing the underlying mechanic;
+- a new generic primitive/mechanic built from scratch requires a concrete repository-documented reason that approved maintained sources do not satisfy the requirement.
+
+`npm run verify:ui-purity` enforces the current native-control boundary and runs in UI Shell CI. Shared primitive/config/package changes must remain covered by the affected screen lifecycle workflows.
+
 Default approved ecosystems:
 1. **shadcn/ui + Radix primitives** — foundational accessible application UI such as buttons, dialogs, menus, popovers, tabs, forms, selects, sheets, tooltips, and related primitives.
 2. **Motion for React** — underlying animation/gesture/layout-motion engine for deliberate custom interaction when a prebuilt component is not the right abstraction.
@@ -120,6 +130,8 @@ Search in this order:
 7. React Bits;
 8. only then consider a custom implementation.
 
+If the requested UI is a conventional control already represented by `src/components/ui`, use that primitive instead of writing a raw visible native control in feature/shell code. If a maintained source provides the mechanic but needs RenderLab styling or semantics, adapt the local wrapper rather than rebuilding it feature-by-feature.
+
 When an external component is adopted and becomes part of the product, record the local RenderLab component/wrapper and source in `COMPONENT_CATALOG.md`.
 
 ## Design Tokens
@@ -157,10 +169,11 @@ Follow the user's requested scope precisely. Do not redesign, migrate, refactor,
 ## Validation
 For frontend changes:
 1. Verify the application builds.
-2. Verify affected routes/surfaces render.
-3. Check responsive behavior when relevant.
-4. Inspect the rendered result.
-5. Check reused components for regressions.
-6. Confirm documentation reflects verified reality.
+2. Run `npm run verify:ui-purity` for changes that can affect feature/shell visible controls.
+3. Verify affected routes/surfaces render and their existing lifecycle workflows cover shared primitive changes.
+4. Check responsive behavior when relevant.
+5. Inspect the rendered result.
+6. Check reused components for regressions.
+7. Confirm documentation reflects verified reality.
 
 Compilation alone does not mean the UI task is complete.
