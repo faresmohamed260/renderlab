@@ -107,8 +107,14 @@ async function cleanupFixture() {
 }
 
 async function imageMetrics(locator, label) {
-  const metrics = await locator.evaluate((image) => {
+  const metrics = await locator.evaluate(async (image) => {
     if (!(image instanceof HTMLImageElement)) return null;
+    let decodeError = null;
+    try {
+      await image.decode();
+    } catch (error) {
+      decodeError = error instanceof Error ? error.message : String(error);
+    }
     const style = window.getComputedStyle(image);
     const rect = image.getBoundingClientRect();
     return {
@@ -121,6 +127,8 @@ async function imageMetrics(locator, label) {
       cssHeight: style.height,
       objectFit: style.objectFit,
       aspectRatio: style.aspectRatio,
+      currentSrc: image.currentSrc,
+      decodeError,
     };
   });
   console.log(`${label} metrics=${JSON.stringify(metrics)}`);
