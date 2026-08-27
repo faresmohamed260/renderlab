@@ -88,7 +88,13 @@ Image, Video, Edit, Animate, Models, and Workflows are not separate top-level de
 ### Verified current state
 - application shell is implemented and `APPROVED`;
 - Create is implemented and `APPROVED` after the complete configured desktop/mobile lifecycle review in GitHub Actions run `33031817744`;
-- the configured lifecycle review exercised one real Create Image request through the browser, waited for durable `media_assets` persistence, rendered the persisted image, verified **Edit** and **Animate**, selected **Edit** from the durable result, captured desktop/mobile result and continuation states, and self-cleaned the generated R2/media/job fixture;
+- Library v0.1 is implemented and `APPROVED` after credential-free production/UI run `33034606323` and configured shared-R2/Supabase lifecycle run `33034606396`;
+- Media Viewer v0.1 is implemented and `APPROVED` after the same configured run `33034606396` verified Library → Viewer → Create Edit continuation;
+- Library uses a RenderLab-owned media list contract/API with newest-first browsing, All/Images/Videos filtering, pagination, responsive media cards, truthful unavailable/empty states and deep links;
+- Media Viewer presents one durable image/video with basic metadata and capability-derived continuation actions;
+- Viewer → Create continuation carries opaque `media-asset` identity plus action intent only; the Create server route reloads the durable media record and validates action compatibility before initializing the client workspace;
+- configured Phase 4 media verification uses a deterministic 400×300 R2 + `media_assets` fixture, verifies browser media geometry at Library/Viewer, captures desktop/mobile Library/Viewer/Create continuation states and self-cleans without invoking ComfyUI;
+- the configured Create lifecycle review exercised one real Create Image request through the browser, waited for durable `media_assets` persistence, rendered the persisted image, verified **Edit** and **Animate**, selected **Edit** from the durable result, captured desktop/mobile result and continuation states, and self-cleaned the generated R2/media/job fixture;
 - Image/Video prompt composition, aspect/duration controls, reference preview/removal/replacement, responsive composer behavior, persisted-result presentation, continuation actions, and Advanced disclosure are implemented;
 - reference upload is verified end-to-end against the reused shared R2 + Supabase resources and self-cleans;
 - RenderLab reuses Supabase project `AI Studio` (`rashyleshocuvpgcooxy`), shared R2, and the existing worker fleet by explicit product decision;
@@ -101,13 +107,14 @@ Image, Video, Edit, Animate, Models, and Workflows are not separate top-level de
 - conservative poll-time worker reassignment is implemented and post-merge live generation regression run `33027861292` succeeded;
 - Create Advanced v0.3 is implemented from verified capabilities using the normalized Radix Collapsible primitive and was reviewed in run `33030364272`;
 - production build/UI validation remains GitHub-based rather than depending on Vercel preview deployments;
-- `scripts/verify-create-lifecycle.mjs` plus `.github/workflows/create-lifecycle-visual.yml` provide a repeatable configured real-lifecycle visual check when future Create changes justify rerunning it.
+- `scripts/verify-create-lifecycle.mjs` plus `.github/workflows/create-lifecycle-visual.yml` provide a repeatable configured real-generation visual check;
+- `scripts/verify-library-lifecycle.mjs` plus `.github/workflows/library-lifecycle-visual.yml` provide a repeatable configured media-only Library/Viewer visual check.
 
 ### Current Phase 4 work
-1. Design and implement Library against RenderLab-owned `media_assets`, preserving Library as a reusable creative-asset workspace rather than generation history only.
-2. Implement the contextual Media Viewer on `/library/[assetId]` using the existing media delivery and capability-derived continuation contracts.
-3. Add search/filter/history/metadata/media actions only from actual product requirements and verified data contracts.
-4. Keep Create continuation logic centralized so Library/Media Viewer reuse the same capability model rather than hard-coding duplicate action rules.
+1. Define the RenderLab-owned persistent uploaded-asset contract required to fully satisfy UI-010. Temporary `generation_sources` are generation inputs and must not be reinterpreted as durable Library uploads.
+2. Decide whether persistent uploads become durable `media_assets` with explicit source/provenance semantics or require a separate RenderLab-owned asset record before implementing upload management.
+3. Add search, favorites/collections, broader history controls, rename/delete/download/batch actions only after the corresponding persistent product contracts are explicitly owned and approved.
+4. Keep Create/Viewer continuation logic centralized in the shared capability model rather than adding screen-specific action registries.
 
 ### Infrastructure cleanup still open
 - Decide/remove the transitional Studio compatibility fallback once no migration/debugging requirement still needs it.
