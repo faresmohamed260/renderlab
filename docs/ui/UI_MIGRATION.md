@@ -162,13 +162,34 @@ UI-025: Rename changes durable human-facing display identity only.
 
 **Durable Media Rename v0.1 status: `APPROVED` and merged.**
 
-### R2 browser-origin boundary
-Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement.
+### Library history ordering v0.1 — PR #14 / UI-027
+UI-027: chronological direction is URL-owned server-side durable-media state, not a client filter or organization schema.
 
-### Still intentionally open after Rename
-- [ ] Broader history controls where a real product need is defined.
-- [ ] Favorites/collections or another approved organization model.
-- [ ] Delete and batch management.
+- [x] Keep Newest first as the canonical default; omit default `sort=newest` from clean links.
+- [x] Add explicit `sort=oldest` navigation and validate `newest|oldest` at the product API boundary.
+- [x] Order durable `media_assets` by `created_at` plus `id` in the same direction for deterministic pagination.
+- [x] Compose ordering with `q`, All/Images/Videos, Clear and bounded pagination; changing sort clears stale offset.
+- [x] Use direction-aware `Newer` / `Older` pagination labels.
+- [x] Add maintained shadcn/Radix Dropdown Menu primitive and feature-owned `LibrarySortMenu`; no bespoke selector or generic filter console.
+- [x] Add configured Library History Visual with exact R2/Supabase fixtures, controlled timestamps, API order/pagination/kind assertions, real Chromium menu interaction, desktop/mobile screenshots and self-cleanup.
+- [x] Harden the verifier to wait for `domcontentloaded` plus explicit UI/card readiness instead of flaky media-grid `networkidle`.
+- [x] Implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed Library History `33094977896`, UI Shell `33094977929`, Library Search `33094977911`, Library Lifecycle `33094977899`, Media Download `33094977913` after unchanged rerun, Media Rename `33094977895`, Create Lifecycle `33094977825`, and Persistent Media Upload Integration `33094978022`.
+- [x] Visually inspect desktop Oldest, open Dropdown menu and mobile Newest screenshots; no unintended Library hierarchy/layout drift found.
+- [x] Direct Supabase cleanup verification found `0` `library-history-order-v0-1` media fixtures and `0` upload sessions.
+- [x] Explicitly defer Favorites/Collections until RenderLab has an account/user ownership model; do not add global durable-media favorite flags.
+- [x] Explicitly defer Delete until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
+- [ ] Final documentation-head exact regression set must pass before merge.
+- [ ] Merge PR #14 and verify merged `main`.
+
+**Library history ordering v0.1 status: `APPROVED FOR MERGE` pending final documentation-head regression and merge verification.**
+
+### R2 browser-origin boundary
+Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement.
+
+### Still intentionally open after History Ordering
+- [ ] Favorites/collections or another approved organization model after user/account ownership is explicit.
+- [ ] Delete and batch management after storage/reference/recovery semantics are explicit.
+- [ ] Drag/drop or other Library interaction enhancements only when separately justified.
 
 These require explicit RenderLab-owned contracts. Do not infer Saga organization/destructive-action schemas automatically.
 
@@ -193,9 +214,10 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Completed product slice:** Durable Media Rename v0.1, merged PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.  
-**Completed foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc` after final exact-head six-gate regression coverage, clean fixture verification, responsive review and green post-merge `main` shell/reference-upload checks.  
-**Next product slice:** select one remaining history/organization/destructive-management need only after its RenderLab-owned contract is explicit.
+**Current product slice:** Library history ordering v0.1 / PR #14 / UI-027 is `APPROVED FOR MERGE` pending final documentation-head exact regression and merge verification.  
+**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11 and Rename PR #12 are merged and approved.  
+**Completed foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`.  
+**Next product slice after PR #14:** do not choose Favorites/Collections until an account/user ownership contract exists; do not choose Delete until durable storage/reference/recovery semantics are explicit. Select the next Phase 4 capability only from a verified RenderLab-owned contract.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
