@@ -57,7 +57,7 @@ Create UI
   -> POST /api/generation/jobs
   -> validate normalized product request
   -> create public.generation_jobs
-  -> resolve opaque source/media inputs
+  -> resolve opaque temporary-source/media-asset inputs
   -> server submits directly to compatible worker fleet
   -> primary/standby submission routing
   -> GET /api/generation/jobs/:jobId polls RenderLab
@@ -71,14 +71,38 @@ Create UI
 
 Worker completion is not product completion. `succeeded` occurs only after durable R2 + `media_assets` persistence.
 
+### Submission routing
+Initial submission may try another compatible worker when a worker clearly rejects/is unavailable before a provider call ID is accepted. The accepted provider job is then pinned to its assigned worker.
+
+### Poll-time reassignment safety
+RenderLab now carries forward the proven Saga safety distinction rather than treating every worker error as failover-safe.
+
+Safe automatic reassignment requires explicit evidence such as:
+- credit/budget/quota exhaustion;
+- explicit worker state/code indicating unavailable;
+- explicit disabled/stopped workspace evidence.
+
+Automatic poll-time reassignment is **not** allowed for ambiguous conditions such as:
+- generic HTTP 429;
+- generic 5xx;
+- network/fetch failure.
+
+Those ambiguous failures may occur after the worker already accepted/executed the job. Resubmitting would risk duplicate generations. Instead, the API returns a transient unavailable response and Create's bounded polling recovery retries status checks against the same job.
+
+Poll reassignment attempts are persisted in `failover_history` and limited to three. An ambiguous standby submission is not automatically repeated.
+
+PR #5 implemented this rule. Its production build/Playwright checks passed, and post-merge live generation regression run `33027861292` completed successfully.
+
 ### Verified native coverage
 - Reference upload → **verified**, self-cleaning.
 - Create Image → **verified end-to-end**, including real worker execution, persistence, asset verification, and cleanup.
-- Edit Image with reference → **verified end-to-end** in GitHub Actions run `33021843503`, commit `f374d711f99b2a68c0e7ea43cbce42052380b0cb`.
-- Create Video → **verified end-to-end** in GitHub Actions run `33021977765`, commit `638e312fdbbf5aa126faa9d2a91dbca68b026d48`.
-- Animate Image with reference → **verified end-to-end in the same run `33021977765`**. The workflow's `Verify Create Video and Animate Image` step completed successfully, validated the persisted video asset through RenderLab product APIs, and self-cleaned the job/media/reference fixtures.
+- Edit Image with reference → **verified end-to-end** in GitHub Actions run `33021843503`.
+- Create Video → **verified end-to-end** in GitHub Actions run `33021977765`.
+- Animate Image with reference → **verified end-to-end** in the same run `33021977765`.
+- Durable media continuation → **verified end-to-end** in run `33027460976`: a persisted Create Image `media_assets` result was loaded from shared R2 by opaque product identity and used as the next Edit Image input; both generation fixtures were cleaned afterward.
+- Post-hardening regression → **verified** in run `33027861292` after conservative poll-time reassignment was merged.
 
-All four initial Create operations now have native live-infrastructure integration coverage.
+All four initial Create operations plus durable image continuation now have native live-infrastructure integration coverage.
 
 ## Studio Compatibility Boundary
 A temporary isolated compatibility adapter exists at `src/server/generation/studio-compat.ts` for migration/debugging only. It is not the preferred production path.
@@ -90,7 +114,7 @@ The product API prioritizes:
 
 The deployed Studio runtime at `studio.faresuniform.uk` was found during integration work to have stale/incorrect R2 credentials (`SignatureDoesNotMatch`). RenderLab's own shared R2 credentials were independently verified. This reinforces that deployed Studio must not become a production dependency.
 
-Remove the compatibility path once native operational hardening is sufficient and no remaining migration/debugging need depends on it.
+Remove the compatibility path once no current migration/debugging workflow still requires it. Do not route new product behavior through Studio merely because the adapter exists.
 
 ## Reference Upload Flow
 ```text
@@ -113,6 +137,8 @@ RenderLab exposes media through product APIs rather than raw R2 keys:
 - `GET /api/media/assets/:assetId/thumbnail`
 
 Content/thumbnail endpoints issue short-lived signed R2 redirects server-side.
+
+Durable media assets can also become generation inputs via `{ type: "media-asset", id }`; the server resolves that product ID to the private R2 object. The browser never needs the underlying storage key.
 
 ## Required Server Environment Variables
 ### Supabase
@@ -138,11 +164,20 @@ Content/thumbnail endpoints issue short-lived signed R2 redirects server-side.
 - Direct browser uploads use short-lived signed URLs.
 - Worker/provider routing remains server-owned operational state.
 - Shared resources do not authorize mutation of legacy Saga tables/contracts without an explicit decision.
+- Raw R2 keys and worker IDs are internal implementation metadata, not browser product identities.
 
 ## CI / Integration Validation
 Default GitHub UI CI intentionally runs without production infrastructure secrets and validates truthful unavailable states.
 
-Configured integration workflows run automatically on relevant `main` pushes and may also support manual dispatch. Current integration coverage includes reference upload plus all four initial native Create operations: Create Image, Edit Image, Create Video and Animate Image. Integration fixtures self-clean rather than pollute shared production resources.
+Configured integration workflows run automatically on relevant `main` pushes and may also support manual dispatch. Current integration coverage includes:
+- signed reference upload;
+- Create Image;
+- Edit Image;
+- Create Video;
+- Animate Image;
+- persisted `media-asset` → Edit continuation.
+
+Integration fixtures self-clean rather than pollute shared production resources.
 
 Required GitHub secrets:
 - `SUPABASE_SERVICE_ROLE_KEY`
@@ -152,7 +187,6 @@ Required GitHub secrets:
 - `R2_BUCKET_NAME`
 
 ## Next Infrastructure Work
-1. Finish bounded client polling recovery for transient status/network failures.
-2. Reintroduce safe poll-time worker reassignment only with strong evidence that no worker accepted/executed the job; avoid duplicate generations.
-3. Remove the Studio compatibility adapter after operational hardening and migration/debugging dependence are sufficiently reduced.
-4. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
+1. Remove the transitional Studio compatibility adapter once no migration/debugging need depends on it.
+2. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
+3. Preserve the conservative duplicate-avoidance rule if worker APIs/routing evolve; do not broaden safe reassignment to generic network/5xx errors without stronger execution evidence.
