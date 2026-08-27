@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ImageIcon, Video } from "lucide-react";
-import type {
-  MediaAssetListKind,
-  PublicMediaAsset,
+import { ArrowLeft, ArrowRight, ImageIcon, Search, Video } from "lucide-react";
+import {
+  MEDIA_ASSET_SEARCH_MAX_LENGTH,
+  type MediaAssetListKind,
+  type PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
 import { LibraryUploadButton } from "@/features/library/library-upload-button";
 
@@ -12,13 +13,10 @@ const filters: Array<{ value: MediaAssetListKind; label: string }> = [
   { value: "video", label: "Videos" },
 ];
 
-function filterHref(kind: MediaAssetListKind) {
-  return kind === "all" ? "/library" : `/library?kind=${kind}`;
-}
-
-function pageHref(kind: MediaAssetListKind, offset: number) {
+function libraryHref(kind: MediaAssetListKind, searchQuery: string | null, offset = 0) {
   const params = new URLSearchParams();
   if (kind !== "all") params.set("kind", kind);
+  if (searchQuery) params.set("q", searchQuery);
   if (offset > 0) params.set("offset", String(offset));
   const query = params.toString();
   return query ? `/library?${query}` : "/library";
@@ -80,6 +78,7 @@ export function LibraryView({
   uploadAvailable,
   items,
   kind,
+  searchQuery,
   offset,
   limit,
   hasMore,
@@ -88,6 +87,7 @@ export function LibraryView({
   uploadAvailable: boolean;
   items: PublicMediaAsset[];
   kind: MediaAssetListKind;
+  searchQuery: string | null;
   offset: number;
   limit: number;
   hasMore: boolean;
@@ -111,7 +111,7 @@ export function LibraryView({
             return (
               <Link
                 key={filter.value}
-                href={filterHref(filter.value)}
+                href={libraryHref(filter.value, searchQuery)}
                 aria-current={active ? "page" : undefined}
                 className={[
                   "inline-flex min-h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors",
@@ -126,6 +126,40 @@ export function LibraryView({
         <span className="hidden text-xs text-text-muted sm:inline">Newest first</span>
       </div>
 
+      <form action="/library" method="get" role="search" className="mt-4 flex w-full max-w-xl items-center gap-2">
+        {kind !== "all" ? <input type="hidden" name="kind" value={kind} /> : null}
+        <label className="relative min-w-0 flex-1">
+          <span className="sr-only">Search Library</span>
+          <Search
+            aria-hidden="true"
+            size={17}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+          />
+          <input
+            type="search"
+            name="q"
+            defaultValue={searchQuery ?? ""}
+            maxLength={MEDIA_ASSET_SEARCH_MAX_LENGTH}
+            placeholder="Search by name or prompt"
+            className="min-h-10 w-full rounded-lg border border-border bg-surface-1 py-2 pl-10 pr-3 text-sm text-text outline-none transition-colors placeholder:text-text-muted focus:border-accent focus:ring-2 focus:ring-accent/25"
+          />
+        </label>
+        <button
+          type="submit"
+          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-surface-1 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          Search
+        </button>
+        {searchQuery ? (
+          <Link
+            href={libraryHref(kind, null)}
+            className="inline-flex min-h-10 items-center justify-center rounded-lg px-2 text-sm font-medium text-text-muted transition-colors hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Clear
+          </Link>
+        ) : null}
+      </form>
+
       {!available ? (
         <div className="mt-8 rounded-xl border border-border bg-surface-1 px-5 py-8 text-sm text-text-muted" role="status">
           Library media is not connected in this environment yet.
@@ -133,25 +167,37 @@ export function LibraryView({
       ) : items.length === 0 ? (
         <div className="mt-8 flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-1 px-6 text-center">
           <div className="flex size-11 items-center justify-center rounded-lg bg-surface-2 text-text-muted">
-            {kind === "video" ? <Video aria-hidden="true" size={21} /> : <ImageIcon aria-hidden="true" size={21} />}
+            {searchQuery ? <Search aria-hidden="true" size={21} /> : kind === "video" ? <Video aria-hidden="true" size={21} /> : <ImageIcon aria-hidden="true" size={21} />}
           </div>
           <h3 className="mt-4 text-base font-semibold text-text">
-            {offset > 0 ? "No older media on this page" : kind === "all" ? "No media yet" : `No ${kind === "image" ? "images" : "videos"} yet`}
+            {offset > 0
+              ? "No older media on this page"
+              : searchQuery
+                ? `No media matches “${searchQuery}”`
+                : kind === "all"
+                  ? "No media yet"
+                  : `No ${kind === "image" ? "images" : "videos"} yet`}
           </h3>
           <p className="mt-1 max-w-sm text-sm leading-6 text-text-muted">
             {offset > 0
               ? "Go back to newer media."
-              : uploadAvailable
-                ? "Create or upload something and saved media will appear here automatically."
-                : "Create something and saved results will appear here automatically."}
+              : searchQuery
+                ? "Try another name or prompt, or clear the search to browse all saved media."
+                : uploadAvailable
+                  ? "Create or upload something and saved media will appear here automatically."
+                  : "Create something and saved results will appear here automatically."}
           </p>
           <Link
-            href={offset > 0 ? pageHref(kind, Math.max(0, offset - limit)) : "/"}
+            href={offset > 0
+              ? libraryHref(kind, searchQuery, Math.max(0, offset - limit))
+              : searchQuery
+                ? libraryHref(kind, null)
+                : "/"}
             className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-lg bg-surface-2 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-3"
           >
             {offset > 0 ? <ArrowLeft aria-hidden="true" size={16} /> : null}
-            {offset > 0 ? "Newer media" : "Create media"}
-            {offset === 0 ? <ArrowRight aria-hidden="true" size={16} /> : null}
+            {offset > 0 ? "Newer media" : searchQuery ? "Clear search" : "Create media"}
+            {offset === 0 && !searchQuery ? <ArrowRight aria-hidden="true" size={16} /> : null}
           </Link>
         </div>
       ) : (
@@ -184,7 +230,7 @@ export function LibraryView({
               <div>
                 {offset > 0 ? (
                   <Link
-                    href={pageHref(kind, Math.max(0, offset - limit))}
+                    href={libraryHref(kind, searchQuery, Math.max(0, offset - limit))}
                     className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-surface-1 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-2"
                   >
                     <ArrowLeft aria-hidden="true" size={16} />
@@ -194,7 +240,7 @@ export function LibraryView({
               </div>
               {hasMore ? (
                 <Link
-                  href={pageHref(kind, offset + limit)}
+                  href={libraryHref(kind, searchQuery, offset + limit)}
                   className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-surface-1 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-2"
                 >
                   Older
