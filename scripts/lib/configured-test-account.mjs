@@ -5,9 +5,15 @@ const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABAS
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const runToken = process.env.GITHUB_RUN_ID || "local";
+const accountScope =
+  process.env.RENDERLAB_TEST_ACCOUNT_SCOPE ||
+  process.env.GITHUB_HEAD_REF ||
+  process.env.GITHUB_REF_NAME ||
+  runToken;
+const accountScopeToken = createHash("sha256").update(accountScope).digest("hex").slice(0, 12);
 
 function fixtureUuid(namespace) {
-  const hex = createHash("sha256").update(`renderlab-ci-account-${runToken}-${namespace}`).digest("hex").slice(0, 32).split("");
+  const hex = createHash("sha256").update(`renderlab-ci-account-${accountScope}-${namespace}`).digest("hex").slice(0, 32).split("");
   hex[12] = "4";
   hex[16] = "8";
   return `${hex.slice(0, 8).join("")}-${hex.slice(8, 12).join("")}-${hex.slice(12, 16).join("")}-${hex.slice(16, 20).join("")}-${hex.slice(20, 32).join("")}`;
@@ -114,8 +120,8 @@ export function configuredTestAccountIdentity(namespace) {
   const safeNamespace = namespace.replace(/[^a-z0-9-]+/gi, "-").toLowerCase();
   return {
     id,
-    email: `renderlab-${safeNamespace}-${runToken}@example.com`,
-    password: `RenderLab-${safeNamespace}-${runToken}-Pass!`,
+    email: `renderlab-${safeNamespace}-${accountScopeToken}@example.com`,
+    password: `RenderLab-${safeNamespace}-${accountScopeToken}-Pass!`,
   };
 }
 
@@ -139,7 +145,7 @@ export async function createConfiguredTestAccount(namespace) {
       email: account.email,
       password: account.password,
       email_confirm: true,
-      app_metadata: { renderlab_fixture: namespace, run: runToken },
+      app_metadata: { renderlab_fixture: namespace, run: runToken, scope: accountScope },
     }),
   });
   if (!createResponse.ok) {
