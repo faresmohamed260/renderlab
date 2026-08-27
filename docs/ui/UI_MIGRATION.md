@@ -49,6 +49,7 @@ The creation UI is task-oriented and progressively discloses complexity.
 - [x] Visually verify revised narrow/mobile two-row composer.
 - [x] Define prompt/composer, Image/Video selection, reference-driven Edit/Animate resolution, essential values, contextual controls, Advanced disclosure, and automatic model/workflow behavior.
 - [x] Define truthful disabled/error/runtime states: no fake progress, preserve user work on recoverable errors, complete only after persistence.
+- [x] Establish and review `design/penpot/create-v0.3-advanced.svg` for the compact desktop/mobile Advanced disclosure.
 
 ### Create UI / product API implementation
 - [x] Replace Create placeholder with `src/features/create/create-workspace.tsx`.
@@ -57,10 +58,10 @@ The creation UI is task-oriented and progressively discloses complexity.
 - [x] Add `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]`.
 - [x] Make Create submit and poll real RenderLab job state.
 - [x] Preserve prompt/reference/settings on recoverable submission failures.
-- [ ] Retry transient polling/network failures with bounded backoff. Implementation is currently in PR #2 and must not be marked complete until green/merged.
-- [x] Render the persisted output asset directly in Create after success through `GET /api/media/assets/[assetId]`; implementation passed production build + Playwright shell checks before merge in PR #1.
-- [ ] Add capability-derived continuation actions to persisted results.
-- [ ] Implement Advanced controls from real capability definitions.
+- [x] Retry transient polling/network failures with bounded backoff; PR #2 passed production build + Playwright validation before merge.
+- [x] Render persisted output directly in Create after success through `GET /api/media/assets/[assetId]`; PR #1 passed production build + Playwright checks before merge.
+- [x] Add capability-derived continuation actions to persisted image results: **Edit** and **Animate** bind the durable result as a `media-asset` input. PR #3 passed validation and the live continuation path was verified in run `33027460976`.
+- [x] Implement Advanced controls from verified capability definitions. PR #6 uses normalized Radix Collapsible plus feature-owned form composition and exposes negative prompt, seed, steps, guidance, and video-only frame rate. Run `33030364272` passed production build, behavior checks, and reviewed desktop/mobile screenshots before merge.
 
 ### Shared source/storage implementation
 - [x] Apply `0001_generation_sources.sql` to shared Supabase project `AI Studio` (`rashyleshocuvpgcooxy`) with RLS enabled.
@@ -79,21 +80,21 @@ The creation UI is task-oriented and progressively discloses complexity.
 - [x] Mark jobs succeeded only after durable media persistence.
 - [x] Add private media metadata/content/thumbnail APIs.
 - [x] Verify native Create Image end-to-end; persisted asset/R2 output validated and fixture self-cleaned.
-- [x] Verify native reference-driven Edit Image end-to-end — GitHub run `33021843503`, commit `f374d711f99b2a68c0e7ea43cbce42052380b0cb`.
-- [x] Verify native text-to-video end-to-end — GitHub run `33021977765`, commit `638e312fdbbf5aa126faa9d2a91dbca68b026d48`.
-- [x] Verify native reference-driven Animate Image end-to-end in the same video integration run `33021977765`; the workflow step `Verify Create Video and Animate Image` completed successfully and the script self-cleans both video jobs plus the reference source.
-- [ ] Reintroduce proven safe poll-time reassignment only for strong no-execution evidence; never duplicate a possibly accepted generation on generic network/5xx failures.
-- [ ] Remove transitional Studio compatibility adapter after native operation coverage is sufficient.
+- [x] Verify native reference-driven Edit Image end-to-end — GitHub run `33021843503`.
+- [x] Verify native Create Video and native reference-driven Animate Image end-to-end — GitHub run `33021977765`.
+- [x] Verify durable media-asset continuation (`Create Image → persisted media asset → Edit Image`) — GitHub run `33027460976`, self-cleaning.
+- [x] Implement conservative poll-time worker reassignment. Only explicit credit exhaustion or explicit worker-unavailable evidence is safe to reassign; generic 429/5xx/network ambiguity never triggers duplicate-risk automatic resubmission. PR #5 passed validation and post-merge live regression run `33027861292` succeeded.
+- [ ] Remove transitional Studio compatibility adapter after migration/debugging dependence is no longer needed.
 
 ### Validation
 - [x] Default production build + Playwright UI/API checks pass without production credentials and show truthful unavailable states.
 - [x] Configured reference integration passes automatically and self-cleans.
-- [x] Configured native Create Image integration passes and self-cleans.
-- [x] Configured native Edit integration passes and self-cleans.
+- [x] Configured native Create Image/Edit continuation integration passes and self-cleans.
 - [x] Configured native Video + Animate integration passes and self-cleans.
-- [ ] Final responsive Create review after the persisted-result UI and real backend lifecycle are visible together.
+- [x] Advanced desktop/mobile disclosure is rendered/tested and visually reviewed in GitHub CI run `33030364272`.
+- [ ] Final responsive Create review with a **real configured persisted-result + continuation lifecycle visible in the UI**.
 
-Current Create status is `MIGRATING`, not `APPROVED`.
+Current Create status is `MIGRATING`, not `APPROVED`. The remaining approval gate is real-lifecycle rendered review rather than missing core Create functionality.
 
 ## Phase 4 — Media & Continuation
 - [ ] Media library/gallery
@@ -102,7 +103,9 @@ Current Create status is `MIGRATING`, not `APPROVED`.
 - [ ] Metadata presentation
 - [ ] Favorites/collections or approved organizational model
 - [ ] Media actions
-- [ ] Continuation actions such as edit, animate, upscale, or other supported operations
+- [ ] Continuation actions across Library/Media Viewer and future supported operations
+
+Create already supports persisted-result Edit/Animate continuation. Phase 4 must reuse that capability model rather than create separate hard-coded action logic.
 
 Underlying RenderLab `media_assets` persistence and private delivery APIs already exist; Phase 4 surfaces must build on them rather than legacy `studio_generations`.
 
@@ -127,9 +130,9 @@ Underlying RenderLab `media_assets` persistence and private delivery APIs alread
 
 ## Current Work
 **Current phase:** Phase 3 — Creation Experience implementation  
-**Current status:** Shared source upload and all four initial native operations — Create Image, Edit Image, Create Video, Animate Image — are verified end-to-end against the reused production resources. RenderLab owns its job/media records and orchestration path. Create now renders the persisted image/video result after success. It remains `MIGRATING` because continuation actions, resilient client polling, safe poll-time worker reassignment, Advanced controls, and final responsive lifecycle review remain open.  
-**Known blockers:** No credential blocker. Remaining work is implementation/verification rather than infrastructure access.  
-**Next recommended task:** Finish/merge bounded client polling recovery, then design and implement capability-derived continuation actions on the persisted Create result. Follow with safe poll-time worker reassignment and final lifecycle visual review before considering Create approved.
+**Current status:** Core Create composition, reference upload, all four initial native operations, persisted results, durable result continuation, bounded polling recovery, conservative safe worker reassignment, and capability-driven Advanced controls are implemented and verified. Create remains `MIGRATING` only because the final real configured result/continuation lifecycle has not yet been rendered and reviewed responsively as one complete user flow.  
+**Known blockers:** No credential blocker.  
+**Next recommended task:** Build a GitHub-driven real-lifecycle visual verification path for Create so a configured generation can be exercised and screenshots captured without Vercel previews. After that review, decide whether Create can move to `APPROVED`, then remove the Studio compatibility fallback if no migration/debugging need remains.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
