@@ -1,201 +1,212 @@
 # Product Capabilities & Domain Baseline
 
-This document records the verified capability baseline that informs RenderLab. It distinguishes what exists in the Saga reference implementation from what RenderLab should be designed to support conceptually.
+This document records the capability baseline that informs RenderLab. It distinguishes audited Saga reference behavior, currently verified RenderLab capability, and future extensibility categories.
 
 ## Authority and Scope
 - `renderlab` is the product source of truth.
 - Saga is a reference implementation, not the RenderLab specification.
 - Items labeled **Verified in Saga** are supported by the audited Saga repository.
-- Items labeled **Extensibility category** are architectural categories RenderLab should be able to represent later; they are not claims that the capability is currently implemented or production-ready.
+- Items labeled **Verified in RenderLab** are implemented/verified in the current repository.
+- Items labeled **Extensibility category** are architecture pressure-tests, not feature commitments.
 
 ## Verified Saga Generation Capabilities
-Saga's current workflow registry contains five workflow IDs across three worker ecosystems:
+Saga's audited workflow registry contains five workflow IDs across three worker ecosystems.
 
 ### FLUX.2 Klein 9B ecosystem
-- Image generation workflow.
-- Image edit workflow.
-- Image edit supports multiple references.
-- Automatic output sizing is supported.
+- Image generation.
+- Image edit.
+- Multi-reference image edit.
+- Automatic output sizing.
 - PNG output.
-- Execution controls include negative prompt, seed, steps, CFG, and megapixel target.
+- Execution controls include negative prompt, seed, steps, CFG and megapixel target.
 
 ### Qwen Image Edit 2511 ecosystem
-- Image generation workflow.
-- Image edit workflow.
-- Image edit supports multiple references.
-- Automatic output sizing is supported.
+- Image generation.
+- Image edit.
+- Multi-reference image edit.
+- Automatic output sizing.
 - PNG output.
-- Execution controls include negative prompt, seed, fixed four-step execution, CFG, and megapixel target.
+- Execution controls include negative prompt, seed, fixed four-step execution, CFG and megapixel target.
 
 ### REDGraft LTX 2.5 ecosystem
-- Text-to-video because the source image is optional.
+- Text-to-video.
 - Image-to-video using an optional first-frame/reference image.
 - MP4 output.
-- Resolution choices: 480p, 720p, 1080p, and 2K.
+- Resolution choices: 480p, 720p, 1080p and 2K.
 - Duration range: 5–30 seconds.
-- Frame rates: 24, 25, and 30 fps.
-- Audio generation can be enabled/disabled.
-- Multiple aspect ratios are supported.
-- Reference aspect can be used automatically.
-- Execution controls include negative prompt, seed, steps, CFG, resolution, duration, audio, aspect ratio, and frame rate.
+- Frame rates: 24, 25 and 30 fps.
+- Audio generation on/off.
+- Multiple aspect ratios.
+- Reference aspect support.
+- Execution controls include negative prompt, seed, steps, CFG, resolution, duration, audio, aspect ratio and frame rate.
 
-## Verified Saga Input and Asset Capabilities
-- Source/reference images are stored in Cloudflare R2 and can be reused by generation jobs.
-- PNG, JPEG, and WebP source uploads are supported up to 25 MB.
-- Saga distinguishes temporary generation sources from persistent library uploads.
-- Persistent uploads can be listed, searched, sorted, favorited, renamed, downloaded, and deleted.
-- Generation submission can accept one or multiple source references according to workflow capability.
-- Multi-reference prompts preserve upload order and explicitly identify Image 1 as the primary canvas in the current orchestration behavior.
+## Verified Saga Input, Job and Media Behavior
+- PNG, JPEG and WebP references up to 25 MB.
+- Temporary sources and durable media are distinct concepts.
+- Generation is asynchronous and represented by persistent jobs.
+- Real worker lifecycle state is exposed rather than synthetic percentage progress.
+- Primary/standby workers and failover exist.
+- Completed images/videos are persisted to R2 plus structured records in Supabase.
+- Existing media can continue into later actions such as edit or animate.
+- Library/gallery behavior supports durable media organization and reuse.
 
-## Verified Saga Job and Execution Capabilities
-- Generation is asynchronous and represented by persistent generation jobs.
-- Workflow submission returns a job rather than blocking for the final media result.
-- Jobs preserve workflow/model/provider information and execution metadata.
-- Worker warm-up can be requested before generation.
-- The orchestration layer exposes meaningful worker lifecycle state rather than synthetic percentage progress.
-- Worker ecosystems support primary and standby workers.
-- Current generated worker registry contains primary/standby fleets for FLUX, Qwen, and LTX ecosystems.
-- Result polling can reassign a running job to a standby worker when the active worker is unavailable or credit-exhausted and reassignment is safe.
-- Failover history and assigned worker/runtime state are persisted with job metadata.
-- Current result polling limits automatic worker failover history to three attempts.
+## Proven Behaviors Carried Forward
+1. **Asynchronous jobs are first-class objects.**
+2. **Persist before declaring completion.** Provider completion alone is not product completion.
+3. **Reusable input assets.** References/results can become later generation inputs.
+4. **Capability-aware inputs.** Input roles/requirements depend on operation/workflow compatibility.
+5. **Real execution state.** Avoid fake percentage progress.
+6. **Worker resilience stays behind product UX.**
+7. **Output continuation is a core product concept.**
+8. **Durable media needs organization/reuse surfaces.**
+9. **Defaults and limits belong to capability/backend contracts, not arbitrary UI literals.**
 
-## Verified Saga Persistence and Media Capabilities
-- Completed images and videos are persisted to Cloudflare R2.
-- Generation records and metadata are persisted through Supabase.
-- Images receive WebP thumbnails generated by the orchestration layer when thumbnail generation succeeds.
-- Videos can persist a supplied poster image as the media thumbnail.
-- Persisted records include media URL, thumbnail URL, MIME type, dimensions where available, storage keys, timestamps, model/workflow metadata, and execution metadata.
-- Gallery/library behavior supports generated media, favorites, collections, filtering/search, batch download, and deletion.
-- Existing media can be continued into user actions such as reusing settings, editing an image, or animating an image.
-
-## Proven Behaviors Worth Carrying Forward
-These are product/backend behaviors, not requirements to copy Saga UI implementation:
-
-1. **Asynchronous jobs as first-class objects.** Generation should not be modeled as a single blocking request.
-2. **Persist outputs before treating generation as complete.** A completed provider response is not enough; RenderLab should surface durable media.
-3. **Reusable input assets.** Uploaded references should be reusable rather than disposable browser-only inputs.
-4. **Capability-aware inputs.** Workflows determine whether references are required, optional, singular, or multiple.
-5. **Real execution state.** User feedback should derive from actual orchestration/worker state when available.
-6. **Worker failover.** Infrastructure resilience should remain behind the product experience instead of requiring user intervention.
-7. **Output continuation.** A generated asset can become an input to another creative operation.
-8. **Media organization.** Durable generated and uploaded assets need searchable/reusable library behavior.
-9. **Workflow defaults and limits.** Backend contracts should own validated defaults/constraints; the UI should present them appropriately rather than duplicating arbitrary values.
-
-## Saga Constraints Not to Encode as RenderLab Product Architecture
-- The current five workflow IDs are not the permanent RenderLab capability boundary.
-- The current image/video/edit modes are not sufficient as the long-term domain model.
-- Current Saga routes/screens are not the required RenderLab information architecture.
-- Current parameter names should not all be exposed in the default UI.
-- Current model/provider/ecosystem naming is infrastructure metadata, not necessarily primary user-facing navigation.
-- Current workflow-specific request parsing is evidence of required backend validation, not a reason to build a generic technical form in the frontend.
+## Saga Constraints Not to Encode as RenderLab Architecture
+- Saga's five workflow IDs are not RenderLab's permanent capability boundary.
+- Saga routes/screens are not the required RenderLab IA.
+- Model/provider/ecosystem naming is infrastructure metadata, not primary product navigation.
+- A worker/node parameter does not automatically deserve a UI control.
+- Workflow-specific request parsing is evidence for validation, not a reason to render a generic ComfyUI form.
 
 ## RenderLab Capability Domain Model
-RenderLab should separate **what the user wants to do** from **how a workflow executes it**.
+RenderLab separates **what the user wants to do** from **how execution is routed**.
 
 ### Creative Operation
-A user-understandable goal such as create image, create video, edit, animate, upscale, or another approved operation.
-
-A Creative Operation may map to one or more compatible workflows. The user should not have to understand the workflow graph to begin the task.
+A user-understandable goal such as create image, edit image, create video, animate image, upscale, restore, or another approved operation.
 
 ### Workflow Definition
-A registered executable backend capability. It should be able to declare:
-- stable workflow ID and version;
-- creative operations it can satisfy;
-- output media kind(s);
-- compatible model/model family;
-- provider/worker ecosystem routing metadata;
-- input slots and constraints;
-- parameter definitions, defaults, limits, and visibility tier;
+A registered executable capability able to declare:
+- stable workflow/version identity;
+- supported creative operations;
+- output media kind;
+- compatible model/ecosystem;
+- input slots/constraints;
+- parameter definitions, defaults, limits and visibility tiers;
 - output definitions;
 - supported continuation actions;
-- capability flags and compatibility rules.
+- capability/compatibility flags.
 
 ### Input Slot
-A typed input requirement rather than a generic file list. An input slot should be able to describe:
+Typed input requirements can describe:
 - media type;
-- required vs optional;
-- minimum/maximum count;
-- accepted formats and size constraints;
-- semantic role such as primary image, reference, first frame, mask, or other future role;
-- whether an existing library asset can satisfy it.
+- required/optional;
+- min/max count;
+- accepted formats/size;
+- semantic role such as primary image, reference, first frame, mask;
+- whether temporary or durable media can satisfy the slot.
 
 ### Parameter Definition
-A workflow control with metadata sufficient for validation and curated UI presentation. Parameters should distinguish:
-- **Essential:** commonly needed to express the task/output, shown by default.
-- **Contextual:** shown when the selected operation/input/workflow makes it relevant.
-- **Advanced:** available to users who intentionally want deeper control.
-- **Internal:** required for execution but never directly user-facing.
-
-This tier is a product decision and must not be inferred only from whether ComfyUI exposes a node input.
+Controls are classified as:
+- **Essential** — needed for the ordinary task;
+- **Contextual** — relevant because of current operation/input;
+- **Advanced** — deliberate technical/reproducibility tuning;
+- **Internal** — execution/infrastructure values never normally surfaced.
 
 ### Generation Request
-A normalized request containing the selected creative operation, workflow/model resolution, prompt, bound input assets, parameter values, and provenance needed to reproduce or continue the generation.
+Normalized product request containing prompt, output intent, opaque inputs and curated parameter values.
 
 ### Generation Job
-A persistent asynchronous execution object. It should represent:
-- queued/running/terminal lifecycle;
-- workflow and workflow version;
-- resolved model/provider ecosystem;
-- normalized inputs and parameters;
-- actual runtime/worker state when available;
-- failure/cancellation information;
-- retry/failover provenance;
-- output references.
+Persistent asynchronous execution identity containing lifecycle, resolved execution metadata, runtime state, failures/failover provenance and output asset IDs.
 
 ### Media Asset
-A durable generated or uploaded asset with:
-- media kind and MIME type;
-- original storage reference;
-- preview/thumbnail references;
-- dimensions/duration where applicable;
-- provenance;
-- generation/workflow relationship when generated;
-- user organization metadata;
-- available continuation actions derived from capability compatibility.
+Durable product media identity with kind/MIME, storage metadata, preview data, generation provenance and compatible continuation actions.
 
 ### Continuation Action
-An operation that uses an existing asset or generation configuration as the starting point for another task. Examples already proven in Saga include reuse settings, edit, and animate. RenderLab should allow additional actions to be registered without hard-coding them into every media component.
+An action that uses a durable media asset/configuration as the starting point for another creative operation. Continuations are capability-derived rather than hard-coded independently into each media component.
+
+## Verified RenderLab Initial Capability Set
+### Creative operations
+The initial Create workspace supports and live-verifies:
+- **Create Image** → FLUX.2 Klein generation;
+- **Edit Image** → FLUX.2 Klein edit with image input;
+- **Create Video** → REDGraft LTX 2.5 text-to-video;
+- **Animate Image** → REDGraft LTX 2.5 image-to-video.
+
+All four operations have native live-infrastructure verification. Qwen remains an audited available ecosystem but is not the default initial product workflow.
+
+### Input identities
+Current generation inputs are opaque product identities:
+- `{ type: "temporary-source", id }` for ready uploaded references;
+- `{ type: "media-asset", id }` for durable RenderLab results.
+
+The browser does not submit R2 keys.
+
+### Initial supported reference behavior
+- PNG, JPEG, WebP;
+- ≤25 MB;
+- signed direct-R2 upload;
+- server HEAD verification;
+- opaque `generation_sources.id` binding.
+
+### Initial default/contextual values
+- Image/Video is the explicit main output choice.
+- Image aspect ratios: `1:1`, `16:9`, `9:16`, `4:3`, `3:4`.
+- Video aspect ratios: `16:9`, `9:16`, `1:1`.
+- Video durations: 5, 10, 15, 20, 30 seconds.
+- A compatible image input resolves Image → Edit and Video → Animate.
+
+### Verified Advanced product controls
+Create v0.3 intentionally exposes only currently justified Advanced controls:
+- negative prompt;
+- seed;
+- steps;
+- guidance;
+- frame rate for Video only (24/25/30 fps).
+
+Current UI/API capability metadata is centralized in `src/lib/capabilities/generation.ts`. Advanced is collapsed by default. A worker supporting more parameters is not sufficient reason to expose them.
+
+### Verified continuation actions
+Persisted image results currently expose:
+- **Edit** → rebind result as `media-asset` / `primary-image`;
+- **Animate** → rebind result as `media-asset` / `first-frame`.
+
+Run `33027460976` live-verified `Create Image → persisted media asset → Edit Image` and cleaned both fixtures.
+
+### Verified job/runtime behavior
+- asynchronous `generation_jobs`;
+- queued/running/persisting/succeeded/failed/cancelled product states;
+- success only after R2 + `media_assets` persistence;
+- bounded client retry/backoff for transient status/network errors;
+- primary/standby submission routing;
+- conservative poll-time reassignment only on explicit safe evidence;
+- no automatic poll-time resubmission for generic 429/5xx/network ambiguity.
 
 ## Extensibility Categories
-The following categories should be representable by the domain model if/when production workflows are introduced. They are **not currently verified RenderLab features** and should not be added to the UI merely because ComfyUI can support them:
-
-- text-to-image and image-to-image variants;
-- region/mask-based editing such as inpainting/outpainting;
-- structural/reference conditioning such as pose, depth, edges, or similar controls;
+These must remain representable if/when production workflows are introduced, but are **not current feature commitments**:
+- inpainting/outpainting and mask-based editing;
+- pose/depth/edge/structural conditioning;
 - style/identity/reference adapters;
-- LoRA or other model adapters;
-- upscaling and restoration;
-- multi-stage generation/post-processing pipelines;
+- LoRA/model adapters;
+- upscaling/restoration;
+- multi-stage generation/post-processing;
 - additional image/video/audio input roles;
-- multiple outputs or variations from one request;
-- workflow chaining and branching continuation actions;
+- multiple outputs/variations;
+- workflow chaining/branching;
 - reusable presets;
-- expert workflow inspection/control as a deliberately separate advanced experience, if ever justified.
-
-These categories are architecture pressure-tests, not roadmap commitments.
+- expert workflow inspection/control as a deliberately separate experience if ever justified.
 
 ## Progressive Disclosure Boundary
-### Default experience
-The minimum controls an average user needs to express intent and request a useful output. Typical examples are prompt, necessary reference media, a small number of understandable output choices, and Generate.
+### Default
+Prompt, necessary reference media, understandable output choices and Generate.
 
-### Contextual controls
-Controls that appear because of the current task. Examples: duration for video, edit strength for an editing workflow if supported, mask tools for a mask-based operation, or reference-specific options when references are present.
+### Contextual
+Controls that matter because of the current task, such as video duration/aspect or attached-reference context.
 
-### Advanced controls
-Technical/reproducibility controls for users who intentionally want them, such as seed, steps, CFG/guidance, negative prompt, frame rate, or other workflow-specific tuning when exposing them provides real value.
+### Advanced
+Technical/reproducibility controls intentionally requested by the user, currently negative prompt, seed, steps, guidance and video frame rate.
 
-### Internal controls
-Provider routing, worker selection, workflow graph/node identifiers, infrastructure retry bookkeeping, storage transport, and other execution details that should normally remain invisible to the user.
+### Internal
+Provider routing, worker selection, ecosystem IDs, R2 keys, ComfyUI node/graph identifiers and failover bookkeeping.
 
 ## Architecture Invariants
-1. A new backend workflow should not require a new top-level application screen by default.
-2. Adding a workflow parameter should not automatically add a permanent control to the default composer.
-3. User-facing creative operations and backend workflow IDs are separate concepts.
-4. Media assets should be reusable inputs to compatible future operations.
-5. Workflow constraints must be validated server-side even when the UI also validates them.
-6. Infrastructure/provider details should remain replaceable behind stable product contracts.
-7. The UI may be purpose-built for important operations even though the underlying capability model is generic.
-8. The domain model must support capabilities that are not currently surfaced without advertising or implementing them prematurely.
+1. A new backend workflow does not create a new top-level screen by default.
+2. A new worker parameter does not automatically create a default/Advanced control.
+3. User-facing creative operations and backend workflow IDs remain separate concepts.
+4. Durable media assets are reusable inputs to compatible operations.
+5. Constraints are validated server-side even when the UI also validates them.
+6. Provider/infrastructure details remain replaceable behind stable product contracts.
+7. Purpose-built UX is allowed even though the internal capability model is extensible.
+8. Unsurfaced capabilities may exist in architecture without being advertised prematurely.
 
-## Next Product Decision
-Use this baseline to define RenderLab's initial information architecture and the first production creation experience. That design should select only the capabilities needed for an intuitive initial product while preserving the extensibility described here.
+## Current Capability Work
+The initial Create capability slice is implemented. The remaining Create approval task is not a missing capability definition; it is the final responsive visual review of the complete **configured real generation → persisted result → continuation** lifecycle. Future capability work should grow from verified user needs/workflows rather than pre-populating the UI with theoretical ComfyUI options.
