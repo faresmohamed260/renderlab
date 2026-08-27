@@ -86,7 +86,7 @@ Image, Video, Edit, Animate, Models, and Workflows are not separate top-level de
 
 ### Verified current state
 - application shell is implemented and `APPROVED`;
-- Create is implemented and remains `MIGRATING` until persisted-result UX and final responsive review are complete;
+- Create is implemented and remains `MIGRATING` until continuation UX and final responsive lifecycle review are complete;
 - Image/Video prompt composition, aspect/duration controls, reference preview/removal/replacement, and responsive composer behavior are implemented;
 - reference upload is verified end-to-end against the reused shared R2 + Supabase resources and self-cleans;
 - RenderLab reuses Supabase project `AI Studio` (`rashyleshocuvpgcooxy`), the shared R2 resource, and the existing worker fleet by explicit product decision;
@@ -95,17 +95,18 @@ Image, Video, Edit, Animate, Models, and Workflows are not separate top-level de
 - RenderLab-native worker submission, primary/standby routing, polling, R2 persistence, media records, and private media-delivery APIs are implemented;
 - **native Create Image is verified end-to-end**, including persisted `media_assets` + R2 output and self-cleaning integration;
 - **native reference-driven Edit Image is verified end-to-end** in GitHub Actions run `33021843503` (commit `f374d711f99b2a68c0e7ea43cbce42052380b0cb`);
-- **native Create Video is verified end-to-end** in GitHub Actions run `33021977765` (commit `638e312fdbbf5aa126faa9d2a91dbca68b026d48`);
+- **native Create Video and reference-driven Animate Image are both verified end-to-end** in GitHub Actions run `33021977765` (commit `638e312fdbbf5aa126faa9d2a91dbca68b026d48`); the workflow's `Verify Create Video and Animate Image` step completed successfully and the integration self-cleans;
+- Create now loads the persisted RenderLab `media_assets` result after a successful job and renders the real image/video through the product media API boundary;
+- persisted-result code passed production build + Playwright shell validation in PR #1 before merge; final real-result responsive visual review is still required before Create approval;
 - production build/UI validation remains GitHub-based rather than depending on Vercel preview deployments.
 
 ### Still open
-1. Surface persisted `media_assets` results directly in Create and add capability-derived continuation actions.
-2. Verify reference-driven **Animate Image** natively.
-3. Make transient Create polling/network failures retry with bounded backoff.
-4. Reintroduce proven safe poll-time reassignment only where there is strong evidence no worker accepted the job; do not risk duplicate generations.
-5. Introduce Advanced controls only from verified capability definitions.
-6. Perform final desktop/mobile Create review with real persisted-result lifecycle visible.
-7. Remove the Studio compatibility fallback after native operation coverage is sufficient.
+1. Add capability-derived continuation actions to the persisted Create result.
+2. Make transient Create polling/network failures retry with bounded backoff (implementation is currently under validation; do not treat complete until merged and green).
+3. Reintroduce proven safe poll-time reassignment only where there is strong evidence no worker accepted the job; do not risk duplicate generations.
+4. Introduce Advanced controls only from verified capability definitions.
+5. Perform final desktop/mobile Create review with the real persisted-result lifecycle visible.
+6. Remove the Studio compatibility fallback after native operation coverage is sufficient.
 
 See `docs/ui/UI_MIGRATION.md` for phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, `docs/architecture/FRONTEND_ARCHITECTURE.md` for frontend architecture, and `docs/architecture/INFRASTRUCTURE.md` for shared-resource and generation ownership rules.
 
