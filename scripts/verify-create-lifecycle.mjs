@@ -58,14 +58,15 @@ async function rows(path) {
   return response.json();
 }
 
-async function loadAssets(jobId) {
-  return rows(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}&select=id,storage_key,thumbnail_storage_key,owner_id`);
+async function loadAssets(ownerId, jobId) {
+  return rows(`media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&generation_job_id=eq.${encodeURIComponent(jobId)}&select=id,storage_key,thumbnail_storage_key,owner_id`);
 }
 
-async function cleanupJob(jobId) {
+async function cleanupJob(ownerId, jobId) {
   if (!jobId) return;
 
-  const assets = await loadAssets(jobId);
+  const ownerFilter = encodeURIComponent(ownerId);
+  const assets = await loadAssets(ownerId, jobId);
   const keys = new Set();
   for (const asset of assets) {
     if (asset.storage_key) keys.add(asset.storage_key);
@@ -76,19 +77,19 @@ async function cleanupJob(jobId) {
     await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: key }));
   }
 
-  const mediaDelete = await supabase(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" });
+  const mediaDelete = await supabase(`media_assets?owner_id=eq.${ownerFilter}&generation_job_id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" });
   if (!mediaDelete.ok) throw new Error(`Could not remove lifecycle media fixture (${mediaDelete.status}).`);
 
-  const jobDelete = await supabase(`generation_jobs?id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" });
+  const jobDelete = await supabase(`generation_jobs?owner_id=eq.${ownerFilter}&id=eq.${encodeURIComponent(jobId)}`, { method: "DELETE" });
   if (!jobDelete.ok) throw new Error(`Could not remove lifecycle generation fixture (${jobDelete.status}).`);
 
-  const remainingAssets = await loadAssets(jobId);
-  const remainingJobs = await rows(`generation_jobs?id=eq.${encodeURIComponent(jobId)}&select=id`);
+  const remainingAssets = await loadAssets(ownerId, jobId);
+  const remainingJobs = await rows(`generation_jobs?owner_id=eq.${ownerFilter}&id=eq.${encodeURIComponent(jobId)}&select=id`);
   if (remainingAssets.length || remainingJobs.length) {
-    throw new Error(`Lifecycle cleanup was incomplete for job ${jobId}.`);
+    throw new Error(`Lifecycle cleanup was incomplete for owner=${ownerId} job=${jobId}.`);
   }
 
-  console.log(`Cleaned configured Create lifecycle fixture job=${jobId} objects=${keys.size}`);
+  console.log(`Cleaned configured Create lifecycle fixture owner=${ownerId} job=${jobId} objects=${keys.size}`);
 }
 
 async function readFixtureJobId() {
@@ -103,7 +104,7 @@ async function readFixtureJobId() {
 async function cleanupFixtureFile() {
   const jobId = await readFixtureJobId();
   if (jobId) {
-    await cleanupJob(jobId);
+    await cleanupJob(fixtureAccount.id, jobId);
     await rm(fixturePath, { force: true });
   }
   await deleteConfiguredTestAccount(fixtureAccount);
@@ -155,7 +156,7 @@ try {
 
   jobId = submissionPayload.job.id;
   await writeFile(fixturePath, JSON.stringify({ jobId }), "utf8");
-  const jobRows = await rows(`generation_jobs?id=eq.${encodeURIComponent(jobId)}&select=id,owner_id&limit=1`);
+  const jobRows = await rows(`generation_jobs?owner_id=eq.${encodeURIComponent(account.id)}&id=eq.${encodeURIComponent(jobId)}&select=id,owner_id&limit=1`);
   assert(jobRows[0]?.owner_id === account.id, "Create generation job was not owned by the authenticated fixture account.");
   console.log(`Configured Create lifecycle accepted. owner=${account.id} job=${jobId}`);
 
@@ -170,7 +171,7 @@ try {
     );
   }
 
-  const assets = await loadAssets(jobId);
+  const assets = await loadAssets(account.id, jobId);
   assert(assets.length > 0, "Configured Create did not persist a durable media asset.");
   assert(assets.every((asset) => asset.owner_id === account.id), "Persisted Create media did not inherit the generation account owner.");
 
@@ -228,7 +229,7 @@ try {
 
   try {
     if (jobId) {
-      await cleanupJob(jobId);
+      await cleanupJob(fixtureAccount.id, jobId);
       await rm(fixturePath, { force: true });
     }
     await deleteConfiguredTestAccount(fixtureAccount);
