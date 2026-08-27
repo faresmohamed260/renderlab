@@ -76,7 +76,7 @@ Current branch behavior:
 - generation jobs are created with the authenticated owner and generated media inherits the job owner;
 - Create may still hold an unsigned draft, but persistent generation/upload actions require sign-in;
 - raw core tables remain unavailable to browser roles: actual grants show `service_role` retains required privileges while `anon` and `authenticated` have none;
-- an optional external RenderLab generation backend is considered configured only when both `RENDERLAB_GENERATION_BACKEND_URL` and server-only `RENDERLAB_GENERATION_BACKEND_TOKEN` are present. Submission and polling authenticate to that backend with `Authorization: Bearer <token>` before forwarding the trusted `x-renderlab-owner-id` header. If the external pair is incomplete, RenderLab falls back to native generation when available rather than sending unauthenticated owner context.
+- an optional external RenderLab generation service is active only when both its URL and a server-only bearer token are configured. RenderLab authenticates both submit and poll calls before forwarding `x-renderlab-owner-id`; a backend must verify the bearer token before trusting that owner header. URL-only configuration falls back to native orchestration rather than trusting an unauthenticated external owner boundary.
 
 Verified rollout state in shared Supabase:
 - all four ownership tables currently contain `0` rows and therefore `0` null owners;
@@ -84,18 +84,19 @@ Verified rollout state in shared Supabase:
 - RLS is enabled on all four tables;
 - there are intentionally no browser RLS policies because browser roles have no direct table grants and product routes are the access boundary;
 - no RenderLab configured-test Auth users remain after cleanup;
-- corrected `0005` was executed only inside a live-schema transaction and rolled back. Same-owner generation/media/upload relationships succeeded; cross-owner media→job and upload→asset links were rejected; owner reassignment was rejected; missing ownership was rejected; all six enforcement triggers existed inside the transaction. Post-rollback verification found four still-nullable owner columns, zero enforcement triggers, zero simulation Auth users and zero core rows.
+- corrected `0005` was executed only inside live-schema transactions and rolled back. Same-owner generation/media/upload relationships succeeded; cross-owner media→job and upload→asset links were rejected on insert/update; owner reassignment and missing ownership were rejected; Auth-owner deletion was restricted while owned rows existed; all six enforcement triggers existed inside the transaction;
+- a second rollback-only compatibility simulation verified existing FK cleanup remains valid under corrected `0005`: deleting a generation job still sets `media_assets.generation_job_id` to null, while deleting a media asset still cascades its `media_upload_sessions` row;
+- post-rollback verification found four still-nullable owner columns, zero enforcement triggers/functions, zero simulation Auth users and zero core rows; migration history still contains only applied `0004`.
 
 Configured ownership evidence:
 - exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b` passed Account Ownership run `33115683962`, including build, configured application startup, two real confirmed Supabase accounts, own-vs-foreign media/job access, foreign rename/content/download/completion denial, owner-bound upload/reference writes, raw Data API denial and cleanup;
-- that passing run proves the owner-aware product implementation at `7dfda5e...`, but it does **not** cover the later external-backend submission/polling token hardening or the corrected staged `0005` trigger split. Those later changes require the still-pending exact-head hosted execution before PR #17 can be considered merge-ready;
-- configured test cleanup now uses deterministic fixture account ownership. Shared helper identities are stable per branch/ref + verifier namespace while `GITHUB_RUN_ID` remains diagnostic metadata, so a fresh or superseding run can recover its own DB/R2 state without deleting another workflow's fixtures;
+- subsequent exact-scope hardening changed corrected staged `0005` and the external generation adapter's submit/poll authentication. These newer code/schema changes have independent static/transactional evidence but still require final executable exact-head hosted validation before approval;
+- configured test cleanup now uses deterministic fixture account ownership so a rerun on a fresh runner can recover its own stale DB/R2 rows without deleting another workflow's fixtures;
 - Generation Image/Edit and Video/Animate PR workflows now carry timeout budgets that exceed their own sequential verifier deadlines.
 
 Current external validation blocker:
-- GitHub-hosted Actions jobs currently fail before executing step 1 (`steps: null`, no job log) on PR #17, including heads containing the corrected migration and later external-backend authentication hardening;
+- GitHub-hosted Actions jobs currently fail before executing step 1 (`steps: null`, no job log) on PR #17, including heads containing the corrected migration;
 - rerunning the previously successful merged-main UI Shell job from run `33113289145` now fails with the same zero-step symptom, proving the runner-start failure is independent of PR #17 code;
-- GitHub public Actions status is operational. Repository history shows 1,446 Actions runs in August 2026, including 819 successful runs, while GitHub Free private repositories have a finite hosted-minutes allowance and budget controls can block additional usage. Exhausted included minutes / Actions budget is therefore the strongest current explanation, but remains **unconfirmed** because the connected GitHub API does not expose the account billing meter or the hidden pre-run annotation;
 - therefore PR #17 remains draft and corrected 0005 remains unapplied until exact-head hosted execution becomes available again.
 
 ## Cloudflare R2
@@ -140,7 +141,7 @@ Managed origins:
 
 Configured browser verification uses the local RenderLab origin directly and does not depend on the Studio runtime. `CLOUDFLARE_API_TOKEN` is an optional REST fallback only.
 
-If a future public RenderLab origin changes, add that exact origin before direct browser uploads there. Do not use broad wildcard CORS merely for convenience.
+If a future public RenderLab origin changes, add that exact origin before direct browser upload use. Do not use broad wildcard CORS merely for convenience.
 
 ### Durable media read/download contract
 Ordinary media presentation and user download both stay behind RenderLab product routes.
@@ -242,21 +243,19 @@ Initial submission may try another worker only before a provider call ID is acce
 - Media Download configured lifecycle — `33070792343`; final documentation-head gates passed before PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`.
 - Media Rename configured lifecycle — `33074480356`; refined-head UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, and Library Lifecycle `33074480489` on rerun all passed.
 - Account Identity configured lifecycle — `33111299356`; exact run-owned auth fixture, real Settings sign-in/session persistence/sign-out and cleanup passed.
-- Account Ownership configured lifecycle — `33115683962` on exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b`; two-account private-media/job boundary, owner-bound upload/reference persistence, raw Data API denial and cleanup passed before later verifier/test hardening, external-backend token hardening and the corrected staged `0005` trigger split.
+- Account Ownership configured lifecycle — `33115683962` on exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b`; two-account private-media/job boundary, owner-bound upload/reference persistence, raw Data API denial and cleanup passed before later verifier/test hardening, corrected staged `0005`, and external-backend authentication hardening.
 
 Search/upload/download/rename/account configured verifiers do not invoke ComfyUI. Generation Image/Edit and Video/Animate verifiers do invoke the configured worker fleet.
 
-## Studio Compatibility Boundary
-`src/server/generation/studio-compat.ts` is transitional migration/debugging compatibility only, not the preferred production path.
-
-Product generation priority:
-1. intentionally configured external RenderLab backend with both `RENDERLAB_GENERATION_BACKEND_URL` and `RENDERLAB_GENERATION_BACKEND_TOKEN`;
+## External Generation & Studio Compatibility Boundary
+Current product generation routing is:
+1. an intentionally configured **authenticated external RenderLab backend** only when both `RENDERLAB_GENERATION_BACKEND_URL` and `RENDERLAB_GENERATION_BACKEND_TOKEN` are present;
 2. RenderLab-native orchestration when shared Supabase/R2 credentials are configured;
-3. Studio compatibility only when explicitly configured as fallback.
+3. otherwise a truthful generation-backend-unavailable state.
 
-The external RenderLab backend boundary is server-to-server. The bearer token authenticates RenderLab before the trusted owner header is forwarded; the owner header must not be treated as sufficient authentication on its own.
+For the external path, RenderLab sends `Authorization: Bearer <server-token>` plus `x-renderlab-owner-id` on submit and poll. The external service must authenticate the bearer token before trusting the forwarded owner ID. A bare owner header is not an authorization boundary.
 
-Do not make deployed Studio runtime a RenderLab product dependency. Remove the adapter when no migration/debugging workflow requires it.
+`src/server/generation/studio-compat.ts` remains transitional migration/debugging code only. It is **not part of current product generation routing** and must not become a deployed Studio runtime dependency. Remove the adapter when no migration/debugging workflow requires it.
 
 ## Temporary Reference Upload Flow
 ```text
@@ -302,17 +301,17 @@ R2 credentials currently require Admin Read & Write because configured browser u
 
 ### Optional
 - `CLOUDFLARE_API_TOKEN` — REST CORS fallback
-- `RENDERLAB_GENERATION_BACKEND_URL` — optional external RenderLab generation service URL; does not activate the adapter alone
-- `RENDERLAB_GENERATION_BACKEND_TOKEN` — server-only bearer credential required together with `RENDERLAB_GENERATION_BACKEND_URL`; never expose through `NEXT_PUBLIC_*`
-- `RENDERLAB_STUDIO_COMPAT_URL` — transitional compatibility only
+- `RENDERLAB_GENERATION_BACKEND_URL` — optional external RenderLab generation service; only active together with the token below
+- `RENDERLAB_GENERATION_BACKEND_TOKEN` — server-only bearer secret required to authenticate the optional external generation service before `x-renderlab-owner-id` is trusted
+- `RENDERLAB_STUDIO_COMPAT_URL` — transitional migration/debugging compatibility only; not current product generation routing
 
 ## Security Rules
-- Never commit service-role/R2/provider credentials.
+- Never commit service-role/R2/provider/backend bearer credentials.
 - Never expose server credentials through `NEXT_PUBLIC_*`; only public Supabase URL/publishable-key configuration belongs there.
 - Supabase Auth `auth.users.id` remains the canonical account principal; do not trust a browser-supplied owner ID.
 - Raw `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions` stay server-owned. Browser roles have no direct table grants; product routes/services enforce owner scope while using server-only service-role access.
 - Keep RLS enabled on the four core tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
-- External generation owner forwarding is server-to-server only: require the backend token for both submit and poll before sending `x-renderlab-owner-id`; never expose the token to the browser and never treat the owner header as standalone authentication.
+- An external generation service must authenticate the server-only bearer token before trusting `x-renderlab-owner-id`; owner headers alone are not authorization.
 - UI-030 ownership is still in progress until PR #17 receives exact-head configured execution and corrected 0005 is safely enforced. Do not approve Favorites/Collections or other personal organization before that rollout completes.
 - Direct browser uploads use short-lived signed URLs + exact-origin CORS.
 - Durable reads/downloads use short-lived signed R2 GETs behind opaque product routes.
@@ -324,13 +323,6 @@ R2 credentials currently require Admin Read & Write because configured browser u
 
 ## CI / Integration Validation
 Ordinary UI CI runs without production secrets and validates truthful unavailable states. Configured workflows use GitHub Secrets and self-clean shared production fixtures.
-
-Actions budget discipline:
-- final exact-head validation remains mandatory; budget pressure is not permission to waive a required gate;
-- configured helper accounts use a stable branch/ref + verifier namespace identity so a superseding run can reconstruct its own cleanup while keeping `GITHUB_RUN_ID` only as diagnostic metadata;
-- only workflows whose interrupted state is safely reconstructible may use `cancel-in-progress: true`. Current approved cancellation-safe workflows are UI Shell, Persistent Media Upload Integration, and Reference Upload Integration;
-- worker-backed Create/Generation/Video workflows, the shared Library Lifecycle/Drag Drop lock, and visual fixtures that can place R2 objects before their DB row remain non-canceling;
-- when using connector-driven repository writes, batch cohesive changes into as few commits as practical so intermediate heads do not launch redundant copies of expensive install/build/browser workflows.
 
 Key workflows:
 - `verify-create-lifecycle.mjs` + `create-lifecycle-visual.yml`
@@ -347,8 +339,8 @@ Key workflows:
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
 ## Next Infrastructure Work
-1. Complete UI-030 / PR #17: when GitHub-hosted runners can execute again, rerun the exact-head configured suite including the later external-backend authentication hardening and corrected `0005`, inspect any real failures/artifacts, and re-audit shared-resource cleanup.
-2. After owner-aware code is safely merged/live, verify there are no unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, and confirm `NOT NULL`, immutable ownership and same-owner link triggers. Do not reverse this rollout order.
+1. Complete UI-030 / PR #17: when GitHub-hosted runners can execute again, rerun the exact-head configured suite including corrected `0005` and external-backend authentication hardening, inspect any real failures/artifacts, and re-audit shared-resource cleanup.
+2. After owner-aware code is safely merged/live, verify there are no unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, and confirm `NOT NULL`, immutable ownership and table-specific same-owner link triggers. Do not reverse this rollout order.
 3. Only after UI-030 is fully enforced may personal organization such as Favorites/Collections be reconsidered.
 4. Add any future public upload origin explicitly to R2 CORS before deployment/use.
 5. Remove transitional Studio compatibility when no migration/debugging need remains.
