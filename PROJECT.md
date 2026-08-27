@@ -87,7 +87,7 @@ UI-026 makes maintained conventional controls a repository-enforced frontend fou
 - Conventional visible controls in `src/features` and `src/components/shell` compose those approved primitives rather than hand-styled raw native controls.
 - Native `file` and `hidden` inputs remain allowed as browser/form plumbing.
 - Local wrappers own RenderLab tokens, variants, spacing, required semantic elements and product accessibility adaptations; features should not rebuild the same mechanic independently.
-- Correct maintained accessibility semantics are authoritative. Create Image/Video is a required Radix single-choice `radiogroup` with checked `radio`) items; Library history ordering uses maintained Radix Dropdown Menu radio items.
+- Correct maintained accessibility semantics are authoritative. Create Image/Video is a required Radix single-choice `radiogroup` with checked `radio` items; Library history ordering uses maintained Radix Dropdown Menu radio items.
 - `npm run verify:ui-purity` rejects raw visible button/select/textarea/ordinary-input controls in feature/shell code and runs in UI Shell CI.
 - Shared primitive/config/package changes retrigger the dependent Create, Library Search, Library Lifecycle, Library History, Download, Rename and Shell regressions.
 
@@ -158,7 +158,7 @@ UI-023 defines durable-media discovery.
 - Search state is shareable URL parameter `q`.
 - Search is server-owned against durable `media_assets`, not a client-only current-page filter.
 - Queries are whitespace-normalized and capped at 120 characters.
-- Matching is case-insensitive literal substring search across `display_name`, `original_filename`, and generated `provenance.prompt`.
+- Matching is case-insensitive literal substring across `display_name`, `original_filename`, and generated `provenance.prompt`.
 - Search composes with All/Images/Videos and URL-owned chronological ordering/pagination.
 - v0.1 adds no relevance ranking, model/date filters, command palette, collection schema or dedicated search service/index.
 
