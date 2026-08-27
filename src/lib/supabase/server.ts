@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
 
 export type RenderLabAccount = {
@@ -28,15 +28,32 @@ export async function createServerSupabaseClient() {
   });
 }
 
+function bearerToken(value: string | null) {
+  if (!value) return null;
+  const match = /^Bearer\s+(.+)$/i.exec(value.trim());
+  return match?.[1]?.trim() || null;
+}
+
 export async function getCurrentRenderLabAccount(): Promise<RenderLabAccount | null> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
 
-  const { data, error } = await supabase.auth.getClaims();
-  if (error || !data?.claims || typeof data.claims.sub !== "string") return null;
+  const requestHeaders = await headers();
+  const token = bearerToken(requestHeaders.get("authorization"));
+  const { data, error } = await supabase.auth.getClaims(token ?? undefined);
+  const claims = data?.claims;
+  if (
+    error
+    || !claims
+    || typeof claims.sub !== "string"
+    || claims.role !== "authenticated"
+    || claims.is_anonymous === true
+  ) {
+    return null;
+  }
 
   return {
-    id: data.claims.sub,
-    email: typeof data.claims.email === "string" ? data.claims.email : null,
+    id: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : null,
   };
 }
