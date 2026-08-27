@@ -114,19 +114,30 @@ Before copying/installing an external component:
 **Dependencies:** Next.js Link, native GET form/input, Lucide, `PublicMediaAsset`, media-list/search contracts, feature-owned `LibraryUploadButton`.  
 **Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search URL/server-owned.  
 **Do not:** Couple to legacy `studio_*`, expose storage identity, use page-only client filtering or add fake organization controls.  
-**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search merged PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`. No generic Search component was created because the native search form is feature-owned composition.
+**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search merged PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`. Rename v0.1 reuses the existing display-name search contract; no generic Search component was created because the native search form is feature-owned composition.
 
 ### MediaViewer
 **Status:** APPROVED  
 **Source:** `src/features/library/media-viewer.tsx`  
 **Origin:** RenderLab composition based on `design/penpot/media-viewer-v0.1.svg`  
-**Purpose:** Contextual durable-media workspace: media-primary presentation, truthful metadata, capability-derived continuation and one secondary durable Download action.  
-**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Download for durable assets.  
+**Purpose:** Contextual durable-media workspace: media-primary presentation, truthful metadata, capability-derived continuation and secondary durable asset actions.  
+**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Download and Rename.  
 **Used by:** `/library/[assetId]`  
-**Dependencies:** Next.js Link, native anchor navigation, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media routes.  
-**Reuse rules:** Keep continuation derivation in the capability model. Keep durable actions on opaque media IDs/product routes. Download is feature-owned Viewer composition; do not extract a generic Download component without a second real reuse need.  
-**Do not:** Hard-code a second continuation registry, expose worker/provider/R2 identity, use raw signed URLs as durable links, or add Library-card/batch actions merely because Viewer has Download.  
-**Notes:** Base generated-media Viewer/continuation passed `33034606396`; uploaded continuation approved through PR #9. Download v0.1 implementation head `6d528c47445b26b5464fa529b9e489e6a7ce87ff` passed UI Shell `33070792349`, Search `33070792317`, Upload Integration `33070792362`, Library Lifecycle `33070792329` and Media Download Visual `33070792343`. Chromium verified uploaded `RenderLab-Download-画像.png`, deterministic generated fallback and exact 68-byte R2 contents. Three responsive Viewer screenshots were visually inspected and cleanup was `0/0/0`.
+**Dependencies:** Next.js Link, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media routes, feature-owned `MediaViewerActions`.  
+**Reuse rules:** Keep continuation derivation in the capability model. Keep durable actions on opaque media IDs/product routes. Extend Viewer actions deliberately rather than adding card/batch controls by implication.  
+**Do not:** Hard-code a second continuation registry, expose worker/provider/R2 identity, use raw signed URLs as durable links, or add Library-card/batch/destructive actions merely because Viewer has contextual actions.  
+**Notes:** Base generated-media Viewer/continuation passed `33034606396`; uploaded continuation approved through PR #9. Download v0.1 merged through PR #11 as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`. Rename v0.1 refined head `fb6f42cdfae377cf841655320dc4bbeee74d3549` passed UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, Rename `33074480356`, and Library Lifecycle `33074480489` on rerun; four responsive Rename screenshots were visually inspected.
+
+### MediaViewerActions
+**Status:** APPROVED  
+**Source:** `src/features/library/media-viewer-actions.tsx`  
+**Origin:** RenderLab feature composition using native button/input/form/anchor behavior, React client state and Lucide React  
+**Purpose:** Viewer-owned secondary action group for durable Rename + Download, including the small inline Rename editor and local error/saving state.  
+**Used by:** `MediaViewer` only.  
+**Dependencies:** `PATCH /api/media/assets/[assetId]`, `/api/media/assets/[assetId]/download`, `MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH`, Next.js router refresh.  
+**Reuse rules:** Keep this feature-owned while only Media Viewer needs the action composition. Extract generic mechanics only after a second real reuse need.  
+**Do not:** Turn it into a global media-management framework, mutate R2 identity from the client, or infer delete/batch/collection actions from its existence.  
+**Notes:** Rename and Download stay side-by-side while the edit form expands beneath them. Configured Rename run `33074480356` verified generated/uploaded rename, responsive editing/renamed states, search discovery, Download preservation and cleanup.
 
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  
