@@ -24,6 +24,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: renderlab-library-lifecycle-shared
+  cancel-in-progress: false
+
 jobs:
   lifecycle:
     runs-on: ubuntu-latest
