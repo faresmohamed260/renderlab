@@ -13,10 +13,6 @@ function integerParam(value: string | null, fallback: number) {
 }
 
 export async function GET(request: Request) {
-  if (!isSupabaseConfigured() || !isR2Configured()) {
-    return NextResponse.json({ available: false });
-  }
-
   const url = new URL(request.url);
   const rawKind = url.searchParams.get("kind");
   const kind = rawKind && rawKind !== "all" ? rawKind : undefined;
@@ -28,6 +24,10 @@ export async function GET(request: Request) {
       { ok: false, error: { code: "invalid_request", message: "Media list parameters are invalid." } },
       { status: 400 },
     );
+  }
+
+  if (!isSupabaseConfigured() || !isR2Configured()) {
+    return NextResponse.json({ available: false });
   }
 
   try {
