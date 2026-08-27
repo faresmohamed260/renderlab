@@ -95,7 +95,7 @@ Configured ownership evidence:
 - Generation Image/Edit and Video/Animate PR workflows now carry timeout budgets that exceed their own sequential verifier deadlines.
 
 Current external validation blocker:
-- GitHub-hosted Actions jobs currently fail before executing step 1 (`steps: null`, no job log) on PR #17, including heads containing the corrected migration;
+- GitHub-hosted Actions jobs currently fail before executing step 1 (`steps: null`, no job log) on PR #17, including heads containing the corrected migration and later external-backend authentication hardening;
 - rerunning the previously successful merged-main UI Shell job from run `33113289145` now fails with the same zero-step symptom, proving the runner-start failure is independent of PR #17 code;
 - therefore PR #17 remains draft and corrected 0005 remains unapplied until exact-head hosted execution becomes available again.
 
@@ -141,7 +141,7 @@ Managed origins:
 
 Configured browser verification uses the local RenderLab origin directly and does not depend on the Studio runtime. `CLOUDFLARE_API_TOKEN` is an optional REST fallback only.
 
-If a future public RenderLab origin changes, add that exact origin before direct browser upload use. Do not use broad wildcard CORS merely for convenience.
+If a future public RenderLab origin changes, add that exact origin before direct browser uploads there. Do not use broad wildcard CORS merely for convenience.
 
 ### Durable media read/download contract
 Ordinary media presentation and user download both stay behind RenderLab product routes.
@@ -323,6 +323,13 @@ R2 credentials currently require Admin Read & Write because configured browser u
 
 ## CI / Integration Validation
 Ordinary UI CI runs without production secrets and validates truthful unavailable states. Configured workflows use GitHub Secrets and self-clean shared production fixtures.
+
+Actions budget discipline:
+- final exact-head validation remains mandatory; budget pressure or runner-start failure is not permission to waive a required gate;
+- only workflows whose interrupted state is safely reconstructible use `cancel-in-progress: true`. Current cancellation-safe workflows are UI Shell, Persistent Media Upload Integration, and Reference Upload Integration;
+- worker-backed Create/Generation/Video workflows, the shared Library Lifecycle/Drag Drop lock, and visual fixtures that can place R2 objects before their DB row remain non-canceling;
+- configured helper accounts use deterministic owner-scoped identities so a superseding/fresh run can reconstruct its own cleanup without deleting another workflow's fixtures;
+- connector-driven repository writes should batch cohesive changes into as few commits as practical so intermediate heads do not launch redundant expensive workflows.
 
 Key workflows:
 - `verify-create-lifecycle.mjs` + `create-lifecycle-visual.yml`
