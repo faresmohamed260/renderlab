@@ -3,9 +3,14 @@ import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
+const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
+
+function isExternalGenerationBackendConfigured() {
+  return Boolean(backendUrl && backendToken);
+}
 
 export function isGenerationBackendConfigured() {
-  return Boolean(backendUrl || isNativeGenerationConfigured());
+  return isExternalGenerationBackendConfigured() || isNativeGenerationConfigured();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -45,6 +50,7 @@ async function submitToRenderLabBackend(ownerId: string, request: GenerationRequ
       method: "POST",
       headers: {
         "content-type": "application/json",
+        authorization: `Bearer ${backendToken!}`,
         "x-renderlab-owner-id": ownerId,
       },
       body: JSON.stringify(request),
@@ -76,7 +82,7 @@ async function submitToRenderLabBackend(ownerId: string, request: GenerationRequ
 }
 
 export async function submitGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
-  if (backendUrl) return submitToRenderLabBackend(ownerId, request);
+  if (isExternalGenerationBackendConfigured()) return submitToRenderLabBackend(ownerId, request);
   if (isNativeGenerationConfigured()) return submitNativeGeneration(ownerId, request);
 
   return {
