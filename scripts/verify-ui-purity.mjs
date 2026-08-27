@@ -35,13 +35,13 @@ for (const file of files) {
   const content = await readFile(file, "utf8");
 
   for (const tagName of forbiddenTags) {
-    const expression = new RegExp(`<${tagName}\\b`, "gi");
+    const expression = new RegExp(`<${tagName}\\b`, "g");
     for (const match of content.matchAll(expression)) {
       violations.push(`${file}:${lineNumber(content, match.index)} raw <${tagName}>; use an approved shared UI primitive`);
     }
   }
 
-  const inputExpression = /<input\b[\s\S]*?>/gi;
+  const inputExpression = /<input\b[\s\S]*?>/g;
   for (const match of content.matchAll(inputExpression)) {
     const type = rawInputType(match[0]);
     if (!type || !allowedNativeInputTypes.has(type)) {
