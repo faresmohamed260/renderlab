@@ -2,6 +2,7 @@ import {
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
   normalizeMediaAssetSearchQuery,
   type MediaAssetListKind,
+  type MediaAssetSortOrder,
   type PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
 import { LibraryView } from "@/features/library/library-view";
@@ -23,6 +24,10 @@ function parseKind(value: string | string[] | undefined): MediaAssetListKind {
   return resolved === "image" || resolved === "video" ? resolved : "all";
 }
 
+function parseSort(value: string | string[] | undefined): MediaAssetSortOrder {
+  return firstParam(value) === "oldest" ? "oldest" : "newest";
+}
+
 function parseOffset(value: string | string[] | undefined) {
   const parsed = Number(firstParam(value) || 0);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0;
@@ -40,6 +45,7 @@ export default async function LibraryPage({
 }) {
   const params = await searchParams;
   const kind = parseKind(params.kind);
+  const sort = parseSort(params.sort);
   const searchQuery = parseSearch(params.q);
   const offset = parseOffset(params.offset);
   let available = isSupabaseConfigured() && isR2Configured();
@@ -51,6 +57,7 @@ export default async function LibraryPage({
       const result = await listMediaAssets({
         ...(kind === "all" ? {} : { kind }),
         ...(searchQuery ? { search: searchQuery } : {}),
+        sort,
         limit: pageSize,
         offset,
       });
@@ -67,6 +74,7 @@ export default async function LibraryPage({
       uploadAvailable={isMediaUploadConfigured()}
       items={items}
       kind={kind}
+      sort={sort}
       searchQuery={searchQuery}
       offset={offset}
       limit={pageSize}
