@@ -5,7 +5,7 @@ const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const r2Bucket = process.env.R2_BUCKET_NAME;
 const cleanupOnly = process.argv.includes("--cleanup-only");
-const fixtureFilename = "renderlab-persistent-upload-integration.png";
+const fixtureFilename = "renderlab-اختبار-画像.png";
 const fixtureDisplayName = "Persistent upload verification";
 const pngBytes = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z5ZsAAAAASUVORK5CYII=",
@@ -111,14 +111,20 @@ try {
   });
   assert(uploadResponse.ok, `Signed persistent R2 upload failed (${uploadResponse.status}): ${await uploadResponse.text()}`);
 
-  const completion = await request("/api/media/uploads/upload-completions", {
+  const completionRequest = () => request("/api/media/uploads/upload-completions", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ uploadId: ticket.uploadId, width: 1, height: 1 }),
   });
+  const [completion, concurrentCompletion] = await Promise.all([
+    completionRequest(),
+    completionRequest(),
+  ]);
   assert(completion.response.ok && completion.payload?.ok, `Persistent upload completion failed (${completion.response.status}): ${JSON.stringify(completion.payload)}`);
+  assert(concurrentCompletion.response.ok && concurrentCompletion.payload?.ok, `Concurrent persistent upload completion failed (${concurrentCompletion.response.status}): ${JSON.stringify(concurrentCompletion.payload)}`);
   const asset = completion.payload.asset;
   assert(asset?.id, "Persistent upload completion did not return a durable asset ID.");
+  assert(concurrentCompletion.payload.asset?.id === asset.id, "Concurrent completion did not recover to the same durable asset.");
   assert(asset.origin === "uploaded", `Persistent upload origin is incorrect: ${JSON.stringify(asset)}`);
   assert(asset.generationJobId === null, "Persistent upload should not claim a generation job.");
   assert(asset.kind === "image" && asset.mimeType === "image/png", "Persistent upload media identity is incorrect.");
@@ -127,12 +133,8 @@ try {
   assert(asset.sizeBytes === pngBytes.length, "Persistent upload size was not persisted.");
   assert(asset.width === 1 && asset.height === 1, "Persistent upload dimensions were not persisted.");
 
-  const repeated = await request("/api/media/uploads/upload-completions", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ uploadId: ticket.uploadId, width: 1, height: 1 }),
-  });
-  assert(repeated.response.ok && repeated.payload?.asset?.id === asset.id, "Persistent upload completion is not idempotent.");
+  const repeated = await completionRequest();
+  assert(repeated.response.ok && repeated.payload?.asset?.id === asset.id, "Persistent upload completion is not sequentially idempotent.");
 
   const metadata = await request(`/api/media/assets/${encodeURIComponent(asset.id)}`, {
     headers: { accept: "application/json" },
@@ -149,8 +151,9 @@ try {
   assert(listResult.response.ok && listResult.payload?.ok, "Library media list could not be loaded after persistent upload.");
   assert(listResult.payload.items.some((item) => item.id === asset.id && item.origin === "uploaded"), "Persistent upload did not appear through the ordinary Library media list contract.");
 
-  const sessionRows = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(ticket.uploadId)}&select=status,media_asset_id`);
+  const sessionRows = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(ticket.uploadId)}&select=status,media_asset_id,filename`);
   assert(sessionRows[0]?.status === "completed" && sessionRows[0]?.media_asset_id === asset.id, "Upload session was not linked to the promoted media asset.");
+  assert(sessionRows[0]?.filename === fixtureFilename, "Upload session did not preserve the original Unicode filename.");
 
   console.log(`Persistent media upload verified successfully. upload=${ticket.uploadId} asset=${asset.id}`);
 } catch (error) {

@@ -5,13 +5,18 @@ on:
     paths:
       - "scripts/verify-library-lifecycle.mjs"
       - ".github/workflows/library-lifecycle-visual.yml"
+      - "supabase/migrations/0003_persistent_media_uploads.sql"
       - "src/app/library/**"
       - "src/features/library/**"
       - "src/app/page.tsx"
       - "src/features/create/create-workspace.tsx"
       - "src/app/api/media/assets/**"
+      - "src/app/api/media/uploads/**"
       - "src/server/media/media-assets.ts"
+      - "src/server/media/media-uploads.ts"
+      - "src/server/storage/r2.ts"
       - "src/lib/api/media-assets-contract.ts"
+      - "src/lib/api/media-upload-contract.ts"
       - "src/lib/capabilities/generation.ts"
   workflow_dispatch:
 

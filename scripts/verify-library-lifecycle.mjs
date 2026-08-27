@@ -1,6 +1,5 @@
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { chromium } from "@playwright/test";
-import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
@@ -10,7 +9,8 @@ const r2Bucket = process.env.R2_BUCKET_NAME;
 const artifactDir = process.env.RENDERLAB_LIBRARY_ARTIFACT_DIR || "artifacts";
 const fixturePath = process.env.RENDERLAB_LIBRARY_FIXTURE_PATH || "/tmp/renderlab-library-lifecycle-fixture.json";
 const cleanupOnly = process.argv.includes("--cleanup-only");
-const fixturePrompt = "Phase 4 Library verification image";
+const fixtureFilename = "renderlab-اختبار-画像.png";
+const fixtureDisplayName = fixtureFilename.replace(/\.[^.]+$/, "");
 const fixtureWidth = 400;
 const fixtureHeight = 300;
 
@@ -63,7 +63,7 @@ async function rows(path) {
 async function readFixture() {
   try {
     const payload = JSON.parse(await readFile(fixturePath, "utf8"));
-    return typeof payload?.assetId === "string" && typeof payload?.storageKey === "string" ? payload : null;
+    return typeof payload?.uploadId === "string" ? payload : null;
   } catch {
     return null;
   }
@@ -73,16 +73,36 @@ async function cleanupFixture() {
   const fixture = await readFixture();
   if (!fixture) return;
 
-  await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: fixture.storageKey }));
+  const sessions = await rows(
+    `media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id,storage_key,media_asset_id`,
+  );
+  const session = sessions[0] || null;
+  const storageKey = session?.storage_key || fixture.storageKey || null;
+  const assetId = session?.media_asset_id || fixture.assetId || null;
 
-  const deletion = await supabase(`media_assets?id=eq.${encodeURIComponent(fixture.assetId)}`, { method: "DELETE" });
-  if (!deletion.ok) throw new Error(`Could not remove Library media fixture (${deletion.status}): ${await deletion.text()}`);
+  if (storageKey) {
+    await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: storageKey })).catch(() => {});
+  }
 
-  const remaining = await rows(`media_assets?id=eq.${encodeURIComponent(fixture.assetId)}&select=id`);
-  if (remaining.length) throw new Error(`Library cleanup was incomplete for asset ${fixture.assetId}.`);
+  if (session) {
+    const sessionDelete = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}`, { method: "DELETE" });
+    if (!sessionDelete.ok) throw new Error(`Could not remove Library upload session fixture (${sessionDelete.status}): ${await sessionDelete.text()}`);
+  }
+
+  if (assetId) {
+    const assetDelete = await supabase(`media_assets?id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
+    if (!assetDelete.ok) throw new Error(`Could not remove Library media fixture (${assetDelete.status}): ${await assetDelete.text()}`);
+  }
+
+  const remainingSessions = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id`);
+  if (remainingSessions.length) throw new Error(`Library cleanup left upload session ${fixture.uploadId}.`);
+  if (assetId) {
+    const remainingAssets = await rows(`media_assets?id=eq.${encodeURIComponent(assetId)}&select=id`);
+    if (remainingAssets.length) throw new Error(`Library cleanup left uploaded asset ${assetId}.`);
+  }
 
   await rm(fixturePath, { force: true });
-  console.log(`Cleaned configured Library fixture asset=${fixture.assetId} objects=1`);
+  console.log(`Cleaned configured Library upload fixture upload=${fixture.uploadId}${assetId ? ` asset=${assetId}` : ""}.`);
 }
 
 async function imageMetrics(locator, label) {
@@ -119,83 +139,94 @@ if (cleanupOnly) {
 
 await mkdir(artifactDir, { recursive: true });
 
-const assetId = randomUUID();
-const storageKey = `renderlab/test-fixtures/library/${assetId}.png`;
-const fixture = { assetId, storageKey };
 const desktopViewport = { width: 1440, height: 1024 };
 const mobileViewport = { width: 390, height: 844 };
 let browser = null;
 let primaryError = null;
 
 try {
-  await writeFile(fixturePath, JSON.stringify(fixture), "utf8");
-
-  await r2Client.send(new PutObjectCommand({
-    Bucket: r2Bucket,
-    Key: storageKey,
-    Body: pngBytes,
-    ContentType: "image/png",
-  }));
-
-  const insertion = await supabase("media_assets", {
-    method: "POST",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({
-      id: assetId,
-      generation_job_id: null,
-      kind: "image",
-      mime_type: "image/png",
-      storage_key: storageKey,
-      thumbnail_storage_key: null,
-      width: fixtureWidth,
-      height: fixtureHeight,
-      duration_ms: null,
-      provenance: {
-        prompt: fixturePrompt,
-        model: "integration-fixture",
-        operation: "create-image",
-      },
-      metadata: { integrationFixture: "library-v0.1" },
-    }),
-  });
-  if (!insertion.ok) throw new Error(`Could not create Library media fixture (${insertion.status}): ${await insertion.text()}`);
-
-  console.log(`Configured Library fixture ready. asset=${assetId} pngBytes=${pngBytes.length}`);
-
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark" });
   const page = await context.newPage();
 
   await page.goto(`${baseUrl}/library`, { waitUntil: "networkidle", timeout: 60_000 });
+  const uploadButton = page.getByRole("button", { name: "Upload", exact: true });
+  await uploadButton.waitFor({ state: "visible", timeout: 30_000 });
 
-  const card = page.getByRole("link", { name: `Open ${fixturePrompt}`, exact: true });
+  const ticketPromise = page.waitForResponse(
+    (response) => response.url().endsWith("/api/media/uploads/upload-tickets") && response.request().method() === "POST",
+    { timeout: 30_000 },
+  );
+  const completionPromise = page.waitForResponse(
+    (response) => response.url().endsWith("/api/media/uploads/upload-completions") && response.request().method() === "POST",
+    { timeout: 60_000 },
+  );
+  const fileChooserPromise = page.waitForEvent("filechooser", { timeout: 30_000 });
+  await uploadButton.click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: fixtureFilename,
+    mimeType: "image/png",
+    buffer: pngBytes,
+  });
+
+  const ticketResponse = await ticketPromise;
+  const ticketPayload = await ticketResponse.json();
+  assert(ticketResponse.ok() && ticketPayload?.ok && ticketPayload.ticket?.uploadId, `Browser upload ticket failed (${ticketResponse.status()}): ${JSON.stringify(ticketPayload)}`);
+  const uploadId = ticketPayload.ticket.uploadId;
+  await writeFile(fixturePath, JSON.stringify({ uploadId }), "utf8");
+
+  const completionResponse = await completionPromise;
+  const completionPayload = await completionResponse.json();
+  assert(completionResponse.ok() && completionPayload?.ok && completionPayload.asset?.id, `Browser upload completion failed (${completionResponse.status()}): ${JSON.stringify(completionPayload)}`);
+  const assetId = completionPayload.asset.id;
+  assert(completionPayload.asset.origin === "uploaded", "Browser upload was not promoted as uploaded media.");
+  assert(completionPayload.asset.displayName === fixtureDisplayName, "Browser upload display name was not derived correctly.");
+  assert(completionPayload.asset.originalFilename === fixtureFilename, "Browser upload did not preserve the original Unicode filename.");
+  assert(completionPayload.asset.width === fixtureWidth && completionPayload.asset.height === fixtureHeight, "Browser upload dimensions were not persisted.");
+
+  const sessionRows = await rows(
+    `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=status,storage_key,media_asset_id,filename,display_name`,
+  );
+  const session = sessionRows[0];
+  assert(session?.status === "completed" && session.media_asset_id === assetId, "Browser upload session was not completed against the durable asset.");
+  assert(session.filename === fixtureFilename, "Browser upload session changed the original Unicode filename.");
+  assert(session.display_name === fixtureDisplayName, "Browser upload session changed the display name.");
+  await writeFile(fixturePath, JSON.stringify({ uploadId, assetId, storageKey: session.storage_key }), "utf8");
+
+  await page.getByRole("status").filter({ hasText: "Added to Library." }).waitFor({ state: "visible", timeout: 30_000 });
+  const card = page.getByRole("link", { name: `Open ${fixtureDisplayName}`, exact: true });
   await card.waitFor({ state: "visible", timeout: 30_000 });
   const cardImage = card.locator("img");
   await cardImage.waitFor({ state: "visible", timeout: 30_000 });
-  const cardMetrics = await imageMetrics(cardImage, "Library card image");
-  assertRatio(cardMetrics, fixtureWidth / fixtureHeight, "Library card image");
+  const cardMetrics = await imageMetrics(cardImage, "Uploaded Library card image");
+  assertRatio(cardMetrics, fixtureWidth / fixtureHeight, "Uploaded Library card image");
 
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-desktop-grid.png`, fullPage: true });
 
   await page.setViewportSize(mobileViewport);
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
+  assert(await page.getByRole("button", { name: "Upload", exact: true }).isVisible(), "Upload control is not visible on the mobile Library layout.");
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-mobile-grid.png`, fullPage: true });
 
   await page.setViewportSize(desktopViewport);
   await card.click();
   await page.waitForURL(new RegExp(`/library/${assetId}$`), { timeout: 30_000 });
 
-  const viewerImage = page.getByRole("img", { name: fixturePrompt });
+  const viewerImage = page.getByRole("img", { name: fixtureDisplayName });
   await viewerImage.waitFor({ state: "visible", timeout: 30_000 });
-  const viewerMetrics = await imageMetrics(viewerImage, "Media Viewer image");
-  assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Media Viewer image");
+  const viewerMetrics = await imageMetrics(viewerImage, "Uploaded Media Viewer image");
+  assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Uploaded Media Viewer image");
+  await page.getByText(/^uploaded image$/i).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("Upload", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText(fixtureFilename, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
   const edit = page.getByRole("link", { name: "Edit", exact: true });
   const animate = page.getByRole("link", { name: "Animate", exact: true });
-  assert(await edit.isVisible(), "Media Viewer did not expose Edit for a persisted image asset.");
-  assert(await animate.isVisible(), "Media Viewer did not expose Animate for a persisted image asset.");
-  assert((await edit.getAttribute("href"))?.includes(`source=${assetId}`), "Edit continuation did not bind the durable media asset ID.");
+  assert(await edit.isVisible(), "Media Viewer did not expose Edit for an uploaded image asset.");
+  assert(await animate.isVisible(), "Media Viewer did not expose Animate for an uploaded image asset.");
+  assert((await edit.getAttribute("href"))?.includes(`source=${assetId}`), "Edit continuation did not bind the durable uploaded media asset ID.");
   assert((await edit.getAttribute("href"))?.includes("action=edit-image"), "Edit continuation did not bind the capability action ID.");
   assert((await animate.getAttribute("href"))?.includes("action=animate-image"), "Animate continuation did not bind the capability action ID.");
 
@@ -215,7 +246,7 @@ try {
 
   const referencePreview = page.getByRole("img", { name: "Reference preview" });
   await referencePreview.waitFor({ state: "visible", timeout: 30_000 });
-  await imageMetrics(referencePreview, "Create continuation preview");
+  await imageMetrics(referencePreview, "Uploaded Create continuation preview");
 
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-mobile-edit-handoff.png`, fullPage: true });
@@ -225,7 +256,7 @@ try {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-desktop-edit-handoff.png`, fullPage: true });
 
-  console.log("Configured Library -> Media Viewer -> Edit handoff rendered successfully at desktop and mobile widths.");
+  console.log(`Configured browser upload -> Library -> Media Viewer -> Edit handoff rendered successfully. upload=${uploadId} asset=${assetId}`);
 } catch (error) {
   primaryError = error;
 } finally {

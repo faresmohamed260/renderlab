@@ -26,23 +26,28 @@ type MediaUploadSessionRow = {
   metadata: Record<string, unknown> | null;
 };
 
-function safeFilename(value: string) {
-  return value.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 180) || "upload.png";
+function extensionFor(mimeType: CreateMediaUploadTicketRequest["mimeType"]) {
+  if (mimeType === "image/jpeg") return "jpg";
+  if (mimeType === "image/webp") return "webp";
+  return "png";
+}
+
+function originalFilenameFor(request: CreateMediaUploadTicketRequest) {
+  const cleaned = request.filename
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const basename = cleaned.split(/[\\/]/).filter(Boolean).at(-1) || "";
+  return basename.slice(0, 180) || `upload.${extensionFor(request.mimeType)}`;
 }
 
 function displayNameFor(request: CreateMediaUploadTicketRequest) {
-  const fallback = request.filename.replace(/\.[^.]+$/, "") || "Untitled upload";
+  const fallback = originalFilenameFor(request).replace(/\.[^.]+$/, "") || "Untitled upload";
   return (request.displayName || fallback)
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 240) || "Untitled upload";
-}
-
-function extensionFor(mimeType: CreateMediaUploadTicketRequest["mimeType"]) {
-  if (mimeType === "image/jpeg") return "jpg";
-  if (mimeType === "image/webp") return "webp";
-  return "png";
 }
 
 export function isMediaUploadConfigured() {
@@ -68,7 +73,7 @@ export async function createMediaUploadTicket(
     headers: { Prefer: "return=representation" },
     body: JSON.stringify({
       storage_key: key,
-      filename: safeFilename(request.filename),
+      filename: originalFilenameFor(request),
       display_name: displayNameFor(request),
       mime_type: request.mimeType,
       size_bytes: request.sizeBytes,
@@ -142,6 +147,25 @@ async function markUploadFailed(row: MediaUploadSessionRow, message: string) {
   await deleteR2Object(row.storage_key).catch(() => null);
 }
 
+async function markUploadCompleted(
+  row: MediaUploadSessionRow,
+  assetId: string,
+  etag: string | null,
+) {
+  await supabaseRest(`media_upload_sessions?id=eq.${encodeURIComponent(row.id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: "completed",
+      media_asset_id: assetId,
+      updated_at: new Date().toISOString(),
+      metadata: {
+        ...(row.metadata ?? {}),
+        etag,
+      },
+    }),
+  });
+}
+
 export async function completeMediaUpload(request: CompleteMediaUploadRequest) {
   if (!isMediaUploadConfigured()) throw new Error("Media upload storage is not configured.");
 
@@ -155,14 +179,7 @@ export async function completeMediaUpload(request: CompleteMediaUploadRequest) {
 
   const existingAsset = await findAssetByStorageKey(row.storage_key);
   if (existingAsset) {
-    await supabaseRest(`media_upload_sessions?id=eq.${encodeURIComponent(row.id)}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        status: "completed",
-        media_asset_id: existingAsset.id,
-        updated_at: new Date().toISOString(),
-      }),
-    });
+    await markUploadCompleted(row, existingAsset.id, null);
     return existingAsset;
   }
 
@@ -178,40 +195,34 @@ export async function completeMediaUpload(request: CompleteMediaUploadRequest) {
     throw new Error("Uploaded media did not match the signed upload ticket.");
   }
 
-  const assetId = randomUUID();
-  await supabaseRest("media_assets", {
-    method: "POST",
-    body: JSON.stringify({
-      id: assetId,
-      generation_job_id: null,
-      origin: "uploaded",
-      kind: "image",
-      mime_type: row.mime_type,
-      storage_key: row.storage_key,
-      thumbnail_storage_key: null,
-      original_filename: row.filename,
-      display_name: row.display_name,
-      size_bytes: expectedSize,
-      width: request.width ?? null,
-      height: request.height ?? null,
-      duration_ms: null,
-      provenance: { source: "library-upload" },
-      metadata: { etag: object.etag || null },
-    }),
-  });
+  let assetId = randomUUID();
+  try {
+    await supabaseRest("media_assets", {
+      method: "POST",
+      body: JSON.stringify({
+        id: assetId,
+        generation_job_id: null,
+        origin: "uploaded",
+        kind: "image",
+        mime_type: row.mime_type,
+        storage_key: row.storage_key,
+        thumbnail_storage_key: null,
+        original_filename: row.filename,
+        display_name: row.display_name,
+        size_bytes: expectedSize,
+        width: request.width ?? null,
+        height: request.height ?? null,
+        duration_ms: null,
+        provenance: { source: "library-upload" },
+        metadata: { etag: object.etag || null },
+      }),
+    });
+  } catch (error) {
+    const racedAsset = await findAssetByStorageKey(row.storage_key).catch(() => null);
+    if (!racedAsset) throw error;
+    assetId = racedAsset.id;
+  }
 
-  await supabaseRest(`media_upload_sessions?id=eq.${encodeURIComponent(row.id)}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      status: "completed",
-      media_asset_id: assetId,
-      updated_at: new Date().toISOString(),
-      metadata: {
-        ...(row.metadata ?? {}),
-        etag: object.etag || null,
-      },
-    }),
-  });
-
+  await markUploadCompleted(row, assetId, object.etag || null);
   return getMediaAsset(assetId);
 }
