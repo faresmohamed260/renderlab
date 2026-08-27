@@ -34,7 +34,7 @@ Approved behavior:
 
 ### Create
 **Route:** `/`  
-**Status:** MIGRATING  
+**Status:** APPROVED  
 **Implementation:** `src/features/create/create-workspace.tsx`  
 **Supporting implementation:** `src/features/create/create-advanced-panel.tsx`  
 **Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`  
@@ -65,13 +65,10 @@ Approved behavior:
 - Advanced values from verified capability definitions: negative prompt, seed, steps, guidance, plus video-only frame rate;
 - separate Image/Video Advanced drafts and reset-to-default behavior;
 - Advanced production build, behavior/API tests, and reviewed desktop/mobile screenshots in GitHub run `33030364272` before PR #6 merge;
+- complete configured lifecycle review in GitHub run `33031817744`: a real browser-driven Create Image request reached durable persistence, rendered at desktop/mobile widths, exposed **Edit**/**Animate**, selected **Edit** using the persisted asset, rendered the continuation state at both widths, and self-cleaned the generated R2/media/job fixture;
 - production build + responsive Playwright/API validation.
 
-**Still open before approval:**
-- final responsive review of a **configured real generation → persisted result → continuation** lifecycle visible inside Create;
-- any fixes revealed by that real-lifecycle rendered review.
-
-Studio compatibility removal is an infrastructure/migration cleanup item and should not be confused with Create's visual approval gate.
+**Approval evidence:** The complete Create product loop is verified both functionally and visually against configured production resources. Run `33031817744` provides the final lifecycle screenshots and cleanup evidence. Create is `APPROVED`, not `LOCKED`; future changes still require scoped validation and must preserve the accepted behavior below.
 
 **Accepted design direction:**
 - one focused workspace rather than separate Image/Edit/Video/Animate screens;
