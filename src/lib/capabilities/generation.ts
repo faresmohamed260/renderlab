@@ -19,13 +19,57 @@ export type GenerationInput = {
   role: GenerationInputRole;
 };
 
+export const generationAdvancedCapabilities = {
+  seed: {
+    label: "Seed",
+  },
+  steps: {
+    label: "Steps",
+    min: 1,
+    max: 200,
+  },
+  guidance: {
+    label: "Guidance",
+    min: 0,
+    max: 100,
+    step: 0.1,
+  },
+  negativePrompt: {
+    label: "Negative prompt",
+  },
+  image: {
+    defaults: {
+      seed: 42,
+      steps: 4,
+      guidance: 1,
+    },
+  },
+  video: {
+    defaults: {
+      seed: 42,
+      steps: 11,
+      guidance: 1,
+      frameRate: 24 as const,
+    },
+    frameRates: [24, 25, 30] as const,
+  },
+} as const;
+
+export type GenerationFrameRate = (typeof generationAdvancedCapabilities.video.frameRates)[number];
+
 export type GenerationAdvancedParameters = {
   negativePrompt?: string;
   seed?: number;
   steps?: number;
   guidance?: number;
-  frameRate?: 24 | 25 | 30;
+  frameRate?: GenerationFrameRate;
 };
+
+export function advancedDefaultsForOutput(kind: OutputKind) {
+  return kind === "video"
+    ? generationAdvancedCapabilities.video.defaults
+    : generationAdvancedCapabilities.image.defaults;
+}
 
 export type GenerationRequest = {
   prompt: string;

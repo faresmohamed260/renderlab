@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1740" height="1020" viewBox="0 0 1740 1020">
+  <style>
+    text { font-family: Inter, ui-sans-serif, system-ui, sans-serif; fill:#F4F5F7 }
+    .muted { fill:#9CA3AF }
+    .label { font-size:12px; font-weight:600 }
+    .body { font-size:14px }
+    .title { font-size:28px; font-weight:600 }
+    .small { font-size:11px }
+  </style>
+  <rect width="1740" height="1020" fill="#090A0C"/>
+  <text x="54" y="54" class="title">Create v0.3 — Advanced disclosure</text>
+  <text x="54" y="82" class="body muted">Advanced controls stay inside the composer, collapsed by default, and expose only verified workflow parameters.</text>
+  <g transform="translate(54,120)">
+    <rect width="1170" height="840" rx="22" fill="#090A0C" stroke="#2B303A"/>
+    <text x="54" y="104" class="title">What do you want to create?</text>
+    <text x="54" y="132" class="body muted">Start with an idea. Add a reference only when you need one.</text>
+    <rect x="170" y="232" width="830" height="414" rx="16" fill="#111318" stroke="#2B303A"/>
+    <text x="194" y="274" class="body muted">Describe what you want to create…</text>
+    <rect x="188" y="354" width="794" height="178" rx="12" fill="#171A20" stroke="#2B303A"/>
+    <text x="208" y="381" class="label">Advanced</text>
+    <text x="208" y="405" class="small muted">Technical controls for reproducibility and tuning. Defaults remain safe.</text>
+    <text x="208" y="438" class="small muted">Negative prompt</text>
+    <rect x="208" y="446" width="754" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <text x="222" y="470" class="small muted">Optional things to avoid…</text>
+    <text x="208" y="508" class="small muted">Seed</text>
+    <text x="410" y="508" class="small muted">Steps</text>
+    <text x="612" y="508" class="small muted">Guidance</text>
+    <rect x="208" y="516" width="178" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <rect x="410" y="516" width="178" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <rect x="612" y="516" width="178" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <text x="224" y="540" class="body">42</text>
+    <text x="426" y="540" class="body">4</text>
+    <text x="628" y="540" class="body">1</text>
+    <text x="822" y="540" class="small muted">Reset defaults</text>
+    <rect x="188" y="576" width="40" height="40" rx="9" fill="#171A20"/>
+    <text x="202" y="602" class="body">+</text>
+    <rect x="240" y="576" width="172" height="40" rx="9" fill="#171A20"/>
+    <rect x="244" y="580" width="78" height="32" rx="7" fill="#20242C"/>
+    <text x="266" y="601" class="small">Image</text>
+    <text x="344" y="601" class="small muted">Video</text>
+    <rect x="424" y="576" width="72" height="40" rx="9" fill="#171A20"/>
+    <text x="447" y="601" class="small muted">1:1</text>
+    <rect x="508" y="576" width="40" height="40" rx="9" fill="#20242C"/>
+    <text x="519" y="601" class="body">•••</text>
+    <rect x="846" y="576" width="136" height="40" rx="9" fill="#7C6CF2"/>
+    <text x="887" y="601" class="label">Generate</text>
+    <text x="170" y="686" class="small muted">Default state keeps this panel closed. Opening Advanced must not alter the primary task flow.</text>
+  </g>
+  <g transform="translate(1280,120)">
+    <rect width="390" height="844" rx="28" fill="#090A0C" stroke="#2B303A"/>
+    <text x="22" y="72" style="font-size:23px;font-weight:600">Create a video</text>
+    <text x="22" y="98" class="small muted">Only the essentials stay visible.</text>
+    <rect x="16" y="154" width="358" height="536" rx="15" fill="#111318" stroke="#2B303A"/>
+    <text x="32" y="194" class="body muted">Describe the video you want to create…</text>
+    <rect x="28" y="268" width="334" height="290" rx="12" fill="#171A20" stroke="#2B303A"/>
+    <text x="44" y="296" class="label">Advanced</text>
+    <text x="44" y="320" class="small muted">Only shown when intentionally opened.</text>
+    <text x="44" y="351" class="small muted">Negative prompt</text>
+    <rect x="44" y="360" width="302" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <text x="44" y="426" class="small muted">Seed</text>
+    <text x="204" y="426" class="small muted">Steps</text>
+    <rect x="44" y="434" width="142" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <rect x="204" y="434" width="142" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <text x="58" y="458" class="body">42</text>
+    <text x="218" y="458" class="body">11</text>
+    <text x="44" y="500" class="small muted">Guidance</text>
+    <text x="204" y="500" class="small muted">Frame rate</text>
+    <rect x="44" y="508" width="142" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <rect x="204" y="508" width="142" height="38" rx="8" fill="#111318" stroke="#2B303A"/>
+    <text x="58" y="532" class="body">1</text>
+    <text x="218" y="532" class="body">24 fps</text>
+    <rect x="28" y="582" width="42" height="42" rx="9" fill="#171A20"/>
+    <rect x="80" y="582" width="136" height="42" rx="9" fill="#171A20"/>
+    <text x="95" y="608" class="small muted">Image</text>
+    <rect x="145" y="587" width="65" height="32" rx="7" fill="#20242C"/>
+    <text x="160" y="608" class="small">Video</text>
+    <rect x="226" y="582" width="64" height="42" rx="9" fill="#171A20"/>
+    <text x="241" y="608" class="small muted">16:9</text>
+    <rect x="300" y="582" width="62" height="42" rx="9" fill="#171A20"/>
+    <text x="315" y="608" class="small muted">5 s</text>
+    <rect x="28" y="636" width="334" height="42" rx="9" fill="#7C6CF2"/>
+    <text x="165" y="662" class="label">Generate</text>
+  </g>
+</svg>

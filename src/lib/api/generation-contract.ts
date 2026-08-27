@@ -1,11 +1,13 @@
 import type {
   AspectRatio,
   GenerationAdvancedParameters,
+  GenerationFrameRate,
   GenerationInput,
   GenerationJob,
   GenerationRequest,
   OutputKind,
 } from "@/lib/capabilities/generation";
+import { generationAdvancedCapabilities } from "@/lib/capabilities/generation";
 
 export type SubmitGenerationSuccess = {
   ok: true;
@@ -30,7 +32,7 @@ const aspectRatios = new Set<AspectRatio>(["1:1", "16:9", "9:16", "4:3", "3:4"])
 const outputKinds = new Set<OutputKind>(["image", "video"]);
 const inputRoles = new Set<GenerationInput["role"]>(["reference", "primary-image", "first-frame"]);
 const inputSourceTypes = new Set<GenerationInput["source"]["type"]>(["temporary-source", "media-asset"]);
-const frameRates = new Set([24, 25, 30]);
+const frameRates = new Set<number>(generationAdvancedCapabilities.video.frameRates);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -75,16 +77,25 @@ function parseAdvanced(value: unknown): GenerationAdvancedParameters | null | un
     advanced.seed = value.seed as number;
   }
   if (value.steps !== undefined) {
-    if (!Number.isInteger(value.steps) || (value.steps as number) < 1 || (value.steps as number) > 200) return null;
+    if (
+      !Number.isInteger(value.steps)
+      || (value.steps as number) < generationAdvancedCapabilities.steps.min
+      || (value.steps as number) > generationAdvancedCapabilities.steps.max
+    ) return null;
     advanced.steps = value.steps as number;
   }
   if (value.guidance !== undefined) {
-    if (typeof value.guidance !== "number" || !Number.isFinite(value.guidance) || value.guidance < 0 || value.guidance > 100) return null;
+    if (
+      typeof value.guidance !== "number"
+      || !Number.isFinite(value.guidance)
+      || value.guidance < generationAdvancedCapabilities.guidance.min
+      || value.guidance > generationAdvancedCapabilities.guidance.max
+    ) return null;
     advanced.guidance = value.guidance;
   }
   if (value.frameRate !== undefined) {
     if (typeof value.frameRate !== "number" || !frameRates.has(value.frameRate)) return null;
-    advanced.frameRate = value.frameRate as 24 | 25 | 30;
+    advanced.frameRate = value.frameRate as GenerationFrameRate;
   }
 
   return advanced;
