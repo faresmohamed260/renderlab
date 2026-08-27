@@ -9,7 +9,8 @@ const r2Bucket = process.env.R2_BUCKET_NAME;
 const artifactDir = process.env.RENDERLAB_LIBRARY_DROP_ARTIFACT_DIR || "artifacts";
 const fixturePath = process.env.RENDERLAB_LIBRARY_DROP_FIXTURE_PATH || "/tmp/renderlab-library-drop-upload-fixture.json";
 const cleanupOnly = process.argv.includes("--cleanup-only");
-const fixtureFilename = "renderlab-drop-اختبار-画像.png";
+const fixtureToken = process.env.GITHUB_RUN_ID || "local";
+const fixtureFilename = `renderlab-drop-${fixtureToken}-اختبار-画像.png`;
 const fixtureDisplayName = fixtureFilename.replace(/\.[^.]+$/, "");
 
 const pngBytes = Buffer.from(
@@ -68,36 +69,51 @@ async function readFixture() {
 
 async function cleanupFixture() {
   const fixture = await readFixture();
-  if (!fixture) return;
-
   const sessions = await rows(
-    `media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id,storage_key,media_asset_id`,
+    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,media_asset_id`,
   );
-  const session = sessions[0] || null;
-  const storageKey = session?.storage_key || fixture.storageKey || null;
-  const assetId = session?.media_asset_id || fixture.assetId || null;
+  const assets = await rows(
+    `media_assets?original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key`,
+  );
 
-  if (storageKey) {
+  const storageKeys = new Set([
+    ...sessions.map((session) => session.storage_key).filter(Boolean),
+    ...assets.map((asset) => asset.storage_key).filter(Boolean),
+    fixture?.storageKey,
+  ].filter(Boolean));
+  const assetIds = new Set([
+    ...sessions.map((session) => session.media_asset_id).filter(Boolean),
+    ...assets.map((asset) => asset.id).filter(Boolean),
+    fixture?.assetId,
+  ].filter(Boolean));
+
+  for (const storageKey of storageKeys) {
     await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: storageKey })).catch(() => {});
   }
-  if (session) {
-    const response = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}`, { method: "DELETE" });
+  for (const session of sessions) {
+    const response = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(session.id)}`, { method: "DELETE" });
     if (!response.ok) throw new Error(`Could not remove drag/drop upload session (${response.status}): ${await response.text()}`);
   }
-  if (assetId) {
+  if (fixture?.uploadId && !sessions.some((session) => session.id === fixture.uploadId)) {
+    const response = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Could not remove tracked drag/drop upload session (${response.status}): ${await response.text()}`);
+  }
+  for (const assetId of assetIds) {
     const response = await supabase(`media_assets?id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
     if (!response.ok) throw new Error(`Could not remove drag/drop media asset (${response.status}): ${await response.text()}`);
   }
 
-  const remainingSessions = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id`);
-  if (remainingSessions.length) throw new Error(`Drag/drop cleanup left upload session ${fixture.uploadId}.`);
-  if (assetId) {
-    const remainingAssets = await rows(`media_assets?id=eq.${encodeURIComponent(assetId)}&select=id`);
-    if (remainingAssets.length) throw new Error(`Drag/drop cleanup left media asset ${assetId}.`);
-  }
+  const remainingSessions = await rows(
+    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id`,
+  );
+  const remainingAssets = await rows(
+    `media_assets?original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id`,
+  );
+  if (remainingSessions.length) throw new Error(`Drag/drop cleanup left ${remainingSessions.length} matching upload session(s).`);
+  if (remainingAssets.length) throw new Error(`Drag/drop cleanup left ${remainingAssets.length} matching media asset(s).`);
 
   await rm(fixturePath, { force: true });
-  console.log(`Cleaned Library drag/drop fixture upload=${fixture.uploadId}${assetId ? ` asset=${assetId}` : ""}.`);
+  console.log(`Cleaned Library drag/drop fixtures filename=${fixtureFilename}.`);
 }
 
 async function createDataTransfer(page, files) {
@@ -128,6 +144,14 @@ try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark" });
   const page = await context.newPage();
+  let ticketRequests = 0;
+  let completionRequests = 0;
+  page.on("request", (request) => {
+    if (request.method() !== "POST") return;
+    if (request.url().endsWith("/api/media/uploads/upload-tickets")) ticketRequests += 1;
+    if (request.url().endsWith("/api/media/uploads/upload-completions")) completionRequests += 1;
+  });
+
   await page.goto(`${baseUrl}/library`, { waitUntil: "networkidle", timeout: 60_000 });
 
   const surface = page.locator('[data-library-drop-surface="true"]');
@@ -142,6 +166,7 @@ try {
   await page.getByText("Drop image to add to Library", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
   await surface.dispatchEvent("drop", { dataTransfer: multipleTransfer });
   await page.getByRole("alert").filter({ hasText: "Drop one image at a time." }).waitFor({ state: "visible", timeout: 10_000 });
+  assert(ticketRequests === 0 && completionRequests === 0, "Rejected multi-file drop started an upload request.");
   await multipleTransfer.dispose();
 
   const transfer = await createDataTransfer(page, [
@@ -175,6 +200,7 @@ try {
   assert(completionPayload.asset.origin === "uploaded", "Drag/drop upload was not promoted as uploaded media.");
   assert(completionPayload.asset.displayName === fixtureDisplayName, "Drag/drop display name was not derived correctly.");
   assert(completionPayload.asset.originalFilename === fixtureFilename, "Drag/drop upload did not preserve the Unicode filename.");
+  assert(ticketRequests === 1 && completionRequests === 1, `Single-file drop made unexpected upload requests tickets=${ticketRequests} completions=${completionRequests}.`);
 
   const sessionRows = await rows(
     `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=status,storage_key,media_asset_id,filename,display_name`,
@@ -185,9 +211,22 @@ try {
   assert(session.display_name === fixtureDisplayName, "Drag/drop upload session changed the display name.");
   await writeFile(fixturePath, JSON.stringify({ uploadId, assetId, storageKey: session.storage_key }), "utf8");
 
+  const matchingSessions = await rows(
+    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,media_asset_id,storage_key`,
+  );
+  const matchingAssets = await rows(
+    `media_assets?original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key`,
+  );
+  assert(matchingSessions.length === 1, `Single-file drop created ${matchingSessions.length} matching upload sessions.`);
+  assert(matchingAssets.length === 1, `Single-file drop created ${matchingAssets.length} matching media assets.`);
+  assert(matchingAssets[0]?.id === assetId, "Single-file drop durable asset query did not match the completion asset ID.");
+
   const card = page.locator(`a[href="/library/${assetId}"]`);
   await card.waitFor({ state: "visible", timeout: 30_000 });
+  await page.waitForTimeout(500);
   assert(await card.getAttribute("aria-label") === `Open ${fixtureDisplayName}`, "Drag/drop Library card did not expose the expected display name.");
+  const matchingCards = page.getByRole("link", { name: `Open ${fixtureDisplayName}`, exact: true });
+  assert((await matchingCards.count()) === 1, `Library rendered ${await matchingCards.count()} cards for the single dropped asset.`);
   assert((await page.getByRole("status").filter({ hasText: "Added to Library." }).count()) > 0, "Drag/drop success was not announced to assistive technology.");
   assert((await page.locator('[data-library-drop-overlay="true"]').count()) === 0, "Drag/drop overlay remained visible after completion.");
   await page.screenshot({ path: `${artifactDir}/library-drag-drop-desktop-complete.png`, fullPage: true });
@@ -197,6 +236,7 @@ try {
   await page.evaluate(() => window.scrollTo(0, 0));
   assert(await page.getByRole("button", { name: "Upload", exact: true }).isVisible(), "Upload button is not visible on mobile after drag/drop enhancement.");
   assert((await page.locator('[data-library-drop-overlay="true"]').count()) === 0, "Drag/drop affordance is persistently visible on mobile.");
+  assert((await page.getByRole("link", { name: `Open ${fixtureDisplayName}`, exact: true }).count()) === 1, "Mobile Library duplicated the dropped asset card.");
   await page.screenshot({ path: `${artifactDir}/library-drag-drop-mobile-complete.png`, fullPage: true });
 
   console.log(`Configured Library drag/drop upload rendered successfully. upload=${uploadId} asset=${assetId}`);
