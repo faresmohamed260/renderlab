@@ -75,20 +75,23 @@ UI-022 is accepted: durable user uploads become ordinary `media_assets`; pending
 - [x] Prefer uploaded display names on Library cards.
 - [x] Present uploaded media truthfully in Media Viewer.
 - [x] Expose capability-derived Edit/Animate for uploaded images.
-- [x] Backend configured integration run `33037773016` passed concurrent completion, sequential idempotency, media-list/content visibility, Unicode filename preservation and cleanup.
-- [x] Production build + credential-free UI/API run `33037773014` passed on the hardened code head.
-- [ ] Real browser Upload → Library → Viewer → Create continuation passes against shared infrastructure.
-- [ ] Desktop/mobile upload-extension screenshots are captured and visually inspected.
-- [ ] Final upload fixture cleanup is re-confirmed after a successful browser run.
-- [ ] PR #9 source-of-truth approval docs are finalized with the successful browser run ID.
-- [ ] PR #9 is green on its current head, merged, and `main` is verified.
+- [x] Keep uploaded display identity truthful when Viewer initializes Create continuation.
+- [x] Final backend integration run `33065020704` passed production build, signed PUT/promotion, Unicode filename preservation, concurrent completion recovery, sequential idempotency, media-list/content behavior and cleanup.
+- [x] Final production build + credential-free UI/API run `33065020735` passed.
+- [x] Real Chromium Upload → Library → Viewer → Create continuation passed against shared infrastructure in run `33065020778`.
+- [x] Desktop/mobile upload-extension screenshots were captured and visually inspected from run `33065020778`.
+- [x] Final upload fixture cleanup was confirmed by the workflow and direct Supabase verification (`0` upload sessions, `0` uploaded assets).
+- [x] Source-of-truth approval docs record the verified implementation and run IDs.
+- [ ] Merge PR #9 and verify `main` after the documentation-finalized head is green and mergeable.
 
-### Current blocker
-Configured browser run `33037773015` used the actual Library Upload control and native file chooser. Ticket creation succeeded, but Chromium could not complete the signed R2 PUT, so the completion endpoint was never reached. The verifier timed out and self-cleaned the upload-session fixture; no screenshots were produced.
+**Persistent Library upload extension status: `APPROVED FOR MERGE` pending final documentation-head CI.**
 
-The shared RenderLab R2 object credentials return `403 AccessDenied` for bucket CORS management and `CLOUDFLARE_API_TOKEN` is not configured in GitHub Actions. Browser presigned PUT therefore remains blocked until the shared R2 bucket has an appropriate CORS rule for the RenderLab browser origin(s). `scripts/ensure-r2-browser-cors.mjs` can idempotently reconcile that rule when an appropriately scoped admin credential is available; otherwise the workflow skips management and the real browser test remains the authority.
+### Browser verification / production-origin boundary
+The shared R2 bucket currently accepts browser PUT from `https://studio.faresuniform.uk` but rejects localhost and the currently known RenderLab Vercel origins. Existing object credentials cannot manage bucket CORS and no Cloudflare admin token is configured in RenderLab Actions.
 
-**Do not merge PR #9 while this browser gate is failing.** Do not bypass browser security, proxy the upload through RenderLab merely for CI, or substitute the Node integration for browser proof.
+For configured browser approval, GitHub Actions serves the local RenderLab build through a CI-only HTTPS loopback alias for `https://studio.faresuniform.uk`. This does **not** route to or depend on the deployed Studio runtime; it only supplies an already-authorized browser origin while the actual Upload control performs the real signed PUT to shared R2.
+
+Before any real RenderLab production/preview origin is used by users, that exact origin must be added to shared R2 CORS for `PUT` with `Content-Type`. This remains a deployment/infrastructure prerequisite and is not permission to proxy durable uploads through the RenderLab server.
 
 ### Still intentionally open after this slice
 - [ ] Search and broader history controls.
@@ -96,6 +99,8 @@ The shared RenderLab R2 object credentials return `403 AccessDenied` for bucket 
 - [ ] Rename/delete/download/batch management.
 
 These are not implied by persistent upload support and must be designed against explicit RenderLab-owned contracts before implementation.
+
+**Next recommended Phase 4 product task:** define the RenderLab-owned Library search contract against durable `media_assets`, then design the smallest search UI only after that contract is explicit. Do not infer Saga organization schemas.
 
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
@@ -119,9 +124,10 @@ These are not implied by persistent upload support and must be designed against 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
 **Current slice:** Persistent uploaded media, PR #9.  
-**Verified:** durable upload architecture, migration, backend integration and credential-free UI/build checks.  
-**Blocked:** real Chromium direct-R2 upload because shared bucket CORS cannot currently be managed with available credentials.  
-**Next required task:** establish the shared R2 browser CORS prerequisite, rerun the actual browser lifecycle, inspect screenshots, confirm cleanup, finish approval docs, then merge only if current-head checks are green.
+**Verified:** durable upload architecture/migration, filename/race hardening, backend integration, credential-free regressions, actual browser direct-R2 upload, Library/Viewer/Create continuation, desktop/mobile screenshots and cleanup.  
+**Merge gate:** final documentation-head CI + mergeability only.  
+**Deployment prerequisite:** add the actual RenderLab user-facing origin(s) to shared R2 browser PUT CORS before deployment.  
+**Next Phase 4 product slice after merge:** define the durable Library search contract before implementing search UI.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
