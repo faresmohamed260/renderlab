@@ -77,11 +77,12 @@ async function readFixture() {
 
 async function cleanupFixture() {
   const fixture = await readFixture();
+  const ownerFilter = encodeURIComponent(fixtureAccount.id);
   const sessions = await rows(
-    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,media_asset_id`,
+    `media_upload_sessions?owner_id=eq.${ownerFilter}&filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,media_asset_id`,
   );
   const assets = await rows(
-    `media_assets?original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key`,
+    `media_assets?owner_id=eq.${ownerFilter}&original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key`,
   );
 
   const storageKeys = new Set([
@@ -103,26 +104,26 @@ async function cleanupFixture() {
     if (!response.ok) throw new Error(`Could not remove drag/drop upload session (${response.status}): ${await response.text()}`);
   }
   if (fixture?.uploadId && !sessions.some((session) => session.id === fixture.uploadId)) {
-    const response = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}`, { method: "DELETE" });
+    const response = await supabase(`media_upload_sessions?owner_id=eq.${ownerFilter}&id=eq.${encodeURIComponent(fixture.uploadId)}`, { method: "DELETE" });
     if (!response.ok) throw new Error(`Could not remove tracked drag/drop upload session (${response.status}): ${await response.text()}`);
   }
   for (const assetId of assetIds) {
-    const response = await supabase(`media_assets?id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
+    const response = await supabase(`media_assets?owner_id=eq.${ownerFilter}&id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
     if (!response.ok) throw new Error(`Could not remove drag/drop media asset (${response.status}): ${await response.text()}`);
   }
 
   const remainingSessions = await rows(
-    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id`,
+    `media_upload_sessions?owner_id=eq.${ownerFilter}&filename=eq.${encodeURIComponent(fixtureFilename)}&select=id`,
   );
   const remainingAssets = await rows(
-    `media_assets?original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id`,
+    `media_assets?owner_id=eq.${ownerFilter}&original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id`,
   );
   if (remainingSessions.length) throw new Error(`Drag/drop cleanup left ${remainingSessions.length} matching upload session(s).`);
   if (remainingAssets.length) throw new Error(`Drag/drop cleanup left ${remainingAssets.length} matching media asset(s).`);
 
   await rm(fixturePath, { force: true });
   await deleteConfiguredTestAccount(fixtureAccount);
-  console.log(`Cleaned Library drag/drop fixtures filename=${fixtureFilename}.`);
+  console.log(`Cleaned Library drag/drop fixtures owner=${fixtureAccount.id} filename=${fixtureFilename}.`);
 }
 
 async function createDataTransfer(page, files) {
@@ -224,14 +225,15 @@ try {
   assert(session.owner_id === account.id, "Drag/drop upload session did not inherit the authenticated account owner.");
   await writeFile(fixturePath, JSON.stringify({ uploadId, assetId, storageKey: session.storage_key }), "utf8");
 
+  const ownerFilter = encodeURIComponent(account.id);
   const matchingSessions = await rows(
-    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,media_asset_id,storage_key,owner_id`,
+    `media_upload_sessions?owner_id=eq.${ownerFilter}&filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,media_asset_id,storage_key,owner_id`,
   );
   const matchingAssets = await rows(
-    `media_assets?original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,owner_id`,
+    `media_assets?owner_id=eq.${ownerFilter}&original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,owner_id`,
   );
-  assert(matchingSessions.length === 1, `Single-file drop created ${matchingSessions.length} matching upload sessions.`);
-  assert(matchingAssets.length === 1, `Single-file drop created ${matchingAssets.length} matching media assets.`);
+  assert(matchingSessions.length === 1, `Single-file drop created ${matchingSessions.length} matching upload sessions for the fixture owner.`);
+  assert(matchingAssets.length === 1, `Single-file drop created ${matchingAssets.length} matching media assets for the fixture owner.`);
   assert(matchingAssets[0]?.id === assetId, "Single-file drop durable asset query did not match the completion asset ID.");
   assert(matchingSessions[0]?.owner_id === account.id && matchingAssets[0]?.owner_id === account.id, "Drag/drop persistence lost the authenticated account owner.");
 
