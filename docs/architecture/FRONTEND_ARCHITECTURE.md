@@ -3,7 +3,7 @@
 This document defines the approved RenderLab frontend architecture and records the verified implementation state of the fresh build.
 
 ## Verified Scaffold
-The application is scaffolded and remotely verified through GitHub Actions.
+The application is remotely built and validated through GitHub Actions.
 
 Installed versions from `package.json`:
 - Next.js `16.3.3`
@@ -12,11 +12,12 @@ Installed versions from `package.json`:
 - TypeScript `7.0.2`
 - Tailwind CSS `4.3.3`
 - Lucide React `1.34.0`
+- Radix Collapsible `@radix-ui/react-collapsible` `1.1.20`
 - Playwright `1.62.1`
 - AWS SDK S3 client `3.1116.0`
 - AWS SDK S3 request presigner `3.1116.0`
 
-The production build and responsive Create/shell checks pass in GitHub Actions. The verified public routes are `/`, `/library`, `/library/[assetId]`, `/activity`, and `/settings`. Product API routes currently include generation submission plus reference-upload ticket/completion boundaries.
+The production build and responsive Create/shell checks pass in GitHub Actions. Verified public routes are `/`, `/library`, `/library/[assetId]`, `/activity`, and `/settings`.
 
 ## Framework
 **Framework:** Next.js `16.3.3` with React `19.2.8` and the App Router  
@@ -24,49 +25,51 @@ The production build and responsive Create/shell checks pass in GitHub Actions. 
 **Routing:** Next.js file-system routing via `src/app/`  
 **Rendering model:** Server Components by default; Client Components only for interactive creative/workspace behavior  
 **Styling:** Tailwind CSS `4.3.3` + project semantic design tokens  
-**Component foundation:** shadcn/ui/Radix for conventional primitives plus approved motion/component ecosystems documented in `docs/ui/UI_SYSTEM.md` and `docs/ui/COMPONENT_CATALOG.md`
+**Component foundation:** existing RenderLab components first, then normalized shadcn/ui/Radix primitives and the approved component ecosystem documented in `docs/ui/COMPONENT_CATALOG.md`.
 
 ## Why Next.js
-Next.js is selected because RenderLab targets Vercel and requires more than a static SPA:
-- first-class application routing without recreating Saga's manual hash navigation;
-- colocated server and client boundaries;
-- route handlers/server-side code for product API boundaries where appropriate;
-- strong TypeScript support;
-- direct compatibility with the selected Vercel deployment stack;
-- layouts and nested routes suitable for the persistent creative application shell;
-- ability to keep data-fetching/server concerns out of highly interactive client components;
-- straightforward integration with Tailwind and the approved component ecosystem.
+Next.js fits the product because RenderLab requires:
+- real application routing instead of Saga-style manual hash navigation;
+- colocated server/client boundaries;
+- server-side product APIs for generation, uploads, media and orchestration;
+- TypeScript-first implementation;
+- compatibility with the Vercel deployment target;
+- persistent layouts for the application shell;
+- ability to keep provider/storage credentials and worker interaction out of browser code.
 
-The selection does **not** mean RenderLab should become server-rendered everywhere. The creation workspace, media interactions, upload controls, live job state, dialogs, and other interaction-heavy features intentionally use Client Components where required.
+The creation workspace remains intentionally client-interactive; choosing Next.js does not imply server-rendering every interaction.
 
 ## Routing Architecture
-Approved and currently scaffolded routes:
+Approved routes:
 
 ```text
 /                  Create
 /library           Library
-/library/[assetId] Media Viewer / deep-linked asset view
+/library/[assetId] Media Viewer
 /activity          Activity
 /settings          Settings
 ```
 
-Current product API boundaries:
+Implemented product API boundaries:
 
 ```text
 GET/POST /api/generation/jobs
+GET      /api/generation/jobs/[jobId]
 GET/POST /api/assets/reference/upload-tickets
 POST     /api/assets/reference/upload-completions
+GET      /api/media/assets/[assetId]
+GET      /api/media/assets/[assetId]/content
+GET      /api/media/assets/[assetId]/thumbnail
 ```
 
 Rules:
-- `Create` remains the default route.
-- Image, Video, Edit, Animate, models, and workflows are not separate top-level routes by default.
+- Create remains the default route.
+- Image, Video, Edit, Animate, models and workflows are not separate top-level routes by default.
 - Adding a backend workflow does not create a route automatically.
-- Context such as selected operation, asset, filters, or continuation source may use URL/search state when sharing/bookmarking meaningfully benefits the user.
-- Do not encode transient implementation state into URLs merely because routing makes it possible.
+- Context moves into URLs only when deep linking/shareability provides product value.
 
-## Current Directory Structure and Ownership
-Verified implementation now includes:
+## Verified Ownership Structure
+Current important implementation boundaries include:
 
 ```text
 src/
@@ -75,22 +78,22 @@ src/
 │   ├── globals.css
 │   ├── page.tsx
 │   ├── api/
-│   │   ├── generation/jobs/route.ts
-│   │   └── assets/reference/
-│   │       ├── upload-tickets/route.ts
-│   │       └── upload-completions/route.ts
+│   │   ├── generation/jobs/
+│   │   ├── assets/reference/
+│   │   └── media/assets/
 │   ├── library/
-│   │   ├── page.tsx
-│   │   └── [assetId]/page.tsx
-│   ├── activity/page.tsx
-│   └── settings/page.tsx
+│   ├── activity/
+│   └── settings/
 ├── components/
-│   └── shell/
-│       ├── app-shell.tsx
-│       └── route-placeholder.tsx
+│   ├── shell/
+│   │   ├── app-shell.tsx
+│   │   └── route-placeholder.tsx
+│   └── ui/
+│       └── collapsible.tsx
 ├── features/
 │   └── create/
-│       └── create-workspace.tsx
+│       ├── create-workspace.tsx
+│       └── create-advanced-panel.tsx
 ├── lib/
 │   ├── api/
 │   │   ├── generation-contract.ts
@@ -101,147 +104,110 @@ src/
     ├── data/
     │   └── supabase-rest.ts
     ├── generation/
-    │   └── submit-generation.ts
+    │   ├── native-generation.ts
+    │   ├── worker-fleet.ts
+    │   ├── submit-generation.ts
+    │   ├── poll-generation.ts
+    │   └── studio-compat.ts
     ├── media/
-    │   └── reference-uploads.ts
+    │   └── media-assets.ts
     └── storage/
         └── r2.ts
 
 supabase/
 └── migrations/
-    └── 0001_generation_sources.sql
+    ├── 0001_generation_sources.sql
+    └── 0002_generation_jobs_media_assets.sql
 ```
 
-Future ownership boundaries should follow this model only as code actually requires them:
+Future ownership pattern:
+- `components/ui` — normalized generic primitives with no feature data contract;
+- `components/shell` — persistent navigation/application chrome;
+- `components/media` — reusable media presentation/actions when multiple surfaces need them;
+- `components/feedback` — shared feedback mechanics when reuse is real;
+- `features/<feature>` — product-specific composition/behavior;
+- `lib/capabilities` — user-facing capability definitions and resolution;
+- `lib/api` — typed product API contracts;
+- `server/generation` — orchestration and worker boundaries;
+- `server/media` — durable media/source services;
+- `server/storage` — R2/storage provider implementation;
+- `server/data` — Supabase/repository access.
 
-```text
-src/
-├── components/
-│   ├── ui/                         # approved primitives / normalized external components
-│   ├── shell/                      # navigation, app shell, global status
-│   ├── media/                      # reusable media presentation/actions
-│   └── feedback/                   # shared progress/error/empty/loading patterns
-├── features/
-│   ├── create/
-│   ├── library/
-│   ├── activity/
-│   └── settings/
-├── lib/
-│   ├── capabilities/               # workflow/capability contracts and resolution
-│   ├── api/                        # typed product API contracts/clients
-│   ├── validation/
-│   └── utils/
-├── server/
-│   ├── generation/                 # orchestration/application service boundaries
-│   ├── media/                      # media/source application services
-│   ├── storage/                    # R2/provider-specific storage implementation
-│   └── data/                       # Supabase/repository access
-└── types/
-```
-
-Do not create folders merely to match the future diagram before code needs them. The structure defines ownership, not a requirement for empty scaffolding.
+Do not create empty folders merely to match the future diagram.
 
 ## Naming Conventions
-### Files
-- React components: `kebab-case.tsx` (`app-shell.tsx`, `media-card.tsx`).
-- Hooks: `use-*.ts` (`use-generation-job.ts`).
-- Libraries/services/schema modules: `kebab-case.ts`.
-- Next.js reserved route files keep framework names (`page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `route.ts`).
-- Tests follow the source filename plus `.test.ts[x]` or the test framework convention.
-
-### Symbols
-- React component exports: `PascalCase` (`AppShell`, `MediaCard`).
+- React files: `kebab-case.tsx`.
+- Hooks: `use-*.ts`.
+- Services/libraries: `kebab-case.ts`.
+- Next.js reserved route files keep framework names.
+- Component exports: `PascalCase`.
 - hooks/functions/variables: `camelCase`.
-- types/interfaces/schema names: `PascalCase`.
-- constants: descriptive `camelCase` by default; use `UPPER_SNAKE_CASE` only for true environment/protocol constants where it improves clarity.
-- semantic token names: lowercase kebab-case at the CSS/Tailwind variable boundary.
+- types: `PascalCase`.
+- semantic CSS/Tailwind tokens: lowercase kebab-case.
 
-### Component ownership
-- `components/ui`: generic reusable primitives with no feature-specific data contract.
-- `components/shell`: persistent application chrome shared across routes.
-- `components/media`: reusable asset presentation/actions shared by multiple features.
-- `components/feedback`: generic shared state/feedback UI.
-- `features/<feature>`: product-specific compositions and feature behavior. Do not promote a feature component globally before a real second reuse case or clear stable primitive role exists.
+## Component Architecture
+### Reuse before invention
+Generic interaction mechanics follow the component sourcing policy in `docs/ui/COMPONENT_CATALOG.md`. Feature code should not casually implement competing dialog/disclosure/menu/selection mechanics.
 
-### External components
-Copy-owned registry components are normalized into project-owned files before feature use. Feature code should import the RenderLab wrapper/local component rather than reaching directly into multiple external registries.
+`src/components/ui/collapsible.tsx` is the first normalized Radix primitive in the repository. It wraps `@radix-ui/react-collapsible` and deliberately contains no Create-specific data or styling logic. Create Advanced composes that maintained disclosure behavior with feature-owned fields.
 
-Do not preserve demo-library names when the RenderLab role is clearer. Preserve source attribution in `COMPONENT_CATALOG.md`.
+Native HTML inputs/selects remain valid ordinary form controls; using them is not a license to invent custom interaction engines. New reusable mechanics still follow the approved source search order.
 
-## Component Boundaries
 ### Server Components by default
-Use for:
-- route/page composition where browser state is unnecessary;
-- initial server-side data loading where appropriate;
-- metadata/layout composition;
-- read-heavy shells that can pass serializable data into interactive children.
+Use for route/page/layout composition where browser state is unnecessary.
 
 ### Client Components deliberately
 Use for:
-- Create composer/workspace;
-- prompt and reference interaction;
-- uploads and drag/drop;
-- operation selection;
-- contextual/advanced controls;
-- live job status and cancellation interaction;
-- media selection/actions;
-- dialogs, sheets, popovers, menus and client-only accessibility interactions;
-- optimistic interaction where justified.
+- Create workspace and prompt state;
+- uploads/reference interaction;
+- output/operation selection;
+- Advanced disclosure and draft parameters;
+- live job polling and runtime feedback;
+- media actions/continuation;
+- dialogs, sheets, popovers and other client interaction primitives when required.
 
-`AppShell` is currently a Client Component because active route styling uses `usePathname`; feature route pages remain Server Components. Do not add `'use client'` to broad route/page trees just for convenience.
+`AppShell` is currently a Client Component because active-route styling uses `usePathname`. Do not add broad `'use client'` boundaries for convenience.
 
 ## State Architecture
 ### URL state
-Use for state that benefits from navigation, deep linking, reload persistence, or shareability, such as:
-- current route;
-- selected media asset via route parameter;
-- Library filters/search when product design approves shareable/filterable URLs.
+Use only for navigation/deep-link state that benefits from reload/shareability.
 
 ### Server state
-Persistent jobs, media, uploads, collections/organization, workflow capability data, and other backend-owned state remain server state.
-
-Preferred principle:
-- fetch server-owned data through typed application APIs/services;
-- do not duplicate it into ad-hoc global client stores;
-- use polling/revalidation/streaming mechanisms according to the actual backend contract rather than pretending generation is synchronous.
-
-The concrete server-state client library is not yet selected. Choose it only when implementation requirements justify it; do not add a dependency by default.
+`generation_jobs`, `media_assets`, `generation_sources` and future persistent product data remain server-owned state accessed through application boundaries.
 
 ### Client feature state
-Keep ephemeral creative state close to the owning feature:
-- current prompt draft;
-- selected/attached inputs before submission;
-- local preview URLs during upload;
-- open panels/dialogs;
-- local operation selection;
-- advanced-control visibility;
-- unsaved parameter changes.
+Create currently owns ephemeral state such as:
+- prompt draft;
+- output kind and essential values;
+- local reference preview;
+- upload/submission state;
+- current job/result state;
+- Advanced disclosure visibility;
+- separate Image/Video Advanced drafts;
+- continuation source selection.
 
-Lift state only when multiple feature boundaries genuinely require shared ownership.
-
-### Persistent user preferences
-Persistent preferences should have explicit ownership. Do not scatter unrelated raw `localStorage` keys across components as Saga did. Browser-only persistence may use a small typed preference layer; account-backed settings should live in the data layer.
+Avoid an ad-hoc global store until multiple features genuinely require one.
 
 ## Capability Architecture
-The frontend consumes the domain defined in `PRODUCT_CAPABILITIES.md` rather than hard-coding UI directly around ComfyUI workflow IDs.
+Frontend behavior consumes the domain defined in `PRODUCT_CAPABILITIES.md` rather than ComfyUI graph IDs.
 
 ```text
 Creative Operation
-      ↓ resolves against
-Workflow Capability Definition
-      ↓ defines
+      ↓
+Workflow Capability
+      ↓
 Input Slots + Parameter Definitions
-      ↓ produces
+      ↓
 Normalized Generation Request
-      ↓ creates
+      ↓
 Generation Job
-      ↓ persists
-Media Asset(s)
-      ↓ enables
+      ↓
+Persisted Media Asset
+      ↓
 Continuation Actions
 ```
 
-A generation input binds by **product identity**, not storage identity:
+Generation inputs bind by product identity:
 
 ```text
 GenerationInput
@@ -249,177 +215,174 @@ GenerationInput
   └── media-asset      { id }
 ```
 
-R2 keys are not generation-request identities exposed to feature code. Server services resolve opaque product IDs to provider/storage details.
+R2 keys, workers, providers and ComfyUI graph identifiers remain server-side implementation details.
 
-The UI is free to provide purpose-built experiences for important operations. Capability-driven architecture does not mean rendering generic forms from raw workflow metadata.
+### Advanced capability boundary
+Verified request-level Advanced parameters currently are:
+- negative prompt;
+- seed;
+- steps;
+- guidance;
+- frame rate for Video.
 
-## API and Backend Boundary
-RenderLab keeps browser code behind stable product-level APIs. The browser must not communicate directly with ComfyUI workers or provider infrastructure.
+`src/lib/capabilities/generation.ts` owns the current UI/API capability metadata and validation ranges used by Create and the typed generation request parser. New worker parameters do not automatically become UI controls.
 
-```text
-Browser UI
-  ↓ typed RenderLab API/client
-Next.js route handler / application service boundary
-  ↓
-Generation, media, upload, job and capability services
-  ↓
-Supabase / Cloudflare R2 / workflow orchestration
-  ↓
-Cloud-hosted ComfyUI worker ecosystem
-```
-
-Some backend services may later live outside the Next.js runtime if execution characteristics require it. The frontend contract must not depend on where orchestration is physically hosted.
-
-## Generation Flow
-Current product-level generation contract:
+## Native Generation Flow
+Current native RenderLab generation path:
 
 ```text
 Create workspace
   ↓
-Resolve creative operation + compatible workflow
-  ↓
-Validate/bind opaque input source IDs + parameters
-  ↓
 POST /api/generation/jobs
   ↓
-Server generation adapter
+validate normalized request + resolve creative operation
   ↓
-External orchestration endpoint configured by RENDERLAB_GENERATION_BACKEND_URL
+create generation_jobs row
   ↓
-Persistent asynchronous Generation Job
+resolve opaque temporary-source/media-asset inputs
   ↓
-Real job/runtime state
+submit to compatible primary/standby worker fleet
   ↓
-Persist output to R2 + product metadata to Supabase
+GET /api/generation/jobs/[jobId]
   ↓
-Durable Media Asset
+poll assigned worker + persist real runtime state
   ↓
-Create result / Library / Activity
+persisting
+  ↓
+write durable output to shared R2
+  ↓
+create media_assets row
+  ↓
+job succeeds with outputAssetIds
+  ↓
+Create loads /api/media/assets/[assetId]
+  ↓
+render result + capability-derived continuations
 ```
 
-The browser-to-RenderLab boundary is implemented and validated. The actual configured generation backend adapter endpoint and post-submit job synchronization remain open. A provider reporting completion is not product completion until the durable result has been persisted.
+A worker response is not product completion. `succeeded` occurs only after durable R2 and `media_assets` persistence.
+
+All four initial operations are live-verified. Durable `media-asset` continuation is also live-verified.
+
+## Polling and Worker Reliability
+Create client polling:
+- normal status polling follows real RenderLab job state;
+- transient 408/425/429/5xx/network interruptions retry with bounded exponential backoff;
+- repeated client connection failures pause tracking with truthful copy rather than falsely failing the job.
+
+Server worker behavior:
+- submission can try compatible primary/standby workers;
+- poll-time reassignment is intentionally conservative;
+- explicit credit exhaustion or explicit worker-unavailable evidence can be safe to reassign;
+- generic 429/5xx/network ambiguity never causes automatic resubmission because the assigned worker may already have accepted/executed the generation;
+- failover attempts are persisted in job metadata;
+- ambiguous standby submission is not automatically repeated.
+
+Post-merge live generation regression run `33027861292` succeeded after this hardening.
 
 ## Reference Asset Upload Flow
-The reference upload contract deliberately carries forward the proven Saga behavior—direct signed upload plus server verification—without copying Saga's storage-key-facing API.
-
 ```text
 User selects PNG/JPEG/WebP reference (≤25 MB)
   ↓
 POST /api/assets/reference/upload-tickets
   ↓
-Server creates pending generation_sources row + opaque sourceId
+pending generation_sources row + opaque sourceId
   ↓
-Server issues short-lived signed Cloudflare R2 PUT
+short-lived signed Cloudflare R2 PUT
   ↓
-Browser uploads bytes directly to R2
+browser uploads bytes directly to R2
   ↓
-POST /api/assets/reference/upload-completions { sourceId, dimensions? }
+POST /api/assets/reference/upload-completions
   ↓
-Server HEAD-verifies exact object size + MIME type
+server HEAD-verifies MIME + size
   ↓
-Server marks generation_sources row ready
+generation_sources becomes ready
   ↓
-Create binds source as { type: "temporary-source", id: sourceId }
-  ↓
-Image + source resolves Edit; Video + source resolves Animate
+Create binds { type: "temporary-source", id: sourceId }
 ```
 
-Rules:
-- accepted reference formats are currently PNG, JPEG and WebP;
-- maximum source size is currently 25 MB, matching the verified legacy production constraint;
-- upload URLs expire after five minutes;
-- source IDs are opaque UUIDs; browser feature code never uses an R2 key as product identity;
-- server-side completion is idempotent for an already-ready source;
-- server verification is authoritative even though the browser validates first for UX;
-- failed verification marks the source failed rather than silently accepting mismatched bytes;
-- current migration creates a temporary `generation_sources` table with RLS enabled and no browser policies; access is service-role/server-owned.
+This path is live-verified against the reused shared Supabase/R2 resources and its integration fixtures self-clean.
 
-The code path passes production build and unconfigured-environment API/UI tests. It is **not yet end-to-end production verified** because a dedicated RenderLab Supabase target/R2 configuration has not been established in this repo/session.
+## Media Delivery and Continuation
+Persisted product media is exposed through stable RenderLab APIs rather than raw R2 identity:
+- metadata: `/api/media/assets/[assetId]`;
+- content: `/api/media/assets/[assetId]/content`;
+- thumbnail: `/api/media/assets/[assetId]/thumbnail`.
+
+Create uses returned `contentUrl` for image/video presentation. Persisted image results currently expose capability-derived Edit and Animate actions. Continuation rebinds the durable asset as a `media-asset` input. Live run `33027460976` verified `Create Image → persisted media asset → Edit Image` and self-cleaned both output objects/records.
 
 ## Supabase Boundary
-- Supabase is the persistent application data store for jobs, media metadata, source records, organization state, settings/account data as introduced, and other structured product state.
-- Service-role/server credentials never enter Client Components or browser bundles.
-- `src/server/data/supabase-rest.ts` requires `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`; unlike Saga, there are no repository/default credential fallbacks.
-- Browser access, if later used directly for authenticated realtime/read scenarios, must be deliberate and constrained by RLS; it is not assumed by this architecture.
-- `supabase/migrations/0001_generation_sources.sql` is committed but has **not been applied to the currently connected legacy `AI Studio` project by assumption**. The only connected project inspected during this implementation contains the legacy `studio_*` tables. Establish the intended RenderLab database target explicitly before applying new RenderLab migrations.
+RenderLab deliberately reuses shared project `AI Studio` (`rashyleshocuvpgcooxy`) while keeping RenderLab tables separate from legacy `studio_*`.
+
+Applied RenderLab tables:
+- `generation_sources`;
+- `generation_jobs`;
+- `media_assets`.
+
+RLS remains enabled. Service-role credentials are server-only.
 
 ## Cloudflare R2 Boundary
-- R2 stores durable media/source objects.
-- Browser uploads use short-lived signed upload contracts rather than proxying large media bodies through the web application.
-- R2 credentials stay server-only and are required explicitly via `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME`.
-- Storage keys/provider details remain internal application data rather than primary user-facing concepts.
-- Media access/download URLs should be issued through stable product contracts.
-- The new reference path uses `sources/YYYY/MM/<uuid>.<ext>` internally; this format is implementation detail and must not become frontend identity.
+RenderLab reuses the shared R2 resource by explicit decision.
+- Browser uploads use short-lived signed PUT URLs.
+- Generated outputs use the `renderlab/` namespace.
+- R2 credentials stay server-only.
+- R2 storage keys are internal metadata, never frontend generation identity.
 
 ## ComfyUI Boundary
-- ComfyUI is never called directly by ordinary frontend components.
-- Workflow graph/node details remain behind workflow capability/orchestration services.
-- The frontend consumes user-facing operation/capability definitions, validated constraints, job state, and outputs.
-- Saga's Modal worker fleet remains behavioral/runtime reference for real states, standby routing and safe failover; RenderLab does not expose worker/account infrastructure as ordinary Create controls.
+- Browser components never call workers directly.
+- User-facing operations are distinct from worker/workflow IDs.
+- Worker routing/failover remains server-owned.
+- Advanced UI remains curated rather than mirroring ComfyUI nodes.
 
 ## Styling Architecture
-- Tailwind CSS is the primary composition/styling mechanism.
-- Initial semantic tokens are implemented in `src/app/globals.css` using Tailwind v4 `@theme` values derived from `docs/ui/UI_SYSTEM.md`.
-- RenderLab design tokens define semantic colors, surfaces, spacing, typography, radii, motion, layout and control metrics.
-- shadcn/Radix and the approved component ecosystems are implementation starting points, not automatic visual authority.
-- App-specific reusable components are promoted into `COMPONENT_CATALOG.md` only after implementation and review.
-- Avoid Saga's pattern of large feature-specific global CSS files and repeated inline visual values.
+- Tailwind CSS is the primary styling mechanism.
+- semantic tokens live in `src/app/globals.css` using Tailwind v4 `@theme` values;
+- reusable external primitives are normalized into RenderLab-owned component files;
+- feature composition uses semantic tokens rather than external demo styling;
+- avoid Saga-style large feature-specific global CSS files.
 
 ## Remote Validation Architecture
-UI development does not depend on Vercel preview deployments for every iteration.
+UI iteration does not require Vercel preview deployments.
 
-Current GitHub validation:
-- `.github/workflows/ui-shell.yml`
-- production `next build`
-- Playwright Chromium against `next start`
-- desktop viewport `1440×1024`
-- mobile viewport `390×844`
-- generation contract availability/validation checks
-- reference-upload contract availability/validation checks
-- uploaded screenshot artifact for visual inspection
-- path filtering so documentation-only changes do not consume UI CI runs
+`.github/workflows/ui-shell.yml` currently performs:
+- production `next build`;
+- Playwright Chromium against `next start`;
+- desktop `1440×1024` checks;
+- mobile `390×844` checks;
+- generation/reference API validation;
+- screenshot artifacts for visual review.
 
-The reference contract implementation passes CI run `33018346650` at commit `8332597f65aa85725f7395e10407dce4682ac025`; latest desktop/mobile Create screenshots were visually inspected after the change. CI intentionally runs without production Supabase/R2/generation credentials, so availability is expected to be false there.
+Create Advanced PR #6 was verified in final PR run `33030364272`, including progressive-disclosure interaction, per-output Advanced drafts, invalid Advanced API validation, and reviewed desktop/mobile screenshot artifacts.
+
+Configured real-infrastructure workflows separately verify reference uploads and generation without placing production secrets into ordinary UI CI.
 
 ## Error and Loading Architecture
 The product distinguishes:
-- initial/loading data state;
-- empty state;
-- upload-in-progress state;
-- recoverable upload/submission error;
-- generation/job failure;
-- cancelled state;
-- worker/runtime transitions that do not require user action.
+- unavailable environment state;
+- upload in progress;
+- submission error;
+- running/persisting generation;
+- transient polling interruption/recovery;
+- worker/job failure;
+- durable result loading;
+- succeeded persisted result.
 
-Do not collapse infrastructure events such as failover into alarming user-facing errors if the system is recovering automatically. Recoverable Create errors preserve prompt, reference and settings.
+No synthetic percentage progress is permitted. Recoverable errors preserve prompt/reference/settings/Advanced drafts.
 
-## Validation and Type Safety
-- Product API request/response contracts are typed.
-- Current generation and reference-upload boundaries also perform explicit runtime validation at server entry points.
-- Backend remains authoritative for limits/defaults/compatibility.
-- Frontend validation exists for fast UX, not as the security/integrity boundary.
+## Current Frontend Status
+- AppShell: `APPROVED`.
+- Create: screen status `MIGRATING`; core implementation is feature-owned/experimental.
+- Create core native functionality, persistence, continuations, polling recovery, worker hardening and Advanced disclosure are implemented and verified.
+- Remaining Create approval gate: render and review the complete **configured real generation → persisted result → continuation** lifecycle responsively.
+- Library, Media Viewer, Activity and Settings remain planned/placeholder surfaces.
 
-No runtime schema library has been added yet; the current small contracts use explicit validators. Introduce a schema library only when the number/complexity of contracts justifies it and record the decision.
-
-## Architecture Constraints
-1. Do not copy Saga's hash routing or central mega-`App` state container.
-2. Do not build a global state store before a verified cross-feature requirement exists.
-3. Do not expose service-role credentials or direct worker endpoints to the browser.
-4. Do not expose R2 storage keys as generation-input identity.
-5. Do not tie product routes to workflow IDs.
-6. Do not model generation as a synchronous request.
-7. Do not make a generic workflow-form renderer the default Create experience.
-8. Do not move all components client-side merely because the application is highly interactive.
-9. Keep infrastructure replaceable behind stable product/domain contracts.
-10. Do not scatter raw third-party registry imports through feature code; normalize adopted components into RenderLab ownership first.
-11. Do not apply RenderLab migrations to a legacy/shared Supabase project merely because it is the only connected project visible to a session.
-
-## Decisions Still Open
-These are intentionally deferred until implementation evidence exists:
-- dedicated RenderLab Supabase project vs explicitly approved reuse/migration of the existing AI Studio project;
-- RenderLab R2 bucket/credential target;
-- server-state synchronization library, if any;
-- runtime schema/validation library, if any;
-- authentication implementation;
-- realtime transport vs polling strategy for jobs;
-- exact external generation adapter deployment/URL and whether orchestration lives inside or outside Vercel runtime limits.
+## Architecture Rules
+- Do not rebuild Saga's frontend architecture.
+- Do not expose ComfyUI graph/node complexity in ordinary UI.
+- Do not call workers or R2 credentialed APIs from browser components.
+- Do not create a route per workflow/model.
+- Do not add global state before there is a real cross-feature ownership need.
+- Do not make every component a Client Component.
+- Do not reinvent generic UI mechanics before checking approved maintained sources.
+- Do not promote every worker parameter to default/Advanced UI automatically.
+- Do not mark a generation complete before durable persistence.
