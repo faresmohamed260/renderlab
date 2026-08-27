@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - "scripts/ensure-r2-browser-cors.mjs"
-      - "scripts/serve-test-origin.mjs"
       - "scripts/verify-library-lifecycle.mjs"
       - ".github/workflows/library-lifecycle-visual.yml"
       - "supabase/migrations/0003_persistent_media_uploads.sql"
@@ -37,13 +36,8 @@ jobs:
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN || secrets.CLOUDFLARE_R2_ADMIN_TOKEN }}
-      RENDERLAB_BROWSER_UPLOAD_ORIGINS: https://studio.faresuniform.uk
-      RENDERLAB_BROWSER_UPLOAD_PROBE_ORIGINS: http://127.0.0.1:3000,http://localhost:3000,https://renderlab-lake.vercel.app,https://renderlab-faresmohamed260-6733s-projects.vercel.app
-      RENDERLAB_TEST_BASE_URL: https://studio.faresuniform.uk
-      RENDERLAB_TEST_IGNORE_HTTPS_ERRORS: "1"
-      RENDERLAB_TEST_TLS_CERT: /tmp/renderlab-test-origin.crt
-      RENDERLAB_TEST_TLS_KEY: /tmp/renderlab-test-origin.key
-      RENDERLAB_TEST_PROXY_TARGET_PORT: "3000"
+      RENDERLAB_BROWSER_UPLOAD_ORIGINS: http://127.0.0.1:3000,http://localhost:3000,https://renderlab-faresmohamed260-6733s-projects.vercel.app,https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
 
     steps:
       - name: Checkout
@@ -74,42 +68,24 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify R2 browser upload CORS
+      - name: Reconcile and verify R2 browser upload CORS
         run: node scripts/ensure-r2-browser-cors.mjs
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Start configured application at trusted test origin
+      - name: Start configured application
         shell: bash
         run: |
           npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
           echo $! > /tmp/renderlab-next.pid
           for i in {1..60}; do
             if curl --fail --silent http://127.0.0.1:3000/library > /dev/null; then
-              break
-            fi
-            sleep 1
-          done
-          curl --fail --silent http://127.0.0.1:3000/library > /dev/null || { cat /tmp/renderlab-next.log; exit 1; }
-
-          openssl req -x509 -newkey rsa:2048 -nodes \
-            -keyout "$RENDERLAB_TEST_TLS_KEY" \
-            -out "$RENDERLAB_TEST_TLS_CERT" \
-            -days 1 \
-            -subj "/CN=studio.faresuniform.uk" \
-            -addext "subjectAltName=DNS:studio.faresuniform.uk" \
-            > /tmp/renderlab-openssl.log 2>&1
-          echo "127.0.0.1 studio.faresuniform.uk" | sudo tee -a /etc/hosts > /dev/null
-          sudo -E "$(command -v node)" scripts/serve-test-origin.mjs > /tmp/renderlab-test-origin.log 2>&1 &
-          echo $! > /tmp/renderlab-test-origin.pid
-          for i in {1..30}; do
-            if curl --fail --silent --insecure https://studio.faresuniform.uk/library > /dev/null; then
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/renderlab-test-origin.log || true
+          cat /tmp/renderlab-next.log || true
           exit 1
 
       - name: Render configured persistent upload Library lifecycle
@@ -119,11 +95,9 @@ jobs:
         if: always()
         run: node scripts/verify-library-lifecycle.mjs --cleanup-only
 
-      - name: Print server logs on failure
+      - name: Print server log on failure
         if: failure()
-        run: |
-          cat /tmp/renderlab-next.log || true
-          cat /tmp/renderlab-test-origin.log || true
+        run: cat /tmp/renderlab-next.log || true
 
       - name: Upload Library lifecycle screenshots
         if: always()
