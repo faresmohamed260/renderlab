@@ -5,6 +5,7 @@ This directory contains open, versioned visual artifacts that can be imported in
 ## Current files
 - `create-v0.2-desktop.svg` — reviewed Create v0.2 desktop states: Create Image, Edit Image, Create Video.
 - `create-v0.2-mobile.svg` — revised Create v0.2 narrow/mobile candidate using a two-row composer.
+- `create-v0.3-advanced.svg` — reviewed desktop/mobile Advanced-disclosure candidate. The panel stays inside the composer, is collapsed by default, and exposes only currently verified advanced generation parameters.
 
 ## Authority
 These SVGs are design handoff artifacts, not the project source of truth.
@@ -16,7 +17,7 @@ Authority order remains:
 4. historical Figma material;
 5. chat/session context.
 
-The durable product rules represented here are documented in `docs/ui/UI_DECISIONS.md` (especially UI-015 through UI-017) and `docs/ui/UI_MIGRATION.md`.
+The durable product rules represented here are documented in `docs/ui/UI_DECISIONS.md` (especially UI-015 through UI-019) and `docs/ui/UI_MIGRATION.md`.
 
 ## Penpot workflow
 1. Create/open the RenderLab Penpot project.
