@@ -12,6 +12,19 @@ import type {
 } from "@/lib/api/reference-upload-contract";
 import { maxReferenceUploadBytes, supportedReferenceMimeTypes } from "@/lib/api/reference-upload-contract";
 
+type PublicMediaAsset = {
+  id: string;
+  generationJobId: string | null;
+  kind: "image" | "video";
+  mimeType: string;
+  width: number | null;
+  height: number | null;
+  durationMs: number | null;
+  createdAt: string;
+  contentUrl: string;
+  thumbnailUrl: string | null;
+};
+
 function nextValue<T>(values: readonly T[], current: T) {
   const currentIndex = values.indexOf(current);
   return values[(currentIndex + 1) % values.length];
@@ -51,6 +64,8 @@ export function CreateWorkspace({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<GenerationJob | null>(null);
+  const [resultAsset, setResultAsset] = useState<PublicMediaAsset | null>(null);
+  const [resultLoading, setResultLoading] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -103,6 +118,52 @@ export function CreateWorkspace({
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
     };
   }, [job?.id, job?.status]);
+
+  const firstOutputAssetId = job?.status === "succeeded" ? job.outputAssetIds[0] : undefined;
+
+  useEffect(() => {
+    if (!firstOutputAssetId) return;
+
+    let cancelled = false;
+
+    async function loadResult() {
+      setResultLoading(true);
+      try {
+        const response = await fetch(`/api/media/assets/${encodeURIComponent(firstOutputAssetId!)}`, {
+          method: "GET",
+          headers: { accept: "application/json" },
+          cache: "no-store",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | { ok: true; asset: PublicMediaAsset }
+          | { ok: false; error?: { message?: string } }
+          | null;
+
+        if (cancelled) return;
+        if (!response.ok || !payload?.ok) {
+          setError(
+            payload && !payload.ok && payload.error?.message
+              ? payload.error.message
+              : "The saved result could not be loaded.",
+          );
+          return;
+        }
+
+        setResultAsset(payload.asset);
+      } catch {
+        if (!cancelled) {
+          setError("The result was saved, but its preview could not be loaded.");
+        }
+      } finally {
+        if (!cancelled) setResultLoading(false);
+      }
+    }
+
+    void loadResult();
+    return () => {
+      cancelled = true;
+    };
+  }, [firstOutputAssetId]);
 
   const aspectRatio = outputKind === "image" ? imageAspect : videoAspect;
   const hasReference = Boolean(reference);
@@ -219,6 +280,8 @@ export function CreateWorkspace({
     setSubmitting(true);
     setError(null);
     setJob(null);
+    setResultAsset(null);
+    setResultLoading(false);
 
     try {
       const response = await fetch("/api/generation/jobs", {
@@ -270,7 +333,13 @@ export function CreateWorkspace({
             id="create-prompt"
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
-            placeholder={hasReference ? "Describe the change or result you want…" : outputKind === "image" ? "Describe what you want to create…" : "Describe the video you want to create…"}
+            placeholder={
+              hasReference
+                ? "Describe the change or result you want…"
+                : outputKind === "image"
+                  ? "Describe what you want to create…"
+                  : "Describe the video you want to create…"
+            }
             className="min-h-32 w-full resize-none bg-transparent px-1 py-1 text-[16px] leading-6 text-text outline-none placeholder:text-text-muted sm:min-h-28"
           />
 
@@ -283,9 +352,7 @@ export function CreateWorkspace({
                 <p className="truncate text-sm font-semibold text-text">
                   {referenceUploading ? "Uploading reference…" : outputKind === "image" ? "Editing this image" : "Animating this image"}
                 </p>
-                <p className="truncate text-xs text-text-muted">
-                  {reference?.filename ?? "Reference image"}
-                </p>
+                <p className="truncate text-xs text-text-muted">{reference?.filename ?? "Reference image"}</p>
               </div>
               <button
                 type="button"
@@ -317,10 +384,20 @@ export function CreateWorkspace({
                 disabled={!referenceUploadAvailable || referenceUploading}
                 onClick={() => fileInputRef.current?.click()}
                 aria-label={hasReference ? "Replace reference" : "Add reference"}
-                title={referenceUploadAvailable ? "Add a reference image" : "Reference upload storage is not configured in this environment."}
+                title={
+                  referenceUploadAvailable
+                    ? "Add a reference image"
+                    : "Reference upload storage is not configured in this environment."
+                }
                 className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-muted transition-colors hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {referenceUploading ? <LoaderCircle aria-hidden="true" className="animate-spin" size={17} /> : hasReference ? <ImageIcon aria-hidden="true" size={18} /> : <Plus aria-hidden="true" size={18} strokeWidth={1.8} />}
+                {referenceUploading ? (
+                  <LoaderCircle aria-hidden="true" className="animate-spin" size={17} />
+                ) : hasReference ? (
+                  <ImageIcon aria-hidden="true" size={18} />
+                ) : (
+                  <Plus aria-hidden="true" size={18} strokeWidth={1.8} />
+                )}
               </button>
 
               <div className="flex shrink-0 rounded-lg bg-surface-2 p-1" aria-label="Output type">
@@ -405,6 +482,35 @@ export function CreateWorkspace({
           <div className="mt-4 rounded-lg border border-border bg-surface-1 px-4 py-3 text-sm text-text" role="status">
             {statusText}
           </div>
+        ) : null}
+
+        {resultLoading ? (
+          <div className="mt-8 flex min-h-64 items-center justify-center rounded-xl border border-border bg-surface-1 text-sm text-text-muted" role="status">
+            <LoaderCircle aria-hidden="true" className="mr-2 animate-spin" size={20} />
+            Loading saved result…
+          </div>
+        ) : null}
+
+        {resultAsset ? (
+          <article className="mt-8 overflow-hidden rounded-xl border border-border bg-surface-1" aria-label="Generated result">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-semibold text-text">Generated result</p>
+              <p className="text-xs text-text-muted">Saved to your RenderLab media library.</p>
+            </div>
+            <div className="bg-surface-2">
+              {resultAsset.kind === "image" ? (
+                <img src={resultAsset.contentUrl} alt="Generated result" className="max-h-[70vh] w-full object-contain" />
+              ) : (
+                <video
+                  src={resultAsset.contentUrl}
+                  controls
+                  playsInline
+                  className="max-h-[70vh] w-full"
+                  aria-label="Generated video"
+                />
+              )}
+            </div>
+          </article>
         ) : null}
       </div>
     </section>
