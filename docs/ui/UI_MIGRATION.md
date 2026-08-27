@@ -206,7 +206,7 @@ UI-028: drag/drop is an optional interaction path into the existing persistent u
 
 **Library drag-and-drop upload v0.1 status: `APPROVED` and merged.**
 
-### Account identity foundation v0.1 — PR #16 / UI-029
+### Account identity foundation v0.1 — merged PR #16 / UI-029
 UI-029 establishes a real RenderLab account principal without pretending media ownership is already enforced.
 
 - [x] Use Supabase Auth `auth.users.id` as the canonical future account identity.
@@ -214,12 +214,13 @@ UI-029 establishes a real RenderLab account principal without pretending media o
 - [x] Use `@supabase/ssr` cookie sessions with root `proxy.ts` refresh and verified server claims; expose only the public project URL/publishable key to browser code.
 - [x] Keep existing Create and Library routes available and visually unchanged in this slice; identity does not become a global login wall.
 - [x] Add configured `Account Identity Visual` with an exact run-owned confirmed Supabase test user, real Settings sign-in, cookie persistence across reload, responsive signed-in/signed-out screenshots and exact user cleanup.
-- [x] Code head `e87e1c89e339c5ca1a4c29dc414500072a71a3c5` passed Account Identity `33111299356`, UI Shell `33111299265`, Create Lifecycle `33111299305`, Library Search `33111299144`, Library History `33111299040`, Library Lifecycle `33111299250`, Library Drag Drop `33111299309`, Media Download `33111299155`, and Media Rename `33111299172`.
+- [x] Final exact PR head `55a5df4351b5f9f23bde7dc9b2e73213481dd9e2` passed Account Identity `33112405837`, UI Shell `33112405863`, Create Lifecycle `33112405840`, Library Search `33112405831`, Library History `33112405838`, Library Lifecycle `33112405858`, Library Drag Drop `33112405827`, Media Download `33112405889`, and Media Rename `33112405850`.
 - [x] Visually inspect desktop signed-in and mobile signed-in/signed-out Settings screenshots; the existing shell hierarchy and bottom navigation remain intact and long account email text wraps safely.
-- [x] Direct Supabase cleanup verified `0` `renderlab-account-%@example.com` CI users after the configured run.
-- [ ] Finalize PR #16 source-of-truth documentation and merge only after scope/review checks.
+- [x] Direct final shared-resource verification found `0` account CI users, `0` drag/drop upload sessions/assets and `0` legacy Library lifecycle sessions/assets.
+- [x] Merge PR #16 as `bcb20365db102252db51263968de96fc795be518` using the expected exact-head SHA guard.
+- [x] Verify merged `main`: UI Shell `33113289145` and Reference Upload Integration `33113289156` passed on merge commit `bcb20365db102252db51263968de96fc795be518`.
 
-**Account identity foundation v0.1 status: `APPROVED` implementation, pending documentation-finalized merge.**
+**Account identity foundation v0.1 status: `APPROVED` and merged.**
 
 ### R2 browser-origin boundary
 Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement. Drag/drop reuses the persistent direct-browser upload path and adds no new R2/CORS contract.
@@ -253,10 +254,10 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** Account Identity Foundation v0.1 / UI-029 on PR #16 is implementation-approved after configured account lifecycle, responsive visual review and clean auth-fixture verification; documentation-finalized merge remains.  
+**Current product slice:** none selected; Account Identity Foundation v0.1 / UI-029 is complete, approved and merged through PR #16 as `bcb20365db102252db51263968de96fc795be518`.  
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14 and Drag/drop Upload PR #15 are merged and approved.  
-**Completed foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`.  
-**Next product slice after UI-029:** owner-scoped core data enforcement across generation/reference/upload/media boundaries. Do not implement Favorites/Collections until that cross-account isolation contract is verified; do not implement Delete until durable storage/reference/recovery semantics are explicit.
+**Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
+**Next product slice:** owner-scoped core data enforcement across generation/reference/upload/media boundaries. Do not implement Favorites/Collections until that cross-account isolation contract is verified; do not implement Delete until durable storage/reference/recovery semantics are explicit.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
