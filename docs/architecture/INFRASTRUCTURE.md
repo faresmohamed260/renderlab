@@ -76,7 +76,9 @@ Worker completion is not product completion. `succeeded` occurs only after durab
 - Create Image → **verified end-to-end**, including real worker execution, persistence, asset verification, and cleanup.
 - Edit Image with reference → **verified end-to-end** in GitHub Actions run `33021843503`, commit `f374d711f99b2a68c0e7ea43cbce42052380b0cb`.
 - Create Video → **verified end-to-end** in GitHub Actions run `33021977765`, commit `638e312fdbbf5aa126faa9d2a91dbca68b026d48`.
-- Animate Image with reference → **not yet verified**.
+- Animate Image with reference → **verified end-to-end in the same run `33021977765`**. The workflow's `Verify Create Video and Animate Image` step completed successfully, validated the persisted video asset through RenderLab product APIs, and self-cleaned the job/media/reference fixtures.
+
+All four initial Create operations now have native live-infrastructure integration coverage.
 
 ## Studio Compatibility Boundary
 A temporary isolated compatibility adapter exists at `src/server/generation/studio-compat.ts` for migration/debugging only. It is not the preferred production path.
@@ -88,7 +90,7 @@ The product API prioritizes:
 
 The deployed Studio runtime at `studio.faresuniform.uk` was found during integration work to have stale/incorrect R2 credentials (`SignatureDoesNotMatch`). RenderLab's own shared R2 credentials were independently verified. This reinforces that deployed Studio must not become a production dependency.
 
-Remove the compatibility path once required native operation coverage is sufficient.
+Remove the compatibility path once native operational hardening is sufficient and no remaining migration/debugging need depends on it.
 
 ## Reference Upload Flow
 ```text
@@ -140,7 +142,7 @@ Content/thumbnail endpoints issue short-lived signed R2 redirects server-side.
 ## CI / Integration Validation
 Default GitHub UI CI intentionally runs without production infrastructure secrets and validates truthful unavailable states.
 
-Configured integration workflows run automatically on relevant `main` pushes and may also support manual dispatch. Current integration coverage includes reference upload, image/edit generation, and video generation. Integration fixtures are expected to self-clean rather than pollute shared production resources.
+Configured integration workflows run automatically on relevant `main` pushes and may also support manual dispatch. Current integration coverage includes reference upload plus all four initial native Create operations: Create Image, Edit Image, Create Video and Animate Image. Integration fixtures self-clean rather than pollute shared production resources.
 
 Required GitHub secrets:
 - `SUPABASE_SERVICE_ROLE_KEY`
@@ -150,8 +152,7 @@ Required GitHub secrets:
 - `R2_BUCKET_NAME`
 
 ## Next Infrastructure Work
-1. Verify native Animate Image with a real reference.
-2. Add bounded client polling recovery for transient network failures.
-3. Reintroduce safe poll-time worker reassignment only with strong evidence that no worker accepted/executed the job; avoid duplicate generations.
-4. Remove the Studio compatibility adapter after native coverage is sufficient.
-5. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
+1. Finish bounded client polling recovery for transient status/network failures.
+2. Reintroduce safe poll-time worker reassignment only with strong evidence that no worker accepted/executed the job; avoid duplicate generations.
+3. Remove the Studio compatibility adapter after operational hardening and migration/debugging dependence are sufficiently reduced.
+4. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
