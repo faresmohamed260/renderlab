@@ -126,14 +126,14 @@ Before copying/installing an external component:
 ### LibraryView
 **Status:** APPROVED  
 **Source:** `src/features/library/library-view.tsx`  
-**Origin:** RenderLab product composition based on `design/penpot/library-v0.1.svg`  
-**Purpose:** Present the durable-media Library surface with compact kind filtering, responsive browsing, product metadata, pagination and deep links into Media Viewer.  
-**Variants:** `All`, `Images`, `Videos`; configured, unavailable, empty and paginated states; responsive desktop/mobile layout.  
+**Origin:** RenderLab product composition based on `design/penpot/library-v0.1.svg`, extended in place by the approved persistent-upload and search slices  
+**Purpose:** Present the durable-media Library surface with URL-owned literal search, compact kind filtering, responsive browsing, product metadata, pagination, upload entry, and deep links into Media Viewer.  
+**Variants:** `All`, `Images`, `Videos`; active/clear search; configured, unavailable, empty, no-match and paginated states; responsive desktop/mobile layout.  
 **Used by:** `/library`  
-**Dependencies:** Next.js `Link`, Lucide React, `PublicMediaAsset`/media-list product contracts  
-**Reuse rules:** This is the authoritative Library v0.1 composition. Extend it as real Library requirements/data contracts are approved rather than creating a competing gallery. Extract reusable media-card mechanics only after another surface has a genuine shared need.  
-**Do not:** Couple cards/filters to legacy `studio_*` records, expose R2 storage identity, or add fake organization controls without persistent RenderLab data.  
-**Notes:** Credential-free desktop/mobile rendering passed run `33034606323`. Configured run `33034606396` verified a real R2-backed 400×300 `media_assets` fixture, correct card geometry, Viewer navigation and cleanup. Approved, not locked.
+**Dependencies:** Next.js `Link`, native GET form/input semantics, Lucide React, `PublicMediaAsset`/media-list search contracts, feature-owned `LibraryUploadButton`  
+**Reuse rules:** This is the authoritative Library composition. Extend it as real Library requirements/data contracts are approved rather than creating a competing gallery or parallel search surface. Keep search URL/server-owned; extract reusable media-card/search mechanics only after another surface has a genuine shared need.  
+**Do not:** Couple cards/search/filters to legacy `studio_*` records, expose R2 storage identity, turn search into client-only current-page filtering, or add fake organization controls without persistent RenderLab data.  
+**Notes:** Base Library verification passed `33034606323` / `33034606396`. Persistent uploaded-media behavior is approved through PR #9. Library search v0.1 is approved for merge through UI Shell `33069004219`, configured search lifecycle `33069004204`, existing upload backend regression `33069004207`, and real Upload → Library → Viewer → Create regression `33069004227`. Four search result/no-match desktop/mobile screenshots from `33069004204` were visually inspected; the verifier self-cleaned and direct Supabase verification found no remaining search/upload fixtures. No separate reusable Search component was introduced because the current search form is feature-owned native composition.
 
 ### MediaViewer
 **Status:** APPROVED  

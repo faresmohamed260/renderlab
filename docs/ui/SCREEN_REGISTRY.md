@@ -58,7 +58,7 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED — Library v0.1 + persistent Upload extension  
+**Status:** APPROVED — Library v0.1 + persistent Upload + search v0.1  
 **Implementation:** `src/features/library/library-view.tsx`  
 **Persistent upload client:** `src/features/library/library-upload-button.tsx`  
 **Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `GET /api/media/assets`, `POST /api/media/uploads/upload-tickets`, `POST /api/media/uploads/upload-completions`  
@@ -78,29 +78,43 @@ Approved behavior:
 - configured shared-R2/Supabase lifecycle approval run `33034606396`.
 
 #### Persistent upload extension — approved
-Approved direction:
 - one compact `Upload` action in the existing Library header;
 - native file picker; no separate Uploads tab or generic modal framework;
 - PNG/JPEG/WebP up to 25 MB;
 - ticket → short-lived signed R2 PUT → completion → server HEAD verification;
-- asset appears through the normal Library media list only after verified `media_assets` promotion;
+- asset appears through the normal Library list only after verified `media_assets` promotion;
 - uploaded cards prefer durable display names;
-- Unicode/non-ASCII human filenames remain readable;
-- concise inline uploading/error/success feedback;
+- Unicode/non-ASCII filenames remain readable;
 - existing approved Library grid remains the durable media surface.
 
-**Approval evidence:**
-- current-state backend integration `33066999365` passed direct upload, promotion, concurrent-completion recovery, sequential idempotency, public media/list/content behavior and cleanup;
-- current-state credential-free production/UI run `33066999317` passed;
-- current-state configured browser run `33066999350` reconciled the shared R2 CORS rule through the S3 API, used the actual Upload control/native file chooser from `http://127.0.0.1:3000`, completed the real signed R2 PUT, promoted the upload to a normal `media_assets` row, rendered it in Library at desktop/mobile widths, and continued through Viewer → Create Edit;
-- uploaded image decode/geometry was verified as 400×300 and six screenshots were visually inspected;
-- the browser workflow self-cleaned its fixture; prior direct Supabase verification also confirmed no persistent-upload integration fixture remained.
+Final pre-merge upload evidence: UI Shell `33067469516`, backend integration `33067469518`, Library lifecycle `33067469527`, inspected responsive screenshots and cleanup. PR #9 merged as `d306f2abd1831538c51692545d72db1e5e9e0814`; post-merge `main` checks passed.
 
-The managed R2 CORS rule now includes both localhost CI origins plus the two current stable RenderLab Vercel domains. The temporary Studio-origin TLS/hosts alias used during diagnosis has been removed; the browser lifecycle no longer depends on the Studio origin string or deployed Studio runtime. See `docs/architecture/INFRASTRUCTURE.md`.
+#### Search v0.1 — approved for merge
+- one native `GET` search form integrated below the existing kind filter;
+- shareable URL parameter `q` owns search state;
+- server-side search spans durable media rather than filtering only the rendered page;
+- case-insensitive literal substring matching over display name, original filename and generated prompt;
+- whitespace-normalized, max 120 characters;
+- user punctuation is literal text, not query syntax;
+- combines with `All / Images / Videos` and newest-first pagination;
+- kind/pagination links preserve active search; changing kind/search resets offset;
+- concise `Clear` action while searching;
+- truthful `No media matches …` state with clear-search recovery;
+- no relevance ranking, model/date filters, command palette, collection model or generic search framework.
 
-**Still intentionally open:** search, favorites/collections, richer history controls, rename/delete/download/batch management and drag/drop mechanics unless separately justified.
+**Search approval evidence:**
+- UI Shell `33069004219` passed production build and credential-free Playwright/API coverage;
+- existing backend upload regression `33069004207` passed;
+- existing real upload → Library → Viewer → Create regression `33069004227` passed;
+- configured search run `33069004204` passed prompt, Unicode filename, literal punctuation and kind+search semantics with self-cleaning real R2-backed fixtures;
+- four desktop/mobile result/empty screenshots from `33069004204` were visually inspected;
+- direct Supabase verification left `0` search fixtures, `0` upload sessions and `0` uploaded test assets.
 
-**Do not change:** Do not couple Library to legacy `studio_generations`/`studio_uploads`, do not expose temporary `generation_sources` as durable media and do not add Creatives/Uploads tabs.
+The managed R2 CORS rule includes both localhost CI origins plus the current stable RenderLab Vercel domains. See `docs/architecture/INFRASTRUCTURE.md`.
+
+**Still intentionally open:** broader history controls, favorites/collections, rename/delete/download/batch management and drag/drop mechanics unless separately justified.
+
+**Do not change:** Do not couple Library to legacy `studio_generations`/`studio_uploads`, do not expose temporary `generation_sources` as durable media, do not add Creatives/Uploads tabs, and do not turn search into a legacy-style filter console without an explicit product contract.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
@@ -118,7 +132,7 @@ The managed R2 CORS rule now includes both localhost CI origins plus the two cur
 - Viewer links carry only opaque `media-asset` identity plus action intent;
 - Create reloads durable media and validates action compatibility server-side;
 - configured generated-media Library → Viewer → Create Edit approval run `33034606396`;
-- uploaded assets use their display name and truthful `Uploaded image`/Upload metadata rather than generated-media fallback copy;
+- uploaded assets use truthful uploaded metadata and display name;
 - original filename/size/source metadata appears when available;
 - uploaded images derive Edit/Animate from the same capability model and ordinary `media-asset` identity;
 - uploaded-media Viewer → Create Edit lifecycle is visually approved in run `33066999350` at desktop/mobile widths.
@@ -141,7 +155,7 @@ The managed R2 CORS rule now includes both localhost CI origins plus the two cur
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current durable interaction/product decisions are documented in `docs/ui/UI_DECISIONS.md`, including UI-022 for persistent uploaded-media identity.
+Current durable interaction/product decisions are documented in `docs/ui/UI_DECISIONS.md`, including UI-022 for persistent uploaded-media identity and UI-023 for Library search.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.

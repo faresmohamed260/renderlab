@@ -55,75 +55,97 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Application shell: `APPROVED`.
 - Create: `APPROVED`; configured complete browser lifecycle approval run `33031817744`.
 - Library v0.1: `APPROVED`; credential-free run `33034606323`, configured R2/Supabase lifecycle run `33034606396`.
-- Media Viewer v0.1: `APPROVED`; the same configured run `33034606396` verified Library → Viewer → Create Edit continuation.
-- Persistent Library upload extension: `APPROVED`; final current-state verification run `33066999350` passed real browser upload after R2 CORS reconciliation, alongside UI Shell `33066999317` and backend upload integration `33066999365`.
+- Media Viewer v0.1: `APPROVED`; run `33034606396` verified Library → Viewer → Create Edit continuation.
+- Persistent Library upload extension: `APPROVED` and merged through PR #9 as main commit `d306f2abd1831538c51692545d72db1e5e9e0814`; post-merge main checks passed.
+- Library search v0.1: implementation and responsive visual states are `APPROVED FOR MERGE` in PR #10, pending only final documentation-head verification.
 - Create supports the four initial native operations: Create Image, Edit Image, Create Video and Animate Image.
 - Durable generated and uploaded media use RenderLab `media_assets`, product media APIs and opaque `media-asset` continuation identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity and action compatibility before initializing Create.
 
 Do not redesign these approved surfaces merely because new media capabilities are added.
 
-## Phase 4 Persistent Media Upload Contract
+## Persistent Media Upload Contract
 UI-022 defines the approved durable upload model.
 
-### Durable identity decision
 - Durable user uploads are ordinary `media_assets` with `origin = uploaded`.
 - Pending direct-to-R2 transfer state is owned by server-side `media_upload_sessions`.
-- After verification, the upload is promoted into normal `media_assets` and immediately participates in Library, Media Viewer and Create continuation through the existing opaque `media-asset` identity.
-- `generation_sources` remains temporary generation/reference input state and is not the durable Library upload model.
-- Legacy Saga `studio_uploads` is not reused or repurposed.
+- After verification, uploads participate in Library, Media Viewer and Create through ordinary opaque `media-asset` identity.
+- `generation_sources` remains temporary generation/reference input state.
+- Legacy Saga `studio_uploads` is not reused.
 - There is no parallel public Uploads identity or Uploads tab.
+- Migration `supabase/migrations/0003_persistent_media_uploads.sql` is applied to shared Supabase as `20260827031630 renderlab_persistent_media_uploads`.
+- Browser upload is ticket → signed R2 PUT → completion → server HEAD verification → durable asset promotion.
+- PNG/JPEG/WebP up to 25 MB are supported.
+- Unicode/non-ASCII filenames are preserved after control/path cleanup and length bounding.
+- Concurrent completion races recover to the unique `media_assets.storage_key` winner.
 
-### Implemented contract
-- Migration: `supabase/migrations/0003_persistent_media_uploads.sql`.
-- Applied shared-Supabase migration: `20260827031630 renderlab_persistent_media_uploads`.
-- `media_assets` owns explicit origin, original filename, display name and byte-size metadata while generated rows remain backward compatible.
-- `media_upload_sessions` owns pending/completed/failed transfer state and links completed transfers to the durable media asset.
-- Browser upload flow: ticket → short-lived signed R2 PUT → completion → server HEAD verification of exact MIME/size → durable `media_assets` promotion.
-- Initial persistent upload types: PNG, JPEG, WebP; max 25 MB.
-- Human-facing original filenames preserve Unicode/non-ASCII characters while removing controls/path semantics and enforcing a bounded length.
-- Concurrent completion races recover to the unique durable `media_assets.storage_key` winner instead of surfacing a duplicate insert failure.
-- Public generated/uploaded media use one `PublicMediaAsset` shape.
-- Library has one compact Upload action using the native file picker and existing v0.1 visual language; uploaded cards prefer their display name.
-- Media Viewer truthfully identifies uploaded media and exposes capability-derived Edit/Animate for uploaded images.
-- Create continuation from uploaded media keeps the uploaded display name rather than describing it as a generated result.
+Final pre-merge upload evidence included UI Shell `33067469516`, backend integration `33067469518`, Library browser lifecycle `33067469527`, visually inspected desktop/mobile screenshots and direct cleanup verification. PR #9 then merged as `d306f2abd1831538c51692545d72db1e5e9e0814`; `main` remained green.
+
+## Library Search v0.1 Contract
+UI-023 defines the durable-media search model.
+
+### Product behavior
+- Search state is the shareable Library URL parameter `q`.
+- Search is server-owned against durable RenderLab `media_assets`, not a client-only filter over the current page.
+- Queries are whitespace-normalized and capped at 120 characters.
+- Matching is case-insensitive literal substring search across:
+  - `display_name`;
+  - `original_filename`;
+  - generated prompt at `provenance.prompt`.
+- User punctuation is literal search text, not PostgREST/regex syntax.
+- Search combines with `All / Images / Videos` and keeps newest-first ordering.
+- Changing search or kind resets pagination; pagination preserves active search.
+- v0.1 does not add relevance ranking, model/date filters, favorites, collections, batch actions, rename/delete/download or a command-palette experience.
+
+### Implementation boundary
+- `src/lib/api/media-assets-contract.ts` owns query normalization/limit.
+- `GET /api/media/assets?q=...` exposes the product API contract.
+- `src/server/media/media-assets.ts` translates literal search into escaped case-insensitive PostgREST regex filters for display name, original filename and prompt.
+- `/library` reads `q` server-side and renders one native GET search form integrated into the existing approved Library composition.
+- No database migration, `pg_trgm` extension, parallel search service or new generic UI primitive was introduced. Shared Supabase currently has an empty production media corpus, so indexing is deferred until real scale warrants it behind the same product contract.
 
 ### Verified approval evidence
-- Shared Supabase migration is applied with RLS enabled on `media_assets` and `media_upload_sessions`.
-- Original persistent backend integration run `33035954398` passed and self-cleaned.
-- Current-state backend integration run `33066999365` passed production build, direct signed PUT, HEAD verification, promotion, concurrent completion recovery, sequential idempotency, public media/list/content behavior, Unicode filename preservation and cleanup.
-- Current-state credential-free UI/API run `33066999317` passed production build and Playwright regression coverage.
-- Current-state configured browser lifecycle run `33066999350` reconciled shared R2 CORS through the S3 API, then passed the actual Library Upload control/native file chooser → signed R2 PUT → completion → Library card → Media Viewer → capability-derived Edit → server-validated Create handoff at desktop/mobile widths. It verified 400×300 media decode/geometry, captured six screenshots and self-cleaned.
-- The six screenshots from `33066999350` were visually inspected. Upload placement, uploaded display name, Viewer uploaded metadata, Edit/Animate actions and desktop/mobile Create continuation preserve the approved v0.1/Create visual language.
-- Post-run cleanup remains authoritative: the browser workflow cleaned its upload fixture, and prior direct Supabase verification confirmed no persistent-upload integration fixtures remained.
+Implementation head `ba7508859d665a753221177eb2b93ecd11c4b2fe` passed:
+- UI Shell Validation `33069004219` — production build + credential-free Playwright/API regressions;
+- Persistent Media Upload Integration `33069004207` — existing upload backend regression;
+- Library Lifecycle Visual `33069004227` — existing real upload → Library → Viewer → Create regression;
+- Library Search Visual `33069004204` — configured shared Supabase/R2 verification with self-cleaning real media fixtures.
 
-**PR #9 is functionally and visually approved. Merge only after the final documentation-head checks are green and GitHub still reports the PR mergeable.**
+The search lifecycle verified:
+- case-insensitive generated-prompt matching;
+- case-insensitive Unicode uploaded-filename matching;
+- literal punctuation/wildcard-character matching;
+- kind + search conjunction;
+- URL-owned search and kind-link preservation;
+- desktop/mobile result states;
+- truthful desktop/mobile no-match states;
+- fixture cleanup.
+
+All four search screenshots from `33069004204` were visually inspected and preserve the approved Library hierarchy/grid language. Direct post-run Supabase verification found `0` search fixtures, `0` upload sessions and `0` uploaded test assets.
+
+**PR #10 is functionally and visually approved. Merge only after the documentation-finalized head is green and GitHub still reports it mergeable.**
 
 ## R2 Browser CORS State
-The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` now has bucket-admin capability. Run `33066999350` verified `GetBucketCors`/`PutBucketCors` through the S3 API and reconciled the managed `renderlab-browser-uploads` rule while preserving one unrelated existing rule.
-
-The managed rule currently allows direct browser `PUT` with `Content-Type` from:
+The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` has bucket-admin capability. The managed `renderlab-browser-uploads` rule currently allows direct browser `PUT` with `Content-Type` from:
 - `http://127.0.0.1:3000`
 - `http://localhost:3000`
 - `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
 - `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
-All four origins returned successful preflight in `33066999350`. The browser verifier now runs directly from the local RenderLab origin; the temporary Studio-origin TLS/hosts alias has been removed. RenderLab still does not depend on the deployed Studio runtime.
-
-The connected Vercel project is currently `live=false`. If a future custom domain or different user-facing production origin is adopted, add that exact origin to the managed R2 CORS rule before serving direct browser uploads there. Do not use a broad wildcard and do not replace the approved direct-to-R2 flow with a server proxy merely for convenience.
+The browser verifier runs directly from the local RenderLab origin; RenderLab does not depend on the deployed Studio runtime. If a future custom domain or different user-facing production origin is adopted, add that exact origin to the managed R2 CORS rule before serving direct browser uploads there. Do not use a broad wildcard or replace the approved direct-to-R2 flow with a server proxy merely for convenience.
 
 ## Still Open in Phase 4
-Persistent uploads do **not** complete broader Library organization/management work:
-- search and broader history controls;
-- favorites/collections;
+Search and persistent uploads do **not** complete broader Library organization/management work:
+- broader history controls where a real need is defined;
+- favorites/collections or another approved organization model;
 - rename/delete/download/batch management.
 
-The next recommended Phase 4 product slice is to define a RenderLab-owned **Library search contract** against durable `media_assets` before adding search UI. Do not infer collection/favorite/destructive-action schemas from Saga.
+The next Phase 4 product slice must be selected from these remaining needs only after defining a RenderLab-owned contract. Do not infer Saga organization/destructive-action schemas automatically.
 
 ## Infrastructure Cleanup Still Open
 - Remove the transitional Studio compatibility adapter once no migration/debugging requirement depends on it.
 - Keep capability definitions and native workflow defaults aligned as backend capability grows; do not expose controls merely because a worker accepts them.
-- If the eventual public RenderLab origin differs from the two currently configured stable Vercel domains, add the exact origin to the managed R2 CORS rule before deployment.
+- If the eventual public RenderLab origin differs from the currently configured stable Vercel domains, add the exact origin to R2 CORS before deployment.
 
 ## Source of Truth
 The `renderlab` repository is authoritative. ChatGPT Project context is secondary continuity context and current conversations are temporary working context.

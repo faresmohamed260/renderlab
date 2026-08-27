@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import type { MediaAssetKind } from "@/lib/api/media-assets-contract";
+import {
+  MEDIA_ASSET_SEARCH_MAX_LENGTH,
+  normalizeMediaAssetSearchQuery,
+  type MediaAssetKind,
+} from "@/lib/api/media-assets-contract";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { isR2Configured } from "@/server/storage/r2";
@@ -16,10 +20,19 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const rawKind = url.searchParams.get("kind");
   const kind = rawKind && rawKind !== "all" ? rawKind : undefined;
+  const search = normalizeMediaAssetSearchQuery(url.searchParams.get("q"));
   const limit = integerParam(url.searchParams.get("limit"), 24);
   const offset = integerParam(url.searchParams.get("offset"), 0);
 
-  if ((kind && !kinds.has(kind as MediaAssetKind)) || limit == null || offset == null || limit < 1 || limit > 48 || offset < 0) {
+  if (
+    (kind && !kinds.has(kind as MediaAssetKind))
+    || (search && search.length > MEDIA_ASSET_SEARCH_MAX_LENGTH)
+    || limit == null
+    || offset == null
+    || limit < 1
+    || limit > 48
+    || offset < 0
+  ) {
     return NextResponse.json(
       { ok: false, error: { code: "invalid_request", message: "Media list parameters are invalid." } },
       { status: 400 },
@@ -33,6 +46,7 @@ export async function GET(request: Request) {
   try {
     const result = await listMediaAssets({
       ...(kind ? { kind: kind as MediaAssetKind } : {}),
+      ...(search ? { search } : {}),
       limit,
       offset,
     });

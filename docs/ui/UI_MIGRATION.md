@@ -56,58 +56,67 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 **Library v0.1 status: `APPROVED`.**  
 **Media Viewer v0.1 status: `APPROVED`.**
 
-### Persistent upload contract — PR #9
+### Persistent uploads — merged
 UI-022 is accepted: durable user uploads become ordinary `media_assets`; pending direct transfer state is isolated in server-owned `media_upload_sessions`.
 
-- [x] Decide durable identity: uploaded and generated media share opaque `media-asset` identity.
-- [x] Keep temporary `generation_sources` separate from durable Library media.
-- [x] Do not reuse Saga `studio_uploads`.
-- [x] Add `0003_persistent_media_uploads.sql`.
-- [x] Apply migration to shared Supabase as `20260827031630 renderlab_persistent_media_uploads`.
-- [x] Verify `media_assets.origin`, `original_filename`, `display_name`, `size_bytes` and `media_upload_sessions`; keep RLS enabled.
-- [x] Implement typed upload ticket/completion APIs.
-- [x] Implement short-lived signed direct-R2 PUT and server HEAD verification of exact MIME + byte size.
-- [x] Support PNG/JPEG/WebP up to 25 MB.
-- [x] Preserve human-readable Unicode/non-ASCII original filenames while removing controls/path semantics and bounding length.
-- [x] Recover cleanly from concurrent completion races against unique `media_assets.storage_key`.
-- [x] Keep uploaded/generated media in one public media contract.
-- [x] Integrate one compact native-file-picker Upload action into the existing approved Library; no Uploads tab or generic modal framework.
-- [x] Prefer uploaded display names on Library cards.
-- [x] Present uploaded media truthfully in Media Viewer.
-- [x] Expose capability-derived Edit/Animate for uploaded images.
-- [x] Keep uploaded display identity truthful when Viewer initializes Create continuation.
-- [x] Current-state backend integration run `33066999365` passed production build, signed PUT/promotion, Unicode filename preservation, concurrent completion recovery, sequential idempotency, media-list/content behavior and cleanup.
-- [x] Current-state production build + credential-free UI/API run `33066999317` passed.
-- [x] Current-state Chromium Upload → Library → Viewer → Create continuation passed against shared infrastructure in run `33066999350`.
-- [x] R2 bucket CORS was reconciled in `33066999350` through the S3 API using the existing admin-capable R2 access-key token; both localhost origins and both current stable RenderLab Vercel domains passed preflight.
-- [x] Desktop/mobile upload-extension screenshots were captured and visually inspected from run `33066999350`.
-- [x] Upload fixture cleanup was confirmed by the workflow; prior direct Supabase verification also found `0` upload sessions and `0` uploaded assets after the configured lifecycle.
-- [x] Source-of-truth approval docs record the verified implementation and run IDs.
-- [ ] Merge PR #9 and verify `main` after the documentation-finalized head is green and mergeable.
+- [x] Durable uploaded/generated media share opaque `media-asset` identity.
+- [x] Temporary `generation_sources` remain separate from durable Library media.
+- [x] Saga `studio_uploads` is not reused.
+- [x] Migration `0003_persistent_media_uploads.sql` applied as `20260827031630 renderlab_persistent_media_uploads`.
+- [x] Typed ticket/completion APIs, signed direct-R2 PUT and server HEAD verification implemented.
+- [x] PNG/JPEG/WebP up to 25 MB supported.
+- [x] Unicode filename preservation and concurrent completion race recovery verified.
+- [x] Compact Upload action integrated without an Uploads tab/modal framework.
+- [x] Uploaded Library/Viewer/Create continuation is truthful and capability-derived.
+- [x] R2 CORS management verified through the existing admin-capable R2 S3 credentials.
+- [x] Final pre-merge runs: UI Shell `33067469516`, backend upload integration `33067469518`, Library browser lifecycle `33067469527`.
+- [x] Desktop/mobile screenshots inspected and fixture cleanup confirmed.
+- [x] PR #9 merged to `main` as `d306f2abd1831538c51692545d72db1e5e9e0814`.
+- [x] Post-merge `main` shell/reference-upload checks passed.
 
-**Persistent Library upload extension status: `APPROVED FOR MERGE` pending final documentation-head CI.**
+**Persistent Library upload extension status: `APPROVED` and merged.**
 
-### Browser verification / production-origin boundary
-The previous browser-CORS blocker is resolved. The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` now has bucket-admin capability, and `scripts/ensure-r2-browser-cors.mjs` successfully reconciles the managed `renderlab-browser-uploads` rule through the R2 S3 API.
+### Library search v0.1 — PR #10
+UI-023 is accepted: Library search is URL-owned, server-side durable-media discovery.
 
-The currently managed origins are:
+- [x] Define shareable `q` contract against RenderLab `media_assets`.
+- [x] Normalize whitespace and cap queries at 120 characters.
+- [x] Search display name, original uploaded filename and generated prompt.
+- [x] Keep user punctuation literal rather than exposing PostgREST/regex syntax.
+- [x] Combine search with `All / Images / Videos`.
+- [x] Preserve newest-first ordering; do not add relevance ranking in v0.1.
+- [x] Reset pagination when search/kind changes and preserve `q` across kind/pagination links.
+- [x] Add one native GET search form to the existing Library; no command palette or client-only page filter.
+- [x] Add truthful no-match state and clear-search path.
+- [x] Keep storage/provider/model internals, temporary sources and legacy `studio_*` outside search.
+- [x] Do not add a database extension/index prematurely; keep optimization behind the product contract until corpus scale justifies it.
+- [x] Credential-free UI/API validation passed in `33069004219`.
+- [x] Existing persistent-upload backend regression passed in `33069004207`.
+- [x] Existing real upload → Library → Viewer → Create regression passed in `33069004227`.
+- [x] Configured Library search lifecycle passed in `33069004204` with real R2-backed media fixtures.
+- [x] Prompt, Unicode filename, literal punctuation, kind+search and URL-state behavior verified.
+- [x] Four desktop/mobile results/empty screenshots captured and visually inspected.
+- [x] Direct cleanup verification found `0` search fixtures, `0` upload sessions and `0` uploaded test assets.
+- [x] Source-of-truth docs record UI-023 and verified state.
+- [ ] Merge PR #10 after documentation-finalized head checks are green and GitHub remains mergeable.
+
+**Library search v0.1 status: `APPROVED FOR MERGE` pending final documentation-head CI.**
+
+### R2 browser-origin boundary
+The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` has bucket-admin capability. The managed browser-upload rule currently allows:
 - `http://127.0.0.1:3000`
 - `http://localhost:3000`
 - `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
 - `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
-Run `33066999350` verified successful preflight for all four origins and then ran the real browser lifecycle directly from `http://127.0.0.1:3000`. The temporary Studio-origin TLS/hosts alias used during diagnosis has been removed; configured upload verification no longer depends on the Studio origin string or deployed Studio runtime.
+If a future custom/different public RenderLab origin is adopted, add that exact origin before serving direct browser uploads there. Do not use a broad wildcard or proxy uploads merely to avoid correct CORS configuration.
 
-The connected Vercel project remains `live=false`. If a future custom domain or different user-facing production origin is adopted, add that exact origin to the managed R2 CORS rule before serving direct browser uploads there. Do not use a broad wildcard and do not proxy durable uploads through RenderLab merely to avoid correct CORS configuration.
-
-### Still intentionally open after this slice
-- [ ] Search and broader history controls.
+### Still intentionally open after search
+- [ ] Broader history controls where a real product need is defined.
 - [ ] Favorites/collections or another approved organization model.
 - [ ] Rename/delete/download/batch management.
 
-These are not implied by persistent upload support and must be designed against explicit RenderLab-owned contracts before implementation.
-
-**Next recommended Phase 4 product task:** define the RenderLab-owned Library search contract against durable `media_assets`, then design the smallest search UI only after that contract is explicit. Do not infer Saga organization schemas.
+These must be designed against explicit RenderLab-owned contracts. Do not infer Saga organization or destructive-action schemas automatically.
 
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
@@ -130,11 +139,10 @@ These are not implied by persistent upload support and must be designed against 
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current slice:** Persistent uploaded media, PR #9.  
-**Verified:** durable upload architecture/migration, filename/race hardening, backend integration, credential-free regressions, admin-capable R2 CORS reconciliation, actual browser direct-R2 upload, Library/Viewer/Create continuation, desktop/mobile screenshots and cleanup.  
+**Current slice:** Library search v0.1, PR #10.  
+**Verified:** server/API search contract, URL state, responsive search/no-match UI, prompt/name/filename/punctuation semantics, kind composition, existing upload regressions, screenshots and cleanup.  
 **Merge gate:** final documentation-head CI + mergeability only.  
-**Deployment note:** the two current stable RenderLab Vercel origins are already in the managed CORS rule; add any future custom/different public origin explicitly before use.  
-**Next Phase 4 product slice after merge:** define the durable Library search contract before implementing search UI.
+**Next product slice:** select one remaining Phase 4 organization/history need only after its RenderLab-owned contract is explicit.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
