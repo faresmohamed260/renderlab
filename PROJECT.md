@@ -62,6 +62,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Durable Media Rename v0.1: `APPROVED`, merged through PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4` after exact-head six-gate CI and clean shared-resource verification.
 - Maintained UI primitive foundation / UI-026: `APPROVED`, merged through PR #13 as `5953934d5f67c16304be7493eda27c88e24c02cc`.
 - Library history ordering v0.1 / UI-027: `APPROVED`, merged through PR #14 as `a7ecaa6a704e4378b31e694e5f21c5629920b520` after final documentation-head eight-gate CI, responsive screenshot review, clean fixture verification and green post-merge `main` UI Shell `33097463519`.
+- Library drag-and-drop upload v0.1 / UI-028: implementation `APPROVED` on PR #15; final documentation-head CI and merge remain. Implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed UI Shell `33102672560`, Library Search `33102672572`, Library History `33102672507`, Library Lifecycle `33102672568`, and Library Drag Drop `33102672468`; responsive screenshots and direct cleanup were reviewed clean.
 - Create supports Create Image, Edit Image, Create Video and Animate Image.
 - Durable generated and uploaded media share RenderLab `media_assets`, product APIs and opaque `media-asset` identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
@@ -95,6 +96,19 @@ UI-022 defines the approved durable upload model.
 - PNG/JPEG/WebP up to 25 MB are supported.
 - Unicode filenames are preserved after control/path cleanup and length bounding.
 - Concurrent completion races recover to the unique durable asset winner.
+
+## Library Drag-and-Drop Upload v0.1 Contract
+UI-028 adds a second interaction path into UI-022 without changing persistence.
+
+- The ordinary visible Upload button + native file picker remain the keyboard/touch/mobile baseline.
+- Desktop file drag over Library reveals a temporary full-surface drop affordance; there is no persistent dropzone.
+- Exactly one PNG/JPEG/WebP image up to 25 MB is accepted per drop; multi-file drops fail locally before ticket creation.
+- Picker and drop use the same feature-owned `library-upload-client.ts` transaction: upload ticket → signed R2 PUT → completion → durable `media_assets` promotion.
+- Success refreshes the server-owned Library and announces completion; errors stay local. No global media store or toast framework is introduced.
+- Configured verification is serialized with the shared Library upload fixture lock, uses run-unique fixtures, asserts exactly one ticket/completion/session/asset/card, and cleans test fixture namespaces before visual review.
+- Drag/drop adds no schema migration, account/organization state, Delete/batch framework or new R2/CORS contract.
+
+Implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed UI Shell `33102672560`, Library Search `33102672572`, Library History `33102672507`, Library Lifecycle `33102672568`, and Library Drag Drop `33102672468`. Clean desktop drag-active/completed and mobile completed screenshots were visually reviewed. Direct Supabase cleanup found `0` drag/drop sessions/assets and `0` known legacy lifecycle sessions/assets. Final documentation-head regression is required before PR #15 merge.
 
 ## Library Search v0.1 Contract
 UI-023 defines durable-media discovery.
@@ -161,12 +175,12 @@ The admin-capable R2 access-key credentials manage the exact-origin `renderlab-b
 - `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
 - `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
-Download uses product-route → signed-R2 top-level GET navigation. Rename is a server-side Supabase metadata mutation and introduces no R2 object write/move or new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement.
+Download uses product-route → signed-R2 top-level GET navigation. Rename is a server-side Supabase metadata mutation and introduces no R2 object write/move or new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement. Drag/drop reuses the same direct browser PUT origin policy as the approved Upload button and introduces no new CORS surface.
 
 If a future user-facing production origin changes, add that exact origin before serving direct browser uploads there. Do not use broad wildcard CORS or replace direct-to-R2 transfers with an application-server proxy merely for convenience.
 
 ## Still Open in Phase 4
-Completed upload/search/download/rename/history ordering do **not** approve broader organization or destructive behavior. Still open:
+Completed upload/search/download/rename/history ordering/drag-drop do **not** approve broader organization or destructive behavior. Still open:
 - favorites/collections or another organization model after user/account ownership is explicit;
 - delete and batch management after durable storage/reference/recovery semantics are explicit;
 - other Library interaction enhancements only when separately justified.

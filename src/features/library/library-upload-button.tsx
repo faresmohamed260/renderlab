@@ -5,25 +5,10 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import type {
-  CompleteMediaUploadResponse,
-  CreateMediaUploadTicketResponse,
-} from "@/lib/api/media-upload-contract";
 import {
-  maxMediaUploadBytes,
-  supportedMediaUploadMimeTypes,
-} from "@/lib/api/media-upload-contract";
-
-async function readImageDimensions(file: File) {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const dimensions = { width: bitmap.width, height: bitmap.height };
-    bitmap.close();
-    return dimensions;
-  } catch {
-    return {};
-  }
-}
+  uploadLibraryFile,
+  validateLibraryUploadFile,
+} from "@/features/library/library-upload-client";
 
 export function LibraryUploadButton() {
   const router = useRouter();
@@ -33,15 +18,11 @@ export function LibraryUploadButton() {
   const [error, setError] = useState<string | null>(null);
 
   async function upload(file: File) {
-    const mimeType = file.type.toLowerCase();
-    if (!(supportedMediaUploadMimeTypes as readonly string[]).includes(mimeType)) {
+    try {
+      validateLibraryUploadFile(file);
+    } catch (validationError) {
       setMessage(null);
-      setError("Library uploads must be PNG, JPEG, or WebP images.");
-      return;
-    }
-    if (file.size < 1 || file.size > maxMediaUploadBytes) {
-      setMessage(null);
-      setError("Library uploads must be no larger than 25 MB.");
+      setError(validationError instanceof Error ? validationError.message : "Library upload failed.");
       return;
     }
 
@@ -50,40 +31,7 @@ export function LibraryUploadButton() {
     setError(null);
 
     try {
-      const ticketResponse = await fetch("/api/media/uploads/upload-tickets", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          mimeType,
-          sizeBytes: file.size,
-        }),
-      });
-      const ticketPayload = (await ticketResponse.json()) as CreateMediaUploadTicketResponse;
-      if (!ticketResponse.ok || !ticketPayload.ok) {
-        throw new Error(ticketPayload.ok ? "Library upload could not be prepared." : ticketPayload.error.message);
-      }
-
-      const uploadResponse = await fetch(ticketPayload.ticket.uploadUrl, {
-        method: ticketPayload.ticket.method,
-        headers: ticketPayload.ticket.headers,
-        body: file,
-      });
-      if (!uploadResponse.ok) throw new Error("The image could not be uploaded.");
-
-      const dimensions = await readImageDimensions(file);
-      const completionResponse = await fetch("/api/media/uploads/upload-completions", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ uploadId: ticketPayload.ticket.uploadId, ...dimensions }),
-      });
-      const completionPayload = (await completionResponse.json()) as CompleteMediaUploadResponse;
-      if (!completionResponse.ok || !completionPayload.ok) {
-        throw new Error(
-          completionPayload.ok ? "Library upload could not be verified." : completionPayload.error.message,
-        );
-      }
-
+      await uploadLibraryFile(file);
       setMessage("Added to Library.");
       router.refresh();
     } catch (uploadError) {
