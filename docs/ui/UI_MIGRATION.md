@@ -92,11 +92,13 @@ The creation UI is task-oriented and progressively discloses complexity.
 - [x] Configured native Create Image/Edit continuation integration passes and self-cleans.
 - [x] Configured native Video + Animate integration passes and self-cleans.
 - [x] Advanced desktop/mobile disclosure is rendered/tested and visually reviewed in GitHub CI run `33030364272`.
-- [ ] Final responsive Create review with a **real configured persisted-result + continuation lifecycle visible in the UI**.
+- [x] Final configured Create lifecycle review completed in GitHub Actions run `33031817744`: one real Create Image generation was submitted through the browser, persisted, rendered at desktop/mobile widths, exposed **Edit**/**Animate**, transitioned into **Edit** using the durable asset, captured desktop/mobile continuation states, and self-cleaned its R2/media/job fixture.
 
-Current Create status is `MIGRATING`, not `APPROVED`. The remaining approval gate is real-lifecycle rendered review rather than missing core Create functionality.
+**Create status: `APPROVED`.** Phase 3 is complete. The Studio compatibility adapter is a separate infrastructure cleanup item and is not part of Create's visual/product approval.
 
 ## Phase 4 — Media & Continuation
+**Current phase.** Library and Media Viewer must build on RenderLab-owned `media_assets` plus the existing capability-derived continuation model.
+
 - [ ] Media library/gallery
 - [ ] Media viewer
 - [ ] Search/filter/history behavior
@@ -129,10 +131,10 @@ Underlying RenderLab `media_assets` persistence and private delivery APIs alread
 11. Update authoritative documentation from verified implementation.
 
 ## Current Work
-**Current phase:** Phase 3 — Creation Experience implementation  
-**Current status:** Core Create composition, reference upload, all four initial native operations, persisted results, durable result continuation, bounded polling recovery, conservative safe worker reassignment, and capability-driven Advanced controls are implemented and verified. Create remains `MIGRATING` only because the final real configured result/continuation lifecycle has not yet been rendered and reviewed responsively as one complete user flow.  
+**Current phase:** Phase 4 — Media & Continuation  
+**Current status:** `AppShell` and Create are `APPROVED`. Core generation, persistence, continuation, polling recovery, conservative worker failover and Advanced controls are verified. The configured real-lifecycle visual gate is repeatable through `scripts/verify-create-lifecycle.mjs` and `.github/workflows/create-lifecycle-visual.yml`. Library, Media Viewer and broader media organization/actions remain unimplemented beyond route placeholders.  
 **Known blockers:** No credential blocker.  
-**Next recommended task:** Build a GitHub-driven real-lifecycle visual verification path for Create so a configured generation can be exercised and screenshots captured without Vercel previews. After that review, decide whether Create can move to `APPROVED`, then remove the Studio compatibility fallback if no migration/debugging need remains.
+**Next recommended task:** Audit the current `media_assets` contract and proven Saga Library behavior, define the smallest RenderLab Library/Media Viewer experience consistent with UI-010, then create reviewed desktop/mobile design handoff before implementation. The Studio compatibility fallback can be removed separately once no migration/debugging need remains.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.
