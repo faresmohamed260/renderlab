@@ -1,6 +1,7 @@
 import type { ContinuationAction } from "@/lib/capabilities/generation";
 import { continuationActionForMedia } from "@/lib/capabilities/generation";
 import { CreateWorkspace } from "@/features/create/create-workspace";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { isGenerationBackendConfigured } from "@/server/generation/submit-generation";
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
@@ -23,6 +24,7 @@ export default async function CreatePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const account = await getCurrentRenderLabAccount();
   const sourceId = firstValue(params.source);
   const requestedAction = firstValue(params.action);
   let initialContinuation = null;
@@ -31,11 +33,13 @@ export default async function CreatePage({
   if (sourceId || requestedAction) {
     if (!sourceId || !requestedAction || !uuidPattern.test(sourceId) || !isContinuationActionId(requestedAction)) {
       initialContinuationError = "That continuation link is invalid. Start a new creation or return to Library.";
+    } else if (!account) {
+      initialContinuationError = "Sign in from Settings to continue from private RenderLab media.";
     } else if (!isSupabaseConfigured() || !isR2Configured()) {
       initialContinuationError = "That media item cannot be loaded in this environment. Start a new creation or return to Library.";
     } else {
       try {
-        const asset = await getMediaAsset(sourceId);
+        const asset = await getMediaAsset(account.id, sourceId);
         const action = asset ? continuationActionForMedia(asset.kind, requestedAction) : null;
 
         if (!asset) {
@@ -56,6 +60,7 @@ export default async function CreatePage({
 
   return (
     <CreateWorkspace
+      accountAvailable={Boolean(account)}
       generationAvailable={isGenerationBackendConfigured()}
       referenceUploadAvailable={isReferenceUploadConfigured()}
       initialContinuation={initialContinuation}
