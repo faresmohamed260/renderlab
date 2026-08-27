@@ -54,17 +54,17 @@ Approved behavior:
 - RenderLab-owned `generation_jobs` + `media_assets` persistence and private media-delivery APIs;
 - native Create Image end-to-end generation/persistence;
 - native reference-driven Edit Image end-to-end generation/persistence (GitHub run `33021843503`);
-- native Create Video end-to-end generation/persistence (GitHub run `33021977765`);
+- native Create Video and native reference-driven Animate Image end-to-end generation/persistence (GitHub run `33021977765`; the `Verify Create Video and Animate Image` step completed successfully);
+- persisted `media_assets` result loading after successful jobs through the RenderLab media metadata/content API boundary;
+- real image/video result rendering below the composer; persisted-result implementation passed production build + Playwright shell checks in PR #1 before merge;
 - production build + responsive Playwright/API validation.
 
 **Still open before approval:**
-- render persisted output asset directly in Create;
-- capability-derived continuation actions;
-- native reference-driven Animate Image verification;
-- bounded retry/backoff for transient client polling failures;
+- capability-derived continuation actions on persisted results;
+- bounded retry/backoff for transient client polling failures (implementation is under validation in PR #2; do not treat complete until merged/green);
 - safe poll-time reassignment semantics without duplicate-generation risk;
 - Advanced controls from verified capability definitions;
-- final responsive review with real persisted-result lifecycle visible.
+- final responsive review with the real persisted-result lifecycle visible.
 
 **Accepted design direction:**
 - one focused workspace rather than separate Image/Edit/Video/Animate screens;
