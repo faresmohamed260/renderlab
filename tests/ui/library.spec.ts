@@ -33,15 +33,16 @@ test("Library preserves search while switching media kind on mobile", async ({ p
   await page.screenshot({ path: "artifacts/library-mobile-unavailable.png", fullPage: true });
 });
 
-test("Library search form keeps kind and resets pagination", async ({ page }) => {
+test("Library search form keeps kind, normalizes rendered query, and resets pagination", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/library?kind=image&q=old&offset=24");
 
   const search = page.getByRole("searchbox", { name: "Search Library" });
   await search.fill("  new   prompt  ");
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("kind") === "image" && url.searchParams.get("q") === "new prompt" && !url.searchParams.has("offset"));
+  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("kind") === "image" && !url.searchParams.has("offset"));
   await expect(search).toHaveValue("new prompt");
+  await expect(page.getByRole("link", { name: "Videos", exact: true })).toHaveAttribute("href", "/library?kind=video&q=new+prompt");
   await expect(page.getByRole("link", { name: "Clear", exact: true })).toHaveAttribute("href", "/library?kind=image");
 });
 
