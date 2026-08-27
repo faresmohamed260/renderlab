@@ -7,7 +7,7 @@ test("Library renders the media-first desktop surface truthfully without credent
   await page.setViewportSize(desktopViewport);
   await page.goto("/library");
 
-  await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Library", exact: true, level: 2 })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Library media type" })).toBeVisible();
   await expect(page.getByRole("link", { name: "All", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("link", { name: "Images", exact: true })).toBeVisible();
@@ -21,7 +21,7 @@ test("Library keeps filtering and navigation usable on mobile", async ({ page })
   await page.setViewportSize(mobileViewport);
   await page.goto("/library?kind=video");
 
-  await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Library", exact: true, level: 2 })).toBeVisible();
   await expect(page.getByRole("link", { name: "Videos", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Library", exact: true }).last()).toHaveAttribute("aria-current", "page");
@@ -35,7 +35,7 @@ test("Create rejects malformed Library continuation URLs without losing the defa
   await page.goto("/?source=not-a-media-id&action=edit-image");
 
   await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("That continuation link is invalid.");
+  await expect(page.getByRole("alert").filter({ hasText: "That continuation link is invalid." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Image", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByAltText("Reference preview")).toHaveCount(0);
 });
@@ -45,7 +45,7 @@ test("Create reports a valid-looking continuation source truthfully when media i
   await page.goto("/?source=00000000-0000-4000-8000-000000000000&action=edit-image");
 
   await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("That media item cannot be loaded in this environment.");
+  await expect(page.getByRole("alert").filter({ hasText: "That media item cannot be loaded in this environment." })).toBeVisible();
 });
 
 test("media list API validates requests before reporting configured availability", async ({ request }) => {
