@@ -40,10 +40,10 @@ This is foundation maintenance, not a product redesign or new Phase 4 media capa
 - [x] Implementation head `36ee8e8eb80645d1389afa749a36b493e2abbb61` passed UI Shell `33088086901`, Create Lifecycle `33088086892`, Library Search `33088086914`, Library Lifecycle `33088086872`, Media Download `33088086907`, and Media Rename `33088086871`.
 - [x] Final-code UI Shell and Library lifecycle desktop/mobile screenshots visually inspected; no unintended hierarchy/layout drift found.
 - [x] Library lifecycle `33088086872` verified real browser Upload → Library → Viewer → Edit continuation, Image radio initialization, 400×300 media geometry and self-cleanup.
-- [ ] Documentation-finalized exact-head six-gate CI.
+- [x] Documentation-finalized candidate head `ba8199b49d4576dc5495779f8e84812786c5b586` passed UI Shell `33089332190`, Create Lifecycle `33089332135`, Library Search `33089333557`, Library Lifecycle `33089332001`, Media Download `33089332087`, and Media Rename `33089332021`.
 - [ ] Merge PR #13 and verify merged `main`.
 
-**Maintained primitive foundation status: `APPROVED FOR MERGE` pending documentation-finalized exact-head CI.**
+**Maintained primitive foundation status: `APPROVED FOR MERGE`.** Final tracker-only exact-head CI is required before the merge operation; no further product/code change is planned.
 
 ## Phase 2 — Application Shell
 - [x] Scaffold the fresh application.
@@ -190,8 +190,9 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
 **Completed product slice:** Durable Media Rename v0.1, merged PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.  
-**Current foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor; implementation and rendered result are approved, documentation-finalized exact-head CI remains before merge.  
-**Verified PR #13 implementation head:** `36ee8e8eb80645d1389afa749a36b493e2abbb61` — six affected gates green, real Upload → Viewer → Create continuation green, responsive screenshot review clean, fixture cleanup successful.  
+**Current foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor is `APPROVED FOR MERGE`; documentation-finalized candidate `ba8199b49d4576dc5495779f8e84812786c5b586` passed all six affected workflows.  
+**Verified product/code head:** `36ee8e8eb80645d1389afa749a36b493e2abbb61` — six affected gates green, real Upload → Viewer → Create continuation green, responsive screenshot review clean, fixture cleanup successful.  
+**Remaining before merge:** final exact-head CI after this tracker-only approval update, then shared-resource cleanup verification.  
 **Next product slice:** select one remaining history/organization/destructive-management need only after its RenderLab-owned contract is explicit.
 
 ## Session Handoff Rule
