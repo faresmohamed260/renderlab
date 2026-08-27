@@ -4,6 +4,7 @@ import type {
   MediaAssetListKind,
   PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
+import { LibraryUploadButton } from "@/features/library/library-upload-button";
 
 const filters: Array<{ value: MediaAssetListKind; label: string }> = [
   { value: "all", label: "All" },
@@ -24,7 +25,12 @@ function pageHref(kind: MediaAssetListKind, offset: number) {
 }
 
 function assetTitle(asset: PublicMediaAsset) {
-  return asset.prompt || (asset.kind === "image" ? "Generated image" : "Generated video");
+  return asset.displayName
+    || asset.prompt
+    || asset.originalFilename
+    || (asset.origin === "uploaded"
+      ? asset.kind === "image" ? "Uploaded image" : "Uploaded video"
+      : asset.kind === "image" ? "Generated image" : "Generated video");
 }
 
 function createdLabel(value: string) {
@@ -71,6 +77,7 @@ function MediaPreview({ asset }: { asset: PublicMediaAsset }) {
 
 export function LibraryView({
   available,
+  uploadAvailable,
   items,
   kind,
   offset,
@@ -78,6 +85,7 @@ export function LibraryView({
   hasMore,
 }: {
   available: boolean;
+  uploadAvailable: boolean;
   items: PublicMediaAsset[];
   kind: MediaAssetListKind;
   offset: number;
@@ -86,11 +94,14 @@ export function LibraryView({
 }) {
   return (
     <section className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text">Library</h2>
-        <p className="max-w-xl text-[15px] text-text-muted">
-          Browse durable media and continue from the work you want to keep.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text">Library</h2>
+          <p className="mt-2 max-w-xl text-[15px] text-text-muted">
+            Browse durable media and continue from the work you want to keep.
+          </p>
+        </div>
+        {uploadAvailable ? <LibraryUploadButton /> : null}
       </div>
 
       <div className="mt-8 flex items-center justify-between gap-4">
@@ -130,7 +141,9 @@ export function LibraryView({
           <p className="mt-1 max-w-sm text-sm leading-6 text-text-muted">
             {offset > 0
               ? "Go back to newer media."
-              : "Create something and saved results will appear here automatically."}
+              : uploadAvailable
+                ? "Create or upload something and saved media will appear here automatically."
+                : "Create something and saved results will appear here automatically."}
           </p>
           <Link
             href={offset > 0 ? pageHref(kind, Math.max(0, offset - limit)) : "/"}

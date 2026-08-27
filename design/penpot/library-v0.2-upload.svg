@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="980" viewBox="0 0 1720 980">
+  <style>
+    text { font-family: Inter, ui-sans-serif, system-ui, sans-serif; fill:#F4F5F7 }
+    .muted { fill:#9CA3AF }
+    .title { font-size:28px; font-weight:600 }
+    .body { font-size:14px }
+    .label { font-size:12px; font-weight:600 }
+    .small { font-size:11px }
+  </style>
+  <rect width="1720" height="980" fill="#090A0C"/>
+  <text x="48" y="50" class="title">Library v0.2 — persistent upload integration</text>
+  <text x="48" y="76" class="body muted">One lightweight Upload action joins the approved Library header. No separate Uploads tab; verified uploads become ordinary media assets.</text>
+
+  <g transform="translate(48,116)">
+    <rect width="1070" height="790" rx="20" fill="#090A0C" stroke="#2B303A"/>
+    <rect width="190" height="790" rx="20" fill="#111318"/>
+    <text x="26" y="42" class="label">RenderLab</text>
+    <rect x="14" y="112" width="162" height="40" rx="8" fill="#20242C"/>
+    <text x="46" y="137" class="body">Library</text>
+    <rect x="190" width="880" height="54" fill="#0D0F13"/>
+    <text x="214" y="34" class="label">Library</text>
+
+    <g transform="translate(226,94)">
+      <text x="0" y="30" class="title">Library</text>
+      <text x="0" y="56" class="body muted">Browse durable media and continue from the work you want to keep.</text>
+      <rect x="694" y="7" width="112" height="42" rx="9" fill="#7C6CF2"/>
+      <text x="718" y="33" class="label">＋ Upload</text>
+
+      <g transform="translate(0,94)">
+        <rect width="222" height="40" rx="9" fill="#171A20"/>
+        <rect x="4" y="4" width="70" height="32" rx="7" fill="#20242C"/>
+        <text x="28" y="25" class="small">All</text>
+        <text x="93" y="25" class="small muted">Images</text>
+        <text x="164" y="25" class="small muted">Videos</text>
+        <text x="716" y="25" class="small muted">Newest first</text>
+      </g>
+
+      <g transform="translate(0,156)">
+        <g>
+          <rect width="190" height="220" rx="12" fill="#111318" stroke="#2B303A"/>
+          <rect x="1" y="1" width="188" height="154" rx="11" fill="#2B394A"/>
+          <circle cx="95" cy="78" r="39" fill="#526F8D"/>
+          <text x="12" y="180" class="small">Persistent upload verification</text>
+          <text x="12" y="201" class="small muted">Image · Today</text>
+        </g>
+        <g transform="translate(206,0)">
+          <rect width="190" height="220" rx="12" fill="#111318" stroke="#2B303A"/>
+          <rect x="1" y="1" width="188" height="154" rx="11" fill="#453328"/>
+          <text x="12" y="180" class="small">Warm editorial portrait…</text>
+          <text x="12" y="201" class="small muted">Image · Today</text>
+        </g>
+        <g transform="translate(412,0)">
+          <rect width="190" height="220" rx="12" fill="#111318" stroke="#2B303A"/>
+          <rect x="1" y="1" width="188" height="154" rx="11" fill="#1D2938"/>
+          <polygon points="83,59 83,99 117,79" fill="#F4F5F7"/>
+          <text x="12" y="180" class="small">Rainy city camera move…</text>
+          <text x="12" y="201" class="small muted">Video · Yesterday</text>
+        </g>
+      </g>
+
+      <g transform="translate(0,420)">
+        <text x="0" y="18" class="label">Upload runtime states</text>
+        <rect y="34" width="152" height="42" rx="9" fill="#20242C"/>
+        <text x="24" y="60" class="label">◌ Uploading…</text>
+        <rect x="170" y="34" width="370" height="42" rx="9" fill="#2A171A" stroke="#E06464" opacity="0.95"/>
+        <text x="184" y="60" class="small">Upload failed. Your Library is unchanged.</text>
+        <text x="0" y="104" class="small muted">PNG, JPEG, WebP · up to 25 MB · direct signed upload · appears only after server verification</text>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(1160,116)">
+    <rect width="390" height="790" rx="22" fill="#090A0C" stroke="#2B303A"/>
+    <rect width="390" height="54" rx="22" fill="#0D0F13"/>
+    <text x="18" y="34" class="label">Library</text>
+    <g transform="translate(18,88)">
+      <text x="0" y="30" class="title">Library</text>
+      <rect x="242" y="1" width="112" height="42" rx="9" fill="#7C6CF2"/>
+      <text x="266" y="27" class="label">＋ Upload</text>
+      <text x="0" y="62" class="body muted">Browse durable media and continue from the work you want to keep.</text>
+
+      <g transform="translate(0,96)">
+        <rect width="222" height="40" rx="9" fill="#171A20"/>
+        <rect x="4" y="4" width="70" height="32" rx="7" fill="#20242C"/>
+        <text x="28" y="25" class="small">All</text>
+        <text x="93" y="25" class="small muted">Images</text>
+        <text x="164" y="25" class="small muted">Videos</text>
+      </g>
+
+      <g transform="translate(0,154)">
+        <rect width="170" height="196" rx="12" fill="#111318" stroke="#2B303A"/>
+        <rect x="1" y="1" width="168" height="134" rx="11" fill="#2B394A"/>
+        <circle cx="85" cy="68" r="34" fill="#526F8D"/>
+        <text x="10" y="158" class="small">Persistent upload…</text>
+        <text x="10" y="179" class="small muted">Image · Today</text>
+
+        <g transform="translate(184,0)">
+          <rect width="170" height="196" rx="12" fill="#111318" stroke="#2B303A"/>
+          <rect x="1" y="1" width="168" height="134" rx="11" fill="#453328"/>
+          <text x="10" y="158" class="small">Warm editorial…</text>
+          <text x="10" y="179" class="small muted">Image · Today</text>
+        </g>
+      </g>
+
+      <g transform="translate(0,386)">
+        <rect width="354" height="42" rx="9" fill="#20242C"/>
+        <text x="117" y="26" class="label">◌ Uploading image…</text>
+        <text x="0" y="68" class="small muted">The existing grid stays usable while the file uploads.</text>
+      </g>
+    </g>
+
+    <rect x="0" y="726" width="390" height="64" fill="#111318"/>
+    <text x="50" y="764" class="small muted">Create</text>
+    <text x="172" y="764" class="small">Library</text>
+    <text x="292" y="764" class="small muted">Activity</text>
+  </g>
+</svg>

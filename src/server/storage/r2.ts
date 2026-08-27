@@ -1,4 +1,4 @@
-import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const accountId = process.env.R2_ACCOUNT_ID?.trim();
@@ -54,6 +54,10 @@ export async function writeR2Object({ key, contentType, body }: { key: string; c
     body: Uint8Array.from(body).buffer,
   });
   if (!response.ok) throw new Error(`R2 object could not be written (${response.status}).`);
+}
+
+export async function deleteR2Object(key: string) {
+  await getClient().send(new DeleteObjectCommand({ Bucket: bucketName!, Key: key }));
 }
 
 export async function headR2Object(key: string) {

@@ -243,6 +243,15 @@ export function CreateWorkspace({
   const canSubmit =
     generationAvailable && Boolean(prompt.trim()) && !submitting && !referenceUploading && !jobActive;
   const continuationActions = resultAsset ? continuationActionsForMedia(resultAsset.kind) : [];
+  const continuationSourceLabel = continuationSource
+    ? continuationSource.id === initialContinuation?.asset.id
+      ? initialContinuation.asset.origin === "uploaded"
+        ? initialContinuation.asset.displayName
+          || initialContinuation.asset.originalFilename
+          || "Uploaded image"
+        : "Generated result"
+      : "Generated result"
+    : null;
 
   const statusText = useMemo(() => {
     if (!job) return null;
@@ -442,7 +451,7 @@ export function CreateWorkspace({
                   {referenceUploading ? "Uploading reference…" : outputKind === "image" ? "Editing this image" : "Animating this image"}
                 </p>
                 <p className="truncate text-xs text-text-muted">
-                  {continuationSource ? "Generated result" : reference?.filename ?? "Reference image"}
+                  {continuationSource ? continuationSourceLabel : reference?.filename ?? "Reference image"}
                 </p>
               </div>
               <button

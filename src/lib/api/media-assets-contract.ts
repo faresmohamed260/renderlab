@@ -1,12 +1,17 @@
 import type { CreativeOperation } from "@/lib/capabilities/generation";
 
 export type MediaAssetKind = "image" | "video";
+export type MediaAssetOrigin = "generated" | "uploaded";
 
 export type PublicMediaAsset = {
   id: string;
   generationJobId: string | null;
+  origin: MediaAssetOrigin;
   kind: MediaAssetKind;
   mimeType: string;
+  originalFilename: string | null;
+  displayName: string | null;
+  sizeBytes: number | null;
   width: number | null;
   height: number | null;
   durationMs: number | null;

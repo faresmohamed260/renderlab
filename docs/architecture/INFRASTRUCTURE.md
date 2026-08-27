@@ -6,9 +6,9 @@ This document records durable RenderLab infrastructure decisions and verified sh
 The `renderlab` repository is authoritative for RenderLab infrastructure intent/contracts. Saga/Studio infrastructure may be reused deliberately, but RenderLab application code, schema, storage prefixes, orchestration and product APIs remain independently named and owned.
 
 ## Shared-Resource Decision
-RenderLab reuses the existing Saga/Studio Supabase project, Cloudflare R2 resource, and cloud-hosted ComfyUI/Modal worker fleet rather than creating parallel infrastructure.
+RenderLab reuses the existing Saga/Studio Supabase project, Cloudflare R2 resource and cloud-hosted ComfyUI/Modal worker fleet rather than creating parallel infrastructure.
 
-Reuse does **not** mean reusing Saga application tables, Studio APIs, or the deployed Studio runtime as RenderLab product dependencies.
+Reuse does **not** mean reusing Saga application tables, Studio APIs or the deployed Studio runtime as RenderLab product dependencies.
 
 ## Supabase
 Approved shared project:
@@ -17,26 +17,78 @@ Approved shared project:
 - API URL: `https://rashyleshocuvpgcooxy.supabase.co`
 - Region: `eu-west-1`
 
-Legacy `studio_*` tables remain present and separate. RenderLab must not rename, repurpose, or silently depend on them.
+Legacy `studio_*` tables remain present and separate. RenderLab must not rename, repurpose or silently depend on them.
 
 ### Applied RenderLab migrations
-`0001_generation_sources.sql` creates `public.generation_sources` with RLS enabled for temporary reference sources.
+- `0001_generation_sources.sql` — creates `public.generation_sources` with RLS enabled for temporary reference sources.
+- `0002_generation_jobs_media_assets.sql` — creates `public.generation_jobs` and `public.media_assets`, both with RLS enabled. Jobs own asynchronous product/runtime state; media assets own durable media identity and R2 metadata.
+- `0003_persistent_media_uploads.sql` — applied as Supabase migration version `20260827031630` / `renderlab_persistent_media_uploads`. It extends `media_assets` with `origin` (default `generated`), `original_filename`, `display_name` and `size_bytes`, and creates server-owned `media_upload_sessions` with RLS enabled.
 
-`0002_generation_jobs_media_assets.sql` creates `public.generation_jobs` and `public.media_assets`, both with RLS enabled. `generation_jobs` owns asynchronous product/runtime state; `media_assets` owns durable media identity and R2 metadata.
+Migration 0003 has already been applied to the shared project. Do **not** reapply it.
 
-Neither migration modifies legacy `studio_*` tables.
+Direct verification on 2026-08-27 confirmed:
+- `media_assets` RLS enabled;
+- `media_upload_sessions` RLS enabled;
+- the four new `media_assets` columns exist;
+- `origin` defaults to `generated` for backward compatibility;
+- no persistent-upload integration fixture remained after verification.
+
+The Supabase security advisor reports the expected informational “RLS enabled, no public policy” state for these server-owned tables. Service-role access remains server-only.
 
 ## Cloudflare R2
 RenderLab reuses the existing Saga/Studio R2 resource. Credentials remain server/GitHub-secret configuration and must not be committed.
 
-RenderLab generated media uses the `renderlab/` namespace, including `renderlab/generations/YYYY/MM/...` and `renderlab/thumbnails/YYYY/MM/...`. Temporary references use server-generated keys but are addressed by opaque `generation_sources.id` in product requests.
+Storage namespaces:
+- generated media: `renderlab/generations/YYYY/MM/...`;
+- generated thumbnails: `renderlab/thumbnails/YYYY/MM/...`;
+- persistent uploads: `renderlab/uploads/YYYY/MM/...`;
+- temporary references use server-generated keys associated with opaque `generation_sources.id`.
 
-Browser-held R2 credentials are prohibited. Direct browser uploads use short-lived signed PUT URLs. Raw R2 keys remain internal implementation metadata.
+Browser-held R2 credentials are prohibited. Raw R2 storage keys are internal metadata, never product identity.
+
+### Persistent browser upload contract
+```text
+Library
+  -> POST /api/media/uploads/upload-tickets
+  -> pending media_upload_sessions row + opaque upload ID
+  -> short-lived signed R2 PUT
+  -> browser uploads directly to R2
+  -> POST /api/media/uploads/upload-completions
+  -> server HEAD-verifies MIME + exact byte size
+  -> create ordinary media_assets row with origin=uploaded
+  -> mark upload session completed + link media_asset_id
+  -> Library / Viewer / Create reuse the ordinary media-asset ID
+```
+
+Initial persistent upload types are PNG, JPEG and WebP up to 25 MB.
+
+The server-generated R2 key is opaque and independent of the human filename. `original_filename` therefore preserves legitimate Unicode/non-ASCII text while removing control characters/path semantics and enforcing a reasonable length bound.
+
+`media_assets.storage_key` remains unique. Concurrent completion requests recover to an already-created asset when another request wins that unique insert, while repeated completion after success returns the same durable asset.
+
+### Browser CORS requirement and verified current state
+Presigned browser PUT requires an R2 bucket CORS policy for the requesting browser origin.
+
+The R2 API token backing `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` now has **Admin Read & Write** capability. Current-state browser lifecycle run `33066999350` verified that the existing GitHub secrets can successfully call R2 `GetBucketCors`/`PutBucketCors` through the S3-compatible API. `scripts/ensure-r2-browser-cors.mjs` reconciled the managed rule `renderlab-browser-uploads` while preserving one unrelated existing rule.
+
+The managed rule currently permits `PUT` with `Content-Type` and exposes `ETag` for:
+- `http://127.0.0.1:3000`
+- `http://localhost:3000`
+- `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
+- `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
+
+Run `33066999350` returned successful `204` preflight for all four origins, then completed the actual browser Upload → Library → Viewer → Create lifecycle from `http://127.0.0.1:3000`. The workflow self-cleaned its R2/object/database fixture and uploaded six screenshots.
+
+The temporary diagnostic approach that served RenderLab through a local TLS alias for `https://studio.faresuniform.uk` has been removed. CI/browser verification now uses the RenderLab localhost origin directly and does not depend on the Studio origin string or deployed Studio runtime.
+
+`CLOUDFLARE_API_TOKEN` remains an optional Cloudflare REST-API fallback for bucket-CORS management. It is not required while the R2 S3 access-key token retains Admin Read & Write permission.
+
+The connected Vercel RenderLab project is currently `live=false`. Its two stable Vercel project origins listed above are already in the managed CORS rule. If RenderLab later adopts a custom domain or any different user-facing origin, add that exact origin to the managed rule before enabling direct browser uploads there. Do not use a broad wildcard merely to avoid origin management.
 
 ## Generation Worker Fleet
 RenderLab reuses the existing ComfyUI/Modal workers while the **RenderLab server owns orchestration**.
 
-Public routing metadata lives in `src/server/generation/worker-fleet.ts`; no account credentials belong there.
+Public routing metadata lives in `src/server/generation/worker-fleet.ts`; credentials never belong there.
 
 Reused ecosystems:
 - FLUX.2 Klein 9B — primary + standby
@@ -56,69 +108,55 @@ Qwen remains an audited capability but is not the default user-facing image work
 Create UI
   -> POST /api/generation/jobs
   -> validate normalized product request
-  -> create public.generation_jobs
+  -> create generation_jobs
   -> resolve opaque temporary-source/media-asset inputs
   -> server submits directly to compatible worker fleet
-  -> primary/standby submission routing
   -> GET /api/generation/jobs/:jobId polls RenderLab
   -> server polls assigned worker and updates real state
   -> persisting
   -> write output to shared R2
-  -> create public.media_assets
+  -> create media_assets
   -> generation_jobs succeeds with output_asset_ids
   -> browser receives persisted product result
 ```
 
 Worker completion is not product completion. `succeeded` occurs only after durable R2 + `media_assets` persistence.
 
-### Submission routing
-Initial submission may try another compatible worker when a worker clearly rejects/is unavailable before a provider call ID is accepted. The accepted provider job is then pinned to its assigned worker.
+### Worker reassignment safety
+Initial submission may try another compatible worker when a worker clearly rejects/is unavailable before a provider call ID is accepted. Once accepted, the provider job is pinned to its assigned worker.
 
-### Poll-time reassignment safety
-RenderLab carries forward the proven Saga safety distinction rather than treating every worker error as failover-safe.
+Poll-time automatic reassignment requires explicit safe evidence such as credit/budget/quota exhaustion or an explicit worker-unavailable state. Generic 429, generic 5xx and network/fetch ambiguity do not trigger automatic resubmission because the original worker may already have accepted/executed the request. Failover history is persisted and bounded.
 
-Safe automatic reassignment requires explicit evidence such as:
-- credit/budget/quota exhaustion;
-- explicit worker state/code indicating unavailable;
-- explicit disabled/stopped workspace evidence.
+PR #5 implemented this rule; post-merge live generation regression run `33027861292` succeeded.
 
-Automatic poll-time reassignment is **not** allowed for ambiguous conditions such as:
-- generic HTTP 429;
-- generic 5xx;
-- network/fetch failure.
+## Verified Native Coverage
+- Reference upload → verified, self-cleaning.
+- Create Image → verified end-to-end with real worker execution and persistence.
+- Edit Image with reference → run `33021843503`.
+- Create Video → run `33021977765`.
+- Animate Image with reference → run `33021977765`.
+- Durable generated media continuation → run `33027460976`.
+- Configured complete Create browser lifecycle → run `33031817744`.
+- Configured Library/Viewer generated-media lifecycle → run `33034606396`.
+- Persistent media backend integration → original run `33035954398`; current-state run `33066999365` including concurrent completion recovery, sequential idempotency, Unicode filename preservation, ordinary media API visibility/content and cleanup.
+- Persistent media credential-free production/UI regression → current-state run `33066999317`.
+- Persistent media browser lifecycle + R2 CORS reconciliation → current-state run `33066999350`; real browser signed PUT, Library → Viewer → Create continuation, six responsive screenshots and cleanup all passed.
 
-Those ambiguous failures may occur after the worker already accepted/executed the job. Resubmitting would risk duplicate generations. Instead, the API returns a transient unavailable response and Create's bounded polling recovery retries status checks against the same job.
-
-Poll reassignment attempts are persisted in `failover_history` and limited to three. An ambiguous standby submission is not automatically repeated.
-
-PR #5 implemented this rule. Its production build/Playwright checks passed, and post-merge live generation regression run `33027861292` completed successfully.
-
-### Verified native coverage
-- Reference upload → **verified**, self-cleaning.
-- Create Image → **verified end-to-end**, including real worker execution, persistence, asset verification, and cleanup.
-- Edit Image with reference → **verified end-to-end** in GitHub Actions run `33021843503`.
-- Create Video → **verified end-to-end** in GitHub Actions run `33021977765`.
-- Animate Image with reference → **verified end-to-end** in the same run `33021977765`.
-- Durable media continuation → **verified end-to-end** in run `33027460976`: a persisted Create Image `media_assets` result was loaded from shared R2 by opaque product identity and used as the next Edit Image input; both generation fixtures were cleaned afterward.
-- Post-hardening regression → **verified** in run `33027861292` after conservative poll-time reassignment was merged.
-- Configured Create browser lifecycle → **verified** in run `33031817744`: one real Create Image request was submitted from the rendered Create UI, reached durable persistence, rendered through the product media API, exposed Edit/Animate, transitioned into Edit from the durable asset at desktop/mobile widths, and removed its generated R2/media/job fixture afterward.
-- Configured Library/Viewer media lifecycle → **verified** in run `33034606396`: a deterministic 400×300 R2 object plus RenderLab `media_assets` row was rendered through Library and Media Viewer, media geometry was verified, capability-derived Edit/Animate was exposed, Edit initialized Create through the durable asset contract, and the R2/media fixture was removed afterward. This verifier does not invoke ComfyUI or spend a generation.
-
-All four initial Create operations, durable image continuation, the complete browser-visible Create lifecycle, and the Phase 4 Library → Viewer → Create durable-media path now have live shared-infrastructure coverage.
+The persistent media verifier does not invoke ComfyUI or spend a generation.
 
 ## Studio Compatibility Boundary
 A temporary isolated compatibility adapter exists at `src/server/generation/studio-compat.ts` for migration/debugging only. It is not the preferred production path.
 
 The product API prioritizes:
-1. explicitly configured external RenderLab backend via `RENDERLAB_GENERATION_BACKEND_URL` if intentionally used;
+1. explicitly configured external RenderLab backend if intentionally used;
 2. RenderLab-native orchestration when shared Supabase/R2 credentials are configured;
 3. Studio compatibility only when explicitly configured as fallback.
 
-The deployed Studio runtime at `studio.faresuniform.uk` was found during integration work to have stale/incorrect R2 credentials (`SignatureDoesNotMatch`). RenderLab's own shared R2 credentials were independently verified. This reinforces that deployed Studio must not become a production dependency.
+The deployed Studio runtime previously showed stale/incorrect R2 credentials while RenderLab's own shared R2 credentials were independently verified. Do not make the deployed Studio runtime a RenderLab product dependency.
 
-Remove the compatibility path once no current migration/debugging workflow still requires it. Do not route new product behavior through Studio merely because the adapter exists.
+Remove the compatibility path once no current migration/debugging workflow still requires it.
 
-## Reference Upload Flow
+## Temporary Reference Upload Flow
 ```text
 Create UI
   -> POST /api/assets/reference/upload-tickets
@@ -130,33 +168,34 @@ Create UI
   -> generation binds opaque source ID
 ```
 
-`scripts/verify-reference-upload.mjs` verifies the real shared-resource path and removes its R2/Supabase fixture afterward.
-
-`generation_sources` is a temporary generation-input contract. It is **not** the persistent uploaded-asset Library model required by UI-010. Do not expose temporary reference rows as durable Library uploads by assumption.
+`generation_sources` is temporary generation-input state. It must not be exposed or reinterpreted as durable Library uploaded media.
 
 ## Media Delivery Boundary
-RenderLab exposes media through product APIs rather than raw R2 keys:
+RenderLab exposes media through product APIs rather than raw R2 identity:
 - `GET /api/media/assets`
 - `GET /api/media/assets/:assetId`
 - `GET /api/media/assets/:assetId/content`
 - `GET /api/media/assets/:assetId/thumbnail`
 
-The list endpoint provides bounded newest-first `media_assets` browsing, optional image/video kind filtering, and pagination metadata. Content/thumbnail endpoints issue short-lived signed R2 redirects server-side.
+Generated and uploaded durable media use the same public media contract. Durable media can become generation input via `{ type: "media-asset", id }`; the server resolves that product identity to private storage.
 
-Durable media assets can also become generation inputs via `{ type: "media-asset", id }`; the server resolves that product ID to the private R2 object. The browser never needs the underlying storage key.
+Viewer → Create continuation carries only opaque asset identity plus action intent. The Create server route reloads the durable asset and validates capability compatibility before initializing workspace state.
 
-Viewer → Create continuation carries only opaque asset identity plus action intent in the URL. The Create server route reloads the durable asset and validates action compatibility before it becomes workspace state.
-
-## Required Server Environment Variables
+## Required Server / CI Environment Variables
 ### Supabase
 - `SUPABASE_URL` = `https://rashyleshocuvpgcooxy.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY` — secret, server only
 
-### Cloudflare R2
+### Cloudflare R2 object + bucket configuration access
 - `R2_ACCOUNT_ID`
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 - `R2_BUCKET_NAME`
+
+The R2 access-key token currently requires Admin Read & Write because the configured browser lifecycle reconciles the managed bucket CORS rule before testing direct browser upload.
+
+### Optional Cloudflare REST fallback
+- `CLOUDFLARE_API_TOKEN` — optional; may be used by `scripts/ensure-r2-browser-cors.mjs` instead of the S3 bucket-CORS API when intentionally configured. Do not expose it to browser code.
 
 ### Optional external RenderLab generation service
 - `RENDERLAB_GENERATION_BACKEND_URL`
@@ -165,49 +204,29 @@ Viewer → Create continuation carries only opaque asset identity plus action in
 - `RENDERLAB_STUDIO_COMPAT_URL`
 
 ## Security Rules
-- Never commit Supabase service-role keys, R2 access keys, or provider credentials.
+- Never commit Supabase service-role keys, R2 access keys or provider credentials.
 - Never expose server credentials through `NEXT_PUBLIC_*`.
 - Keep RLS enabled on RenderLab tables.
-- Direct browser uploads use short-lived signed URLs.
+- Direct browser uploads use short-lived signed URLs and origin-restricted bucket CORS.
+- Restrict CORS to exact known origins; do not use broad wildcard origins merely for CI/deployment convenience.
 - Worker/provider routing remains server-owned operational state.
-- Shared resources do not authorize mutation of legacy Saga tables/contracts without an explicit decision.
-- Raw R2 keys and worker IDs are internal implementation metadata, not browser product identities.
-- URL continuation parameters are not trusted media records; durable identity/capability must be revalidated server-side.
+- Shared resources do not authorize mutation of legacy Saga contracts without an explicit decision.
+- Raw R2 keys and worker IDs are internal implementation metadata.
+- URL continuation parameters are untrusted navigation intent; durable asset/capability are revalidated server-side.
 
 ## CI / Integration Validation
-Default GitHub UI CI intentionally runs without production infrastructure secrets and validates truthful unavailable states.
+Ordinary GitHub UI CI runs without production infrastructure secrets and validates truthful unavailable states.
 
-Configured integration workflows use the existing server-side GitHub Secrets and keep production credentials out of browser/client code. Current integration coverage includes:
-- signed reference upload;
-- Create Image;
-- Edit Image;
-- Create Video;
-- Animate Image;
-- persisted `media-asset` → Edit continuation;
-- browser-driven Create result/continuation rendering at desktop/mobile widths;
-- Library → Media Viewer → Create Edit rendering against real shared R2/Supabase media.
+Configured workflows use GitHub Secrets and keep production credentials out of browser/client code. Integration fixtures self-clean shared production resources.
 
-Integration fixtures self-clean rather than pollute shared production resources.
-
-### Configured Create visual lifecycle
-`scripts/verify-create-lifecycle.mjs` and `.github/workflows/create-lifecycle-visual.yml` provide the repeatable visual lifecycle check used for final Create approval. It uses one real generation, captures four screenshots, then deletes its generated R2 object and associated RenderLab media/job rows. The workflow is separate from ordinary credential-free UI CI and can also be manually dispatched when future Create changes justify a configured regression review.
-
-Approval run: `33031817744`.
-
-### Configured Library visual lifecycle
-`scripts/verify-library-lifecycle.mjs` and `.github/workflows/library-lifecycle-visual.yml` provide the repeatable Phase 4 durable-media visual check. The verifier seeds one deterministic 400×300 PNG directly into the approved shared R2 + RenderLab `media_assets` contract, drives Library → Media Viewer → Create Edit through Chromium at desktop/mobile widths, verifies decoded/rendered media geometry, captures six screenshots, and deletes the R2/media fixture afterward. It deliberately does not call the generation worker fleet.
-
-Approval run: `33034606396`.
-
-Required GitHub secrets for configured media/generation workflows:
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `R2_ACCOUNT_ID`
-- `R2_ACCESS_KEY_ID`
-- `R2_SECRET_ACCESS_KEY`
-- `R2_BUCKET_NAME`
+Key workflows:
+- `scripts/verify-create-lifecycle.mjs` + `.github/workflows/create-lifecycle-visual.yml` — real generation browser lifecycle.
+- `scripts/verify-media-upload.mjs` + `.github/workflows/media-upload-integration.yml` — server/API persistent upload contract without ComfyUI.
+- `scripts/verify-library-lifecycle.mjs` + `.github/workflows/library-lifecycle-visual.yml` — reconciles/verifies exact-origin R2 CORS, then performs actual browser persistent Upload → Library → Viewer → Create continuation, no ComfyUI.
+- `scripts/ensure-r2-browser-cors.mjs` — idempotent CORS reconciliation through the Cloudflare REST API when `CLOUDFLARE_API_TOKEN` is present, otherwise through the R2 S3 API using the admin-capable R2 access-key token.
 
 ## Next Infrastructure Work
-1. Define the RenderLab-owned persistent uploaded-asset contract required by UI-010 before implementing Library upload management. Do not repurpose legacy `studio_uploads` or temporary `generation_sources` by assumption.
-2. Remove the transitional Studio compatibility adapter once no migration/debugging need depends on it.
+1. If the eventual public RenderLab custom/domain origin differs from the two currently configured stable Vercel domains, add that exact origin to the managed R2 CORS rule before deployment.
+2. Remove the transitional Studio compatibility adapter when no migration/debugging need depends on it.
 3. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
-4. Preserve the conservative duplicate-avoidance rule if worker APIs/routing evolve; do not broaden safe reassignment to generic network/5xx errors without stronger execution evidence.
+4. Preserve the conservative duplicate-avoidance rule if worker routing evolves.
