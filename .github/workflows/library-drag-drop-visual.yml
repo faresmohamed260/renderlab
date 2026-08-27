@@ -1,0 +1,114 @@
+name: Library Drag Drop Visual
+
+on:
+  pull_request:
+    paths:
+      - "scripts/ensure-r2-browser-cors.mjs"
+      - "scripts/verify-library-drag-drop.mjs"
+      - ".github/workflows/library-drag-drop-visual.yml"
+      - "components.json"
+      - "package.json"
+      - "src/components/ui/**"
+      - "src/lib/utils.ts"
+      - "supabase/migrations/0003_persistent_media_uploads.sql"
+      - "src/app/library/**"
+      - "src/features/library/**"
+      - "src/app/api/media/assets/**"
+      - "src/app/api/media/uploads/**"
+      - "src/server/media/media-assets.ts"
+      - "src/server/media/media-uploads.ts"
+      - "src/server/storage/r2.ts"
+      - "src/lib/api/media-assets-contract.ts"
+      - "src/lib/api/media-upload-contract.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-library-lifecycle-shared
+  cancel-in-progress: false
+
+jobs:
+  drag-drop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN || secrets.CLOUDFLARE_R2_ADMIN_TOKEN }}
+      RENDERLAB_BROWSER_UPLOAD_ORIGINS: http://127.0.0.1:3000,http://localhost:3000,https://renderlab-faresmohamed260-6733s-projects.vercel.app,https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required shared-resource secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Reconcile and verify R2 browser upload CORS
+        run: node scripts/ensure-r2-browser-cors.mjs
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start configured application
+        shell: bash
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
+          echo $! > /tmp/renderlab-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/library > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-next.log || true
+          exit 1
+
+      - name: Render configured Library drag/drop upload
+        run: node scripts/verify-library-drag-drop.mjs
+
+      - name: Cleanup Library drag/drop fixture
+        if: always()
+        run: node scripts/verify-library-drag-drop.mjs --cleanup-only
+
+      - name: Print server log on failure
+        if: failure()
+        run: cat /tmp/renderlab-next.log || true
+
+      - name: Upload Library drag/drop screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-library-drag-drop-screenshots
+          path: artifacts/library-drag-drop-*.png
+          if-no-files-found: warn
+          retention-days: 14

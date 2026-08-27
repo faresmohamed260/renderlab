@@ -1,0 +1,215 @@
+import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { chromium } from "@playwright/test";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+
+const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
+const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const r2Bucket = process.env.R2_BUCKET_NAME;
+const artifactDir = process.env.RENDERLAB_LIBRARY_DROP_ARTIFACT_DIR || "artifacts";
+const fixturePath = process.env.RENDERLAB_LIBRARY_DROP_FIXTURE_PATH || "/tmp/renderlab-library-drop-upload-fixture.json";
+const cleanupOnly = process.argv.includes("--cleanup-only");
+const fixtureFilename = "renderlab-drop-اختبار-画像.png";
+const fixtureDisplayName = fixtureFilename.replace(/\.[^.]+$/, "");
+
+const pngBytes = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAZAAAAEsCAIAAABi1XKVAAAETElEQVR42u3by3GrQBBAUUlFlqRAOATAhgU7hUgAqEp8Buihz9m/Z6un+jLY5fd3Gl4ANfgYASBYAIIFCBaAYAEIFiBYAIIFIFiAYAEIFoBgAYIFIFgAggUIFoBgAQgWIFgAggUgWIBgAQgWgGABggUgWACCBQgWgGABggUgWACCBQgWgGABCBYgWACCBSBYgGABCBaAYAGCBSBYAIIFCBaAYAEIFiBYAIIFIFiAYAEIFoBgAYIFIFgAggUIFoBgAYIFIFgAggUIFoBgAQgWIFgAggUgWIBgAQgWgGABggUgWACCBQgWwG0aI+CIbtz8T/rW2BAsQuZpzX8iYQgWUQq19avoF4JFuE79/erKhWARtFPKhWBRX6eUC8GiylT9/IZlS7CQKtlCsJAq2UKwSJsq2RIspEq2iM7fEqqVT4obFhbYVQs3LNTKZ3fDwrq6auGGhVqZBoKF/TQTr4RYS6+HuGGhVqaEYNlDzEqwsIEmhmBh98wNwbJ1mJ5gYd/MEMHCppkkgmXHME/BwnaZKoKFvTJbBAsQLFwBTBjBwi6ZM4JlizBtwQIQLDzwzRzBsjmYvGABCJaHPOaPYNkWnIJgAQiWBzvOQrCMABAsPNKdCIIFCBYe5jgXwQIQLI9xnI5gAQgWHuDOCMECBAtAsPCu4aQQLECwAAQLbxnOC8ECBAtAsLxf4NQQLECwAAQLQLAAwWI3P7t1dggWIFgAggUgWIBgAQhWKn7N5AQRLECwAAQLQLAAwQIQLADBAgQLQLAABAsQLADBAhAsQLAABAtAsADBYoW+NQMniGABggUgWACCBQgWgGCl49dMzg7BAgQLQLAABAsQLMrxs1unhmABggUgWN4vcF4IFiBYAILlLQMnhWABggUgWN41cEYIFiBYeIA7HQQLQLA8xnEuggUgWB7mOBEECxAsPNKdBYIFCBYe7DgFwcK2mD+CBQgWHvImbwaChc0xcwQLECw88E0bwcIWmTOCZZcwYcECECxcAcwWwbJXmKpgYbvME8HCjpkkgmXTMEPBwr6ZHoKFrTM3BMvuYWKChQ00KwQLe2hKLDRG8KRt7EaTkCo3LGymmSBY2E/TwCuhLc3+eihVbljYWJ8dNyxctaQKNyxS7bBauWHhqiVVCBayJVUIFkmyJVWChWxJFYKFbEkVgkXBCoQtl04hWEQvl04hWEQvl04hWBRox0n9UigEiyvKsiNh8oRgESVhcB5/SwgIFoBgAYIFIFgAggUIFoBgAQgWIFgAggUgWIBgAQgWgGABggUgWACCBQgWgGABCBYgWACCBSBYgGABCBaAYAGCBSBYgGAZASBYAIIFCBaAYAEIFiBYAIIFIFiAYAEIFoBgAYIFIFgAggUIFoBgAQgWIFgAggUgWIBgAQgWgGABggUgWACCBQgWgGABggUgWACCBQgWgGABCBYgWACCBSBYgGABCBaAYAGCBSBYAIIFPNAMNnjReMMTg9AAAAAASUVORK5CYII=",
+  "base64",
+);
+
+for (const [name, value] of Object.entries({
+  SUPABASE_URL: supabaseUrl,
+  SUPABASE_SERVICE_ROLE_KEY: supabaseKey,
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+  R2_BUCKET_NAME: r2Bucket,
+})) {
+  if (!value) throw new Error(`${name} is required for configured Library drag/drop verification.`);
+}
+
+const r2Client = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
+});
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+async function supabase(path, init = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("apikey", supabaseKey);
+  headers.set("authorization", `Bearer ${supabaseKey}`);
+  if (init.body != null && !headers.has("content-type")) headers.set("content-type", "application/json");
+  return fetch(`${supabaseUrl}/rest/v1/${path}`, { ...init, headers });
+}
+
+async function rows(path) {
+  const response = await supabase(path);
+  if (!response.ok) throw new Error(`Supabase Library drag/drop query failed (${response.status}): ${await response.text()}`);
+  return response.json();
+}
+
+async function readFixture() {
+  try {
+    const payload = JSON.parse(await readFile(fixturePath, "utf8"));
+    return typeof payload?.uploadId === "string" ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+async function cleanupFixture() {
+  const fixture = await readFixture();
+  if (!fixture) return;
+
+  const sessions = await rows(
+    `media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id,storage_key,media_asset_id`,
+  );
+  const session = sessions[0] || null;
+  const storageKey = session?.storage_key || fixture.storageKey || null;
+  const assetId = session?.media_asset_id || fixture.assetId || null;
+
+  if (storageKey) {
+    await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: storageKey })).catch(() => {});
+  }
+  if (session) {
+    const response = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Could not remove drag/drop upload session (${response.status}): ${await response.text()}`);
+  }
+  if (assetId) {
+    const response = await supabase(`media_assets?id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Could not remove drag/drop media asset (${response.status}): ${await response.text()}`);
+  }
+
+  const remainingSessions = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id`);
+  if (remainingSessions.length) throw new Error(`Drag/drop cleanup left upload session ${fixture.uploadId}.`);
+  if (assetId) {
+    const remainingAssets = await rows(`media_assets?id=eq.${encodeURIComponent(assetId)}&select=id`);
+    if (remainingAssets.length) throw new Error(`Drag/drop cleanup left media asset ${assetId}.`);
+  }
+
+  await rm(fixturePath, { force: true });
+  console.log(`Cleaned Library drag/drop fixture upload=${fixture.uploadId}${assetId ? ` asset=${assetId}` : ""}.`);
+}
+
+async function createDataTransfer(page, files) {
+  return page.evaluateHandle(({ files: fileSpecs }) => {
+    const transfer = new DataTransfer();
+    for (const spec of fileSpecs) {
+      const binary = atob(spec.base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+      transfer.items.add(new File([bytes], spec.name, { type: spec.mimeType }));
+    }
+    return transfer;
+  }, { files });
+}
+
+if (cleanupOnly) {
+  await cleanupFixture();
+  process.exit(0);
+}
+
+await mkdir(artifactDir, { recursive: true });
+const desktopViewport = { width: 1440, height: 1024 };
+const mobileViewport = { width: 390, height: 844 };
+let browser = null;
+let primaryError = null;
+
+try {
+  browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark" });
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/library`, { waitUntil: "networkidle", timeout: 60_000 });
+
+  const surface = page.locator('[data-library-drop-surface="true"]');
+  await surface.waitFor({ state: "visible", timeout: 30_000 });
+  assert(await page.getByRole("button", { name: "Upload", exact: true }).isVisible(), "Upload button baseline is not visible.");
+
+  const multipleTransfer = await createDataTransfer(page, [
+    { name: "one.png", mimeType: "image/png", base64: pngBytes.toString("base64") },
+    { name: "two.png", mimeType: "image/png", base64: pngBytes.toString("base64") },
+  ]);
+  await surface.dispatchEvent("dragenter", { dataTransfer: multipleTransfer });
+  await page.getByText("Drop image to add to Library", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
+  await surface.dispatchEvent("drop", { dataTransfer: multipleTransfer });
+  await page.getByRole("alert").filter({ hasText: "Drop one image at a time." }).waitFor({ state: "visible", timeout: 10_000 });
+  await multipleTransfer.dispose();
+
+  const transfer = await createDataTransfer(page, [
+    { name: fixtureFilename, mimeType: "image/png", base64: pngBytes.toString("base64") },
+  ]);
+  await surface.dispatchEvent("dragenter", { dataTransfer: transfer });
+  await page.getByText("Drop image to add to Library", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
+  await page.screenshot({ path: `${artifactDir}/library-drag-drop-desktop-ready.png`, fullPage: true });
+
+  const ticketPromise = page.waitForResponse(
+    (response) => response.url().endsWith("/api/media/uploads/upload-tickets") && response.request().method() === "POST",
+    { timeout: 30_000 },
+  );
+  const completionPromise = page.waitForResponse(
+    (response) => response.url().endsWith("/api/media/uploads/upload-completions") && response.request().method() === "POST",
+    { timeout: 60_000 },
+  );
+  await surface.dispatchEvent("drop", { dataTransfer: transfer });
+  await transfer.dispose();
+
+  const ticketResponse = await ticketPromise;
+  const ticketPayload = await ticketResponse.json();
+  assert(ticketResponse.ok() && ticketPayload?.ok && ticketPayload.ticket?.uploadId, `Drag/drop upload ticket failed (${ticketResponse.status()}): ${JSON.stringify(ticketPayload)}`);
+  const uploadId = ticketPayload.ticket.uploadId;
+  await writeFile(fixturePath, JSON.stringify({ uploadId }), "utf8");
+
+  const completionResponse = await completionPromise;
+  const completionPayload = await completionResponse.json();
+  assert(completionResponse.ok() && completionPayload?.ok && completionPayload.asset?.id, `Drag/drop completion failed (${completionResponse.status()}): ${JSON.stringify(completionPayload)}`);
+  const assetId = completionPayload.asset.id;
+  assert(completionPayload.asset.origin === "uploaded", "Drag/drop upload was not promoted as uploaded media.");
+  assert(completionPayload.asset.displayName === fixtureDisplayName, "Drag/drop display name was not derived correctly.");
+  assert(completionPayload.asset.originalFilename === fixtureFilename, "Drag/drop upload did not preserve the Unicode filename.");
+
+  const sessionRows = await rows(
+    `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=status,storage_key,media_asset_id,filename,display_name`,
+  );
+  const session = sessionRows[0];
+  assert(session?.status === "completed" && session.media_asset_id === assetId, "Drag/drop upload session did not complete against the durable asset.");
+  assert(session.filename === fixtureFilename, "Drag/drop upload session changed the original filename.");
+  assert(session.display_name === fixtureDisplayName, "Drag/drop upload session changed the display name.");
+  await writeFile(fixturePath, JSON.stringify({ uploadId, assetId, storageKey: session.storage_key }), "utf8");
+
+  const card = page.locator(`a[href="/library/${assetId}"]`);
+  await card.waitFor({ state: "visible", timeout: 30_000 });
+  assert(await card.getAttribute("aria-label") === `Open ${fixtureDisplayName}`, "Drag/drop Library card did not expose the expected display name.");
+  assert((await page.getByRole("status").filter({ hasText: "Added to Library." }).count()) > 0, "Drag/drop success was not announced to assistive technology.");
+  assert((await page.locator('[data-library-drop-overlay="true"]').count()) === 0, "Drag/drop overlay remained visible after completion.");
+  await page.screenshot({ path: `${artifactDir}/library-drag-drop-desktop-complete.png`, fullPage: true });
+
+  await page.setViewportSize(mobileViewport);
+  await page.waitForTimeout(250);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  assert(await page.getByRole("button", { name: "Upload", exact: true }).isVisible(), "Upload button is not visible on mobile after drag/drop enhancement.");
+  assert((await page.locator('[data-library-drop-overlay="true"]').count()) === 0, "Drag/drop affordance is persistently visible on mobile.");
+  await page.screenshot({ path: `${artifactDir}/library-drag-drop-mobile-complete.png`, fullPage: true });
+
+  console.log(`Configured Library drag/drop upload rendered successfully. upload=${uploadId} asset=${assetId}`);
+} catch (error) {
+  primaryError = error;
+} finally {
+  if (browser) await browser.close().catch(() => {});
+  try {
+    await cleanupFixture();
+  } catch (cleanupError) {
+    console.error(cleanupError);
+    if (!primaryError) primaryError = cleanupError;
+  }
+}
+
+if (primaryError) throw primaryError;
