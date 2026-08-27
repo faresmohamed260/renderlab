@@ -78,11 +78,11 @@ export function CreateAdvancedPanel({
 
   return (
     <CollapsibleContent className="mb-3 rounded-xl border border-border bg-surface-2 p-4">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-text">Advanced</p>
           <p className="mt-1 text-xs leading-5 text-text-muted">
-            Technical controls for reproducibility and tuning. Defaults stay safe unless you change them.
+            Reproducibility and tuning. Defaults stay safe unless you change them.
           </p>
         </div>
         <button
@@ -95,10 +95,10 @@ export function CreateAdvancedPanel({
         </button>
       </div>
 
-      <fieldset className="grid gap-3 sm:grid-cols-3">
+      <fieldset className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <legend className="sr-only">Advanced generation controls</legend>
 
-        <label className="flex flex-col gap-1.5 sm:col-span-3">
+        <label className="col-span-2 flex flex-col gap-1.5 sm:col-span-3">
           <span className="text-xs font-medium text-text-muted">
             {generationAdvancedCapabilities.negativePrompt.label}
           </span>
@@ -155,7 +155,7 @@ export function CreateAdvancedPanel({
         </label>
 
         {outputKind === "video" ? (
-          <label className="flex flex-col gap-1.5 sm:col-span-1">
+          <label className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-text-muted">Frame rate</span>
             <select
               value={draft.frameRate}
