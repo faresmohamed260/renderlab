@@ -3,6 +3,11 @@ name: Create Lifecycle Visual
 on:
   pull_request:
     paths:
+      - "src/features/create/**"
+      - "src/components/ui/**"
+      - "src/lib/utils.ts"
+      - "components.json"
+      - "package.json"
       - "scripts/verify-create-lifecycle.mjs"
       - ".github/workflows/create-lifecycle-visual.yml"
   workflow_dispatch:

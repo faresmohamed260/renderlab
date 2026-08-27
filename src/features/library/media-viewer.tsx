@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import { continuationActionsForMedia } from "@/lib/capabilities/generation";
 import { MediaViewerActions } from "@/features/library/media-viewer-actions";
@@ -50,13 +51,12 @@ export function MediaViewer({ asset }: { asset: PublicMediaAsset }) {
 
   return (
     <section className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-8 sm:px-8 sm:pb-16 sm:pt-10 lg:px-10 lg:pt-12">
-      <Link
-        href="/library"
-        className="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-medium text-text-muted transition-colors hover:bg-surface-1 hover:text-text"
-      >
-        <ArrowLeft aria-hidden="true" size={17} />
-        Back to Library
-      </Link>
+      <Button asChild variant="ghost">
+        <Link href="/library">
+          <ArrowLeft aria-hidden="true" data-icon="inline-start" />
+          Back to Library
+        </Link>
+      </Button>
 
       <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
         <div className="flex min-h-[52vh] items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-1 p-2 sm:p-4 lg:min-h-[70vh]">
@@ -137,18 +137,9 @@ export function MediaViewer({ asset }: { asset: PublicMediaAsset }) {
               <h3 className="text-xs font-semibold text-text">Continue</h3>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {actions.map((action, index) => (
-                  <Link
-                    key={action.id}
-                    href={continuationHref(asset.id, action.id)}
-                    className={[
-                      "inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-semibold transition-colors",
-                      index === 0
-                        ? "bg-accent text-white hover:opacity-90"
-                        : "border border-border bg-surface-2 text-text hover:bg-surface-3",
-                    ].join(" ")}
-                  >
-                    {action.label}
-                  </Link>
+                  <Button key={action.id} asChild variant={index === 0 ? "default" : "secondary"} size="lg" className="w-full">
+                    <Link href={continuationHref(asset.id, action.id)}>{action.label}</Link>
+                  </Button>
                 ))}
               </div>
             </div>

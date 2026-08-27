@@ -18,7 +18,8 @@ Users interact with understandable creative goals rather than ComfyUI graphs, wo
 - React
 - TypeScript
 - Tailwind CSS
-- shadcn/ui/Radix plus the approved maintained component ecosystem
+- shadcn/ui Radix Nova + `radix-ui` through the approved maintained component ecosystem
+- RenderLab-owned normalized primitive layer under `src/components/ui`
 - Server Components by default; Client Components for interactive feature behavior
 
 ### Infrastructure
@@ -57,13 +58,29 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Library v0.1: `APPROVED`; credential-free run `33034606323`, configured lifecycle `33034606396`.
 - Persistent Library upload: `APPROVED`, merged through PR #9 as `d306f2abd1831538c51692545d72db1e5e9e0814`.
 - Library search v0.1: `APPROVED`, merged through PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`.
-- Durable Media Download v0.1: `APPROVED`, merged through PR #11 as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`; post-merge main shell/reference-upload runs `33071764713` / `33071764748` passed.
+- Durable Media Download v0.1: `APPROVED`, merged through PR #11 as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`.
 - Durable Media Rename v0.1: `APPROVED`, merged through PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4` after exact-head six-gate CI and clean shared-resource verification.
 - Create supports Create Image, Edit Image, Create Video and Animate Image.
 - Durable generated and uploaded media share RenderLab `media_assets`, product APIs and opaque `media-asset` identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 Do not redesign these approved surfaces merely because new media capabilities are added.
+
+## Maintained UI Primitive Contract
+UI-026 makes maintained conventional controls a repository-enforced frontend foundation rule.
+
+- `components.json` configures shadcn `radix-nova`.
+- `src/components/ui` owns normalized Alert, Button, Collapsible, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle and ToggleGroup primitives.
+- Conventional visible controls in `src/features` and `src/components/shell` compose those approved primitives rather than hand-styled raw native controls.
+- Native `file` and `hidden` inputs remain allowed as browser/form plumbing.
+- Local wrappers own RenderLab tokens, variants, spacing, required semantic elements and product accessibility adaptations; features should not rebuild the same mechanic independently.
+- Correct maintained accessibility semantics are authoritative. Create Image/Video is a required Radix single-choice `radiogroup` with checked `radio` items.
+- `npm run verify:ui-purity` rejects raw visible button/select/textarea/ordinary-input controls in feature/shell code and runs in UI Shell CI.
+- Shared primitive/config/package changes retrigger the dependent Create, Library Search, Library Lifecycle, Download, Rename and Shell regressions.
+
+PR #13 is foundation-only; it preserves approved Create/Library/Viewer/shell product behavior. Implementation head `36ee8e8eb80645d1389afa749a36b493e2abbb61` passed UI Shell `33088086901`, Create Lifecycle `33088086892`, Library Search `33088086914`, Library Lifecycle `33088086872`, Media Download `33088086907`, and Media Rename `33088086871`. Final-code UI Shell and Library lifecycle desktop/mobile screenshots were visually inspected with no unintended hierarchy/layout drift. Library lifecycle verified real Upload → Library → Viewer → Edit continuation, correct Radix Image selection, 400×300 media geometry and self-cleanup.
+
+Documentation-finalized candidate head `ba8199b49d4576dc5495779f8e84812786c5b586` passed UI Shell `33089332190`, Create Lifecycle `33089332135`, Library Search `33089333557`, Library Lifecycle `33089332001`, Media Download `33089332087`, and Media Rename `33089332021`. PR #13 is `APPROVED FOR MERGE`; only final exact-head confirmation after the tracker-only approval update plus shared-resource cleanup verification remains before the merge operation.
 
 ## Persistent Media Upload Contract
 UI-022 defines the approved durable upload model.
@@ -99,7 +116,7 @@ UI-024 defines Download as a contextual product-media action.
 - Generated downloads use deterministic `renderlab-<kind>-<id-prefix>.<ext>` names rather than prompts/storage keys.
 - v0.1 adds no Library-card Download or batch framework.
 
-Implementation-head runs `33070792349`, `33070792317`, `33070792362`, `33070792329`, `33070792343` passed. Documentation-finalized runs `33071571971`, `33071572092`, `33071571998`, `33071571944`, `33071571912` passed. PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`; `main` remained green.
+PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef` after implementation and documentation-finalized configured verification; `main` remained green.
 
 ## Durable Media Rename v0.1 Contract
 UI-025 defines Rename as durable display identity, not file/storage mutation.
@@ -114,24 +131,12 @@ UI-025 defines Rename as durable display identity, not file/storage mutation.
 - v0.1 adds no Library-card rename, modal framework, global store, delete, batch actions, favorites/collections or database migration.
 
 ### Verified approval evidence
-Refined implementation head `fb6f42cdfae377cf841655320dc4bbeee74d3549` passed:
-- UI Shell Validation `33074480462`;
-- Library Search Visual `33074480419`;
-- Persistent Media Upload Integration `33074480288`;
-- Media Download Visual `33074480319`;
-- Media Rename Visual `33074480356`;
-- Library Lifecycle Visual `33074480489` on rerun after an unrelated stale shared fixture was removed.
-
-Configured Rename verification used real self-cleaning R2-backed generated/uploaded assets and Chromium. It verified invalid/blank/overlength rejection, whitespace normalization, Unicode names, durable persistence, search discovery, provenance/original-filename/storage preservation, unchanged uploaded Download filename/bytes, responsive edit/renamed states and cleanup.
-
-Four refined Viewer screenshots from `33074480356` were visually inspected. The initial edit composition was deliberately refined so Download no longer shifts below the editor.
-
-Shared lifecycle verification exposed two older leaked same-name fixtures over the course of PR #12 validation; both were unrelated to Rename product behavior. Their database rows and exact R2 objects were removed. Cleanup run `33075125636` deleted the first orphan, and cleanup run `33076888858` deleted and HEAD-verified absence of the second. The configured Library lifecycle is now hardened in two ways: its workflow is serialized with `concurrency: renderlab-library-lifecycle-shared`, and `verify-library-lifecycle.mjs` targets the exact durable `media-asset` ID returned by its own upload completion while separately asserting the expected human display name. Fixture-name uniqueness is no longer a correctness assumption.
-
 Final exact-head `70cbcc4daeafb9a48c0253df38796811d4cf4f03` passed UI Shell `33077320919`, Library Search `33077320839`, Persistent Media Upload `33077320935`, Media Download `33077320886`, Media Rename `33077321228`, and Library Lifecycle `33077320976`. Direct Supabase cleanup immediately before merge found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.
 
+The configured Library lifecycle is serialized with `concurrency: renderlab-library-lifecycle-shared` and targets the exact durable asset ID returned by its own upload completion while separately asserting the expected human display name. Fixture-name uniqueness is not a correctness assumption.
+
 ## R2 Browser CORS State
-The admin-capable R2 access-key token manages the exact-origin `renderlab-browser-uploads` rule for:
+The admin-capable R2 access-key credentials manage the exact-origin `renderlab-browser-uploads` rule through the S3 API for:
 - `http://127.0.0.1:3000`
 - `http://localhost:3000`
 - `https://renderlab-faresmohamed260-6733s-projects.vercel.app`

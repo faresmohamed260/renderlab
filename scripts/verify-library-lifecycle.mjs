@@ -251,8 +251,10 @@ try {
   await page.waitForURL((url) => url.pathname === "/" && url.searchParams.get("source") === assetId && url.searchParams.get("action") === "edit-image", { timeout: 30_000 });
   await page.getByRole("heading", { name: "Edit an image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Editing this image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByRole("button", { name: "Image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  assert(await page.getByRole("button", { name: "Image", exact: true }).getAttribute("aria-pressed") === "true", "Validated Edit continuation did not initialize Image output.");
+  await page.getByRole("radiogroup", { name: "Output type", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  const imageOutput = page.getByRole("radio", { name: "Image", exact: true });
+  await imageOutput.waitFor({ state: "visible", timeout: 30_000 });
+  assert(await imageOutput.getAttribute("aria-checked") === "true", "Validated Edit continuation did not initialize Image output.");
 
   const referencePreview = page.getByRole("img", { name: "Reference preview" });
   await referencePreview.waitFor({ state: "visible", timeout: 30_000 });

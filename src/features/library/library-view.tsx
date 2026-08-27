@@ -1,5 +1,16 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ImageIcon, Search, Video } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
 import {
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
   type MediaAssetListKind,
@@ -109,17 +120,11 @@ export function LibraryView({
           {filters.map((filter) => {
             const active = kind === filter.value;
             return (
-              <Link
-                key={filter.value}
-                href={libraryHref(filter.value, searchQuery)}
-                aria-current={active ? "page" : undefined}
-                className={[
-                  "inline-flex min-h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors",
-                  active ? "bg-surface-3 text-text" : "text-text-muted hover:text-text",
-                ].join(" ")}
-              >
-                {filter.label}
-              </Link>
+              <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
+                <Link href={libraryHref(filter.value, searchQuery)} aria-current={active ? "page" : undefined}>
+                  {filter.label}
+                </Link>
+              </Button>
             );
           })}
         </nav>
@@ -133,73 +138,72 @@ export function LibraryView({
           <Search
             aria-hidden="true"
             size={17}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+            className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-text-muted"
           />
-          <input
+          <Input
             type="search"
             name="q"
             defaultValue={searchQuery ?? ""}
             maxLength={MEDIA_ASSET_SEARCH_MAX_LENGTH}
             placeholder="Search by name or prompt"
-            className="min-h-10 w-full rounded-lg border border-border bg-surface-1 py-2 pl-10 pr-3 text-sm text-text outline-none transition-colors placeholder:text-text-muted focus:border-accent focus:ring-2 focus:ring-accent/25"
+            className="pl-10"
           />
         </label>
-        <button
-          type="submit"
-          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-surface-1 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          Search
-        </button>
+        <Button type="submit" variant="outline">Search</Button>
         {searchQuery ? (
-          <Link
-            href={libraryHref(kind, null)}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg px-2 text-sm font-medium text-text-muted transition-colors hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            Clear
-          </Link>
+          <Button asChild variant="ghost">
+            <Link href={libraryHref(kind, null)}>Clear</Link>
+          </Button>
         ) : null}
       </form>
 
       {!available ? (
-        <div className="mt-8 rounded-xl border border-border bg-surface-1 px-5 py-8 text-sm text-text-muted" role="status">
-          Library media is not connected in this environment yet.
-        </div>
+        <Alert className="mt-8" role="status">
+          <AlertDescription className="text-text-muted">
+            Library media is not connected in this environment yet.
+          </AlertDescription>
+        </Alert>
       ) : items.length === 0 ? (
-        <div className="mt-8 flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-1 px-6 text-center">
-          <div className="flex size-11 items-center justify-center rounded-lg bg-surface-2 text-text-muted">
-            {searchQuery ? <Search aria-hidden="true" size={21} /> : kind === "video" ? <Video aria-hidden="true" size={21} /> : <ImageIcon aria-hidden="true" size={21} />}
-          </div>
-          <h3 className="mt-4 text-base font-semibold text-text">
-            {offset > 0
-              ? "No older media on this page"
-              : searchQuery
-                ? `No media matches “${searchQuery}”`
-                : kind === "all"
-                  ? "No media yet"
-                  : `No ${kind === "image" ? "images" : "videos"} yet`}
-          </h3>
-          <p className="mt-1 max-w-sm text-sm leading-6 text-text-muted">
-            {offset > 0
-              ? "Go back to newer media."
-              : searchQuery
-                ? "Try another name or prompt, or clear the search to browse all saved media."
-                : uploadAvailable
-                  ? "Create or upload something and saved media will appear here automatically."
-                  : "Create something and saved results will appear here automatically."}
-          </p>
-          <Link
-            href={offset > 0
-              ? libraryHref(kind, searchQuery, Math.max(0, offset - limit))
-              : searchQuery
-                ? libraryHref(kind, null)
-                : "/"}
-            className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-lg bg-surface-2 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-3"
-          >
-            {offset > 0 ? <ArrowLeft aria-hidden="true" size={16} /> : null}
-            {offset > 0 ? "Newer media" : searchQuery ? "Clear search" : "Create media"}
-            {offset === 0 && !searchQuery ? <ArrowRight aria-hidden="true" size={16} /> : null}
-          </Link>
-        </div>
+        <Empty className="mt-8 min-h-72 rounded-xl border border-dashed border-border bg-surface-1 px-6">
+          <EmptyHeader>
+            <EmptyMedia>
+              {searchQuery ? <Search aria-hidden="true" /> : kind === "video" ? <Video aria-hidden="true" /> : <ImageIcon aria-hidden="true" />}
+            </EmptyMedia>
+            <EmptyTitle>
+              {offset > 0
+                ? "No older media on this page"
+                : searchQuery
+                  ? `No media matches “${searchQuery}”`
+                  : kind === "all"
+                    ? "No media yet"
+                    : `No ${kind === "image" ? "images" : "videos"} yet`}
+            </EmptyTitle>
+            <EmptyDescription>
+              {offset > 0
+                ? "Go back to newer media."
+                : searchQuery
+                  ? "Try another name or prompt, or clear the search to browse all saved media."
+                  : uploadAvailable
+                    ? "Create or upload something and saved media will appear here automatically."
+                    : "Create something and saved results will appear here automatically."}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button asChild variant="secondary">
+              <Link
+                href={offset > 0
+                  ? libraryHref(kind, searchQuery, Math.max(0, offset - limit))
+                  : searchQuery
+                    ? libraryHref(kind, null)
+                    : "/"}
+              >
+                {offset > 0 ? <ArrowLeft aria-hidden="true" data-icon="inline-start" /> : null}
+                {offset > 0 ? "Newer media" : searchQuery ? "Clear search" : "Create media"}
+                {offset === 0 && !searchQuery ? <ArrowRight aria-hidden="true" data-icon="inline-end" /> : null}
+              </Link>
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
@@ -229,23 +233,21 @@ export function LibraryView({
             <nav className="mt-8 flex items-center justify-between gap-3" aria-label="Library pages">
               <div>
                 {offset > 0 ? (
-                  <Link
-                    href={libraryHref(kind, searchQuery, Math.max(0, offset - limit))}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-surface-1 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-2"
-                  >
-                    <ArrowLeft aria-hidden="true" size={16} />
-                    Newer
-                  </Link>
+                  <Button asChild variant="outline">
+                    <Link href={libraryHref(kind, searchQuery, Math.max(0, offset - limit))}>
+                      <ArrowLeft aria-hidden="true" data-icon="inline-start" />
+                      Newer
+                    </Link>
+                  </Button>
                 ) : null}
               </div>
               {hasMore ? (
-                <Link
-                  href={libraryHref(kind, searchQuery, offset + limit)}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-surface-1 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-2"
-                >
-                  Older
-                  <ArrowRight aria-hidden="true" size={16} />
-                </Link>
+                <Button asChild variant="outline">
+                  <Link href={libraryHref(kind, searchQuery, offset + limit)}>
+                    Older
+                    <ArrowRight aria-hidden="true" data-icon="inline-end" />
+                  </Link>
+                </Button>
               ) : null}
             </nav>
           ) : null}

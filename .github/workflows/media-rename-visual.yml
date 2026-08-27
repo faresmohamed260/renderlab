@@ -5,6 +5,10 @@ on:
     paths:
       - "scripts/verify-media-rename.mjs"
       - ".github/workflows/media-rename-visual.yml"
+      - "components.json"
+      - "package.json"
+      - "src/components/ui/**"
+      - "src/lib/utils.ts"
       - "src/app/api/media/assets/**"
       - "src/features/library/media-viewer-actions.tsx"
       - "src/features/library/media-viewer.tsx"

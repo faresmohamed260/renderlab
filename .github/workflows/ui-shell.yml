@@ -6,6 +6,8 @@ on:
     paths:
       - "src/**"
       - "tests/ui/**"
+      - "scripts/verify-ui-purity.mjs"
+      - "components.json"
       - "package.json"
       - "tsconfig.json"
       - "next-env.d.ts"
@@ -16,6 +18,8 @@ on:
     paths:
       - "src/**"
       - "tests/ui/**"
+      - "scripts/verify-ui-purity.mjs"
+      - "components.json"
       - "package.json"
       - "tsconfig.json"
       - "next-env.d.ts"
@@ -44,6 +48,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Verify maintained UI primitive usage
+        run: npm run verify:ui-purity
 
       - name: Build
         run: npm run build

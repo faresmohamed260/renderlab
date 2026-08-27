@@ -9,8 +9,9 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Image", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: "Video", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("radiogroup", { name: "Output type" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Image", exact: true })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Video", exact: true })).not.toBeChecked();
   await expect(page.getByRole("button", { name: /Aspect ratio 1:1/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Advanced controls" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add reference", exact: true })).toBeDisabled();
@@ -28,7 +29,7 @@ test("Create switches to video essentials without exposing backend workflow deta
   await page.setViewportSize(desktopViewport);
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Video", exact: true }).click();
+  await page.getByRole("radio", { name: "Video", exact: true }).click();
 
   await expect(page.getByRole("heading", { name: "Create a video" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Aspect ratio 16:9/ })).toBeVisible();
@@ -50,17 +51,17 @@ test("Advanced controls use progressive disclosure and preserve per-output draft
   await expect(page.getByRole("spinbutton", { name: "Guidance" })).toHaveValue("1");
   await expect(page.getByRole("combobox", { name: "Frame rate" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Video", exact: true }).click();
+  await page.getByRole("radio", { name: "Video", exact: true }).click();
   await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("11");
   await expect(page.getByRole("combobox", { name: "Frame rate" })).toHaveValue("24");
   await page.getByRole("spinbutton", { name: "Steps" }).fill("12");
 
-  await page.getByRole("button", { name: "Image", exact: true }).click();
+  await page.getByRole("radio", { name: "Image", exact: true }).click();
   await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("4");
-  await page.getByRole("button", { name: "Video", exact: true }).click();
+  await page.getByRole("radio", { name: "Video", exact: true }).click();
   await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("12");
-  await expect(page.getByRole("button", { name: "Image", exact: true })).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByRole("button", { name: "Video", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("radio", { name: "Image", exact: true })).not.toBeChecked();
+  await expect(page.getByRole("radio", { name: "Video", exact: true })).toBeChecked();
   await page.waitForTimeout(200);
 
   await page.screenshot({ path: "artifacts/create-desktop-advanced-video.png", fullPage: true });

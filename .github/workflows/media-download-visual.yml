@@ -5,8 +5,13 @@ on:
     paths:
       - "scripts/verify-media-download.mjs"
       - ".github/workflows/media-download-visual.yml"
+      - "components.json"
+      - "package.json"
+      - "src/components/ui/**"
+      - "src/lib/utils.ts"
       - "src/app/api/media/assets/**"
       - "src/features/library/media-viewer.tsx"
+      - "src/features/library/media-viewer-actions.tsx"
       - "src/server/media/media-assets.ts"
       - "src/server/storage/r2.ts"
   workflow_dispatch:

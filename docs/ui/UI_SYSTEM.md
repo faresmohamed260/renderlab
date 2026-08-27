@@ -128,8 +128,36 @@ These are design targets, not immutable constants:
 
 Implementation may tune these values after rendered review while preserving the hierarchy and boundary above.
 
-## Initial Primitive Set
-The following primitive **roles** are approved as the first implementation set. Concrete source components are selected during scaffold/implementation and then recorded in `COMPONENT_CATALOG.md`.
+## Maintained Primitive Foundation
+UI-026 makes the maintained primitive layer an implementation contract rather than a suggestion.
+
+Current approved local primitives under `src/components/ui`:
+- `Alert` / `AlertDescription`
+- `Button`
+- `Collapsible` / trigger / content
+- `Empty` composition with heading-preserving `EmptyTitle`
+- `Field` / `FieldLabel` / `FieldDescription` / `FieldError` / `FieldGroup`
+- `Input`
+- `Label`
+- `NativeSelect`
+- `Spinner`
+- `Textarea`
+- `Toggle` / `ToggleGroup` / `ToggleGroupItem`
+
+The project is configured for shadcn **Radix Nova** through `components.json`. These files are RenderLab-owned wrappers/adaptations: shadcn/Radix supplies the maintained mechanics and accessibility model; RenderLab owns semantic tokens, variants, spacing, product-required semantic elements, and reviewed visual integration.
+
+### Primitive purity contract
+- Conventional visible feature/shell controls must use the approved shared primitive layer instead of raw hand-styled native controls.
+- Raw visible `<button>`, `<select>`, `<textarea>`, and ordinary visible `<input>` are prohibited in `src/features` and `src/components/shell`.
+- Native `file` and `hidden` inputs remain allowed as browser/form plumbing.
+- Do not force a maintained component back into legacy DOM semantics merely to satisfy an old test. Verify the correct accessible behavior. A required single-choice Radix ToggleGroup, for example, is a `radiogroup` with checked `radio` items.
+- When a wrapper needs RenderLab-specific spacing, semantic elements, or token mapping, fix the wrapper once rather than patching every feature instance.
+- Do not locally override a primitive into a competing visual system unless the product requirement genuinely needs a new variant that belongs in the primitive.
+- `npm run verify:ui-purity` is the CI enforcement gate for the native-control boundary.
+- Shared primitive/config/package changes must retrigger dependent screen lifecycle workflows so a foundation change cannot bypass approved Create/Library/Viewer regressions.
+
+## Primitive Growth
+Add maintained primitives when the first real feature needs them; do not install a catalog preemptively.
 
 ### Foundation primitives — default shadcn/Radix candidates
 - Button / IconButton

@@ -1,8 +1,14 @@
 "use client";
 
-import { ImageIcon, LoaderCircle, MoreHorizontal, Plus, X } from "lucide-react";
+import { ImageIcon, MoreHorizontal, Plus, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   advancedParametersFromDraft,
   CreateAdvancedPanel,
@@ -426,9 +432,10 @@ export function CreateWorkspace({
         </div>
 
         <form onSubmit={submit} noValidate className="rounded-xl border border-border bg-surface-1 p-3 sm:p-4">
-          <label htmlFor="create-prompt" className="sr-only">Prompt</label>
-          <textarea
+          <Label htmlFor="create-prompt" className="sr-only">Prompt</Label>
+          <Textarea
             id="create-prompt"
+            variant="bare"
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             placeholder={
@@ -438,7 +445,7 @@ export function CreateWorkspace({
                   ? "Describe what you want to create…"
                   : "Describe the video you want to create…"
             }
-            className="min-h-32 w-full resize-none bg-transparent px-1 py-1 text-[16px] leading-6 text-text outline-none placeholder:text-text-muted sm:min-h-28"
+            className="min-h-32 px-1 py-1 text-[16px] leading-6 sm:min-h-28"
           />
 
           {referencePreviewUrl ? (
@@ -454,15 +461,16 @@ export function CreateWorkspace({
                   {continuationSource ? continuationSourceLabel : reference?.filename ?? "Reference image"}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={clearReference}
                 disabled={referenceUploading}
                 aria-label="Remove reference"
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text disabled:opacity-50"
               >
-                <X aria-hidden="true" size={18} />
-              </button>
+                <X aria-hidden="true" />
+              </Button>
             </div>
           ) : null}
 
@@ -487,8 +495,10 @@ export function CreateWorkspace({
                     if (file) void uploadReference(file);
                   }}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="icon"
                   disabled={!referenceUploadAvailable || referenceUploading}
                   onClick={() => fileInputRef.current?.click()}
                   aria-label={hasReference ? "Replace reference" : "Add reference"}
@@ -497,119 +507,112 @@ export function CreateWorkspace({
                       ? "Add a reference image"
                       : "Reference upload storage is not configured in this environment."
                   }
-                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-muted transition-colors hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {referenceUploading ? (
-                    <LoaderCircle aria-hidden="true" className="animate-spin" size={17} />
+                    <Spinner />
                   ) : hasReference ? (
-                    <ImageIcon aria-hidden="true" size={18} />
+                    <ImageIcon aria-hidden="true" />
                   ) : (
-                    <Plus aria-hidden="true" size={18} strokeWidth={1.8} />
+                    <Plus aria-hidden="true" />
                   )}
-                </button>
+                </Button>
 
-                <div className="flex shrink-0 rounded-lg bg-surface-2 p-1" aria-label="Output type">
-                  {(["image", "video"] as const).map((kind) => (
-                    <button
-                      type="button"
-                      key={kind}
-                      aria-pressed={outputKind === kind}
-                      onClick={() => {
-                        setOutputKind(kind);
-                        setError(null);
-                        setContinuationSource((current) =>
-                          current
-                            ? {
-                                ...current,
-                                inputRole: kind === "image" ? "primary-image" : "first-frame",
-                              }
-                            : current,
-                        );
-                      }}
-                      className={[
-                        "min-h-8 min-w-20 rounded-md px-3 text-sm font-medium transition-colors duration-150",
-                        outputKind === kind ? "bg-surface-3 text-text" : "text-text-muted hover:text-text",
-                      ].join(" ")}
-                    >
-                      {kind === "image" ? "Image" : "Video"}
-                    </button>
-                  ))}
-                </div>
+                <ToggleGroup
+                  type="single"
+                  value={outputKind}
+                  aria-label="Output type"
+                  onValueChange={(value) => {
+                    if (!value) return;
+                    const kind = value as OutputKind;
+                    setOutputKind(kind);
+                    setError(null);
+                    setContinuationSource((current) =>
+                      current
+                        ? {
+                            ...current,
+                            inputRole: kind === "image" ? "primary-image" : "first-frame",
+                          }
+                        : current,
+                    );
+                  }}
+                  className="shrink-0"
+                >
+                  <ToggleGroupItem value="image">Image</ToggleGroupItem>
+                  <ToggleGroupItem value="video">Video</ToggleGroupItem>
+                </ToggleGroup>
 
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => {
                     if (outputKind === "image") setImageAspect(nextValue(imageAspectRatios, imageAspect));
                     else setVideoAspect(nextValue(videoAspectRatios, videoAspect));
                   }}
                   aria-label={`Aspect ratio ${aspectRatio}. Activate to choose the next ratio.`}
-                  className="min-h-10 shrink-0 rounded-lg bg-surface-2 px-4 text-sm font-medium text-text-muted transition-colors duration-150 hover:text-text"
+                  className="shrink-0"
                 >
                   {aspectRatio}
-                </button>
+                </Button>
 
                 {outputKind === "video" ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
                     aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
-                    className="min-h-10 shrink-0 rounded-lg bg-surface-2 px-4 text-sm font-medium text-text-muted transition-colors duration-150 hover:text-text"
+                    className="shrink-0"
                   >
                     {durationSeconds} s
-                  </button>
+                  </Button>
                 ) : null}
 
                 <CollapsibleTrigger asChild>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="icon"
+                    aria-pressed={advancedOpen}
                     aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
                     title="Advanced generation controls"
-                    className={[
-                      "inline-flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-                      advancedOpen
-                        ? "bg-surface-3 text-text"
-                        : "bg-surface-2 text-text-muted hover:text-text",
-                    ].join(" ")}
+                    className={advancedOpen ? "bg-surface-3" : undefined}
                   >
-                    <MoreHorizontal aria-hidden="true" size={18} strokeWidth={1.8} />
-                  </button>
+                    <MoreHorizontal aria-hidden="true" />
+                  </Button>
                 </CollapsibleTrigger>
               </div>
 
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
-              >
-                {submitting || jobActive ? <LoaderCircle aria-hidden="true" className="animate-spin" size={17} /> : null}
+              <Button type="submit" size="lg" disabled={!canSubmit} className="w-full sm:w-auto">
+                {submitting || jobActive ? <Spinner data-icon="inline-start" /> : null}
                 {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
-              </button>
+              </Button>
             </div>
           </Collapsible>
         </form>
 
         {!generationAvailable || !referenceUploadAvailable ? (
-          <div className="mt-3 space-y-1 text-sm text-text-muted" role="status">
-            {!generationAvailable ? <p>Generation is not connected in this environment yet.</p> : null}
-            {!referenceUploadAvailable ? <p>Reference uploads are not connected in this environment yet.</p> : null}
-          </div>
+          <Alert className="mt-3" role="status">
+            <AlertDescription className="space-y-1 text-text-muted">
+              {!generationAvailable ? <p>Generation is not connected in this environment yet.</p> : null}
+              {!referenceUploadAvailable ? <p>Reference uploads are not connected in this environment yet.</p> : null}
+            </AlertDescription>
+          </Alert>
         ) : null}
 
         {error ? (
-          <div className="mt-4 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-text" role="alert">
-            {error}
-          </div>
+          <Alert className="mt-4" variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : null}
 
         {statusText ? (
-          <div className="mt-4 rounded-lg border border-border bg-surface-1 px-4 py-3 text-sm text-text" role="status">
-            {statusText}
-          </div>
+          <Alert className="mt-4" role="status">
+            <AlertDescription>{statusText}</AlertDescription>
+          </Alert>
         ) : null}
 
         {resultLoading ? (
           <div className="mt-8 flex min-h-64 items-center justify-center rounded-xl border border-border bg-surface-1 text-sm text-text-muted" role="status">
-            <LoaderCircle aria-hidden="true" className="mr-2 animate-spin" size={20} />
+            <Spinner className="mr-2 size-5" />
             Loading saved result…
           </div>
         ) : null}
@@ -624,14 +627,14 @@ export function CreateWorkspace({
               {continuationActions.length ? (
                 <div className="flex items-center gap-2" aria-label="Continue from result">
                   {continuationActions.map((action) => (
-                    <button
+                    <Button
                       key={action.id}
                       type="button"
+                      variant="secondary"
                       onClick={() => startContinuation(action)}
-                      className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-surface-2 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-3"
                     >
                       {action.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               ) : null}
