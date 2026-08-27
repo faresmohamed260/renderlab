@@ -1,8 +1,11 @@
 import {
   GetBucketCorsCommand,
   PutBucketCorsCommand,
+  PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { randomUUID } from "node:crypto";
 
 const r2AccountId = process.env.R2_ACCOUNT_ID;
 const r2Bucket = process.env.R2_BUCKET_NAME;
@@ -12,6 +15,13 @@ const requiredOrigins = (process.env.RENDERLAB_BROWSER_UPLOAD_ORIGINS
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
+const probeOrigins = Array.from(new Set([
+  ...requiredOrigins,
+  ...(process.env.RENDERLAB_BROWSER_UPLOAD_PROBE_ORIGINS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
+]));
 const managedRuleId = "renderlab-browser-uploads";
 
 for (const [name, value] of Object.entries({
@@ -72,18 +82,7 @@ async function ensureWithCloudflareApi() {
   const verified = await cloudflareRequest("GET");
   const rule = verified?.rules?.find((candidate) => candidate.id === managedRuleId);
   if (!rule) throw new Error("RenderLab browser upload CORS rule was not persisted through the Cloudflare API.");
-  for (const origin of requiredOrigins) {
-    if (!rule.allowed?.origins?.includes(origin)) {
-      throw new Error(`RenderLab browser upload CORS is missing origin ${origin}.`);
-    }
-  }
-  if (!rule.allowed?.methods?.includes("PUT")) {
-    throw new Error("RenderLab browser upload CORS does not allow PUT.");
-  }
-  if (!rule.allowed?.headers?.some((header) => header.toLowerCase() === "content-type")) {
-    throw new Error("RenderLab browser upload CORS does not allow Content-Type.");
-  }
-  console.log(`RenderLab browser upload CORS verified through the Cloudflare API for ${requiredOrigins.join(", ")}; preserved ${unmanagedRules.length} unmanaged rule(s).`);
+  console.log(`RenderLab browser upload CORS reconciled through the Cloudflare API for ${requiredOrigins.join(", ")}; preserved ${unmanagedRules.length} unmanaged rule(s).`);
 }
 
 async function readS3Rules() {
@@ -108,34 +107,62 @@ async function ensureWithS3Api() {
     ExposeHeaders: ["etag"],
     MaxAgeSeconds: 3600,
   };
-
   await r2Client.send(new PutBucketCorsCommand({
     Bucket: r2Bucket,
-    CORSConfiguration: {
-      CORSRules: [...unmanagedRules, managedRule],
-    },
+    CORSConfiguration: { CORSRules: [...unmanagedRules, managedRule] },
   }));
-
-  const verifiedRules = await readS3Rules();
-  const verified = verifiedRules.find((rule) => rule.ID === managedRuleId);
-  if (!verified) throw new Error("RenderLab browser upload CORS rule was not persisted through the S3 API.");
-  for (const origin of requiredOrigins) {
-    if (!verified.AllowedOrigins?.includes(origin)) {
-      throw new Error(`RenderLab browser upload CORS is missing origin ${origin}.`);
-    }
-  }
-  if (!verified.AllowedMethods?.includes("PUT")) {
-    throw new Error("RenderLab browser upload CORS does not allow PUT.");
-  }
-  if (!verified.AllowedHeaders?.some((header) => header.toLowerCase() === "content-type")) {
-    throw new Error("RenderLab browser upload CORS does not allow Content-Type.");
-  }
-
-  console.log(`RenderLab browser upload CORS verified through the S3 API for ${requiredOrigins.join(", ")}; preserved ${unmanagedRules.length} unmanaged rule(s).`);
+  console.log(`RenderLab browser upload CORS reconciled through the S3 API for ${requiredOrigins.join(", ")}; preserved ${unmanagedRules.length} unmanaged rule(s).`);
 }
 
+async function probeCors() {
+  const signedUrl = await getSignedUrl(
+    r2Client,
+    new PutObjectCommand({
+      Bucket: r2Bucket,
+      Key: `renderlab/cors-probes/${randomUUID()}.png`,
+      ContentType: "image/png",
+    }),
+    { expiresIn: 300, signableHeaders: new Set(["content-type"]) },
+  );
+  const supported = new Set();
+  for (const origin of probeOrigins) {
+    const response = await fetch(signedUrl, {
+      method: "OPTIONS",
+      headers: {
+        origin,
+        "access-control-request-method": "PUT",
+        "access-control-request-headers": "content-type",
+      },
+    });
+    const allowOrigin = response.headers.get("access-control-allow-origin");
+    const allowMethods = response.headers.get("access-control-allow-methods") || "";
+    const allowHeaders = response.headers.get("access-control-allow-headers") || "";
+    const ok = response.ok
+      && (allowOrigin === origin || allowOrigin === "*")
+      && allowMethods.toUpperCase().split(/\s*,\s*/).includes("PUT")
+      && (allowHeaders === "*" || allowHeaders.toLowerCase().split(/\s*,\s*/).includes("content-type"));
+    if (ok) supported.add(origin);
+    console.log(`R2 CORS preflight origin=${origin} status=${response.status} allowed=${ok} allow-origin=${allowOrigin || "<none>"} allow-methods=${allowMethods || "<none>"} allow-headers=${allowHeaders || "<none>"}`);
+  }
+  return requiredOrigins.every((origin) => supported.has(origin));
+}
+
+let managed = false;
 if (cloudflareApiToken) {
   await ensureWithCloudflareApi();
+  managed = true;
 } else {
-  await ensureWithS3Api();
+  try {
+    await ensureWithS3Api();
+    managed = true;
+  } catch (error) {
+    if (error?.$metadata?.httpStatusCode !== 403 && error?.name !== "AccessDenied") throw error;
+    console.log("R2 object credentials cannot manage bucket CORS; probing existing policy instead.");
+  }
 }
+
+const requiredReady = await probeCors();
+if (!requiredReady) {
+  throw new Error(`Shared R2 bucket does not currently allow all required RenderLab browser upload origins: ${requiredOrigins.join(", ")}.${managed ? " CORS reconciliation completed but preflight still failed." : " Bucket-admin authority is required to add them."}`);
+}
+console.log(`RenderLab browser upload CORS preflight verified for ${requiredOrigins.join(", ")}.`);
