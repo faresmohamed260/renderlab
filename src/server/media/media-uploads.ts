@@ -195,7 +195,7 @@ export async function completeMediaUpload(request: CompleteMediaUploadRequest) {
     throw new Error("Uploaded media did not match the signed upload ticket.");
   }
 
-  let assetId = randomUUID();
+  let assetId: string = randomUUID();
   try {
     await supabaseRest("media_assets", {
       method: "POST",
