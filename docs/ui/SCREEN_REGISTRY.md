@@ -43,7 +43,7 @@ Approved behavior:
 
 **Verified behavior:**
 - prompt + Image/Video output intent;
-- PNG/JPEG/WebP reference input up to 25 MB;
+- PNG/JPEG/WebP temporary reference input up to 25 MB;
 - temporary signed-R2 reference upload with opaque source identity;
 - reference preview/removal/replacement;
 - Image + reference → Edit; Video + reference → Animate;
@@ -51,17 +51,18 @@ Approved behavior:
 - capability-derived Edit/Animate continuation from persisted images;
 - durable `media-asset` continuation verified in run `33027460976`;
 - Advanced controls from verified capability definitions;
-- complete configured browser lifecycle approval run `33031817744` with responsive screenshots and cleanup.
+- complete configured browser lifecycle approval run `33031817744` with responsive screenshots and cleanup;
+- persistent uploaded-image continuation verified in run `33065020778`; Create reloads the durable uploaded asset through the existing server-validated handoff and preserves the uploaded display name in the reference summary rather than mislabeling it as generated.
 
 **Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 
 ### Library
 **Route:** `/library`  
-**Base status:** APPROVED — Library v0.1  
+**Status:** APPROVED — Library v0.1 + persistent Upload extension  
 **Implementation:** `src/features/library/library-view.tsx`  
-**Supporting:** `src/lib/api/media-assets-contract.ts`, `src/server/media/media-assets.ts`, `GET /api/media/assets`  
-**Approved design artifact:** `design/penpot/library-v0.1.svg`  
-**Persistent-upload handoff:** `design/penpot/library-v0.2-upload.svg`
+**Persistent upload client:** `src/features/library/library-upload-button.tsx`  
+**Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `GET /api/media/assets`, `POST /api/media/uploads/upload-tickets`, `POST /api/media/uploads/upload-completions`  
+**Approved design artifacts:** `design/penpot/library-v0.1.svg`, `design/penpot/library-v0.2-upload.svg`
 
 **Purpose:** Find, inspect, reuse and continue from durable RenderLab media. Library is a reusable creative-asset workspace, not merely generation history.
 
@@ -76,24 +77,26 @@ Approved behavior:
 - credential-free verification run `33034606323`;
 - configured shared-R2/Supabase lifecycle approval run `33034606396`.
 
-#### Persistent upload extension — implementation under review
-**Status:** MIGRATING / NOT YET APPROVED  
-**PR:** #9, `work/persistent-media-uploads-v0-1`  
-**Client implementation:** `src/features/library/library-upload-button.tsx`
-
-Implemented direction:
+#### Persistent upload extension — approved
+Approved direction:
 - one compact `Upload` action in the existing Library header;
 - native file picker; no separate Uploads tab or generic modal framework;
 - PNG/JPEG/WebP up to 25 MB;
-- ticket → signed R2 PUT → completion flow;
-- asset appears through the normal Library media list only after server verification/promoted `media_assets` creation;
+- ticket → short-lived signed R2 PUT → completion → server HEAD verification;
+- asset appears through the normal Library media list only after verified `media_assets` promotion;
 - uploaded cards prefer durable display names;
-- concise inline uploading/error feedback;
+- Unicode/non-ASCII human filenames remain readable;
+- concise inline uploading/error/success feedback;
 - existing approved Library grid remains the durable media surface.
 
-Backend contract is verified, including hardened run `33037773016`. Real browser approval is still blocked: run `33037773015` created an upload ticket through the actual Upload control/native file chooser but Chromium could not complete the direct signed R2 PUT because the shared bucket lacks usable browser CORS for the test origin. The fixture self-cleaned and no approval screenshots were produced.
+**Approval evidence:**
+- final backend integration `33065020704` passed direct upload, promotion, concurrent-completion recovery, sequential idempotency, public media/list/content behavior and cleanup;
+- final credential-free production/UI run `33065020735` passed;
+- final configured browser run `33065020778` used the actual Upload control and native file chooser, completed the real signed R2 PUT, promoted the upload to a normal `media_assets` row, rendered it in Library at desktop/mobile widths, and continued through Viewer → Create Edit;
+- uploaded image decode/geometry was verified as 400×300 and six screenshots were visually inspected;
+- workflow cleanup plus direct Supabase verification left `0` upload sessions and `0` uploaded assets.
 
-**Do not promote this extension to APPROVED** until actual Upload → Library → Viewer → Create continuation passes at desktop/mobile widths and screenshots are inspected.
+The configured browser run uses a CI-only HTTPS loopback alias for the already-authorized `https://studio.faresuniform.uk` origin while serving the local RenderLab build. It does not call the deployed Studio runtime. Actual RenderLab user-facing origins still require shared R2 CORS before deployment; see `docs/architecture/INFRASTRUCTURE.md`.
 
 **Still intentionally open:** search, favorites/collections, richer history controls, rename/delete/download/batch management and drag/drop mechanics unless separately justified.
 
@@ -101,7 +104,7 @@ Backend contract is verified, including hardened run `33037773016`. Real browser
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Base status:** APPROVED — Media Viewer v0.1  
+**Status:** APPROVED — Media Viewer v0.1 + uploaded-media presentation  
 **Implementation:** `src/features/library/media-viewer.tsx`  
 **Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/lib/api/media-assets-contract.ts`, `src/lib/capabilities/generation.ts`  
 **Design artifact:** `design/penpot/media-viewer-v0.1.svg`
@@ -114,16 +117,11 @@ Backend contract is verified, including hardened run `33037773016`. Real browser
 - persisted image assets expose Edit/Animate;
 - Viewer links carry only opaque `media-asset` identity plus action intent;
 - Create reloads durable media and validates action compatibility server-side;
-- configured Library → Viewer → Create Edit approval run `33034606396`.
-
-#### Uploaded-media presentation — implementation under review
-PR #9 extends the existing Viewer without redesigning it:
-- uploaded assets use their display name rather than generated-media fallback copy;
-- Viewer identifies them truthfully as uploaded media;
-- original filename/size/source metadata is presented when available;
-- uploaded images derive Edit/Animate from the same shared capability model and ordinary `media-asset` identity.
-
-This uploaded-media extension is not yet visually approved because the upstream real browser upload lifecycle is blocked by R2 CORS. Media Viewer v0.1 itself remains approved.
+- configured generated-media Library → Viewer → Create Edit approval run `33034606396`;
+- uploaded assets use their display name and truthful `Uploaded image`/Upload metadata rather than generated-media fallback copy;
+- original filename/size/source metadata appears when available;
+- uploaded images derive Edit/Animate from the same capability model and ordinary `media-asset` identity;
+- uploaded-media Viewer → Create Edit lifecycle is visually approved in run `33065020778` at desktop/mobile widths.
 
 **Do not change:** Provider/worker/R2 identity stays internal. Viewer actions remain capability-derived and use opaque product media identity; URL parameters are navigation intent, not authoritative asset state.
 
