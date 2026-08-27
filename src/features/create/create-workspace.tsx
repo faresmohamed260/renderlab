@@ -2,6 +2,13 @@
 
 import { ImageIcon, LoaderCircle, MoreHorizontal, Plus, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  advancedParametersFromDraft,
+  CreateAdvancedPanel,
+  createAdvancedDraft,
+  type AdvancedDraft,
+} from "@/features/create/create-advanced-panel";
 import type {
   AspectRatio,
   ContinuationAction,
@@ -92,6 +99,9 @@ export function CreateWorkspace({
   const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(null);
   const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
   const [referenceUploading, setReferenceUploading] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("image"));
+  const [videoAdvanced, setVideoAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("video"));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<GenerationJob | null>(null);
@@ -210,6 +220,8 @@ export function CreateWorkspace({
   }, [firstOutputAssetId]);
 
   const aspectRatio = outputKind === "image" ? imageAspect : videoAspect;
+  const advancedDraft = outputKind === "image" ? imageAdvanced : videoAdvanced;
+  const setAdvancedDraft = outputKind === "image" ? setImageAdvanced : setVideoAdvanced;
   const hasReference = Boolean(reference || continuationSource);
   const heading = hasReference
     ? outputKind === "image"
@@ -259,6 +271,13 @@ export function CreateWorkspace({
     setJob(null);
     setError(null);
     window.requestAnimationFrame(() => document.getElementById("create-prompt")?.focus());
+  }
+
+  function resetAdvanced() {
+    const next = createAdvancedDraft(outputKind);
+    if (outputKind === "image") setImageAdvanced(next);
+    else setVideoAdvanced(next);
+    setError(null);
   }
 
   async function uploadReference(file: File) {
@@ -327,6 +346,13 @@ export function CreateWorkspace({
     event.preventDefault();
     if (!canSubmit) return;
 
+    const advanced = advancedParametersFromDraft(advancedDraft, outputKind);
+    if (!advanced) {
+      setAdvancedOpen(true);
+      setError("Check the Advanced values before generating. Seed must be an integer, steps must be 1–200, and guidance must be 0–100.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     setJob(null);
@@ -361,6 +387,7 @@ export function CreateWorkspace({
             ...(outputKind === "video" ? { durationSeconds } : {}),
           },
           inputs,
+          advanced,
         }),
       });
 
@@ -386,7 +413,7 @@ export function CreateWorkspace({
           <p className="mt-1 text-[15px] text-text-muted">{supportingText}</p>
         </div>
 
-        <form onSubmit={submit} className="rounded-xl border border-border bg-surface-1 p-3 sm:p-4">
+        <form onSubmit={submit} noValidate className="rounded-xl border border-border bg-surface-1 p-3 sm:p-4">
           <label htmlFor="create-prompt" className="sr-only">Prompt</label>
           <textarea
             id="create-prompt"
@@ -427,111 +454,126 @@ export function CreateWorkspace({
             </div>
           ) : null}
 
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="sr-only"
-                aria-label="Reference image file"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void uploadReference(file);
-                }}
-              />
-              <button
-                type="button"
-                disabled={!referenceUploadAvailable || referenceUploading}
-                onClick={() => fileInputRef.current?.click()}
-                aria-label={hasReference ? "Replace reference" : "Add reference"}
-                title={
-                  referenceUploadAvailable
-                    ? "Add a reference image"
-                    : "Reference upload storage is not configured in this environment."
-                }
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-muted transition-colors hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {referenceUploading ? (
-                  <LoaderCircle aria-hidden="true" className="animate-spin" size={17} />
-                ) : hasReference ? (
-                  <ImageIcon aria-hidden="true" size={18} />
-                ) : (
-                  <Plus aria-hidden="true" size={18} strokeWidth={1.8} />
-                )}
-              </button>
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+            <CreateAdvancedPanel
+              outputKind={outputKind}
+              draft={advancedDraft}
+              onDraftChange={setAdvancedDraft}
+              onReset={resetAdvanced}
+            />
 
-              <div className="flex shrink-0 rounded-lg bg-surface-2 p-1" aria-label="Output type">
-                {(["image", "video"] as const).map((kind) => (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  aria-label="Reference image file"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadReference(file);
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={!referenceUploadAvailable || referenceUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label={hasReference ? "Replace reference" : "Add reference"}
+                  title={
+                    referenceUploadAvailable
+                      ? "Add a reference image"
+                      : "Reference upload storage is not configured in this environment."
+                  }
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-muted transition-colors hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {referenceUploading ? (
+                    <LoaderCircle aria-hidden="true" className="animate-spin" size={17} />
+                  ) : hasReference ? (
+                    <ImageIcon aria-hidden="true" size={18} />
+                  ) : (
+                    <Plus aria-hidden="true" size={18} strokeWidth={1.8} />
+                  )}
+                </button>
+
+                <div className="flex shrink-0 rounded-lg bg-surface-2 p-1" aria-label="Output type">
+                  {(["image", "video"] as const).map((kind) => (
+                    <button
+                      type="button"
+                      key={kind}
+                      aria-pressed={outputKind === kind}
+                      onClick={() => {
+                        setOutputKind(kind);
+                        setError(null);
+                        setContinuationSource((current) =>
+                          current
+                            ? {
+                                ...current,
+                                inputRole: kind === "image" ? "primary-image" : "first-frame",
+                              }
+                            : current,
+                        );
+                      }}
+                      className={[
+                        "min-h-8 min-w-20 rounded-md px-3 text-sm font-medium transition-colors duration-150",
+                        outputKind === kind ? "bg-surface-3 text-text" : "text-text-muted hover:text-text",
+                      ].join(" ")}
+                    >
+                      {kind === "image" ? "Image" : "Video"}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (outputKind === "image") setImageAspect(nextValue(imageAspectRatios, imageAspect));
+                    else setVideoAspect(nextValue(videoAspectRatios, videoAspect));
+                  }}
+                  aria-label={`Aspect ratio ${aspectRatio}. Activate to choose the next ratio.`}
+                  className="min-h-10 shrink-0 rounded-lg bg-surface-2 px-4 text-sm font-medium text-text-muted transition-colors duration-150 hover:text-text"
+                >
+                  {aspectRatio}
+                </button>
+
+                {outputKind === "video" ? (
                   <button
                     type="button"
-                    key={kind}
-                    aria-pressed={outputKind === kind}
-                    onClick={() => {
-                      setOutputKind(kind);
-                      setError(null);
-                      setContinuationSource((current) =>
-                        current
-                          ? {
-                              ...current,
-                              inputRole: kind === "image" ? "primary-image" : "first-frame",
-                            }
-                          : current,
-                      );
-                    }}
+                    onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
+                    aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
+                    className="min-h-10 shrink-0 rounded-lg bg-surface-2 px-4 text-sm font-medium text-text-muted transition-colors duration-150 hover:text-text"
+                  >
+                    {durationSeconds} s
+                  </button>
+                ) : null}
+
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
+                    title="Advanced generation controls"
                     className={[
-                      "min-h-8 min-w-20 rounded-md px-3 text-sm font-medium transition-colors duration-150",
-                      outputKind === kind ? "bg-surface-3 text-text" : "text-text-muted hover:text-text",
+                      "inline-flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                      advancedOpen
+                        ? "bg-surface-3 text-text"
+                        : "bg-surface-2 text-text-muted hover:text-text",
                     ].join(" ")}
                   >
-                    {kind === "image" ? "Image" : "Video"}
+                    <MoreHorizontal aria-hidden="true" size={18} strokeWidth={1.8} />
                   </button>
-                ))}
+                </CollapsibleTrigger>
               </div>
 
               <button
-                type="button"
-                onClick={() => {
-                  if (outputKind === "image") setImageAspect(nextValue(imageAspectRatios, imageAspect));
-                  else setVideoAspect(nextValue(videoAspectRatios, videoAspect));
-                }}
-                aria-label={`Aspect ratio ${aspectRatio}. Activate to choose the next ratio.`}
-                className="min-h-10 shrink-0 rounded-lg bg-surface-2 px-4 text-sm font-medium text-text-muted transition-colors duration-150 hover:text-text"
+                type="submit"
+                disabled={!canSubmit}
+                className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
               >
-                {aspectRatio}
-              </button>
-
-              {outputKind === "video" ? (
-                <button
-                  type="button"
-                  onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
-                  aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
-                  className="min-h-10 shrink-0 rounded-lg bg-surface-2 px-4 text-sm font-medium text-text-muted transition-colors duration-150 hover:text-text"
-                >
-                  {durationSeconds} s
-                </button>
-              ) : null}
-
-              <button
-                type="button"
-                disabled
-                aria-label="Advanced controls (coming later)"
-                title="Advanced controls will be added from capability definitions rather than hard-coded here."
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-muted opacity-70"
-              >
-                <MoreHorizontal aria-hidden="true" size={18} strokeWidth={1.8} />
+                {submitting || jobActive ? <LoaderCircle aria-hidden="true" className="animate-spin" size={17} /> : null}
+                {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
               </button>
             </div>
-
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
-            >
-              {submitting || jobActive ? <LoaderCircle aria-hidden="true" className="animate-spin" size={17} /> : null}
-              {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
-            </button>
-          </div>
+          </Collapsible>
         </form>
 
         {!generationAvailable || !referenceUploadAvailable ? (
