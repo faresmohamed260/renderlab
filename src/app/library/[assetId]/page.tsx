@@ -1,11 +1,35 @@
-import { RoutePlaceholder } from "@/components/shell/route-placeholder";
+import { notFound } from "next/navigation";
+import { MediaViewer } from "@/features/library/media-viewer";
+import { isSupabaseConfigured } from "@/server/data/supabase-rest";
+import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
+import { isR2Configured } from "@/server/storage/r2";
 
-export default function MediaViewerPage() {
-  return (
-    <RoutePlaceholder
-      eyebrow="Media Viewer"
-      title="Asset detail surface"
-      description="The deep-linked media viewer will own asset presentation, metadata, and compatible continuation actions. This placeholder verifies the shell and route boundary only."
-    />
-  );
+export const dynamic = "force-dynamic";
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export default async function MediaViewerPage({
+  params,
+}: {
+  params: Promise<{ assetId: string }>;
+}) {
+  const { assetId } = await params;
+
+  if (!uuidPattern.test(assetId)) notFound();
+
+  if (!isSupabaseConfigured() || !isR2Configured()) {
+    return (
+      <section className="mx-auto w-full max-w-4xl px-4 pb-28 pt-12 sm:px-8 sm:pb-16 sm:pt-16">
+        <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text">Media Viewer</h2>
+        <div className="mt-6 rounded-xl border border-border bg-surface-1 px-5 py-8 text-sm text-text-muted" role="status">
+          Media assets are not connected in this environment yet.
+        </div>
+      </section>
+    );
+  }
+
+  const asset = await getMediaAsset(assetId).catch(() => null);
+  if (!asset) notFound();
+
+  return <MediaViewer asset={publicMediaAsset(asset)} />;
 }
