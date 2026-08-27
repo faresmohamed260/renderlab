@@ -1,35 +1,22 @@
-name: Library Lifecycle Visual
+name: Media Rename Visual
 
 on:
   pull_request:
     paths:
-      - "scripts/ensure-r2-browser-cors.mjs"
-      - "scripts/verify-library-lifecycle.mjs"
-      - ".github/workflows/library-lifecycle-visual.yml"
-      - "supabase/migrations/0003_persistent_media_uploads.sql"
-      - "src/app/library/**"
-      - "src/features/library/**"
-      - "src/app/page.tsx"
-      - "src/features/create/create-workspace.tsx"
+      - "scripts/verify-media-rename.mjs"
+      - ".github/workflows/media-rename-visual.yml"
       - "src/app/api/media/assets/**"
-      - "src/app/api/media/uploads/**"
-      - "src/server/media/media-assets.ts"
-      - "src/server/media/media-uploads.ts"
-      - "src/server/storage/r2.ts"
+      - "src/features/library/media-viewer-actions.tsx"
+      - "src/features/library/media-viewer.tsx"
       - "src/lib/api/media-assets-contract.ts"
-      - "src/lib/api/media-upload-contract.ts"
-      - "src/lib/capabilities/generation.ts"
+      - "src/server/media/media-assets.ts"
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: renderlab-library-lifecycle-shared
-  cancel-in-progress: false
-
 jobs:
-  lifecycle:
+  rename:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -39,8 +26,6 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN || secrets.CLOUDFLARE_R2_ADMIN_TOKEN }}
-      RENDERLAB_BROWSER_UPLOAD_ORIGINS: http://127.0.0.1:3000,http://localhost:3000,https://renderlab-faresmohamed260-6733s-projects.vercel.app,https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
 
     steps:
@@ -72,9 +57,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Reconcile and verify R2 browser upload CORS
-        run: node scripts/ensure-r2-browser-cors.mjs
-
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
@@ -92,22 +74,22 @@ jobs:
           cat /tmp/renderlab-next.log || true
           exit 1
 
-      - name: Render configured persistent upload Library lifecycle
-        run: node scripts/verify-library-lifecycle.mjs
+      - name: Render configured media rename lifecycle
+        run: node scripts/verify-media-rename.mjs
 
-      - name: Cleanup Library upload fixture
+      - name: Cleanup media rename fixtures
         if: always()
-        run: node scripts/verify-library-lifecycle.mjs --cleanup-only
+        run: node scripts/verify-media-rename.mjs --cleanup-only
 
       - name: Print server log on failure
         if: failure()
         run: cat /tmp/renderlab-next.log || true
 
-      - name: Upload Library lifecycle screenshots
+      - name: Upload media rename screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: renderlab-library-lifecycle-screenshots
-          path: artifacts/library-lifecycle-*.png
+          name: renderlab-media-rename-screenshots
+          path: artifacts/media-rename-*.png
           if-no-files-found: warn
           retention-days: 14

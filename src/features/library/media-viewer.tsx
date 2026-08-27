@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import { continuationActionsForMedia } from "@/lib/capabilities/generation";
+import { MediaViewerActions } from "@/features/library/media-viewer-actions";
 
 function createdLabel(value: string) {
   const date = new Date(value);
@@ -37,10 +38,6 @@ function assetTitle(asset: PublicMediaAsset) {
 function continuationHref(assetId: string, actionId: string) {
   const params = new URLSearchParams({ source: assetId, action: actionId });
   return `/?${params.toString()}`;
-}
-
-function downloadHref(assetId: string) {
-  return `/api/media/assets/${encodeURIComponent(assetId)}/download`;
 }
 
 export function MediaViewer({ asset }: { asset: PublicMediaAsset }) {
@@ -158,13 +155,14 @@ export function MediaViewer({ asset }: { asset: PublicMediaAsset }) {
           ) : null}
 
           <div className="mt-6 border-t border-border pt-5">
-            <a
-              href={downloadHref(asset.id)}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <Download aria-hidden="true" size={16} />
-              Download
-            </a>
+            <h3 className="text-xs font-semibold text-text">Actions</h3>
+            <div className="mt-3">
+              <MediaViewerActions
+                assetId={asset.id}
+                displayName={asset.displayName}
+                fallbackTitle={title}
+              />
+            </div>
           </div>
         </aside>
       </div>

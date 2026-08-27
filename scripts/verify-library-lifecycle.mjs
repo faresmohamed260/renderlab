@@ -204,8 +204,9 @@ try {
   await writeFile(fixturePath, JSON.stringify({ uploadId, assetId, storageKey: session.storage_key }), "utf8");
 
   await page.getByRole("status").filter({ hasText: "Added to Library." }).waitFor({ state: "visible", timeout: 30_000 });
-  const card = page.getByRole("link", { name: `Open ${fixtureDisplayName}`, exact: true });
+  const card = page.locator(`a[href="/library/${assetId}"]`);
   await card.waitFor({ state: "visible", timeout: 30_000 });
+  assert(await card.getAttribute("aria-label") === `Open ${fixtureDisplayName}`, "Uploaded Library card did not expose the expected display name.");
   const cardImage = card.locator("img");
   await cardImage.waitFor({ state: "visible", timeout: 30_000 });
   const cardMetrics = await imageMetrics(cardImage, "Uploaded Library card image");

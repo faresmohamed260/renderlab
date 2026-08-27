@@ -4,10 +4,18 @@ export type MediaAssetKind = "image" | "video";
 export type MediaAssetOrigin = "generated" | "uploaded";
 
 export const MEDIA_ASSET_SEARCH_MAX_LENGTH = 120;
+export const MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH = 240;
 
 export function normalizeMediaAssetSearchQuery(value: string | null | undefined) {
   const normalized = value?.trim().replace(/\s+/g, " ") ?? "";
   return normalized || null;
+}
+
+export function normalizeMediaAssetDisplayName(value: string | null | undefined) {
+  return (value ?? "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export type PublicMediaAsset = {
@@ -42,6 +50,11 @@ export type ListMediaAssetsSuccess = {
   };
 };
 
+export type MediaAssetSuccess = {
+  ok: true;
+  asset: PublicMediaAsset;
+};
+
 export type MediaAssetError = {
   ok: false;
   error: {
@@ -51,3 +64,10 @@ export type MediaAssetError = {
 };
 
 export type ListMediaAssetsResponse = ListMediaAssetsSuccess | MediaAssetError;
+export type MediaAssetResponse = MediaAssetSuccess | MediaAssetError;
+
+export type RenameMediaAssetRequest = {
+  displayName: string;
+};
+
+export type RenameMediaAssetResponse = MediaAssetResponse;

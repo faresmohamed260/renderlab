@@ -89,7 +89,7 @@ UI-023: search is URL-owned server-side discovery over durable `media_assets`.
 
 **Library search v0.1 status: `APPROVED` and merged.**
 
-### Durable media Download v0.1 — PR #11
+### Durable media Download v0.1 — merged PR #11
 UI-024: Download is a contextual Media Viewer product action over opaque durable media identity.
 
 - [x] Add Viewer-only secondary Download action.
@@ -102,25 +102,45 @@ UI-024: Download is a contextual Media Viewer product action over opaque durable
 - [x] Verify uploaded filename `RenderLab-Download-画像.png` and generated deterministic fallback.
 - [x] Verify both downloaded files are byte-identical to the durable 68-byte R2 fixtures.
 - [x] Verify Cloudflare R2 honors signed `ResponseContentDisposition`.
-- [x] Implementation-head UI Shell `33070792349` passed.
-- [x] Existing Library Search regression `33070792317` passed.
-- [x] Existing persistent-upload backend regression `33070792362` passed.
-- [x] Existing real Upload → Library → Viewer → Create regression `33070792329` passed.
-- [x] Media Download Visual `33070792343` passed.
+- [x] Implementation-head UI Shell `33070792349`, Search `33070792317`, Upload Integration `33070792362`, Library Lifecycle `33070792329`, and Media Download Visual `33070792343` passed.
 - [x] Three Viewer desktop/mobile screenshots visually inspected; Download remains secondary to Continue.
 - [x] Direct cleanup verification found `0` Download fixtures, `0` upload sessions and `0` uploaded test assets.
-- [x] Source-of-truth docs record UI-024 and verified implementation state.
-- [ ] Merge PR #11 after documentation-finalized head checks are green and GitHub remains mergeable.
+- [x] Documentation-finalized runs `33071571971`, `33071572092`, `33071571998`, `33071571944`, `33071571912` passed.
+- [x] PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`; post-merge main shell/reference-upload runs `33071764713` / `33071764748` passed.
 
-**Durable Media Download v0.1 status: `APPROVED FOR MERGE` pending final documentation-head CI.**
+**Durable Media Download v0.1 status: `APPROVED` and merged.**
+
+### Durable media Rename v0.1 — PR #12
+UI-025: Rename changes durable human-facing display identity only.
+
+- [x] Add one Viewer-only `Rename` action beside Download.
+- [x] Add `PATCH /api/media/assets/[assetId]` against opaque durable media identity.
+- [x] Update only `media_assets.display_name`; preserve original filename, MIME, R2 storage key and generated provenance/prompt.
+- [x] Remove controls, collapse whitespace, require a non-empty name and cap at 240 characters.
+- [x] Keep uploaded/generated Download naming unchanged after Rename.
+- [x] Keep Library search immediately discoverable through existing `display_name` search.
+- [x] Keep the edit interaction feature-owned and inline; no modal/global management framework.
+- [x] Refine Viewer composition so Rename and Download remain side-by-side while the editor expands beneath them.
+- [x] Configured Media Rename Visual `33074480356` passed with real R2/Supabase fixtures and Chromium.
+- [x] Refined-head UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, and Rename `33074480356` passed.
+- [x] Library Lifecycle `33074480489` passed on rerun after an unrelated stale shared test fixture was identified and removed.
+- [x] Four refined desktop/mobile edit/renamed screenshots from `33074480356` were visually inspected.
+- [x] Direct cleanup verification found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions.
+- [x] Remove both unrelated stale lifecycle database/R2 fixtures exposed during PR validation; cleanup runs `33075125636` and `33076888858` deleted the exact orphaned objects, with the second run HEAD-verifying absence.
+- [x] Serialize the shared configured Library lifecycle workflow with `concurrency: renderlab-library-lifecycle-shared` to avoid overlapping mutable fixture windows.
+- [x] Harden `verify-library-lifecycle.mjs` to select the exact durable asset ID returned by its own upload completion while separately asserting the expected display name; fixture-name uniqueness is not assumed.
+- [x] Source-of-truth docs record UI-025 and verified implementation state.
+- [ ] Merge PR #12 after documentation-finalized exact-head checks are green and GitHub remains mergeable.
+
+**Durable Media Rename v0.1 status: `APPROVED FOR MERGE` pending final documentation-head CI.**
 
 ### R2 browser-origin boundary
-Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement.
+Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement.
 
-### Still intentionally open after Download
+### Still intentionally open after Rename
 - [ ] Broader history controls where a real product need is defined.
 - [ ] Favorites/collections or another approved organization model.
-- [ ] Rename/delete/batch management.
+- [ ] Delete and batch management.
 
 These require explicit RenderLab-owned contracts. Do not infer Saga organization/destructive-action schemas automatically.
 
@@ -145,10 +165,10 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current slice:** Durable Media Download v0.1, PR #11.  
-**Verified:** product download route, R2 attachment signing, uploaded/generated filename policy, exact bytes, Viewer desktop/mobile placement, existing media/search/upload regressions and cleanup.  
-**Merge gate:** final documentation-head CI + mergeability only.  
-**Next product slice after merge:** select one remaining organization/history/management need only after its RenderLab-owned contract is explicit.
+**Current slice:** Durable Media Rename v0.1, PR #12.  
+**Verified:** Viewer-only inline Rename, durable `display_name` mutation, input normalization/validation, Search discovery, Download/original/provenance/storage preservation, responsive Viewer review, shared-resource cleanup, exact-ID lifecycle targeting and regression coverage.  
+**Merge gate:** documentation-finalized exact-head CI + mergeability only.  
+**Next product slice after merge:** select one remaining history/organization/destructive-management need only after its RenderLab-owned contract is explicit.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

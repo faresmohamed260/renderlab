@@ -75,24 +75,27 @@ Approved behavior:
 - compact native-file-picker Upload action with verified durable promotion;
 - uploaded cards prefer durable display names and preserve Unicode filenames;
 - URL-owned server-side search `q` over display name, original filename and generated prompt;
-- search is case-insensitive literal substring matching, max 120 characters, composed with kind/pagination.
+- search is case-insensitive literal substring matching, max 120 characters, composed with kind/pagination;
+- renamed durable assets are immediately discoverable through the same display-name search contract.
 
 **Approval evidence:**
 - base Library/Viewer lifecycle `33034606396`;
 - persistent upload final pre-merge runs `33067469516`, `33067469518`, `33067469527`; PR #9 merged as `d306f2abd1831538c51692545d72db1e5e9e0814`;
 - search implementation runs `33069004219`, `33069004207`, `33069004227`, `33069004204`;
 - search documentation-finalized runs `33070046222`, `33070046205`, `33070046336`, `33070046186`;
-- PR #10 merged as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; post-merge `33070215358` passed.
+- PR #10 merged as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; post-merge `33070215358` passed;
+- Rename configured search-discovery regression passed in Media Rename Visual `33074480356`.
 
-**Still intentionally open:** broader history controls, favorites/collections, rename/delete/batch management and drag/drop unless separately justified.
+**Still intentionally open:** broader history controls, favorites/collections, delete/batch management and drag/drop unless separately justified.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search into a Saga-style filter console without an explicit product contract.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** APPROVED — Media Viewer v0.1 + uploaded-media presentation + Download v0.1  
+**Status:** APPROVED — Media Viewer v0.1 + uploaded-media presentation + Download v0.1 + Rename v0.1  
 **Implementation:** `src/features/library/media-viewer.tsx`  
-**Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/lib/api/media-assets-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`  
+**Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
+**Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/lib/api/media-assets-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`  
 **Design artifact:** `design/penpot/media-viewer-v0.1.svg`
 
 **Approved behavior:**
@@ -106,15 +109,25 @@ Approved behavior:
 - one secondary Viewer-only `Download` action for durable generated/uploaded media;
 - Download uses `/api/media/assets/[assetId]/download`, reloads the durable asset server-side, then redirects to a short-lived signed R2 attachment GET;
 - uploaded download filenames preserve a sanitized Unicode basename with canonical MIME extension;
-- generated downloads use deterministic `renderlab-<kind>-<id-prefix>.<ext>` fallback names rather than prompt/storage identity.
+- generated downloads use deterministic `renderlab-<kind>-<id-prefix>.<ext>` fallback names rather than prompt/storage identity;
+- one Viewer-only `Rename` action changes only durable `display_name` through `PATCH /api/media/assets/[assetId]`;
+- Rename strips controls, collapses whitespace, requires non-empty input and caps names at 240 characters;
+- Rename preserves original filename, MIME, R2 storage key, generated provenance/prompt and Download filename semantics;
+- Rename and Download remain side-by-side while the inline edit form expands beneath them on desktop/mobile.
 
 **Download approval evidence:**
 - implementation head `6d528c47445b26b5464fa529b9e489e6a7ce87ff` passed UI Shell `33070792349`, Library Search `33070792317`, Persistent Media Upload `33070792362`, Library Lifecycle `33070792329` and Media Download Visual `33070792343`;
-- configured Chromium verified uploaded `RenderLab-Download-画像.png`, generated deterministic fallback, and exact 68-byte R2 contents for both;
-- three Viewer screenshots were visually inspected at desktop/mobile widths;
-- direct cleanup verification left `0` Download fixtures, `0` upload sessions and `0` uploaded test assets.
+- documentation-finalized runs `33071571971`, `33071572092`, `33071571998`, `33071571944`, `33071571912` passed;
+- PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`; post-merge main shell/reference-upload runs `33071764713` / `33071764748` passed.
 
-**Do not change:** Provider/worker/R2 identity stays internal. Viewer continuation remains capability-derived. Download remains a contextual product action; do not expose raw R2 keys/signed URLs as durable product links or add batch/card actions without a separate contract.
+**Rename approval evidence:**
+- refined implementation head `fb6f42cdfae377cf841655320dc4bbeee74d3549` passed UI Shell `33074480462`, Library Search `33074480419`, Persistent Media Upload `33074480288`, Media Download Visual `33074480319`, Media Rename Visual `33074480356`, and Library Lifecycle `33074480489` on rerun after stale shared fixture cleanup;
+- configured Chromium verified generated/uploaded rename, Unicode/whitespace normalization, invalid/blank/overlength rejection, search discovery, original/provenance/storage preservation and unchanged uploaded Download filename/bytes;
+- four refined edit/renamed Viewer screenshots were visually inspected at desktop/mobile widths;
+- direct cleanup verification left `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions;
+- the unrelated stale lifecycle R2 object was explicitly removed by cleanup run `33075125636`.
+
+**Do not change:** Provider/worker/R2 identity stays internal. Viewer continuation remains capability-derived. Download/Rename remain contextual product actions; do not expose raw R2 keys/signed URLs as durable product links or add Library-card/batch/delete/collection actions without a separate contract.
 
 ### Activity
 **Route:** `/activity`  
@@ -132,7 +145,7 @@ Approved behavior:
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search and UI-024 durable media Download.
+Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download and UI-025 durable display-name Rename.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.

@@ -24,9 +24,9 @@ Legacy `studio_*` tables remain separate and must not be renamed, repurposed or 
 - `0002_generation_jobs_media_assets.sql` — RenderLab jobs + durable media identity, RLS enabled.
 - `0003_persistent_media_uploads.sql` — applied as `20260827031630 renderlab_persistent_media_uploads`; adds durable origin/name/size fields and server-owned `media_upload_sessions`, RLS enabled.
 
-Do not reapply migration 0003. Search v0.1 and Download v0.1 add no database migration.
+Do not reapply migration 0003. Search v0.1, Download v0.1 and Rename v0.1 add no database migration.
 
-Service-role access remains server-only. Direct verification after configured media tests has repeatedly shown no remaining integration fixtures.
+Service-role access remains server-only. Rename uses the existing `media_assets.display_name` column and a server-side product route; no browser Supabase credential is introduced.
 
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
@@ -88,7 +88,7 @@ Durable Download (UI-024):
 GET /api/media/assets/:assetId/download
   -> reload durable media_assets row
   -> derive safe product filename from durable metadata + MIME
-  -> sign short-lived R2 GetObject with ResponseContentDisposition=attachment
+  -> sign R2 GetObject with ResponseContentDisposition=attachment
   -> 302 private/no-store
   -> browser downloads directly from R2
 ```
@@ -97,13 +97,33 @@ The application server does **not** proxy the media bytes. The product route is 
 
 Uploaded Download filenames preserve a sanitized Unicode basename and force canonical extension from verified `mime_type`. Generated files use deterministic `renderlab-<kind>-<id-prefix>.<ext>` names rather than prompts/storage keys. Content-Disposition includes an ASCII fallback plus RFC5987 UTF-8 `filename*`.
 
-Configured Media Download run `33070792343` proved Cloudflare R2 honors the signed response-content-disposition override in the current setup. Chromium downloaded:
-- `RenderLab-Download-画像.png` — 68 bytes, exact fixture bytes;
-- `renderlab-image-3b990612.png` — 68 bytes, exact fixture bytes.
-
-The verifier self-cleaned both R2 objects/database rows. Direct Supabase cleanup after the full implementation-head gate set showed `0` Download fixtures, `0` upload sessions and `0` uploaded test assets.
+Configured Media Download run `33070792343` proved Cloudflare R2 honors the signed response-content-disposition override. Documentation-finalized Download runs `33071571971`, `33071572092`, `33071571998`, `33071571944`, `33071571912` passed; PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`. Post-merge main shell/reference-upload runs `33071764713` / `33071764748` passed.
 
 Top-level Download navigation does not create a new browser-upload CORS requirement. Upload CORS remains governed by the exact-origin PUT rule above.
+
+### Durable media Rename boundary
+Rename (UI-025) is a Supabase metadata mutation, not a storage mutation:
+```text
+PATCH /api/media/assets/:assetId
+  -> validate opaque durable asset ID
+  -> normalize/validate bounded display name
+  -> reload media_assets row server-side
+  -> PATCH display_name only through service-role REST
+  -> return public media asset
+```
+
+Infrastructure invariants:
+- no R2 object is renamed, moved, copied or rewritten;
+- `storage_key`, uploaded `original_filename`, MIME and generated provenance/prompt remain unchanged;
+- Download filename behavior remains independent of Rename;
+- Rename introduces no new R2 CORS origin or R2 credential requirement;
+- no schema migration is required because `display_name` already belongs to durable `media_assets`.
+
+Configured Media Rename Visual `33074480356` used real generated/uploaded R2-backed durable assets and Chromium. It verified bounded validation, Unicode/whitespace normalization, durable persistence, Search discovery, unchanged uploaded Download filename/bytes and preservation of original filename/storage/provenance. Direct cleanup verification found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions.
+
+During PR #12 verification, two older leaked Library lifecycle assets surfaced with the same fixed human fixture name. Each failing run cleaned its own newly created upload correctly; the stale database rows were removed separately. One-off cleanup run `33075125636` deleted the first orphaned R2 object. One-off cleanup run `33076888858` deleted and then HEAD-verified absence of the second orphaned R2 object `renderlab/uploads/2026/08/dde3c1c0-d65e-498a-a4b1-78cc9cbd0264.png`. The temporary cleanup script/workflow was removed from the branch after each cleanup.
+
+The configured Library lifecycle is now hardened at both orchestration and identity boundaries. `.github/workflows/library-lifecycle-visual.yml` uses `concurrency: renderlab-library-lifecycle-shared` with `cancel-in-progress: false` so shared mutable lifecycle windows do not overlap for workflow revisions that include the rule. Independently, `scripts/verify-library-lifecycle.mjs` locates the exact Library card by the durable `media-asset` ID returned by its own upload completion and separately asserts the expected display name. Same-name durable assets therefore cannot make the verifier ambiguous even if unrelated stale state exists.
 
 ## Generation Worker Fleet
 RenderLab reuses existing ComfyUI/Modal workers while the **RenderLab server owns orchestration**. Public routing metadata lives in `src/server/generation/worker-fleet.ts`; credentials never belong there.
@@ -149,9 +169,10 @@ Initial submission may try another worker only before a provider call ID is acce
 - Generated Library/Viewer lifecycle — `33034606396`.
 - Persistent Upload final pre-merge — `33067469518` + `33067469527`; PR #9 merged.
 - Library Search configured lifecycle — `33069004204`; final docs head `33070046205`; PR #10 merged as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; post-merge main `33070215358` passed.
-- Media Download configured lifecycle — `33070792343`; implementation-head regressions UI Shell `33070792349`, Search `33070792317`, Upload Integration `33070792362`, Library Lifecycle `33070792329` all passed.
+- Media Download configured lifecycle — `33070792343`; final documentation-head gates passed before PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`.
+- Media Rename configured lifecycle — `33074480356`; refined-head UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, and Library Lifecycle `33074480489` on rerun all passed.
 
-Search/upload/download configured verifiers do not invoke ComfyUI.
+Search/upload/download/rename configured verifiers do not invoke ComfyUI.
 
 ## Studio Compatibility Boundary
 `src/server/generation/studio-compat.ts` is transitional migration/debugging compatibility only, not the preferred production path.
@@ -181,6 +202,7 @@ Create
 Product media APIs:
 - `GET /api/media/assets`
 - `GET /api/media/assets/:assetId`
+- `PATCH /api/media/assets/:assetId` — current bounded UI-025 display-name Rename mutation
 - `GET /api/media/assets/:assetId/content`
 - `GET /api/media/assets/:assetId/thumbnail`
 - `GET /api/media/assets/:assetId/download`
@@ -211,6 +233,7 @@ R2 credentials currently require Admin Read & Write because configured browser u
 - Keep RLS enabled on RenderLab tables.
 - Direct browser uploads use short-lived signed URLs + exact-origin CORS.
 - Durable reads/downloads use short-lived signed R2 GETs behind opaque product routes.
+- Rename uses a server-side service-role metadata mutation and never exposes Supabase credentials to the browser.
 - Do not persist/expose raw signed URLs as product links.
 - Worker/provider routing remains server-owned.
 - Shared resources do not authorize legacy Saga mutation/coupling.
@@ -222,9 +245,10 @@ Ordinary UI CI runs without production secrets and validates truthful unavailabl
 Key workflows:
 - `verify-create-lifecycle.mjs` + `create-lifecycle-visual.yml`
 - `verify-media-upload.mjs` + `media-upload-integration.yml`
-- `verify-library-lifecycle.mjs` + `library-lifecycle-visual.yml`
+- `verify-library-lifecycle.mjs` + `library-lifecycle-visual.yml` — shared-resource lifecycle is serialized and exact durable fixture identity is used for browser targeting
 - `verify-library-search.mjs` + `library-search-visual.yml`
 - `verify-media-download.mjs` + `media-download-visual.yml`
+- `verify-media-rename.mjs` + `media-rename-visual.yml`
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
 ## Next Infrastructure Work
