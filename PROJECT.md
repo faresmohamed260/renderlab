@@ -34,7 +34,7 @@ Generation is modeled as:
 
 `Workflow → Inputs → Parameters → Generation Job → Outputs → Continuation Actions`
 
-Generation inputs use opaque product identities such as temporary-source IDs and durable media-asset IDs. R2 storage keys, provider IDs and worker routing remain server-side implementation details.
+Generation inputs and media actions use opaque product identities. R2 storage keys, provider IDs and worker routing remain server-side implementation details.
 
 ## Product Areas
 Primary:
@@ -53,14 +53,14 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 
 ### Approved product state
 - Application shell: `APPROVED`.
-- Create: `APPROVED`; configured complete browser lifecycle approval run `33031817744`.
-- Library v0.1: `APPROVED`; credential-free run `33034606323`, configured R2/Supabase lifecycle run `33034606396`.
-- Media Viewer v0.1: `APPROVED`; generated and uploaded continuation behavior is live verified.
-- Persistent Library upload extension: `APPROVED`, merged through PR #9 as `d306f2abd1831538c51692545d72db1e5e9e0814`.
-- Library search v0.1: `APPROVED`, merged through PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; post-merge main shell run `33070215358` passed.
-- Durable Media Viewer Download v0.1: functionally and visually `APPROVED FOR MERGE` in PR #11, pending only final documentation-head CI.
+- Create: `APPROVED`; complete configured browser lifecycle run `33031817744`.
+- Library v0.1: `APPROVED`; credential-free run `33034606323`, configured lifecycle `33034606396`.
+- Persistent Library upload: `APPROVED`, merged through PR #9 as `d306f2abd1831538c51692545d72db1e5e9e0814`.
+- Library search v0.1: `APPROVED`, merged through PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`.
+- Durable Media Download v0.1: `APPROVED`, merged through PR #11 as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`; post-merge main shell/reference-upload runs `33071764713` / `33071764748` passed.
+- Durable Media Rename v0.1: functionally and visually `APPROVED FOR MERGE` in PR #12, pending documentation-finalized exact-head CI.
 - Create supports Create Image, Edit Image, Create Video and Animate Image.
-- Durable generated and uploaded media use RenderLab `media_assets`, product media APIs and opaque `media-asset` identity.
+- Durable generated and uploaded media share RenderLab `media_assets`, product APIs and opaque `media-asset` identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 Do not redesign these approved surfaces merely because new media capabilities are added.
@@ -70,84 +70,88 @@ UI-022 defines the approved durable upload model.
 
 - Durable user uploads are ordinary `media_assets` with `origin = uploaded`.
 - Pending direct-to-R2 transfer state belongs to server-side `media_upload_sessions`.
-- After verification, uploads participate in Library, Media Viewer and Create through ordinary opaque `media-asset` identity.
 - `generation_sources` remains temporary generation/reference state; legacy Saga `studio_uploads` is not reused.
-- Migration `supabase/migrations/0003_persistent_media_uploads.sql` is applied as `20260827031630 renderlab_persistent_media_uploads`.
+- Migration `0003_persistent_media_uploads.sql` is applied as `20260827031630 renderlab_persistent_media_uploads`.
 - Browser upload is ticket → signed R2 PUT → completion → server HEAD verification → durable asset promotion.
 - PNG/JPEG/WebP up to 25 MB are supported.
 - Unicode filenames are preserved after control/path cleanup and length bounding.
 - Concurrent completion races recover to the unique durable asset winner.
 
-Final pre-merge upload evidence included UI Shell `33067469516`, backend integration `33067469518`, Library lifecycle `33067469527`, responsive screenshot review and cleanup. PR #9 then merged and `main` remained green.
-
 ## Library Search v0.1 Contract
 UI-023 defines durable-media discovery.
 
-- Search state is the shareable Library URL parameter `q`.
+- Search state is shareable URL parameter `q`.
 - Search is server-owned against durable `media_assets`, not a client-only current-page filter.
 - Queries are whitespace-normalized and capped at 120 characters.
 - Matching is case-insensitive literal substring search across `display_name`, `original_filename`, and generated `provenance.prompt`.
-- User punctuation is literal text, not PostgREST/regex syntax.
-- Search combines with `All / Images / Videos`, keeps newest-first ordering, resets offset when search/kind changes and preserves `q` through pagination/kind links.
-- v0.1 adds no relevance ranking, model/date filters, command palette, collection schema or search service/index.
+- Search composes with All/Images/Videos and newest-first pagination.
+- v0.1 adds no relevance ranking, model/date filters, command palette, collection schema or dedicated search service/index.
 
-Implementation-head evidence passed UI Shell `33069004219`, upload backend `33069004207`, Library lifecycle `33069004227` and configured search `33069004204`. The configured lifecycle verified prompt, Unicode filename, literal punctuation, kind+search, responsive result/no-match states and cleanup. The documentation-finalized head then passed UI Shell `33070046222`, Library Search `33070046205`, Library Lifecycle `33070046336` and Persistent Media Upload `33070046186`. PR #10 merged as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; post-merge main run `33070215358` passed.
+PR #10 passed implementation and documentation-finalized Search/upload/lifecycle/UI gates before merge. Post-merge main shell `33070215358` passed.
 
 ## Durable Media Download v0.1 Contract
 UI-024 defines Download as a contextual product-media action.
 
-### Product behavior
 - Media Viewer exposes one secondary `Download` action for durable generated/uploaded media.
-- The action uses `/api/media/assets/[assetId]/download`; storage keys and raw signed URLs are not durable product identity.
-- The server reloads the durable asset and redirects to a short-lived signed R2 GET with attachment `Content-Disposition`.
-- RenderLab does not proxy media bytes through the application server.
-- Uploaded files preserve a sanitized Unicode basename and receive the canonical extension from verified MIME.
-- Generated files use deterministic `renderlab-<kind>-<id-prefix>.<ext>` filenames; prompts/storage keys are not used as filenames.
-- v0.1 does not add Library-card Download, batch actions, rename/delete, favorites/collections or a new client/store framework.
+- `/api/media/assets/[assetId]/download` reloads the durable asset and redirects to a short-lived signed R2 GET with attachment `Content-Disposition`.
+- RenderLab does not proxy media bytes through the application server and never treats raw R2 identity as product identity.
+- Uploaded downloads preserve a sanitized Unicode basename with canonical extension from verified MIME.
+- Generated downloads use deterministic `renderlab-<kind>-<id-prefix>.<ext>` names rather than prompts/storage keys.
+- v0.1 adds no Library-card Download or batch framework.
+
+Implementation-head runs `33070792349`, `33070792317`, `33070792362`, `33070792329`, `33070792343` passed. Documentation-finalized runs `33071571971`, `33071572092`, `33071571998`, `33071571944`, `33071571912` passed. PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`; `main` remained green.
+
+## Durable Media Rename v0.1 Contract
+UI-025 defines Rename as durable display identity, not file/storage mutation.
+
+### Product behavior
+- Media Viewer exposes `Rename` beside Download under secondary **Actions**.
+- Rename changes only `media_assets.display_name` through `PATCH /api/media/assets/[assetId]`.
+- Names remove control characters, collapse whitespace, must remain non-empty and are capped at 240 characters.
+- Original uploaded filename, MIME, R2 storage key, generated provenance/prompt and Download filename semantics remain unchanged.
+- Library search immediately discovers the new display name because `display_name` is already part of UI-023.
+- The edit UI is feature-owned inline Viewer state; Rename and Download remain side-by-side while the form expands beneath them.
+- v0.1 adds no Library-card rename, modal framework, global store, delete, batch actions, favorites/collections or database migration.
 
 ### Verified approval evidence
-Implementation head `6d528c47445b26b5464fa529b9e489e6a7ce87ff` passed:
-- UI Shell Validation `33070792349`;
-- Library Search Visual `33070792317`;
-- Persistent Media Upload Integration `33070792362`;
-- Library Lifecycle Visual `33070792329`;
-- Media Download Visual `33070792343`.
+Refined implementation head `fb6f42cdfae377cf841655320dc4bbeee74d3549` passed:
+- UI Shell Validation `33074480462`;
+- Library Search Visual `33074480419`;
+- Persistent Media Upload Integration `33074480288`;
+- Media Download Visual `33074480319`;
+- Media Rename Visual `33074480356`;
+- Library Lifecycle Visual `33074480489` on rerun after an unrelated stale shared fixture was removed.
 
-Configured Download verification used two self-cleaning real R2-backed durable assets and Chromium. It proved:
-- uploaded Unicode download filename `RenderLab-Download-画像.png`;
-- generated fallback filename `renderlab-image-<id-prefix>.png`;
-- downloaded bytes exactly matched the durable 68-byte R2 fixture for both assets;
-- R2 accepted the signed `ResponseContentDisposition` override;
-- Download uses the product media route;
-- desktop/mobile Viewer placement remains visually secondary to Continue;
-- cleanup succeeded.
+Configured Rename verification used real self-cleaning R2-backed generated/uploaded assets and Chromium. It verified invalid/blank/overlength rejection, whitespace normalization, Unicode names, durable persistence, search discovery, provenance/original-filename/storage preservation, unchanged uploaded Download filename/bytes, responsive edit/renamed states and cleanup.
 
-Three Viewer screenshots from `33070792343` were visually inspected. Direct Supabase verification found `0` Download fixtures, `0` upload sessions and `0` uploaded test assets.
+Four refined Viewer screenshots from `33074480356` were visually inspected. The initial edit composition was deliberately refined so Download no longer shifts below the editor. Direct Supabase cleanup verification found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions.
 
-**PR #11 is functionally and visually approved. Merge only after the documentation-finalized head is green and GitHub still reports it mergeable.**
+The lifecycle rerun exposed an older leaked fixture rather than a product regression. Its stale database row and exact R2 object were removed; one-off R2 cleanup run `33075125636` logged successful deletion. The configured Library lifecycle workflow is now serialized with `concurrency: renderlab-library-lifecycle-shared` so shared mutable fixtures cannot overlap across runs.
+
+**PR #12 is functionally and visually approved. Merge only after documentation-finalized exact-head checks are green and GitHub still reports it mergeable.**
 
 ## R2 Browser CORS State
-The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` has bucket-admin capability. The managed browser-upload rule currently allows direct browser `PUT` from:
+The admin-capable R2 access-key token manages the exact-origin `renderlab-browser-uploads` rule for:
 - `http://127.0.0.1:3000`
 - `http://localhost:3000`
 - `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
 - `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
-Download is different from browser PUT: Media Viewer navigates to a RenderLab product route, which redirects to a short-lived signed R2 GET carrying attachment disposition. No new browser-upload CORS origin is required for this top-level download navigation.
+Download uses product-route → signed-R2 top-level GET navigation. Rename is a server-side Supabase metadata mutation and introduces no R2 object write/move or new CORS requirement.
 
-If a future custom domain or different user-facing production origin is adopted, add that exact origin to the managed R2 CORS rule before serving direct browser uploads there. Do not use broad wildcard CORS or replace direct-to-R2 transfers with an application-server proxy merely for convenience.
+If a future user-facing production origin changes, add that exact origin before serving direct browser uploads there. Do not use broad wildcard CORS or replace direct-to-R2 transfers with an application-server proxy merely for convenience.
 
 ## Still Open in Phase 4
-Completed search/upload/download do **not** approve broader organization or destructive behavior. Still open:
+Completed upload/search/download/rename do **not** approve broader organization or destructive behavior. Still open:
 - broader history controls where a real product need is defined;
 - favorites/collections or another approved organization model;
-- rename/delete/batch management.
+- delete and batch management.
 
 The next slice must define a RenderLab-owned contract before implementation. Do not infer Saga organization/destructive-action schemas automatically.
 
 ## Infrastructure Cleanup Still Open
 - Remove the transitional Studio compatibility adapter once no migration/debugging requirement depends on it.
-- Keep capability definitions and native workflow defaults aligned as backend capability grows; do not expose controls merely because a worker accepts them.
+- Keep capability definitions/native workflow defaults aligned as backend capability grows; do not expose controls merely because a worker accepts them.
 - If the eventual public RenderLab origin differs from currently configured stable Vercel domains, add the exact origin to R2 CORS before direct browser upload use.
 
 ## Source of Truth
