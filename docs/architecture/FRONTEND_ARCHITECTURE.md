@@ -328,7 +328,9 @@ Implementation head `36ee8e8eb80645d1389afa749a36b493e2abbb61` passed all six af
 - Media Download Visual `33088086907`;
 - Media Rename Visual `33088086871`.
 
-The Library lifecycle verified real browser Upload → Library → Viewer → Edit continuation with the Radix Image radio selected, 400×300 media geometry and self-cleanup. Final-code desktop/mobile screenshots from UI Shell and Library lifecycle were visually inspected with no unintended hierarchy/layout drift. Documentation-finalized exact-head CI remains the merge gate until recorded complete in the foundation tracker.
+The Library lifecycle verified real browser Upload → Library → Viewer → Edit continuation with the Radix Image radio selected, 400×300 media geometry and self-cleanup. Final-code desktop/mobile screenshots from UI Shell and Library lifecycle were visually inspected with no unintended hierarchy/layout drift.
+
+Documentation-finalized candidate head `ba8199b49d4576dc5495779f8e84812786c5b586` passed UI Shell `33089332190`, Create Lifecycle `33089332135`, Library Search `33089333557`, Library Lifecycle `33089332001`, Media Download `33089332087`, and Media Rename `33089332021`. UI-026 and the maintained primitive architecture are `APPROVED FOR MERGE`; only final exact-head confirmation after tracker-only approval updates plus shared-resource cleanup remains before merge.
 
 ## Naming Conventions
 - React files: `kebab-case.tsx`
