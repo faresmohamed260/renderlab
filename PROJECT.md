@@ -58,7 +58,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Persistent Library upload: `APPROVED`, merged through PR #9 as `d306f2abd1831538c51692545d72db1e5e9e0814`.
 - Library search v0.1: `APPROVED`, merged through PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`.
 - Durable Media Download v0.1: `APPROVED`, merged through PR #11 as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`; post-merge main shell/reference-upload runs `33071764713` / `33071764748` passed.
-- Durable Media Rename v0.1: functionally and visually `APPROVED FOR MERGE` in PR #12, pending documentation-finalized exact-head CI.
+- Durable Media Rename v0.1: `APPROVED`, merged through PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4` after exact-head six-gate CI and clean shared-resource verification.
 - Create supports Create Image, Edit Image, Create Video and Animate Image.
 - Durable generated and uploaded media share RenderLab `media_assets`, product APIs and opaque `media-asset` identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
@@ -124,11 +124,11 @@ Refined implementation head `fb6f42cdfae377cf841655320dc4bbeee74d3549` passed:
 
 Configured Rename verification used real self-cleaning R2-backed generated/uploaded assets and Chromium. It verified invalid/blank/overlength rejection, whitespace normalization, Unicode names, durable persistence, search discovery, provenance/original-filename/storage preservation, unchanged uploaded Download filename/bytes, responsive edit/renamed states and cleanup.
 
-Four refined Viewer screenshots from `33074480356` were visually inspected. The initial edit composition was deliberately refined so Download no longer shifts below the editor. Direct Supabase cleanup verification found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions.
+Four refined Viewer screenshots from `33074480356` were visually inspected. The initial edit composition was deliberately refined so Download no longer shifts below the editor.
 
-Shared lifecycle verification exposed two older leaked same-name fixtures over the course of PR #12 validation; both were unrelated to Rename product behavior. Their database rows and exact R2 objects were removed. Cleanup run `33075125636` deleted the first orphan, and cleanup run `33076888858` deleted and HEAD-verified absence of the second. The temporary cleanup files were removed after each use. The configured Library lifecycle is now hardened in two ways: its workflow is serialized with `concurrency: renderlab-library-lifecycle-shared`, and `verify-library-lifecycle.mjs` targets the exact durable `media-asset` ID returned by its own upload completion while separately asserting the expected human display name. Fixture-name uniqueness is no longer a correctness assumption.
+Shared lifecycle verification exposed two older leaked same-name fixtures over the course of PR #12 validation; both were unrelated to Rename product behavior. Their database rows and exact R2 objects were removed. Cleanup run `33075125636` deleted the first orphan, and cleanup run `33076888858` deleted and HEAD-verified absence of the second. The configured Library lifecycle is now hardened in two ways: its workflow is serialized with `concurrency: renderlab-library-lifecycle-shared`, and `verify-library-lifecycle.mjs` targets the exact durable `media-asset` ID returned by its own upload completion while separately asserting the expected human display name. Fixture-name uniqueness is no longer a correctness assumption.
 
-**PR #12 is functionally and visually approved. Merge only after documentation-finalized exact-head checks are green and GitHub still reports it mergeable.**
+Final exact-head `70cbcc4daeafb9a48c0253df38796811d4cf4f03` passed UI Shell `33077320919`, Library Search `33077320839`, Persistent Media Upload `33077320935`, Media Download `33077320886`, Media Rename `33077321228`, and Library Lifecycle `33077320976`. Direct Supabase cleanup immediately before merge found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.
 
 ## R2 Browser CORS State
 The admin-capable R2 access-key token manages the exact-origin `renderlab-browser-uploads` rule for:
