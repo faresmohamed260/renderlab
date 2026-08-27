@@ -110,7 +110,7 @@ UI-024: Download is a contextual Media Viewer product action over opaque durable
 
 **Durable Media Download v0.1 status: `APPROVED` and merged.**
 
-### Durable media Rename v0.1 — PR #12
+### Durable media Rename v0.1 — merged PR #12
 UI-025: Rename changes durable human-facing display identity only.
 
 - [x] Add one Viewer-only `Rename` action beside Download.
@@ -125,14 +125,14 @@ UI-025: Rename changes durable human-facing display identity only.
 - [x] Refined-head UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, and Rename `33074480356` passed.
 - [x] Library Lifecycle `33074480489` passed on rerun after an unrelated stale shared test fixture was identified and removed.
 - [x] Four refined desktop/mobile edit/renamed screenshots from `33074480356` were visually inspected.
-- [x] Direct cleanup verification found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions.
 - [x] Remove both unrelated stale lifecycle database/R2 fixtures exposed during PR validation; cleanup runs `33075125636` and `33076888858` deleted the exact orphaned objects, with the second run HEAD-verifying absence.
 - [x] Serialize the shared configured Library lifecycle workflow with `concurrency: renderlab-library-lifecycle-shared` to avoid overlapping mutable fixture windows.
 - [x] Harden `verify-library-lifecycle.mjs` to select the exact durable asset ID returned by its own upload completion while separately asserting the expected display name; fixture-name uniqueness is not assumed.
-- [x] Source-of-truth docs record UI-025 and verified implementation state.
-- [ ] Merge PR #12 after documentation-finalized exact-head checks are green and GitHub remains mergeable.
+- [x] Final exact head `70cbcc4daeafb9a48c0253df38796811d4cf4f03` passed UI Shell `33077320919`, Search `33077320839`, Upload Integration `33077320935`, Download `33077320886`, Rename `33077321228`, and Library Lifecycle `33077320976`.
+- [x] Direct pre-merge cleanup verified `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions.
+- [x] PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.
 
-**Durable Media Rename v0.1 status: `APPROVED FOR MERGE` pending final documentation-head CI.**
+**Durable Media Rename v0.1 status: `APPROVED` and merged.**
 
 ### R2 browser-origin boundary
 Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement.
@@ -165,10 +165,9 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current slice:** Durable Media Rename v0.1, PR #12.  
-**Verified:** Viewer-only inline Rename, durable `display_name` mutation, input normalization/validation, Search discovery, Download/original/provenance/storage preservation, responsive Viewer review, shared-resource cleanup, exact-ID lifecycle targeting and regression coverage.  
-**Merge gate:** documentation-finalized exact-head CI + mergeability only.  
-**Next product slice after merge:** select one remaining history/organization/destructive-management need only after its RenderLab-owned contract is explicit.
+**Completed slice:** Durable Media Rename v0.1, merged PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.  
+**Verified:** Viewer-only inline Rename, durable `display_name` mutation, input normalization/validation, Search discovery, Download/original/provenance/storage preservation, responsive Viewer review, shared-resource cleanup, exact-ID lifecycle targeting and six-gate final regression coverage.  
+**Next product slice:** select one remaining history/organization/destructive-management need only after its RenderLab-owned contract is explicit.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
