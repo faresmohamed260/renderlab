@@ -101,9 +101,10 @@ PR #5 implemented this rule. Its production build/Playwright checks passed, and 
 - Animate Image with reference → **verified end-to-end** in the same run `33021977765`.
 - Durable media continuation → **verified end-to-end** in run `33027460976`: a persisted Create Image `media_assets` result was loaded from shared R2 by opaque product identity and used as the next Edit Image input; both generation fixtures were cleaned afterward.
 - Post-hardening regression → **verified** in run `33027861292` after conservative poll-time reassignment was merged.
-- Configured browser lifecycle → **verified** in run `33031817744`: one real Create Image request was submitted from the rendered Create UI, reached durable persistence, rendered through the product media API, exposed Edit/Animate, transitioned into Edit from the durable asset at desktop/mobile widths, and removed its generated R2/media/job fixture afterward.
+- Configured Create browser lifecycle → **verified** in run `33031817744`: one real Create Image request was submitted from the rendered Create UI, reached durable persistence, rendered through the product media API, exposed Edit/Animate, transitioned into Edit from the durable asset at desktop/mobile widths, and removed its generated R2/media/job fixture afterward.
+- Configured Library/Viewer media lifecycle → **verified** in run `33034606396`: a deterministic 400×300 R2 object plus RenderLab `media_assets` row was rendered through Library and Media Viewer, media geometry was verified, capability-derived Edit/Animate was exposed, Edit initialized Create through the durable asset contract, and the R2/media fixture was removed afterward. This verifier does not invoke ComfyUI or spend a generation.
 
-All four initial Create operations plus durable image continuation and the complete browser-visible Create lifecycle now have live shared-infrastructure coverage.
+All four initial Create operations, durable image continuation, the complete browser-visible Create lifecycle, and the Phase 4 Library → Viewer → Create durable-media path now have live shared-infrastructure coverage.
 
 ## Studio Compatibility Boundary
 A temporary isolated compatibility adapter exists at `src/server/generation/studio-compat.ts` for migration/debugging only. It is not the preferred production path.
@@ -131,15 +132,20 @@ Create UI
 
 `scripts/verify-reference-upload.mjs` verifies the real shared-resource path and removes its R2/Supabase fixture afterward.
 
+`generation_sources` is a temporary generation-input contract. It is **not** the persistent uploaded-asset Library model required by UI-010. Do not expose temporary reference rows as durable Library uploads by assumption.
+
 ## Media Delivery Boundary
 RenderLab exposes media through product APIs rather than raw R2 keys:
+- `GET /api/media/assets`
 - `GET /api/media/assets/:assetId`
 - `GET /api/media/assets/:assetId/content`
 - `GET /api/media/assets/:assetId/thumbnail`
 
-Content/thumbnail endpoints issue short-lived signed R2 redirects server-side.
+The list endpoint provides bounded newest-first `media_assets` browsing, optional image/video kind filtering, and pagination metadata. Content/thumbnail endpoints issue short-lived signed R2 redirects server-side.
 
 Durable media assets can also become generation inputs via `{ type: "media-asset", id }`; the server resolves that product ID to the private R2 object. The browser never needs the underlying storage key.
+
+Viewer → Create continuation carries only opaque asset identity plus action intent in the URL. The Create server route reloads the durable asset and validates action compatibility before it becomes workspace state.
 
 ## Required Server Environment Variables
 ### Supabase
@@ -166,6 +172,7 @@ Durable media assets can also become generation inputs via `{ type: "media-asset
 - Worker/provider routing remains server-owned operational state.
 - Shared resources do not authorize mutation of legacy Saga tables/contracts without an explicit decision.
 - Raw R2 keys and worker IDs are internal implementation metadata, not browser product identities.
+- URL continuation parameters are not trusted media records; durable identity/capability must be revalidated server-side.
 
 ## CI / Integration Validation
 Default GitHub UI CI intentionally runs without production infrastructure secrets and validates truthful unavailable states.
@@ -177,7 +184,8 @@ Configured integration workflows use the existing server-side GitHub Secrets and
 - Create Video;
 - Animate Image;
 - persisted `media-asset` → Edit continuation;
-- browser-driven Create result/continuation rendering at desktop/mobile widths.
+- browser-driven Create result/continuation rendering at desktop/mobile widths;
+- Library → Media Viewer → Create Edit rendering against real shared R2/Supabase media.
 
 Integration fixtures self-clean rather than pollute shared production resources.
 
@@ -186,7 +194,12 @@ Integration fixtures self-clean rather than pollute shared production resources.
 
 Approval run: `33031817744`.
 
-Required GitHub secrets:
+### Configured Library visual lifecycle
+`scripts/verify-library-lifecycle.mjs` and `.github/workflows/library-lifecycle-visual.yml` provide the repeatable Phase 4 durable-media visual check. The verifier seeds one deterministic 400×300 PNG directly into the approved shared R2 + RenderLab `media_assets` contract, drives Library → Media Viewer → Create Edit through Chromium at desktop/mobile widths, verifies decoded/rendered media geometry, captures six screenshots, and deletes the R2/media fixture afterward. It deliberately does not call the generation worker fleet.
+
+Approval run: `33034606396`.
+
+Required GitHub secrets for configured media/generation workflows:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `R2_ACCOUNT_ID`
 - `R2_ACCESS_KEY_ID`
@@ -194,6 +207,7 @@ Required GitHub secrets:
 - `R2_BUCKET_NAME`
 
 ## Next Infrastructure Work
-1. Remove the transitional Studio compatibility adapter once no migration/debugging need depends on it.
-2. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
-3. Preserve the conservative duplicate-avoidance rule if worker APIs/routing evolve; do not broaden safe reassignment to generic network/5xx errors without stronger execution evidence.
+1. Define the RenderLab-owned persistent uploaded-asset contract required by UI-010 before implementing Library upload management. Do not repurpose legacy `studio_uploads` or temporary `generation_sources` by assumption.
+2. Remove the transitional Studio compatibility adapter once no migration/debugging need depends on it.
+3. Keep Library/Activity built against RenderLab-owned `media_assets` and `generation_jobs`, never legacy `studio_*` tables.
+4. Preserve the conservative duplicate-avoidance rule if worker APIs/routing evolve; do not broaden safe reassignment to generic network/5xx errors without stronger execution evidence.
