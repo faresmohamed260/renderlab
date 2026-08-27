@@ -60,9 +60,25 @@ export type GenerationJob = {
   };
 };
 
+export type ContinuationAction = {
+  id: "edit-image" | "animate-image";
+  label: "Edit" | "Animate";
+  outputKind: OutputKind;
+  inputRole: Extract<GenerationInputRole, "primary-image" | "first-frame">;
+};
+
 export const imageAspectRatios: AspectRatio[] = ["1:1", "16:9", "9:16", "4:3", "3:4"];
 export const videoAspectRatios: AspectRatio[] = ["16:9", "9:16", "1:1"];
 export const videoDurations = [5, 10, 15, 20, 30] as const;
+
+const imageContinuationActions: ContinuationAction[] = [
+  { id: "edit-image", label: "Edit", outputKind: "image", inputRole: "primary-image" },
+  { id: "animate-image", label: "Animate", outputKind: "video", inputRole: "first-frame" },
+];
+
+export function continuationActionsForMedia(kind: OutputKind): ContinuationAction[] {
+  return kind === "image" ? imageContinuationActions : [];
+}
 
 export function resolveCreativeOperation(request: GenerationRequest): CreativeOperation {
   const hasImageInput = request.inputs.some(
