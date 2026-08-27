@@ -12,20 +12,18 @@ Tracks approved product surfaces and actual route/status/component composition.
 ## Initial Information Architecture
 Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextual: **Media Viewer**.
 
-Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps, and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default.
+Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default.
 
 ## Application Shell
 **Status:** APPROVED  
-**Implementation:** `src/components/shell/app-shell.tsx`  
-**Verification:** GitHub production build + Playwright desktop/mobile checks and rendered screenshot review.
+**Implementation:** `src/components/shell/app-shell.tsx`
 
 Approved behavior:
 - compact persistent desktop left navigation;
 - Create/Library primary, Activity/Settings secondary;
-- compact top bar for route context/utilities;
-- route content owns the overwhelming majority of screen area;
-- shell stops at route-content boundary and does not own Create/Library feature UI;
-- narrow layouts hide desktop sidebar and use bottom navigation for Create/Library/Activity;
+- compact route-context top bar;
+- feature surfaces own route content, not the shell;
+- narrow layouts use bottom navigation for primary destinations;
 - touch-friendly semantic navigation.
 
 `APPROVED` does not mean `LOCKED`.
@@ -36,113 +34,98 @@ Approved behavior:
 **Route:** `/`  
 **Status:** APPROVED  
 **Implementation:** `src/features/create/create-workspace.tsx`  
-**Supporting implementation:** `src/features/create/create-advanced-panel.tsx`  
-**Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`  
-**Purpose:** Start and continue creative operations from one task-oriented workspace.  
-**Initial operations:** Create Image, Edit Image, Create Video, Animate Image.
+**Supporting:** `src/features/create/create-advanced-panel.tsx`  
+**Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
 
-**Implemented and verified:**
-- focused prompt composer;
-- Image/Video output choice with Image default;
-- concrete aspect and contextual video duration values;
-- responsive two-row mobile composer;
-- reference selection for PNG/JPEG/WebP up to 25 MB;
-- signed direct-R2 upload with server verification and opaque source identity;
+**Purpose:** Start and continue creative operations from one task-oriented workspace.
+
+**Approved operations:** Create Image, Edit Image, Create Video, Animate Image.
+
+**Verified behavior:**
+- prompt + Image/Video output intent;
+- PNG/JPEG/WebP reference input up to 25 MB;
+- temporary signed-R2 reference upload with opaque source identity;
 - reference preview/removal/replacement;
-- Image + reference → Edit and Video + reference → Animate context resolution;
-- typed `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]` boundaries;
-- real RenderLab job polling without fabricated percentage progress;
-- bounded retry/backoff for transient client polling/network failures;
-- RenderLab-owned `generation_jobs` + `media_assets` persistence and private media-delivery APIs;
-- native Create Image end-to-end generation/persistence;
-- native reference-driven Edit Image end-to-end generation/persistence (GitHub run `33021843503`);
-- native Create Video and native reference-driven Animate Image end-to-end generation/persistence (GitHub run `33021977765`);
-- persisted `media_assets` result loading and real image/video rendering after successful jobs;
-- capability-derived **Edit** and **Animate** continuation actions on persisted image results;
-- durable result reuse through opaque `media-asset` input identity, live-verified in GitHub run `33027460976` (`Create Image → persisted asset → Edit Image`) with fixture cleanup;
-- conservative poll-time worker reassignment: only explicit credit exhaustion or explicit worker-unavailable evidence may reassign; generic 429/5xx/network ambiguity does not trigger duplicate-risk resubmission. Post-merge live regression run `33027861292` succeeded;
-- compact Advanced disclosure using normalized Radix Collapsible rather than a bespoke disclosure mechanic;
-- Advanced values from verified capability definitions: negative prompt, seed, steps, guidance, plus video-only frame rate;
-- separate Image/Video Advanced drafts and reset-to-default behavior;
-- Advanced production build, behavior/API tests, and reviewed desktop/mobile screenshots in GitHub run `33030364272` before PR #6 merge;
-- complete configured lifecycle review in GitHub run `33031817744`: a real browser-driven Create Image request reached durable persistence, rendered at desktop/mobile widths, exposed **Edit**/**Animate**, selected **Edit** using the persisted asset, rendered the continuation state at both widths, and self-cleaned the generated R2/media/job fixture;
-- production build + responsive Playwright/API validation.
+- Image + reference → Edit; Video + reference → Animate;
+- real RenderLab generation jobs and durable media persistence;
+- capability-derived Edit/Animate continuation from persisted images;
+- durable `media-asset` continuation verified in run `33027460976`;
+- Advanced controls from verified capability definitions;
+- complete configured browser lifecycle approval run `33031817744` with responsive screenshots and cleanup.
 
-**Approval evidence:** The complete Create product loop is verified both functionally and visually against configured production resources. Run `33031817744` provides the final lifecycle screenshots and cleanup evidence. Create is `APPROVED`, not `LOCKED`; future changes still require scoped validation and must preserve the accepted behavior below.
-
-**Accepted design direction:**
-- one focused workspace rather than separate Image/Edit/Video/Animate screens;
-- Image/Video is the main explicit output choice;
-- compatible reference changes operation context automatically;
-- essential controls show useful current values such as `1:1`, `16:9`, `5 s`;
-- technical/model-specific controls remain contextual or Advanced;
-- Advanced remains collapsed by default and uses maintained disclosure mechanics;
-- runtime states derive from real asynchronous state; no fake progress;
-- result is complete only after durable persistence;
-- continuation actions are capability-derived and operate on durable product media identities.
-
-**Default controls:** Prompt, reference input, Image/Video, operation-specific essential values, Generate.  
-**Contextual controls:** attached reference context/removal/replacement, video duration/aspect, supported continuation actions.  
-**Advanced controls:** negative prompt, seed, steps, guidance, video frame rate, and only future parameters deliberately promoted from verified capability definitions.  
-**Internal:** provider, worker, ecosystem, R2 key, workflow graph/node IDs, failover bookkeeping.  
-**Do not change:** Do not turn Create into a generic ComfyUI parameter form or wire fake behavior merely to make it look complete.
+**Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED  
+**Base status:** APPROVED — Library v0.1  
 **Implementation:** `src/features/library/library-view.tsx`  
-**Supporting implementation:** `src/lib/api/media-assets-contract.ts`, `src/server/media/media-assets.ts`, `GET /api/media/assets`  
-**Design artifact:** `design/penpot/library-v0.1.svg`  
-**Purpose:** Find, inspect, reuse, and continue from durable RenderLab media. Library is a reusable creative-asset workspace, not merely generation history.
+**Supporting:** `src/lib/api/media-assets-contract.ts`, `src/server/media/media-assets.ts`, `GET /api/media/assets`  
+**Approved design artifact:** `design/penpot/library-v0.1.svg`  
+**Persistent-upload handoff:** `design/penpot/library-v0.2-upload.svg`
 
-**Implemented and verified:**
+**Purpose:** Find, inspect, reuse and continue from durable RenderLab media. Library is a reusable creative-asset workspace, not merely generation history.
+
+**Library v0.1 approved behavior:**
 - unified newest-first `media_assets` browsing;
-- `All / Images / Videos` filtering through URL state;
-- server-owned list contract with bounded pagination (`limit`, `offset`, `hasMore`);
-- responsive two/three/four-column media grid;
-- image previews and video preview/thumbnail states through product media URLs;
-- prompt/fallback title, media kind and created-time card metadata;
+- `All / Images / Videos` filtering via URL state;
+- bounded pagination;
+- responsive media grid;
+- product media URLs for image/video presentation;
+- truthful unavailable/empty states;
 - deep links to `/library/[assetId]`;
-- truthful unavailable state when shared media infrastructure is not configured;
-- truthful empty/no-older-media states;
-- desktop/mobile credential-free rendering in GitHub Actions run `33034606323`;
-- configured shared-R2/Supabase lifecycle in run `33034606396`, including deterministic 400×300 media geometry verification and fixture cleanup.
+- credential-free verification run `33034606323`;
+- configured shared-R2/Supabase lifecycle approval run `33034606396`.
 
-**Approval evidence:** Run `33034606396` rendered a real R2-backed durable `media_assets` fixture in Library at desktop/mobile widths, verified product media delivery and correct 4:3 geometry, opened the deep-linked Viewer, and self-cleaned the fixture. Library v0.1 is `APPROVED`, not `LOCKED`.
+#### Persistent upload extension — implementation under review
+**Status:** MIGRATING / NOT YET APPROVED  
+**PR:** #9, `work/persistent-media-uploads-v0-1`  
+**Client implementation:** `src/features/library/library-upload-button.tsx`
 
-**Accepted design direction:**
-- media is visually primary;
-- default organization remains simple and contract-backed;
-- kind filtering and newest-first order are enough for v0.1;
-- dimensions are not required for grid layout correctness;
-- richer organization is added only when RenderLab owns the corresponding persistent data contract.
+Implemented direction:
+- one compact `Upload` action in the existing Library header;
+- native file picker; no separate Uploads tab or generic modal framework;
+- PNG/JPEG/WebP up to 25 MB;
+- ticket → signed R2 PUT → completion flow;
+- asset appears through the normal Library media list only after server verification/promoted `media_assets` creation;
+- uploaded cards prefer durable display names;
+- concise inline uploading/error feedback;
+- existing approved Library grid remains the durable media surface.
 
-**Still intentionally open:** persistent uploaded assets, search, favorites/collections, richer history controls, rename/delete/download/batch management.  
-**Do not change:** Do not couple Library to legacy `studio_generations`/`studio_uploads`, and do not copy Saga organization controls before RenderLab owns the required data.
+Backend contract is verified, including hardened run `33037773016`. Real browser approval is still blocked: run `33037773015` created an upload ticket through the actual Upload control/native file chooser but Chromium could not complete the direct signed R2 PUT because the shared bucket lacks usable browser CORS for the test origin. The fixture self-cleaned and no approval screenshots were produced.
+
+**Do not promote this extension to APPROVED** until actual Upload → Library → Viewer → Create continuation passes at desktop/mobile widths and screenshots are inspected.
+
+**Still intentionally open:** search, favorites/collections, richer history controls, rename/delete/download/batch management and drag/drop mechanics unless separately justified.
+
+**Do not change:** Do not couple Library to legacy `studio_generations`/`studio_uploads`, do not expose temporary `generation_sources` as durable media and do not add Creatives/Uploads tabs.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** APPROVED  
+**Base status:** APPROVED — Media Viewer v0.1  
 **Implementation:** `src/features/library/media-viewer.tsx`  
-**Supporting implementation:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/lib/api/media-assets-contract.ts`, `src/lib/capabilities/generation.ts`  
-**Design artifact:** `design/penpot/media-viewer-v0.1.svg`  
-**Purpose:** Inspect one durable media asset and continue from it using compatible product capabilities.
+**Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/lib/api/media-assets-contract.ts`, `src/lib/capabilities/generation.ts`  
+**Design artifact:** `design/penpot/media-viewer-v0.1.svg`
 
-**Implemented and verified:**
+**Approved behavior:**
 - deep-linked durable asset route;
-- media-primary responsive image/video presentation;
-- prompt/fallback title and created-time metadata;
-- optional dimensions and video duration details;
-- capability-derived continuation actions rather than Viewer-specific action rules;
-- persisted image assets expose **Edit** and **Animate** through the shared capability model;
-- Viewer links carry only opaque `media-asset` identity plus continuation intent;
-- root Create route treats continuation URL state as untrusted navigation intent, validates UUID/action compatibility, loads the durable media record server-side and initializes Create only when valid;
-- malformed, unavailable, stale or incompatible continuation state falls back to usable Create with truthful local feedback rather than becoming product state;
-- configured Library → Viewer → Create Edit lifecycle verified at desktop/mobile widths in GitHub Actions run `33034606396` with fixture cleanup.
+- responsive media-primary image/video presentation;
+- secondary product metadata;
+- capability-derived continuation actions;
+- persisted image assets expose Edit/Animate;
+- Viewer links carry only opaque `media-asset` identity plus action intent;
+- Create reloads durable media and validates action compatibility server-side;
+- configured Library → Viewer → Create Edit approval run `33034606396`.
 
-**Approval evidence:** Run `33034606396` verified a real 400×300 R2-backed image in the Viewer, capability-derived Edit/Animate links, server-validated durable-asset Edit handoff into Create, correct media geometry, responsive rendering and cleanup. Media Viewer v0.1 is `APPROVED`, not `LOCKED`.
+#### Uploaded-media presentation — implementation under review
+PR #9 extends the existing Viewer without redesigning it:
+- uploaded assets use their display name rather than generated-media fallback copy;
+- Viewer identifies them truthfully as uploaded media;
+- original filename/size/source metadata is presented when available;
+- uploaded images derive Edit/Animate from the same shared capability model and ordinary `media-asset` identity.
 
-**Do not change:** Provider/worker/R2 identity stays internal. Viewer actions must remain capability-derived and use opaque product media identity; URL query parameters are continuation intent, not authoritative asset state.
+This uploaded-media extension is not yet visually approved because the upstream real browser upload lifecycle is blocked by R2 CORS. Media Viewer v0.1 itself remains approved.
+
+**Do not change:** Provider/worker/R2 identity stays internal. Viewer actions remain capability-derived and use opaque product media identity; URL parameters are navigation intent, not authoritative asset state.
 
 ### Activity
 **Route:** `/activity`  
@@ -160,7 +143,7 @@ Approved behavior:
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current interaction/runtime decisions are documented in UI-015 through UI-021.
+Current durable interaction/product decisions are documented in `docs/ui/UI_DECISIONS.md`, including UI-022 for persistent uploaded-media identity.
 
 ## Growth Rule
-Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
+Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
