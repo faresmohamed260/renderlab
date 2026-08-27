@@ -97,19 +97,28 @@ The creation UI is task-oriented and progressively discloses complexity.
 **Create status: `APPROVED`.** Phase 3 is complete. The Studio compatibility adapter is a separate infrastructure cleanup item and is not part of Create's visual/product approval.
 
 ## Phase 4 — Media & Continuation
-**Current phase.** Library and Media Viewer must build on RenderLab-owned `media_assets` plus the existing capability-derived continuation model.
+**Current phase.** Library and Media Viewer build on RenderLab-owned `media_assets` plus the existing capability-derived continuation model.
 
-- [ ] Media library/gallery
-- [ ] Media viewer
-- [ ] Search/filter/history behavior
-- [ ] Metadata presentation
-- [ ] Favorites/collections or approved organizational model
-- [ ] Media actions
-- [ ] Continuation actions across Library/Media Viewer and future supported operations
+- [x] Media library/gallery v0.1 — unified newest-first durable-media grid with All/Images/Videos filtering, pagination, truthful unavailable/empty states and deep links.
+- [x] Media viewer v0.1 — responsive deep-linked image/video presentation with basic product metadata and capability-derived continuation.
+- [ ] Search/filter/history behavior — media-kind filtering and newest-first history order are implemented; search and broader history controls remain intentionally open.
+- [x] Basic metadata presentation — kind, prompt/fallback, created time and optional dimensions/duration.
+- [ ] Favorites/collections or approved organizational model.
+- [ ] Persistent uploaded-asset Library contract and management experience required to fully satisfy UI-010.
+- [ ] Broader media actions such as download/delete/rename/batch management.
+- [x] Continuation actions across Library/Media Viewer for currently supported persisted-image actions: **Edit** and **Animate**, validated server-side before Create initialization.
 
-Create already supports persisted-result Edit/Animate continuation. Phase 4 must reuse that capability model rather than create separate hard-coded action logic.
+Create already supports persisted-result Edit/Animate continuation. Phase 4 reuses that capability model rather than creating separate hard-coded action rules.
 
-Underlying RenderLab `media_assets` persistence and private delivery APIs already exist; Phase 4 surfaces must build on them rather than legacy `studio_generations`.
+Underlying RenderLab `media_assets` persistence and private delivery APIs are the source for these surfaces; Phase 4 does not use legacy `studio_generations`.
+
+### Phase 4 verification
+- [x] Open design handoff established in `design/penpot/library-v0.1.svg` and `design/penpot/media-viewer-v0.1.svg`.
+- [x] Credential-free production build + 13 Playwright UI/API checks pass in GitHub Actions run `33034606323` and show truthful unavailable/invalid-link states.
+- [x] Configured R2 + Supabase Library lifecycle passes in GitHub Actions run `33034606396`: a deterministic 400×300 durable image fixture appears in Library, opens in Media Viewer, exposes capability-derived Edit/Animate, initializes Create Edit through a server-validated durable `media-asset` handoff, renders at desktop/mobile widths, verifies media geometry, and self-cleans its R2/media fixture.
+
+**Library v0.1 status: `APPROVED`.**  
+**Media Viewer v0.1 status: `APPROVED`.**
 
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`
@@ -132,9 +141,9 @@ Underlying RenderLab `media_assets` persistence and private delivery APIs alread
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation  
-**Current status:** `AppShell` and Create are `APPROVED`. Core generation, persistence, continuation, polling recovery, conservative worker failover and Advanced controls are verified. The configured real-lifecycle visual gate is repeatable through `scripts/verify-create-lifecycle.mjs` and `.github/workflows/create-lifecycle-visual.yml`. Library, Media Viewer and broader media organization/actions remain unimplemented beyond route placeholders.  
+**Current status:** `AppShell`, Create, Library v0.1 and Media Viewer v0.1 are `APPROVED`. Library now has a RenderLab-owned media list contract/API, responsive durable-media grid, media-kind filtering, pagination, deep-linked Viewer and real Viewer → Create continuation. Broader organization, persistent uploads, search and destructive/media-management actions remain deliberately unimplemented.  
 **Known blockers:** No credential blocker.  
-**Next recommended task:** Audit the current `media_assets` contract and proven Saga Library behavior, define the smallest RenderLab Library/Media Viewer experience consistent with UI-010, then create reviewed desktop/mobile design handoff before implementation. The Studio compatibility fallback can be removed separately once no migration/debugging need remains.
+**Next recommended task:** Define the RenderLab persistent uploaded-asset contract needed to fulfill UI-010 without repurposing Saga `studio_uploads`; decide whether persistent uploads become `media_assets` with explicit provenance/source semantics or a separate RenderLab-owned asset record before implementing upload management. The Studio compatibility fallback remains a separate infrastructure cleanup item.
 
 ## Session Handoff
 Before ending meaningful work, update completed items, current phase/surface, blockers, and next recommended task. Documentation must describe verified reality rather than planned completion.

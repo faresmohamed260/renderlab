@@ -89,13 +89,60 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** PLANNED; temporary route placeholder  
-**Purpose:** Find, inspect, organize, reuse, and continue from durable RenderLab `media_assets`. Library is not merely generation history.
+**Status:** APPROVED  
+**Implementation:** `src/features/library/library-view.tsx`  
+**Supporting implementation:** `src/lib/api/media-assets-contract.ts`, `src/server/media/media-assets.ts`, `GET /api/media/assets`  
+**Design artifact:** `design/penpot/library-v0.1.svg`  
+**Purpose:** Find, inspect, reuse, and continue from durable RenderLab media. Library is a reusable creative-asset workspace, not merely generation history.
+
+**Implemented and verified:**
+- unified newest-first `media_assets` browsing;
+- `All / Images / Videos` filtering through URL state;
+- server-owned list contract with bounded pagination (`limit`, `offset`, `hasMore`);
+- responsive two/three/four-column media grid;
+- image previews and video preview/thumbnail states through product media URLs;
+- prompt/fallback title, media kind and created-time card metadata;
+- deep links to `/library/[assetId]`;
+- truthful unavailable state when shared media infrastructure is not configured;
+- truthful empty/no-older-media states;
+- desktop/mobile credential-free rendering in GitHub Actions run `33034606323`;
+- configured shared-R2/Supabase lifecycle in run `33034606396`, including deterministic 400×300 media geometry verification and fixture cleanup.
+
+**Approval evidence:** Run `33034606396` rendered a real R2-backed durable `media_assets` fixture in Library at desktop/mobile widths, verified product media delivery and correct 4:3 geometry, opened the deep-linked Viewer, and self-cleaned the fixture. Library v0.1 is `APPROVED`, not `LOCKED`.
+
+**Accepted design direction:**
+- media is visually primary;
+- default organization remains simple and contract-backed;
+- kind filtering and newest-first order are enough for v0.1;
+- dimensions are not required for grid layout correctness;
+- richer organization is added only when RenderLab owns the corresponding persistent data contract.
+
+**Still intentionally open:** persistent uploaded assets, search, favorites/collections, richer history controls, rename/delete/download/batch management.  
+**Do not change:** Do not couple Library to legacy `studio_generations`/`studio_uploads`, and do not copy Saga organization controls before RenderLab owns the required data.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** PLANNED; temporary route placeholder  
-**Purpose:** Inspect one durable media asset and take capability-derived continuation/media actions.
+**Status:** APPROVED  
+**Implementation:** `src/features/library/media-viewer.tsx`  
+**Supporting implementation:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/lib/api/media-assets-contract.ts`, `src/lib/capabilities/generation.ts`  
+**Design artifact:** `design/penpot/media-viewer-v0.1.svg`  
+**Purpose:** Inspect one durable media asset and continue from it using compatible product capabilities.
+
+**Implemented and verified:**
+- deep-linked durable asset route;
+- media-primary responsive image/video presentation;
+- prompt/fallback title and created-time metadata;
+- optional dimensions and video duration details;
+- capability-derived continuation actions rather than Viewer-specific action rules;
+- persisted image assets expose **Edit** and **Animate** through the shared capability model;
+- Viewer links carry only opaque `media-asset` identity plus continuation intent;
+- root Create route treats continuation URL state as untrusted navigation intent, validates UUID/action compatibility, loads the durable media record server-side and initializes Create only when valid;
+- malformed, unavailable, stale or incompatible continuation state falls back to usable Create with truthful local feedback rather than becoming product state;
+- configured Library → Viewer → Create Edit lifecycle verified at desktop/mobile widths in GitHub Actions run `33034606396` with fixture cleanup.
+
+**Approval evidence:** Run `33034606396` verified a real 400×300 R2-backed image in the Viewer, capability-derived Edit/Animate links, server-validated durable-asset Edit handoff into Create, correct media geometry, responsive rendering and cleanup. Media Viewer v0.1 is `APPROVED`, not `LOCKED`.
+
+**Do not change:** Provider/worker/R2 identity stays internal. Viewer actions must remain capability-derived and use opaque product media identity; URL query parameters are continuation intent, not authoritative asset state.
 
 ### Activity
 **Route:** `/activity`  
@@ -113,7 +160,7 @@ Approved behavior:
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current interaction/runtime decisions are documented in UI-015 through UI-019.
+Current interaction/runtime decisions are documented in UI-015 through UI-021.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint, structural guidance, or other workflow-backed capabilities should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.

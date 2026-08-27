@@ -9,6 +9,7 @@ import {
   createAdvancedDraft,
   type AdvancedDraft,
 } from "@/features/create/create-advanced-panel";
+import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import type {
   AspectRatio,
   ContinuationAction,
@@ -30,22 +31,14 @@ import type {
 } from "@/lib/api/reference-upload-contract";
 import { maxReferenceUploadBytes, supportedReferenceMimeTypes } from "@/lib/api/reference-upload-contract";
 
-type PublicMediaAsset = {
-  id: string;
-  generationJobId: string | null;
-  kind: "image" | "video";
-  mimeType: string;
-  width: number | null;
-  height: number | null;
-  durationMs: number | null;
-  createdAt: string;
-  contentUrl: string;
-  thumbnailUrl: string | null;
-};
-
 type ContinuationSource = {
   id: string;
   inputRole: Extract<GenerationInputRole, "primary-image" | "first-frame">;
+};
+
+type InitialContinuation = {
+  asset: PublicMediaAsset;
+  action: ContinuationAction;
 };
 
 const maxPollRetries = 5;
@@ -85,25 +78,35 @@ function isTerminalJob(job: GenerationJob | null) {
 export function CreateWorkspace({
   generationAvailable,
   referenceUploadAvailable,
+  initialContinuation = null,
+  initialContinuationError = null,
 }: {
   generationAvailable: boolean;
   referenceUploadAvailable: boolean;
+  initialContinuation?: InitialContinuation | null;
+  initialContinuationError?: string | null;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [prompt, setPrompt] = useState("");
-  const [outputKind, setOutputKind] = useState<OutputKind>("image");
+  const [outputKind, setOutputKind] = useState<OutputKind>(() => initialContinuation?.action.outputKind ?? "image");
   const [imageAspect, setImageAspect] = useState<AspectRatio>("1:1");
   const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
   const [reference, setReference] = useState<ReferenceSource | null>(null);
-  const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(null);
-  const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
+  const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(() =>
+    initialContinuation
+      ? { id: initialContinuation.asset.id, inputRole: initialContinuation.action.inputRole }
+      : null,
+  );
+  const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(() =>
+    initialContinuation?.asset.contentUrl ?? null,
+  );
   const [referenceUploading, setReferenceUploading] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("image"));
   const [videoAdvanced, setVideoAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("video"));
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialContinuationError);
   const [job, setJob] = useState<GenerationJob | null>(null);
   const [resultAsset, setResultAsset] = useState<PublicMediaAsset | null>(null);
   const [resultLoading, setResultLoading] = useState(false);

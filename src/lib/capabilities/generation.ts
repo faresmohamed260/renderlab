@@ -124,6 +124,13 @@ export function continuationActionsForMedia(kind: OutputKind): ContinuationActio
   return kind === "image" ? imageContinuationActions : [];
 }
 
+export function continuationActionForMedia(
+  kind: OutputKind,
+  actionId: ContinuationAction["id"],
+): ContinuationAction | null {
+  return continuationActionsForMedia(kind).find((action) => action.id === actionId) ?? null;
+}
+
 export function resolveCreativeOperation(request: GenerationRequest): CreativeOperation {
   const hasImageInput = request.inputs.some(
     (input) => input.role === "reference" || input.role === "primary-image" || input.role === "first-frame",
