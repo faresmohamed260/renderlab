@@ -14,7 +14,7 @@ function isFileDrag(event: DragEvent<HTMLElement>) {
   return Array.from(event.dataTransfer.types).includes("Files");
 }
 
-// UI-028 keeps drag/drop transient and routes persistence through the existing Library upload transaction.
+// UI-028 keeps drag/drop transient while the existing Library upload transaction remains the persistence boundary.
 export function LibraryDropUploadSurface({
   enabled,
   children,
