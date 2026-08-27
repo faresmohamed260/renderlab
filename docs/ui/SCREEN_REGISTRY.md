@@ -57,10 +57,11 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED — Library v0.1 + persistent Upload + search v0.1 + history ordering v0.1  
+**Status:** APPROVED — Library v0.1 + persistent Upload + search v0.1 + history ordering v0.1 + drag/drop upload v0.1  
 **Implementation:** `src/features/library/library-view.tsx`  
 **Sort control:** `src/features/library/library-sort-menu.tsx`  
-**Persistent upload client:** `src/features/library/library-upload-button.tsx`  
+**Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`  
+**Shared browser upload transaction:** `src/features/library/library-upload-client.ts`  
 **Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `GET /api/media/assets`, media-upload ticket/completion routes  
 **Approved design artifacts:** `design/penpot/library-v0.1.svg`, `design/penpot/library-v0.2-upload.svg`
 
@@ -75,6 +76,8 @@ Approved behavior:
 - truthful unavailable/empty/no-match states;
 - deep links to `/library/[assetId]`;
 - compact native-file-picker Upload action with verified durable promotion;
+- optional desktop drag/drop of one image through the exact same persistent upload transaction, with a temporary drag-only full-Library affordance and no persistent dropzone;
+- multi-file drops are rejected before upload requests start; Upload button remains the keyboard/touch/mobile baseline;
 - uploaded cards prefer durable display names and preserve Unicode filenames;
 - URL-owned server-side search `q` over display name, original filename and generated prompt;
 - search is case-insensitive literal substring matching, max 120 characters, composed with kind/sort/pagination;
@@ -90,9 +93,11 @@ Approved behavior:
 - Rename configured search-discovery regression passed in Media Rename Visual `33074480356`;
 - history ordering implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed Library History `33094977896`, UI Shell `33094977929`, Library Search `33094977911`, Library Lifecycle `33094977899`, Media Download `33094977913` after unchanged rerun, Media Rename `33094977895`, Create Lifecycle `33094977825`, and Persistent Media Upload Integration `33094978022`;
 - history desktop Oldest, open sort menu and mobile Newest screenshots were visually inspected with no unintended Library hierarchy drift;
-- direct Supabase verification after implementation found `0` `library-history-order-v0-1` fixture assets and `0` upload sessions.
+- drag/drop implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed UI Shell `33102672560`, Library Search `33102672572`, Library History `33102672507`, Library Lifecycle `33102672568`, and Library Drag Drop `33102672468`;
+- clean drag-active/completed desktop and completed mobile drag/drop screenshots were visually inspected; exactly one current run-owned durable card rendered with a valid preview and the mobile Upload baseline remained unchanged;
+- direct Supabase cleanup after drag/drop verification found `0` drag/drop sessions/assets and `0` known legacy lifecycle sessions/assets.
 
-**Still intentionally open:** favorites/collections or another account-owned organization model, delete/batch management and drag/drop unless separately justified. Favorites/Collections must not be modeled as global media flags before a real ownership model exists. Delete must not be added until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
+**Still intentionally open:** favorites/collections or another account-owned organization model, delete/batch management and other Library interaction enhancements unless separately justified. Favorites/Collections must not be modeled as global media flags before a real ownership model exists. Delete must not be added until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
@@ -151,7 +156,7 @@ Approved behavior:
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity and UI-027 Library history ordering.
+Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity, UI-027 Library history ordering and UI-028 Library drag/drop upload.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
