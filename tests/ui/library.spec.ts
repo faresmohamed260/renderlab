@@ -12,38 +12,57 @@ test("Library renders the media-first desktop surface truthfully without credent
   await expect(page.getByRole("link", { name: "All", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("link", { name: "Images", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Videos", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Newest first", exact: true })).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search Library" })).toBeVisible();
   await expect(page.getByText("Library media is not connected in this environment yet.")).toBeVisible();
 
   await page.screenshot({ path: "artifacts/library-desktop-unavailable.png", fullPage: true });
 });
 
-test("Library preserves search while switching media kind on mobile", async ({ page }) => {
+test("Library preserves search and sort while switching media kind on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport);
-  await page.goto("/library?kind=image&q=portrait&offset=24");
+  await page.goto("/library?kind=image&q=portrait&sort=oldest&offset=24");
 
   await expect(page.getByRole("heading", { name: "Library", exact: true, level: 2 })).toBeVisible();
   await expect(page.getByRole("link", { name: "Images", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("searchbox", { name: "Search Library" })).toHaveValue("portrait");
-  await expect(page.getByRole("link", { name: "Videos", exact: true })).toHaveAttribute("href", "/library?kind=video&q=portrait");
+  await expect(page.getByRole("button", { name: "Oldest first", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Videos", exact: true })).toHaveAttribute("href", "/library?kind=video&q=portrait&sort=oldest");
   await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Library", exact: true }).last()).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("Library media is not connected in this environment yet.")).toBeVisible();
 
+  await page.getByRole("button", { name: "Oldest first", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Newest first", exact: true }).click();
+  await page.waitForURL((url) =>
+    url.pathname === "/library"
+    && url.searchParams.get("kind") === "image"
+    && url.searchParams.get("q") === "portrait"
+    && !url.searchParams.has("sort")
+    && !url.searchParams.has("offset"),
+  );
+  await expect(page.getByRole("button", { name: "Newest first", exact: true })).toBeVisible();
+
   await page.screenshot({ path: "artifacts/library-mobile-unavailable.png", fullPage: true });
 });
 
-test("Library search form keeps kind, normalizes rendered query, and resets pagination", async ({ page }) => {
+test("Library search form keeps kind and sort, normalizes rendered query, and resets pagination", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
-  await page.goto("/library?kind=image&q=old&offset=24");
+  await page.goto("/library?kind=image&q=old&sort=oldest&offset=24");
 
   const search = page.getByRole("searchbox", { name: "Search Library" });
   await search.fill("  new   prompt  ");
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("kind") === "image" && !url.searchParams.has("offset"));
+  await page.waitForURL((url) =>
+    url.pathname === "/library"
+    && url.searchParams.get("kind") === "image"
+    && url.searchParams.get("q") === "new prompt"
+    && url.searchParams.get("sort") === "oldest"
+    && !url.searchParams.has("offset"),
+  );
   await expect(search).toHaveValue("new prompt");
-  await expect(page.getByRole("link", { name: "Videos", exact: true })).toHaveAttribute("href", "/library?kind=video&q=new+prompt");
-  await expect(page.getByRole("link", { name: "Clear", exact: true })).toHaveAttribute("href", "/library?kind=image");
+  await expect(page.getByRole("link", { name: "Videos", exact: true })).toHaveAttribute("href", "/library?kind=video&q=new+prompt&sort=oldest");
+  await expect(page.getByRole("link", { name: "Clear", exact: true })).toHaveAttribute("href", "/library?kind=image&sort=oldest");
 });
 
 test("Create rejects malformed Library continuation URLs without losing the default workspace", async ({ page }) => {
@@ -65,7 +84,7 @@ test("Create reports a valid-looking continuation source truthfully when media i
   await expect(page.getByRole("alert").filter({ hasText: "That media item cannot be loaded in this environment." })).toBeVisible();
 });
 
-test("media list API validates search requests before reporting configured availability", async ({ request }) => {
+test("media list API validates search and sort requests before reporting configured availability", async ({ request }) => {
   const availability = await request.get("/api/media/assets");
   expect(availability.ok()).toBeTruthy();
   expect(await availability.json()).toEqual({ available: false });
@@ -74,11 +93,21 @@ test("media list API validates search requests before reporting configured avail
   expect(whitespaceSearch.ok()).toBeTruthy();
   expect(await whitespaceSearch.json()).toEqual({ available: false });
 
+  const oldestAvailability = await request.get("/api/media/assets?sort=oldest");
+  expect(oldestAvailability.ok()).toBeTruthy();
+  expect(await oldestAvailability.json()).toEqual({ available: false });
+
   const invalidKind = await request.get("/api/media/assets?kind=audio");
   expect(invalidKind.status()).toBe(400);
   const kindBody = await invalidKind.json();
   expect(kindBody.ok).toBe(false);
   expect(kindBody.error.code).toBe("invalid_request");
+
+  const invalidSort = await request.get("/api/media/assets?sort=random");
+  expect(invalidSort.status()).toBe(400);
+  const sortBody = await invalidSort.json();
+  expect(sortBody.ok).toBe(false);
+  expect(sortBody.error.code).toBe("invalid_request");
 
   const invalidLimit = await request.get("/api/media/assets?limit=0");
   expect(invalidLimit.status()).toBe(400);
