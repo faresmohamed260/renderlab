@@ -11,9 +11,12 @@ const artifactDir = process.env.RENDERLAB_LIBRARY_ARTIFACT_DIR || "artifacts";
 const fixturePath = process.env.RENDERLAB_LIBRARY_FIXTURE_PATH || "/tmp/renderlab-library-lifecycle-fixture.json";
 const cleanupOnly = process.argv.includes("--cleanup-only");
 const fixturePrompt = "Phase 4 Library verification image";
+const fixtureWidth = 400;
+const fixtureHeight = 300;
 
+// Deterministic 4:3 PNG: warm gray field with a centered cobalt-blue circle.
 const pngBytes = Buffer.from(
-  "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",
+  "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",
   "base64",
 );
 
@@ -82,6 +85,33 @@ async function cleanupFixture() {
   console.log(`Cleaned configured Library fixture asset=${fixture.assetId} objects=1`);
 }
 
+async function imageMetrics(locator, label) {
+  const metrics = await locator.evaluate((image) => {
+    if (!(image instanceof HTMLImageElement)) return null;
+    const style = window.getComputedStyle(image);
+    const rect = image.getBoundingClientRect();
+    return {
+      complete: image.complete,
+      naturalWidth: image.naturalWidth,
+      naturalHeight: image.naturalHeight,
+      renderedWidth: rect.width,
+      renderedHeight: rect.height,
+      cssWidth: style.width,
+      cssHeight: style.height,
+      objectFit: style.objectFit,
+      aspectRatio: style.aspectRatio,
+    };
+  });
+  console.log(`${label} metrics=${JSON.stringify(metrics)}`);
+  assert(metrics?.complete && metrics.naturalWidth === fixtureWidth && metrics.naturalHeight === fixtureHeight, `${label} did not decode the ${fixtureWidth}×${fixtureHeight} fixture correctly.`);
+  return metrics;
+}
+
+function assertRatio(metrics, ratio, label) {
+  const renderedRatio = metrics.renderedWidth / metrics.renderedHeight;
+  assert(Math.abs(renderedRatio - ratio) < 0.03, `${label} rendered at ${renderedRatio.toFixed(3)} instead of ${ratio.toFixed(3)}.`);
+}
+
 if (cleanupOnly) {
   await cleanupFixture();
   process.exit(0);
@@ -117,8 +147,8 @@ try {
       mime_type: "image/png",
       storage_key: storageKey,
       thumbnail_storage_key: null,
-      width: 640,
-      height: 480,
+      width: fixtureWidth,
+      height: fixtureHeight,
       duration_ms: null,
       provenance: {
         prompt: fixturePrompt,
@@ -130,7 +160,7 @@ try {
   });
   if (!insertion.ok) throw new Error(`Could not create Library media fixture (${insertion.status}): ${await insertion.text()}`);
 
-  console.log(`Configured Library fixture ready. asset=${assetId}`);
+  console.log(`Configured Library fixture ready. asset=${assetId} pngBytes=${pngBytes.length}`);
 
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark" });
@@ -142,11 +172,8 @@ try {
   await card.waitFor({ state: "visible", timeout: 30_000 });
   const cardImage = card.locator("img");
   await cardImage.waitFor({ state: "visible", timeout: 30_000 });
-  await cardImage.evaluate((image) => {
-    if (!(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth < 1) {
-      throw new Error("Library fixture image did not load through the product media endpoint.");
-    }
-  });
+  const cardMetrics = await imageMetrics(cardImage, "Library card image");
+  assertRatio(cardMetrics, fixtureWidth / fixtureHeight, "Library card image");
 
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-desktop-grid.png`, fullPage: true });
 
@@ -161,11 +188,8 @@ try {
 
   const viewerImage = page.getByRole("img", { name: fixturePrompt });
   await viewerImage.waitFor({ state: "visible", timeout: 30_000 });
-  await viewerImage.evaluate((image) => {
-    if (!(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth < 1) {
-      throw new Error("Media Viewer fixture image did not load through the product media endpoint.");
-    }
-  });
+  const viewerMetrics = await imageMetrics(viewerImage, "Media Viewer image");
+  assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Media Viewer image");
 
   const edit = page.getByRole("link", { name: "Edit", exact: true });
   const animate = page.getByRole("link", { name: "Animate", exact: true });
@@ -191,11 +215,7 @@ try {
 
   const referencePreview = page.getByRole("img", { name: "Reference preview" });
   await referencePreview.waitFor({ state: "visible", timeout: 30_000 });
-  await referencePreview.evaluate((image) => {
-    if (!(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth < 1) {
-      throw new Error("Create continuation preview did not load the durable media asset.");
-    }
-  });
+  await imageMetrics(referencePreview, "Create continuation preview");
 
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-mobile-edit-handoff.png`, fullPage: true });
