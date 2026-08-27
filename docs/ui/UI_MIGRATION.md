@@ -8,6 +8,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Simple by default, powerful when needed.
 - Expose user goals, not ComfyUI graph/workflow complexity.
 - Reuse approved RenderLab components and maintained interaction mechanics before inventing generic primitives.
+- Conventional visible feature/shell controls compose the approved maintained primitive layer under UI-026.
 - Validate rendered UI, not only compilation.
 - Keep repository documentation synchronized with verified implementation.
 
@@ -20,6 +21,29 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - [x] Select/document Next.js App Router + React + TypeScript + Tailwind architecture.
 - [x] Establish design tokens, component sourcing policy and repository-backed design workflow.
 - [x] Establish application-shell direction and Penpot/open-SVG design handoff.
+
+### Maintained primitive foundation — PR #13 / UI-026
+This is foundation maintenance, not a product redesign or new Phase 4 media capability.
+
+- [x] Configure shadcn `radix-nova` and consolidate conventional visible controls into `src/components/ui` maintained shadcn/Radix wrappers.
+- [x] Adopt/normalize Alert, Button, Collapsible, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle and ToggleGroup primitives.
+- [x] Refactor Application Shell, Create, Create Advanced, Library search/filter/upload/empty state, Media Viewer and Viewer Rename/Download controls onto the shared primitive layer while preserving approved product composition.
+- [x] Keep native file/hidden inputs only as browser/form plumbing.
+- [x] Add `npm run verify:ui-purity`; reject raw visible button/select/textarea/ordinary-input controls in feature/shell code.
+- [x] Run the purity audit before the UI Shell production build.
+- [x] Harden visual workflow path filters so shared primitive/config/package changes retrigger Create, Library Search, Library Lifecycle, Download, Rename and Shell regression coverage.
+- [x] Preserve semantic Library empty-state heading behavior when adapting the maintained Empty primitive.
+- [x] Normalize shared Button icon/text spacing centrally rather than feature-by-feature.
+- [x] Use maintained Radix single-choice semantics for Create Image/Video (`radiogroup` + checked `radio`) and update tests/verifiers to assert the accessible behavior rather than legacy `aria-pressed` DOM shape.
+- [x] Harden Library Search configured verification to target exact durable asset IDs while separately asserting human labels.
+- [x] Update Library Upload → Viewer → Create verifier to the Radix continuation semantics.
+- [x] Implementation head `36ee8e8eb80645d1389afa749a36b493e2abbb61` passed UI Shell `33088086901`, Create Lifecycle `33088086892`, Library Search `33088086914`, Library Lifecycle `33088086872`, Media Download `33088086907`, and Media Rename `33088086871`.
+- [x] Final-code UI Shell and Library lifecycle desktop/mobile screenshots visually inspected; no unintended hierarchy/layout drift found.
+- [x] Library lifecycle `33088086872` verified real browser Upload → Library → Viewer → Edit continuation, Image radio initialization, 400×300 media geometry and self-cleanup.
+- [ ] Documentation-finalized exact-head six-gate CI.
+- [ ] Merge PR #13 and verify merged `main`.
+
+**Maintained primitive foundation status: `APPROVED FOR MERGE` pending documentation-finalized exact-head CI.**
 
 ## Phase 2 — Application Shell
 - [x] Scaffold the fresh application.
@@ -79,7 +103,7 @@ UI-023: search is URL-owned server-side discovery over durable `media_assets`.
 - [x] Search display name, original uploaded filename and generated prompt as case-insensitive literal substrings.
 - [x] Keep punctuation literal and exclude storage/provider/temporary/legacy data.
 - [x] Compose with All/Images/Videos and newest-first pagination.
-- [x] Add native GET search form, clear action and truthful no-match state.
+- [x] Add GET search form, clear action and truthful no-match state; visible controls use maintained primitives while hidden kind state remains native form plumbing.
 - [x] Defer relevance ranking/index/search service until real scale justifies it.
 - [x] Implementation-head runs `33069004219`, `33069004207`, `33069004227`, `33069004204` passed.
 - [x] Four result/no-match desktop/mobile screenshots reviewed; cleanup verified.
@@ -135,7 +159,7 @@ UI-025: Rename changes durable human-facing display identity only.
 **Durable Media Rename v0.1 status: `APPROVED` and merged.**
 
 ### R2 browser-origin boundary
-Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement.
+Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement.
 
 ### Still intentionally open after Rename
 - [ ] Broader history controls where a real product need is defined.
@@ -153,20 +177,21 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 ## Feature/Surface Procedure
 1. Establish the user goal and required behavior.
 2. Inspect applicable RenderLab decisions/components and architecture.
-3. Search approved component sources before implementing generic interaction mechanics.
+3. Compose conventional visible controls from the approved maintained primitive layer; search approved component sources before implementing any new generic interaction mechanic.
 4. Inspect Saga only when useful as behavioral/backend reference.
 5. Inspect the actual backend/capability contract.
 6. Decide default vs contextual vs advanced complexity.
 7. Use Penpot/open SVG artifacts when visual exploration reduces implementation churn.
 8. Implement the smallest coherent experience.
-9. Build and visually verify through GitHub.
-10. Check responsive/accessibility behavior.
+9. Run production build, UI purity and affected lifecycle validation through GitHub.
+10. Check responsive/accessibility behavior and inspect rendered output.
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Completed slice:** Durable Media Rename v0.1, merged PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.  
-**Verified:** Viewer-only inline Rename, durable `display_name` mutation, input normalization/validation, Search discovery, Download/original/provenance/storage preservation, responsive Viewer review, shared-resource cleanup, exact-ID lifecycle targeting and six-gate final regression coverage.  
+**Completed product slice:** Durable Media Rename v0.1, merged PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.  
+**Current foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor; implementation and rendered result are approved, documentation-finalized exact-head CI remains before merge.  
+**Verified PR #13 implementation head:** `36ee8e8eb80645d1389afa749a36b493e2abbb61` — six affected gates green, real Upload → Viewer → Create continuation green, responsive screenshot review clean, fixture cleanup successful.  
 **Next product slice:** select one remaining history/organization/destructive-management need only after its RenderLab-owned contract is explicit.
 
 ## Session Handoff Rule
