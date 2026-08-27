@@ -17,7 +17,7 @@ Installed versions from `package.json`:
 - AWS SDK S3 client `3.1116.0`
 - AWS SDK S3 request presigner `3.1116.0`
 
-The production build and responsive Create/shell checks pass in GitHub Actions. Verified public routes are `/`, `/library`, `/library/[assetId]`, `/activity`, and `/settings`.
+The production build and responsive Create/shell/Library checks pass in GitHub Actions. Verified public routes are `/`, `/library`, `/library/[assetId]`, `/activity`, and `/settings`. Create, Library v0.1 and Media Viewer v0.1 are implemented product surfaces; Activity and Settings remain placeholders.
 
 ## Framework
 **Framework:** Next.js `16.3.3` with React `19.2.8` and the App Router  
@@ -57,6 +57,7 @@ GET/POST /api/generation/jobs
 GET      /api/generation/jobs/[jobId]
 GET/POST /api/assets/reference/upload-tickets
 POST     /api/assets/reference/upload-completions
+GET      /api/media/assets
 GET      /api/media/assets/[assetId]
 GET      /api/media/assets/[assetId]/content
 GET      /api/media/assets/[assetId]/thumbnail
@@ -67,6 +68,8 @@ Rules:
 - Image, Video, Edit, Animate, models and workflows are not separate top-level routes by default.
 - Adding a backend workflow does not create a route automatically.
 - Context moves into URLs only when deep linking/shareability provides product value.
+- Library kind/pagination state may use URL parameters because it is navigable browsing state.
+- Viewer → Create continuation query parameters are untrusted navigation intent, not authoritative product state. The Create server route validates the source UUID, action ID, durable asset existence and capability compatibility before initializing the workspace.
 
 ## Verified Ownership Structure
 Current important implementation boundaries include:
@@ -91,12 +94,16 @@ src/
 │   └── ui/
 │       └── collapsible.tsx
 ├── features/
-│   └── create/
-│       ├── create-workspace.tsx
-│       └── create-advanced-panel.tsx
+│   ├── create/
+│   │   ├── create-workspace.tsx
+│   │   └── create-advanced-panel.tsx
+│   └── library/
+│       ├── library-view.tsx
+│       └── media-viewer.tsx
 ├── lib/
 │   ├── api/
 │   │   ├── generation-contract.ts
+│   │   ├── media-assets-contract.ts
 │   │   └── reference-upload-contract.ts
 │   └── capabilities/
 │       └── generation.ts
@@ -151,10 +158,14 @@ Generic interaction mechanics follow the component sourcing policy in `docs/ui/C
 
 `src/components/ui/collapsible.tsx` is the first normalized Radix primitive in the repository. It wraps `@radix-ui/react-collapsible` and deliberately contains no Create-specific data or styling logic. Create Advanced composes that maintained disclosure behavior with feature-owned fields.
 
+Library v0.1 and Media Viewer v0.1 are feature-owned compositions rather than premature generic media primitives. Reusable media-card/viewer mechanics should be extracted only once another real surface has the same product need.
+
 Native HTML inputs/selects remain valid ordinary form controls; using them is not a license to invent custom interaction engines. New reusable mechanics still follow the approved source search order.
 
 ### Server Components by default
 Use for route/page/layout composition where browser state is unnecessary.
+
+Library and Media Viewer currently use server route composition and server-owned media loading. The root Create route also resolves/validates cross-route continuation intent server-side before passing an initial continuation to the client workspace.
 
 ### Client Components deliberately
 Use for:
@@ -163,7 +174,7 @@ Use for:
 - output/operation selection;
 - Advanced disclosure and draft parameters;
 - live job polling and runtime feedback;
-- media actions/continuation;
+- media actions/continuation when browser interaction genuinely requires it;
 - dialogs, sheets, popovers and other client interaction primitives when required.
 
 `AppShell` is currently a Client Component because active-route styling uses `usePathname`. Do not add broad `'use client'` boundaries for convenience.
@@ -171,6 +182,13 @@ Use for:
 ## State Architecture
 ### URL state
 Use only for navigation/deep-link state that benefits from reload/shareability.
+
+Current URL-owned state includes:
+- Library `kind` and `offset` browsing state;
+- durable asset identity in `/library/[assetId]`;
+- Viewer → Create `source` + `action` continuation intent.
+
+Continuation query parameters are never trusted as the asset record itself. The server reloads the durable asset and validates capability compatibility before Create initialization. Malformed/stale/incompatible continuation intent leaves Create usable and returns truthful local feedback.
 
 ### Server state
 `generation_jobs`, `media_assets`, `generation_sources` and future persistent product data remain server-owned state accessed through application boundaries.
@@ -184,7 +202,7 @@ Create owns ephemeral state such as:
 - current job/result state;
 - Advanced disclosure visibility;
 - separate Image/Video Advanced drafts;
-- continuation source selection.
+- validated continuation source selection.
 
 Avoid an ad-hoc global store until multiple features genuinely require one.
 
@@ -225,7 +243,7 @@ Verified request-level Advanced parameters currently are:
 - guidance;
 - frame rate for Video.
 
-`src/lib/capabilities/generation.ts` owns the current UI/API capability metadata and validation ranges used by Create and the typed generation request parser. New worker parameters do not automatically become UI controls.
+`src/lib/capabilities/generation.ts` owns the current UI/API capability metadata and validation ranges used by Create and the typed generation request parser. The same capability module owns media continuation eligibility used by Create and Media Viewer. New worker parameters or media actions do not automatically become UI controls.
 
 ## Native Generation Flow
 Current native RenderLab generation path:
@@ -303,13 +321,22 @@ Create binds { type: "temporary-source", id: sourceId }
 
 This path is live-verified against the reused shared Supabase/R2 resources and its integration fixtures self-clean.
 
-## Media Delivery and Continuation
+Temporary Create references are not yet the persistent uploaded-asset Library contract required by UI-010.
+
+## Media Delivery, Library and Continuation
 Persisted product media is exposed through stable RenderLab APIs rather than raw R2 identity:
+- list: `/api/media/assets`;
 - metadata: `/api/media/assets/[assetId]`;
 - content: `/api/media/assets/[assetId]/content`;
 - thumbnail: `/api/media/assets/[assetId]/thumbnail`.
 
-Create uses returned `contentUrl` for image/video presentation. Persisted image results expose capability-derived Edit and Animate actions. Continuation rebinds the durable asset as a `media-asset` input. Live run `33027460976` verified `Create Image → persisted media asset → Edit Image` and self-cleaned both output objects/records.
+The list API exposes bounded newest-first browsing with optional image/video kind filtering and pagination metadata. Library consumes this product contract rather than querying Supabase from the browser.
+
+Library cards deep-link to `/library/[assetId]`. Media Viewer loads one durable asset and derives compatible continuation actions from `src/lib/capabilities/generation.ts`.
+
+Persisted image results currently support Edit and Animate. Viewer links use opaque `media-asset` identity plus action intent. On `/`, the server validates UUID/action shape, loads the durable media record, verifies the action is compatible with that media kind, and only then initializes Create. Invalid/stale/incompatible links do not become client state.
+
+Live run `33027460976` verified `Create Image → persisted media asset → Edit Image`. Configured Phase 4 run `33034606396` separately verified `Library → Media Viewer → Create Edit` against a deterministic real R2/Supabase fixture, correct 400×300 media geometry at the product surfaces, desktop/mobile rendering and cleanup.
 
 ## Supabase Boundary
 RenderLab deliberately reuses shared project `AI Studio` (`rashyleshocuvpgcooxy`) while keeping RenderLab tables separate from legacy `studio_*`.
@@ -349,12 +376,14 @@ UI iteration does not require Vercel preview deployments.
 - Playwright Chromium against `next start`;
 - desktop `1440×1024` checks;
 - mobile `390×844` checks;
-- generation/reference API validation;
+- generation/reference/media-list API validation;
+- Create/shell/Library responsive and truthful-unavailable checks;
+- continuation-link failure-state checks;
 - screenshot artifacts for visual review.
 
-Create Advanced PR #6 was verified in final PR run `33030364272`, including progressive-disclosure interaction, per-output Advanced drafts, invalid Advanced API validation, and reviewed desktop/mobile screenshot artifacts.
+The final Phase 4 credential-free PR run `33034606323` passed 13 Playwright tests plus production build.
 
-Configured real-infrastructure workflows separately verify reference uploads and generation without placing production secrets into ordinary UI CI.
+Configured real-infrastructure workflows separately verify reference uploads, generation and media lifecycle behavior without placing production secrets into browser/client code.
 
 For full Create visual lifecycle verification, `scripts/verify-create-lifecycle.mjs` plus `.github/workflows/create-lifecycle-visual.yml` use the existing server-side infrastructure secrets to:
 1. launch the production build;
@@ -368,9 +397,21 @@ For full Create visual lifecycle verification, `scripts/verify-create-lifecycle.
 
 GitHub Actions run `33031817744` passed this configured lifecycle check and supplied the final Phase 3 visual approval evidence.
 
+For Library/Viewer verification, `scripts/verify-library-lifecycle.mjs` plus `.github/workflows/library-lifecycle-visual.yml` seed a deterministic media-only fixture directly into the RenderLab R2/`media_assets` contract without invoking ComfyUI, then:
+1. render it in Library at desktop/mobile widths;
+2. verify the browser decodes the expected 400×300 media and preserves 4:3 geometry in the grid;
+3. open the deep-linked Media Viewer and verify product media delivery/geometry;
+4. verify capability-derived Edit/Animate actions;
+5. follow Edit into the server-validated Create handoff;
+6. capture desktop/mobile Viewer and continuation screenshots;
+7. delete the R2 object and `media_assets` fixture.
+
+Approval run `33034606396` passed this Phase 4 lifecycle and cleanup.
+
 ## Error and Loading Architecture
 The product distinguishes:
 - unavailable environment state;
+- invalid/stale/incompatible continuation intent;
 - upload in progress;
 - submission error;
 - running/persisting generation;
@@ -379,13 +420,16 @@ The product distinguishes:
 - durable result loading;
 - succeeded persisted result.
 
-No synthetic percentage progress is permitted. Recoverable errors preserve prompt/reference/settings/Advanced drafts.
+No synthetic percentage progress is permitted. Recoverable errors preserve prompt/reference/settings/Advanced drafts. Invalid cross-route continuation must not destroy or replace the default Create workspace.
 
 ## Current Frontend Status
 - AppShell: `APPROVED`.
 - Create: `APPROVED` after configured real-lifecycle responsive review in run `33031817744`.
-- Library, Media Viewer, Activity and Settings remain planned/placeholder surfaces.
+- Library v0.1: `APPROVED` after credential-free run `33034606323` and configured real-media lifecycle run `33034606396`.
+- Media Viewer v0.1: `APPROVED` after configured Library → Viewer → Create continuation review in run `33034606396`.
+- Activity and Settings remain planned/placeholder surfaces.
 - Current product phase: Phase 4 — Media & Continuation.
+- Next Phase 4 contract gap: persistent uploaded assets for Library; temporary `generation_sources` must not be mistaken for that durable product contract.
 
 ## Architecture Rules
 - Do not rebuild Saga's frontend architecture.
@@ -397,3 +441,5 @@ No synthetic percentage progress is permitted. Recoverable errors preserve promp
 - Do not reinvent generic UI mechanics before checking approved maintained sources.
 - Do not promote every worker parameter to default/Advanced UI automatically.
 - Do not mark a generation complete before durable persistence.
+- Do not treat cross-route URL query values as trusted media state; reload and validate durable identity server-side.
+- Do not couple Library/persistent uploads to legacy `studio_*` tables merely because infrastructure is shared.
