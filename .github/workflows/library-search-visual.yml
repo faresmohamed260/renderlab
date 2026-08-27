@@ -5,6 +5,10 @@ on:
     paths:
       - "scripts/verify-library-search.mjs"
       - ".github/workflows/library-search-visual.yml"
+      - "components.json"
+      - "package.json"
+      - "src/components/ui/**"
+      - "src/lib/utils.ts"
       - "src/app/library/**"
       - "src/features/library/**"
       - "src/app/api/media/assets/**"
