@@ -47,6 +47,7 @@ Shared-infrastructure authority: `docs/architecture/INFRASTRUCTURE.md`.
 - persistent RenderLab `generation_jobs`
 - durable RenderLab `media_assets`
 - primary/standby worker submission routing
+- conservative poll-time reassignment only when explicit evidence makes reassignment safe
 - capability-driven workflow contracts designed to grow beyond the initial production workflows
 
 The deployed Studio/Vercel runtime is not intended to be a RenderLab production dependency. A transitional compatibility adapter exists only as a fallback/debugging aid while native RenderLab orchestration is completed and verified.
@@ -86,8 +87,8 @@ Image, Video, Edit, Animate, Models, and Workflows are not separate top-level de
 
 ### Verified current state
 - application shell is implemented and `APPROVED`;
-- Create is implemented and remains `MIGRATING` until final lifecycle review and remaining hardening are complete;
-- Image/Video prompt composition, aspect/duration controls, reference preview/removal/replacement, and responsive composer behavior are implemented;
+- Create is implemented and remains `MIGRATING` until final real-lifecycle responsive review is complete;
+- Image/Video prompt composition, aspect/duration controls, reference preview/removal/replacement, responsive composer behavior, persisted-result presentation, continuation actions, and Advanced disclosure are implemented;
 - reference upload is verified end-to-end against the reused shared R2 + Supabase resources and self-cleans;
 - RenderLab reuses Supabase project `AI Studio` (`rashyleshocuvpgcooxy`), shared R2, and the existing worker fleet by explicit product decision;
 - RenderLab-owned `generation_sources`, `generation_jobs`, and `media_assets` tables are applied with RLS enabled; legacy `studio_*` tables remain separate;
@@ -95,17 +96,17 @@ Image, Video, Edit, Animate, Models, and Workflows are not separate top-level de
 - RenderLab-native worker submission, primary/standby routing, polling, R2 persistence, media records, and private media-delivery APIs are implemented;
 - all four initial native operations are verified end-to-end: Create Image, Edit Image, Create Video, and Animate Image;
 - Create loads the persisted RenderLab `media_assets` result after success and renders the real image/video through product media APIs;
-- transient Create status-poll failures now retry automatically with bounded backoff; PR #2 passed production build + Playwright validation before merge;
-- capability-derived continuation actions are implemented centrally: persisted image results expose **Edit** and **Animate**, and the next generation binds the durable result as a `media-asset` input rather than an R2 key; PR #3 passed production build + Playwright validation before merge;
-- a live integration specifically verifying `Create Image → persisted media asset → Edit Image` is currently running as GitHub Actions run `33027460976`; do not mark that durable-media continuation path live-verified until the run succeeds and self-cleans;
+- transient Create status-poll failures retry automatically with bounded backoff; PR #2 passed production build + Playwright validation before merge;
+- capability-derived continuation actions are implemented centrally: persisted image results expose **Edit** and **Animate**, and the next generation binds the durable result as a `media-asset` input rather than an R2 key; PR #3 passed validation before merge;
+- durable-media continuation is live-verified in GitHub Actions run `33027460976`: `Create Image → persisted media asset → Edit Image` succeeded and both generated fixtures were removed afterward;
+- conservative poll-time worker reassignment is implemented: explicit credit exhaustion or explicit worker-unavailable evidence may reassign, while generic 429/5xx/network failures never trigger automatic duplicate-risk reassignment; PR #5 passed UI/build validation and post-merge live generation regression run `33027861292` succeeded;
+- Create Advanced v0.3 is implemented from verified capabilities and is collapsed by default. It exposes negative prompt, seed, steps, guidance, and video-only frame rate. The disclosure uses the normalized Radix Collapsible primitive rather than a bespoke interaction mechanic; PR #6 passed production build, interaction tests, desktop/mobile screenshot review, and was merged as `0aa5344a20d321f364f44eb0666d41a861b5ca5a`;
 - production build/UI validation remains GitHub-based rather than depending on Vercel preview deployments.
 
 ### Still open
-1. Complete and record live durable-media continuation verification from run `33027460976`.
-2. Reintroduce safe poll-time worker reassignment only where there is strong evidence the assigned worker did not/ cannot continue; never duplicate a possibly accepted generation on generic network/5xx failures.
-3. Introduce Advanced controls only from verified capability definitions.
-4. Perform final desktop/mobile Create review with the real persisted-result/continuation lifecycle visible.
-5. Remove the Studio compatibility fallback after native operational hardening is sufficient.
+1. Perform final desktop/mobile Create review with a **real configured persisted-result and continuation lifecycle** visible, not only credential-free UI states.
+2. Decide/remove the transitional Studio compatibility fallback once no migration/debugging requirement still needs it.
+3. Keep capability definitions and native workflow defaults aligned as Advanced capability metadata evolves; do not expose new controls merely because a worker accepts them.
 
 See `docs/ui/UI_MIGRATION.md` for phase status, `docs/ui/DESIGN_WORKFLOW.md` for visual workflow, `docs/architecture/FRONTEND_ARCHITECTURE.md` for frontend architecture, and `docs/architecture/INFRASTRUCTURE.md` for shared-resource and generation ownership rules.
 
