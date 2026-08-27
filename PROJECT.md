@@ -56,7 +56,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Create: `APPROVED`; configured complete browser lifecycle approval run `33031817744`.
 - Library v0.1: `APPROVED`; credential-free run `33034606323`, configured R2/Supabase lifecycle run `33034606396`.
 - Media Viewer v0.1: `APPROVED`; the same configured run `33034606396` verified Library → Viewer → Create Edit continuation.
-- Persistent Library upload extension: verified and visually approved for PR #9 in configured browser run `33065020778` after production/UI run `33065020735` and persistent backend integration run `33065020704`.
+- Persistent Library upload extension: `APPROVED`; final current-state verification run `33066999350` passed real browser upload after R2 CORS reconciliation, alongside UI Shell `33066999317` and backend upload integration `33066999365`.
 - Create supports the four initial native operations: Create Image, Edit Image, Create Video and Animate Image.
 - Durable generated and uploaded media use RenderLab `media_assets`, product media APIs and opaque `media-asset` continuation identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity and action compatibility before initializing Create.
@@ -91,20 +91,26 @@ UI-022 defines the approved durable upload model.
 ### Verified approval evidence
 - Shared Supabase migration is applied with RLS enabled on `media_assets` and `media_upload_sessions`.
 - Original persistent backend integration run `33035954398` passed and self-cleaned.
-- Final persistent backend integration run `33065020704` passed production build, direct signed PUT, HEAD verification, promotion, concurrent completion recovery, sequential idempotency, public media/list/content behavior, Unicode filename preservation and cleanup.
-- Final credential-free UI/API run `33065020735` passed production build and Playwright regression coverage.
-- Final configured browser lifecycle run `33065020778` passed the actual Library Upload control/native file chooser → signed R2 PUT → completion → Library card → Media Viewer → capability-derived Edit → server-validated Create handoff at desktop/mobile widths. It verified 400×300 media decode/geometry, captured six screenshots and self-cleaned.
-- The six screenshots from `33065020778` were visually inspected. Upload placement, uploaded display name, Viewer uploaded metadata, Edit/Animate actions and desktop/mobile Create continuation preserve the approved v0.1/Create visual language.
-- Post-run direct Supabase verification found `0` `media_upload_sessions` rows and `0` uploaded `media_assets` rows, confirming no integration fixture remained.
+- Current-state backend integration run `33066999365` passed production build, direct signed PUT, HEAD verification, promotion, concurrent completion recovery, sequential idempotency, public media/list/content behavior, Unicode filename preservation and cleanup.
+- Current-state credential-free UI/API run `33066999317` passed production build and Playwright regression coverage.
+- Current-state configured browser lifecycle run `33066999350` reconciled shared R2 CORS through the S3 API, then passed the actual Library Upload control/native file chooser → signed R2 PUT → completion → Library card → Media Viewer → capability-derived Edit → server-validated Create handoff at desktop/mobile widths. It verified 400×300 media decode/geometry, captured six screenshots and self-cleaned.
+- The six screenshots from `33066999350` were visually inspected. Upload placement, uploaded display name, Viewer uploaded metadata, Edit/Animate actions and desktop/mobile Create continuation preserve the approved v0.1/Create visual language.
+- Post-run cleanup remains authoritative: the browser workflow cleaned its upload fixture, and prior direct Supabase verification confirmed no persistent-upload integration fixtures remained.
 
-**PR #9 is functionally and visually ready for merge once the final documentation-head checks are green and GitHub still reports the PR mergeable.**
+**PR #9 is functionally and visually approved. Merge only after the final documentation-head checks are green and GitHub still reports the PR mergeable.**
 
-## R2 Production-Origin Deployment Prerequisite
-The shared R2 bucket currently allows browser PUT from `https://studio.faresuniform.uk` but rejects the current localhost and RenderLab Vercel origins. Existing object credentials cannot manage bucket CORS, and no Cloudflare admin token is configured in RenderLab Actions.
+## R2 Browser CORS State
+The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` now has bucket-admin capability. Run `33066999350` verified `GetBucketCors`/`PutBucketCors` through the S3 API and reconciled the managed `renderlab-browser-uploads` rule while preserving one unrelated existing rule.
 
-The configured approval workflow therefore serves the local RenderLab build through a CI-only HTTPS loopback alias for `https://studio.faresuniform.uk`. No request is routed to or depends on the deployed Studio runtime; the alias only supplies an origin already authorized by the shared R2 policy so Chromium can exercise the real signed PUT against shared R2.
+The managed rule currently allows direct browser `PUT` with `Content-Type` from:
+- `http://127.0.0.1:3000`
+- `http://localhost:3000`
+- `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
+- `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
-Before RenderLab is deployed for real users on a RenderLab production/preview origin, that exact origin must be added to the shared bucket CORS policy for `PUT` with `Content-Type`. `scripts/ensure-r2-browser-cors.mjs` can reconcile the managed rule when an appropriately scoped Cloudflare/R2 admin credential is available. This is a **deployment prerequisite**, not a reason to replace direct browser-to-R2 upload with a server proxy.
+All four origins returned successful preflight in `33066999350`. The browser verifier now runs directly from the local RenderLab origin; the temporary Studio-origin TLS/hosts alias has been removed. RenderLab still does not depend on the deployed Studio runtime.
+
+The connected Vercel project is currently `live=false`. If a future custom domain or different user-facing production origin is adopted, add that exact origin to the managed R2 CORS rule before serving direct browser uploads there. Do not use a broad wildcard and do not replace the approved direct-to-R2 flow with a server proxy merely for convenience.
 
 ## Still Open in Phase 4
 Persistent uploads do **not** complete broader Library organization/management work:
@@ -112,11 +118,12 @@ Persistent uploads do **not** complete broader Library organization/management w
 - favorites/collections;
 - rename/delete/download/batch management.
 
-The next recommended Phase 4 product slice is to define a RenderLab-owned **Library search contract** against durable `media_assets` before adding search UI. Do not infer collection/favorite/destructive-action schemas from Saga. The R2 production-origin CORS prerequisite remains separate infrastructure work before deployment.
+The next recommended Phase 4 product slice is to define a RenderLab-owned **Library search contract** against durable `media_assets` before adding search UI. Do not infer collection/favorite/destructive-action schemas from Saga.
 
 ## Infrastructure Cleanup Still Open
 - Remove the transitional Studio compatibility adapter once no migration/debugging requirement depends on it.
 - Keep capability definitions and native workflow defaults aligned as backend capability grows; do not expose controls merely because a worker accepts them.
+- If the eventual public RenderLab origin differs from the two currently configured stable Vercel domains, add the exact origin to the managed R2 CORS rule before deployment.
 
 ## Source of Truth
 The `renderlab` repository is authoritative. ChatGPT Project context is secondary continuity context and current conversations are temporary working context.
