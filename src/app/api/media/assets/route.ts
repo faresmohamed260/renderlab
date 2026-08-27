@@ -5,6 +5,7 @@ import {
   type MediaAssetKind,
   type MediaAssetSortOrder,
 } from "@/lib/api/media-assets-contract";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { isR2Configured } from "@/server/storage/r2";
@@ -44,12 +45,21 @@ export async function GET(request: Request) {
     );
   }
 
+  const account = await getCurrentRenderLabAccount();
+  if (!account) {
+    return NextResponse.json(
+      { ok: false, error: { code: "authentication_required", message: "Sign in to access your RenderLab Library." } },
+      { status: 401 },
+    );
+  }
+
   if (!isSupabaseConfigured() || !isR2Configured()) {
     return NextResponse.json({ available: false });
   }
 
   try {
     const result = await listMediaAssets({
+      ownerId: account.id,
       ...(kind ? { kind: kind as MediaAssetKind } : {}),
       ...(search ? { search } : {}),
       sort,
