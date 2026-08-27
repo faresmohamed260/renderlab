@@ -183,13 +183,33 @@ UI-027: chronological direction is URL-owned server-side durable-media state, no
 
 **Library history ordering v0.1 status: `APPROVED` and merged.**
 
-### R2 browser-origin boundary
-Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement.
+### Library drag-and-drop upload v0.1 — PR #15 / UI-028
+UI-028: drag/drop is an optional interaction path into the existing persistent upload contract, not a new media or storage model.
 
-### Still intentionally open after History Ordering
+- [x] Keep the visible Upload button + native file picker as the keyboard/touch/mobile baseline.
+- [x] Reveal a temporary full-Library drop affordance only during an active file drag; no always-visible dropzone.
+- [x] Accept one dropped PNG/JPEG/WebP image at a time, using the same 25 MB limit and existing ticket → signed R2 PUT → completion → durable promotion flow.
+- [x] Extract the shared browser transaction into feature-owned `library-upload-client.ts`; picker and drag/drop do not maintain parallel upload implementations.
+- [x] Reject multi-file drops locally before any upload ticket/completion request starts.
+- [x] Keep success/error feedback local and refresh the server-owned Library after completion; no global toast/store.
+- [x] Add configured `Library Drag Drop Visual` with real browser DataTransfer, R2/Supabase promotion, exact ticket/completion/session/asset/card uniqueness assertions, responsive screenshots and cleanup.
+- [x] Serialize drag/drop verification with the existing shared Library lifecycle fixture lock.
+- [x] Harden configured fixtures with run-unique drag/drop filenames and pre-run cleanup of the `renderlab-drop-*` namespace plus the known stale legacy lifecycle fixture.
+- [x] Implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed UI Shell `33102672560`, Library Search `33102672572`, Library History `33102672507`, Library Lifecycle `33102672568`, and Library Drag Drop `33102672468`.
+- [x] Visually inspect clean desktop drag-active/completed and mobile completed screenshots; drop affordance is temporary, completed desktop has exactly one current run-owned card with valid preview, and mobile preserves the ordinary Upload baseline.
+- [x] Direct Supabase cleanup verified `0` drag/drop sessions, `0` drag/drop assets, `0` legacy lifecycle sessions and `0` legacy lifecycle assets.
+- [ ] Require the documentation-finalized exact head to pass all five affected workflows before PR #15 merge.
+- [ ] Merge PR #15 and verify merged `main`.
+
+**Library drag-and-drop upload v0.1 status: `APPROVED` implementation, pending final exact-head CI and merge.**
+
+### R2 browser-origin boundary
+Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement. Drag/drop reuses the persistent direct-browser upload path and adds no new R2/CORS contract.
+
+### Still intentionally open after Drag/drop Upload
 - [ ] Favorites/collections or another approved organization model after user/account ownership is explicit.
 - [ ] Delete and batch management after storage/reference/recovery semantics are explicit.
-- [ ] Drag/drop or other Library interaction enhancements only when separately justified.
+- [ ] Other Library interaction enhancements only when separately justified.
 
 These require explicit RenderLab-owned contracts. Do not infer Saga organization/destructive-action schemas automatically.
 
@@ -214,10 +234,10 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Completed product slice:** Library history ordering v0.1 / UI-027 merged through PR #14 as `a7ecaa6a704e4378b31e694e5f21c5629920b520` after final exact-head eight-gate regression, clean shared-resource verification and green post-merge `main` UI Shell `33097463519`.  
+**Current product slice:** Library drag-and-drop upload v0.1 / UI-028 is implementation-approved on PR #15 after exact configured upload validation, clean visual review and shared-resource cleanup; final documentation-head CI and merge remain.  
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12 and History Ordering PR #14 are merged and approved.  
 **Completed foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`.  
-**Next product slice:** do not choose Favorites/Collections until an account/user ownership contract exists; do not choose Delete until durable storage/reference/recovery semantics are explicit. Select the next Phase 4 capability only from a verified RenderLab-owned contract.
+**Next product slice after PR #15:** do not choose Favorites/Collections until an account/user ownership contract exists; do not choose Delete until durable storage/reference/recovery semantics are explicit. Select the next Phase 4 capability only from a verified RenderLab-owned contract.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
