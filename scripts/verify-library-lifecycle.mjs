@@ -1,6 +1,12 @@
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { chromium } from "@playwright/test";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  configuredTestAccountIdentity,
+  createConfiguredTestAccount,
+  deleteConfiguredTestAccount,
+  routeLocalAppRequestsWithAccount,
+} from "./lib/configured-test-account.mjs";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -14,6 +20,7 @@ const fixtureFilename = "renderlab-اختبار-画像.png";
 const fixtureDisplayName = fixtureFilename.replace(/\.[^.]+$/, "");
 const fixtureWidth = 400;
 const fixtureHeight = 300;
+const fixtureAccount = configuredTestAccountIdentity("library-lifecycle");
 
 // Deterministic 4:3 PNG: warm gray field with a centered cobalt-blue circle.
 const pngBytes = Buffer.from(
@@ -24,6 +31,7 @@ const pngBytes = Buffer.from(
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
   SUPABASE_SERVICE_ROLE_KEY: supabaseKey,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -72,38 +80,39 @@ async function readFixture() {
 
 async function cleanupFixture() {
   const fixture = await readFixture();
-  if (!fixture) return;
+  if (fixture) {
+    const sessions = await rows(
+      `media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id,storage_key,media_asset_id`,
+    );
+    const session = sessions[0] || null;
+    const storageKey = session?.storage_key || fixture.storageKey || null;
+    const assetId = session?.media_asset_id || fixture.assetId || null;
 
-  const sessions = await rows(
-    `media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id,storage_key,media_asset_id`,
-  );
-  const session = sessions[0] || null;
-  const storageKey = session?.storage_key || fixture.storageKey || null;
-  const assetId = session?.media_asset_id || fixture.assetId || null;
+    if (storageKey) {
+      await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: storageKey })).catch(() => {});
+    }
 
-  if (storageKey) {
-    await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: storageKey })).catch(() => {});
+    if (session) {
+      const sessionDelete = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}`, { method: "DELETE" });
+      if (!sessionDelete.ok) throw new Error(`Could not remove Library upload session fixture (${sessionDelete.status}): ${await sessionDelete.text()}`);
+    }
+
+    if (assetId) {
+      const assetDelete = await supabase(`media_assets?id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
+      if (!assetDelete.ok) throw new Error(`Could not remove Library media fixture (${assetDelete.status}): ${await assetDelete.text()}`);
+    }
+
+    const remainingSessions = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id`);
+    if (remainingSessions.length) throw new Error(`Library cleanup left upload session ${fixture.uploadId}.`);
+    if (assetId) {
+      const remainingAssets = await rows(`media_assets?id=eq.${encodeURIComponent(assetId)}&select=id`);
+      if (remainingAssets.length) throw new Error(`Library cleanup left uploaded asset ${assetId}.`);
+    }
+
+    await rm(fixturePath, { force: true });
+    console.log(`Cleaned configured Library upload fixture upload=${fixture.uploadId}${assetId ? ` asset=${assetId}` : ""}.`);
   }
-
-  if (session) {
-    const sessionDelete = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}`, { method: "DELETE" });
-    if (!sessionDelete.ok) throw new Error(`Could not remove Library upload session fixture (${sessionDelete.status}): ${await sessionDelete.text()}`);
-  }
-
-  if (assetId) {
-    const assetDelete = await supabase(`media_assets?id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
-    if (!assetDelete.ok) throw new Error(`Could not remove Library media fixture (${assetDelete.status}): ${await assetDelete.text()}`);
-  }
-
-  const remainingSessions = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(fixture.uploadId)}&select=id`);
-  if (remainingSessions.length) throw new Error(`Library cleanup left upload session ${fixture.uploadId}.`);
-  if (assetId) {
-    const remainingAssets = await rows(`media_assets?id=eq.${encodeURIComponent(assetId)}&select=id`);
-    if (remainingAssets.length) throw new Error(`Library cleanup left uploaded asset ${assetId}.`);
-  }
-
-  await rm(fixturePath, { force: true });
-  console.log(`Cleaned configured Library upload fixture upload=${fixture.uploadId}${assetId ? ` asset=${assetId}` : ""}.`);
+  await deleteConfiguredTestAccount(fixtureAccount);
 }
 
 async function imageMetrics(locator, label) {
@@ -154,9 +163,12 @@ let browser = null;
 let primaryError = null;
 
 try {
+  await cleanupFixture();
+  const account = await createConfiguredTestAccount("library-lifecycle");
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark", ignoreHTTPSErrors: ignoreHttpsErrors });
   const page = await context.newPage();
+  await routeLocalAppRequestsWithAccount(page, baseUrl, account);
 
   await page.goto(`${baseUrl}/library`, { waitUntil: "networkidle", timeout: 60_000 });
   const uploadButton = page.getByRole("button", { name: "Upload", exact: true });
@@ -195,12 +207,15 @@ try {
   assert(completionPayload.asset.width === fixtureWidth && completionPayload.asset.height === fixtureHeight, "Browser upload dimensions were not persisted.");
 
   const sessionRows = await rows(
-    `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=status,storage_key,media_asset_id,filename,display_name`,
+    `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=status,storage_key,media_asset_id,filename,display_name,owner_id`,
   );
   const session = sessionRows[0];
   assert(session?.status === "completed" && session.media_asset_id === assetId, "Browser upload session was not completed against the durable asset.");
   assert(session.filename === fixtureFilename, "Browser upload session changed the original Unicode filename.");
   assert(session.display_name === fixtureDisplayName, "Browser upload session changed the display name.");
+  assert(session.owner_id === account.id, "Browser upload session did not inherit the authenticated account owner.");
+  const assetRows = await rows(`media_assets?id=eq.${encodeURIComponent(assetId)}&select=id,owner_id&limit=1`);
+  assert(assetRows[0]?.owner_id === account.id, "Browser upload durable asset did not inherit the authenticated account owner.");
   await writeFile(fixturePath, JSON.stringify({ uploadId, assetId, storageKey: session.storage_key }), "utf8");
 
   await page.getByRole("status").filter({ hasText: "Added to Library." }).waitFor({ state: "visible", timeout: 30_000 });
@@ -268,7 +283,7 @@ try {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-desktop-edit-handoff.png`, fullPage: true });
 
-  console.log(`Configured browser upload -> Library -> Media Viewer -> Edit handoff rendered successfully. upload=${uploadId} asset=${assetId}`);
+  console.log(`Configured browser upload -> Library -> Media Viewer -> Edit handoff rendered successfully. owner=${account.id} upload=${uploadId} asset=${assetId}`);
 } catch (error) {
   primaryError = error;
 } finally {
