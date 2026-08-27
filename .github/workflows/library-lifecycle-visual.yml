@@ -3,6 +3,7 @@ name: Library Lifecycle Visual
 on:
   pull_request:
     paths:
+      - "scripts/ensure-r2-browser-cors.mjs"
       - "scripts/verify-library-lifecycle.mjs"
       - ".github/workflows/library-lifecycle-visual.yml"
       - "supabase/migrations/0003_persistent_media_uploads.sql"
@@ -64,6 +65,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Ensure R2 browser upload CORS
+        run: node scripts/ensure-r2-browser-cors.mjs
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
@@ -80,10 +84,10 @@ jobs:
           cat /tmp/renderlab-next.log
           exit 1
 
-      - name: Render configured Library lifecycle
+      - name: Render configured persistent upload Library lifecycle
         run: node scripts/verify-library-lifecycle.mjs
 
-      - name: Cleanup Library fixture
+      - name: Cleanup Library upload fixture
         if: always()
         run: node scripts/verify-library-lifecycle.mjs --cleanup-only
 
