@@ -97,7 +97,7 @@ Approved behavior:
 - clean drag-active/completed desktop and completed mobile drag/drop screenshots were visually inspected; exactly one current run-owned durable card rendered with a valid preview and the mobile Upload baseline remained unchanged;
 - direct Supabase cleanup after drag/drop verification found `0` drag/drop sessions/assets and `0` known legacy lifecycle sessions/assets.
 
-**Still intentionally open:** favorites/collections or another account-owned organization model, delete/batch management and other Library interaction enhancements unless separately justified. Favorites/Collections must not be modeled as global media flags before a real ownership model exists. Delete must not be added until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
+**Still intentionally open:** UI-029 now supplies account identity, but owner scoping across generation/reference/upload/media is not yet implemented. Favorites/Collections remain blocked until that data boundary and cross-account isolation are verified. Delete/batch management remains blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
@@ -147,8 +147,28 @@ Approved behavior:
 
 ### Settings
 **Route:** `/settings`  
-**Status:** PLANNED; temporary route placeholder  
-**Purpose:** Persistent application/account preferences backed by actual requirements; not a dumping ground for workflow/model parameters.
+**Status:** APPROVED — Account Identity Foundation v0.1 / UI-029  
+**Implementation:** `src/app/settings/page.tsx`  
+**Account surface:** `src/features/account/account-settings.tsx`  
+**Session boundary:** `src/lib/supabase/config.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/proxy.ts`, root `proxy.ts`
+
+**Purpose:** Own persistent account/application settings only when backed by real requirements. UI-029 uses Settings for the first real RenderLab account identity surface; it is not a workflow/model parameter dumping ground.
+
+**Approved behavior:**
+- compact email/password sign-in, account creation and sign-out states;
+- Supabase Auth `auth.users.id` is the canonical account identity;
+- maintained Supabase SSR cookie sessions are refreshed through the root Next.js proxy and server identity uses verified claims;
+- public Supabase URL/publishable key may reach browser code; service-role credentials remain server-only;
+- identity does not gate or redesign Create/Library in UI-029;
+- no owner columns, account-scoped media visibility, Favorites/Collections or Delete/batch behavior are implied by this surface.
+
+**Approval evidence:**
+- Account Identity Visual `33111299356` built and exercised an exact run-owned confirmed Supabase user through real Settings sign-in, reload-persistent cookie identity, responsive signed-in state, sign-out and exact cleanup;
+- UI Shell `33111299265`, Create Lifecycle `33111299305`, Library Search `33111299144`, Library History `33111299040`, Library Lifecycle `33111299250`, Library Drag Drop `33111299309`, Media Download `33111299155`, and Media Rename `33111299172` also passed on the shared package-change code head;
+- desktop signed-in and mobile signed-in/signed-out screenshots were visually reviewed without shell hierarchy drift;
+- direct Supabase verification found `0` account CI fixture users after cleanup.
+
+**Still intentionally open:** owner-scoped generation/reference/upload/media enforcement is the next prerequisite before personal Library organization. Other Settings sections remain requirement-driven.
 
 ## Creation Experience Resolution
 - Prompt + Image → Create Image.
@@ -156,7 +176,7 @@ Approved behavior:
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity, UI-027 Library history ordering and UI-028 Library drag/drop upload.
+Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity, UI-027 Library history ordering, UI-028 Library drag/drop upload and UI-029 account identity.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
