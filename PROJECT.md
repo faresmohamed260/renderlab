@@ -126,7 +126,7 @@ Configured Rename verification used real self-cleaning R2-backed generated/uploa
 
 Four refined Viewer screenshots from `33074480356` were visually inspected. The initial edit composition was deliberately refined so Download no longer shifts below the editor. Direct Supabase cleanup verification found `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions.
 
-The lifecycle rerun exposed an older leaked fixture rather than a product regression. Its stale database row and exact R2 object were removed; one-off R2 cleanup run `33075125636` logged successful deletion. The configured Library lifecycle workflow is now serialized with `concurrency: renderlab-library-lifecycle-shared` so shared mutable fixtures cannot overlap across runs.
+Shared lifecycle verification exposed two older leaked same-name fixtures over the course of PR #12 validation; both were unrelated to Rename product behavior. Their database rows and exact R2 objects were removed. Cleanup run `33075125636` deleted the first orphan, and cleanup run `33076888858` deleted and HEAD-verified absence of the second. The temporary cleanup files were removed after each use. The configured Library lifecycle is now hardened in two ways: its workflow is serialized with `concurrency: renderlab-library-lifecycle-shared`, and `verify-library-lifecycle.mjs` targets the exact durable `media-asset` ID returned by its own upload completion while separately asserting the expected human display name. Fixture-name uniqueness is no longer a correctness assumption.
 
 **PR #12 is functionally and visually approved. Merge only after documentation-finalized exact-head checks are green and GitHub still reports it mergeable.**
 
