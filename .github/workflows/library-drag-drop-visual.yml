@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/ensure-r2-browser-cors.mjs"
+      - "scripts/cleanup-library-drag-drop-fixtures.mjs"
       - "scripts/verify-library-drag-drop.mjs"
       - ".github/workflows/library-drag-drop-visual.yml"
       - "components.json"
@@ -75,6 +76,9 @@ jobs:
 
       - name: Reconcile and verify R2 browser upload CORS
         run: node scripts/ensure-r2-browser-cors.mjs
+
+      - name: Clean drag/drop fixture namespace
+        run: node scripts/cleanup-library-drag-drop-fixtures.mjs
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
