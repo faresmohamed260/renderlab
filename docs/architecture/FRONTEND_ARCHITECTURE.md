@@ -20,7 +20,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026. PR #14 / UI-027 adds only URL/server-owned Library chronological direction plus the maintained Dropdown Menu primitive; it does not redesign or introduce organization/destructive schema. Activity and Settings remain placeholders.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`. UI-027 does not redesign or introduce organization/destructive schema. Activity and Settings remain placeholders.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -264,6 +264,8 @@ Rules:
 
 Implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed Library History `33094977896`, UI Shell `33094977929`, Library Search `33094977911`, Library Lifecycle `33094977899`, Media Download `33094977913` after unchanged rerun, Media Rename `33094977895`, Create Lifecycle `33094977825`, and Persistent Media Upload Integration `33094978022`. Direct Supabase cleanup found `0` history fixtures and `0` upload sessions.
 
+Final exact documentation head `cae17cb2850f3a995bbe3d106669ce651e3e0aa1` passed UI Shell `33097006928`, Create Lifecycle `33097006913`, Persistent Media Upload Integration `33097007064`, Library Lifecycle `33097006853`, Library Search `33097007092`, Library History `33097006833`, Media Download `33097006968`, and Media Rename `33097006959`. PR #14 merged as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; merged `main` UI Shell `33097463519` passed.
+
 ## Durable Media Download Flow
 UI-024:
 ```text
@@ -373,7 +375,19 @@ Implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed all eight 
 - Create Lifecycle Visual `33094977825`;
 - Persistent Media Upload Integration `33094978022`.
 
-History screenshots for desktop Oldest, open menu and mobile Newest were visually inspected with no unintended hierarchy drift. Direct Supabase cleanup found `0` history verification assets and `0` upload sessions. Final documentation-head regression is required before PR #14 merge.
+History screenshots for desktop Oldest, open menu and mobile Newest were visually inspected with no unintended hierarchy drift. Direct Supabase cleanup found `0` history verification assets and `0` upload sessions.
+
+Final exact documentation head `cae17cb2850f3a995bbe3d106669ce651e3e0aa1` passed all eight affected gates:
+- UI Shell Validation `33097006928`;
+- Create Lifecycle Visual `33097006913`;
+- Persistent Media Upload Integration `33097007064`;
+- Library Lifecycle Visual `33097006853`;
+- Library Search Visual `33097007092`;
+- Library History Visual `33097006833`;
+- Media Download Visual `33097006968`;
+- Media Rename Visual `33097006959`.
+
+PR #14 merged as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; the push-triggered merged `main` UI Shell `33097463519` passed.
 
 ## Naming Conventions
 - React files: `kebab-case.tsx`
