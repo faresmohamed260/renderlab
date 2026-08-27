@@ -3,12 +3,14 @@ import {
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
   normalizeMediaAssetSearchQuery,
   type MediaAssetKind,
+  type MediaAssetSortOrder,
 } from "@/lib/api/media-assets-contract";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { isR2Configured } from "@/server/storage/r2";
 
 const kinds = new Set<MediaAssetKind>(["image", "video"]);
+const sortOrders = new Set<MediaAssetSortOrder>(["newest", "oldest"]);
 
 function integerParam(value: string | null, fallback: number) {
   if (value == null || value === "") return fallback;
@@ -20,12 +22,15 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const rawKind = url.searchParams.get("kind");
   const kind = rawKind && rawKind !== "all" ? rawKind : undefined;
+  const rawSort = url.searchParams.get("sort");
+  const sort = (rawSort || "newest") as MediaAssetSortOrder;
   const search = normalizeMediaAssetSearchQuery(url.searchParams.get("q"));
   const limit = integerParam(url.searchParams.get("limit"), 24);
   const offset = integerParam(url.searchParams.get("offset"), 0);
 
   if (
     (kind && !kinds.has(kind as MediaAssetKind))
+    || !sortOrders.has(sort)
     || (search && search.length > MEDIA_ASSET_SEARCH_MAX_LENGTH)
     || limit == null
     || offset == null
@@ -47,6 +52,7 @@ export async function GET(request: Request) {
     const result = await listMediaAssets({
       ...(kind ? { kind: kind as MediaAssetKind } : {}),
       ...(search ? { search } : {}),
+      sort,
       limit,
       offset,
     });

@@ -14,8 +14,10 @@ import { Input } from "@/components/ui/input";
 import {
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
   type MediaAssetListKind,
+  type MediaAssetSortOrder,
   type PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
+import { LibrarySortMenu } from "@/features/library/library-sort-menu";
 import { LibraryUploadButton } from "@/features/library/library-upload-button";
 
 const filters: Array<{ value: MediaAssetListKind; label: string }> = [
@@ -24,10 +26,16 @@ const filters: Array<{ value: MediaAssetListKind; label: string }> = [
   { value: "video", label: "Videos" },
 ];
 
-function libraryHref(kind: MediaAssetListKind, searchQuery: string | null, offset = 0) {
+function libraryHref(
+  kind: MediaAssetListKind,
+  searchQuery: string | null,
+  sort: MediaAssetSortOrder,
+  offset = 0,
+) {
   const params = new URLSearchParams();
   if (kind !== "all") params.set("kind", kind);
   if (searchQuery) params.set("q", searchQuery);
+  if (sort !== "newest") params.set("sort", sort);
   if (offset > 0) params.set("offset", String(offset));
   const query = params.toString();
   return query ? `/library?${query}` : "/library";
@@ -89,6 +97,7 @@ export function LibraryView({
   uploadAvailable,
   items,
   kind,
+  sort,
   searchQuery,
   offset,
   limit,
@@ -98,11 +107,17 @@ export function LibraryView({
   uploadAvailable: boolean;
   items: PublicMediaAsset[];
   kind: MediaAssetListKind;
+  sort: MediaAssetSortOrder;
   searchQuery: string | null;
   offset: number;
   limit: number;
   hasMore: boolean;
 }) {
+  const previousDirection = sort === "newest" ? "newer" : "older";
+  const nextDirection = sort === "newest" ? "older" : "newer";
+  const previousLabel = previousDirection === "newer" ? "Newer" : "Older";
+  const nextLabel = nextDirection === "older" ? "Older" : "Newer";
+
   return (
     <section className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
       <div className="flex items-start justify-between gap-4">
@@ -121,18 +136,26 @@ export function LibraryView({
             const active = kind === filter.value;
             return (
               <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
-                <Link href={libraryHref(filter.value, searchQuery)} aria-current={active ? "page" : undefined}>
+                <Link
+                  href={libraryHref(filter.value, searchQuery, sort)}
+                  aria-current={active ? "page" : undefined}
+                >
                   {filter.label}
                 </Link>
               </Button>
             );
           })}
         </nav>
-        <span className="hidden text-xs text-text-muted sm:inline">Newest first</span>
+        <LibrarySortMenu
+          sort={sort}
+          newestHref={libraryHref(kind, searchQuery, "newest")}
+          oldestHref={libraryHref(kind, searchQuery, "oldest")}
+        />
       </div>
 
       <form action="/library" method="get" role="search" className="mt-4 flex w-full max-w-xl items-center gap-2">
         {kind !== "all" ? <input type="hidden" name="kind" value={kind} /> : null}
+        {sort !== "newest" ? <input type="hidden" name="sort" value={sort} /> : null}
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">Search Library</span>
           <Search
@@ -152,7 +175,7 @@ export function LibraryView({
         <Button type="submit" variant="outline">Search</Button>
         {searchQuery ? (
           <Button asChild variant="ghost">
-            <Link href={libraryHref(kind, null)}>Clear</Link>
+            <Link href={libraryHref(kind, null, sort)}>Clear</Link>
           </Button>
         ) : null}
       </form>
@@ -171,7 +194,7 @@ export function LibraryView({
             </EmptyMedia>
             <EmptyTitle>
               {offset > 0
-                ? "No older media on this page"
+                ? `No ${nextDirection} media on this page`
                 : searchQuery
                   ? `No media matches “${searchQuery}”`
                   : kind === "all"
@@ -180,7 +203,7 @@ export function LibraryView({
             </EmptyTitle>
             <EmptyDescription>
               {offset > 0
-                ? "Go back to newer media."
+                ? `Go back to ${previousDirection} media.`
                 : searchQuery
                   ? "Try another name or prompt, or clear the search to browse all saved media."
                   : uploadAvailable
@@ -192,13 +215,13 @@ export function LibraryView({
             <Button asChild variant="secondary">
               <Link
                 href={offset > 0
-                  ? libraryHref(kind, searchQuery, Math.max(0, offset - limit))
+                  ? libraryHref(kind, searchQuery, sort, Math.max(0, offset - limit))
                   : searchQuery
-                    ? libraryHref(kind, null)
+                    ? libraryHref(kind, null, sort)
                     : "/"}
               >
                 {offset > 0 ? <ArrowLeft aria-hidden="true" data-icon="inline-start" /> : null}
-                {offset > 0 ? "Newer media" : searchQuery ? "Clear search" : "Create media"}
+                {offset > 0 ? `${previousLabel} media` : searchQuery ? "Clear search" : "Create media"}
                 {offset === 0 && !searchQuery ? <ArrowRight aria-hidden="true" data-icon="inline-end" /> : null}
               </Link>
             </Button>
@@ -234,17 +257,17 @@ export function LibraryView({
               <div>
                 {offset > 0 ? (
                   <Button asChild variant="outline">
-                    <Link href={libraryHref(kind, searchQuery, Math.max(0, offset - limit))}>
+                    <Link href={libraryHref(kind, searchQuery, sort, Math.max(0, offset - limit))}>
                       <ArrowLeft aria-hidden="true" data-icon="inline-start" />
-                      Newer
+                      {previousLabel}
                     </Link>
                   </Button>
                 ) : null}
               </div>
               {hasMore ? (
                 <Button asChild variant="outline">
-                  <Link href={libraryHref(kind, searchQuery, offset + limit)}>
-                    Older
+                  <Link href={libraryHref(kind, searchQuery, sort, offset + limit)}>
+                    {nextLabel}
                     <ArrowRight aria-hidden="true" data-icon="inline-end" />
                   </Link>
                 </Button>

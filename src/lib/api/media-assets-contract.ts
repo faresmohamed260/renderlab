@@ -2,6 +2,7 @@ import type { CreativeOperation } from "@/lib/capabilities/generation";
 
 export type MediaAssetKind = "image" | "video";
 export type MediaAssetOrigin = "generated" | "uploaded";
+export type MediaAssetSortOrder = "newest" | "oldest";
 
 export const MEDIA_ASSET_SEARCH_MAX_LENGTH = 120;
 export const MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH = 240;

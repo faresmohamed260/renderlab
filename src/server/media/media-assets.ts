@@ -5,6 +5,7 @@ import {
   normalizeMediaAssetSearchQuery,
   type MediaAssetKind,
   type MediaAssetOrigin,
+  type MediaAssetSortOrder,
   type PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
 import type { CreativeOperation } from "@/lib/capabilities/generation";
@@ -149,11 +150,13 @@ export async function renameMediaAsset(assetId: string, requestedDisplayName: st
 export async function listMediaAssets({
   kind,
   search,
+  sort = "newest",
   limit = 24,
   offset = 0,
 }: {
   kind?: MediaAssetKind;
   search?: string | null;
+  sort?: MediaAssetSortOrder;
   limit?: number;
   offset?: number;
 } = {}) {
@@ -164,9 +167,10 @@ export async function listMediaAssets({
     throw new RangeError(`Media search queries may not exceed ${MEDIA_ASSET_SEARCH_MAX_LENGTH} characters.`);
   }
 
+  const direction = sort === "oldest" ? "asc" : "desc";
   const params = new URLSearchParams({
     select: "*",
-    order: "created_at.desc,id.desc",
+    order: `created_at.${direction},id.${direction}`,
     limit: String(safeLimit + 1),
     offset: String(safeOffset),
   });
