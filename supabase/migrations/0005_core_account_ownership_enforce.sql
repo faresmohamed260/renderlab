@@ -33,26 +33,33 @@ begin
 end;
 $$;
 
-create or replace function public.renderlab_enforce_owner_links()
+create or replace function public.renderlab_enforce_media_asset_owner_link()
 returns trigger
 language plpgsql
 set search_path = public
 as $$
 begin
-  if tg_table_name = 'media_assets' and new.generation_job_id is not null then
-    if not exists (
-      select 1 from public.generation_jobs
-      where id = new.generation_job_id and owner_id = new.owner_id
-    ) then
-      raise exception 'media asset generation job must have the same owner';
-    end if;
-  elsif tg_table_name = 'media_upload_sessions' and new.media_asset_id is not null then
-    if not exists (
-      select 1 from public.media_assets
-      where id = new.media_asset_id and owner_id = new.owner_id
-    ) then
-      raise exception 'upload session media asset must have the same owner';
-    end if;
+  if new.generation_job_id is not null and not exists (
+    select 1 from public.generation_jobs
+    where id = new.generation_job_id and owner_id = new.owner_id
+  ) then
+    raise exception 'media asset generation job must have the same owner';
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.renderlab_enforce_upload_session_owner_link()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.media_asset_id is not null and not exists (
+    select 1 from public.media_assets
+    where id = new.media_asset_id and owner_id = new.owner_id
+  ) then
+    raise exception 'upload session media asset must have the same owner';
   end if;
   return new;
 end;
@@ -76,11 +83,11 @@ for each row execute function public.renderlab_reject_owner_change();
 
 create trigger media_assets_owner_link
 before insert or update of generation_job_id, owner_id on public.media_assets
-for each row execute function public.renderlab_enforce_owner_links();
+for each row execute function public.renderlab_enforce_media_asset_owner_link();
 
 create trigger media_upload_sessions_owner_link
 before insert or update of media_asset_id, owner_id on public.media_upload_sessions
-for each row execute function public.renderlab_enforce_owner_links();
+for each row execute function public.renderlab_enforce_upload_session_owner_link();
 
 comment on column public.generation_sources.owner_id is 'Immutable RenderLab account principal that owns this temporary reference source.';
 comment on column public.generation_jobs.owner_id is 'Immutable RenderLab account principal that owns this generation job.';
