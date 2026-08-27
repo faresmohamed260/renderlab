@@ -1,6 +1,12 @@
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { chromium } from "@playwright/test";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  configuredTestAccountIdentity,
+  createConfiguredTestAccount,
+  deleteConfiguredTestAccount,
+  routeLocalAppRequestsWithAccount,
+} from "./lib/configured-test-account.mjs";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -12,6 +18,7 @@ const cleanupOnly = process.argv.includes("--cleanup-only");
 const fixtureToken = process.env.GITHUB_RUN_ID || "local";
 const fixtureFilename = `renderlab-drop-${fixtureToken}-اختبار-画像.png`;
 const fixtureDisplayName = fixtureFilename.replace(/\.[^.]+$/, "");
+const fixtureAccount = configuredTestAccountIdentity("library-drag-drop");
 
 const pngBytes = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAZAAAAEsCAIAAABi1XKVAAAETElEQVR42u3by3GrQBBAUUlFlqRAOATAhgU7hUgAqEp8Buihz9m/Z6un+jLY5fd3Gl4ANfgYASBYAIIFCBaAYAEIFiBYAIIFIFiAYAEIFoBgAYIFIFgAggUIFoBgAQgWIFgAggUgWIBgAQgWgGABggUgWACCBQgWgGABggUgWACCBQgWgGABCBYgWACCBSBYgGABCBaAYAGCBSBYAIIFCBaAYAEIFiBYAIIFIFiAYAEIFoBgAYIFIFgAggUIFoBgAYIFIFgAggUIFoBgAQgWIFgAggUgWIBgAQgWgGABggUgWACCBQgWwG0aI+CIbtz8T/rW2BAsQuZpzX8iYQgWUQq19avoF4JFuE79/erKhWARtFPKhWBRX6eUC8GiylT9/IZlS7CQKtlCsJAq2UKwSJsq2RIspEq2iM7fEqqVT4obFhbYVQs3LNTKZ3fDwrq6auGGhVqZBoKF/TQTr4RYS6+HuGGhVqaEYNlDzEqwsIEmhmBh98wNwbJ1mJ5gYd/MEMHCppkkgmXHME/BwnaZKoKFvTJbBAsQLFwBTBjBwi6ZM4JlizBtwQIQLDzwzRzBsjmYvGABCJaHPOaPYNkWnIJgAQiWBzvOQrCMABAsPNKdCIIFCBYe5jgXwQIQLI9xnI5gAQgWHuDOCMECBAtAsPCu4aQQLECwAAQLbxnOC8ECBAtAsLxf4NQQLECwAAQLQLAAwWI3P7t1dggWIFgAggUgWIBgAQhWKn7N5AQRLECwAAQLQLAAwQIQLADBAgQLQLAABAsQLADBAhAsQLAABAtAsADBYoW+NQMniGABggUgWACCBQgWgGCl49dMzg7BAgQLQLAABAsQLMrxs1unhmABggUgWN4vcF4IFiBYAILlLQMnhWABggUgWN41cEYIFiBYeIA7HQQLQLA8xnEuggUgWB7mOBEECxAsPNKdBYIFCBYe7DgFwcK2mD+CBQgWHvImbwaChc0xcwQLECw88E0bwcIWmTOCZZcwYcECECxcAcwWwbJXmKpgYbvME8HCjpkkgmXTMEPBwr6ZHoKFrTM3BMvuYWKChQ00KwQLe2hKLDRG8KRt7EaTkCo3LGymmSBY2E/TwCuhLc3+eihVbljYWJ8dNyxctaQKNyxS7bBauWHhqiVVCBayJVUIFkmyJVWChWxJFYKFbEkVgkXBCoQtl04hWEQvl04hWEQvl04hWBRox0n9UigEiyvKsiNh8oRgESVhcB5/SwgIFoBgAYIFIFgAggUIFoBgAQgWIFgAggUgWIBgAQgWgGABggUgWACCBQgWgGABCBYgWACCBSBYgGABCBaAYAGCBSBYgGAZASBYAIIFCBaAYAEIFiBYAIIFIFiAYAEIFoBgAYIFIFgAggUIFoBgAQgWIFgAggUgWIBgAQgWgGABggUgWACCBQgWgGABggUgWACCBQgWgGABCBYgWACCBSBYgGABCBaAYAGCBSBYAIIFPNAMNnjReMMTg9AAAAAASUVORK5CYII=",
@@ -21,6 +28,7 @@ const pngBytes = Buffer.from(
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
   SUPABASE_SERVICE_ROLE_KEY: supabaseKey,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -113,6 +121,7 @@ async function cleanupFixture() {
   if (remainingAssets.length) throw new Error(`Drag/drop cleanup left ${remainingAssets.length} matching media asset(s).`);
 
   await rm(fixturePath, { force: true });
+  await deleteConfiguredTestAccount(fixtureAccount);
   console.log(`Cleaned Library drag/drop fixtures filename=${fixtureFilename}.`);
 }
 
@@ -141,9 +150,12 @@ let browser = null;
 let primaryError = null;
 
 try {
+  await cleanupFixture();
+  const account = await createConfiguredTestAccount("library-drag-drop");
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark" });
   const page = await context.newPage();
+  await routeLocalAppRequestsWithAccount(page, baseUrl, account);
   let ticketRequests = 0;
   let completionRequests = 0;
   page.on("request", (request) => {
@@ -203,23 +215,25 @@ try {
   assert(ticketRequests === 1 && completionRequests === 1, `Single-file drop made unexpected upload requests tickets=${ticketRequests} completions=${completionRequests}.`);
 
   const sessionRows = await rows(
-    `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=status,storage_key,media_asset_id,filename,display_name`,
+    `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=status,storage_key,media_asset_id,filename,display_name,owner_id`,
   );
   const session = sessionRows[0];
   assert(session?.status === "completed" && session.media_asset_id === assetId, "Drag/drop upload session did not complete against the durable asset.");
   assert(session.filename === fixtureFilename, "Drag/drop upload session changed the original filename.");
   assert(session.display_name === fixtureDisplayName, "Drag/drop upload session changed the display name.");
+  assert(session.owner_id === account.id, "Drag/drop upload session did not inherit the authenticated account owner.");
   await writeFile(fixturePath, JSON.stringify({ uploadId, assetId, storageKey: session.storage_key }), "utf8");
 
   const matchingSessions = await rows(
-    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,media_asset_id,storage_key`,
+    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,media_asset_id,storage_key,owner_id`,
   );
   const matchingAssets = await rows(
-    `media_assets?original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key`,
+    `media_assets?original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,owner_id`,
   );
   assert(matchingSessions.length === 1, `Single-file drop created ${matchingSessions.length} matching upload sessions.`);
   assert(matchingAssets.length === 1, `Single-file drop created ${matchingAssets.length} matching media assets.`);
   assert(matchingAssets[0]?.id === assetId, "Single-file drop durable asset query did not match the completion asset ID.");
+  assert(matchingSessions[0]?.owner_id === account.id && matchingAssets[0]?.owner_id === account.id, "Drag/drop persistence lost the authenticated account owner.");
 
   const card = page.locator(`a[href="/library/${assetId}"]`);
   await card.waitFor({ state: "visible", timeout: 30_000 });
@@ -239,7 +253,7 @@ try {
   assert((await page.getByRole("link", { name: `Open ${fixtureDisplayName}`, exact: true }).count()) === 1, "Mobile Library duplicated the dropped asset card.");
   await page.screenshot({ path: `${artifactDir}/library-drag-drop-mobile-complete.png`, fullPage: true });
 
-  console.log(`Configured Library drag/drop upload rendered successfully. upload=${uploadId} asset=${assetId}`);
+  console.log(`Configured Library drag/drop upload rendered successfully. owner=${account.id} upload=${uploadId} asset=${assetId}`);
 } catch (error) {
   primaryError = error;
 } finally {
