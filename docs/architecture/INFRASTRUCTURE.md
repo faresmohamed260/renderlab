@@ -24,9 +24,31 @@ Legacy `studio_*` tables remain separate and must not be renamed, repurposed or 
 - `0002_generation_jobs_media_assets.sql` — RenderLab jobs + durable media identity, RLS enabled.
 - `0003_persistent_media_uploads.sql` — applied as `20260827031630 renderlab_persistent_media_uploads`; adds durable origin/name/size fields and server-owned `media_upload_sessions`, RLS enabled.
 
-Do not reapply migration 0003. Search v0.1, Download v0.1 and Rename v0.1 add no database migration.
+Do not reapply migration 0003. Search v0.1, Download v0.1, Rename v0.1, history ordering, drag/drop and Account Identity Foundation v0.1 add no database migration.
 
-Service-role access remains server-only. Rename uses the existing `media_assets.display_name` column and a server-side product route; no browser Supabase credential is introduced.
+Service-role access remains server-only. UI-029 adds public Supabase Auth client configuration only: browser code may receive the project URL plus a publishable key, while service-role credentials remain server-only. Existing RenderLab application-table reads/writes still use the server-side service-role boundary until owner-scoped persistence is implemented in the next ownership slice.
+
+### Account identity boundary — UI-029
+Supabase Auth `auth.users.id` is the canonical RenderLab account principal.
+
+Session architecture:
+```text
+Settings browser
+  -> Supabase Auth email/password sign-in or account creation
+  -> Supabase SSR cookie session
+  -> root Next.js proxy refreshes/rotates cookies
+  -> Server Components/services read verified claims
+  -> RenderLab account identity = claims.sub / auth.users.id
+```
+
+Rules:
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are public browser configuration, not secrets;
+- `SUPABASE_SERVICE_ROLE_KEY` remains server/CI-only and is never used by product browser code;
+- server account identity uses verified Supabase claims rather than trusting an unverified browser-supplied user ID;
+- UI-029 does not yet add owner columns or account-scoped policies to `generation_sources`, `generation_jobs`, `media_assets` or `media_upload_sessions`;
+- Create/Library remain ungated during UI-029; personal organization must not be approved until the next ownership slice threads the verified principal through those records/APIs and verifies cross-account denial.
+
+Configured Account Identity Visual `33111299356` created a run-owned confirmed test user through the server-only Auth admin API, signed in through the actual Settings UI, verified session persistence across reload, signed out and deleted the exact user. Direct verification afterward found no matching account-CI users.
 
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
@@ -171,8 +193,9 @@ Initial submission may try another worker only before a provider call ID is acce
 - Library Search configured lifecycle — `33069004204`; final docs head `33070046205`; PR #10 merged as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; post-merge main `33070215358` passed.
 - Media Download configured lifecycle — `33070792343`; final documentation-head gates passed before PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`.
 - Media Rename configured lifecycle — `33074480356`; refined-head UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, and Library Lifecycle `33074480489` on rerun all passed.
+- Account Identity configured lifecycle — `33111299356`; exact run-owned auth fixture, real Settings sign-in/session persistence/sign-out and cleanup passed.
 
-Search/upload/download/rename configured verifiers do not invoke ComfyUI.
+Search/upload/download/rename/account configured verifiers do not invoke ComfyUI.
 
 ## Studio Compatibility Boundary
 `src/server/generation/studio-compat.ts` is transitional migration/debugging compatibility only, not the preferred production path.
@@ -210,9 +233,13 @@ Product media APIs:
 Generated/uploaded durable media share one public contract and can become generation input through `{ type: "media-asset", id }`. Viewer → Create carries opaque identity + action intent; the server revalidates durable media/capability state.
 
 ## Required Server / CI Environment Variables
-### Supabase
+### Supabase server/private
 - `SUPABASE_URL` = `https://rashyleshocuvpgcooxy.supabase.co`
-- `SUPABASE_SERVICE_ROLE_KEY` — secret, server only
+- `SUPABASE_SERVICE_ROLE_KEY` — secret, server/CI only
+
+### Supabase public auth configuration
+- `NEXT_PUBLIC_SUPABASE_URL` = `https://rashyleshocuvpgcooxy.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — public publishable project key; safe for browser configuration, not a service credential
 
 ### R2
 - `R2_ACCOUNT_ID`
@@ -229,11 +256,13 @@ R2 credentials currently require Admin Read & Write because configured browser u
 
 ## Security Rules
 - Never commit service-role/R2/provider credentials.
-- Never expose server credentials through `NEXT_PUBLIC_*`.
-- Keep RLS enabled on RenderLab tables.
+- Never expose server credentials through `NEXT_PUBLIC_*`; only public Supabase URL/publishable-key configuration belongs there.
+- Supabase Auth `auth.users.id` is the only approved account principal for UI-029; do not trust a browser-supplied owner ID.
+- UI-029 account identity is not equivalent to media/job isolation. Until owner scoping lands, do not build Favorites/Collections or claim account-private Library state.
+- Keep RLS enabled on RenderLab tables; the next ownership slice must add owner-aware data contracts/policies only after repository migration/API changes are defined and verified.
 - Direct browser uploads use short-lived signed URLs + exact-origin CORS.
 - Durable reads/downloads use short-lived signed R2 GETs behind opaque product routes.
-- Rename uses a server-side service-role metadata mutation and never exposes Supabase credentials to the browser.
+- Rename uses a server-side service-role metadata mutation and never exposes service-role credentials to the browser.
 - Do not persist/expose raw signed URLs as product links.
 - Worker/provider routing remains server-owned.
 - Shared resources do not authorize legacy Saga mutation/coupling.
@@ -249,10 +278,12 @@ Key workflows:
 - `verify-library-search.mjs` + `library-search-visual.yml`
 - `verify-media-download.mjs` + `media-download-visual.yml`
 - `verify-media-rename.mjs` + `media-rename-visual.yml`
+- `verify-account-identity.mjs` + `account-identity-visual.yml` — exact run-owned confirmed Auth user, real Settings session lifecycle, responsive screenshots and exact cleanup
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
 ## Next Infrastructure Work
-1. Add any future public upload origin explicitly to R2 CORS before deployment/use.
-2. Remove transitional Studio compatibility when no migration/debugging need remains.
-3. Keep Library/Activity against RenderLab-owned `media_assets`/`generation_jobs`, never legacy `studio_*`.
-4. Preserve conservative duplicate-avoidance if worker routing evolves.
+1. Owner-scope RenderLab generation/reference/upload/media records and thread verified Supabase Auth identity through product APIs/services; verify cross-account denial before personal organization.
+2. Add any future public upload origin explicitly to R2 CORS before deployment/use.
+3. Remove transitional Studio compatibility when no migration/debugging need remains.
+4. Keep Library/Activity against RenderLab-owned `media_assets`/`generation_jobs`, never legacy `studio_*`.
+5. Preserve conservative duplicate-avoidance if worker routing evolves.
