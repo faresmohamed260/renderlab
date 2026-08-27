@@ -36,7 +36,8 @@ Approved behavior:
 **Route:** `/`  
 **Status:** MIGRATING  
 **Implementation:** `src/features/create/create-workspace.tsx`  
-**Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`  
+**Supporting implementation:** `src/features/create/create-advanced-panel.tsx`  
+**Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`  
 **Purpose:** Start and continue creative operations from one task-oriented workspace.  
 **Initial operations:** Create Image, Edit Image, Create Video, Animate Image.
 
@@ -51,20 +52,26 @@ Approved behavior:
 - Image + reference → Edit and Video + reference → Animate context resolution;
 - typed `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]` boundaries;
 - real RenderLab job polling without fabricated percentage progress;
+- bounded retry/backoff for transient client polling/network failures;
 - RenderLab-owned `generation_jobs` + `media_assets` persistence and private media-delivery APIs;
 - native Create Image end-to-end generation/persistence;
 - native reference-driven Edit Image end-to-end generation/persistence (GitHub run `33021843503`);
-- native Create Video and native reference-driven Animate Image end-to-end generation/persistence (GitHub run `33021977765`; the `Verify Create Video and Animate Image` step completed successfully);
-- persisted `media_assets` result loading after successful jobs through the RenderLab media metadata/content API boundary;
-- real image/video result rendering below the composer; persisted-result implementation passed production build + Playwright shell checks in PR #1 before merge;
+- native Create Video and native reference-driven Animate Image end-to-end generation/persistence (GitHub run `33021977765`);
+- persisted `media_assets` result loading and real image/video rendering after successful jobs;
+- capability-derived **Edit** and **Animate** continuation actions on persisted image results;
+- durable result reuse through opaque `media-asset` input identity, live-verified in GitHub run `33027460976` (`Create Image → persisted asset → Edit Image`) with fixture cleanup;
+- conservative poll-time worker reassignment: only explicit credit exhaustion or explicit worker-unavailable evidence may reassign; generic 429/5xx/network ambiguity does not trigger duplicate-risk resubmission. Post-merge live regression run `33027861292` succeeded;
+- compact Advanced disclosure using normalized Radix Collapsible rather than a bespoke disclosure mechanic;
+- Advanced values from verified capability definitions: negative prompt, seed, steps, guidance, plus video-only frame rate;
+- separate Image/Video Advanced drafts and reset-to-default behavior;
+- Advanced production build, behavior/API tests, and reviewed desktop/mobile screenshots in GitHub run `33030364272` before PR #6 merge;
 - production build + responsive Playwright/API validation.
 
 **Still open before approval:**
-- capability-derived continuation actions on persisted results;
-- bounded retry/backoff for transient client polling failures (implementation is under validation in PR #2; do not treat complete until merged/green);
-- safe poll-time reassignment semantics without duplicate-generation risk;
-- Advanced controls from verified capability definitions;
-- final responsive review with the real persisted-result lifecycle visible.
+- final responsive review of a **configured real generation → persisted result → continuation** lifecycle visible inside Create;
+- any fixes revealed by that real-lifecycle rendered review.
+
+Studio compatibility removal is an infrastructure/migration cleanup item and should not be confused with Create's visual approval gate.
 
 **Accepted design direction:**
 - one focused workspace rather than separate Image/Edit/Video/Animate screens;
@@ -72,12 +79,14 @@ Approved behavior:
 - compatible reference changes operation context automatically;
 - essential controls show useful current values such as `1:1`, `16:9`, `5 s`;
 - technical/model-specific controls remain contextual or Advanced;
+- Advanced remains collapsed by default and uses maintained disclosure mechanics;
 - runtime states derive from real asynchronous state; no fake progress;
-- result is complete only after durable persistence.
+- result is complete only after durable persistence;
+- continuation actions are capability-derived and operate on durable product media identities.
 
 **Default controls:** Prompt, reference input, Image/Video, operation-specific essential values, Generate.  
-**Contextual controls:** attached reference context/removal/replacement, video duration/aspect, other supported task-relevant controls.  
-**Advanced controls:** seed, negative prompt, steps/guidance where genuinely useful, frame rate, and other deliberately advanced tuning.  
+**Contextual controls:** attached reference context/removal/replacement, video duration/aspect, supported continuation actions.  
+**Advanced controls:** negative prompt, seed, steps, guidance, video frame rate, and only future parameters deliberately promoted from verified capability definitions.  
 **Internal:** provider, worker, ecosystem, R2 key, workflow graph/node IDs, failover bookkeeping.  
 **Do not change:** Do not turn Create into a generic ComfyUI parameter form or wire fake behavior merely to make it look complete.
 
@@ -103,9 +112,9 @@ Approved behavior:
 
 ## Creation Experience Resolution
 - Prompt + Image → Create Image.
-- Prompt + ready image reference + Image → Edit Image.
+- Prompt + ready image reference/media asset + Image → Edit Image.
 - Prompt + Video, no reference → Create Video.
-- Prompt + ready image reference + Video → Animate Image.
+- Prompt + ready image reference/media asset + Video → Animate Image.
 
 Current interaction/runtime decisions are documented in UI-015 through UI-019.
 
