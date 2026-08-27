@@ -22,7 +22,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - [x] Establish design tokens, component sourcing policy and repository-backed design workflow.
 - [x] Establish application-shell direction and Penpot/open-SVG design handoff.
 
-### Maintained primitive foundation — PR #13 / UI-026
+### Maintained primitive foundation — merged PR #13 / UI-026
 This is foundation maintenance, not a product redesign or new Phase 4 media capability.
 
 - [x] Configure shadcn `radix-nova` and consolidate conventional visible controls into `src/components/ui` maintained shadcn/Radix wrappers.
@@ -41,9 +41,13 @@ This is foundation maintenance, not a product redesign or new Phase 4 media capa
 - [x] Final-code UI Shell and Library lifecycle desktop/mobile screenshots visually inspected; no unintended hierarchy/layout drift found.
 - [x] Library lifecycle `33088086872` verified real browser Upload → Library → Viewer → Edit continuation, Image radio initialization, 400×300 media geometry and self-cleanup.
 - [x] Documentation-finalized candidate head `ba8199b49d4576dc5495779f8e84812786c5b586` passed UI Shell `33089332190`, Create Lifecycle `33089332135`, Library Search `33089333557`, Library Lifecycle `33089332001`, Media Download `33089332087`, and Media Rename `33089332021`.
-- [ ] Merge PR #13 and verify merged `main`.
+- [x] Final exact PR head `89dc69e394bf467227e0131432c301050d718999` passed UI Shell `33089808029`, Create Lifecycle `33089808086`, Library Search `33089807606`, Library Lifecycle `33089807890`, Media Download `33089807786`, and Media Rename `33089807776`.
+- [x] Treat the first Create Lifecycle attempt on the final head as runner infrastructure failure only: Playwright dependency installation hit a transient Microsoft Ubuntu apt-repository 403 before browser execution; unchanged attempt 2 passed.
+- [x] Direct pre-merge cleanup verified `0` upload sessions, no recent RenderLab-named test media assets and no remaining configured Create lifecycle test job.
+- [x] Merge PR #13 as `5953934d5f67c16304be7493eda27c88e24c02cc`.
+- [x] Verify merged `main`: UI Shell `33092354072` and Reference Upload Integration `33092353971` passed.
 
-**Maintained primitive foundation status: `APPROVED FOR MERGE`.** Final tracker-only exact-head CI is required before the merge operation; no further product/code change is planned.
+**Maintained primitive foundation status: `APPROVED` and merged.**
 
 ## Phase 2 — Application Shell
 - [x] Scaffold the fresh application.
@@ -190,9 +194,7 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
 **Completed product slice:** Durable Media Rename v0.1, merged PR #12 as `d76f0ce30502e2aff2384dcd168f07b2184768a4`.  
-**Current foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor is `APPROVED FOR MERGE`; documentation-finalized candidate `ba8199b49d4576dc5495779f8e84812786c5b586` passed all six affected workflows.  
-**Verified product/code head:** `36ee8e8eb80645d1389afa749a36b493e2abbb61` — six affected gates green, real Upload → Viewer → Create continuation green, responsive screenshot review clean, fixture cleanup successful.  
-**Remaining before merge:** final exact-head CI after this tracker-only approval update, then shared-resource cleanup verification.  
+**Completed foundation maintenance:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc` after final exact-head six-gate regression coverage, clean fixture verification, responsive review and green post-merge `main` shell/reference-upload checks.  
 **Next product slice:** select one remaining history/organization/destructive-management need only after its RenderLab-owned contract is explicit.
 
 ## Session Handoff Rule
