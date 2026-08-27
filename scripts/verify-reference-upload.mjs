@@ -67,7 +67,7 @@ async function supabase(path, init = {}) {
 }
 
 async function cleanupIntegrationFixtures() {
-  const query = `generation_sources?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key`;
+  const query = `generation_sources?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key`;
   const response = await supabase(query);
   if (!response.ok) throw new Error(`Could not query integration fixtures (${response.status}).`);
   const fixtures = await response.json();
@@ -76,12 +76,17 @@ async function cleanupIntegrationFixtures() {
     if (fixture.storage_key) {
       await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: fixture.storage_key })).catch(() => {});
     }
-    const deletion = await supabase(`generation_sources?id=eq.${encodeURIComponent(fixture.id)}`, { method: "DELETE" });
+    const deletion = await supabase(
+      `generation_sources?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&id=eq.${encodeURIComponent(fixture.id)}`,
+      { method: "DELETE" },
+    );
     if (!deletion.ok) throw new Error(`Could not delete integration fixture row (${deletion.status}).`);
   }
 
   await deleteConfiguredTestAccount(fixtureAccount);
-  if (fixtures.length) console.log(`Cleaned ${fixtures.length} stale/current reference integration fixture(s).`);
+  if (fixtures.length) {
+    console.log(`Cleaned ${fixtures.length} reference integration fixture(s) for owner=${fixtureAccount.id}.`);
+  }
 }
 
 console.log(`Checking RenderLab reference upload at ${baseUrl}`);
