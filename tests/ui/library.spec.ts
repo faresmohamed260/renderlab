@@ -52,7 +52,8 @@ test("Create rejects malformed Library continuation URLs without losing the defa
 
   await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "That continuation link is invalid." })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Image", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("radiogroup", { name: "Output type" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Image", exact: true })).toBeChecked();
   await expect(page.getByAltText("Reference preview")).toHaveCount(0);
 });
 
