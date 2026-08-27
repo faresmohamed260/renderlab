@@ -68,7 +68,15 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Durable generated and uploaded media share RenderLab `media_assets`, product APIs and opaque `media-asset` identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
-Do not redesign these approved surfaces merely because new media capabilities are added.
+### Active product slice
+- Core Account Ownership v0.1 / UI-030 is **IN PROGRESS** on draft PR #17.
+- The owner-aware product implementation passed configured two-account build/isolation run `33115683962` on exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b`.
+- Product `src/` code and ownership migrations have not changed after that passing ownership SHA; subsequent branch changes are verifier/workflow/test/documentation hardening.
+- Shared Supabase has the compatible prepare migration `20260827203604 renderlab_core_account_ownership_prepare` applied. `0005_core_account_ownership_enforce.sql` is staged but not applied.
+- Current exact-head GitHub-hosted jobs cannot execute step 1 (`steps: null`, no job log), and the same runner-start failure reproduces when rerunning a previously successful merged-main UI Shell job. PR #17 therefore stays draft until exact-head hosted execution is available again.
+- Do not start Favorites/Collections, Delete/batch, or another Phase 4 product slice while UI-030 is incomplete.
+
+Do not redesign approved surfaces merely because new media capabilities or ownership enforcement are added.
 
 ## Maintained UI Primitive Contract
 UI-026 makes maintained conventional controls a repository-enforced frontend foundation rule.
@@ -98,6 +106,24 @@ UI-029 establishes a real RenderLab account principal while deliberately leaving
 
 Final exact PR head `55a5df4351b5f9f23bde7dc9b2e73213481dd9e2` passed Account Identity `33112405837`, UI Shell `33112405863`, Create Lifecycle `33112405840`, Library Search `33112405831`, Library History `33112405838`, Library Lifecycle `33112405858`, Library Drag Drop `33112405827`, Media Download `33112405889`, and Media Rename `33112405850`. Account Identity created one run-owned confirmed Supabase user through the server-only admin API, signed in through the real Settings form, verified cookie persistence across reload, rendered desktop/mobile signed-in states, signed out, rendered the mobile signed-out state and deleted the exact fixture. Direct final cleanup found `0` account CI users and zero shared Library drag/drop/lifecycle fixtures. PR #16 merged as `bcb20365db102252db51263968de96fc795be518`; merged `main` UI Shell `33113289145` and Reference Upload Integration `33113289156` both passed.
 
+## Core Account Ownership v0.1 Contract
+UI-030 owner-scopes the existing core persistence model without introducing a parallel account-media system.
+
+- Supabase Auth `auth.users.id` / verified `claims.sub` is the canonical owner identity.
+- `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions` carry `owner_id -> auth.users.id ON DELETE RESTRICT`.
+- Raw core tables remain server-owned: RLS stays enabled, `anon`/`authenticated` have no direct table grants, and product routes/services use the server-only service role after resolving verified account context.
+- Private media list/read/rename/content/thumbnail/download, upload ticket/completion, reference ticket/completion, generation submission/polling and generation input resolution are owner-scoped.
+- New pending/durable records receive the authenticated owner; generated output media inherits the generation job owner.
+- Foreign opaque media/job/upload/reference IDs resolve like ordinary not-found records; ownership is not disclosed.
+- Create may hold a signed-out draft, but persistent upload/generation actions require a verified non-anonymous account.
+- The prepare migration is deliberately nullable for rolling deployment. `0005` is the later enforcement step: it rejects unowned rows, makes owner non-null/immutable, and adds same-owner relational guards.
+- `0005` must not be applied before the owner-aware application code is safely merged/live and a final no-unowned-row audit passes.
+- Configured fixtures are isolated by deterministic test owner; cleanup reconstructs DB/R2 state by owner, deletes in dependency order, then removes the Auth fixture. Active workflows must not perform namespace-wide service-role deletion across owners.
+
+Passing product evidence: Account Ownership `33115683962` built and started the configured app and passed two-account isolation on exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b`. Current verifier/workflow hardening remains unexecuted because GitHub-hosted jobs fail before step 1 even for previously green merged-main code. This is a validation availability blocker, not permission to waive the final exact-head gate.
+
+**Core Account Ownership v0.1 status: `IN PROGRESS`; PR #17 remains draft and `0005` remains unapplied.**
+
 ## Persistent Media Upload Contract
 UI-022 defines the approved durable upload model.
 
@@ -118,7 +144,8 @@ UI-028 adds a second interaction path into UI-022 without changing persistence.
 - Exactly one PNG/JPEG/WebP image up to 25 MB is accepted per drop; multi-file drops fail locally before ticket creation.
 - Picker and drop use the same feature-owned `library-upload-client.ts` transaction: upload ticket → signed R2 PUT → completion → durable `media_assets` promotion.
 - Success refreshes the server-owned Library and announces completion; errors stay local. No global media store or toast framework is introduced.
-- Configured verification is serialized with the shared Library upload fixture lock, uses run-unique fixtures, asserts exactly one ticket/completion/session/asset/card, and cleans test fixture namespaces before visual review.
+- Configured verification is serialized with the shared Library upload fixture lock, uses run-unique fixtures, and asserts exactly one ticket/completion/session/asset/card.
+- Under UI-030 configured verification cleanup is additionally owner-scoped; the active Drag Drop workflow no longer runs namespace-wide destructive cleanup across owners.
 - Drag/drop adds no schema migration, account/organization state, Delete/batch framework or new R2/CORS contract.
 
 Final exact PR head `ddb522ad71615e8c489043c54581ca78f8a3330a` passed UI Shell `33109026794`, Library Search `33109026806`, Library History `33109026871`, Library Drag Drop `33109026739`, and Library Lifecycle `33109026758`. Drag Drop `33109026739` verified pre-run namespace cleanup, real DataTransfer upload through ticket → signed R2 PUT → completion, exact one session/asset/card, and post-run cleanup using the run-unique fixture `renderlab-drop-33109026739-اختبار-画像.png`. Desktop drag-active/completed and mobile completed screenshots were re-reviewed with no hierarchy drift. Direct Supabase cleanup after the exact-head suite found `0` drag/drop sessions, `0` drag/drop assets, `0` legacy lifecycle sessions and `0` legacy lifecycle assets. PR #15 merged as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; push-triggered merged `main` UI Shell `33109435978` passed.
@@ -179,7 +206,7 @@ Implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed Library Hi
 
 Final exact documentation head `cae17cb2850f3a995bbe3d106669ce651e3e0aa1` passed UI Shell `33097006928`, Create Lifecycle `33097006913`, Persistent Media Upload Integration `33097007064`, Library Lifecycle `33097006853`, Library Search `33097007092`, Library History `33097006833`, Media Download `33097006968`, and Media Rename `33097006959`. PR #14 merged as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; the merged `main` UI Shell run `33097463519` passed.
 
-Account identity now exists under UI-029, but Favorites/Collections remain deferred until RenderLab owner-scopes the core generation/reference/upload/media records and verifies cross-account isolation; do not encode them as global durable-media flags. Delete remains deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
+UI-030 is now the active prerequisite for personal organization. Favorites/Collections remain deferred until its owner-scoped boundary is fully enforced; do not encode them as global durable-media flags. Delete remains deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
 
 ## R2 Browser CORS State
 The admin-capable R2 access-key credentials manage the exact-origin `renderlab-browser-uploads` rule through the S3 API for:
@@ -193,13 +220,15 @@ Download uses product-route → signed-R2 top-level GET navigation. Rename is a 
 If a future user-facing production origin changes, add that exact origin before serving direct browser uploads there. Do not use broad wildcard CORS or replace direct-to-R2 transfers with an application-server proxy merely for convenience.
 
 ## Still Open in Phase 4
-Completed upload/search/download/rename/history ordering/drag-drop plus account identity do **not** approve broader organization or destructive behavior. Still open, in order:
-- owner-scope `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions`; thread the verified account principal through all relevant server APIs/services and verify cross-account denial;
-- favorites/collections or another personal organization model after that owner-scoped boundary is verified;
+Core account ownership / UI-030 is the active Phase 4 slice and must finish before any other product slice is selected. Remaining work, in order:
+- restore executable GitHub-hosted exact-head validation for PR #17, rerun the configured suite, inspect fresh artifacts and re-audit shared cleanup;
+- merge and safely make the owner-aware application code live only after that gate passes;
+- recheck for unowned rows, then apply and verify `0005_core_account_ownership_enforce.sql` (`NOT NULL`, owner immutability, same-owner relational guards);
+- favorites/collections or another personal organization model only after UI-030 is fully enforced;
 - delete and batch management after durable storage/reference/recovery semantics are explicit;
 - other Library interaction enhancements only when separately justified.
 
-The next slice must define a RenderLab-owned ownership contract before implementation. Do not infer Saga organization/destructive-action schemas automatically.
+Do not infer Saga organization/destructive-action schemas automatically. Do not waive the ownership rollout order merely because current GitHub-hosted jobs are unavailable.
 
 ## Infrastructure Cleanup Still Open
 - Remove the transitional Studio compatibility adapter once no migration/debugging requirement depends on it.
