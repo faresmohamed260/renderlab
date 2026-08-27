@@ -1,12 +1,33 @@
 name: Video Generation Integration
 
 on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/verify-video-generation.mjs"
+      - "src/lib/supabase/**"
+      - "src/server/generation/**"
+      - "src/server/media/**"
+      - "src/app/api/generation/**"
+      - "src/app/api/media/assets/**"
+      - "src/app/api/assets/reference/**"
+      - "supabase/migrations/0004_core_account_ownership_prepare.sql"
+      - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - ".github/workflows/video-generation-integration.yml"
   push:
     branches: [main]
     paths:
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-video-generation.mjs"
+      - "src/lib/supabase/**"
+      - "src/server/generation/**"
+      - "src/server/media/**"
+      - "src/app/api/generation/**"
+      - "src/app/api/media/assets/**"
+      - "src/app/api/assets/reference/**"
+      - "supabase/migrations/**"
       - ".github/workflows/video-generation-integration.yml"
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,13 +39,18 @@ jobs:
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Validate shared-resource secrets
         shell: bash
         run: |
@@ -33,24 +59,38 @@ jobs:
             if [ -z "${!name}" ]; then echo "::error::$name is not configured for RenderLab."; missing=1; fi
           done
           exit "$missing"
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: package.json
-      - run: npm install --no-audit --no-fund
-      - run: npm run build
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
       - name: Start configured application
         run: |
           npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
+          echo $! > /tmp/renderlab-next.pid
           for i in {1..60}; do
             if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/renderlab-next.log
           exit 1
-      - name: Verify Create Video and Animate Image
+
+      - name: Verify Create Video and Animate Image ownership
         run: node scripts/verify-video-generation.mjs
+
+      - name: Cleanup video ownership fixtures
+        if: always()
+        run: node scripts/verify-video-generation.mjs --cleanup-only
+
       - name: Print server log on failure
         if: failure()
         run: cat /tmp/renderlab-next.log || true
