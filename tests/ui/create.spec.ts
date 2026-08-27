@@ -61,6 +61,7 @@ test("Advanced controls use progressive disclosure and preserve per-output draft
   await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("12");
   await expect(page.getByRole("button", { name: "Image", exact: true })).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByRole("button", { name: "Video", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.waitForTimeout(200);
 
   await page.screenshot({ path: "artifacts/create-desktop-advanced-video.png", fullPage: true });
 });
