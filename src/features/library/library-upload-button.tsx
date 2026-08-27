@@ -1,8 +1,10 @@
 "use client";
 
-import { LoaderCircle, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import type {
   CompleteMediaUploadResponse,
   CreateMediaUploadTicketResponse,
@@ -105,25 +107,12 @@ export function LibraryUploadButton() {
           if (file) void upload(file);
         }}
       />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {uploading ? (
-          <LoaderCircle aria-hidden="true" className="animate-spin" size={17} />
-        ) : (
-          <Upload aria-hidden="true" size={17} />
-        )}
+      <Button type="button" size="lg" onClick={() => inputRef.current?.click()} disabled={uploading}>
+        {uploading ? <Spinner data-icon="inline-start" /> : <Upload aria-hidden="true" data-icon="inline-start" />}
         {uploading ? "Uploading" : "Upload"}
-      </button>
-      {message ? (
-        <p className="text-xs text-text-muted" role="status">{message}</p>
-      ) : null}
-      {error ? (
-        <p className="max-w-64 text-right text-xs text-danger" role="alert">{error}</p>
-      ) : null}
+      </Button>
+      {message ? <p className="text-xs text-text-muted" role="status">{message}</p> : null}
+      {error ? <p className="max-w-64 text-right text-xs text-danger" role="alert">{error}</p> : null}
     </div>
   );
 }
