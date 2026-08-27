@@ -25,9 +25,19 @@ type PublicMediaAsset = {
   thumbnailUrl: string | null;
 };
 
+const maxPollRetries = 5;
+
 function nextValue<T>(values: readonly T[], current: T) {
   const currentIndex = values.indexOf(current);
   return values[(currentIndex + 1) % values.length];
+}
+
+function pollRetryDelay(attempt: number) {
+  return Math.min(2000 * 2 ** Math.max(0, attempt - 1), 15000);
+}
+
+function isRetryablePollStatus(status: number) {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
 async function readImageDimensions(file: File) {
@@ -78,6 +88,21 @@ export function CreateWorkspace({
 
     let cancelled = false;
     let timeoutId: number | undefined;
+    let transientFailures = 0;
+
+    function schedulePoll(delay: number) {
+      timeoutId = window.setTimeout(poll, delay);
+    }
+
+    function scheduleRetry(message: string) {
+      transientFailures += 1;
+      if (transientFailures > maxPollRetries) {
+        setError(`${message} Tracking paused after repeated connection failures. Your generation may still be running.`);
+        return;
+      }
+      setError(`Connection interrupted while checking generation status. Retrying automatically (${transientFailures}/${maxPollRetries}).`);
+      schedulePoll(pollRetryDelay(transientFailures));
+    }
 
     async function poll() {
       try {
@@ -93,26 +118,32 @@ export function CreateWorkspace({
 
         if (cancelled) return;
         if (!response.ok || !payload?.ok) {
-          setError(
+          const message =
             payload && !payload.ok && payload.error?.message
               ? payload.error.message
-              : "Generation status could not be updated. Your work is unchanged.",
-          );
+              : "Generation status could not be updated.";
+          if (isRetryablePollStatus(response.status)) {
+            scheduleRetry(message);
+            return;
+          }
+          setError(`${message} Your work is unchanged.`);
           return;
         }
 
+        transientFailures = 0;
+        setError(null);
         setJob(payload.job);
         if (!isTerminalJob(payload.job)) {
-          timeoutId = window.setTimeout(poll, 2000);
+          schedulePoll(2000);
         }
       } catch {
         if (!cancelled) {
-          setError("Generation status could not be updated. Your work is unchanged.");
+          scheduleRetry("Generation status could not be updated.");
         }
       }
     }
 
-    timeoutId = window.setTimeout(poll, 1200);
+    schedulePoll(1200);
     return () => {
       cancelled = true;
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
