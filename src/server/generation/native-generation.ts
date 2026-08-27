@@ -55,6 +55,37 @@ type JobRow = {
 
 type InputBytes = { bytes: Buffer; contentType: string; filename: string };
 
+type WorkerFailureClassification = {
+  retryable: boolean;
+  safeToReassign: boolean;
+  kind: "credit_exhausted" | "unavailable" | "failed";
+  code: "WORKER_CREDIT_EXHAUSTED" | "WORKER_UNAVAILABLE" | "PROVIDER_FAILED";
+};
+
+const maxPollReassignmentAttempts = 3;
+const creditPatterns = [
+  "credit",
+  "credits",
+  "quota",
+  "budget",
+  "billing",
+  "payment",
+  "insufficient",
+  "spending limit",
+  "spend limit",
+  "workspace budget",
+  "out of funds",
+  "balance",
+];
+const explicitUnavailablePatterns = [
+  "workspace is disabled",
+  "workspace disabled",
+  "disabled workspace",
+  "temporarily unavailable",
+  "app is stopped",
+  "app stopped",
+];
+
 const grayPng = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAATUlEQVR42u3PQQ0AAAgEIDX5RTeFDzdoQCepz6aeExAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQELi3oiwCAJt186UAAAAASUVORK5CYII=",
   "base64",
@@ -211,14 +242,40 @@ async function errorBody(response: Response) {
   try { return await response.json() as Record<string, unknown>; } catch { return {}; }
 }
 
-function failureKind(status: number, body: Record<string, unknown>) {
-  const text = [body.error, body.detail, body.errorCode, body.code, body.workerState, body.worker_state]
+function workerFailureText(body: Record<string, unknown>) {
+  return [body.error, body.detail, body.errorCode, body.code, body.workerState, body.worker_state]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
-  if (status === 402 || /credit|quota|budget|billing|payment|insufficient|balance/.test(text)) return "credit_exhausted";
-  if (status === 429 || status >= 500 || /unavailable|disabled|stopped/.test(text)) return "unavailable";
-  return "failed";
+}
+
+function classifyWorkerFailure(status: number, body: Record<string, unknown>): WorkerFailureClassification {
+  const text = workerFailureText(body);
+  const explicitState = String(body.workerState || body.worker_state || "").trim().toLowerCase();
+  const explicitCode = String(body.errorCode || body.code || "").trim().toUpperCase();
+  const credit = status === 402
+    || explicitState === "credit_exhausted"
+    || explicitCode === "WORKER_CREDIT_EXHAUSTED"
+    || creditPatterns.some((pattern) => text.includes(pattern));
+  if (credit) {
+    return { retryable: true, safeToReassign: true, kind: "credit_exhausted", code: "WORKER_CREDIT_EXHAUSTED" };
+  }
+
+  const explicitUnavailable = explicitState === "unavailable"
+    || explicitCode === "WORKER_UNAVAILABLE"
+    || explicitUnavailablePatterns.some((pattern) => text.includes(pattern));
+  if (explicitUnavailable) {
+    return { retryable: true, safeToReassign: true, kind: "unavailable", code: "WORKER_UNAVAILABLE" };
+  }
+
+  if (status === 429 || status >= 500) {
+    return { retryable: true, safeToReassign: false, kind: "unavailable", code: "WORKER_UNAVAILABLE" };
+  }
+  return { retryable: false, safeToReassign: false, kind: "failed", code: "PROVIDER_FAILED" };
+}
+
+function failureKind(status: number, body: Record<string, unknown>) {
+  return classifyWorkerFailure(status, body).kind;
 }
 
 async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
@@ -360,6 +417,110 @@ async function fetchPoster(worker: GenerationWorker, callId: string) {
   }
 }
 
+function requestFromJobRow(row: JobRow): GenerationRequest {
+  const output = row.parameters.output as GenerationRequest["output"] | undefined;
+  const advanced = row.parameters.advanced as GenerationRequest["advanced"] | undefined;
+  if (!output?.aspectRatio) throw new Error("Stored generation request is missing its output settings.");
+  return {
+    prompt: row.prompt,
+    output: { ...output, kind: row.output_kind },
+    inputs: Array.isArray(row.inputs) ? row.inputs : [],
+    ...(advanced ? { advanced } : {}),
+  };
+}
+
+function pollReassignmentAttemptCount(row: JobRow) {
+  return (row.failover_history || []).filter((entry) => entry.phase === "poll-reassign-attempt").length;
+}
+
+function attemptedWorkerIds(row: JobRow) {
+  const ids = new Set<string>();
+  if (row.worker_id) ids.add(row.worker_id);
+  for (const entry of row.failover_history || []) {
+    for (const key of ["workerId", "fromWorkerId", "toWorkerId"] as const) {
+      const value = entry[key];
+      if (typeof value === "string" && value) ids.add(value);
+    }
+  }
+  return ids;
+}
+
+async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification) {
+  if (!failure.safeToReassign || pollReassignmentAttemptCount(row) >= maxPollReassignmentAttempts) return null;
+
+  const request = requestFromJobRow(row);
+  const workflow = workflowFor(request);
+  if (workflow.id !== row.workflow_id || workflow.ecosystem !== row.ecosystem) {
+    throw new Error("Stored generation workflow no longer matches the job routing contract.");
+  }
+
+  const sources = await resolveInputs(request);
+  const excluded = attemptedWorkerIds(row);
+  const candidate = workersForEcosystem(workflow.ecosystem).find((worker) => !excluded.has(worker.id));
+  if (!candidate) return null;
+
+  const at = new Date().toISOString();
+  const attemptEntry = {
+    phase: "poll-reassign-attempt",
+    fromWorkerId: row.worker_id,
+    workerId: candidate.id,
+    reason: failure.kind,
+    code: failure.code,
+    at,
+  };
+  const attempted = await patchJob(row.id, {
+    failover_history: [...(row.failover_history || []), attemptEntry],
+  });
+
+  let response: Response;
+  try {
+    response = await fetch(`${candidate.gatewayUrl}${workflow.submitPath}`, {
+      method: "POST",
+      body: buildForm(request, workflow, sources),
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("Standby reassignment could not be confirmed, so RenderLab will not retry that worker automatically.");
+  }
+
+  if (!response.ok) {
+    const body = await errorBody(response);
+    throw new Error(String(body.error || body.detail || `Standby worker rejected reassignment (${response.status}).`));
+  }
+
+  const payload = await response.json().catch(() => ({})) as { call_id?: string; worker_state?: string; workerState?: string };
+  if (!payload.call_id) {
+    throw new Error("Standby worker did not return a call ID; RenderLab will not retry the ambiguous reassignment automatically.");
+  }
+
+  return patchJob(row.id, {
+    status: "running",
+    worker_id: candidate.id,
+    provider_job_id: payload.call_id,
+    worker_state: payload.worker_state || payload.workerState || "queued",
+    failover_history: [
+      ...(attempted.failover_history || []),
+      {
+        phase: "poll-reassign",
+        fromWorkerId: row.worker_id,
+        toWorkerId: candidate.id,
+        reason: failure.kind,
+        code: failure.code,
+        at: new Date().toISOString(),
+      },
+    ],
+  });
+}
+
+async function failJob(row: JobRow, code: string, message: string) {
+  return patchJob(row.id, {
+    status: "failed",
+    error_code: code,
+    error_message: message,
+    completed_at: new Date().toISOString(),
+  });
+}
+
 export async function pollNativeGeneration(jobId: string): Promise<GenerationJob | null> {
   const row = await getJobRow(jobId);
   if (!row) return null;
@@ -386,14 +547,34 @@ export async function pollNativeGeneration(jobId: string): Promise<GenerationJob
 
   if (!response.ok) {
     const body = await errorBody(response);
-    const kind = failureKind(response.status, body);
-    if (kind !== "failed") throw new Error(String(body.error || body.detail || `Worker status unavailable (${response.status}).`));
-    const failed = await patchJob(row.id, {
-      status: "failed",
-      error_code: "generation_failed",
-      error_message: String(body.error || body.detail || "Generation failed."),
-      completed_at: new Date().toISOString(),
-    });
+    const failure = classifyWorkerFailure(response.status, body);
+    const message = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
+
+    if (failure.safeToReassign) {
+      try {
+        const reassigned = await reassignPollJob(row, failure);
+        if (reassigned) return toGenerationJob(reassigned);
+        const failed = await failJob(
+          row,
+          failure.code.toLowerCase(),
+          `${message} No safe standby worker remains for this generation.`,
+        );
+        return toGenerationJob(failed);
+      } catch (error) {
+        const failed = await failJob(
+          row,
+          "generation_reassignment_failed",
+          error instanceof Error ? error.message : "Generation worker reassignment failed.",
+        );
+        return toGenerationJob(failed);
+      }
+    }
+
+    if (failure.retryable) {
+      throw new Error(message);
+    }
+
+    const failed = await failJob(row, "generation_failed", String(body.error || body.detail || "Generation failed."));
     return toGenerationJob(failed);
   }
 
