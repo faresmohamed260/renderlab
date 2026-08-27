@@ -1,4 +1,9 @@
-import type { MediaAssetListKind, PublicMediaAsset } from "@/lib/api/media-assets-contract";
+import {
+  MEDIA_ASSET_SEARCH_MAX_LENGTH,
+  normalizeMediaAssetSearchQuery,
+  type MediaAssetListKind,
+  type PublicMediaAsset,
+} from "@/lib/api/media-assets-contract";
 import { LibraryView } from "@/features/library/library-view";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
@@ -9,15 +14,23 @@ export const dynamic = "force-dynamic";
 
 const pageSize = 24;
 
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function parseKind(value: string | string[] | undefined): MediaAssetListKind {
-  const resolved = Array.isArray(value) ? value[0] : value;
+  const resolved = firstParam(value);
   return resolved === "image" || resolved === "video" ? resolved : "all";
 }
 
 function parseOffset(value: string | string[] | undefined) {
-  const resolved = Array.isArray(value) ? value[0] : value;
-  const parsed = Number(resolved || 0);
+  const parsed = Number(firstParam(value) || 0);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function parseSearch(value: string | string[] | undefined) {
+  const normalized = normalizeMediaAssetSearchQuery(firstParam(value));
+  return normalized?.slice(0, MEDIA_ASSET_SEARCH_MAX_LENGTH) ?? null;
 }
 
 export default async function LibraryPage({
@@ -27,6 +40,7 @@ export default async function LibraryPage({
 }) {
   const params = await searchParams;
   const kind = parseKind(params.kind);
+  const searchQuery = parseSearch(params.q);
   const offset = parseOffset(params.offset);
   let available = isSupabaseConfigured() && isR2Configured();
   let items: PublicMediaAsset[] = [];
@@ -36,6 +50,7 @@ export default async function LibraryPage({
     try {
       const result = await listMediaAssets({
         ...(kind === "all" ? {} : { kind }),
+        ...(searchQuery ? { search: searchQuery } : {}),
         limit: pageSize,
         offset,
       });
@@ -52,6 +67,7 @@ export default async function LibraryPage({
       uploadAvailable={isMediaUploadConfigured()}
       items={items}
       kind={kind}
+      searchQuery={searchQuery}
       offset={offset}
       limit={pageSize}
       hasMore={hasMore}
