@@ -118,13 +118,46 @@ Before copying/installing an external component:
 ### LibraryView
 **Status:** APPROVED  
 **Source:** `src/features/library/library-view.tsx`  
-**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history slices  
+**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop slices  
 **Purpose:** Durable-media Library with URL-owned literal search, kind filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry and Viewer deep links.  
-**Variants:** All/Images/Videos; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; desktop/mobile.  
-**Dependencies:** Next.js Link, maintained Button/Input/DropdownMenu/Alert/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort contracts, feature-owned `LibraryUploadButton` and `LibrarySortMenu`.  
-**Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search and history ordering URL/server-owned.  
+**Variants:** All/Images/Videos; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; transient desktop drag-active upload state; desktop/mobile.  
+**Dependencies:** Next.js Link, maintained Button/Input/DropdownMenu/Alert/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort contracts, feature-owned `LibraryUploadButton`, `LibraryDropUploadSurface` and `LibrarySortMenu`.  
+**Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search/history ordering URL/server-owned and persistent upload paths on the shared feature-owned transaction.  
 **Do not:** Couple to legacy `studio_*`, expose storage identity, use page-only client filtering or add fake organization controls.  
-**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search merged PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; history ordering v0.1 approved under UI-027 after exact configured verification. Rename v0.1 reuses the existing display-name search contract; no generic Search feature component was created because the URL-owned GET search form remains Library composition while its conventional controls use the shared primitive layer.
+**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search merged PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; history ordering v0.1 approved under UI-027. UI-028 adds drag/drop without a generic Dropzone primitive because the browser drag surface is a Library-specific composition over an existing product upload contract, not a reusable conventional control.
+
+### LibraryUploadButton
+**Status:** APPROVED  
+**Source:** `src/features/library/library-upload-button.tsx`  
+**Origin:** RenderLab feature composition using maintained Button/Spinner plus the browser native file chooser  
+**Purpose:** Keyboard/touch/mobile baseline for one persistent Library image upload.  
+**Used by:** `LibraryView` only.  
+**Dependencies:** feature-owned `uploadLibraryFile`, native hidden file input, Next.js router refresh.  
+**Reuse rules:** Keep picker interaction feature-owned while the persistent upload contract belongs to Library. Share the transaction through `library-upload-client.ts` rather than duplicating ticket/R2/completion logic.  
+**Do not:** Replace the native file chooser plumbing with a bespoke visible raw control or introduce a second upload data contract.  
+**Notes:** UI-022 + UI-028. Existing picker lifecycle remained green after the shared upload transaction extraction.
+
+### LibraryDropUploadSurface
+**Status:** APPROVED  
+**Source:** `src/features/library/library-drop-upload-surface.tsx`  
+**Origin:** RenderLab feature composition using browser DragEvent/DataTransfer semantics, maintained Spinner, Lucide and the existing persistent upload transaction  
+**Purpose:** Optional desktop drag/drop path for adding one compatible image to Library without adding a permanent dropzone.  
+**Used by:** `LibraryView` only.  
+**Dependencies:** `library-upload-client.ts`, Next.js router refresh, UI-022 persistent upload APIs.  
+**Reuse rules:** Keep it Library-owned while only Library has this drag-to-persist interaction. Generic drag/drop abstraction is not justified by a single feature need.  
+**Do not:** Turn it into a global dropzone framework, accept batch uploads implicitly, hide the ordinary Upload button, or create a parallel storage/upload contract.  
+**Notes:** UI-028. The drag affordance exists only while a file drag is active; multi-file drops are rejected before network upload. Configured run `33102672468` verified exact one-ticket/one-completion/one-session/one-asset/one-card behavior plus responsive screenshots and cleanup.
+
+### LibraryUploadClient
+**Status:** APPROVED  
+**Source:** `src/features/library/library-upload-client.ts`  
+**Origin:** RenderLab feature-owned browser transaction extracted from the approved picker upload behavior  
+**Purpose:** One shared validation + ticket/R2 PUT/completion transaction for Library picker and drag/drop interaction paths.  
+**Used by:** `LibraryUploadButton`, `LibraryDropUploadSurface`.  
+**Dependencies:** `media-upload-contract`, browser `fetch`, `createImageBitmap`.  
+**Reuse rules:** Share it only across Library persistent upload interaction paths; it is not a generic application upload service.  
+**Do not:** Expose R2 credentials/storage keys, bypass server completion verification, or merge temporary Create reference uploads into this durable Library contract.  
+**Notes:** UI-028. PNG/JPEG/WebP and 25 MB validation remains identical across picker/drop paths.
 
 ### LibrarySortMenu
 **Status:** APPROVED  
