@@ -1,7 +1,9 @@
-import type {
-  MediaAssetKind,
-  MediaAssetOrigin,
-  PublicMediaAsset,
+import {
+  MEDIA_ASSET_SEARCH_MAX_LENGTH,
+  normalizeMediaAssetSearchQuery,
+  type MediaAssetKind,
+  type MediaAssetOrigin,
+  type PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
 import type { CreativeOperation } from "@/lib/capabilities/generation";
 import { supabaseRest } from "@/server/data/supabase-rest";
@@ -48,6 +50,16 @@ function optionalString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function postgrestQuotedValue(value: string) {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function mediaSearchFilter(search: string) {
+  const literal = search.replace(/[\\%_*]/g, "\\$&");
+  const pattern = postgrestQuotedValue(`%${literal}%`);
+  return `(display_name.ilike.${pattern},original_filename.ilike.${pattern},provenance->>prompt.ilike.${pattern})`;
+}
+
 export async function getMediaAsset(assetId: string) {
   const rows = await supabaseRest<MediaAssetRecord[]>(
     `media_assets?id=eq.${encodeURIComponent(assetId)}&select=*&limit=1`,
@@ -58,18 +70,33 @@ export async function getMediaAsset(assetId: string) {
 
 export async function listMediaAssets({
   kind,
+  search,
   limit = 24,
   offset = 0,
 }: {
   kind?: MediaAssetKind;
+  search?: string | null;
   limit?: number;
   offset?: number;
 } = {}) {
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 48);
   const safeOffset = Math.max(Math.trunc(offset), 0);
-  const filters = kind ? `&kind=eq.${encodeURIComponent(kind)}` : "";
+  const normalizedSearch = normalizeMediaAssetSearchQuery(search);
+  if (normalizedSearch && normalizedSearch.length > MEDIA_ASSET_SEARCH_MAX_LENGTH) {
+    throw new RangeError(`Media search queries may not exceed ${MEDIA_ASSET_SEARCH_MAX_LENGTH} characters.`);
+  }
+
+  const params = new URLSearchParams({
+    select: "*",
+    order: "created_at.desc,id.desc",
+    limit: String(safeLimit + 1),
+    offset: String(safeOffset),
+  });
+  if (kind) params.set("kind", `eq.${kind}`);
+  if (normalizedSearch) params.set("or", mediaSearchFilter(normalizedSearch));
+
   const rows = await supabaseRest<MediaAssetRecord[]>(
-    `media_assets?select=*&order=created_at.desc,id.desc&limit=${safeLimit + 1}&offset=${safeOffset}${filters}`,
+    `media_assets?${params.toString()}`,
     { method: "GET" },
   );
   const items = rows ?? [];
