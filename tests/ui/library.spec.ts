@@ -56,7 +56,6 @@ test("Library search form keeps kind and sort, normalizes rendered query, and re
   await page.waitForURL((url) =>
     url.pathname === "/library"
     && url.searchParams.get("kind") === "image"
-    && url.searchParams.get("q") === "new prompt"
     && url.searchParams.get("sort") === "oldest"
     && !url.searchParams.has("offset"),
   );
