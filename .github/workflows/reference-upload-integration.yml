@@ -96,7 +96,7 @@ jobs:
 
       - name: Cleanup reference upload fixture
         if: always()
-        run: node scripts/verify-reference-upload.mjs
+        run: node scripts/verify-reference-upload.mjs --cleanup-only
 
       - name: Print server log on failure
         if: failure()
