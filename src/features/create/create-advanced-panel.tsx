@@ -27,10 +27,7 @@ export function createAdvancedDraft(kind: OutputKind): AdvancedDraft {
     seed: String(defaults.seed),
     steps: String(defaults.steps),
     guidance: String(defaults.guidance),
-    frameRate:
-      kind === "video"
-        ? defaults.frameRate
-        : generationAdvancedCapabilities.video.defaults.frameRate,
+    frameRate: generationAdvancedCapabilities.video.defaults.frameRate,
   };
 }
 
