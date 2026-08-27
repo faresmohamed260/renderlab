@@ -93,7 +93,7 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 ### UI-014 — Persistent shell does not own feature UI
 **Status:** Accepted  
 **Decision:** The persistent application shell owns navigation, compact route context, account access, lightweight Activity/global-attention access, and the route-content region. Feature-specific UI such as the Create composer, references, generation controls/results, Library grids/cards, and feature toolbars remain owned by their feature surfaces.  
-**Reason:** The first historical Figma shell exploration mixed persistent chrome with Create-specific composition, which would prematurely couple Phase 2 shell implementation to Phase 3 product design. The reviewed v0.2 refinement separated these concerns before implementation.  
+**Reason:** The first historical Figma shell exploration mixed shell and Create UI, which would prematurely couple Phase 2 shell implementation to Phase 3 product design. The reviewed v0.2 refinement separated these concerns before implementation.  
 **Consequences:** Phase 2 may implement stable shell chrome without locking the Create or Library layout. Idle shell state should not show an unnecessary persistent “ready” status; global status becomes prominent only when user attention is useful.
 
 ### UI-015 — Output media is the primary Create-mode choice
@@ -125,3 +125,15 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 **Decision:** Generate is disabled when required task inputs are missing and while a submission is already in progress. Running-state copy/progress must be derived from real job/orchestration state when available rather than fabricated percentage progress. Submission/runtime errors appear locally without clearing the user's prompt, references, or settings. A generation is presented as complete only after the durable media result has been persisted.  
 **Reason:** Saga proved that generation is asynchronous and persistence/worker state are meaningful product concepts; fake progress or destructive error handling would reduce trust and make recovery harder.  
 **Consequences:** The Create UI must preserve task state across recoverable errors, expose concise actionable failure feedback, surface meaningful runtime state, and transition to result/continuation UI only after persistence succeeds. Result actions are capability-derived rather than hard-coded to one workflow.
+
+### UI-020 — Initial Library stays media-first and contract-driven
+**Status:** Accepted  
+**Decision:** Library v0.1 is a unified durable-media surface backed by RenderLab `media_assets`. It starts with newest-first browsing, a compact `All / Images / Videos` filter, a responsive media grid, an empty state that points back to Create, and deep links into Media Viewer. Prompt/created-time metadata may be shown when present; optional dimensions/duration must not be required for the layout.  
+**Reason:** The current RenderLab media contract reliably owns durable media identity, kind, MIME, creation time, product media URLs, and generation provenance, but does not yet own favorites, collections, persistent-upload names, or a rich searchable organization schema. Saga proves those richer behaviors are useful, but copying its full filter/collection/batch-management surface before RenderLab owns the data would create fake or legacy-coupled product state.  
+**Consequences:** Do not add Creatives/Uploads tabs, model/date/favorites filters, density toggles, collections, batch actions, rename, or delete merely because Saga has them. Persistent uploaded assets remain part of Library's accepted long-term purpose under UI-010; introduce them through a RenderLab-owned persistent upload contract rather than legacy `studio_uploads`. The initial grid must work correctly even when the Library is empty or asset dimensions are null.
+
+### UI-021 — Media Viewer is the contextual asset workspace
+**Status:** Accepted  
+**Decision:** `/library/[assetId]` is the deep-linked Media Viewer for one durable RenderLab asset. Media is visually primary; prompt, creation time, media kind and available dimensions/duration are secondary metadata. Compatible continuation actions come from the shared capability model rather than a Viewer-specific hard-coded action list.  
+**Reason:** A stable asset route supports inspection, reuse and future media actions without overloading grid cards or creating modal-only state. The same durable asset identity is already proven as a generation input in Create.  
+**Consequences:** Library cards navigate to the route rather than opening a separate legacy-style modal. Viewer actions must use opaque `media-asset` IDs and product APIs. Provider/worker/ecosystem/R2 data remain internal. A cross-route continuation handoff to Create must be implemented as a stable product contract before Viewer buttons are presented as functional; do not render fake Edit/Animate actions.
