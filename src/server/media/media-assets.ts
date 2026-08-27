@@ -7,7 +7,7 @@ import {
 } from "@/lib/api/media-assets-contract";
 import type { CreativeOperation } from "@/lib/capabilities/generation";
 import { supabaseRest } from "@/server/data/supabase-rest";
-import { createSignedReadUrl } from "@/server/storage/r2";
+import { createSignedDownloadUrl, createSignedReadUrl } from "@/server/storage/r2";
 
 export type MediaAssetRecord = {
   id: string;
@@ -36,6 +36,8 @@ const creativeOperations = new Set<CreativeOperation>([
   "animate-image",
 ]);
 
+const windowsReservedBasenames = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
+
 function provenanceString(asset: MediaAssetRecord, key: string) {
   const value = asset.provenance?.[key];
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -61,6 +63,56 @@ function regexpLiteral(value: string) {
 function mediaSearchFilter(search: string) {
   const pattern = postgrestQuotedValue(regexpLiteral(search));
   return `(display_name.imatch.${pattern},original_filename.imatch.${pattern},provenance->>prompt.imatch.${pattern})`;
+}
+
+function downloadExtension(asset: MediaAssetRecord) {
+  const mimeType = asset.mime_type.toLowerCase();
+  if (mimeType === "image/jpeg") return "jpg";
+  if (mimeType === "image/png") return "png";
+  if (mimeType === "image/webp") return "webp";
+  if (mimeType === "video/mp4") return "mp4";
+  if (mimeType === "video/webm") return "webm";
+  if (mimeType === "video/quicktime") return "mov";
+
+  const subtype = mimeType.split("/")[1]?.split(/[+;]/)[0] || "";
+  return /^[a-z0-9]{1,8}$/.test(subtype) ? subtype : "bin";
+}
+
+function safeDownloadBase(value: string) {
+  const basename = value.split(/[\\/]/).filter(Boolean).at(-1) || "";
+  const withoutExtension = basename.replace(/\.[^.]+$/, "");
+  let cleaned = withoutExtension
+    .replace(/[\u0000-\u001f\u007f<>:"/\\|?*]/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^[ .]+|[ .]+$/g, "")
+    .slice(0, 140)
+    .trim();
+  if (windowsReservedBasenames.test(cleaned)) cleaned = `renderlab-${cleaned}`;
+  return cleaned || null;
+}
+
+function encodeDispositionFilename(value: string) {
+  return encodeURIComponent(value).replace(/[!'()*]/g, (character) =>
+    `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+export function mediaAssetDownloadFilename(asset: MediaAssetRecord) {
+  const extension = downloadExtension(asset);
+  const fallback = `renderlab-${asset.kind}-${asset.id.slice(0, 8)}.${extension}`;
+  if (asset.origin === "uploaded") {
+    const humanName = optionalString(asset.original_filename) || optionalString(asset.display_name);
+    const base = humanName ? safeDownloadBase(humanName) : null;
+    if (base) return `${base}.${extension}`;
+  }
+  return fallback;
+}
+
+function mediaAssetDownloadContentDisposition(asset: MediaAssetRecord) {
+  const filename = mediaAssetDownloadFilename(asset);
+  const extension = downloadExtension(asset);
+  const fallback = `renderlab-${asset.kind}-${asset.id.slice(0, 8)}.${extension}`;
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeDispositionFilename(filename)}`;
 }
 
 export async function getMediaAsset(assetId: string) {
@@ -142,4 +194,12 @@ export async function getMediaAssetContentUrl(asset: MediaAssetRecord, variant: 
   const key = variant === "thumbnail" ? asset.thumbnail_storage_key : asset.storage_key;
   if (!key) return null;
   return createSignedReadUrl(key, 300);
+}
+
+export async function getMediaAssetDownloadUrl(asset: MediaAssetRecord) {
+  return createSignedDownloadUrl({
+    key: asset.storage_key,
+    contentDisposition: mediaAssetDownloadContentDisposition(asset),
+    expiresIn: 300,
+  });
 }
