@@ -11,6 +11,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type NavItem = {
   href: string;
@@ -45,24 +47,12 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const Icon = item.icon;
 
   return (
-    <Link
-      href={item.href}
-      aria-current={active ? "page" : undefined}
-      className={[
-        "flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150",
-        active
-          ? "bg-surface-3 font-semibold text-text"
-          : "text-text-muted hover:bg-surface-2 hover:text-text",
-      ].join(" ")}
-    >
-      <Icon
-        aria-hidden="true"
-        className={active ? "text-accent" : "text-text-muted"}
-        size={18}
-        strokeWidth={1.8}
-      />
-      <span>{item.label}</span>
-    </Link>
+    <Button asChild variant={active ? "secondary" : "ghost"} size="lg" className="w-full justify-start gap-3 px-3">
+      <Link href={item.href} aria-current={active ? "page" : undefined} className={active ? "font-semibold" : "font-normal"}>
+        <Icon aria-hidden="true" className={active ? "text-accent" : "text-text-muted"} />
+        <span>{item.label}</span>
+      </Link>
+    </Button>
   );
 }
 
@@ -71,22 +61,19 @@ function MobileNavLink({ item, pathname }: { item: NavItem; pathname: string }) 
   const Icon = item.icon;
 
   return (
-    <Link
-      href={item.href}
-      aria-current={active ? "page" : undefined}
-      className={[
-        "flex min-h-14 min-w-20 flex-col items-center justify-center gap-1 rounded-lg px-2 text-xs transition-colors duration-150",
-        active ? "font-semibold text-text" : "text-text-muted",
-      ].join(" ")}
+    <Button
+      asChild
+      variant="ghost"
+      className={cn(
+        "min-h-14 min-w-20 flex-col gap-1 px-2 text-xs",
+        active ? "font-semibold text-text" : "font-normal text-text-muted",
+      )}
     >
-      <Icon
-        aria-hidden="true"
-        className={active ? "text-accent" : "text-text-muted"}
-        size={18}
-        strokeWidth={1.8}
-      />
-      <span>{item.label}</span>
-    </Link>
+      <Link href={item.href} aria-current={active ? "page" : undefined}>
+        <Icon aria-hidden="true" className={active ? "text-accent" : "text-text-muted"} />
+        <span>{item.label}</span>
+      </Link>
+    </Button>
   );
 }
 
@@ -104,13 +91,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           RenderLab
         </Link>
 
-        <nav className="space-y-1" aria-label="Primary navigation">
+        <nav className="flex flex-col gap-1" aria-label="Primary navigation">
           {primaryNav.map((item) => (
             <NavLink key={item.href} item={item} pathname={pathname} />
           ))}
         </nav>
 
-        <nav className="mt-auto space-y-1" aria-label="Utility navigation">
+        <nav className="mt-auto flex flex-col gap-1" aria-label="Utility navigation">
           {utilityNav.map((item) => (
             <NavLink key={item.href} item={item} pathname={pathname} />
           ))}
@@ -125,20 +112,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <h1 className="hidden text-base font-semibold lg:block">{title}</h1>
 
           <div className="ml-auto flex items-center gap-2">
-            <Link
-              href="/activity"
-              aria-label="Open activity"
-              className="relative inline-flex size-11 items-center justify-center rounded-lg text-text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
-            >
-              <Activity aria-hidden="true" size={19} strokeWidth={1.8} />
-            </Link>
-            <Link
-              href="/settings"
-              aria-label="Open settings and account"
-              className="inline-flex size-11 items-center justify-center rounded-lg text-text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
-            >
-              <CircleUserRound aria-hidden="true" size={20} strokeWidth={1.8} />
-            </Link>
+            <Button asChild variant="ghost" size="icon-lg">
+              <Link href="/activity" aria-label="Open activity">
+                <Activity aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="icon-lg">
+              <Link href="/settings" aria-label="Open settings and account">
+                <CircleUserRound aria-hidden="true" />
+              </Link>
+            </Button>
           </div>
         </header>
 
