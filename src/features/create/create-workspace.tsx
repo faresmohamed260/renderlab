@@ -2,8 +2,19 @@
 
 import { ImageIcon, LoaderCircle, MoreHorizontal, Plus, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import type { AspectRatio, GenerationJob, OutputKind } from "@/lib/capabilities/generation";
-import { imageAspectRatios, videoAspectRatios, videoDurations } from "@/lib/capabilities/generation";
+import type {
+  AspectRatio,
+  ContinuationAction,
+  GenerationJob,
+  GenerationInputRole,
+  OutputKind,
+} from "@/lib/capabilities/generation";
+import {
+  continuationActionsForMedia,
+  imageAspectRatios,
+  videoAspectRatios,
+  videoDurations,
+} from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import type {
   CompleteReferenceUploadResponse,
@@ -25,6 +36,11 @@ type PublicMediaAsset = {
   thumbnailUrl: string | null;
 };
 
+type ContinuationSource = {
+  id: string;
+  inputRole: Extract<GenerationInputRole, "primary-image" | "first-frame">;
+};
+
 const maxPollRetries = 5;
 
 function nextValue<T>(values: readonly T[], current: T) {
@@ -38,6 +54,10 @@ function pollRetryDelay(attempt: number) {
 
 function isRetryablePollStatus(status: number) {
   return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+function revokePreviewUrl(url: string | null) {
+  if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
 }
 
 async function readImageDimensions(file: File) {
@@ -69,6 +89,7 @@ export function CreateWorkspace({
   const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
   const [reference, setReference] = useState<ReferenceSource | null>(null);
+  const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(null);
   const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(null);
   const [referenceUploading, setReferenceUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -78,9 +99,7 @@ export function CreateWorkspace({
   const [resultLoading, setResultLoading] = useState(false);
 
   useEffect(() => {
-    return () => {
-      if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
-    };
+    return () => revokePreviewUrl(referencePreviewUrl);
   }, [referencePreviewUrl]);
 
   useEffect(() => {
@@ -133,13 +152,9 @@ export function CreateWorkspace({
         transientFailures = 0;
         setError(null);
         setJob(payload.job);
-        if (!isTerminalJob(payload.job)) {
-          schedulePoll(2000);
-        }
+        if (!isTerminalJob(payload.job)) schedulePoll(2000);
       } catch {
-        if (!cancelled) {
-          scheduleRetry("Generation status could not be updated.");
-        }
+        if (!cancelled) scheduleRetry("Generation status could not be updated.");
       }
     }
 
@@ -182,9 +197,7 @@ export function CreateWorkspace({
 
         setResultAsset(payload.asset);
       } catch {
-        if (!cancelled) {
-          setError("The result was saved, but its preview could not be loaded.");
-        }
+        if (!cancelled) setError("The result was saved, but its preview could not be loaded.");
       } finally {
         if (!cancelled) setResultLoading(false);
       }
@@ -197,7 +210,7 @@ export function CreateWorkspace({
   }, [firstOutputAssetId]);
 
   const aspectRatio = outputKind === "image" ? imageAspect : videoAspect;
-  const hasReference = Boolean(reference);
+  const hasReference = Boolean(reference || continuationSource);
   const heading = hasReference
     ? outputKind === "image"
       ? "Edit an image"
@@ -214,6 +227,7 @@ export function CreateWorkspace({
   const jobActive = Boolean(job && !isTerminalJob(job));
   const canSubmit =
     generationAvailable && Boolean(prompt.trim()) && !submitting && !referenceUploading && !jobActive;
+  const continuationActions = resultAsset ? continuationActionsForMedia(resultAsset.kind) : [];
 
   const statusText = useMemo(() => {
     if (!job) return null;
@@ -227,11 +241,24 @@ export function CreateWorkspace({
   }, [job]);
 
   function clearReference() {
-    if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
+    revokePreviewUrl(referencePreviewUrl);
     setReferencePreviewUrl(null);
     setReference(null);
+    setContinuationSource(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function startContinuation(action: ContinuationAction) {
+    if (!resultAsset) return;
+    revokePreviewUrl(referencePreviewUrl);
+    setReference(null);
+    setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });
+    setReferencePreviewUrl(resultAsset.contentUrl);
+    setOutputKind(action.outputKind);
+    setJob(null);
+    setError(null);
+    window.requestAnimationFrame(() => document.getElementById("create-prompt")?.focus());
   }
 
   async function uploadReference(file: File) {
@@ -251,19 +278,16 @@ export function CreateWorkspace({
     setError(null);
 
     const previewUrl = URL.createObjectURL(file);
-    if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
+    revokePreviewUrl(referencePreviewUrl);
     setReferencePreviewUrl(previewUrl);
     setReference(null);
+    setContinuationSource(null);
 
     try {
       const ticketResponse = await fetch("/api/assets/reference/upload-tickets", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          mimeType,
-          sizeBytes: file.size,
-        }),
+        body: JSON.stringify({ filename: file.name, mimeType, sizeBytes: file.size }),
       });
       const ticketPayload = (await ticketResponse.json()) as CreateReferenceUploadTicketResponse;
       if (!ticketResponse.ok || !ticketPayload.ok) {
@@ -275,18 +299,13 @@ export function CreateWorkspace({
         headers: ticketPayload.ticket.headers,
         body: file,
       });
-      if (!uploadResponse.ok) {
-        throw new Error("Reference image could not be uploaded.");
-      }
+      if (!uploadResponse.ok) throw new Error("Reference image could not be uploaded.");
 
       const dimensions = await readImageDimensions(file);
       const completionResponse = await fetch("/api/assets/reference/upload-completions", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          sourceId: ticketPayload.ticket.sourceId,
-          ...dimensions,
-        }),
+        body: JSON.stringify({ sourceId: ticketPayload.ticket.sourceId, ...dimensions }),
       });
       const completionPayload = (await completionResponse.json()) as CompleteReferenceUploadResponse;
       if (!completionResponse.ok || !completionPayload.ok) {
@@ -314,6 +333,22 @@ export function CreateWorkspace({
     setResultAsset(null);
     setResultLoading(false);
 
+    const inputs = continuationSource
+      ? [
+          {
+            source: { type: "media-asset" as const, id: continuationSource.id },
+            role: continuationSource.inputRole,
+          },
+        ]
+      : reference
+        ? [
+            {
+              source: { type: "temporary-source" as const, id: reference.id },
+              role: outputKind === "image" ? ("primary-image" as const) : ("first-frame" as const),
+            },
+          ]
+        : [];
+
     try {
       const response = await fetch("/api/generation/jobs", {
         method: "POST",
@@ -325,14 +360,7 @@ export function CreateWorkspace({
             aspectRatio,
             ...(outputKind === "video" ? { durationSeconds } : {}),
           },
-          inputs: reference
-            ? [
-                {
-                  source: { type: "temporary-source", id: reference.id },
-                  role: outputKind === "image" ? "primary-image" : "first-frame",
-                },
-              ]
-            : [],
+          inputs,
         }),
       });
 
@@ -383,7 +411,9 @@ export function CreateWorkspace({
                 <p className="truncate text-sm font-semibold text-text">
                   {referenceUploading ? "Uploading reference…" : outputKind === "image" ? "Editing this image" : "Animating this image"}
                 </p>
-                <p className="truncate text-xs text-text-muted">{reference?.filename ?? "Reference image"}</p>
+                <p className="truncate text-xs text-text-muted">
+                  {continuationSource ? "Generated result" : reference?.filename ?? "Reference image"}
+                </p>
               </div>
               <button
                 type="button"
@@ -440,6 +470,14 @@ export function CreateWorkspace({
                     onClick={() => {
                       setOutputKind(kind);
                       setError(null);
+                      setContinuationSource((current) =>
+                        current
+                          ? {
+                              ...current,
+                              inputRole: kind === "image" ? "primary-image" : "first-frame",
+                            }
+                          : current,
+                      );
                     }}
                     className={[
                       "min-h-8 min-w-20 rounded-md px-3 text-sm font-medium transition-colors duration-150",
@@ -524,9 +562,25 @@ export function CreateWorkspace({
 
         {resultAsset ? (
           <article className="mt-8 overflow-hidden rounded-xl border border-border bg-surface-1" aria-label="Generated result">
-            <div className="border-b border-border px-4 py-3">
-              <p className="text-sm font-semibold text-text">Generated result</p>
-              <p className="text-xs text-text-muted">Saved to your RenderLab media library.</p>
+            <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-text">Generated result</p>
+                <p className="text-xs text-text-muted">Saved to your RenderLab media library.</p>
+              </div>
+              {continuationActions.length ? (
+                <div className="flex items-center gap-2" aria-label="Continue from result">
+                  {continuationActions.map((action) => (
+                    <button
+                      key={action.id}
+                      type="button"
+                      onClick={() => startContinuation(action)}
+                      className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-surface-2 px-4 text-sm font-medium text-text transition-colors hover:bg-surface-3"
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
             <div className="bg-surface-2">
               {resultAsset.kind === "image" ? (
