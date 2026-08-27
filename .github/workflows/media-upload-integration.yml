@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - "supabase/migrations/0003_persistent_media_uploads.sql"
+      - "supabase/migrations/0004_core_account_ownership_prepare.sql"
+      - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "src/lib/api/media-upload-contract.ts"
       - "src/lib/api/media-assets-contract.ts"
+      - "src/lib/supabase/**"
       - "src/server/media/media-uploads.ts"
       - "src/server/media/media-assets.ts"
       - "src/server/storage/r2.ts"
       - "src/app/api/media/uploads/**"
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-media-upload.mjs"
       - ".github/workflows/media-upload-integration.yml"
   workflow_dispatch:
@@ -24,6 +28,8 @@ jobs:
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
