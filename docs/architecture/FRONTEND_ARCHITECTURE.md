@@ -15,7 +15,7 @@ Core stack from `package.json`:
 - Playwright `1.62.1`
 - AWS SDK S3 client/request presigner `3.1116.0`
 
-Create, Library v0.1, the persistent Library Upload extension and Media Viewer v0.1 are approved product surfaces. Activity and Settings remain placeholders. Persistent uploads passed current-state backend, credential-free UI/API and real-browser verification in runs `33066999365`, `33066999317` and `33066999350` respectively.
+Create, Library v0.1, persistent Library Upload, Library search v0.1 and Media Viewer v0.1 are approved product surfaces/capabilities. Activity and Settings remain placeholders. Persistent uploads are merged through PR #9. Library search v0.1 is verified in PR #10, including implementation-head UI Shell `33069004219`, upload regression `33069004207`, Library lifecycle `33069004227` and configured search lifecycle `33069004204`.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -36,7 +36,8 @@ Create, Library v0.1, the persistent Library Upload extension and Media Viewer v
 Rules:
 - Create remains the default route.
 - Image, Video, Edit, Animate, models and workflows are not separate top-level routes by default.
-- Library kind/pagination may use URL state because it is navigable browsing state.
+- Library `kind`, `q` and `offset` are URL-owned browsing/discovery state because users can share, refresh and navigate them.
+- Changing Library kind/search resets pagination; pagination preserves active kind/search.
 - Viewer → Create `source` + `action` parameters are untrusted continuation intent; the server reloads the durable asset and validates capability compatibility before initializing client state.
 
 ## Product API Boundaries
@@ -55,7 +56,7 @@ POST     /api/media/uploads/upload-tickets
 POST     /api/media/uploads/upload-completions
 ```
 
-Browser components do not call ComfyUI workers, Supabase service-role APIs or raw R2 credentials directly.
+`GET /api/media/assets` accepts bounded Library query state including `kind`, `q`, `limit` and `offset`. Browser components do not call ComfyUI workers, Supabase service-role APIs or raw R2 credentials directly.
 
 ## Current Ownership Structure
 Important current boundaries include:
@@ -105,19 +106,19 @@ Ownership rules:
 - `components/shell` — persistent application chrome;
 - `features/<feature>` — product-specific composition/behavior;
 - `lib/capabilities` — user-facing capability definitions/resolution;
-- `lib/api` — typed product API contracts;
+- `lib/api` — typed product API/query contracts;
 - `server/generation` — orchestration/worker boundaries;
-- `server/media` — durable media and upload services;
+- `server/media` — durable media, media-query and upload services;
 - `server/storage` — R2 provider implementation;
 - `server/data` — Supabase/repository access.
 
-Do not extract a generic media/upload framework merely because one feature uses an Upload button. Reuse should follow a second real product need.
+Do not extract a generic media/upload/search framework from one feature. Reuse should follow a second real product need.
 
 ## Component / Client Boundaries
 ### Server Components by default
-Use for routes/layouts and server-owned media loading where browser state is unnecessary.
+Use for routes/layouts and server-owned media loading/querying where browser state is unnecessary.
 
-Library route composition, Media Viewer media loading and root Create continuation validation are server-owned.
+Library route composition, Library text search, Media Viewer media loading and root Create continuation validation are server-owned. Library search uses a native `GET` form and URL state; it does not require a client search store or client-side filtering of already-loaded cards.
 
 ### Client Components deliberately
 Use for:
@@ -125,14 +126,14 @@ Use for:
 - temporary reference interaction;
 - Library persistent upload file selection/progress/error feedback;
 - interactive continuation/disclosure mechanics;
-- dialogs/sheets/popovers only when required by the product behavior.
+- dialogs/sheets/popovers only when required by product behavior.
 
 `src/features/library/library-upload-button.tsx` is intentionally feature-owned. It uses a native hidden file input and does not create a generic upload modal framework.
 
 ## State Architecture
 ### URL state
 Current URL-owned state:
-- Library `kind` / `offset` browsing state;
+- Library `kind` / `q` / `offset` browsing and discovery state;
 - durable asset ID in `/library/[assetId]`;
 - Viewer → Create `source` / `action` intent.
 
@@ -146,7 +147,7 @@ Server-owned durable/operational data:
 `generation_sources` and `media_upload_sessions` have different lifetimes and responsibilities. Temporary references must not become durable Library media; pending upload sessions must not become public asset identity.
 
 ### Client feature state
-Create owns prompt/reference/settings/job/result drafts. Library Upload owns only local file-selection/upload feedback until completion returns a durable asset. After verification, the server-rendered Library/media contract is authoritative.
+Create owns prompt/reference/settings/job/result drafts. Library Upload owns only local file-selection/upload feedback until completion returns a durable asset. Library search does not introduce persistent client state: after navigation, server-rendered URL/media state is authoritative.
 
 Avoid an ad-hoc global store until multiple features genuinely need one.
 
@@ -192,9 +193,7 @@ Create
   -> render result + capability-derived continuation
 ```
 
-A worker response is not product completion. Success occurs only after durable media persistence.
-
-All four initial operations and durable generated-media continuation are live verified.
+A worker response is not product completion. Success occurs only after durable media persistence. All four initial operations and durable generated-media continuation are live verified.
 
 ## Temporary Reference Upload Flow
 ```text
@@ -235,9 +234,34 @@ Rules:
 - Repeated completion is idempotent; concurrent insert races recover to the unique `media_assets.storage_key` winner.
 - No parallel public Uploads asset type/tab is introduced.
 
-Current-state backend integration run `33066999365` verifies this contract against shared R2/Supabase, including Unicode filename preservation, concurrent completion recovery, sequential idempotency, ordinary media API visibility/content and cleanup.
+Final pre-merge upload verification passed UI Shell `33067469516`, backend integration `33067469518` and Library browser lifecycle `33067469527`; PR #9 then merged as `d306f2abd1831538c51692545d72db1e5e9e0814` and `main` remained green.
 
-Current-state browser lifecycle run `33066999350` is approved. It first reconciled bucket CORS through the R2 S3 API, then used the actual Library Upload control/native file chooser from `http://127.0.0.1:3000`, completed the direct signed R2 PUT, promoted the asset, verified Library/Viewer/Create media geometry and continuation, captured six desktop/mobile screenshots and self-cleaned. The screenshots were visually inspected.
+## Library Search Flow
+UI-023 defines Library search as URL-owned durable-media discovery:
+
+```text
+/library?q=<text>&kind=<optional>&offset=<optional>
+  -> normalize whitespace and cap q at 120 chars
+  -> server listMediaAssets({ search, kind, offset })
+  -> escape q as literal regex text
+  -> PostgREST OR:
+       display_name imatch q
+       original_filename imatch q
+       provenance->>prompt imatch q
+  -> AND optional kind
+  -> order created_at.desc,id.desc
+  -> render existing Library cards / truthful no-match state
+```
+
+Rules:
+- Search spans durable `media_assets`; it is not a client-side filter over one loaded page.
+- Matching is case-insensitive literal substring behavior. Regex/PostgREST syntax is internal and user punctuation is escaped before it reaches the provider query.
+- Search covers human-facing display name, original uploaded filename and generated prompt only.
+- Storage keys, provider/worker metadata, model internals, temporary `generation_sources` and legacy `studio_*` tables are excluded.
+- Kind and search compose; newest-first ordering remains authoritative in v0.1 rather than relevance ranking.
+- There is no schema migration or dedicated search service in v0.1. During the search audit the shared production corpus was empty and `pg_trgm` was not installed, so indexing is intentionally deferred until actual corpus size/query behavior warrants it. Optimization may change behind the same UI-023 product contract later.
+
+Configured approval run `33069004204` used two self-cleaning real R2-backed `media_assets` fixtures and verified prompt, Unicode filename, punctuation-literal and kind+search behavior through the public API/browser. Four desktop/mobile result/empty screenshots were visually inspected. Direct cleanup verification found zero search fixtures after the run.
 
 ## Media Delivery and Continuation
 Product media APIs expose metadata/content/thumbnail without exposing raw storage identity.
@@ -255,7 +279,7 @@ Applied tables/contracts:
 - `media_assets`;
 - `media_upload_sessions`.
 
-Migration `0003_persistent_media_uploads.sql` is already applied as version `20260827031630`. RLS remains enabled; service-role credentials are server-only.
+Migration `0003_persistent_media_uploads.sql` is applied as version `20260827031630`. RLS remains enabled; service-role credentials are server-only. Library search reuses existing `media_assets` fields and adds no migration.
 
 ## Cloudflare R2 Boundary
 - Shared R2 is reused by explicit decision.
@@ -263,9 +287,9 @@ Migration `0003_persistent_media_uploads.sql` is already applied as version `202
 - R2 credentials stay server-only.
 - Browser uploads use short-lived signed PUT URLs.
 - Direct browser PUT requires an origin-appropriate bucket CORS rule.
-- The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` now has bucket-admin capability. Run `33066999350` successfully reconciled the managed CORS rule through `GetBucketCors`/`PutBucketCors` while preserving one unrelated existing rule.
-- The managed origins are `http://127.0.0.1:3000`, `http://localhost:3000`, `https://renderlab-faresmohamed260-6733s-projects.vercel.app` and `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`; all four passed preflight in `33066999350`.
-- `CLOUDFLARE_API_TOKEN` remains an optional REST-API fallback for CORS management but is not required while the R2 S3 token retains admin permission.
+- The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` has bucket-admin capability and manages the `renderlab-browser-uploads` rule through the S3 API.
+- Managed origins include both localhost CI origins and the current stable RenderLab Vercel domains.
+- `CLOUDFLARE_API_TOKEN` remains an optional REST-API fallback, not the verified primary path.
 - If the eventual public custom/different RenderLab origin changes, add that exact origin before serving direct uploads there.
 
 Do not disable browser security, use broad wildcard CORS merely for convenience, proxy the transfer through RenderLab solely to satisfy CI, or replace real browser proof with Node-only integration.
@@ -274,30 +298,29 @@ Do not disable browser security, use broad wildcard CORS merely for convenience,
 UI iteration remains GitHub-based and does not require Vercel preview deployments.
 
 ### Credential-free validation
-`.github/workflows/ui-shell.yml` covers production build, Playwright Chromium, desktop/mobile rendering, product API contracts and truthful unavailable states.
-
-Current-state persistent-upload run `33066999317` passed this gate.
+`.github/workflows/ui-shell.yml` covers production build, Playwright Chromium, desktop/mobile rendering, product API contracts and truthful unavailable states. Library search implementation-head run `33069004219` passed.
 
 ### Configured Create lifecycle
 `scripts/verify-create-lifecycle.mjs` + `.github/workflows/create-lifecycle-visual.yml` drive one real generation through the browser, verify durable persistence/continuation, capture responsive screenshots and self-clean. Approval run: `33031817744`.
 
 ### Configured persistent upload API integration
-`scripts/verify-media-upload.mjs` + `.github/workflows/media-upload-integration.yml` exercise ticket → signed PUT → completion → durable media contract directly without ComfyUI. Current-state run `33066999365` passed and self-cleaned.
+`scripts/verify-media-upload.mjs` + `.github/workflows/media-upload-integration.yml` exercise ticket → signed PUT → completion → durable media contract directly without ComfyUI. Search implementation-head regression run `33069004207` passed and self-cleaned.
 
 ### Configured persistent upload browser lifecycle
-`scripts/verify-library-lifecycle.mjs` + `.github/workflows/library-lifecycle-visual.yml` are the browser-visible persistent upload gate. The workflow first runs `scripts/ensure-r2-browser-cors.mjs`, then serves RenderLab directly at `http://127.0.0.1:3000`; the temporary Studio-origin TLS/hosts alias used during diagnosis has been removed.
+`scripts/verify-library-lifecycle.mjs` + `.github/workflows/library-lifecycle-visual.yml` verify the actual Upload control/native picker → direct R2 PUT → promotion → Library → Viewer → Create continuation plus screenshots and cleanup. Search implementation-head regression run `33069004227` passed.
 
-The verifier checks:
-1. managed-origin R2 CORS reconciliation/preflight;
-2. ticket + browser signed R2 PUT + completion;
-3. uploaded Library card/display name;
-4. Viewer uploaded metadata and media geometry;
-5. capability-derived Edit/Animate;
-6. Edit → server-validated Create continuation using the durable uploaded `media-asset` ID;
-7. desktop/mobile screenshots;
-8. R2 + `media_assets` + `media_upload_sessions` cleanup.
+### Configured Library search lifecycle
+`scripts/verify-library-search.mjs` + `.github/workflows/library-search-visual.yml` create self-cleaning real R2-backed durable media fixtures and verify:
+1. case-insensitive generated-prompt search;
+2. case-insensitive Unicode original-filename search;
+3. literal punctuation/wildcard-character search semantics;
+4. kind + search conjunction;
+5. URL-owned search and kind-link preservation;
+6. desktop/mobile result states;
+7. truthful desktop/mobile no-match states;
+8. R2 + `media_assets` cleanup.
 
-It does not invoke ComfyUI. Current-state approval run: `33066999350`.
+It does not invoke ComfyUI. Implementation-head approval run: `33069004204`.
 
 ## Naming Conventions
 - React files: `kebab-case.tsx`.
@@ -314,6 +337,8 @@ It does not invoke ComfyUI. Current-state approval run: `33066999350`.
 - Shared capability logic owns continuation eligibility.
 - Browser does not talk directly to worker providers.
 - Shared infrastructure reuse never authorizes legacy `studio_*` coupling.
-- Approved Create/Library/Viewer visual language is not redesigned by the upload extension.
+- Approved Create/Library/Viewer visual language is not redesigned by incremental media features.
 - Persistent uploads remain one durable-media contract rather than a parallel upload product model.
+- Library search remains server-owned durable discovery; do not replace it with a page-only client filter or a Saga-style filter console without an explicit product decision.
+- Search implementation details may evolve for scale while preserving UI-023 literal matching, URL state and field scope.
 - Any future public origin change must be reflected in exact origin-restricted R2 CORS before browser upload is considered deployable there.
