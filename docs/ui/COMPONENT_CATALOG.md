@@ -72,11 +72,11 @@ Before copying/installing an external component:
 **Status:** APPROVED  
 **Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`  
 **Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics  
-**Current primitives:** Alert, Button, Collapsible, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.  
-**Used by:** application shell, Create, Create Advanced, Library search/filter/upload/empty state, Media Viewer and Viewer Rename/Download actions.  
+**Current primitives:** Alert, Button, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.  
+**Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/empty state, Media Viewer and Viewer Rename/Download actions.  
 **Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
 **Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
-**Notes:** UI-026. `npm run verify:ui-purity` is the CI enforcement gate. The refactor preserved the approved surface design while centralizing control mechanics. During verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, and Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics.
+**Notes:** UI-026. `npm run verify:ui-purity` is the CI enforcement gate. The refactor preserved the approved surface design while centralizing control mechanics. During verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics, and UI-027 added the maintained Radix Dropdown Menu for Library ordering instead of a bespoke selector.
 
 ### AppShell
 **Status:** APPROVED  
@@ -118,13 +118,24 @@ Before copying/installing an external component:
 ### LibraryView
 **Status:** APPROVED  
 **Source:** `src/features/library/library-view.tsx`  
-**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search slices  
-**Purpose:** Durable-media Library with URL-owned literal search, kind filtering, responsive browsing, metadata, pagination, upload entry and Viewer deep links.  
-**Variants:** All/Images/Videos; active/clear search; configured/unavailable/empty/no-match/paginated states; desktop/mobile.  
-**Dependencies:** Next.js Link, maintained Button/Input/Alert/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search contracts, feature-owned `LibraryUploadButton`.  
-**Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search URL/server-owned.  
+**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history slices  
+**Purpose:** Durable-media Library with URL-owned literal search, kind filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry and Viewer deep links.  
+**Variants:** All/Images/Videos; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; desktop/mobile.  
+**Dependencies:** Next.js Link, maintained Button/Input/DropdownMenu/Alert/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort contracts, feature-owned `LibraryUploadButton` and `LibrarySortMenu`.  
+**Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search and history ordering URL/server-owned.  
 **Do not:** Couple to legacy `studio_*`, expose storage identity, use page-only client filtering or add fake organization controls.  
-**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search merged PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`. Rename v0.1 reuses the existing display-name search contract; no generic Search feature component was created because the URL-owned GET search form remains Library composition while its conventional controls use the shared primitive layer.
+**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search merged PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; history ordering v0.1 approved under UI-027 after exact configured verification. Rename v0.1 reuses the existing display-name search contract; no generic Search feature component was created because the URL-owned GET search form remains Library composition while its conventional controls use the shared primitive layer.
+
+### LibrarySortMenu
+**Status:** APPROVED  
+**Source:** `src/features/library/library-sort-menu.tsx`  
+**Origin:** RenderLab feature composition using the maintained shadcn/Radix Dropdown Menu + Button primitives  
+**Purpose:** Compact Library-owned Newest/Oldest navigation without moving media ordering into client state.  
+**Used by:** `LibraryView` only.  
+**Dependencies:** URL-owned `sort`, `kind`, `q`; Next.js router navigation; maintained DropdownMenu radio items.  
+**Reuse rules:** Keep it feature-owned while ordering is a Library-specific navigation contract. Generic DropdownMenu mechanics belong in `src/components/ui/dropdown-menu.tsx`.  
+**Do not:** Expand it into a Saga-style filter framework, add unsupported model/date/favorites filters, or persist organization state client-side.  
+**Notes:** UI-027. Configured Library History Visual proved Newest/Oldest selection, composed URL state, deterministic API order and responsive rendering.
 
 ### MediaViewer
 **Status:** APPROVED  
