@@ -231,21 +231,22 @@ UI-030 establishes account-private ownership across RenderLab's existing generat
 - [x] Scope list/read/update/completion/poll/input-resolution operations by owner so foreign opaque IDs collapse to normal not-found behavior.
 - [x] Keep Create draftable while signed out, but require sign-in before persistent upload/generation actions.
 - [x] Pass the configured two-account ownership gate on exact product SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b` in run `33115683962`, including production build, configured app startup, own-vs-foreign media/job denial, owner-bound upload/reference writes, raw Data API denial and cleanup.
-- [x] Verify by commit comparison that no product `src/` implementation or migration file changed after that passing ownership SHA; later branch changes are verifier/workflow/test/documentation hardening only.
+- [x] Verify by commit comparison that product/application `src/` code has not changed after that passing ownership SHA; later product-adjacent changes are verifier/workflow/test/documentation hardening.
+- [x] Correct staged `0005_core_account_ownership_enforce.sql` at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after a rollback-only simulation exposed that one shared polymorphic trigger function referenced a field unavailable on `media_assets`; split the media→job and upload→asset checks into table-specific trigger functions.
+- [x] Semantically verify the corrected `0005` transactionally against the live prepared schema: same-owner links succeed; cross-owner media→job and upload→asset links fail; owner reassignment fails; null ownership fails; all six enforcement triggers exist inside the transaction. Roll back and verify four nullable owner columns, zero enforcement triggers, zero simulation Auth users and zero core rows remain afterward.
 - [x] Strengthen current verifier to cover both owners' own lists, signed-out persistent actions, unchanged foreign upload/reference pending rows and raw Data API denial on all four core tables.
 - [x] Make configured account cleanup reconstructible from deterministic owner IDs so fresh-runner reruns clean only their own DB/R2 state before Auth-user recreation.
 - [x] Remove active namespace-wide destructive drag/drop cleanup and scope fixed-name/run-name fixture discovery/deletion to deterministic owners.
 - [x] Align Generation Image/Edit and Video/Animate workflow timeout budgets with their sequential verifier deadlines.
 - [x] Audit live shared Supabase: all four ownership tables currently contain 0 rows / 0 null owners, owner FKs are RESTRICT, browser roles have no raw-table grants, and no RenderLab fixture Auth users remain.
-- [x] Transaction-dry-run `0005_core_account_ownership_enforce.sql` against the live prepared schema and roll back; verify owner columns remain nullable and enforcement triggers remain absent afterward.
 - [ ] Re-run the complete exact-head configured suite after GitHub-hosted runners can execute jobs again; current jobs fail before step 1 with `steps: null` and no log.
 - [ ] Review fresh exact-head screenshots/artifacts and re-audit DB/Auth/R2 cleanup after that executable suite.
 - [ ] Merge owner-aware application code only after exact-head hosted execution is available and passes.
-- [ ] After owner-aware code is safely live, recheck for unowned rows, apply `0005_core_account_ownership_enforce.sql`, then verify `NOT NULL`, owner immutability and same-owner link triggers.
+- [ ] After owner-aware code is safely live, recheck for unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, then verify `NOT NULL`, owner immutability and same-owner link triggers.
 
-Current runner blocker is proven independent of PR #17: rerunning previously successful merged-main UI Shell run `33113289145` now fails before step 1 with the same zero-step/no-log symptom. Do not reinterpret the current red checks as product assertion failures, but do not waive the exact-head execution gate either.
+Current runner blocker is proven independent of PR #17: rerunning previously successful merged-main UI Shell run `33113289145` now fails before step 1 with the same zero-step/no-log symptom. The corrected migration head also fails before runner acquisition, so the current red checks still do not exercise the migration or product assertions. Do not reinterpret them as product assertion failures, but do not waive the exact-head execution gate either.
 
-**Core account ownership v0.1 status: `IN PROGRESS`; PR #17 remains draft and `0005` remains unapplied.**
+**Core account ownership v0.1 status: `IN PROGRESS`; PR #17 remains draft and corrected `0005` remains unapplied.**
 
 ### R2 browser-origin boundary
 Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement. Drag/drop reuses the persistent direct-browser upload path and adds no new R2/CORS contract.
@@ -279,10 +280,10 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** Core account ownership v0.1 / UI-030 on draft PR #17; owner-aware product code has a passing configured two-account build/run, while current-head verifier/workflow hardening is blocked from executable GitHub-hosted validation by a repository/account runner-start failure that also reproduces on previously green `main`.  
+**Current product slice:** Core account ownership v0.1 / UI-030 on draft PR #17; owner-aware product code has a passing configured two-account build/run, corrected staged `0005` has rollback-only live-schema semantic verification, and current-head hosted execution is blocked before runner acquisition even for previously green `main`.  
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14 and Drag/drop Upload PR #15 are merged and approved.  
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current blocker:** exact-head GitHub-hosted jobs fail before step 1 (`steps: null`, no log) even when rerunning a previously successful merged-main job; do not merge PR #17 or apply `0005` until hosted execution is available again.  
+**Current blocker:** exact-head GitHub-hosted jobs fail before step 1 (`steps: null`, no log) even when rerunning a previously successful merged-main job; do not merge PR #17 or apply corrected `0005` until hosted execution is available again.  
 **Next product slice:** none. Finish UI-030 first. Do not implement Favorites/Collections until cross-account isolation is fully enforced; do not implement Delete until durable storage/reference/recovery semantics are explicit.
 
 ## Session Handoff Rule
