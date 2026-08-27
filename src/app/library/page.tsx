@@ -2,6 +2,7 @@ import type { MediaAssetListKind, PublicMediaAsset } from "@/lib/api/media-asset
 import { LibraryView } from "@/features/library/library-view";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
+import { isMediaUploadConfigured } from "@/server/media/media-uploads";
 import { isR2Configured } from "@/server/storage/r2";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export default async function LibraryPage({
   return (
     <LibraryView
       available={available}
+      uploadAvailable={isMediaUploadConfigured()}
       items={items}
       kind={kind}
       offset={offset}
