@@ -38,6 +38,26 @@ export async function createSignedReadUrl(key: string, expiresIn = 300) {
   return getSignedUrl(getClient(), new GetObjectCommand({ Bucket: bucketName!, Key: key }), { expiresIn });
 }
 
+export async function createSignedDownloadUrl({
+  key,
+  contentDisposition,
+  expiresIn = 300,
+}: {
+  key: string;
+  contentDisposition: string;
+  expiresIn?: number;
+}) {
+  return getSignedUrl(
+    getClient(),
+    new GetObjectCommand({
+      Bucket: bucketName!,
+      Key: key,
+      ResponseContentDisposition: contentDisposition,
+    }),
+    { expiresIn },
+  );
+}
+
 export async function readR2Object(key: string) {
   const response = await fetch(await createSignedReadUrl(key), { cache: "no-store" });
   if (!response.ok) throw new Error(`R2 object could not be read (${response.status}).`);

@@ -19,7 +19,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 ## Phase 1 — Design & Frontend Foundation
 - [x] Select/document Next.js App Router + React + TypeScript + Tailwind architecture.
 - [x] Establish design tokens, component sourcing policy and repository-backed design workflow.
-- [x] Establish application-shell direction and replace Figma as an ongoing dependency with Penpot/open SVG handoff.
+- [x] Establish application-shell direction and Penpot/open-SVG design handoff.
 
 ## Phase 2 — Application Shell
 - [x] Scaffold the fresh application.
@@ -38,85 +38,91 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - [x] Implement durable `media-asset` continuation and capability-derived Edit/Animate.
 - [x] Implement conservative poll-time reassignment and bounded client polling recovery.
 - [x] Implement compact Advanced disclosure from verified capability definitions.
-- [x] Complete configured browser lifecycle review in run `33031817744` with desktop/mobile screenshots and fixture cleanup.
+- [x] Complete configured browser lifecycle review in `33031817744` with responsive screenshots and cleanup.
 - [ ] Remove the transitional Studio compatibility adapter after migration/debugging dependence is gone.
 
-**Create status: `APPROVED`.** Phase 3 product/UI work is complete.
+**Create status: `APPROVED`.**
 
 ## Phase 4 — Media & Continuation
 **Current phase.** Library and Media Viewer use RenderLab-owned durable media plus the shared continuation capability model.
 
-### Approved v0.1 surfaces
-- [x] Library v0.1: newest-first unified durable-media grid, All/Images/Videos filtering, pagination, truthful empty/unavailable states and deep links.
-- [x] Media Viewer v0.1: deep-linked responsive media inspection with basic metadata and capability-derived continuation.
-- [x] Viewer → Create durable-media continuation is server-validated before Create initializes.
-- [x] Credential-free production/UI validation run `33034606323` passed.
-- [x] Configured R2 + Supabase Library → Viewer → Create lifecycle run `33034606396` passed with desktop/mobile rendering, media geometry verification and fixture cleanup.
+### Base Library + Viewer
+- [x] Library v0.1: newest-first unified durable-media grid, All/Images/Videos filtering, pagination, truthful states and deep links.
+- [x] Media Viewer v0.1: responsive durable-media inspection, metadata and capability-derived continuation.
+- [x] Viewer → Create durable-media continuation is server-validated.
+- [x] Credential-free run `33034606323` passed.
+- [x] Configured R2/Supabase lifecycle `33034606396` passed with responsive render review and cleanup.
 
 **Library v0.1 status: `APPROVED`.**  
 **Media Viewer v0.1 status: `APPROVED`.**
 
-### Persistent uploads — merged
-UI-022 is accepted: durable user uploads become ordinary `media_assets`; pending direct transfer state is isolated in server-owned `media_upload_sessions`.
+### Persistent uploads — merged PR #9
+UI-022: durable user uploads become ordinary `media_assets`; pending direct transfer belongs to `media_upload_sessions`.
 
-- [x] Durable uploaded/generated media share opaque `media-asset` identity.
-- [x] Temporary `generation_sources` remain separate from durable Library media.
-- [x] Saga `studio_uploads` is not reused.
-- [x] Migration `0003_persistent_media_uploads.sql` applied as `20260827031630 renderlab_persistent_media_uploads`.
-- [x] Typed ticket/completion APIs, signed direct-R2 PUT and server HEAD verification implemented.
-- [x] PNG/JPEG/WebP up to 25 MB supported.
-- [x] Unicode filename preservation and concurrent completion race recovery verified.
-- [x] Compact Upload action integrated without an Uploads tab/modal framework.
-- [x] Uploaded Library/Viewer/Create continuation is truthful and capability-derived.
-- [x] R2 CORS management verified through the existing admin-capable R2 S3 credentials.
-- [x] Final pre-merge runs: UI Shell `33067469516`, backend upload integration `33067469518`, Library browser lifecycle `33067469527`.
-- [x] Desktop/mobile screenshots inspected and fixture cleanup confirmed.
-- [x] PR #9 merged to `main` as `d306f2abd1831538c51692545d72db1e5e9e0814`.
-- [x] Post-merge `main` shell/reference-upload checks passed.
+- [x] Uploaded/generated media share opaque `media-asset` identity.
+- [x] Keep temporary `generation_sources` separate and do not reuse Saga `studio_uploads`.
+- [x] Apply `0003_persistent_media_uploads.sql` as `20260827031630 renderlab_persistent_media_uploads`.
+- [x] Implement ticket → signed R2 PUT → completion → HEAD verification → promotion.
+- [x] Support PNG/JPEG/WebP ≤25 MB.
+- [x] Preserve readable Unicode filenames and recover concurrent completion races.
+- [x] Integrate compact native-file-picker Upload without Uploads tab/modal framework.
+- [x] Verify uploaded Library → Viewer → Create continuation.
+- [x] Final pre-merge runs `33067469516`, `33067469518`, `33067469527` passed.
+- [x] PR #9 merged as `d306f2abd1831538c51692545d72db1e5e9e0814`; post-merge main checks passed.
 
-**Persistent Library upload extension status: `APPROVED` and merged.**
+**Persistent upload status: `APPROVED` and merged.**
 
-### Library search v0.1 — PR #10
-UI-023 is accepted: Library search is URL-owned, server-side durable-media discovery.
+### Library search v0.1 — merged PR #10
+UI-023: search is URL-owned server-side discovery over durable `media_assets`.
 
-- [x] Define shareable `q` contract against RenderLab `media_assets`.
-- [x] Normalize whitespace and cap queries at 120 characters.
-- [x] Search display name, original uploaded filename and generated prompt.
-- [x] Keep user punctuation literal rather than exposing PostgREST/regex syntax.
-- [x] Combine search with `All / Images / Videos`.
-- [x] Preserve newest-first ordering; do not add relevance ranking in v0.1.
-- [x] Reset pagination when search/kind changes and preserve `q` across kind/pagination links.
-- [x] Add one native GET search form to the existing Library; no command palette or client-only page filter.
-- [x] Add truthful no-match state and clear-search path.
-- [x] Keep storage/provider/model internals, temporary sources and legacy `studio_*` outside search.
-- [x] Do not add a database extension/index prematurely; keep optimization behind the product contract until corpus scale justifies it.
-- [x] Credential-free UI/API validation passed in `33069004219`.
-- [x] Existing persistent-upload backend regression passed in `33069004207`.
-- [x] Existing real upload → Library → Viewer → Create regression passed in `33069004227`.
-- [x] Configured Library search lifecycle passed in `33069004204` with real R2-backed media fixtures.
-- [x] Prompt, Unicode filename, literal punctuation, kind+search and URL-state behavior verified.
-- [x] Four desktop/mobile results/empty screenshots captured and visually inspected.
-- [x] Direct cleanup verification found `0` search fixtures, `0` upload sessions and `0` uploaded test assets.
-- [x] Source-of-truth docs record UI-023 and verified state.
-- [ ] Merge PR #10 after documentation-finalized head checks are green and GitHub remains mergeable.
+- [x] Define shareable `q`, whitespace normalization and 120-character cap.
+- [x] Search display name, original uploaded filename and generated prompt as case-insensitive literal substrings.
+- [x] Keep punctuation literal and exclude storage/provider/temporary/legacy data.
+- [x] Compose with All/Images/Videos and newest-first pagination.
+- [x] Add native GET search form, clear action and truthful no-match state.
+- [x] Defer relevance ranking/index/search service until real scale justifies it.
+- [x] Implementation-head runs `33069004219`, `33069004207`, `33069004227`, `33069004204` passed.
+- [x] Four result/no-match desktop/mobile screenshots reviewed; cleanup verified.
+- [x] Documentation-finalized runs `33070046222`, `33070046205`, `33070046336`, `33070046186` passed.
+- [x] PR #10 merged as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`.
+- [x] Post-merge main shell `33070215358` passed.
 
-**Library search v0.1 status: `APPROVED FOR MERGE` pending final documentation-head CI.**
+**Library search v0.1 status: `APPROVED` and merged.**
+
+### Durable media Download v0.1 — PR #11
+UI-024: Download is a contextual Media Viewer product action over opaque durable media identity.
+
+- [x] Add Viewer-only secondary Download action.
+- [x] Add `/api/media/assets/[assetId]/download`; reload durable asset server-side.
+- [x] Redirect to short-lived signed R2 GET with attachment `Content-Disposition`; do not proxy bytes through RenderLab.
+- [x] Keep raw R2 key/signed URL out of durable product identity.
+- [x] Uploaded filename preserves sanitized Unicode basename and canonical extension from MIME.
+- [x] Generated filename uses deterministic `renderlab-<kind>-<id-prefix>.<ext>` fallback; no prompt/storage-key filename.
+- [x] Dedicated configured Chromium verifier uses real self-cleaning R2-backed uploaded/generated assets.
+- [x] Verify uploaded filename `RenderLab-Download-画像.png` and generated deterministic fallback.
+- [x] Verify both downloaded files are byte-identical to the durable 68-byte R2 fixtures.
+- [x] Verify Cloudflare R2 honors signed `ResponseContentDisposition`.
+- [x] Implementation-head UI Shell `33070792349` passed.
+- [x] Existing Library Search regression `33070792317` passed.
+- [x] Existing persistent-upload backend regression `33070792362` passed.
+- [x] Existing real Upload → Library → Viewer → Create regression `33070792329` passed.
+- [x] Media Download Visual `33070792343` passed.
+- [x] Three Viewer desktop/mobile screenshots visually inspected; Download remains secondary to Continue.
+- [x] Direct cleanup verification found `0` Download fixtures, `0` upload sessions and `0` uploaded test assets.
+- [x] Source-of-truth docs record UI-024 and verified implementation state.
+- [ ] Merge PR #11 after documentation-finalized head checks are green and GitHub remains mergeable.
+
+**Durable Media Download v0.1 status: `APPROVED FOR MERGE` pending final documentation-head CI.**
 
 ### R2 browser-origin boundary
-The R2 access-key token represented by `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` has bucket-admin capability. The managed browser-upload rule currently allows:
-- `http://127.0.0.1:3000`
-- `http://localhost:3000`
-- `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
-- `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
+Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement.
 
-If a future custom/different public RenderLab origin is adopted, add that exact origin before serving direct browser uploads there. Do not use a broad wildcard or proxy uploads merely to avoid correct CORS configuration.
-
-### Still intentionally open after search
+### Still intentionally open after Download
 - [ ] Broader history controls where a real product need is defined.
 - [ ] Favorites/collections or another approved organization model.
-- [ ] Rename/delete/download/batch management.
+- [ ] Rename/delete/batch management.
 
-These must be designed against explicit RenderLab-owned contracts. Do not infer Saga organization or destructive-action schemas automatically.
+These require explicit RenderLab-owned contracts. Do not infer Saga organization/destructive-action schemas automatically.
 
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
@@ -139,10 +145,10 @@ These must be designed against explicit RenderLab-owned contracts. Do not infer 
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current slice:** Library search v0.1, PR #10.  
-**Verified:** server/API search contract, URL state, responsive search/no-match UI, prompt/name/filename/punctuation semantics, kind composition, existing upload regressions, screenshots and cleanup.  
+**Current slice:** Durable Media Download v0.1, PR #11.  
+**Verified:** product download route, R2 attachment signing, uploaded/generated filename policy, exact bytes, Viewer desktop/mobile placement, existing media/search/upload regressions and cleanup.  
 **Merge gate:** final documentation-head CI + mergeability only.  
-**Next product slice:** select one remaining Phase 4 organization/history need only after its RenderLab-owned contract is explicit.
+**Next product slice after merge:** select one remaining organization/history/management need only after its RenderLab-owned contract is explicit.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
