@@ -16,6 +16,7 @@ import {
 
 type MediaUploadSessionRow = {
   id: string;
+  owner_id: string;
   storage_key: string;
   filename: string;
   display_name: string;
@@ -55,6 +56,7 @@ export function isMediaUploadConfigured() {
 }
 
 export async function createMediaUploadTicket(
+  ownerId: string,
   request: CreateMediaUploadTicketRequest,
 ): Promise<MediaUploadTicket> {
   if (!isMediaUploadConfigured()) throw new Error("Media upload storage is not configured.");
@@ -72,6 +74,7 @@ export async function createMediaUploadTicket(
     method: "POST",
     headers: { Prefer: "return=representation" },
     body: JSON.stringify({
+      owner_id: ownerId,
       storage_key: key,
       filename: originalFilenameFor(request),
       display_name: displayNameFor(request),
@@ -101,85 +104,95 @@ export async function createMediaUploadTicket(
       maxBytes: maxMediaUploadBytes,
     };
   } catch (error) {
-    await supabaseRest(`media_upload_sessions?id=eq.${encodeURIComponent(row.id)}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        status: "failed",
-        updated_at: new Date().toISOString(),
-        metadata: {
-          signingError: error instanceof Error ? error.message : "Upload signing failed.",
-        },
-      }),
-    }).catch(() => null);
+    await supabaseRest(
+      `media_upload_sessions?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "failed",
+          updated_at: new Date().toISOString(),
+          metadata: {
+            signingError: error instanceof Error ? error.message : "Upload signing failed.",
+          },
+        }),
+      },
+    ).catch(() => null);
     throw error;
   }
 }
 
-async function getUploadSession(uploadId: string) {
+async function getUploadSession(ownerId: string, uploadId: string) {
   const rows = await supabaseRest<MediaUploadSessionRow[]>(
-    `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=*&limit=1`,
+    `media_upload_sessions?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(uploadId)}&select=*&limit=1`,
     { method: "GET" },
   );
   return rows?.[0] ?? null;
 }
 
-async function findAssetByStorageKey(storageKey: string) {
+async function findAssetByStorageKey(ownerId: string, storageKey: string) {
   const rows = await supabaseRest<Array<{ id: string }>>(
-    `media_assets?storage_key=eq.${encodeURIComponent(storageKey)}&select=id&limit=1`,
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&storage_key=eq.${encodeURIComponent(storageKey)}&select=id&limit=1`,
     { method: "GET" },
   );
   const id = rows?.[0]?.id;
-  return id ? getMediaAsset(id) : null;
+  return id ? getMediaAsset(ownerId, id) : null;
 }
 
-async function markUploadFailed(row: MediaUploadSessionRow, message: string) {
-  await supabaseRest(`media_upload_sessions?id=eq.${encodeURIComponent(row.id)}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      status: "failed",
-      updated_at: new Date().toISOString(),
-      metadata: {
-        ...(row.metadata ?? {}),
-        verificationError: message,
-      },
-    }),
-  });
+async function markUploadFailed(ownerId: string, row: MediaUploadSessionRow, message: string) {
+  await supabaseRest(
+    `media_upload_sessions?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "failed",
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...(row.metadata ?? {}),
+          verificationError: message,
+        },
+      }),
+    },
+  );
   await deleteR2Object(row.storage_key).catch(() => null);
 }
 
 async function markUploadCompleted(
+  ownerId: string,
   row: MediaUploadSessionRow,
   assetId: string,
   etag: string | null,
 ) {
-  await supabaseRest(`media_upload_sessions?id=eq.${encodeURIComponent(row.id)}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      status: "completed",
-      media_asset_id: assetId,
-      updated_at: new Date().toISOString(),
-      metadata: {
-        ...(row.metadata ?? {}),
-        etag,
-      },
-    }),
-  });
+  await supabaseRest(
+    `media_upload_sessions?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "completed",
+        media_asset_id: assetId,
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...(row.metadata ?? {}),
+          etag,
+        },
+      }),
+    },
+  );
 }
 
-export async function completeMediaUpload(request: CompleteMediaUploadRequest) {
+export async function completeMediaUpload(ownerId: string, request: CompleteMediaUploadRequest) {
   if (!isMediaUploadConfigured()) throw new Error("Media upload storage is not configured.");
 
-  const row = await getUploadSession(request.uploadId);
+  const row = await getUploadSession(ownerId, request.uploadId);
   if (!row) return null;
 
   if (row.status === "completed" && row.media_asset_id) {
-    return getMediaAsset(row.media_asset_id);
+    return getMediaAsset(ownerId, row.media_asset_id);
   }
   if (row.status === "failed") throw new Error("This media upload can no longer be completed.");
 
-  const existingAsset = await findAssetByStorageKey(row.storage_key);
+  const existingAsset = await findAssetByStorageKey(ownerId, row.storage_key);
   if (existingAsset) {
-    await markUploadCompleted(row, existingAsset.id, null);
+    await markUploadCompleted(ownerId, row, existingAsset.id, null);
     return existingAsset;
   }
 
@@ -191,7 +204,7 @@ export async function completeMediaUpload(request: CompleteMediaUploadRequest) {
     object.sizeBytes !== expectedSize ||
     object.contentType !== row.mime_type
   ) {
-    await markUploadFailed(row, "Uploaded object did not match the upload ticket.");
+    await markUploadFailed(ownerId, row, "Uploaded object did not match the upload ticket.");
     throw new Error("Uploaded media did not match the signed upload ticket.");
   }
 
@@ -201,6 +214,7 @@ export async function completeMediaUpload(request: CompleteMediaUploadRequest) {
       method: "POST",
       body: JSON.stringify({
         id: assetId,
+        owner_id: ownerId,
         generation_job_id: null,
         origin: "uploaded",
         kind: "image",
@@ -218,11 +232,11 @@ export async function completeMediaUpload(request: CompleteMediaUploadRequest) {
       }),
     });
   } catch (error) {
-    const racedAsset = await findAssetByStorageKey(row.storage_key).catch(() => null);
+    const racedAsset = await findAssetByStorageKey(ownerId, row.storage_key).catch(() => null);
     if (!racedAsset) throw error;
     assetId = racedAsset.id;
   }
 
-  await markUploadCompleted(row, assetId, object.etag || null);
-  return getMediaAsset(assetId);
+  await markUploadCompleted(ownerId, row, assetId, object.etag || null);
+  return getMediaAsset(ownerId, assetId);
 }
