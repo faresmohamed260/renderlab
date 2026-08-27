@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Download } from "lucide-react";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import { continuationActionsForMedia } from "@/lib/capabilities/generation";
+import { MediaRenameControl } from "@/features/library/media-rename-control";
 
 function createdLabel(value: string) {
   const date = new Date(value);
@@ -158,13 +159,21 @@ export function MediaViewer({ asset }: { asset: PublicMediaAsset }) {
           ) : null}
 
           <div className="mt-6 border-t border-border pt-5">
-            <a
-              href={downloadHref(asset.id)}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <Download aria-hidden="true" size={16} />
-              Download
-            </a>
+            <h3 className="text-xs font-semibold text-text">Actions</h3>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <MediaRenameControl
+                assetId={asset.id}
+                displayName={asset.displayName}
+                fallbackTitle={title}
+              />
+              <a
+                href={downloadHref(asset.id)}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                <Download aria-hidden="true" size={16} />
+                Download
+              </a>
+            </div>
           </div>
         </aside>
       </div>
