@@ -54,10 +54,13 @@ function postgrestQuotedValue(value: string) {
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
+function regexpLiteral(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function mediaSearchFilter(search: string) {
-  const literal = search.replace(/[\\%_*]/g, "\\$&");
-  const pattern = postgrestQuotedValue(`%${literal}%`);
-  return `(display_name.ilike.${pattern},original_filename.ilike.${pattern},provenance->>prompt.ilike.${pattern})`;
+  const pattern = postgrestQuotedValue(regexpLiteral(search));
+  return `(display_name.imatch.${pattern},original_filename.imatch.${pattern},provenance->>prompt.imatch.${pattern})`;
 }
 
 export async function getMediaAsset(assetId: string) {
