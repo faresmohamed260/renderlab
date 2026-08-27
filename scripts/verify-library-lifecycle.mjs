@@ -9,6 +9,7 @@ const r2Bucket = process.env.R2_BUCKET_NAME;
 const artifactDir = process.env.RENDERLAB_LIBRARY_ARTIFACT_DIR || "artifacts";
 const fixturePath = process.env.RENDERLAB_LIBRARY_FIXTURE_PATH || "/tmp/renderlab-library-lifecycle-fixture.json";
 const cleanupOnly = process.argv.includes("--cleanup-only");
+const ignoreHttpsErrors = process.env.RENDERLAB_TEST_IGNORE_HTTPS_ERRORS === "1";
 const fixtureFilename = "renderlab-اختبار-画像.png";
 const fixtureDisplayName = fixtureFilename.replace(/\.[^.]+$/, "");
 const fixtureWidth = 400;
@@ -146,7 +147,7 @@ let primaryError = null;
 
 try {
   browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark" });
+  const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark", ignoreHTTPSErrors: ignoreHttpsErrors });
   const page = await context.newPage();
 
   await page.goto(`${baseUrl}/library`, { waitUntil: "networkidle", timeout: 60_000 });
