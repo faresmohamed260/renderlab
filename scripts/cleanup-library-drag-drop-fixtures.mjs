@@ -4,6 +4,7 @@ const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const r2Bucket = process.env.R2_BUCKET_NAME;
 const fixturePrefix = "renderlab-drop-";
+const legacyLifecycleFilename = "renderlab-اختبار-画像.png";
 
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
@@ -46,14 +47,17 @@ async function removeRow(table, id) {
   if (!response.ok) throw new Error(`Could not remove ${table} row ${id} (${response.status}): ${await response.text()}`);
 }
 
-const pattern = encodeURIComponent(`like.${fixturePrefix}*`);
-const sessions = await rows(
-  `media_upload_sessions?filename=${pattern}&select=id,storage_key,media_asset_id`,
-);
-const assets = await rows(
-  `media_assets?original_filename=${pattern}&select=id,storage_key`,
-);
+const dragPattern = encodeURIComponent(`like.${fixturePrefix}*`);
+const legacyFilenameFilter = encodeURIComponent(`eq.${legacyLifecycleFilename}`);
+const [dragSessions, dragAssets, legacySessions, legacyAssets] = await Promise.all([
+  rows(`media_upload_sessions?filename=${dragPattern}&select=id,storage_key,media_asset_id`),
+  rows(`media_assets?original_filename=${dragPattern}&select=id,storage_key`),
+  rows(`media_upload_sessions?filename=${legacyFilenameFilter}&select=id,storage_key,media_asset_id`),
+  rows(`media_assets?original_filename=${legacyFilenameFilter}&select=id,storage_key`),
+]);
 
+const sessions = [...dragSessions, ...legacySessions];
+const assets = [...dragAssets, ...legacyAssets];
 const storageKeys = new Set([
   ...sessions.map((session) => session.storage_key).filter(Boolean),
   ...assets.map((asset) => asset.storage_key).filter(Boolean),
@@ -69,14 +73,20 @@ for (const storageKey of storageKeys) {
 for (const session of sessions) await removeRow("media_upload_sessions", session.id);
 for (const assetId of assetIds) await removeRow("media_assets", assetId);
 
-const remainingSessions = await rows(`media_upload_sessions?filename=${pattern}&select=id`);
-const remainingAssets = await rows(`media_assets?original_filename=${pattern}&select=id`);
-if (remainingSessions.length || remainingAssets.length) {
+const [remainingDragSessions, remainingDragAssets, remainingLegacySessions, remainingLegacyAssets] = await Promise.all([
+  rows(`media_upload_sessions?filename=${dragPattern}&select=id`),
+  rows(`media_assets?original_filename=${dragPattern}&select=id`),
+  rows(`media_upload_sessions?filename=${legacyFilenameFilter}&select=id`),
+  rows(`media_assets?original_filename=${legacyFilenameFilter}&select=id`),
+]);
+const remainingSessions = remainingDragSessions.length + remainingLegacySessions.length;
+const remainingAssets = remainingDragAssets.length + remainingLegacyAssets.length;
+if (remainingSessions || remainingAssets) {
   throw new Error(
-    `Drag/drop fixture namespace cleanup incomplete: sessions=${remainingSessions.length} assets=${remainingAssets.length}.`,
+    `Library shared fixture cleanup incomplete: sessions=${remainingSessions} assets=${remainingAssets}.`,
   );
 }
 
 console.log(
-  `Library drag/drop fixture namespace clean. removed sessions=${sessions.length} assets=${assets.length} objects=${storageKeys.size}.`,
+  `Library drag/drop fixture namespace clean. removed sessions=${sessions.length} assets=${assets.length} objects=${storageKeys.size}; legacy lifecycle fixture included.`,
 );
