@@ -124,7 +124,7 @@ Before copying/installing an external component:
 **Dependencies:** Next.js Link, maintained Button/Input/DropdownMenu/Alert/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort/favorite/collection contracts, feature-owned `LibraryUploadButton`, `LibraryDropUploadSurface`, `LibrarySortMenu` and `LibraryCollectionMenu`.
 **Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search/history/Favorites/Collections URL/server-owned and persistent upload paths on the shared feature-owned transaction.
 **Do not:** Couple to legacy `studio_*`, expose storage identity, move organization/search/history into page-only client filtering, or infer card/batch/destructive management from toolbar organization controls.
-**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search PR #10; history UI-027; drag/drop UI-028; Favorites UI-031. UI-032 implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed Collections `33207939064` plus all 13 affected regressions; desktop/mobile collection-filtered Library artifacts were reviewed clean.
+**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search PR #10; history UI-027; drag/drop UI-028; Favorites UI-031. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` plus all 13 affected regressions; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and desktop/mobile collection-filtered Library artifacts were reviewed clean.
 
 ### LibraryUploadButton
 **Status:** APPROVED  
@@ -171,7 +171,7 @@ Before copying/installing an external component:
 **Notes:** UI-027. Configured Library History Visual proved Newest/Oldest selection, composed URL state, deterministic API order and responsive rendering.
 
 ### LibraryCollectionMenu
-**Status:** APPROVED FOR UI-032 FINAL VALIDATION
+**Status:** APPROVED
 **Source:** `src/features/library/library-collection-menu.tsx`
 **Origin:** RenderLab feature composition using maintained Button/DropdownMenu primitives and URL navigation.
 **Purpose:** Compact Library-owned collection selector that keeps durable collection filtering server-owned through `collection=<uuid>`.
@@ -179,7 +179,7 @@ Before copying/installing an external component:
 **Dependencies:** `MediaCollectionSummary`, current Library URL state, maintained DropdownMenu + Button, Next.js navigation.
 **Reuse rules:** Keep the selector feature-owned; generic dropdown mechanics remain in `src/components/ui`. Preserve kind/search/Favorites/sort while changing the selected collection and clear stale pagination.
 **Do not:** Turn it into a collection management console, client media filter, top-level Collections destination or card/batch membership UI.
-**Notes:** UI-032. Implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed the configured Collections lifecycle and responsive Library review.
+**Notes:** UI-032. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed the configured Collections lifecycle and responsive Library review before PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d`.
 
 ### MediaViewer
 **Status:** APPROVED
@@ -191,7 +191,7 @@ Before copying/installing an external component:
 **Dependencies:** Next.js Link, maintained Button primitive, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media/collection routes, feature-owned `MediaViewerActions` and `MediaViewerCollections`.
 **Reuse rules:** Keep continuation derivation in the capability model. Keep durable actions on opaque media IDs/product routes. Extend Viewer actions deliberately rather than adding card/batch controls by implication.
 **Do not:** Hard-code a second continuation registry, expose worker/provider/R2 identity, use raw signed URLs as durable links, or infer batch/destructive/collection-management actions from contextual Viewer controls.
-**Notes:** Base generated-media Viewer/continuation passed `33034606396`; Download PR #11; Rename PR #12; Favorites PR #23. UI-032 implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed Collections `33207939064` and the complete affected matrix; desktop/mobile Viewer artifacts preserve Continue hierarchy and existing Rename/Download composition.
+**Notes:** Base generated-media Viewer/continuation passed `33034606396`; Download PR #11; Rename PR #12; Favorites PR #23. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` and the complete affected matrix; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and desktop/mobile Viewer artifacts preserve Continue hierarchy and existing Rename/Download composition.
 
 ### MediaViewerActions
 **Status:** APPROVED
@@ -205,7 +205,7 @@ Before copying/installing an external component:
 **Notes:** Favorite remains full-width above the action stack; Collections is contextual below it; Rename/Download remain paired. UI-032 screenshots confirm the added disclosure does not displace continuation or existing durable actions.
 
 ### MediaViewerCollections
-**Status:** APPROVED FOR UI-032 FINAL VALIDATION
+**Status:** APPROVED
 **Source:** `src/features/library/media-viewer-collections.tsx`
 **Origin:** RenderLab feature composition using maintained Button/Input/Alert primitives and the owner-scoped Collections product API.
 **Purpose:** Viewer-only collection disclosure for listing current-account collections, creating-and-adding a named collection, and idempotently toggling membership of the current durable asset.
@@ -213,7 +213,7 @@ Before copying/installing an external component:
 **Dependencies:** `GET|POST /api/media/collections`, `PUT|DELETE /api/media/collections/[collectionId]/items/[assetId]`, `MediaCollectionSummary`, React local busy/error state.
 **Reuse rules:** Keep collection dataset ownership on the server/product API. Local state may reflect current Viewer membership interactions but is not a global media/collection store.
 **Do not:** Add rename/delete management, card/batch membership, cross-account IDs, raw table access or a dedicated Collections navigation surface in v0.1.
-**Notes:** UI-032 configured run `33207939064` verified create/add/remove persistence, same-owner isolation, pressed-state accessibility, responsive rendering and exact cleanup.
+**Notes:** UI-032 final configured run `33210501106` verified create/add/remove persistence, same-owner isolation, pressed-state accessibility, responsive rendering and exact cleanup; PR #24 is merged and approved.
 
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  

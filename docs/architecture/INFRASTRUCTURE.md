@@ -55,7 +55,7 @@ Rules:
 - `SUPABASE_SERVICE_ROLE_KEY` remains server/CI-only and is never used by product browser code;
 - server account identity uses verified Supabase claims rather than trusting an unverified browser-supplied user ID;
 - UI-029 itself added no owner columns or account-scoped media/job persistence;
-- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites is approved and UI-032 Collections is the separately modeled second organization slice now in final validation.
+- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites and UI-032 Collections are approved separate organization slices. Delete/batch remains blocked on explicit destructive cleanup/recovery semantics.
 
 Configured Account Identity Visual `33111299356` created a run-owned confirmed test user through the server-only Auth admin API, signed in through the actual Settings UI, verified session persistence across reload, signed out and deleted the exact user. Direct verification afterward found no matching account-CI users.
 
@@ -113,7 +113,7 @@ Supabase advisor result after production enforcement:
 - security: only informational `RLS enabled, no policy` notices on the four deliberately server-owned tables; this is expected while browser roles have no direct grants;
 - performance: unused-index INFO notices on empty/low-traffic RenderLab/legacy tables; no UI-030 schema change is justified from those notices.
 
-### Library Collections boundary — UI-032 / PR #24 (final validation)
+### Library Collections boundary — UI-032 / PR #24 (approved)
 UI-032 adds two RenderLab-owned server tables without coupling to legacy `studio_*`:
 - `media_collections` — named account-owned collection identity;
 - `media_collection_items` — many-to-many same-owner relation between a collection and durable `media_assets`.
@@ -126,9 +126,9 @@ Database boundary:
 - owner-normalized collection name uniqueness is enforced;
 - `0008_media_collection_asset_fk_index.sql` applied as `20260828202601 renderlab_media_collection_asset_fk_index` after the performance advisor identified the `media_asset_id` FK as uncovered; rerunning advisors removed that warning.
 
-Verification boundary: exact implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed the complete 14-gate affected suite, including Collections `33207939064`, Account Ownership `33207939069`, Favorites `33207939053`, Library Lifecycle `33207939113`, Generation `33207939088` and Video Generation `33207939039`. Configured Collections verification covers signed-out denial, two-account own/foreign boundaries, database same-owner/immutability enforcement, idempotent membership, composed Library filtering, responsive Viewer/Library interactions and exact cleanup.
+Verification boundary: final exact head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed the complete 14-gate affected suite, including Collections `33210501106`, Account Ownership `33210501089`, Favorites `33210501168`, Library Lifecycle `33210501160`, Generation `33210501178` and Video Generation `33210501167`. PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d`; merged-main checks UI Shell `33210876059`, Reference Upload `33210876022`, Generation Integration `33210876042`, and Video Generation `33210876085` passed. Configured Collections verification covers signed-out denial, two-account own/foreign boundaries, database same-owner/immutability enforcement, idempotent membership, composed Library filtering, responsive Viewer/Library interactions and exact cleanup.
 
-Post-suite audit found zero rows in all six RenderLab tables, zero fixture Auth users, zero browser grants, six RLS-enabled tables, six `NOT NULL` owner columns and nine ownership/integrity triggers. UI-032 adds no new R2 prefix or browser-upload CORS requirement; Collections store only account-owned organization metadata around existing durable media identity.
+Final post-merge audit found zero rows in all six RenderLab tables, zero fixture Auth users, zero browser grants, six RLS-enabled tables, six `NOT NULL` owner columns, nine ownership/integrity triggers and `0008` as latest migration. Vercel listed zero RenderLab deployments created after the PR #24 merge, preserving the disabled automatic-Git-deployment boundary. UI-032 adds no new R2 prefix or browser-upload CORS requirement; Collections store only account-owned organization metadata around existing durable media identity.
 
 ### GitHub Actions / repository visibility
 The repository is **public** as of 2026-08-28. This is a deliberate remote-development infrastructure decision.
