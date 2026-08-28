@@ -1,5 +1,6 @@
 name: Deployment Readiness
 
+# Non-deploying guard for the explicit RenderLab production rollout contract.
 on:
   push:
     branches: [main]
