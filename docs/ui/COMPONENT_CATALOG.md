@@ -73,7 +73,7 @@ Before copying/installing an external component:
 **Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`  
 **Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics  
 **Current primitives:** Alert, Button, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.  
-**Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/empty state, Media Viewer and Viewer Favorite/Rename/Download actions.
+**Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/Collections/empty state, Media Viewer and Viewer Favorite/Collections/Rename/Download actions.
 **Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
 **Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
 **Notes:** UI-026. `npm run verify:ui-purity` is the CI enforcement gate. The refactor preserved the approved surface design while centralizing control mechanics. During verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics, and UI-027 added the maintained Radix Dropdown Menu for Library ordering instead of a bespoke selector.
@@ -116,15 +116,15 @@ Before copying/installing an external component:
 **Do not:** Add provider/worker identifiers or unverified workflow parameters.
 
 ### LibraryView
-**Status:** APPROVED  
-**Source:** `src/features/library/library-view.tsx`  
-**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop behavior and verified UI-031 Favorites
-**Purpose:** Durable-media Library with URL-owned literal search, kind filtering, Favorites filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry and Viewer deep links.
-**Variants:** All/Images/Videos; Favorites on/off; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; transient desktop drag-active upload state; desktop/mobile.
-**Dependencies:** Next.js Link, maintained Button/Input/DropdownMenu/Alert/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort/favorite contracts, feature-owned `LibraryUploadButton`, `LibraryDropUploadSurface` and `LibrarySortMenu`.
-**Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search/history/Favorites URL/server-owned and persistent upload paths on the shared feature-owned transaction.
-**Do not:** Couple to legacy `studio_*`, expose storage identity, move Favorites/search/history into page-only client filtering, or infer Collections/batch management from the Favorites control.
-**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search merged PR #10 as `7ca965b9637fcdd1dd86a04a73c6f97d09fe7a59`; history ordering v0.1 approved under UI-027. UI-028 adds drag/drop without a generic Dropzone primitive because the browser drag surface is a Library-specific composition over an existing product upload contract. UI-031 implementation head `85460b7920afe66eee7ff35da03d4f43c9f207fd` passed Library Favorites `33200364267` plus the affected Library/account regressions; responsive Favorites views were reviewed clean.
+**Status:** APPROVED
+**Source:** `src/features/library/library-view.tsx`
+**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop/Favorites behavior and the verified UI-032 Collections contract.
+**Purpose:** Durable-media Library with URL-owned literal search, kind/Favorites/collection filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry and Viewer deep links.
+**Variants:** All/Images/Videos; Favorites on/off; optional selected collection; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; transient desktop drag-active upload state; desktop/mobile.
+**Dependencies:** Next.js Link, maintained Button/Input/DropdownMenu/Alert/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort/favorite/collection contracts, feature-owned `LibraryUploadButton`, `LibraryDropUploadSurface`, `LibrarySortMenu` and `LibraryCollectionMenu`.
+**Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search/history/Favorites/Collections URL/server-owned and persistent upload paths on the shared feature-owned transaction.
+**Do not:** Couple to legacy `studio_*`, expose storage identity, move organization/search/history into page-only client filtering, or infer card/batch/destructive management from toolbar organization controls.
+**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search PR #10; history UI-027; drag/drop UI-028; Favorites UI-031. UI-032 implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed Collections `33207939064` plus all 13 affected regressions; desktop/mobile collection-filtered Library artifacts were reviewed clean.
 
 ### LibraryUploadButton
 **Status:** APPROVED  
@@ -170,28 +170,50 @@ Before copying/installing an external component:
 **Do not:** Expand it into a Saga-style filter framework, add unsupported model/date/collection filters, or persist organization state client-side.
 **Notes:** UI-027. Configured Library History Visual proved Newest/Oldest selection, composed URL state, deterministic API order and responsive rendering.
 
+### LibraryCollectionMenu
+**Status:** APPROVED FOR UI-032 FINAL VALIDATION
+**Source:** `src/features/library/library-collection-menu.tsx`
+**Origin:** RenderLab feature composition using maintained Button/DropdownMenu primitives and URL navigation.
+**Purpose:** Compact Library-owned collection selector that keeps durable collection filtering server-owned through `collection=<uuid>`.
+**Used by:** `LibraryView` only.
+**Dependencies:** `MediaCollectionSummary`, current Library URL state, maintained DropdownMenu + Button, Next.js navigation.
+**Reuse rules:** Keep the selector feature-owned; generic dropdown mechanics remain in `src/components/ui`. Preserve kind/search/Favorites/sort while changing the selected collection and clear stale pagination.
+**Do not:** Turn it into a collection management console, client media filter, top-level Collections destination or card/batch membership UI.
+**Notes:** UI-032. Implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed the configured Collections lifecycle and responsive Library review.
+
 ### MediaViewer
-**Status:** APPROVED  
-**Source:** `src/features/library/media-viewer.tsx`  
-**Origin:** RenderLab composition based on `design/penpot/media-viewer-v0.1.svg`  
-**Purpose:** Contextual durable-media workspace: media-primary presentation, truthful metadata, capability-derived continuation and secondary durable asset actions.  
-**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Favorite, Download and Rename.
-**Used by:** `/library/[assetId]`  
-**Dependencies:** Next.js Link, maintained Button primitive, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media routes, feature-owned `MediaViewerActions`.  
-**Reuse rules:** Keep continuation derivation in the capability model. Keep durable actions on opaque media IDs/product routes. Extend Viewer actions deliberately rather than adding card/batch controls by implication.  
-**Do not:** Hard-code a second continuation registry, expose worker/provider/R2 identity, use raw signed URLs as durable links, or add Library-card/batch/destructive actions merely because Viewer has contextual actions.  
-**Notes:** Base generated-media Viewer/continuation passed `33034606396`; uploaded continuation approved through PR #9. Download v0.1 merged through PR #11 as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`. Rename v0.1 refined head `fb6f42cdfae377cf841655320dc4bbeee74d3549` passed UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, Rename `33074480356`, and Library Lifecycle `33074480489` on rerun; four responsive Rename screenshots were visually inspected.
+**Status:** APPROVED
+**Source:** `src/features/library/media-viewer.tsx`
+**Origin:** RenderLab composition based on `design/penpot/media-viewer-v0.1.svg`
+**Purpose:** Contextual durable-media workspace: media-primary presentation, truthful metadata, capability-derived continuation and secondary durable asset actions.
+**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Favorite, Collections, Download and Rename.
+**Used by:** `/library/[assetId]`
+**Dependencies:** Next.js Link, maintained Button primitive, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media/collection routes, feature-owned `MediaViewerActions` and `MediaViewerCollections`.
+**Reuse rules:** Keep continuation derivation in the capability model. Keep durable actions on opaque media IDs/product routes. Extend Viewer actions deliberately rather than adding card/batch controls by implication.
+**Do not:** Hard-code a second continuation registry, expose worker/provider/R2 identity, use raw signed URLs as durable links, or infer batch/destructive/collection-management actions from contextual Viewer controls.
+**Notes:** Base generated-media Viewer/continuation passed `33034606396`; Download PR #11; Rename PR #12; Favorites PR #23. UI-032 implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed Collections `33207939064` and the complete affected matrix; desktop/mobile Viewer artifacts preserve Continue hierarchy and existing Rename/Download composition.
 
 ### MediaViewerActions
-**Status:** APPROVED  
-**Source:** `src/features/library/media-viewer-actions.tsx`  
-**Origin:** RenderLab feature composition using maintained Button/Input primitives, React client state and Lucide React  
-**Purpose:** Viewer-owned secondary action group for durable Favorite + Rename + Download, including the small inline Rename editor and local favorite/rename error/saving state.
-**Used by:** `MediaViewer` only.  
-**Dependencies:** `PUT`/`DELETE /api/media/assets/[assetId]/favorite`, `PATCH /api/media/assets/[assetId]`, `/api/media/assets/[assetId]/download`, `MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH`, Next.js router refresh.
-**Reuse rules:** Keep this feature-owned while only Media Viewer needs the action composition. Extract generic mechanics only after a second real reuse need.  
-**Do not:** Turn it into a global media-management framework, mutate R2 identity from the client, or infer delete/batch/collection actions from its existence.  
-**Notes:** Favorite is a full-width pressed-state action above the existing Rename/Download pair; Rename and Download stay side-by-side while the edit form expands beneath them. Configured Favorites run `33200364267` verified owner-scoped idempotent favorite/unfavorite, responsive Library/Viewer state and cleanup; configured Rename run `33074480356` continues to cover generated/uploaded rename and Download preservation.
+**Status:** APPROVED
+**Source:** `src/features/library/media-viewer-actions.tsx`
+**Origin:** RenderLab feature composition using maintained Button/Input primitives, React client state and Lucide React.
+**Purpose:** Viewer-owned secondary action group for durable Favorite + Collections + Rename + Download, including local favorite/rename state and the feature-owned Collections composition.
+**Used by:** `MediaViewer` only.
+**Dependencies:** favorite PUT/DELETE, Rename PATCH, Download route, `MediaViewerCollections`, display-name contract and Next.js router refresh.
+**Reuse rules:** Keep this feature-owned while only Media Viewer needs the action composition. Extract generic mechanics only after a second real reuse need.
+**Do not:** Turn it into a global media-management framework, mutate R2 identity from the client, or infer Delete/batch/collection-management actions from its existence.
+**Notes:** Favorite remains full-width above the action stack; Collections is contextual below it; Rename/Download remain paired. UI-032 screenshots confirm the added disclosure does not displace continuation or existing durable actions.
+
+### MediaViewerCollections
+**Status:** APPROVED FOR UI-032 FINAL VALIDATION
+**Source:** `src/features/library/media-viewer-collections.tsx`
+**Origin:** RenderLab feature composition using maintained Button/Input/Alert primitives and the owner-scoped Collections product API.
+**Purpose:** Viewer-only collection disclosure for listing current-account collections, creating-and-adding a named collection, and idempotently toggling membership of the current durable asset.
+**Used by:** `MediaViewerActions` only.
+**Dependencies:** `GET|POST /api/media/collections`, `PUT|DELETE /api/media/collections/[collectionId]/items/[assetId]`, `MediaCollectionSummary`, React local busy/error state.
+**Reuse rules:** Keep collection dataset ownership on the server/product API. Local state may reflect current Viewer membership interactions but is not a global media/collection store.
+**Do not:** Add rename/delete management, card/batch membership, cross-account IDs, raw table access or a dedicated Collections navigation surface in v0.1.
+**Notes:** UI-032 configured run `33207939064` verified create/add/remove persistence, same-owner isolation, pressed-state accessibility, responsive rendering and exact cleanup.
 
 ### RoutePlaceholder
 **Status:** EXPERIMENTAL  
