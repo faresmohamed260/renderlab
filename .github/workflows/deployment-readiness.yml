@@ -1,6 +1,6 @@
 name: Deployment Readiness
 
-# Non-deploying guard for the explicit RenderLab production rollout contract.
+# Non-deploying guard for the explicit RenderLab production rollout and Vercel environment contract.
 on:
   push:
     branches: [main]
