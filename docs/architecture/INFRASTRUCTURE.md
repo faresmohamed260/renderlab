@@ -128,6 +128,8 @@ Deployment readiness rule: do not apply corrected `0005` merely because GitHub `
 
 `.github/workflows/deployment-readiness.yml` is the permanent non-deploying configuration gate. On changes to Vercel/build configuration it asserts `framework: nextjs`, asserts automatic Git deployment remains disabled, rejects a forced `outputDirectory`, exercises the Vercel environment preflight with non-secret fixture values, installs dependencies and runs the production `next build`. `scripts/verify-vercel-env.mjs` is also wired as `prebuild`, but only enforces the real environment contract when `VERCEL=1`. The gate performs no Vercel deployment and no Supabase/R2 writes.
 
+Deployment Readiness PR #18 merged as `2b8a5170df0675a691deb8d5a7031f1dc14d803b`. Exact candidate `da7f9c23224f5a03ba0832fe8fcd773d1586e0c2` passed all 15 configured PR gates after fixing a concurrent fixture race: configured account identity now scopes by `GITHUB_RUN_ID`, so an older superseded run cannot delete a newer run's Auth owner. Merged `main` Deployment Readiness `33137972011`, UI Shell `33137972042`, Reference Upload `33137972130`, Generation Integration `33137972033`, and Video Generation `33137972021` all passed. Vercel recorded zero deployments after the PR #18 merge. The dashboard-level project preset still reports `vite`, but Vercel's documented `vercel.json` `framework` property overrides the project preset, so repository `framework: nextjs` is authoritative for the next explicit build. Final post-merge Supabase audit found zero core rows/fixture users/browser grants, four nullable owner columns, zero enforcement triggers, and migration history still ending at applied `0004`.
+
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
 
@@ -359,7 +361,7 @@ Actions budget discipline:
 - final exact-head validation remains mandatory; budget pressure or runner-start failure is not permission to waive a required gate;
 - only workflows whose interrupted state is safely reconstructible use `cancel-in-progress: true`. Current cancellation-safe workflows are UI Shell, Persistent Media Upload Integration, and Reference Upload Integration;
 - worker-backed Create/Generation/Video workflows, the shared Library Lifecycle/Drag Drop lock, and visual fixtures that can place R2 objects before their DB row remain non-canceling;
-- configured helper accounts use deterministic owner-scoped identities so a superseding/fresh run can reconstruct its own cleanup without deleting another workflow's fixtures;
+- configured helper accounts use deterministic `GITHUB_RUN_ID`-scoped owner identities (or an explicit test-scope override): reruns of the same workflow can reconstruct their own cleanup, while separate workflow runs cannot delete each other's Auth owner or owned rows;
 - connector-driven repository writes should batch cohesive changes into as few commits as practical so intermediate heads do not launch redundant workflows.
 
 Key workflows:
