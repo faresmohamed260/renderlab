@@ -84,6 +84,7 @@ export function LibraryBatchSelection({ items }: { items: PublicMediaAsset[] }) 
   const router = useRouter();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [hiddenDeletedIds, setHiddenDeletedIds] = useState<Set<string>>(() => new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -98,8 +99,9 @@ export function LibraryBatchSelection({ items }: { items: PublicMediaAsset[] }) 
     });
   }, [items]);
 
+  const visibleItems = items.filter((item) => !hiddenDeletedIds.has(item.id));
   const selectedCount = selectedIds.size;
-  const allSelected = items.length > 0 && selectedCount === items.length;
+  const allSelected = visibleItems.length > 0 && selectedCount === visibleItems.length;
 
   function enterSelectionMode() {
     setFeedback(null);
@@ -126,7 +128,7 @@ export function LibraryBatchSelection({ items }: { items: PublicMediaAsset[] }) 
 
   function togglePageSelection() {
     setFeedback(null);
-    setSelectedIds(allSelected ? new Set() : new Set(items.map((item) => item.id)));
+    setSelectedIds(allSelected ? new Set() : new Set(visibleItems.map((item) => item.id)));
   }
 
   async function deleteSelected() {
@@ -148,6 +150,8 @@ export function LibraryBatchSelection({ items }: { items: PublicMediaAsset[] }) 
       }
 
       const failedIds = new Set(payload.results.filter((result) => !result.ok).map((result) => result.assetId));
+      const deletedIds = payload.results.filter((result) => result.ok).map((result) => result.assetId);
+      setHiddenDeletedIds((current) => new Set([...current, ...deletedIds]));
       setSelectedIds(failedIds);
       setDialogOpen(false);
 
@@ -187,7 +191,7 @@ export function LibraryBatchSelection({ items }: { items: PublicMediaAsset[] }) 
             <div className="flex flex-wrap items-center justify-end gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={togglePageSelection} disabled={deleting}>
                 <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-                {allSelected ? "Clear page" : `Select page (${items.length})`}
+                {allSelected ? "Clear page" : `Select page (${visibleItems.length})`}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={cancelSelection} disabled={deleting}>
                 <X aria-hidden="true" data-icon="inline-start" />
@@ -251,7 +255,7 @@ export function LibraryBatchSelection({ items }: { items: PublicMediaAsset[] }) 
       ) : null}
 
       <div className="mt-3 grid grid-cols-2 gap-3 sm:mt-4 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-        {items.map((asset) => {
+        {visibleItems.map((asset) => {
           const title = assetTitle(asset);
           const selected = selectedIds.has(asset.id);
           return (
