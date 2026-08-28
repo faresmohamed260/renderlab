@@ -18,6 +18,11 @@ jobs:
           ref: work/library-favorites-v0-1
       - name: Record UI-031 contract and reconcile handoff state
         run: python scripts/tmp-sync-library-favorites.py
+      - name: Normalize generated Markdown
+        shell: bash
+        run: |
+          python -c 'from pathlib import Path; p=Path("docs/ui/SCREEN_REGISTRY.md"); t=p.read_text(); t=t.replace("**Status:** APPROVED base Library; Favorites v0.1 / UI-031 IN PROGRESS  \n", "**Status:** APPROVED base Library; Favorites v0.1 / UI-031 IN PROGRESS\n"); p.write_text(t)'
+          python -c 'from pathlib import Path; p=Path("docs/ui/UI_DECISIONS.md"); t=p.read_text(); marker="### UI-031 — Favorites are lightweight owner-scoped durable-media organization"; before, after=t.split(marker, 1); after="\n".join(line.rstrip() for line in after.splitlines()).rstrip(); p.write_text(before.rstrip()+"\n\n"+marker+"\n"+after+"\n")'
       - name: Commit synchronized contract
         shell: bash
         run: |
