@@ -166,6 +166,14 @@ Update existing authoritative documentation rather than creating competing sourc
 ## Scope Discipline
 Follow the user's requested scope precisely. Do not redesign, migrate, refactor, deploy, or expand scope merely because it seems useful. Preserve approved RenderLab behavior unless changing it is required.
 
+## GitHub Actions Budget Discipline
+Final exact-head validation remains required; Actions quota, budget pressure, or runner unavailability does not waive a repository validation gate.
+
+- When using connector-driven GitHub writes, batch cohesive multi-file changes into as few commits as practical so intermediate heads do not launch redundant install/build/browser workflows.
+- Use `cancel-in-progress` only when interruption is safe and shared-resource cleanup can be reconstructed. The current cancellation-safe workflow contract is documented in `docs/architecture/INFRASTRUCTURE.md`.
+- Do not cancel worker-backed generation lifecycles, serialized shared-resource workflows, or partially reconstructible R2 fixture workflows merely to save hosted minutes.
+- If workflow behavior, fixture ownership, or cancellation safety changes, update `docs/architecture/INFRASTRUCTURE.md` in the same work.
+
 ## Validation
 For frontend changes:
 1. Verify the application builds.

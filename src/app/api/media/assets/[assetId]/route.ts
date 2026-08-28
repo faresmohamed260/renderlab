@@ -4,6 +4,7 @@ import {
   normalizeMediaAssetDisplayName,
   type RenameMediaAssetRequest,
 } from "@/lib/api/media-assets-contract";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { getMediaAsset, publicMediaAsset, renameMediaAsset } from "@/server/media/media-assets";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -15,17 +16,25 @@ function invalidRequest(message: string) {
   );
 }
 
+function authenticationRequired() {
+  return NextResponse.json(
+    { ok: false, error: { code: "authentication_required", message: "Sign in to access your RenderLab media." } },
+    { status: 401 },
+  );
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ assetId: string }> },
 ) {
   const { assetId } = await context.params;
-  if (!uuidPattern.test(assetId)) {
-    return invalidRequest("A valid media asset ID is required.");
-  }
+  if (!uuidPattern.test(assetId)) return invalidRequest("A valid media asset ID is required.");
+
+  const account = await getCurrentRenderLabAccount();
+  if (!account) return authenticationRequired();
 
   try {
-    const asset = await getMediaAsset(assetId);
+    const asset = await getMediaAsset(account.id, assetId);
     if (!asset) {
       return NextResponse.json({ ok: false, error: { code: "asset_not_found", message: "Media asset was not found." } }, { status: 404 });
     }
@@ -43,9 +52,10 @@ export async function PATCH(
   context: { params: Promise<{ assetId: string }> },
 ) {
   const { assetId } = await context.params;
-  if (!uuidPattern.test(assetId)) {
-    return invalidRequest("A valid media asset ID is required.");
-  }
+  if (!uuidPattern.test(assetId)) return invalidRequest("A valid media asset ID is required.");
+
+  const account = await getCurrentRenderLabAccount();
+  if (!account) return authenticationRequired();
 
   let body: RenameMediaAssetRequest;
   try {
@@ -54,9 +64,7 @@ export async function PATCH(
     return invalidRequest("A JSON request body is required.");
   }
 
-  if (!body || typeof body.displayName !== "string") {
-    return invalidRequest("A media name is required.");
-  }
+  if (!body || typeof body.displayName !== "string") return invalidRequest("A media name is required.");
 
   const displayName = normalizeMediaAssetDisplayName(body.displayName);
   if (!displayName) return invalidRequest("A media name is required.");
@@ -65,7 +73,7 @@ export async function PATCH(
   }
 
   try {
-    const asset = await renameMediaAsset(assetId, displayName);
+    const asset = await renameMediaAsset(account.id, assetId, displayName);
     if (!asset) {
       return NextResponse.json({ ok: false, error: { code: "asset_not_found", message: "Media asset was not found." } }, { status: 404 });
     }

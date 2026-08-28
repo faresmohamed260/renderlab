@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ImageIcon, MoreHorizontal, Plus, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -82,11 +83,13 @@ function isTerminalJob(job: GenerationJob | null) {
 }
 
 export function CreateWorkspace({
+  accountAvailable,
   generationAvailable,
   referenceUploadAvailable,
   initialContinuation = null,
   initialContinuationError = null,
 }: {
+  accountAvailable: boolean;
   generationAvailable: boolean;
   referenceUploadAvailable: boolean;
   initialContinuation?: InitialContinuation | null;
@@ -247,7 +250,7 @@ export function CreateWorkspace({
 
   const jobActive = Boolean(job && !isTerminalJob(job));
   const canSubmit =
-    generationAvailable && Boolean(prompt.trim()) && !submitting && !referenceUploading && !jobActive;
+    accountAvailable && generationAvailable && Boolean(prompt.trim()) && !submitting && !referenceUploading && !jobActive;
   const continuationActions = resultAsset ? continuationActionsForMedia(resultAsset.kind) : [];
   const continuationSourceLabel = continuationSource
     ? continuationSource.id === initialContinuation?.asset.id
@@ -299,7 +302,7 @@ export function CreateWorkspace({
   }
 
   async function uploadReference(file: File) {
-    if (!referenceUploadAvailable) return;
+    if (!accountAvailable || !referenceUploadAvailable) return;
 
     const mimeType = file.type.toLowerCase();
     if (!(supportedReferenceMimeTypes as readonly string[]).includes(mimeType)) {
@@ -499,13 +502,15 @@ export function CreateWorkspace({
                   type="button"
                   variant="secondary"
                   size="icon"
-                  disabled={!referenceUploadAvailable || referenceUploading}
+                  disabled={!accountAvailable || !referenceUploadAvailable || referenceUploading}
                   onClick={() => fileInputRef.current?.click()}
                   aria-label={hasReference ? "Replace reference" : "Add reference"}
                   title={
-                    referenceUploadAvailable
-                      ? "Add a reference image"
-                      : "Reference upload storage is not configured in this environment."
+                    !accountAvailable
+                      ? "Sign in to add a private reference image."
+                      : referenceUploadAvailable
+                        ? "Add a reference image"
+                        : "Reference upload storage is not configured in this environment."
                   }
                 >
                   {referenceUploading ? (
@@ -588,6 +593,17 @@ export function CreateWorkspace({
             </div>
           </Collapsible>
         </form>
+
+        {!accountAvailable ? (
+          <Alert className="mt-3" role="status">
+            <AlertDescription className="flex flex-col gap-3 text-text-muted sm:flex-row sm:items-center sm:justify-between">
+              <span>Sign in to generate, upload references, and save private media to your Library.</span>
+              <Button asChild variant="secondary" size="sm" className="self-start sm:self-auto">
+                <Link href="/settings">Open Settings</Link>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
         {!generationAvailable || !referenceUploadAvailable ? (
           <Alert className="mt-3" role="status">

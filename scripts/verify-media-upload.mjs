@@ -1,4 +1,10 @@
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  configuredTestAccountIdentity,
+  createConfiguredTestAccount,
+  deleteConfiguredTestAccount,
+  withAccountAuthorization,
+} from "./lib/configured-test-account.mjs";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -7,6 +13,7 @@ const r2Bucket = process.env.R2_BUCKET_NAME;
 const cleanupOnly = process.argv.includes("--cleanup-only");
 const fixtureFilename = "renderlab-اختبار-画像.png";
 const fixtureDisplayName = "Persistent upload verification";
+const fixtureAccount = configuredTestAccountIdentity("media-upload");
 const pngBytes = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z5ZsAAAAASUVORK5CYII=",
   "base64",
@@ -15,6 +22,7 @@ const pngBytes = Buffer.from(
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
   SUPABASE_SERVICE_ROLE_KEY: supabaseKey,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -38,8 +46,8 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-async function request(path, init) {
-  const response = await fetch(`${baseUrl}${path}`, init);
+async function request(path, account, init = {}) {
+  const response = await fetch(`${baseUrl}${path}`, withAccountAuthorization(account, init));
   const text = await response.text();
   let payload = null;
   try {
@@ -66,20 +74,27 @@ async function rows(path) {
 
 async function cleanupFixtures() {
   const sessions = await rows(
-    `media_upload_sessions?filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,media_asset_id`,
+    `media_upload_sessions?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,media_asset_id`,
   );
 
   for (const session of sessions) {
     await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: session.storage_key })).catch(() => {});
-    const sessionDelete = await supabase(`media_upload_sessions?id=eq.${encodeURIComponent(session.id)}`, { method: "DELETE" });
+    const sessionDelete = await supabase(
+      `media_upload_sessions?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&id=eq.${encodeURIComponent(session.id)}`,
+      { method: "DELETE" },
+    );
     if (!sessionDelete.ok) throw new Error(`Could not remove media upload session fixture (${sessionDelete.status}).`);
     if (session.media_asset_id) {
-      const assetDelete = await supabase(`media_assets?id=eq.${encodeURIComponent(session.media_asset_id)}`, { method: "DELETE" });
+      const assetDelete = await supabase(
+        `media_assets?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&id=eq.${encodeURIComponent(session.media_asset_id)}`,
+        { method: "DELETE" },
+      );
       if (!assetDelete.ok) throw new Error(`Could not remove uploaded media asset fixture (${assetDelete.status}).`);
     }
   }
 
-  if (sessions.length) console.log(`Cleaned ${sessions.length} persistent media upload fixture(s).`);
+  await deleteConfiguredTestAccount(fixtureAccount);
+  if (sessions.length) console.log(`Cleaned ${sessions.length} persistent media upload fixture(s) for owner=${fixtureAccount.id}.`);
 }
 
 await cleanupFixtures();
@@ -87,7 +102,8 @@ if (cleanupOnly) process.exit(0);
 
 let primaryError = null;
 try {
-  const ticketResult = await request("/api/media/uploads/upload-tickets", {
+  const account = await createConfiguredTestAccount("media-upload");
+  const ticketResult = await request("/api/media/uploads/upload-tickets", account, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -111,15 +127,12 @@ try {
   });
   assert(uploadResponse.ok, `Signed persistent R2 upload failed (${uploadResponse.status}): ${await uploadResponse.text()}`);
 
-  const completionRequest = () => request("/api/media/uploads/upload-completions", {
+  const completionRequest = () => request("/api/media/uploads/upload-completions", account, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ uploadId: ticket.uploadId, width: 1, height: 1 }),
   });
-  const [completion, concurrentCompletion] = await Promise.all([
-    completionRequest(),
-    completionRequest(),
-  ]);
+  const [completion, concurrentCompletion] = await Promise.all([completionRequest(), completionRequest()]);
   assert(completion.response.ok && completion.payload?.ok, `Persistent upload completion failed (${completion.response.status}): ${JSON.stringify(completion.payload)}`);
   assert(concurrentCompletion.response.ok && concurrentCompletion.payload?.ok, `Concurrent persistent upload completion failed (${concurrentCompletion.response.status}): ${JSON.stringify(concurrentCompletion.payload)}`);
   const asset = completion.payload.asset;
@@ -136,26 +149,27 @@ try {
   const repeated = await completionRequest();
   assert(repeated.response.ok && repeated.payload?.asset?.id === asset.id, "Persistent upload completion is not sequentially idempotent.");
 
-  const metadata = await request(`/api/media/assets/${encodeURIComponent(asset.id)}`, {
+  const metadata = await request(`/api/media/assets/${encodeURIComponent(asset.id)}`, account, {
     headers: { accept: "application/json" },
   });
   assert(metadata.response.ok && metadata.payload?.asset?.id === asset.id, "Uploaded asset was not available through the ordinary media metadata API.");
   assert(metadata.payload.asset.origin === "uploaded", "Ordinary media API lost uploaded origin metadata.");
 
-  const contentResponse = await fetch(`${baseUrl}${asset.contentUrl}`);
+  const contentResponse = await fetch(`${baseUrl}${asset.contentUrl}`, withAccountAuthorization(account));
   assert(contentResponse.ok, `Uploaded asset content could not be loaded (${contentResponse.status}).`);
   assert(String(contentResponse.headers.get("content-type") || "").startsWith("image/png"), "Uploaded asset content MIME type is incorrect.");
   assert(Buffer.from(await contentResponse.arrayBuffer()).length === pngBytes.length, "Uploaded asset content length changed.");
 
-  const listResult = await request("/api/media/assets?kind=image&limit=48", { headers: { accept: "application/json" } });
+  const listResult = await request("/api/media/assets?kind=image&limit=48", account, { headers: { accept: "application/json" } });
   assert(listResult.response.ok && listResult.payload?.ok, "Library media list could not be loaded after persistent upload.");
   assert(listResult.payload.items.some((item) => item.id === asset.id && item.origin === "uploaded"), "Persistent upload did not appear through the ordinary Library media list contract.");
 
-  const sessionRows = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(ticket.uploadId)}&select=status,media_asset_id,filename`);
+  const sessionRows = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(ticket.uploadId)}&select=status,media_asset_id,filename,owner_id`);
   assert(sessionRows[0]?.status === "completed" && sessionRows[0]?.media_asset_id === asset.id, "Upload session was not linked to the promoted media asset.");
   assert(sessionRows[0]?.filename === fixtureFilename, "Upload session did not preserve the original Unicode filename.");
+  assert(sessionRows[0]?.owner_id === account.id, "Upload session was not owned by the authenticated fixture account.");
 
-  console.log(`Persistent media upload verified successfully. upload=${ticket.uploadId} asset=${asset.id}`);
+  console.log(`Persistent media upload verified successfully. owner=${account.id} upload=${ticket.uploadId} asset=${asset.id}`);
 } catch (error) {
   primaryError = error;
 } finally {

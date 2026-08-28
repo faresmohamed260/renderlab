@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { MediaViewer } from "@/features/library/media-viewer";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
 import { isR2Configured } from "@/server/storage/r2";
@@ -17,6 +20,21 @@ export default async function MediaViewerPage({
 
   if (!uuidPattern.test(assetId)) notFound();
 
+  const account = await getCurrentRenderLabAccount();
+  if (!account) {
+    return (
+      <section className="mx-auto w-full max-w-4xl px-4 pb-28 pt-12 sm:px-8 sm:pb-16 sm:pt-16">
+        <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text">Media Viewer</h2>
+        <div className="mt-6 rounded-xl border border-border bg-surface-1 px-5 py-8 text-sm text-text-muted" role="status">
+          <p>Sign in to view private RenderLab media.</p>
+          <Button asChild variant="secondary" className="mt-4">
+            <Link href="/settings">Open Settings</Link>
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
   if (!isSupabaseConfigured() || !isR2Configured()) {
     return (
       <section className="mx-auto w-full max-w-4xl px-4 pb-28 pt-12 sm:px-8 sm:pb-16 sm:pt-16">
@@ -28,7 +46,7 @@ export default async function MediaViewerPage({
     );
   }
 
-  const asset = await getMediaAsset(assetId).catch(() => null);
+  const asset = await getMediaAsset(account.id, assetId).catch(() => null);
   if (!asset) notFound();
 
   return <MediaViewer asset={publicMediaAsset(asset)} />;

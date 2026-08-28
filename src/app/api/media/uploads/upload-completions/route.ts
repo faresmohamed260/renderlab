@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateMediaUploadCompletionRequest } from "@/lib/api/media-upload-contract";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { publicMediaAsset } from "@/server/media/media-assets";
 import { completeMediaUpload, isMediaUploadConfigured } from "@/server/media/media-uploads";
 
@@ -9,6 +10,14 @@ export async function POST(request: Request) {
 
   if (!parsed.ok) {
     return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
+  }
+
+  const account = await getCurrentRenderLabAccount();
+  if (!account) {
+    return NextResponse.json(
+      { ok: false, error: { code: "authentication_required", message: "Sign in to complete your Library upload." } },
+      { status: 401 },
+    );
   }
 
   if (!isMediaUploadConfigured()) {
@@ -25,7 +34,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const asset = await completeMediaUpload(parsed.request);
+    const asset = await completeMediaUpload(account.id, parsed.request);
     if (!asset) {
       return NextResponse.json(
         {

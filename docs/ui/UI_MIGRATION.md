@@ -222,12 +222,44 @@ UI-029 establishes a real RenderLab account principal without pretending media o
 
 **Account identity foundation v0.1 status: `APPROVED` and merged.**
 
+### Core account ownership v0.1 — PR #17 / UI-030
+UI-030 establishes account-private ownership across RenderLab's existing generation/reference/upload/media records before any personal organization feature is allowed.
+
+- [x] Apply rolling prepare migration `0004_core_account_ownership_prepare.sql` as `20260827203604 renderlab_core_account_ownership_prepare`; add nullable `owner_id -> auth.users.id ON DELETE RESTRICT`, owner-time indexes and revoke direct `anon`/`authenticated` raw-table grants while keeping RLS enabled.
+- [x] Thread verified non-anonymous Supabase `claims.sub` through private Library/Viewer/media/upload/reference/generation routes and server services.
+- [x] Create generation sources/jobs, persistent upload sessions/assets and generated output assets with the authenticated owner.
+- [x] Scope list/read/update/completion/poll/input-resolution operations by owner so foreign opaque IDs collapse to normal not-found behavior.
+- [x] Keep Create draftable while signed out, but require sign-in before persistent upload/generation actions.
+- [x] Pass the configured two-account ownership gate on exact product SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b` in run `33115683962`, including production build, configured app startup, own-vs-foreign media/job denial, owner-bound upload/reference writes, raw Data API denial and cleanup.
+- [x] Correct staged `0005_core_account_ownership_enforce.sql` at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after a rollback-only simulation exposed that one shared polymorphic trigger function referenced a field unavailable on `media_assets`; split the media→job and upload→asset checks into table-specific trigger functions.
+- [x] Semantically verify the corrected `0005` transactionally against the live prepared schema: same-owner links succeed; cross-owner media→job and upload→asset links fail on insert/update; owner reassignment and null ownership fail; Auth-owner deletion is restricted while owned rows exist; all six enforcement triggers exist inside the transaction.
+- [x] Verify existing cleanup semantics under corrected `0005`: deleting a generation job still sets linked `media_assets.generation_job_id` to null, while deleting an uploaded media asset still cascades its `media_upload_sessions` row.
+- [x] Roll back all enforcement simulations and verify four nullable owner columns, zero enforcement triggers/functions, zero simulation Auth users and zero core rows remain afterward; migration history still contains only applied `0004`.
+- [x] Require authenticated server-to-server transport for the optional external RenderLab generation adapter: URL alone no longer activates it; `RENDERLAB_GENERATION_BACKEND_URL` + server-only `RENDERLAB_GENERATION_BACKEND_TOKEN` are required, and both submit/poll send bearer auth before forwarding `x-renderlab-owner-id`. Native generation remains the fallback when that pair is incomplete.
+- [x] Strengthen current verifier to cover both owners' own lists, signed-out persistent actions, unchanged foreign upload/reference pending rows and raw Data API denial on all four core tables.
+- [x] Make configured account cleanup reconstructible from deterministic owner IDs so fresh-runner reruns clean only their own DB/R2 state before Auth-user recreation.
+- [x] Remove active namespace-wide destructive drag/drop cleanup and scope fixed-name/run-name fixture discovery/deletion to deterministic owners.
+- [x] Align Generation Image/Edit and Video/Animate workflow timeout budgets with their sequential verifier deadlines.
+- [x] Make the repository public to remove the private-repository GitHub-hosted Actions capacity block; verify hosted runners acquire normally afterward.
+- [x] Run the complete configured suite on exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82`: Account Ownership `33131090207`, Account Identity `33131090197`, UI Shell `33131090250`, Create Lifecycle `33131090243`, Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265`, Media Download `33131090206`, Media Rename `33131090198`, Reference Upload `33131090263`, Generation Integration `33131090251`, and Video Generation `33131090262` all passed.
+- [x] Fix the verifier-only Playwright redirect-auth bug exposed by resumed CI: local product media routes are authenticated with a non-following fetch and the browser follows signed R2 redirects without carrying the fixture bearer. Create Lifecycle, Library Lifecycle, Download and Rename all pass after the shared helper fix.
+- [x] Review fresh exact-head screenshots/artifacts: signed-out Library private-account state and signed-in Create/Library/Viewer desktop/mobile states preserve the approved hierarchy with no unintended UI drift.
+- [x] Re-audit shared Supabase after exact-head CI: all four ownership tables contain 0 rows / 0 null owners, browser roles have no direct grants, all four owners remain nullable for rolling rollout, enforcement trigger count is 0, migration history ends at applied `0004`, and no RenderLab fixture Auth users remain.
+- [x] Run Supabase advisors: security reports only expected informational RLS-with-no-policy notices for the deliberately server-owned tables; performance reports unused-index INFO findings on currently empty/low-traffic tables, with no UI-030 remediation required.
+- [ ] Merge owner-aware application code after this final documentation head is validated.
+- [ ] After owner-aware code is safely live through a separately authorized rollout, recheck for unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, then verify `NOT NULL`, owner immutability and table-specific same-owner link triggers.
+
+The earlier zero-step/no-log Actions failures were a private-repository hosted-capacity issue, not a RenderLab regression. Making the repository public restored runner allocation immediately; the resumed exact-head suite produced real build/browser/integration evidence and is fully green on `49f08013dc428d8d390a1bd803b10886f853cd82`.
+
+**Core account ownership v0.1 status: `IN PROGRESS`; PR #17 implementation is exact-head verified, while merge/live rollout and corrected `0005` enforcement remain unapplied/outstanding.**
+
 ### R2 browser-origin boundary
 Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement. Drag/drop reuses the persistent direct-browser upload path and adds no new R2/CORS contract.
 
-### Still intentionally open after Account Identity
-- [ ] Owner-scope RenderLab `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions`; enforce the same authenticated principal through server APIs/services and verify cross-account denial before personal Library organization.
-- [ ] Favorites/collections or another approved organization model only after that owner-scoped data boundary is verified.
+### Still intentionally open during Core Account Ownership
+- [ ] Merge PR #17 after final documentation-head validation; do not deploy merely because GitHub `main` advances.
+- [ ] Make the owner-aware runtime live only through a separately authorized deployment/rollout step, then re-audit for unowned rows and apply/verify corrected `0005`.
+- [ ] Favorites/collections or another approved organization model only after that owner-scoped data boundary is fully enforced.
 - [ ] Delete and batch management after storage/reference/recovery semantics are explicit.
 - [ ] Other Library interaction enhancements only when separately justified.
 
@@ -254,10 +286,11 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** none selected; Account Identity Foundation v0.1 / UI-029 is complete, approved and merged through PR #16 as `bcb20365db102252db51263968de96fc795be518`.  
+**Current product slice:** Core account ownership v0.1 / UI-030 on PR #17. Exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured gates, responsive artifact review and clean shared-resource audit.  
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14 and Drag/drop Upload PR #15 are merged and approved.  
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Next product slice:** owner-scoped core data enforcement across generation/reference/upload/media boundaries. Do not implement Favorites/Collections until that cross-account isolation contract is verified; do not implement Delete until durable storage/reference/recovery semantics are explicit.
+**Current gate:** validate this documentation head and merge PR #17. UI-030 remains incomplete after merge until the owner-aware runtime is separately made live and corrected `0005` is applied/verified against a no-unowned-row audit.  
+**Next product slice:** none. Finish UI-030 rollout first. Do not implement Favorites/Collections until cross-account isolation is fully enforced; do not implement Delete until durable storage/reference/recovery semantics are explicit.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

@@ -4,14 +4,17 @@ on:
   pull_request:
     paths:
       - "scripts/ensure-r2-browser-cors.mjs"
-      - "scripts/cleanup-library-drag-drop-fixtures.mjs"
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-library-drag-drop.mjs"
       - ".github/workflows/library-drag-drop-visual.yml"
       - "components.json"
       - "package.json"
       - "src/components/ui/**"
       - "src/lib/utils.ts"
+      - "src/lib/supabase/**"
       - "supabase/migrations/0003_persistent_media_uploads.sql"
+      - "supabase/migrations/0004_core_account_ownership_prepare.sql"
+      - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "src/app/library/**"
       - "src/features/library/**"
       - "src/app/api/media/assets/**"
@@ -37,6 +40,8 @@ jobs:
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -76,9 +81,6 @@ jobs:
 
       - name: Reconcile and verify R2 browser upload CORS
         run: node scripts/ensure-r2-browser-cors.mjs
-
-      - name: Clean drag/drop fixture namespace
-        run: node scripts/cleanup-library-drag-drop-fixtures.mjs
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium

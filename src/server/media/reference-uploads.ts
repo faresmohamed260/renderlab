@@ -11,6 +11,7 @@ import { createSignedUploadUrl, headR2Object, isR2Configured } from "@/server/st
 
 type SourceRow = {
   id: string;
+  owner_id: string;
   storage_key: string;
   filename: string;
   mime_type: string;
@@ -36,6 +37,7 @@ function extensionFor(mimeType: CreateReferenceUploadTicketRequest["mimeType"]) 
 }
 
 export async function createReferenceUploadTicket(
+  ownerId: string,
   request: CreateReferenceUploadTicketRequest,
 ): Promise<ReferenceUploadTicket> {
   if (!isReferenceUploadConfigured()) {
@@ -54,6 +56,7 @@ export async function createReferenceUploadTicket(
     method: "POST",
     headers: { Prefer: "return=representation" },
     body: JSON.stringify({
+      owner_id: ownerId,
       storage_key: key,
       filename: safeFilename(request.filename),
       mime_type: request.mimeType,
@@ -85,6 +88,7 @@ export async function createReferenceUploadTicket(
 }
 
 export async function completeReferenceUpload(
+  ownerId: string,
   request: CompleteReferenceUploadRequest,
 ): Promise<ReferenceSource | null> {
   if (!isReferenceUploadConfigured()) {
@@ -92,7 +96,8 @@ export async function completeReferenceUpload(
   }
 
   const params = new URLSearchParams({
-    select: "id,storage_key,filename,mime_type,size_bytes,width,height,status,metadata",
+    select: "id,owner_id,storage_key,filename,mime_type,size_bytes,width,height,status,metadata",
+    owner_id: `eq.${ownerId}`,
     id: `eq.${request.sourceId}`,
     limit: "1",
   });
@@ -120,22 +125,25 @@ export async function completeReferenceUpload(
     object.sizeBytes !== expectedSize ||
     object.contentType !== row.mime_type
   ) {
-    await supabaseRest(`generation_sources?id=eq.${encodeURIComponent(row.id)}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        status: "failed",
-        updated_at: new Date().toISOString(),
-        metadata: {
-          ...(row.metadata ?? {}),
-          verificationError: "Uploaded object did not match the ticket.",
-        },
-      }),
-    });
+    await supabaseRest(
+      `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "failed",
+          updated_at: new Date().toISOString(),
+          metadata: {
+            ...(row.metadata ?? {}),
+            verificationError: "Uploaded object did not match the ticket.",
+          },
+        }),
+      },
+    );
     throw new Error("Uploaded reference did not match the signed upload ticket.");
   }
 
   const updated = await supabaseRest<SourceRow[]>(
-    `generation_sources?id=eq.${encodeURIComponent(row.id)}&select=*`,
+    `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}&select=*`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },

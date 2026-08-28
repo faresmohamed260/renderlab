@@ -1,13 +1,16 @@
 import type { GenerationJob, GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
-import { submitThroughStudioCompatibility } from "@/server/generation/studio-compat";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
-const studioCompatUrl = process.env.RENDERLAB_STUDIO_COMPAT_URL?.trim();
+const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
+
+function isExternalGenerationBackendConfigured() {
+  return Boolean(backendUrl && backendToken);
+}
 
 export function isGenerationBackendConfigured() {
-  return Boolean(backendUrl || isNativeGenerationConfigured() || studioCompatUrl);
+  return isExternalGenerationBackendConfigured() || isNativeGenerationConfigured();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -41,11 +44,15 @@ function parseGenerationJob(value: unknown): GenerationJob | null {
   };
 }
 
-async function submitToRenderLabBackend(request: GenerationRequest): Promise<SubmitGenerationResponse> {
+async function submitToRenderLabBackend(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
   try {
     const response = await fetch(`${backendUrl!.replace(/\/$/, "")}/jobs`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${backendToken!}`,
+        "x-renderlab-owner-id": ownerId,
+      },
       body: JSON.stringify(request),
       cache: "no-store",
     });
@@ -74,13 +81,12 @@ async function submitToRenderLabBackend(request: GenerationRequest): Promise<Sub
   }
 }
 
-export async function submitGeneration(request: GenerationRequest): Promise<SubmitGenerationResponse> {
-  if (backendUrl) return submitToRenderLabBackend(request);
-  if (isNativeGenerationConfigured()) return submitNativeGeneration(request);
-  if (studioCompatUrl) return submitThroughStudioCompatibility(request, studioCompatUrl);
+export async function submitGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
+  if (isExternalGenerationBackendConfigured()) return submitToRenderLabBackend(ownerId, request);
+  if (isNativeGenerationConfigured()) return submitNativeGeneration(ownerId, request);
 
   return {
     ok: false,
-    error: { code: "generation_backend_unavailable", message: "Generation is not connected to a backend yet." },
+    error: { code: "generation_backend_unavailable", message: "Generation is not connected to an owner-aware backend yet." },
   };
 }

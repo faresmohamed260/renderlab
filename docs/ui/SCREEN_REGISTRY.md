@@ -51,7 +51,11 @@ Approved behavior:
 - capability-derived Edit/Animate continuation from durable images;
 - Advanced controls from verified capability definitions;
 - complete configured browser lifecycle `33031817744`;
-- uploaded-media continuation preserves uploaded display identity.
+- uploaded-media continuation preserves uploaded display identity;
+- UI-030 keeps prompt/settings draftable while signed out, but generation/reference upload and other persistent actions require a verified non-anonymous account;
+- signed-in generation jobs, reference/media inputs and persisted outputs remain within the verified account owner boundary.
+
+**UI-030 evidence:** exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Create Lifecycle `33131090243`, Generation Integration `33131090251`, Video Generation Integration `33131090262` and Account Ownership `33131090207`. Desktop/mobile generated-result artifacts were visually reviewed without unintended Create hierarchy drift.
 
 **Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 
@@ -82,7 +86,8 @@ Approved behavior:
 - URL-owned server-side search `q` over display name, original filename and generated prompt;
 - search is case-insensitive literal substring matching, max 120 characters, composed with kind/sort/pagination;
 - changing search, kind or sort clears stale pagination appropriately;
-- renamed durable assets are immediately discoverable through the same display-name search contract.
+- renamed durable assets are immediately discoverable through the same display-name search contract;
+- UI-030 makes Library private to the verified account: signed-out users see an explicit sign-in state rather than media/search/upload controls, while signed-in list/search/history/upload queries are owner-scoped.
 
 **Approval evidence:**
 - base Library/Viewer lifecycle `33034606396`;
@@ -95,9 +100,10 @@ Approved behavior:
 - history desktop Oldest, open sort menu and mobile Newest screenshots were visually inspected with no unintended Library hierarchy drift;
 - drag/drop implementation head `d957242d9b45fbb9fb115c8fd2b0a4dc60dc88ef` passed UI Shell `33102672560`, Library Search `33102672572`, Library History `33102672507`, Library Lifecycle `33102672568`, and Library Drag Drop `33102672468`;
 - clean drag-active/completed desktop and completed mobile drag/drop screenshots were visually inspected; exactly one current run-owned durable card rendered with a valid preview and the mobile Upload baseline remained unchanged;
-- direct Supabase cleanup after drag/drop verification found `0` drag/drop sessions/assets and `0` known legacy lifecycle sessions/assets.
+- direct Supabase cleanup after drag/drop verification found `0` drag/drop sessions/assets and `0` known legacy lifecycle sessions/assets;
+- UI-030 exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265` and Account Ownership `33131090207`; signed-out desktop/mobile and signed-in Library artifacts were reviewed clean.
 
-**Still intentionally open:** UI-029 now supplies account identity, but owner scoping across generation/reference/upload/media is not yet implemented. Favorites/Collections remain blocked until that data boundary and cross-account isolation are verified. Delete/batch management remains blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
+**Still intentionally open:** UI-030 owner scoping is implemented and exact-head verified, but its rollout remains incomplete until PR #17 is merged, owner-aware code is actually live and corrected `0005` is applied/verified after a no-unowned-row audit. Favorites/Collections remain blocked until that enforcement is complete. Delete/batch management remains separately blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
@@ -124,7 +130,8 @@ Approved behavior:
 - one Viewer-only `Rename` action changes only durable `display_name` through `PATCH /api/media/assets/[assetId]`;
 - Rename strips controls, collapses whitespace, requires non-empty input and caps names at 240 characters;
 - Rename preserves original filename, MIME, R2 storage key, generated provenance/prompt and Download filename semantics;
-- Rename and Download remain side-by-side while the inline edit form expands beneath them on desktop/mobile.
+- Rename and Download remain side-by-side while the inline edit form expands beneath them on desktop/mobile;
+- UI-030 requires a verified account for private Viewer state; the asset is loaded by owner and foreign IDs collapse to normal not-found behavior. Signed-out access renders the compact sign-in state rather than exposing private media.
 
 **Download approval evidence:**
 - implementation head `6d528c47445b26b5464fa529b9e489e6a7ce87ff` passed UI Shell `33070792349`, Library Search `33070792317`, Persistent Media Upload `33070792362`, Library Lifecycle `33070792329` and Media Download Visual `33070792343`;
@@ -136,7 +143,8 @@ Approved behavior:
 - configured Chromium verified generated/uploaded rename, Unicode/whitespace normalization, invalid/blank/overlength rejection, search discovery, original/provenance/storage preservation and unchanged uploaded Download filename/bytes;
 - four refined edit/renamed Viewer screenshots were visually inspected at desktop/mobile widths;
 - direct cleanup verification left `0` Rename fixtures, `0` Download fixtures, `0` lifecycle-named assets and `0` upload sessions;
-- the unrelated stale lifecycle R2 object was explicitly removed by cleanup run `33075125636`.
+- the unrelated stale lifecycle R2 object was explicitly removed by cleanup run `33075125636`;
+- UI-030 exact head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Library Lifecycle `33131090245`, Media Download `33131090206`, Media Rename `33131090198` and Account Ownership `33131090207`; signed-in mobile Viewer media/continuation/Rename/Download presentation was visually reviewed clean.
 
 **Do not change:** Provider/worker/R2 identity stays internal. Viewer continuation remains capability-derived. Download/Rename remain contextual product actions; do not expose raw R2 keys/signed URLs as durable product links or add Library-card/batch/delete/collection actions without a separate contract.
 
@@ -159,16 +167,16 @@ Approved behavior:
 - Supabase Auth `auth.users.id` is the canonical account identity;
 - maintained Supabase SSR cookie sessions are refreshed through the root Next.js proxy and server identity uses verified claims;
 - public Supabase URL/publishable key may reach browser code; service-role credentials remain server-only;
-- identity does not gate or redesign Create/Library in UI-029;
-- no owner columns, account-scoped media visibility, Favorites/Collections or Delete/batch behavior are implied by this surface.
+- UI-029 itself did not gate or redesign Create/Library and did not imply owner columns; UI-030 now consumes that verified identity as the private product owner without moving media authorization into the Settings component.
 
 **Approval evidence:**
 - Account Identity Visual `33111299356` built and exercised an exact run-owned confirmed Supabase user through real Settings sign-in, reload-persistent cookie identity, responsive signed-in state, sign-out and exact cleanup;
 - UI Shell `33111299265`, Create Lifecycle `33111299305`, Library Search `33111299144`, Library History `33111299040`, Library Lifecycle `33111299250`, Library Drag Drop `33111299309`, Media Download `33111299155`, and Media Rename `33111299172` also passed on the shared package-change code head;
 - desktop signed-in and mobile signed-in/signed-out screenshots were visually reviewed without shell hierarchy drift;
-- direct Supabase verification found `0` account CI fixture users after cleanup.
+- direct Supabase verification found `0` account CI fixture users after cleanup;
+- UI-030 exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Account Identity `33131090197` and Account Ownership `33131090207` while the private product routes consumed the same verified account principal.
 
-**Still intentionally open:** owner-scoped generation/reference/upload/media enforcement is the next prerequisite before personal Library organization. Other Settings sections remain requirement-driven.
+**Still intentionally open:** UI-030 strict database enforcement remains a rollout prerequisite before personal Library organization. Other Settings sections remain requirement-driven.
 
 ## Creation Experience Resolution
 - Prompt + Image → Create Image.
@@ -176,7 +184,7 @@ Approved behavior:
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity, UI-027 Library history ordering, UI-028 Library drag/drop upload and UI-029 account identity.
+Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity, UI-027 Library history ordering, UI-028 Library drag/drop upload, UI-029 account identity and UI-030 core account ownership.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.

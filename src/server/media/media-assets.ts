@@ -14,6 +14,7 @@ import { createSignedDownloadUrl, createSignedReadUrl } from "@/server/storage/r
 
 export type MediaAssetRecord = {
   id: string;
+  owner_id: string;
   generation_job_id: string | null;
   origin?: MediaAssetOrigin;
   kind: MediaAssetKind;
@@ -118,15 +119,15 @@ function mediaAssetDownloadContentDisposition(asset: MediaAssetRecord) {
   return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeDispositionFilename(filename)}`;
 }
 
-export async function getMediaAsset(assetId: string) {
+export async function getMediaAsset(ownerId: string, assetId: string) {
   const rows = await supabaseRest<MediaAssetRecord[]>(
-    `media_assets?id=eq.${encodeURIComponent(assetId)}&select=*&limit=1`,
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&select=*&limit=1`,
     { method: "GET" },
   );
   return rows?.[0] ?? null;
 }
 
-export async function renameMediaAsset(assetId: string, requestedDisplayName: string) {
+export async function renameMediaAsset(ownerId: string, assetId: string, requestedDisplayName: string) {
   const displayName = normalizeMediaAssetDisplayName(requestedDisplayName);
   if (!displayName) throw new RangeError("A media name is required.");
   if (displayName.length > MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH) {
@@ -134,7 +135,7 @@ export async function renameMediaAsset(assetId: string, requestedDisplayName: st
   }
 
   const rows = await supabaseRest<MediaAssetRecord[]>(
-    `media_assets?id=eq.${encodeURIComponent(assetId)}&select=*`,
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&select=*`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
@@ -148,18 +149,20 @@ export async function renameMediaAsset(assetId: string, requestedDisplayName: st
 }
 
 export async function listMediaAssets({
+  ownerId,
   kind,
   search,
   sort = "newest",
   limit = 24,
   offset = 0,
 }: {
+  ownerId: string;
   kind?: MediaAssetKind;
   search?: string | null;
   sort?: MediaAssetSortOrder;
   limit?: number;
   offset?: number;
-} = {}) {
+}) {
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 48);
   const safeOffset = Math.max(Math.trunc(offset), 0);
   const normalizedSearch = normalizeMediaAssetSearchQuery(search);
@@ -170,6 +173,7 @@ export async function listMediaAssets({
   const direction = sort === "oldest" ? "asc" : "desc";
   const params = new URLSearchParams({
     select: "*",
+    owner_id: `eq.${ownerId}`,
     order: `created_at.${direction},id.${direction}`,
     limit: String(safeLimit + 1),
     offset: String(safeOffset),

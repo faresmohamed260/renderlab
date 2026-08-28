@@ -6,6 +6,7 @@ import {
   type PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
 import { LibraryView } from "@/features/library/library-view";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
 import { isMediaUploadConfigured } from "@/server/media/media-uploads";
@@ -44,6 +45,7 @@ export default async function LibraryPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const account = await getCurrentRenderLabAccount();
   const kind = parseKind(params.kind);
   const sort = parseSort(params.sort);
   const searchQuery = parseSearch(params.q);
@@ -52,9 +54,10 @@ export default async function LibraryPage({
   let items: PublicMediaAsset[] = [];
   let hasMore = false;
 
-  if (available) {
+  if (account && available) {
     try {
       const result = await listMediaAssets({
+        ownerId: account.id,
         ...(kind === "all" ? {} : { kind }),
         ...(searchQuery ? { search: searchQuery } : {}),
         sort,
@@ -70,8 +73,9 @@ export default async function LibraryPage({
 
   return (
     <LibraryView
+      accountAvailable={Boolean(account)}
       available={available}
-      uploadAvailable={isMediaUploadConfigured()}
+      uploadAvailable={Boolean(account) && isMediaUploadConfigured()}
       items={items}
       kind={kind}
       sort={sort}

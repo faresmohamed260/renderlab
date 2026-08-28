@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { pollGenerationJob } from "@/server/generation/poll-generation";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -15,8 +16,16 @@ export async function GET(
     );
   }
 
+  const account = await getCurrentRenderLabAccount();
+  if (!account) {
+    return NextResponse.json(
+      { ok: false, error: { code: "authentication_required", message: "Sign in to access your generation jobs." } },
+      { status: 401 },
+    );
+  }
+
   try {
-    const job = await pollGenerationJob(jobId);
+    const job = await pollGenerationJob(account.id, jobId);
     if (!job) {
       return NextResponse.json(
         { ok: false, error: { code: "job_not_found", message: "Generation job was not found." } },

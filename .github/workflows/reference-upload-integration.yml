@@ -2,20 +2,41 @@ name: Reference Upload Integration
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/reference-upload-integration.yml"
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/verify-reference-upload.mjs"
+      - "src/lib/supabase/**"
+      - "src/app/api/assets/reference/**"
+      - "src/server/media/reference-uploads.ts"
+      - "src/server/storage/**"
+      - "src/server/data/**"
+      - "src/lib/api/reference-upload-contract.ts"
+      - "supabase/migrations/0004_core_account_ownership_prepare.sql"
+      - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - "package.json"
   push:
     branches: [main]
     paths:
       - ".github/workflows/reference-upload-integration.yml"
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-reference-upload.mjs"
+      - "src/lib/supabase/**"
       - "src/app/api/assets/reference/**"
+      - "src/server/media/reference-uploads.ts"
       - "src/server/storage/**"
       - "src/server/data/**"
-      - "src/lib/api/reference-source-contract.ts"
+      - "src/lib/api/reference-upload-contract.ts"
       - "supabase/migrations/**"
       - "package.json"
 
 permissions:
   contents: read
+
+concurrency:
+  group: renderlab-reference-upload-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   reference-upload:
@@ -24,10 +45,13 @@ jobs:
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
 
     steps:
       - name: Checkout
@@ -73,6 +97,10 @@ jobs:
 
       - name: Verify real signed reference upload
         run: node scripts/verify-reference-upload.mjs
+
+      - name: Cleanup reference upload fixture
+        if: always()
+        run: node scripts/verify-reference-upload.mjs --cleanup-only
 
       - name: Print server log on failure
         if: failure()

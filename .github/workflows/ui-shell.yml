@@ -30,6 +30,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: renderlab-ui-shell-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   shell:
     runs-on: ubuntu-latest

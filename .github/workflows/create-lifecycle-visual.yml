@@ -6,8 +6,15 @@ on:
       - "src/features/create/**"
       - "src/components/ui/**"
       - "src/lib/utils.ts"
+      - "src/lib/supabase/**"
+      - "src/app/api/generation/**"
+      - "src/server/generation/**"
+      - "src/server/media/**"
+      - "supabase/migrations/0004_core_account_ownership_prepare.sql"
+      - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "components.json"
       - "package.json"
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-create-lifecycle.mjs"
       - ".github/workflows/create-lifecycle-visual.yml"
   workflow_dispatch:
@@ -22,6 +29,8 @@ jobs:
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

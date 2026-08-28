@@ -3,18 +3,22 @@ name: Library Search Visual
 on:
   pull_request:
     paths:
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-library-search.mjs"
       - ".github/workflows/library-search-visual.yml"
       - "components.json"
       - "package.json"
       - "src/components/ui/**"
       - "src/lib/utils.ts"
+      - "src/lib/supabase/**"
       - "src/app/library/**"
       - "src/features/library/**"
       - "src/app/api/media/assets/**"
       - "src/server/media/media-assets.ts"
       - "src/server/storage/r2.ts"
       - "src/lib/api/media-assets-contract.ts"
+      - "supabase/migrations/0004_core_account_ownership_prepare.sql"
+      - "supabase/migrations/0005_core_account_ownership_enforce.sql"
   workflow_dispatch:
 
 permissions:
@@ -27,6 +31,8 @@ jobs:
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

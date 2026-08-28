@@ -1,9 +1,30 @@
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  configuredTestAccountIdentity,
+  createConfiguredTestAccount,
+  deleteConfiguredTestAccount,
+  withAccountAuthorization,
+} from "./lib/configured-test-account.mjs";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const r2Bucket = process.env.R2_BUCKET_NAME;
+const fixtureAccount = configuredTestAccountIdentity("generation-bridge");
+const fixtureJobIds = new Set();
+
+for (const [name, value] of Object.entries({
+  SUPABASE_URL: supabaseUrl,
+  SUPABASE_SERVICE_ROLE_KEY: supabaseKey,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+  R2_BUCKET_NAME: r2Bucket,
+})) {
+  if (!value) throw new Error(`${name} is required for configured generation verification.`);
+}
+
 const r2Client = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -15,8 +36,8 @@ const r2Client = new S3Client({
   responseChecksumValidation: "WHEN_REQUIRED",
 });
 
-async function jsonRequest(url, init = {}) {
-  const response = await fetch(url, init);
+async function jsonRequest(url, account, init = {}) {
+  const response = await fetch(url, withAccountAuthorization(account, init));
   const text = await response.text();
   let payload = null;
   try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
@@ -42,7 +63,7 @@ async function loadJob(jobId) {
 }
 
 async function loadAssets(jobId) {
-  return rows(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}&select=id,storage_key,thumbnail_storage_key,mime_type`);
+  return rows(`media_assets?generation_job_id=eq.${encodeURIComponent(jobId)}&select=id,storage_key,thumbnail_storage_key,mime_type,owner_id`);
 }
 
 async function cleanupJob(jobId) {
@@ -61,8 +82,16 @@ async function cleanupJob(jobId) {
   console.log(`Cleaned generation fixture job=${jobId} objects=${keys.size}`);
 }
 
-async function verifyMediaAsset(assetId, expectedKind) {
-  const metadata = await jsonRequest(`${baseUrl}/api/media/assets/${encodeURIComponent(assetId)}`, {
+async function cleanupFixtureAccount() {
+  const jobs = await rows(`generation_jobs?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&select=id`).catch(() => []);
+  for (const row of jobs) fixtureJobIds.add(row.id);
+  for (const jobId of fixtureJobIds) await cleanupJob(jobId);
+  fixtureJobIds.clear();
+  await deleteConfiguredTestAccount(fixtureAccount);
+}
+
+async function verifyMediaAsset(account, assetId, expectedKind) {
+  const metadata = await jsonRequest(`${baseUrl}/api/media/assets/${encodeURIComponent(assetId)}`, account, {
     headers: { accept: "application/json" },
   });
   if (!metadata.response.ok || !metadata.payload?.ok || metadata.payload.asset?.id !== assetId) {
@@ -72,7 +101,10 @@ async function verifyMediaAsset(assetId, expectedKind) {
     throw new Error(`Media metadata has the wrong product shape: ${JSON.stringify(metadata.payload.asset)}`);
   }
 
-  const content = await fetch(`${baseUrl}${metadata.payload.asset.contentUrl}`, { redirect: "follow" });
+  const content = await fetch(
+    `${baseUrl}${metadata.payload.asset.contentUrl}`,
+    withAccountAuthorization(account, { redirect: "follow" }),
+  );
   if (!content.ok) throw new Error(`Media content failed (${content.status}).`);
   const contentType = String(content.headers.get("content-type") || "").toLowerCase();
   if (expectedKind === "image" && !contentType.startsWith("image/")) {
@@ -83,9 +115,9 @@ async function verifyMediaAsset(assetId, expectedKind) {
   }
 }
 
-async function verifyGeneration(request, expectedOperation, label) {
+async function verifyGeneration(account, request, expectedOperation, label) {
   console.log(`Submitting ${label} through ${baseUrl}`);
-  const submission = await jsonRequest(`${baseUrl}/api/generation/jobs`, {
+  const submission = await jsonRequest(`${baseUrl}/api/generation/jobs`, account, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(request),
@@ -95,12 +127,13 @@ async function verifyGeneration(request, expectedOperation, label) {
   }
 
   const jobId = submission.payload.job.id;
+  fixtureJobIds.add(jobId);
   console.log(`${label} accepted. job=${jobId}`);
   const deadline = Date.now() + 12 * 60 * 1000;
   let lastStatus = "";
 
   while (Date.now() < deadline) {
-    const poll = await jsonRequest(`${baseUrl}/api/generation/jobs/${encodeURIComponent(jobId)}`, {
+    const poll = await jsonRequest(`${baseUrl}/api/generation/jobs/${encodeURIComponent(jobId)}`, account, {
       headers: { accept: "application/json" },
     });
     if (!poll.response.ok || !poll.payload?.ok || !poll.payload?.job) {
@@ -124,11 +157,14 @@ async function verifyGeneration(request, expectedOperation, label) {
       if (!row || row.status !== "succeeded" || row.operation !== expectedOperation || assets.length !== 1 || !assets[0].storage_key) {
         throw new Error(`${label} persisted state is incomplete: ${JSON.stringify({ row, assets })}`);
       }
+      if (row.owner_id !== account.id || assets[0].owner_id !== account.id) {
+        throw new Error(`${label} persisted generation state did not inherit the authenticated account owner.`);
+      }
       if (!job.outputAssetIds.includes(assets[0].id)) {
         throw new Error(`${label} output IDs do not match persisted media: ${JSON.stringify({ job, assets })}`);
       }
-      await verifyMediaAsset(assets[0].id, request.output.kind);
-      console.log(`${label} verified. job=${jobId} asset=${assets[0].id}`);
+      await verifyMediaAsset(account, assets[0].id, request.output.kind);
+      console.log(`${label} verified. owner=${account.id} job=${jobId} asset=${assets[0].id}`);
       return { jobId, assetId: assets[0].id };
     }
     await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -140,7 +176,10 @@ async function verifyGeneration(request, expectedOperation, label) {
 let createResult = null;
 let editResult = null;
 try {
+  await cleanupFixtureAccount();
+  const account = await createConfiguredTestAccount("generation-bridge");
   createResult = await verifyGeneration(
+    account,
     {
       prompt: "RenderLab integration verification: a simple blue sphere centered on a neutral studio background",
       output: { kind: "image", aspectRatio: "1:1" },
@@ -151,6 +190,7 @@ try {
   );
 
   editResult = await verifyGeneration(
+    account,
     {
       prompt: "Change the sphere to red while keeping the simple studio composition",
       output: { kind: "image", aspectRatio: "1:1" },
@@ -165,8 +205,9 @@ try {
     "Edit Image from persisted media asset",
   );
 
-  console.log("Native Create Image -> persisted media asset -> Edit Image continuation verified successfully.");
+  console.log(`Native Create Image -> persisted media asset -> Edit Image continuation verified successfully for owner=${account.id}.`);
 } finally {
-  await cleanupJob(editResult?.jobId);
-  await cleanupJob(createResult?.jobId);
+  if (editResult?.jobId) fixtureJobIds.add(editResult.jobId);
+  if (createResult?.jobId) fixtureJobIds.add(createResult.jobId);
+  await cleanupFixtureAccount();
 }

@@ -2,6 +2,13 @@ import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client
 import { chromium } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  configuredTestAccountIdentity,
+  createConfiguredTestAccount,
+  deleteConfiguredTestAccount,
+  routeLocalAppRequestsWithAccount,
+  withAccountAuthorization,
+} from "./lib/configured-test-account.mjs";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -10,6 +17,7 @@ const r2Bucket = process.env.R2_BUCKET_NAME;
 const artifactDir = process.env.RENDERLAB_MEDIA_RENAME_ARTIFACT_DIR || "artifacts";
 const fixturePath = process.env.RENDERLAB_MEDIA_RENAME_FIXTURE_PATH || "/tmp/renderlab-media-rename-fixture.json";
 const cleanupOnly = process.argv.includes("--cleanup-only");
+const fixtureAccount = configuredTestAccountIdentity("media-rename");
 
 const uploadedOriginalFilename = "RenderLab-Rename-画像.PNG";
 const uploadedInitialDisplayName = "Original Upload Name";
@@ -27,6 +35,7 @@ const pngBytes = Buffer.from(
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
   SUPABASE_SERVICE_ROLE_KEY: supabaseKey,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -58,12 +67,12 @@ async function supabase(path, init = {}) {
   return fetch(`${supabaseUrl}/rest/v1/${path}`, { ...init, headers });
 }
 
-async function app(path, init = {}) {
-  return fetch(`${baseUrl}${path}`, init);
+async function app(path, account, init = {}) {
+  return fetch(`${baseUrl}${path}`, withAccountAuthorization(account, init));
 }
 
-async function appJson(path, init = {}) {
-  const response = await app(path, init);
+async function appJson(path, account, init = {}) {
+  const response = await app(path, account, init);
   const body = await response.json().catch(() => null);
   return { response, body };
 }
@@ -82,31 +91,32 @@ async function writeFixture(fixture) {
 
 async function cleanupFixture() {
   const fixture = await readFixture();
-  if (!fixture) return;
-
-  for (const asset of fixture.assets || []) {
-    if (asset.id) {
-      const response = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}`, { method: "DELETE" });
-      if (!response.ok) throw new Error(`Could not remove media rename fixture (${response.status}): ${await response.text()}`);
+  if (fixture) {
+    for (const asset of fixture.assets || []) {
+      if (asset.id) {
+        const response = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}`, { method: "DELETE" });
+        if (!response.ok) throw new Error(`Could not remove media rename fixture (${response.status}): ${await response.text()}`);
+      }
+      if (asset.storageKey) {
+        await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: asset.storageKey })).catch(() => {});
+      }
     }
-    if (asset.storageKey) {
-      await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: asset.storageKey })).catch(() => {});
+
+    for (const asset of fixture.assets || []) {
+      if (!asset.id) continue;
+      const response = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}&select=id`);
+      if (!response.ok) throw new Error(`Could not verify media rename cleanup (${response.status}): ${await response.text()}`);
+      const rows = await response.json();
+      if (rows.length) throw new Error(`Media rename cleanup left asset ${asset.id}.`);
     }
-  }
 
-  for (const asset of fixture.assets || []) {
-    if (!asset.id) continue;
-    const response = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}&select=id`);
-    if (!response.ok) throw new Error(`Could not verify media rename cleanup (${response.status}): ${await response.text()}`);
-    const rows = await response.json();
-    if (rows.length) throw new Error(`Media rename cleanup left asset ${asset.id}.`);
+    await rm(fixturePath, { force: true });
+    console.log(`Cleaned configured media rename fixtures assets=${(fixture.assets || []).map((asset) => asset.id).filter(Boolean).join(",")}.`);
   }
-
-  await rm(fixturePath, { force: true });
-  console.log(`Cleaned configured media rename fixtures assets=${(fixture.assets || []).map((asset) => asset.id).filter(Boolean).join(",")}.`);
+  await deleteConfiguredTestAccount(fixtureAccount);
 }
 
-async function createAsset({ origin, originalFilename = null, displayName = null, prompt = null }) {
+async function createAsset(account, { origin, originalFilename = null, displayName = null, prompt = null }) {
   const id = randomUUID();
   const storageKey = `renderlab/rename-fixtures/${new Date().toISOString().slice(0, 7).replace("-", "/")}/${id}.png`;
   const fixture = await readFixture() || { assets: [] };
@@ -126,6 +136,7 @@ async function createAsset({ origin, originalFilename = null, displayName = null
     headers: { prefer: "return=representation" },
     body: JSON.stringify({
       id,
+      owner_id: account.id,
       generation_job_id: null,
       origin,
       kind: "image",
@@ -148,22 +159,22 @@ async function createAsset({ origin, originalFilename = null, displayName = null
 
 async function mediaAssetRow(assetId) {
   const response = await supabase(
-    `media_assets?id=eq.${encodeURIComponent(assetId)}&select=id,display_name,original_filename,storage_key,provenance&limit=1`,
+    `media_assets?id=eq.${encodeURIComponent(assetId)}&select=id,display_name,original_filename,storage_key,provenance,owner_id&limit=1`,
   );
   if (!response.ok) throw new Error(`Could not inspect media rename fixture (${response.status}): ${await response.text()}`);
   return (await response.json())[0] || null;
 }
 
-async function renameThroughApi(assetId, displayName) {
-  return appJson(`/api/media/assets/${encodeURIComponent(assetId)}`, {
+async function renameThroughApi(account, assetId, displayName) {
+  return appJson(`/api/media/assets/${encodeURIComponent(assetId)}`, account, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ displayName }),
   });
 }
 
-async function searchAssets(query) {
-  const { response, body } = await appJson(`/api/media/assets?q=${encodeURIComponent(query)}&limit=24`);
+async function searchAssets(account, query) {
+  const { response, body } = await appJson(`/api/media/assets?q=${encodeURIComponent(query)}&limit=24`, account);
   assert(response.status === 200 && body?.ok, `Search for ${query} failed with ${response.status}.`);
   return body.items || [];
 }
@@ -179,23 +190,24 @@ let primaryError = null;
 
 try {
   await cleanupFixture();
-  const uploaded = await createAsset({
+  const account = await createConfiguredTestAccount("media-rename");
+  const uploaded = await createAsset(account, {
     origin: "uploaded",
     originalFilename: uploadedOriginalFilename,
     displayName: uploadedInitialDisplayName,
   });
-  const generated = await createAsset({
+  const generated = await createAsset(account, {
     origin: "generated",
     prompt: generatedPrompt,
   });
 
-  const invalidId = await renameThroughApi("not-a-media-id", "Nope");
+  const invalidId = await renameThroughApi(account, "not-a-media-id", "Nope");
   assert(invalidId.response.status === 400 && invalidId.body?.ok === false, "Rename accepted an invalid media asset ID.");
 
-  const blankName = await renameThroughApi(uploaded.id, " \t \n ");
+  const blankName = await renameThroughApi(account, uploaded.id, " \t \n ");
   assert(blankName.response.status === 400 && blankName.body?.ok === false, "Rename accepted a blank media name.");
 
-  const tooLongName = await renameThroughApi(uploaded.id, "a".repeat(maxDisplayNameLength + 1));
+  const tooLongName = await renameThroughApi(account, uploaded.id, "a".repeat(maxDisplayNameLength + 1));
   assert(tooLongName.response.status === 400 && tooLongName.body?.ok === false, "Rename accepted a media name beyond the product bound.");
 
   browser = await chromium.launch({ headless: true });
@@ -205,6 +217,7 @@ try {
     acceptDownloads: true,
   });
   const page = await context.newPage();
+  await routeLocalAppRequestsWithAccount(page, baseUrl, account);
 
   await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
@@ -217,7 +230,7 @@ try {
   await page.getByRole("heading", { name: generatedRenamedDisplayName, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.screenshot({ path: `${artifactDir}/media-rename-desktop-renamed.png`, fullPage: true });
 
-  const { response: generatedApiResponse, body: generatedApi } = await appJson(`/api/media/assets/${generated.id}`);
+  const { response: generatedApiResponse, body: generatedApi } = await appJson(`/api/media/assets/${generated.id}`, account);
   assert(generatedApiResponse.status === 200 && generatedApi?.ok, "Renamed generated media could not be reloaded from the product API.");
   assert(generatedApi.asset.displayName === generatedRenamedDisplayName, "Generated display name was not normalized/persisted truthfully.");
   assert(generatedApi.asset.prompt === generatedPrompt, "Generated rename changed prompt provenance.");
@@ -226,8 +239,9 @@ try {
   assert(generatedRow?.display_name === generatedRenamedDisplayName, "Generated rename did not update only the durable display name.");
   assert(generatedRow?.storage_key === generated.storageKey, "Generated rename changed storage identity.");
   assert(generatedRow?.provenance?.prompt === generatedPrompt, "Generated rename mutated durable provenance.");
+  assert(generatedRow?.owner_id === account.id, "Generated rename fixture lost its account owner.");
 
-  const generatedSearch = await searchAssets(generatedRenamedDisplayName.toLowerCase());
+  const generatedSearch = await searchAssets(account, generatedRenamedDisplayName.toLowerCase());
   assert(generatedSearch.some((asset) => asset.id === generated.id), "Library search did not discover the renamed generated asset.");
 
   await page.goto(`${baseUrl}/library/${uploaded.id}`, { waitUntil: "networkidle", timeout: 60_000 });
@@ -250,10 +264,11 @@ try {
   assert(uploadedRow?.display_name === uploadedRenamedDisplayName, "Uploaded rename did not persist the normalized display name.");
   assert(uploadedRow?.original_filename === uploadedOriginalFilename, "Uploaded rename changed the original filename.");
   assert(uploadedRow?.storage_key === uploaded.storageKey, "Uploaded rename changed storage identity.");
+  assert(uploadedRow?.owner_id === account.id, "Uploaded rename fixture lost its account owner.");
 
-  const renamedSearch = await searchAssets(uploadedRenamedDisplayName.toLowerCase());
+  const renamedSearch = await searchAssets(account, uploadedRenamedDisplayName.toLowerCase());
   assert(renamedSearch.some((asset) => asset.id === uploaded.id), "Library search did not discover the renamed uploaded asset.");
-  const oldNameSearch = await searchAssets(uploadedInitialDisplayName.toLowerCase());
+  const oldNameSearch = await searchAssets(account, uploadedInitialDisplayName.toLowerCase());
   assert(!oldNameSearch.some((asset) => asset.id === uploaded.id), "Library search still matched the replaced uploaded display name.");
 
   await page.setViewportSize({ width: 1440, height: 1024 });
@@ -266,7 +281,7 @@ try {
   assert(downloadedPath, "Renamed uploaded media did not produce a readable download path.");
   assert((await readFile(downloadedPath)).equals(pngBytes), "Renamed uploaded media Download bytes changed.");
 
-  console.log(`Configured Media Viewer Rename verified. generated=${generated.id} uploaded=${uploaded.id}`);
+  console.log(`Configured Media Viewer Rename verified. owner=${account.id} generated=${generated.id} uploaded=${uploaded.id}`);
 } catch (error) {
   primaryError = error;
 } finally {

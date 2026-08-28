@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { getMediaAsset, getMediaAssetContentUrl } from "@/server/media/media-assets";
 
 export async function GET(
@@ -6,8 +7,11 @@ export async function GET(
   context: { params: Promise<{ assetId: string }> },
 ) {
   const { assetId } = await context.params;
+  const account = await getCurrentRenderLabAccount();
+  if (!account) return NextResponse.json({ error: "Sign in to access your RenderLab media." }, { status: 401 });
+
   try {
-    const asset = await getMediaAsset(assetId);
+    const asset = await getMediaAsset(account.id, assetId);
     if (!asset) return NextResponse.json({ error: "Media asset was not found." }, { status: 404 });
     const url = await getMediaAssetContentUrl(asset, "thumbnail");
     if (!url) return NextResponse.json({ error: "Media thumbnail is unavailable." }, { status: 404 });
