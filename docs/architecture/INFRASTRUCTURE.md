@@ -23,7 +23,7 @@ Legacy `studio_*` tables remain separate and must not be renamed, repurposed or 
 - `0001_generation_sources.sql` — temporary reference sources, RLS enabled.
 - `0002_generation_jobs_media_assets.sql` — RenderLab jobs + durable media identity, RLS enabled.
 - `0003_persistent_media_uploads.sql` — applied as `20260827031630 renderlab_persistent_media_uploads`; adds durable origin/name/size fields and server-owned `media_upload_sessions`, RLS enabled.
-- `0004_core_account_ownership_prepare.sql` — applied as `20260827203604 renderlab_core_account_ownership_prepare`; adds nullable `owner_id -> auth.users.id` with `ON DELETE RESTRICT` to generation sources/jobs, media assets and upload sessions, adds owner-time indexes, and revokes direct raw-table privileges from `anon` / `authenticated` while keeping RLS enabled.
+- `0004_core_account_ownership_prepare.sql` — applied as `20260827203604 renderlab_core_account_ownership_prepare`; adds nullable `owner_id -> auth.users.id ON DELETE RESTRICT`, owner-time indexes and revoke direct `anon`/`authenticated` raw-table grants while keeping RLS enabled.
 
 `0005_core_account_ownership_enforce.sql` is committed and merged through PR #17 but is **not applied**. It is the tightening step that refuses unowned rows, makes all four owners `NOT NULL`, makes `owner_id` immutable, and enforces same-owner links for generated media → generation job and upload session → promoted media asset. The staged migration was corrected at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after rollback-only semantic testing exposed that one shared polymorphic trigger function could reference a field unavailable on `media_assets`; the corrected migration uses separate media→job and upload→asset owner-link trigger functions.
 
@@ -45,7 +45,7 @@ Settings browser
 ```
 
 Rules:
-- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are public browser configuration, not secrets;
+- Vercel/runtime configuration uses `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`; `next.config.ts` maps those public-safe values into the existing browser-facing `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` bundle keys. The publishable key is not a service credential;
 - `SUPABASE_SERVICE_ROLE_KEY` remains server/CI-only and is never used by product browser code;
 - server account identity uses verified Supabase claims rather than trusting an unverified browser-supplied user ID;
 - UI-029 itself added no owner columns or account-scoped media/job persistence;
@@ -99,7 +99,7 @@ Configured ownership evidence:
 - configured test cleanup uses deterministic fixture account ownership so a rerun on a fresh runner can recover its own stale DB/R2 rows without deleting another workflow's fixtures;
 - Generation Image/Edit and Video/Animate PR workflows carry timeout budgets that exceed their own sequential verifier deadlines.
 
-Merge verification: final documentation head `d7f856913847ff22fa2594d060dbe21b6ea9373a` passed all 14 configured PR gates before PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`. Push-triggered merged-`main` UI Shell `33135862296`, Reference Upload `33135862307`, Generation Integration `33135862297`, and Video Generation `33135862337` all passed. Post-run cleanup again left all four core tables empty and no RenderLab fixture Auth users.
+Merge verification: final documentation head `d7f856913847ff22fa2594d060dbe21b6ea9373a` passed all 14 configured gates before PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`. Push-triggered merged-`main` UI Shell `33135862296`, Reference Upload `33135862307`, Generation Integration `33135862297`, and Video Generation `33135862337` all passed. Post-run cleanup again left all four core tables empty and no RenderLab fixture Auth users.
 
 Supabase advisor result after exact-head CI:
 - security: only informational `RLS enabled, no policy` notices on the four deliberately server-owned tables; this is expected while browser roles have no direct grants;
@@ -128,7 +128,9 @@ Deployment readiness rule: do not apply corrected `0005` merely because GitHub `
 
 `.github/workflows/deployment-readiness.yml` is the permanent non-deploying configuration gate. On changes to Vercel/build configuration it asserts `framework: nextjs`, asserts automatic Git deployment remains disabled, rejects a forced `outputDirectory`, exercises the Vercel environment preflight with non-secret fixture values, installs dependencies and runs the production `next build`. `scripts/verify-vercel-env.mjs` is also wired as `prebuild`, but only enforces the real environment contract when `VERCEL=1`. The gate performs no Vercel deployment and no Supabase/R2 writes.
 
-Deployment Readiness PR #18 merged as `2b8a5170df0675a691deb8d5a7031f1dc14d803b`. Exact candidate `da7f9c23224f5a03ba0832fe8fcd773d1586e0c2` passed all 15 configured PR gates after fixing a concurrent fixture race: configured account identity now scopes by `GITHUB_RUN_ID`, so an older superseded run cannot delete a newer run's Auth owner. Merged `main` Deployment Readiness `33137972011`, UI Shell `33137972042`, Reference Upload `33137972130`, Generation Integration `33137972033`, and Video Generation `33137972021` all passed. Vercel recorded zero deployments after the PR #18 merge. The dashboard-level project preset still reports `vite`, but Vercel's documented `vercel.json` `framework` property overrides the project preset, so repository `framework: nextjs` is authoritative for the next explicit build. Final post-merge Supabase audit found zero core rows/fixture users/browser grants, four nullable owner columns, zero enforcement triggers, and migration history still ending at applied `0004`.
+Deployment Readiness PR #18 merged as `2b8a5170df0675a691deb8d5a7031f1dc14d803b`. Exact candidate `da7f9c23224f5a03ba0832fe8fcd773d1586e0c2` passed all 15 configured PR gates after fixing a concurrent fixture race: configured account identity now scopes by `GITHUB_RUN_ID`, so an older superseded run cannot delete a newer run's Auth owner. Merged `main` Deployment Readiness `33137972011`, UI Shell `33137972042`, Reference Upload `33137972130`, Generation Integration `33137972033`, and Video Generation `33137972021` all passed. The PR #18 merge itself created no Vercel deployment. The dashboard-level project preset still reports `vite`, but Vercel's documented `vercel.json` `framework` property overrides the project preset when the repository source is deployed, so repository `framework: nextjs` remains the intended explicit-deployment contract. Final post-merge Supabase audit found zero core rows/fixture users/browser grants, four nullable owner columns, zero enforcement triggers, and migration history still ending at applied `0004`.
+
+The first separately authorized rollout attempts after PR #18 did **not** become live. Probe deployment `dpl_6jG1VKYMWimBtZMgyr75b2EKtK9i` failed with the known stale-project `STATIC_BUILD_NO_OUT_DIR` condition. Exact-main bootstrap deployment `dpl_FHeEYsHjERijXcoHSaTdV7MUCvdu` then reached RenderLab's own Vercel preflight and stopped before compilation because the project already stored the same Supabase/R2 credentials under its established `SUPABASE_PUBLISHABLE_KEY` and `CLOUDFLARE_R2_*` names rather than the newer duplicated `NEXT_PUBLIC_SUPABASE_*` / `R2_*` names. No serving production deployment resulted and corrected `0005` remained unapplied. The repository contract is therefore aligned to the existing Vercel project names instead of duplicating secrets: `next.config.ts` intentionally publishes the Supabase URL/publishable key into browser bundle keys, server R2 configuration prefers the established `CLOUDFLARE_R2_*` names, and the deployment preflight validates those canonical Vercel names. Existing GitHub CI aliases remain accepted where needed so this change does not require secret rotation.
 
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
@@ -162,7 +164,7 @@ Initial persistent upload types: PNG/JPEG/WebP up to 25 MB. Human filenames pres
 ### Browser upload CORS
 Presigned browser PUT requires an exact-origin R2 bucket CORS rule.
 
-The R2 access-key token behind `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` has Admin Read & Write capability. `scripts/ensure-r2-browser-cors.mjs` manages the `renderlab-browser-uploads` rule through the S3 API while preserving unrelated rules.
+The production R2 access-key token is configured in Vercel as `CLOUDFLARE_R2_ACCESS_KEY_ID` / `CLOUDFLARE_R2_SECRET_ACCESS_KEY` and has Admin Read & Write capability. GitHub configured workflows may continue supplying the existing `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` aliases; server storage accepts both during the transition. `scripts/ensure-r2-browser-cors.mjs` manages the `renderlab-browser-uploads` rule through the S3 API while preserving unrelated rules.
 
 Managed origins:
 - `http://127.0.0.1:3000`
@@ -314,24 +316,25 @@ Product media APIs:
 Generated/uploaded durable media share one public contract and can become generation input through `{ type: "media-asset", id }`. Viewer → Create carries opaque identity + action intent; the server revalidates durable media/capability state.
 
 ## Required Server / CI / Production Environment Variables
-For an explicit Vercel deployment, every non-optional variable below must be configured in the target Vercel environment. `npm run build` invokes `scripts/verify-vercel-env.mjs`; when Vercel exposes `VERCEL=1`, the prebuild fails before compilation if required Supabase/R2 variables are missing, if the public/private Supabase URLs do not target the approved shared project, or if only one half of the optional external-backend URL/token pair is configured. GitHub builds remain secret-free because the preflight is Vercel-only.
-### Supabase server/private
+For an explicit Vercel deployment, every non-optional variable below must be configured in the target Vercel environment. `npm run build` invokes `scripts/verify-vercel-env.mjs`; when Vercel exposes `VERCEL=1`, the prebuild fails before compilation if required Supabase/R2 variables are missing, if `SUPABASE_URL` does not target the approved shared project, or if only one half of the optional external-backend URL/token pair is configured. GitHub builds remain secret-free because the preflight is Vercel-only.
+
+The canonical Vercel names intentionally match the variables already configured on the RenderLab Vercel project. Existing GitHub configured workflows may continue using the older `NEXT_PUBLIC_SUPABASE_*` / `R2_*` aliases where their workflow contracts already provide them; application/build compatibility keeps those aliases working without requiring secret rotation.
+
+### Supabase
 - `SUPABASE_URL` = `https://rashyleshocuvpgcooxy.supabase.co`
+- `SUPABASE_PUBLISHABLE_KEY` — public publishable project key; `next.config.ts` intentionally maps this plus `SUPABASE_URL` into browser-facing `NEXT_PUBLIC_SUPABASE_*` bundle keys
 - `SUPABASE_SERVICE_ROLE_KEY` — secret, server/CI only
 
-### Supabase public auth configuration
-- `NEXT_PUBLIC_SUPABASE_URL` = `https://rashyleshocuvpgcooxy.supabase.co`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — public publishable project key; safe for browser configuration, not a service credential
-
 ### R2
-- `R2_ACCOUNT_ID`
-- `R2_ACCESS_KEY_ID`
-- `R2_SECRET_ACCESS_KEY`
-- `R2_BUCKET_NAME`
+- `CLOUDFLARE_R2_ACCOUNT_ID`
+- `CLOUDFLARE_R2_ACCESS_KEY_ID`
+- `CLOUDFLARE_R2_SECRET_ACCESS_KEY`
+- `CLOUDFLARE_R2_BUCKET`
 
 R2 credentials currently require Admin Read & Write because configured browser upload verification reconciles bucket CORS.
 
 ### Optional
+- `CLOUDFLARE_R2_PUBLIC_BASE_URL` — existing project variable; not required by current private signed-R2 delivery paths
 - `CLOUDFLARE_API_TOKEN` — REST CORS fallback
 - `RENDERLAB_GENERATION_BACKEND_URL` — optional external RenderLab generation service; only active together with the token below
 - `RENDERLAB_GENERATION_BACKEND_TOKEN` — server-only bearer secret required to authenticate the optional external generation service before `x-renderlab-owner-id` is trusted
@@ -339,7 +342,7 @@ R2 credentials currently require Admin Read & Write because configured browser u
 
 ## Security Rules
 - Never commit service-role/R2/provider/backend bearer credentials.
-- Never expose server credentials through `NEXT_PUBLIC_*`; only public Supabase URL/publishable-key configuration belongs there.
+- Only the Supabase project URL and publishable key are intentionally exposed to browser code. `next.config.ts` maps those public-safe values from `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`; service-role and R2 credentials must never be published.
 - Supabase Auth `auth.users.id` remains the canonical account principal; do not trust a browser-supplied owner ID.
 - Raw `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions` stay server-owned. Browser roles have no direct table grants; product routes/services enforce owner scope while using server-only service-role access.
 - Keep RLS enabled on the four core tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
@@ -371,12 +374,12 @@ Key workflows:
 - `verify-library-search.mjs` + `library-search-visual.yml`
 - `verify-media-download.mjs` + `media-download-visual.yml`
 - `verify-media-rename.mjs` + `media-rename-visual.yml`
-- `verify-account-identity.mjs` + `account-identity-visual.yml` — exact run-owned confirmed Auth user, real Settings session lifecycle, responsive screenshots and exact cleanup
+- `verify-account-identity.mjs` + `account-identity-visual.yml` — exact run-owned confirmed Auth user, real Settings session lifecycle, responsive screenshots and exact cleanup; now also validates the canonical `SUPABASE_PUBLISHABLE_KEY` → browser-bundle mapping
 - `verify-account-ownership.mjs` + `account-ownership.yml` — two-account private-record isolation, signed-out denial, foreign opaque-ID denial, raw table-access denial and exact fixture cleanup
 - `verify-reference-upload.mjs` + `reference-upload-integration.yml` — owner-bound temporary source persistence
 - `verify-generation-bridge.mjs` + `generation-bridge-integration.yml` — owner-bound Create Image/Edit Image persistence and continuation
 - `verify-video-generation.mjs` + `video-generation-integration.yml` — owner-bound Create Video/Animate Image plus temporary reference ownership
-- `verify-vercel-env.mjs` + `deployment-readiness.yml` — non-deploying Next.js/Vercel configuration, Vercel-only environment preflight and production-build gate
+- `verify-vercel-env.mjs` + `deployment-readiness.yml` — non-deploying Next.js/Vercel configuration, canonical Vercel environment preflight and production-build gate
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
 ## Next Infrastructure Work
