@@ -24,6 +24,7 @@ on:
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "supabase/migrations/0006_media_favorites.sql"
       - "supabase/migrations/0007_media_collections.sql"
+      - "supabase/migrations/0008_media_collection_asset_fk_index.sql"
   workflow_dispatch:
 
 permissions:
