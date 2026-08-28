@@ -149,6 +149,8 @@ export async function renameMediaAsset(ownerId: string, assetId: string, request
   return rows?.[0] ?? null;
 }
 
+// Favorite state is metadata on the already owner-scoped durable asset. Keep the
+// mutation idempotent so repeated PUT/DELETE preserves the original favorite timestamp.
 export async function setMediaAssetFavorite(ownerId: string, assetId: string, favorite: boolean) {
   const current = await getMediaAsset(ownerId, assetId);
   if (!current) return null;
