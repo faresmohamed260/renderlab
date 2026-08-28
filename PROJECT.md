@@ -69,12 +69,13 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 ### Active product slice
-- Core Account Ownership v0.1 / UI-030 is **IN PROGRESS** on PR #17. The owner-aware implementation and configured verification are green; merge/live rollout and strict database enforcement remain separate steps.
+- Core Account Ownership v0.1 / UI-030 is **IN PROGRESS** after PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`. GitHub `main` is owner-aware and verified; the remaining rollout is an explicit production deployment followed by corrected `0005` enforcement.
 - Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured PR gates: Account Ownership `33131090207`, Account Identity `33131090197`, UI Shell `33131090250`, Create Lifecycle `33131090243`, Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265`, Media Download `33131090206`, Media Rename `33131090198`, Reference Upload `33131090263`, Generation Integration `33131090251`, and Video Generation `33131090262`.
+- Final PR documentation head `d7f856913847ff22fa2594d060dbe21b6ea9373a` passed all 14 configured gates again before merge. PR #17 then merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; push-triggered `main` UI Shell `33135862296`, Reference Upload `33135862307`, Generation Integration `33135862297`, and Video Generation `33135862337` all passed.
 - The staged `0005_core_account_ownership_enforce.sql` was corrected after rollback-only semantic testing found an invalid shared trigger-field reference. Table-specific owner-link triggers pass same-owner, cross-owner, null-owner, owner-immutability, Auth-delete restriction and existing FK cleanup compatibility simulations against the live prepared schema.
 - The optional external generation adapter requires both `RENDERLAB_GENERATION_BACKEND_URL` and server-only `RENDERLAB_GENERATION_BACKEND_TOKEN`; submit and poll authenticate with that token before forwarding the owner header. Native generation remains the fallback when the external pair is incomplete.
 - Shared Supabase has the compatible prepare migration `20260827203604 renderlab_core_account_ownership_prepare` applied. Corrected `0005_core_account_ownership_enforce.sql` remains staged but not applied; post-CI audit found 0 core rows, 0 null-owner rows, 0 RenderLab fixture Auth users, four still-nullable owner columns and 0 enforcement triggers.
-- The repository is now public. This resolved the previous private-repository hosted Actions capacity failure; exact-head runners execute normally again. No Vercel preview/deployment is required for mid-development validation.
+- The repository is public, which resolved the previous private-repository hosted Actions capacity failure. Mid-development validation remains GitHub-first. Repository `vercel.json` disables automatic Git deployments and pins `framework: nextjs`; `scripts/verify-vercel-env.mjs` runs as a Vercel-only prebuild guard for required Supabase/R2 configuration. The earlier automatic merge attempt failed before becoming live because Vercel's project preset was `vite` and expected `dist`. Production deployment is therefore explicit only.
 - Do not start Favorites/Collections, Delete/batch, or another Phase 4 product slice while UI-030 rollout is incomplete.
 
 Do not redesign approved surfaces merely because new media capabilities or ownership enforcement are added.
@@ -126,7 +127,7 @@ Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed 
 
 The corrected `0005` has independent rollback-only live-schema semantic verification and remains **unapplied**. Post-suite shared-resource audit found zero rows in all four ownership tables, zero null owners, zero RenderLab fixture Auth users, RLS enabled on all four tables, no direct `anon`/`authenticated` grants, four nullable owner columns and zero UI-030 enforcement triggers. Supabase security advisors report only the expected informational no-policy notices for these deliberately server-owned tables; performance notices are unused-index INFO findings on empty/low-traffic tables.
 
-**Core Account Ownership v0.1 status: `IN PROGRESS`; PR #17 implementation is exact-head verified, while merge/live rollout and corrected `0005` enforcement remain outstanding.**
+**Core Account Ownership v0.1 status: `IN PROGRESS`; PR #17 is merged and GitHub `main` is verified owner-aware. Production rollout and corrected `0005` enforcement remain outstanding.**
 
 ## Persistent Media Upload Contract
 UI-022 defines the approved durable upload model.
@@ -225,8 +226,7 @@ If a future user-facing production origin changes, add that exact origin before 
 
 ## Still Open in Phase 4
 Core account ownership / UI-030 is the active Phase 4 slice and must finish before any other product slice is selected. Remaining work, in order:
-- merge PR #17 after final documentation-head validation;
-- make the owner-aware application code live only through a separately authorized deployment/rollout step;
+- make the verified owner-aware application code live only through a separately authorized production rollout;
 - recheck for unowned rows, then apply and verify corrected `0005_core_account_ownership_enforce.sql` (`NOT NULL`, owner immutability, table-specific same-owner relational guards);
 - favorites/collections or another personal organization model only after UI-030 is fully enforced;
 - delete and batch management after durable storage/reference/recovery semantics are explicit;

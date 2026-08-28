@@ -22,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; PR #15 merged Library drag/drop upload/UI-028 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; PR #16 merged Account Identity Foundation/UI-029 as `bcb20365db102252db51263968de96fc795be518`. Core Account Ownership/UI-030 is the active in-progress slice on PR #17: exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed the complete 14-gate configured suite, while merge/live rollout and corrected `0005` enforcement remain outstanding. Activity remains a placeholder.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; PR #15 merged Library drag/drop upload/UI-028 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; PR #16 merged Account Identity Foundation/UI-029 as `bcb20365db102252db51263968de96fc795be518`. Core Account Ownership/UI-030 remains the active rollout slice after PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`: exact implementation and final documentation heads passed the complete configured suite, and merged `main` push checks are green. Production rollout and corrected `0005` enforcement remain outstanding. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -30,6 +30,8 @@ Approved product state includes Application Shell, Create, Library v0.1, persist
 **Rendering:** Server Components by default; Client Components only for interactive feature behavior  
 **Styling:** Tailwind CSS + semantic project tokens  
 **Components:** approved RenderLab components first; conventional visible controls use the maintained `src/components/ui` layer; new mechanics follow the approved source order in `docs/ui/COMPONENT_CATALOG.md`.
+
+Deployment configuration: repository `vercel.json` pins the Vercel framework to `nextjs` and disables automatic Git-triggered deployments. `scripts/verify-vercel-env.mjs` runs as a Vercel-only prebuild guard for required Supabase/R2 configuration and the approved shared Supabase URL. GitHub remains the development/validation path; production deployment is an explicit operation.
 
 ## Maintained Primitive Boundary — UI-026
 Conventional visible controls are centralized rather than hand-styled in feature/shell code.

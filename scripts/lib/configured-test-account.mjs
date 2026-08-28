@@ -5,11 +5,7 @@ const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABAS
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const runToken = process.env.GITHUB_RUN_ID || "local";
-const accountScope =
-  process.env.RENDERLAB_TEST_ACCOUNT_SCOPE ||
-  process.env.GITHUB_HEAD_REF ||
-  process.env.GITHUB_REF_NAME ||
-  runToken;
+const accountScope = process.env.RENDERLAB_TEST_ACCOUNT_SCOPE || runToken;
 const accountScopeToken = createHash("sha256").update(accountScope).digest("hex").slice(0, 12);
 
 function fixtureUuid(namespace) {

@@ -25,11 +25,11 @@ Legacy `studio_*` tables remain separate and must not be renamed, repurposed or 
 - `0003_persistent_media_uploads.sql` — applied as `20260827031630 renderlab_persistent_media_uploads`; adds durable origin/name/size fields and server-owned `media_upload_sessions`, RLS enabled.
 - `0004_core_account_ownership_prepare.sql` — applied as `20260827203604 renderlab_core_account_ownership_prepare`; adds nullable `owner_id -> auth.users.id` with `ON DELETE RESTRICT` to generation sources/jobs, media assets and upload sessions, adds owner-time indexes, and revokes direct raw-table privileges from `anon` / `authenticated` while keeping RLS enabled.
 
-`0005_core_account_ownership_enforce.sql` is committed on PR #17 but is **not applied**. It is the tightening step that refuses unowned rows, makes all four owners `NOT NULL`, makes `owner_id` immutable, and enforces same-owner links for generated media → generation job and upload session → promoted media asset. The staged migration was corrected at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after rollback-only semantic testing exposed that one shared polymorphic trigger function could reference a field unavailable on `media_assets`; the corrected migration uses separate media→job and upload→asset owner-link trigger functions.
+`0005_core_account_ownership_enforce.sql` is committed and merged through PR #17 but is **not applied**. It is the tightening step that refuses unowned rows, makes all four owners `NOT NULL`, makes `owner_id` immutable, and enforces same-owner links for generated media → generation job and upload session → promoted media asset. The staged migration was corrected at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after rollback-only semantic testing exposed that one shared polymorphic trigger function could reference a field unavailable on `media_assets`; the corrected migration uses separate media→job and upload→asset owner-link trigger functions.
 
 Do not reapply migrations 0003 or 0004. Do not apply corrected 0005 before the owner-aware application code is safely live and a final no-unowned-row audit passes; tightening the shared schema first could break an older deployed writer.
 
-Service-role access remains server-only. UI-029 added public Supabase Auth client configuration only. UI-030 / PR #17 threads the verified account principal through server product routes and persistence while keeping the raw core tables server-owned; its implementation is exact-head verified, but rollout remains incomplete until merge/live deployment and corrected 0005 enforcement are completed in that order.
+Service-role access remains server-only. UI-029 added public Supabase Auth client configuration only. UI-030 / PR #17 threads the verified account principal through server product routes and persistence while keeping the raw core tables server-owned; PR #17 is merged and `main` is verified, but rollout remains incomplete until the owner-aware runtime is explicitly deployed and corrected 0005 enforcement is completed afterward.
 
 ### Account identity boundary — UI-029
 Supabase Auth `auth.users.id` is the canonical RenderLab account principal.
@@ -53,7 +53,7 @@ Rules:
 
 Configured Account Identity Visual `33111299356` created a run-owned confirmed test user through the server-only Auth admin API, signed in through the actual Settings UI, verified session persistence across reload, signed out and deleted the exact user. Direct verification afterward found no matching account-CI users.
 
-### Core account ownership boundary — UI-030 / PR #17 (implementation verified; rollout in progress)
+### Core account ownership boundary — UI-030 / PR #17 (merged; live rollout pending)
 PR #17 establishes account-private ownership for the four RenderLab core durable/pending record types:
 - `generation_sources.owner_id`
 - `generation_jobs.owner_id`
@@ -99,6 +99,8 @@ Configured ownership evidence:
 - configured test cleanup uses deterministic fixture account ownership so a rerun on a fresh runner can recover its own stale DB/R2 rows without deleting another workflow's fixtures;
 - Generation Image/Edit and Video/Animate PR workflows carry timeout budgets that exceed their own sequential verifier deadlines.
 
+Merge verification: final documentation head `d7f856913847ff22fa2594d060dbe21b6ea9373a` passed all 14 configured PR gates before PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`. Push-triggered merged-`main` UI Shell `33135862296`, Reference Upload `33135862307`, Generation Integration `33135862297`, and Video Generation `33135862337` all passed. Post-run cleanup again left all four core tables empty and no RenderLab fixture Auth users.
+
 Supabase advisor result after exact-head CI:
 - security: only informational `RLS enabled, no policy` notices on the four deliberately server-owned tables; this is expected while browser roles have no direct grants;
 - performance: unused-index INFO notices on empty/low-traffic RenderLab/legacy tables; no UI-030 schema change is justified from those notices.
@@ -116,6 +118,15 @@ Validation consequences:
 - Vercel preview deployment is not required for iterative UI/application verification;
 - final exact-head validation remains mandatory; a future runner outage still does not waive required gates;
 - connector-driven writes should continue to batch cohesive changes into as few commits as practical.
+
+## Vercel deployment boundary
+Vercel is the production deployment target, but Git pushes are **not** deployment authorization. Repository `vercel.json` sets `git.deploymentEnabled=false`, so GitHub development/merge activity does not automatically create Vercel deployments. An explicit deployment action is required.
+
+The RenderLab repository is Next.js (`npm run build` -> `next build`). The Vercel project had a stale `vite` framework preset: automatic production attempt `dpl_26Di1DVD3fpAdb2HjiskT9kTtpqz` for merge `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1` successfully completed the Next.js production build, then failed with `STATIC_BUILD_NO_OUT_DIR` because the Vite preset expected `dist`. It never became live. Repository `vercel.json` now pins `framework: nextjs`, which overrides the stale project preset for future explicit builds while automatic Git deployments remain disabled.
+
+Deployment readiness rule: do not apply corrected `0005` merely because GitHub `main` is owner-aware. First explicitly deploy the verified owner-aware runtime, verify the serving deployment and private account flows, then re-audit shared Supabase for unowned rows before applying/validating `0005`.
+
+`.github/workflows/deployment-readiness.yml` is the permanent non-deploying configuration gate. On changes to Vercel/build configuration it asserts `framework: nextjs`, asserts automatic Git deployment remains disabled, rejects a forced `outputDirectory`, exercises the Vercel environment preflight with non-secret fixture values, installs dependencies and runs the production `next build`. `scripts/verify-vercel-env.mjs` is also wired as `prebuild`, but only enforces the real environment contract when `VERCEL=1`. The gate performs no Vercel deployment and no Supabase/R2 writes.
 
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
@@ -300,7 +311,8 @@ Product media APIs:
 
 Generated/uploaded durable media share one public contract and can become generation input through `{ type: "media-asset", id }`. Viewer → Create carries opaque identity + action intent; the server revalidates durable media/capability state.
 
-## Required Server / CI Environment Variables
+## Required Server / CI / Production Environment Variables
+For an explicit Vercel deployment, every non-optional variable below must be configured in the target Vercel environment. `npm run build` invokes `scripts/verify-vercel-env.mjs`; when Vercel exposes `VERCEL=1`, the prebuild fails before compilation if required Supabase/R2 variables are missing, if the public/private Supabase URLs do not target the approved shared project, or if only one half of the optional external-backend URL/token pair is configured. GitHub builds remain secret-free because the preflight is Vercel-only.
 ### Supabase server/private
 - `SUPABASE_URL` = `https://rashyleshocuvpgcooxy.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY` — secret, server/CI only
@@ -330,7 +342,7 @@ R2 credentials currently require Admin Read & Write because configured browser u
 - Raw `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions` stay server-owned. Browser roles have no direct table grants; product routes/services enforce owner scope while using server-only service-role access.
 - Keep RLS enabled on the four core tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
 - An external generation service must authenticate the server-only bearer token before trusting `x-renderlab-owner-id`; owner headers alone are not authorization.
-- UI-030 implementation is exact-head verified, but the ownership rollout is not complete until PR #17 is merged, owner-aware code is actually live, a final no-unowned-row audit passes, and corrected `0005` is applied/verified. Do not approve Favorites/Collections or other personal organization before that rollout completes.
+- UI-030 is merged and GitHub-verified, but the ownership rollout is not complete until owner-aware code is actually live, a final no-unowned-row audit passes, and corrected `0005` is applied/verified. Do not approve Favorites/Collections or other personal organization before that rollout completes.
 - Direct browser uploads use short-lived signed URLs + exact-origin CORS.
 - Durable reads/downloads use short-lived signed R2 GETs behind opaque product routes.
 - Rename uses a server-side service-role metadata mutation and never exposes service-role credentials to the browser.
@@ -362,10 +374,11 @@ Key workflows:
 - `verify-reference-upload.mjs` + `reference-upload-integration.yml` — owner-bound temporary source persistence
 - `verify-generation-bridge.mjs` + `generation-bridge-integration.yml` — owner-bound Create Image/Edit Image persistence and continuation
 - `verify-video-generation.mjs` + `video-generation-integration.yml` — owner-bound Create Video/Animate Image plus temporary reference ownership
+- `verify-vercel-env.mjs` + `deployment-readiness.yml` — non-deploying Next.js/Vercel configuration, Vercel-only environment preflight and production-build gate
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
 ## Next Infrastructure Work
-1. Validate the final documentation head for UI-030 / PR #17 and merge the owner-aware application code when green. This repository merge is not permission to apply corrected `0005` or to perform an explicit deployment action.
+1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout, and repository merges are never permission to apply corrected `0005`.
 2. Through a separately authorized rollout, make owner-aware code actually live; then verify there are no unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, and confirm `NOT NULL`, immutable ownership and table-specific same-owner link triggers. Do not reverse this rollout order.
 3. Only after UI-030 is fully enforced may personal organization such as Favorites/Collections be reconsidered.
 4. Add any future public upload origin explicitly to R2 CORS before deployment/use.

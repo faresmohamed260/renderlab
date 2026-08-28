@@ -222,7 +222,7 @@ UI-029 establishes a real RenderLab account principal without pretending media o
 
 **Account identity foundation v0.1 status: `APPROVED` and merged.**
 
-### Core account ownership v0.1 — PR #17 / UI-030
+### Core account ownership v0.1 — merged PR #17 / UI-030
 UI-030 establishes account-private ownership across RenderLab's existing generation/reference/upload/media records before any personal organization feature is allowed.
 
 - [x] Apply rolling prepare migration `0004_core_account_ownership_prepare.sql` as `20260827203604 renderlab_core_account_ownership_prepare`; add nullable `owner_id -> auth.users.id ON DELETE RESTRICT`, owner-time indexes and revoke direct `anon`/`authenticated` raw-table grants while keeping RLS enabled.
@@ -246,18 +246,18 @@ UI-030 establishes account-private ownership across RenderLab's existing generat
 - [x] Review fresh exact-head screenshots/artifacts: signed-out Library private-account state and signed-in Create/Library/Viewer desktop/mobile states preserve the approved hierarchy with no unintended UI drift.
 - [x] Re-audit shared Supabase after exact-head CI: all four ownership tables contain 0 rows / 0 null owners, browser roles have no direct grants, all four owners remain nullable for rolling rollout, enforcement trigger count is 0, migration history ends at applied `0004`, and no RenderLab fixture Auth users remain.
 - [x] Run Supabase advisors: security reports only expected informational RLS-with-no-policy notices for the deliberately server-owned tables; performance reports unused-index INFO findings on currently empty/low-traffic tables, with no UI-030 remediation required.
-- [ ] Merge owner-aware application code after this final documentation head is validated.
+- [x] Final documentation head `d7f856913847ff22fa2594d060dbe21b6ea9373a` passed all 14 configured gates; merge PR #17 as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; merged `main` UI Shell `33135862296`, Reference Upload `33135862307`, Generation Integration `33135862297`, and Video Generation `33135862337` passed.
 - [ ] After owner-aware code is safely live through a separately authorized rollout, recheck for unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, then verify `NOT NULL`, owner immutability and table-specific same-owner link triggers.
 
 The earlier zero-step/no-log Actions failures were a private-repository hosted-capacity issue, not a RenderLab regression. Making the repository public restored runner allocation immediately; the resumed exact-head suite produced real build/browser/integration evidence and is fully green on `49f08013dc428d8d390a1bd803b10886f853cd82`.
 
-**Core account ownership v0.1 status: `IN PROGRESS`; PR #17 implementation is exact-head verified, while merge/live rollout and corrected `0005` enforcement remain unapplied/outstanding.**
+**Core account ownership v0.1 status: `IN PROGRESS`; PR #17 is merged and `main` is verified owner-aware. Production rollout and corrected `0005` enforcement remain unapplied/outstanding.**
 
 ### R2 browser-origin boundary
 Direct browser PUT CORS remains exact-origin restricted to the approved localhost CI origins and current stable RenderLab Vercel origins. The admin-capable R2 access-key credentials reconcile the managed rule through the S3 API during configured lifecycle verification. If a future public origin changes, add it explicitly before direct browser upload use. Download uses product-route → signed-R2 top-level GET navigation and does not add a new upload-CORS requirement. Rename mutates Supabase metadata only and does not rename/move R2 objects or add a new CORS requirement. History ordering is a server-side Supabase query concern and adds no R2/CORS requirement. Drag/drop reuses the persistent direct-browser upload path and adds no new R2/CORS contract.
 
 ### Still intentionally open during Core Account Ownership
-- [ ] Merge PR #17 after final documentation-head validation; do not deploy merely because GitHub `main` advances.
+- [x] PR #17 merged after final documentation-head validation; the merge did not authorize or complete a production rollout.
 - [ ] Make the owner-aware runtime live only through a separately authorized deployment/rollout step, then re-audit for unowned rows and apply/verify corrected `0005`.
 - [ ] Favorites/collections or another approved organization model only after that owner-scoped data boundary is fully enforced.
 - [ ] Delete and batch management after storage/reference/recovery semantics are explicit.
@@ -286,10 +286,10 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** Core account ownership v0.1 / UI-030 on PR #17. Exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured gates, responsive artifact review and clean shared-resource audit.  
+**Current product slice:** Core account ownership v0.1 / UI-030 rollout. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact implementation and final documentation heads passed the complete configured suite, and merged `main` push checks are green.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14 and Drag/drop Upload PR #15 are merged and approved.  
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current gate:** validate this documentation head and merge PR #17. UI-030 remains incomplete after merge until the owner-aware runtime is separately made live and corrected `0005` is applied/verified against a no-unowned-row audit.  
+**Current gate:** production-readiness configuration and explicit owner-aware runtime rollout. Automatic Vercel Git deployments are disabled; `vercel.json` pins Next.js; Vercel builds preflight the required Supabase/R2 environment contract. UI-030 remains incomplete until the runtime is separately made live and corrected `0005` is applied/verified after a no-unowned-row audit.
 **Next product slice:** none. Finish UI-030 rollout first. Do not implement Favorites/Collections until cross-account isolation is fully enforced; do not implement Delete until durable storage/reference/recovery semantics are explicit.
 
 ## Session Handoff Rule
