@@ -69,12 +69,17 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 ### Active product slice
-- Library Favorites v0.1 / UI-031 is **VERIFIED FOR MERGE** as the first personal-organization slice after completed UI-030 ownership enforcement. PR #23 remains open until the final documentation-head configured suite passes.
-- Exact implementation head `85460b7920afe66eee7ff35da03d4f43c9f207fd` passed all 13 applicable gates: Library Favorites `33200364267`, Account Ownership `33200364288`, UI Shell `33200364256`, Create Lifecycle `33200364185`, Library Search `33200364171`, Library History `33200364183`, Library Lifecycle `33200364235`, Library Drag Drop `33200364254`, Persistent Media Upload `33200364229`, Media Download `33200364193`, Media Rename `33200364178`, Generation Integration `33200364233`, and Video Generation `33200364198`.
-- Fresh desktop/mobile Library Favorites and Media Viewer screenshots were visually reviewed without hierarchy drift. The post-suite shared-Supabase audit found 0 core rows, 0 null owners, 0 RenderLab fixture users, 0 browser grants, four RLS-enabled core tables, four `NOT NULL` owner columns, all six UI-030 enforcement triggers, nullable `favorited_at`, and applied migration `20260828183102 renderlab_media_favorites` with its partial owner/favorite index intact.
-- v0.1 scope remains intentionally narrow: one owner-scoped favorite marker on existing durable `media_assets`, a URL/server-owned Favorites Library filter that composes with kind/search/sort/pagination, and one Media Viewer favorite toggle. Collections, Library-card/batch favorite actions, Delete/batch management, new top-level navigation and a global client media store remain out of scope.
+- None. Library Favorites v0.1 / UI-031 is complete and approved; no follow-up product slice has been selected automatically.
+- Collections remains a separate RenderLab-owned organization contract to evaluate only as a future slice. Delete/batch remains blocked until storage/reference/recovery semantics are explicit.
 
 ### Latest completed product slice
+- Library Favorites v0.1 / UI-031 is **APPROVED**. PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431` after final exact head `4bd41d55af27c7240d75862424039fc59027988e` passed all 13 applicable gates: Library Favorites `33205471360`, Account Ownership `33205471266`, UI Shell `33205471298`, Create Lifecycle `33205471299`, Library Search `33205471263`, Library History `33205471326`, Library Lifecycle `33205471335`, Library Drag Drop `33205471286`, Persistent Media Upload `33205471255`, Media Download `33205471419`, Media Rename `33205471361`, Generation Integration `33205471331`, and Video Generation `33205471358`.
+- The implementation-head suite `85460b7920afe66eee7ff35da03d4f43c9f207fd` also passed all 13 applicable gates before documentation finalization. Four fresh desktop/mobile Library Favorites and Media Viewer screenshots were visually reviewed without hierarchy drift.
+- The final pre-merge and post-merge Supabase audits both found 0 core rows, 0 null owners, 0 RenderLab fixture users, 0 browser grants, four RLS-enabled core tables, four `NOT NULL` owner columns, all six UI-030 enforcement triggers, nullable `favorited_at`, and applied migration `20260828183102 renderlab_media_favorites` with its partial owner/favorite index intact.
+- Merged `main` push checks UI Shell `33205766730`, Reference Upload `33205766693`, Generation Integration `33205766671`, and Video Generation `33205766691` all passed. Vercel listed zero RenderLab deployments created after the PR #23 merge; automatic Git deployment remains disabled and UI-031 was not deployed separately.
+- Favorites v0.1 remains intentionally narrow: owner-scoped favorite metadata on existing durable `media_assets`, server-owned `favorite=true` Library filtering that composes with kind/search/sort/pagination, and one contextual Media Viewer toggle. Collections, Library-card/batch favorite actions, Delete/batch, new top-level navigation and a global client media store remain out of scope.
+
+### Previous completed product slice — Core Account Ownership
 - Core Account Ownership v0.1 / UI-030 is **APPROVED**. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; owner-aware production deployment `dpl_DYs48pvBEvzDuDbHwcEn4f9LGabE` is READY at `https://renderlab-lake.vercel.app` from exact application SHA `5f5d3cee9b45af175f072050f48da4549d5f416c`; corrected `0005` was applied as `20260828174940 renderlab_core_account_ownership_enforce` after live two-account verification and a zero-unowned-row audit.
 - Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured PR gates: Account Ownership `33131090207`, Account Identity `33131090197`, UI Shell `33131090250`, Create Lifecycle `33131090243`, Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265`, Media Download `33131090206`, Media Rename `33131090198`, Reference Upload `33131090263`, Generation Integration `33131090251`, and Video Generation `33131090262`.
 - Final PR documentation head `d7f856913847ff22fa2594d060dbe21b6ea9373a` passed all 14 configured gates again before merge. PR #17 then merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; push-triggered `main` UI Shell `33135862296`, Reference Upload `33135862307`, Generation Integration `33135862297`, and Video Generation `33135862337` all passed.
@@ -218,7 +223,7 @@ Implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed Library Hi
 
 Final exact documentation head `cae17cb2850f3a995bbe3d106669ce651e3e0aa1` passed UI Shell `33097006928`, Create Lifecycle `33097006913`, Persistent Media Upload Integration `33097007064`, Library Lifecycle `33097006853`, Library Search `33097007092`, Library History `33097006833`, Media Download `33097006968`, and Media Rename `33097006959`. PR #14 merged as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; the merged `main` UI Shell run `33097463519` passed.
 
-UI-030 ownership enforcement is complete in production. Favorites v0.1 / UI-031 is now the active personal-organization slice and stays owner-scoped on existing durable media; Collections remains a separate later contract. Delete remains deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
+UI-030 ownership enforcement is complete in production and Favorites v0.1 / UI-031 is approved as the first owner-scoped personal-organization slice. Collections remains a separate future contract. Delete remains deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
 
 ## R2 Browser CORS State
 The admin-capable R2 access-key credentials manage the exact-origin `renderlab-browser-uploads` rule through the S3 API for:
@@ -233,9 +238,8 @@ Download uses product-route → signed-R2 top-level GET navigation. Rename is a 
 If a future user-facing production origin changes, add that exact origin before serving direct browser uploads there. Do not use broad wildcard CORS or replace direct-to-R2 transfers with an application-server proxy merely for convenience.
 
 ## Still Open in Phase 4
-Library Favorites v0.1 / UI-031 is the active Phase 4 slice. Remaining follow-ups, in order:
-- merge verified Favorites v0.1 through PR #23 after the final exact-head documentation validation;
-- evaluate Collections only through a separate RenderLab-owned organization contract after Favorites evidence exists;
+No Phase 4 product slice is active. Remaining follow-ups, in order:
+- evaluate Collections only through a separate RenderLab-owned organization contract if/when that slice is explicitly selected;
 - delete and batch management only after durable storage/reference/recovery semantics are explicit;
 - other Library interaction enhancements only when separately justified.
 

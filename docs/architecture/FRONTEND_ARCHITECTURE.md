@@ -22,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is verified for merge through PR #23; final documentation-head CI remains the current gate. Activity remains a placeholder.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; no product slice is currently active. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -242,7 +242,7 @@ Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed 
 
 Corrected `0005` first passed rollback-only live-schema same-owner/cross-owner/immutability/null-owner/Auth-delete and FK-cleanup compatibility simulations, then was applied only after the owner-aware runtime was live and the final no-unowned-row audit passed. Post-enforcement production Account Ownership verification remained green and cleanup returned shared RenderLab rows/users to zero.
 
-## Library Favorites v0.1 Architecture — UI-031 (verified for merge)
+## Library Favorites v0.1 Architecture — UI-031 (approved)
 Verified contract:
 ```text
 verified account + durable media asset
@@ -260,7 +260,7 @@ Rules:
 - foreign asset IDs remain ordinary not-found state and signed-out mutation remains authentication-required;
 - Collections remain a separate future relation/model rather than being inferred from Favorites.
 
-Exact implementation head `85460b7920afe66eee7ff35da03d4f43c9f207fd` passed all 13 applicable configured gates, including Library Favorites `33200364267`, Account Ownership `33200364288`, Library Lifecycle `33200364235`, Media Download `33200364193`, Media Rename `33200364178`, Generation Integration `33200364233` and Video Generation `33200364198`. Four fresh desktop/mobile Library/Viewer artifacts were visually reviewed clean. The post-suite Supabase audit returned zero shared RenderLab rows/fixture users/browser grants while preserving four RLS-enabled tables, four `NOT NULL` owner columns, all six UI-030 enforcement triggers, nullable `favorited_at` and the UI-031 partial index.
+Exact implementation head `85460b7920afe66eee7ff35da03d4f43c9f207fd` passed all 13 applicable configured gates, including Library Favorites `33200364267`, Account Ownership `33200364288`, Library Lifecycle `33200364235`, Media Download `33200364193`, Media Rename `33200364178`, Generation Integration `33200364233` and Video Generation `33200364198`. Final documentation head `4bd41d55af27c7240d75862424039fc59027988e` passed the complete 13-gate affected matrix again before PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431`. Four fresh desktop/mobile Library/Viewer artifacts were visually reviewed clean. Final pre-merge and post-merge Supabase audits returned zero shared RenderLab rows/fixture users/browser grants while preserving four RLS-enabled tables, four `NOT NULL` owner columns, all six UI-030 enforcement triggers, nullable `favorited_at` and the UI-031 partial index. Merged-main UI Shell, Reference Upload, Generation and Video Generation checks all passed.
 
 ## Capability Architecture
 ```text

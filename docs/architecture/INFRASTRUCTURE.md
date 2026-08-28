@@ -31,6 +31,8 @@ Do not reapply migrations 0003, 0004, 0005 or 0006. The required 0005 sequencing
 
 Post-UI-031 Supabase security advisors report only the expected informational `rls_enabled_no_policy` notices for the deliberately server-owned core tables. Performance advisors report unused-index INFO findings on currently empty/low-traffic tables, including the new favorite index; no schema remediation is justified from those observations alone.
 
+UI-031 / PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431` after exact final head `4bd41d55af27c7240d75862424039fc59027988e` passed all 13 affected gates. Merged `main` UI Shell `33205766730`, Reference Upload `33205766693`, Generation Integration `33205766671`, and Video Generation `33205766691` passed. Post-merge Supabase cleanup returned all four core tables and RenderLab fixture users to zero while preserving RLS, browser-grant revocation, six ownership triggers, four `NOT NULL` owners, nullable `favorited_at`, and the favorite index. Vercel reported zero RenderLab deployments created after the PR #23 merge, confirming automatic Git deployment remained disabled; UI-031 has not been separately deployed to production.
+
 Service-role access remains server-only. UI-029 added public Supabase Auth client configuration only. UI-030 / PR #17 threads the verified account principal through server product routes and persistence while keeping the raw core tables server-owned; the owner-aware runtime is live and corrected 0005 enforcement is applied and verified.
 
 ### Account identity boundary — UI-029
@@ -51,7 +53,7 @@ Rules:
 - `SUPABASE_SERVICE_ROLE_KEY` remains server/CI-only and is never used by product browser code;
 - server account identity uses verified Supabase claims rather than trusting an unverified browser-supplied user ID;
 - UI-029 itself added no owner columns or account-scoped media/job persistence;
-- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites is the verified first organization slice, while Collections remains a separate future contract.
+- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites is the approved first organization slice, while Collections remains a separate future contract.
 
 Configured Account Identity Visual `33111299356` created a run-owned confirmed test user through the server-only Auth admin API, signed in through the actual Settings UI, verified session persistence across reload, signed out and deleted the exact user. Direct verification afterward found no matching account-CI users.
 
