@@ -1,11 +1,11 @@
-name: Temporary UI-031 Post-Merge Documentation Sync
+name: Temporary UI-031 Final Project Handoff Cleanup
 
 on:
   push:
     branches: [tmp/ui031-final-doc-sync]
     paths:
       - ".github/workflows/tmp-ui031-final-doc-sync.yml"
-      - "scripts/tmp-ui031-post-merge-sync.py"
+      - "scripts/tmp-ui031-project-cleanup.py"
   workflow_dispatch:
 
 permissions:
@@ -28,16 +28,16 @@ jobs:
           ref: main
           path: repo
 
-      - name: Prepare UI-031 approved handoff
-        run: python helper/scripts/tmp-ui031-post-merge-sync.py repo
+      - name: Prepare final PROJECT handoff cleanup
+        run: python helper/scripts/tmp-ui031-project-cleanup.py repo
 
-      - name: Validate and push docs-only main handoff
+      - name: Validate and push docs-only cleanup
         working-directory: repo
         shell: bash
         run: |
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md
-          git commit -m "Record UI-031 approval"
+          git add PROJECT.md
+          git commit -m "Close UI-031 active handoff"
           git push origin HEAD:main
