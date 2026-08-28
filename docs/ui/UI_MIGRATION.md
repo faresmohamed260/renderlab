@@ -332,6 +332,26 @@ UI-033 resolves the previously blocked destructive-media contract with the small
 
 **Durable Media Delete v0.1 status: `APPROVED`. PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445` after final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates. Batch media management remains a separate future contract.**
 
+### Library Batch Delete v0.1 — PR #29 / UI-034
+UI-034 extends approved single-asset Delete with the smallest coherent Library batch contract. Selection remains transient and page-scoped; deletion remains per-asset and idempotent rather than pretending database + R2 cleanup is globally transactional.
+
+- [x] Select page-scoped Library Batch Delete as the next Phase 4 media-management slice.
+- [x] Define UI-034: explicit Library selection mode, current-page selection only, maximum 24 durable IDs, reset across Library view navigation, and no global media selection store.
+- [x] Add maintained Radix Checkbox plus a feature-owned `LibraryBatchSelection` composition without redesigning the approved Library toolbar/grid hierarchy.
+- [x] Add owner-scoped `POST /api/media/assets/batch-delete` with UUID validation, deduplication, a one-page/24-item cap and per-item results.
+- [x] Reuse the existing UI-033 `deleteMediaAsset` contract per item; successful tombstones/purges are not rolled back because another selected asset fails.
+- [x] Keep foreign/missing IDs indistinguishable as per-item not-found; retain failed active IDs for retry and report cleanup-pending success truthfully.
+- [x] Add configured two-account batch verification covering request bounds, signed-out/foreign denial, mixed partial success, Favorite/collection/upload-session cleanup, R2 primary/thumbnail purge, generation-history preservation, idempotence, page-scoped selection reset, responsive confirmation and exact cleanup.
+- [x] Correct the first browser verifier timing issue by immediately hiding successfully deleted cards while the authoritative server refresh catches up; the underlying API/database/R2 deletion had already succeeded and cleanup remained exact.
+- [x] Implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed all 16 affected gates: Library Batch Delete `33220127853`, Account Ownership `33220127858`, UI Shell `33220127872`, Create Lifecycle `33220127874`, Library Search `33220127883`, Library History `33220127859`, Library Lifecycle `33220127864`, Library Drag Drop `33220127921`, Persistent Media Upload `33220127879`, Media Download `33220127852`, Media Rename `33220127885`, Library Favorites `33220127888`, Library Collections `33220127868`, Media Delete `33220127873`, Generation Integration `33220127851`, and Video Generation `33220127855`.
+- [x] Visually review the successful configured artifacts: desktop selection remains compact, selected cards remain media-first, destructive confirmation is explicit, and the mobile dialog remains touch-friendly without hierarchy drift.
+- [x] Pre-finalization shared-resource audit is clean: all six RenderLab tables and configured fixture users are back to zero; six RLS tables, six non-null owner columns, zero browser grants, nullable `deleted_at`/`purged_at`, all three deletion-integrity triggers and `media_assets_owner_active_created_at_idx` remain intact; `20260828221611 renderlab_media_asset_deletion` remains the latest migration.
+- [ ] Pass the complete 16-gate suite on the documentation-finalized exact PR head.
+- [ ] Merge PR #29 and verify merged-`main` push checks.
+- [ ] Verify post-merge shared-resource cleanup and zero unintended Vercel deployment.
+
+**Library Batch Delete v0.1 status: `IN FINAL VALIDATION`. Cross-page selection, Trash/restore, batch Favorites/Collections and other bulk-management actions remain separate future contracts.**
+
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
 - [ ] Models/workflows only if dedicated user-facing surfaces are justified.
@@ -353,11 +373,11 @@ UI-033 resolves the previously blocked destructive-media contract with the small
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** None. UI-033 is complete; no next Phase 4 product slice has been selected.
+**Current product slice:** Library Batch Delete v0.1 / UI-034 is IN FINAL VALIDATION on PR #29.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, and Durable Media Delete PR #25 / UI-033 are merged and approved.
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current gate:** No active Phase 4 implementation gate. Select the next slice explicitly before implementation.
-**Next product slice:** Batch media management is the next documented candidate, but it is not yet selected. Define selection, multi-delete atomicity, partial-failure/retry and recovery UX explicitly before implementation; do not infer them from UI-033.
+**Current gate:** rerun all 16 affected workflows on the exact documentation-finalized UI-034 head, then merge only after a clean shared-resource audit.
+**Next product slice:** None selected after UI-034. Do not expand batch Delete into Trash/restore, cross-page selection, batch Favorites/Collections or a generic bulk-management framework without a separate contract.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

@@ -133,8 +133,11 @@ UI-026 makes the maintained primitive layer an implementation contract rather th
 
 Current approved local primitives under `src/components/ui`:
 - `Alert` / `AlertDescription`
+- `AlertDialog` / action / cancel / content / description / title / trigger
 - `Button`
+- `Checkbox` (UI-034 candidate in final validation)
 - `Collapsible` / trigger / content
+- `DropdownMenu` / content / items / radio items
 - `Empty` composition with heading-preserving `EmptyTitle`
 - `Field` / `FieldLabel` / `FieldDescription` / `FieldError` / `FieldGroup`
 - `Input`

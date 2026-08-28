@@ -69,8 +69,12 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 ### Active product slice
-- None. UI-033 is complete; no next Phase 4 product slice has been selected.
-- Batch media management is the next documented management candidate, but it requires its own selection/multi-delete/atomicity/recovery contract rather than being inferred from single-asset Delete.
+- Library Batch Delete v0.1 / UI-034 is **IN FINAL VALIDATION** on PR #29.
+- UI-034 adds explicit page-scoped Library selection and best-effort permanent deletion for at most one server-rendered page (24 assets). Each item reuses the approved UI-033 tombstone/R2 contract; successful items are never rolled back because another selected item fails, and failed items remain eligible for retry.
+- No schema migration is added. Cross-page selection, Trash/restore, batch Favorites/Collections and a global media client store remain out of scope.
+- Implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed all 16 affected gates: Library Batch Delete `33220127853`, Account Ownership `33220127858`, UI Shell `33220127872`, Create Lifecycle `33220127874`, Library Search `33220127883`, Library History `33220127859`, Library Lifecycle `33220127864`, Library Drag Drop `33220127921`, Persistent Media Upload `33220127879`, Media Download `33220127852`, Media Rename `33220127885`, Library Favorites `33220127888`, Library Collections `33220127868`, Media Delete `33220127873`, Generation Integration `33220127851`, and Video Generation `33220127855`. Desktop selected/confirmation and mobile confirmation artifacts were visually reviewed without Library hierarchy drift.
+- Shared-resource verification is clean: all six RenderLab tables and configured fixture users are back to zero; six RLS tables, six non-null owner columns, zero browser grants, nullable `deleted_at`/`purged_at`, all three deletion-integrity triggers and `media_assets_owner_active_created_at_idx` remain intact; `20260828221611 renderlab_media_asset_deletion` remains the latest migration.
+- Remaining gate before merge: rerun the same 16-gate matrix on the exact documentation-finalized PR head, repeat the shared-resource audit, then merge and verify merged-`main` checks/cleanup/no-deployment state.
 
 ### Latest completed product slice
 - Durable Media Delete v0.1 / UI-033 is **APPROVED**. PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445` after final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 applicable gates: Media Delete `33218433320`, Account Ownership `33218433329`, UI Shell `33218433381`, Create Lifecycle `33218433291`, Library Search `33218433357`, Library History `33218433299`, Library Lifecycle `33218433285`, Library Drag Drop `33218433305`, Persistent Media Upload `33218433348`, Media Download `33218433296`, Media Rename `33218433406`, Library Favorites `33218433314`, Library Collections `33218433301`, Generation Integration `33218433335`, and Video Generation `33218433309`.
@@ -111,7 +115,7 @@ Do not redesign approved surfaces merely because new media capabilities or owner
 UI-026 makes maintained conventional controls a repository-enforced frontend foundation rule.
 
 - `components.json` configures shadcn `radix-nova`.
-- `src/components/ui` owns normalized Alert, Button, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle and ToggleGroup primitives.
+- `src/components/ui` owns normalized Alert, AlertDialog, Button, Checkbox, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle and ToggleGroup primitives.
 - Conventional visible controls in `src/features` and `src/components/shell` compose those approved primitives rather than hand-styled raw native controls.
 - Native `file` and `hidden` inputs remain allowed as browser/form plumbing.
 - Local wrappers own RenderLab tokens, variants, spacing, required semantic elements and product accessibility adaptations; features should not rebuild the same mechanic independently.
