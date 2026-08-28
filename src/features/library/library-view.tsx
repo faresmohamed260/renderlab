@@ -11,6 +11,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
+import { LibraryBatchSelection } from "@/features/library/library-batch-selection";
 import { LibraryCollectionMenu } from "@/features/library/library-collection-menu";
 import { LibraryDropUploadSurface } from "@/features/library/library-drop-upload-surface";
 import { LibrarySortMenu } from "@/features/library/library-sort-menu";
@@ -46,57 +47,6 @@ function libraryHref(
   if (offset > 0) params.set("offset", String(offset));
   const query = params.toString();
   return query ? `/library?${query}` : "/library";
-}
-
-function assetTitle(asset: PublicMediaAsset) {
-  return asset.displayName
-    || asset.prompt
-    || asset.originalFilename
-    || (asset.origin === "uploaded"
-      ? asset.kind === "image" ? "Uploaded image" : "Uploaded video"
-      : asset.kind === "image" ? "Generated image" : "Generated video");
-}
-
-function createdLabel(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Saved media";
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: date.getFullYear() === new Date().getFullYear() ? undefined : "numeric",
-  }).format(date);
-}
-
-function MediaPreview({ asset }: { asset: PublicMediaAsset }) {
-  if (asset.kind === "image") {
-    return (
-      <img
-        src={asset.contentUrl}
-        alt=""
-        loading="lazy"
-        className="size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]"
-      />
-    );
-  }
-
-  if (asset.thumbnailUrl) {
-    return (
-      <div className="relative size-full">
-        <img src={asset.thumbnailUrl} alt="" loading="lazy" className="size-full object-cover" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-canvas/80 px-2 py-1 text-[11px] font-semibold text-text backdrop-blur-sm">
-          <Video aria-hidden="true" size={13} />
-          Video
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex size-full flex-col items-center justify-center gap-2 bg-surface-2 text-text-muted">
-      <Video aria-hidden="true" size={26} />
-      <span className="text-xs">Video preview</span>
-    </div>
-  );
 }
 
 export function LibraryView({
@@ -198,6 +148,14 @@ export function LibraryView({
       libraryHref(kind, searchQuery, sort, favoriteOnly, collection.id),
     ]),
   );
+  const batchSelectionKey = [
+    kind,
+    sort,
+    searchQuery ?? "",
+    favoriteOnly ? "favorites" : "all-media",
+    selectedCollectionId ?? "",
+    String(offset),
+  ].join(":");
 
   return (
     <LibraryDropUploadSurface enabled={accountAvailable && uploadAvailable}>
@@ -332,28 +290,7 @@ export function LibraryView({
               </Empty>
             ) : (
               <>
-                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-                  {items.map((asset) => (
-                    <Link
-                      key={asset.id}
-                      href={`/library/${encodeURIComponent(asset.id)}`}
-                      className="group min-w-0 overflow-hidden rounded-xl border border-border bg-surface-1 transition-colors hover:border-text-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                      aria-label={`Open ${assetTitle(asset)}`}
-                    >
-                      <div className="aspect-[4/3] overflow-hidden bg-surface-2">
-                        <MediaPreview asset={asset} />
-                      </div>
-                      <div className="p-3">
-                        <p className="truncate text-sm font-medium text-text">{assetTitle(asset)}</p>
-                        <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted">
-                          <span>{asset.kind === "image" ? "Image" : "Video"}</span>
-                          <span aria-hidden="true">·</span>
-                          <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                <LibraryBatchSelection key={batchSelectionKey} items={items} />
 
                 {(offset > 0 || hasMore) ? (
                   <nav className="mt-8 flex items-center justify-between gap-3" aria-label="Library pages">
