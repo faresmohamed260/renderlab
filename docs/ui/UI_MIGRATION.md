@@ -288,7 +288,7 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
 **Current product slice:** Core account ownership v0.1 / UI-030 rollout. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact implementation and final documentation heads passed the complete configured suite, and merged `main` push checks are green.
-**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14 and Drag/drop Upload PR #15 are merged and approved.  
+**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14 and Drag/drop Upload PR #15 are merged and approved.
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
 **Current gate:** explicit owner-aware production rollout. Deployment Readiness PR #18 is merged and green; automatic Vercel Git deployments are disabled, `vercel.json` pins Next.js, and Vercel builds preflight the required Supabase/R2 environment contract. UI-030 remains incomplete until the runtime is separately made live and corrected `0005` is applied/verified after a no-unowned-row audit.
 **Next product slice:** none. Finish UI-030 rollout first. Do not implement Favorites/Collections until cross-account isolation is fully enforced; do not implement Delete until durable storage/reference/recovery semantics are explicit.
