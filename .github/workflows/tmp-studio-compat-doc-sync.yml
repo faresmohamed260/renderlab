@@ -1,0 +1,38 @@
+name: Temporary Studio Compatibility Docs Sync
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/remove-studio-compat-doc-sync
+          fetch-depth: 0
+
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/remove-studio-compat
+          path: target
+          fetch-depth: 0
+
+      - name: Patch authoritative docs
+        run: python .github/tmp/update-studio-compat-docs.py target
+
+      - name: Validate and push target docs
+        working-directory: target
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/ui/UI_MIGRATION.md docs/architecture/INFRASTRUCTURE.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Record Studio compatibility adapter removal"
+          git push origin HEAD:work/remove-studio-compat
