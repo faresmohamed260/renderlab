@@ -175,6 +175,7 @@ export async function listMediaAssets({
   kind,
   search,
   favoriteOnly = false,
+  collectionId,
   sort = "newest",
   limit = 24,
   offset = 0,
@@ -183,6 +184,7 @@ export async function listMediaAssets({
   kind?: MediaAssetKind;
   search?: string | null;
   favoriteOnly?: boolean;
+  collectionId?: string;
   sort?: MediaAssetSortOrder;
   limit?: number;
   offset?: number;
@@ -196,7 +198,7 @@ export async function listMediaAssets({
 
   const direction = sort === "oldest" ? "asc" : "desc";
   const params = new URLSearchParams({
-    select: "*",
+    select: collectionId ? "*,media_collection_items!inner(collection_id)" : "*",
     owner_id: `eq.${ownerId}`,
     order: `created_at.${direction},id.${direction}`,
     limit: String(safeLimit + 1),
@@ -204,6 +206,10 @@ export async function listMediaAssets({
   });
   if (kind) params.set("kind", `eq.${kind}`);
   if (favoriteOnly) params.set("favorited_at", "not.is.null");
+  if (collectionId) {
+    params.set("media_collection_items.collection_id", `eq.${collectionId}`);
+    params.set("media_collection_items.owner_id", `eq.${ownerId}`);
+  }
   if (normalizedSearch) params.set("or", mediaSearchFilter(normalizedSearch));
 
   const rows = await supabaseRest<MediaAssetRecord[]>(

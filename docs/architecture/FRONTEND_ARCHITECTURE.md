@@ -22,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; no product slice is currently active. Activity remains a placeholder.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; Library Collections v0.1 / UI-032 is the active Phase 4 slice. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -72,7 +72,7 @@ Rules:
 Rules:
 - Create remains the default route.
 - Image/Video/Edit/Animate/models/workflows are not separate top-level routes by default.
-- Library `kind`, `q`, `sort`, `offset` are URL-owned shareable browsing/discovery/history state after account context is resolved. Active UI-031 will add optional `favorite=true` as another server-owned Library filter without changing route hierarchy.
+- Library `kind`, `q`, `sort`, `favorite`, `collection`, `offset` are URL-owned shareable browsing/discovery/organization state after account context is resolved. `favorite=true` remains the UI-031 Favorites filter; UI-032 adds optional `collection=<uuid>` without changing route hierarchy.
 - `sort=newest|oldest`; Newest is canonical and omitted from clean links.
 - Viewer → Create `source` + `action` are untrusted navigation intent; the server reloads durable media for the verified owner and validates compatibility.
 - Durable Download uses the Viewer asset route context and a product API; the browser never treats an R2 key/signed URL as durable identity.
@@ -194,7 +194,7 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 - Viewer Rename editor and Favorite mutation feedback state;
 - Settings account-form fields/busy/local feedback state.
 
-Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 ownership enforcement is complete; active UI-031 adds Favorites directly to the existing owner-scoped durable-media contract while Collections remains deferred.
+Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 ownership enforcement is complete; approved UI-031 keeps Favorites on the durable asset, while active UI-032 adds Collections as a separate owner-scoped relation rather than a global client organization store.
 
 ## Account Identity Flow
 UI-029 (merged PR #16):
@@ -261,6 +261,24 @@ Rules:
 - Collections remain a separate future relation/model rather than being inferred from Favorites.
 
 Exact implementation head `85460b7920afe66eee7ff35da03d4f43c9f207fd` passed all 13 applicable configured gates, including Library Favorites `33200364267`, Account Ownership `33200364288`, Library Lifecycle `33200364235`, Media Download `33200364193`, Media Rename `33200364178`, Generation Integration `33200364233` and Video Generation `33200364198`. Final documentation head `4bd41d55af27c7240d75862424039fc59027988e` passed the complete 13-gate affected matrix again before PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431`. Four fresh desktop/mobile Library/Viewer artifacts were visually reviewed clean. Final pre-merge and post-merge Supabase audits returned zero shared RenderLab rows/fixture users/browser grants while preserving four RLS-enabled tables, four `NOT NULL` owner columns, all six UI-030 enforcement triggers, nullable `favorited_at` and the UI-031 partial index. Merged-main UI Shell, Reference Upload, Generation and Video Generation checks all passed.
+
+## Library Collections v0.1 Architecture — UI-032 (active)
+Target contract:
+```text
+verified account
+  -> account-owned media_collections
+  -> same-owner media_collection_items <-> durable media_assets
+  -> Library ?collection=<uuid> server filter
+  -> Viewer create/add/remove membership
+```
+
+Rules:
+- collections and memberships stay server-owned under the existing verified account boundary;
+- one durable asset may belong to multiple collections; Favorites remains independent asset metadata;
+- database enforcement must reject cross-owner collection/media links and owner reassignment;
+- Library collection filtering composes with kind/search/Favorites/sort/pagination and never becomes page-only client filtering;
+- Viewer owns v0.1 membership creation/toggling; Library cards remain navigation-only;
+- no collection rename/delete, card/batch membership, dedicated collection destination, media Delete/batch or global media store is introduced by UI-032.
 
 ## Capability Architecture
 ```text

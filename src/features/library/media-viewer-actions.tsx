@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { MediaViewerCollections } from "@/features/library/media-viewer-collections";
+import type { PublicMediaCollection } from "@/lib/api/media-collections-contract";
 import {
   MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH,
   type FavoriteMediaAssetResponse,
@@ -18,11 +20,15 @@ export function MediaViewerActions({
   displayName,
   fallbackTitle,
   isFavorite,
+  collections,
+  collectionsAvailable,
 }: {
   assetId: string;
   displayName: string | null;
   fallbackTitle: string;
   isFavorite: boolean;
+  collections: PublicMediaCollection[];
+  collectionsAvailable: boolean;
 }) {
   const router = useRouter();
   const inputId = useId();
@@ -124,6 +130,8 @@ export function MediaViewerActions({
       {favoriteError ? (
         <p role="alert" className="col-span-2 text-xs text-danger">{favoriteError}</p>
       ) : null}
+
+      <MediaViewerCollections assetId={assetId} collections={collections} available={collectionsAvailable} />
 
       <Button
         type="button"

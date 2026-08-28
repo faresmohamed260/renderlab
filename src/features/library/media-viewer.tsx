@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
+import type { PublicMediaCollection } from "@/lib/api/media-collections-contract";
 import { continuationActionsForMedia } from "@/lib/capabilities/generation";
 import { MediaViewerActions } from "@/features/library/media-viewer-actions";
 
@@ -41,7 +42,15 @@ function continuationHref(assetId: string, actionId: string) {
   return `/?${params.toString()}`;
 }
 
-export function MediaViewer({ asset }: { asset: PublicMediaAsset }) {
+export function MediaViewer({
+  asset,
+  collections,
+  collectionsAvailable,
+}: {
+  asset: PublicMediaAsset;
+  collections: PublicMediaCollection[];
+  collectionsAvailable: boolean;
+}) {
   const actions = continuationActionsForMedia(asset.kind);
   const dimensions = asset.width && asset.height ? `${asset.width} × ${asset.height}` : null;
   const duration = durationLabel(asset.durationMs);
@@ -153,6 +162,8 @@ export function MediaViewer({ asset }: { asset: PublicMediaAsset }) {
                 displayName={asset.displayName}
                 fallbackTitle={title}
                 isFavorite={asset.isFavorite}
+                collections={collections}
+                collectionsAvailable={collectionsAvailable}
               />
             </div>
           </div>

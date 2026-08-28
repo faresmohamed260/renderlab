@@ -286,6 +286,20 @@ Implementation-head evidence: Library Favorites `33200364267`, Account Ownership
 
 Final documentation-head evidence: Library Favorites `33205471360`, Account Ownership `33205471266`, UI Shell `33205471298`, Create Lifecycle `33205471299`, Library Search `33205471263`, Library History `33205471326`, Library Lifecycle `33205471335`, Library Drag Drop `33205471286`, Persistent Media Upload `33205471255`, Media Download `33205471419`, Media Rename `33205471361`, Generation Integration `33205471331`, and Video Generation `33205471358` all passed on unchanged product tree plus finalized documentation. Final pre-merge and post-merge Supabase verification returned 0 core rows, 0 null owners, 0 fixture users, 0 browser grants, four RLS-enabled core tables, four non-null owner columns and all six UI-030 enforcement triggers; `favorited_at` remains nullable, the partial favorite index remains present, and `0006` remains latest. Security advisors remain only the expected informational RLS-with-no-policy notices for deliberately server-owned tables, while performance advisors report unused-index INFO on empty/low-traffic tables including the favorite index.
 
+### Library Collections v0.1 — UI-032
+Collections is the second personal Library organization slice after approved Favorites. It must remain a separate owner-scoped relation/model rather than expanding `favorited_at` into a generic organization system.
+
+- [x] Select Collections as the next Phase 4 slice in the documented order.
+- [x] Establish the RenderLab-owned UI-032 contract: account-owned named collections; many-to-many membership over same-owner durable `media_assets`; one URL/server-owned Library collection filter; Viewer-only create/add/remove membership.
+- [ ] Apply additive `0007_media_collections.sql` and verify RLS, browser-grant revocation, owner immutability and same-owner collection/media membership enforcement.
+- [ ] Implement owner-scoped collection list/create and idempotent membership APIs.
+- [ ] Compose `collection=<uuid>` with existing Library kind/search/Favorites/sort/pagination without client-only filtering or a new top-level route.
+- [ ] Integrate the compact Library collection menu and Viewer collection membership panel without redesigning cards or continuation hierarchy.
+- [ ] Add configured two-account Collections verification with real browser Library/Viewer screenshots and exact DB/R2/Auth cleanup.
+- [ ] Run affected exact-head GitHub gates, visually review responsive artifacts, audit shared Supabase security/cleanup state, and finalize repository handoff.
+
+**Library Collections v0.1 status: `IN PROGRESS`. Collection rename/delete, card/batch membership and Delete/batch media management remain out of scope.**
+
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
 - [ ] Models/workflows only if dedicated user-facing surfaces are justified.
@@ -307,11 +321,11 @@ Final documentation-head evidence: Library Favorites `33205471360`, Account Owne
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** none. Library Favorites v0.1 / UI-031 is complete and approved.
+**Current product slice:** Library Collections v0.1 / UI-032 — IN PROGRESS.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, and Library Favorites PR #23 / UI-031 are merged and approved.
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current gate:** none for UI-031. PR #23 is merged, final and post-merge checks are green, cleanup is clean, and automatic Vercel Git deployment remained disabled.
-**Next product slice:** none selected. Collections remains a separate possible future organization contract; Delete still requires durable storage/reference/recovery semantics.
+**Current gate:** implement and validate the smallest owner-scoped Collections contract without expanding into collection management or media Delete/batch. No production deployment is authorized by this development slice.
+**Next product slice:** after UI-032, Delete/batch remains blocked until durable storage/reference/recovery semantics are explicit; other Library work remains requirement-driven.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

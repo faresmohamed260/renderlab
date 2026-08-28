@@ -69,8 +69,8 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 ### Active product slice
-- None. Library Favorites v0.1 / UI-031 is complete and approved; no follow-up product slice has been selected automatically.
-- Collections remains a separate RenderLab-owned organization contract to evaluate only as a future slice. Delete/batch remains blocked until storage/reference/recovery semantics are explicit.
+- Library Collections v0.1 / UI-032 is **IN PROGRESS** as the next Phase 4 organization slice selected after approved Favorites.
+- v0.1 is intentionally narrow: account-owned named collections, many-to-many membership over existing durable `media_assets`, one URL/server-owned Library collection filter that composes with kind/search/Favorites/sort/pagination, and Viewer-only create/add/remove membership. Collection rename/delete, Library-card/batch membership, dedicated collection routes, Delete/batch media management, new top-level navigation and a global client media store remain out of scope.
 
 ### Latest completed product slice
 - Library Favorites v0.1 / UI-031 is **APPROVED**. PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431` after final exact head `4bd41d55af27c7240d75862424039fc59027988e` passed all 13 applicable gates: Library Favorites `33205471360`, Account Ownership `33205471266`, UI Shell `33205471298`, Create Lifecycle `33205471299`, Library Search `33205471263`, Library History `33205471326`, Library Lifecycle `33205471335`, Library Drag Drop `33205471286`, Persistent Media Upload `33205471255`, Media Download `33205471419`, Media Rename `33205471361`, Generation Integration `33205471331`, and Video Generation `33205471358`.
