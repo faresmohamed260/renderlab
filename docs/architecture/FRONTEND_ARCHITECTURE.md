@@ -31,7 +31,7 @@ Approved product state includes Application Shell, Create, Library v0.1, persist
 **Styling:** Tailwind CSS + semantic project tokens  
 **Components:** approved RenderLab components first; conventional visible controls use the maintained `src/components/ui` layer; new mechanics follow the approved source order in `docs/ui/COMPONENT_CATALOG.md`.
 
-Deployment configuration: repository `vercel.json` pins the Vercel framework to `nextjs` and disables automatic Git-triggered deployments. GitHub remains the development/validation path; production deployment is an explicit operation.
+Deployment configuration: repository `vercel.json` pins the Vercel framework to `nextjs` and disables automatic Git-triggered deployments. `scripts/verify-vercel-env.mjs` runs as a Vercel-only prebuild guard for required Supabase/R2 configuration and the approved shared Supabase URL. GitHub remains the development/validation path; production deployment is an explicit operation.
 
 ## Maintained Primitive Boundary — UI-026
 Conventional visible controls are centralized rather than hand-styled in feature/shell code.

@@ -126,7 +126,7 @@ The RenderLab repository is Next.js (`npm run build` -> `next build`). The Verce
 
 Deployment readiness rule: do not apply corrected `0005` merely because GitHub `main` is owner-aware. First explicitly deploy the verified owner-aware runtime, verify the serving deployment and private account flows, then re-audit shared Supabase for unowned rows before applying/validating `0005`.
 
-`.github/workflows/deployment-readiness.yml` is the permanent non-deploying configuration gate. On changes to Vercel/build configuration it asserts `framework: nextjs`, asserts automatic Git deployment remains disabled, rejects a forced `outputDirectory`, installs dependencies and runs the production `next build`. It performs no Vercel deployment and no Supabase/R2 writes.
+`.github/workflows/deployment-readiness.yml` is the permanent non-deploying configuration gate. On changes to Vercel/build configuration it asserts `framework: nextjs`, asserts automatic Git deployment remains disabled, rejects a forced `outputDirectory`, exercises the Vercel environment preflight with non-secret fixture values, installs dependencies and runs the production `next build`. `scripts/verify-vercel-env.mjs` is also wired as `prebuild`, but only enforces the real environment contract when `VERCEL=1`. The gate performs no Vercel deployment and no Supabase/R2 writes.
 
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
@@ -311,7 +311,8 @@ Product media APIs:
 
 Generated/uploaded durable media share one public contract and can become generation input through `{ type: "media-asset", id }`. Viewer → Create carries opaque identity + action intent; the server revalidates durable media/capability state.
 
-## Required Server / CI Environment Variables
+## Required Server / CI / Production Environment Variables
+For an explicit Vercel deployment, every non-optional variable below must be configured in the target Vercel environment. `npm run build` invokes `scripts/verify-vercel-env.mjs`; when Vercel exposes `VERCEL=1`, the prebuild fails before compilation if required Supabase/R2 variables are missing, if the public/private Supabase URLs do not target the approved shared project, or if only one half of the optional external-backend URL/token pair is configured. GitHub builds remain secret-free because the preflight is Vercel-only.
 ### Supabase server/private
 - `SUPABASE_URL` = `https://rashyleshocuvpgcooxy.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY` — secret, server/CI only
@@ -341,7 +342,7 @@ R2 credentials currently require Admin Read & Write because configured browser u
 - Raw `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions` stay server-owned. Browser roles have no direct table grants; product routes/services enforce owner scope while using server-only service-role access.
 - Keep RLS enabled on the four core tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
 - An external generation service must authenticate the server-only bearer token before trusting `x-renderlab-owner-id`; owner headers alone are not authorization.
-- UI-030 implementation is exact-head verified, but the ownership rollout is not complete until PR #17 is merged, owner-aware code is actually live, a final no-unowned-row audit passes, and corrected `0005` is applied/verified. Do not approve Favorites/Collections or other personal organization before that rollout completes.
+- UI-030 is merged and GitHub-verified, but the ownership rollout is not complete until owner-aware code is actually live, a final no-unowned-row audit passes, and corrected `0005` is applied/verified. Do not approve Favorites/Collections or other personal organization before that rollout completes.
 - Direct browser uploads use short-lived signed URLs + exact-origin CORS.
 - Durable reads/downloads use short-lived signed R2 GETs behind opaque product routes.
 - Rename uses a server-side service-role metadata mutation and never exposes service-role credentials to the browser.
@@ -373,10 +374,11 @@ Key workflows:
 - `verify-reference-upload.mjs` + `reference-upload-integration.yml` — owner-bound temporary source persistence
 - `verify-generation-bridge.mjs` + `generation-bridge-integration.yml` — owner-bound Create Image/Edit Image persistence and continuation
 - `verify-video-generation.mjs` + `video-generation-integration.yml` — owner-bound Create Video/Animate Image plus temporary reference ownership
+- `verify-vercel-env.mjs` + `deployment-readiness.yml` — non-deploying Next.js/Vercel configuration, Vercel-only environment preflight and production-build gate
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
 ## Next Infrastructure Work
-1. Validate the final documentation head for UI-030 / PR #17 and merge the owner-aware application code when green. This repository merge is not permission to apply corrected `0005` or to perform an explicit deployment action.
+1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout, and repository merges are never permission to apply corrected `0005`.
 2. Through a separately authorized rollout, make owner-aware code actually live; then verify there are no unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, and confirm `NOT NULL`, immutable ownership and table-specific same-owner link triggers. Do not reverse this rollout order.
 3. Only after UI-030 is fully enforced may personal organization such as Favorites/Collections be reconsidered.
 4. Add any future public upload origin explicitly to R2 CORS before deployment/use.
