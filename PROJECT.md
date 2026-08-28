@@ -70,7 +70,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 
 ### Active product slice
 - Library Favorites v0.1 / UI-031 is **IN PROGRESS** as the first personal-organization slice after completed UI-030 ownership enforcement.
-- v0.1 scope is intentionally narrow: one owner-scoped favorite marker on existing durable `media_assets`, a URL/server-owned Favorites Library filter that composes with kind/search/sort/pagination, and one Media Viewer favorite toggle.
+- v0.1 scope is intentionally narrow: one owner-scoped favorite marker on existing durable `media_assets`, a URL/server-owned Favorites Library filter that composes with kind/search/sort/pagination, and one Media Viewer favorite toggle. Additive migration `20260828183102 renderlab_media_favorites` is applied with RLS/ownership/browser-grant boundaries unchanged.
 - Collections, Library-card/batch favorite actions, Delete/batch management, new top-level navigation and a global client media store remain out of scope.
 
 ### Latest completed product slice

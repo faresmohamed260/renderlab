@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { Check, Download, Pencil, X } from "lucide-react";
+import { Check, Download, Pencil, Star, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
   MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH,
+  type FavoriteMediaAssetResponse,
   type RenameMediaAssetResponse,
 } from "@/lib/api/media-assets-contract";
 
@@ -16,10 +17,12 @@ export function MediaViewerActions({
   assetId,
   displayName,
   fallbackTitle,
+  isFavorite,
 }: {
   assetId: string;
   displayName: string | null;
   fallbackTitle: string;
+  isFavorite: boolean;
 }) {
   const router = useRouter();
   const inputId = useId();
@@ -28,6 +31,9 @@ export function MediaViewerActions({
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(displayName ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [favorite, setFavorite] = useState(isFavorite);
+  const [favoriteSaving, setFavoriteSaving] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   function beginEditing() {
     setDraft(displayName ?? "");
@@ -40,6 +46,30 @@ export function MediaViewerActions({
     setDraft(displayName ?? "");
     setError(null);
     setEditing(false);
+  }
+
+  async function toggleFavorite() {
+    if (favoriteSaving) return;
+    const nextFavorite = !favorite;
+    setFavoriteSaving(true);
+    setFavoriteError(null);
+    try {
+      const response = await fetch(`/api/media/assets/${encodeURIComponent(assetId)}/favorite`, {
+        method: nextFavorite ? "PUT" : "DELETE",
+      });
+      const payload = await response.json().catch(() => null) as FavoriteMediaAssetResponse | null;
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload && !payload.ok ? payload.error.message : "Favorite state could not be updated.");
+      }
+      setFavorite(payload.asset.isFavorite);
+      router.refresh();
+    } catch (favoriteUpdateError) {
+      setFavoriteError(
+        favoriteUpdateError instanceof Error ? favoriteUpdateError.message : "Favorite state could not be updated.",
+      );
+    } finally {
+      setFavoriteSaving(false);
+    }
   }
 
   async function submitRename(event: FormEvent<HTMLFormElement>) {
@@ -71,6 +101,30 @@ export function MediaViewerActions({
 
   return (
     <div className="grid grid-cols-2 gap-2">
+      <Button
+        type="button"
+        variant={favorite ? "secondary" : "outline"}
+        size="lg"
+        onClick={toggleFavorite}
+        disabled={favoriteSaving}
+        aria-pressed={favorite}
+        className="col-span-2 w-full"
+      >
+        {favoriteSaving ? (
+          <Spinner data-icon="inline-start" />
+        ) : (
+          <Star
+            aria-hidden="true"
+            data-icon="inline-start"
+            className={favorite ? "fill-current" : undefined}
+          />
+        )}
+        {favoriteSaving ? "Saving…" : favorite ? "Favorited" : "Favorite"}
+      </Button>
+      {favoriteError ? (
+        <p role="alert" className="col-span-2 text-xs text-danger">{favoriteError}</p>
+      ) : null}
+
       <Button
         type="button"
         variant="secondary"

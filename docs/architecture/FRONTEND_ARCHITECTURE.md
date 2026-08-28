@@ -91,6 +91,8 @@ POST     /api/assets/reference/upload-completions
 GET      /api/media/assets
 GET      /api/media/assets/[assetId]
 PATCH    /api/media/assets/[assetId]
+PUT      /api/media/assets/[assetId]/favorite
+DELETE   /api/media/assets/[assetId]/favorite
 GET      /api/media/assets/[assetId]/content
 GET      /api/media/assets/[assetId]/thumbnail
 GET      /api/media/assets/[assetId]/download
@@ -98,7 +100,7 @@ POST     /api/media/uploads/upload-tickets
 POST     /api/media/uploads/upload-completions
 ```
 
-`GET /api/media/assets` accepts bounded `kind`, `q`, `sort`, `limit`, `offset`; `sort` accepts only `newest|oldest` and defaults to newest. `PATCH /api/media/assets/[assetId]` currently owns the UI-025 durable display-name Rename mutation only. Picker and drag/drop persistent uploads both use the same existing media-upload ticket/completion APIs. Browser components do not call workers, Supabase service-role APIs or raw R2 credentials directly.
+`GET /api/media/assets` accepts bounded `kind`, `q`, `sort`, `favorite`, `limit`, `offset`; `favorite` accepts only `true` when present, and `sort` accepts only `newest|oldest` with newest as default. `PATCH /api/media/assets/[assetId]` remains the UI-025 Rename mutation; UI-031 uses idempotent owner-scoped `PUT`/`DELETE /api/media/assets/[assetId]/favorite`. Picker and drag/drop persistent uploads both use the same existing media-upload ticket/completion APIs. Browser components do not call workers, Supabase service-role APIs or raw R2 credentials directly.
 
 UI-029 account operations use the maintained Supabase Auth client contract rather than adding parallel RenderLab password/session APIs. UI-030 resolves the verified non-anonymous account at the product boundary and threads that owner through media, upload, reference and generation services. Foreign opaque IDs are resolved through owner-scoped service queries and collapse to ordinary not-found state rather than exposing another account's record.
 
@@ -172,7 +174,7 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 
 ## State Architecture
 ### URL state
-- Library `kind` / `q` / `sort` / `offset`;
+- Library `kind` / `q` / `sort` / `favorite` / `offset`;
 - durable asset ID in `/library/[assetId]`;
 - Viewer → Create `source` / `action` intent.
 
@@ -189,7 +191,7 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 ### Local transient browser state
 - Create form/runtime interaction state;
 - Library file-picker/drop uploading, drag-active and local feedback state;
-- Viewer Rename editor state;
+- Viewer Rename editor and Favorite mutation feedback state;
 - Settings account-form fields/busy/local feedback state.
 
 Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 ownership enforcement is complete; active UI-031 adds Favorites directly to the existing owner-scoped durable-media contract while Collections remains deferred.

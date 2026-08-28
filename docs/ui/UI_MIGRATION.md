@@ -270,7 +270,7 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 Favorites is the first personal Library organization slice after completed UI-030 ownership enforcement. Keep it intentionally smaller than a Collections or batch-management system.
 
 - [x] Establish the RenderLab-owned UI-031 contract: durable account-owned `media_assets` carry nullable favorite state; Library gets a URL/server-owned Favorites filter; Media Viewer gets one owner-scoped toggle.
-- [ ] Commit and apply additive `0006_media_favorites.sql` with nullable `favorited_at` and an owner/favorites browse index; preserve RLS and zero browser grants.
+- [x] Apply additive `0006_media_favorites.sql` as `20260828183102 renderlab_media_favorites`; `favorited_at` is nullable, the partial owner/favorites browse index exists, `owner_id` remains `NOT NULL`, RLS remains enabled, browser grants remain zero and the media table remained empty after migration.
 - [ ] Extend the typed media contract and owner-scoped list service with favorite state plus `favorite=true` filtering that composes with kind/search/sort/pagination.
 - [ ] Add an idempotent owner-scoped favorite mutation API with signed-out denial and foreign-ID not-found behavior.
 - [ ] Integrate a compact Favorites filter into the approved Library toolbar without redesigning the media grid or adding a new top-level destination.
