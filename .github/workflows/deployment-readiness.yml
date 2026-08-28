@@ -1,0 +1,69 @@
+name: Deployment Readiness
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "vercel.json"
+      - "package.json"
+      - "tsconfig.json"
+      - "postcss.config.mjs"
+      - ".github/workflows/deployment-readiness.yml"
+  pull_request:
+    paths:
+      - "vercel.json"
+      - "package.json"
+      - "tsconfig.json"
+      - "postcss.config.mjs"
+      - ".github/workflows/deployment-readiness.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-deployment-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify explicit Vercel deployment contract
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from "node:fs";
+
+          const config = JSON.parse(fs.readFileSync("vercel.json", "utf8"));
+
+          if (config.framework !== "nextjs") {
+            throw new Error(`Expected vercel.json framework=nextjs, got ${JSON.stringify(config.framework)}`);
+          }
+
+          if (config.git?.deploymentEnabled !== false) {
+            throw new Error("Automatic Vercel Git deployments must remain disabled.");
+          }
+
+          if (Object.hasOwn(config, "outputDirectory")) {
+            throw new Error("Next.js deployment must use the framework-managed output; do not force outputDirectory.");
+          }
+
+          console.log("Vercel deployment contract is explicit, Next.js-native, and non-automatic.");
+          EOF
+
+      - name: Build production application
+        run: npm run build
