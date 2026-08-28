@@ -1,4 +1,4 @@
-name: Temporary Library Favorites Contract Sync
+name: Temporary Library Favorites Implementation
 
 on:
   push:
@@ -10,25 +10,32 @@ permissions:
   contents: write
 
 jobs:
-  sync:
+  implement:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: work/library-favorites-v0-1
-      - name: Record UI-031 contract and reconcile handoff state
-        run: python scripts/tmp-sync-library-favorites.py
-      - name: Normalize generated Markdown
-        shell: bash
-        run: |
-          python -c 'from pathlib import Path; p=Path("docs/ui/SCREEN_REGISTRY.md"); t=p.read_text(); t=t.replace("**Status:** APPROVED base Library; Favorites v0.1 / UI-031 IN PROGRESS  \n", "**Status:** APPROVED base Library; Favorites v0.1 / UI-031 IN PROGRESS\n"); p.write_text(t)'
-          python -c 'from pathlib import Path; p=Path("docs/ui/UI_DECISIONS.md"); t=p.read_text(); marker="### UI-031 — Favorites are lightweight owner-scoped durable-media organization"; before, after=t.split(marker, 1); after="\n".join(line.rstrip() for line in after.splitlines()).rstrip(); p.write_text(before.rstrip()+"\n\n"+marker+"\n"+after+"\n")'
-      - name: Commit synchronized contract
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Apply Favorites implementation patch
+        run: python scripts/tmp-implement-library-favorites.py
+      - name: Verify UI primitive purity
+        run: npm run verify:ui-purity
+      - name: Build production application
+        run: npm run build
+      - name: Commit implementation
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md supabase/migrations/0006_media_favorites.sql
+          git add PROJECT.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_MIGRATION.md src/lib/api/media-assets-contract.ts src/server/media/media-assets.ts src/app/library/page.tsx src/app/api/media/assets/route.ts 'src/app/api/media/assets/[assetId]/favorite/route.ts' src/features/library/library-view.tsx src/features/library/media-viewer.tsx src/features/library/media-viewer-actions.tsx scripts/verify-library-favorites.mjs .github/workflows/library-favorites-visual.yml
           git diff --cached --check
-          git commit -m "Start Library Favorites v0.1"
+          git commit -m "Implement Library Favorites v0.1"
           git push origin HEAD:work/library-favorites-v0-1
