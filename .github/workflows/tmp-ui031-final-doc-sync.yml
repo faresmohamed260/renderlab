@@ -1,12 +1,11 @@
-name: Temporary UI-031 Final Documentation Sync
+name: Temporary UI-031 Post-Merge Documentation Sync
 
 on:
   push:
     branches: [tmp/ui031-final-doc-sync]
     paths:
       - ".github/workflows/tmp-ui031-final-doc-sync.yml"
-      - "scripts/tmp-ui031-final-doc-sync.py"
-      - "scripts/tmp-ui031-normalize-generated.py"
+      - "scripts/tmp-ui031-post-merge-sync.py"
   workflow_dispatch:
 
 permissions:
@@ -23,24 +22,22 @@ jobs:
           ref: tmp/ui031-final-doc-sync
           path: helper
 
-      - name: Checkout PR branch
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: work/library-favorites-v0-1
+          ref: main
           path: repo
 
-      - name: Prepare final UI-031 documentation
-        run: |
-          python helper/scripts/tmp-ui031-final-doc-sync.py repo
-          python helper/scripts/tmp-ui031-normalize-generated.py repo
+      - name: Prepare UI-031 approved handoff
+        run: python helper/scripts/tmp-ui031-post-merge-sync.py repo
 
-      - name: Validate and push one final documentation commit
+      - name: Validate and push docs-only main handoff
         working-directory: repo
         shell: bash
         run: |
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md src/server/media/media-assets.ts
-          git commit -m "Finalize UI-031 verification handoff"
-          git push origin HEAD:work/library-favorites-v0-1
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md
+          git commit -m "Record UI-031 approval"
+          git push origin HEAD:main
