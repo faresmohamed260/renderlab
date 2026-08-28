@@ -103,7 +103,7 @@ Approved behavior:
 - direct Supabase cleanup after drag/drop verification found `0` drag/drop sessions/assets and `0` known legacy lifecycle sessions/assets;
 - UI-030 exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265` and Account Ownership `33131090207`; signed-out desktop/mobile and signed-in Library artifacts were reviewed clean.
 
-**Still intentionally open:** UI-030 owner scoping is implemented and exact-head verified, but its rollout remains incomplete until PR #17 is merged, owner-aware code is actually live and corrected `0005` is applied/verified after a no-unowned-row audit. Favorites/Collections remain blocked until that enforcement is complete. Delete/batch management remains separately blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
+**Still intentionally open:** UI-030 owner scoping is implemented, merged through PR #17 and verified on `main`, but its rollout remains incomplete until owner-aware code is actually live and corrected `0005` is applied/verified after a no-unowned-row audit. Favorites/Collections remain blocked until that enforcement is complete. Delete/batch management remains separately blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
