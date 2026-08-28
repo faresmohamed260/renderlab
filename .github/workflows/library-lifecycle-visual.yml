@@ -50,7 +50,7 @@ jobs:
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN || secrets.CLOUDFLARE_R2_ADMIN_TOKEN }}
-      RENDERLAB_BROWSER_UPLOAD_ORIGINS: http://127.0.0.1:3000,http://localhost:3000,https://renderlab-faresmohamed260-6733s-projects.vercel.app,https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app
+      RENDERLAB_BROWSER_UPLOAD_ORIGINS: http://127.0.0.1:3000,http://localhost:3000,https://renderlab-lake.vercel.app,https://renderlab-faresmohamed260-6733s-projects.vercel.app,https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
 
     steps:
