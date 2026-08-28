@@ -1,0 +1,47 @@
+name: UI-034 Final Documentation Sync
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ui034-final-doc-sync.yml"
+      - "scripts/ui034-finalize-docs.mjs"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.head_ref == 'tmp/ui034-final-doc-sync'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout helper
+        uses: actions/checkout@v4
+        with:
+          path: helper
+
+      - name: Checkout UI-034 work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/library-batch-delete-v0-1
+          path: target
+          fetch-depth: 0
+
+      - name: Patch authoritative UI-034 handoff docs
+        run: node helper/scripts/ui034-finalize-docs.mjs target
+
+      - name: Validate and push docs commit
+        shell: bash
+        run: |
+          cd target
+          git diff --check
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/UI_SYSTEM.md docs/ui/COMPONENT_CATALOG.md docs/ui/SCREEN_REGISTRY.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md
+          if git diff --cached --quiet; then
+            echo "No UI-034 documentation changes needed."
+            exit 0
+          fi
+          git commit -m "Finalize UI-034 pre-merge handoff"
+          git push origin HEAD:work/library-batch-delete-v0-1
