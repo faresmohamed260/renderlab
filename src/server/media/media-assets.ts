@@ -10,7 +10,7 @@ import {
 } from "@/lib/api/media-assets-contract";
 import type { CreativeOperation } from "@/lib/capabilities/generation";
 import { supabaseRest } from "@/server/data/supabase-rest";
-import { createSignedDownloadUrl, createSignedReadUrl } from "@/server/storage/r2";
+import { createSignedDownloadUrl, createSignedReadUrl, deleteR2Object } from "@/server/storage/r2";
 
 export type MediaAssetRecord = {
   id: string;
@@ -31,7 +31,16 @@ export type MediaAssetRecord = {
   metadata: Record<string, unknown>;
   created_at: string;
   favorited_at?: string | null;
+  deleted_at?: string | null;
+  purged_at?: string | null;
   updated_at: string;
+};
+
+export type DeleteMediaAssetResult = {
+  assetId: string;
+  deletedAt: string;
+  purgedAt: string | null;
+  cleanupPending: boolean;
 };
 
 const creativeOperations = new Set<CreativeOperation>([
@@ -120,12 +129,17 @@ function mediaAssetDownloadContentDisposition(asset: MediaAssetRecord) {
   return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeDispositionFilename(filename)}`;
 }
 
-export async function getMediaAsset(ownerId: string, assetId: string) {
+async function getMediaAssetRecord(ownerId: string, assetId: string, includeDeleted: boolean) {
+  const deletedFilter = includeDeleted ? "" : "&deleted_at=is.null";
   const rows = await supabaseRest<MediaAssetRecord[]>(
-    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&select=*&limit=1`,
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}${deletedFilter}&select=*&limit=1`,
     { method: "GET" },
   );
   return rows?.[0] ?? null;
+}
+
+export async function getMediaAsset(ownerId: string, assetId: string) {
+  return getMediaAssetRecord(ownerId, assetId, false);
 }
 
 export async function renameMediaAsset(ownerId: string, assetId: string, requestedDisplayName: string) {
@@ -136,7 +150,7 @@ export async function renameMediaAsset(ownerId: string, assetId: string, request
   }
 
   const rows = await supabaseRest<MediaAssetRecord[]>(
-    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&select=*`,
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&deleted_at=is.null&select=*`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
@@ -157,7 +171,7 @@ export async function setMediaAssetFavorite(ownerId: string, assetId: string, fa
   if (Boolean(current.favorited_at) === favorite) return current;
 
   const rows = await supabaseRest<MediaAssetRecord[]>(
-    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&select=*`,
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&deleted_at=is.null&select=*`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
@@ -200,6 +214,7 @@ export async function listMediaAssets({
   const params = new URLSearchParams({
     select: collectionId ? "*,media_collection_items!inner(collection_id)" : "*",
     owner_id: `eq.${ownerId}`,
+    deleted_at: "is.null",
     order: `created_at.${direction},id.${direction}`,
     limit: String(safeLimit + 1),
     offset: String(safeOffset),
@@ -224,6 +239,66 @@ export async function listMediaAssets({
       offset: safeOffset,
       hasMore: items.length > safeLimit,
     },
+  };
+}
+
+export async function deleteMediaAsset(ownerId: string, assetId: string): Promise<DeleteMediaAssetResult | null> {
+  let asset = await getMediaAssetRecord(ownerId, assetId, true);
+  if (!asset) return null;
+
+  if (!asset.deleted_at) {
+    const deletedAt = new Date().toISOString();
+    const rows = await supabaseRest<MediaAssetRecord[]>(
+      `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&deleted_at=is.null&select=*`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({ deleted_at: deletedAt, updated_at: deletedAt }),
+      },
+    );
+    asset = rows?.[0] ?? await getMediaAssetRecord(ownerId, assetId, true);
+    if (!asset?.deleted_at) return null;
+  }
+
+  if (asset.purged_at) {
+    return {
+      assetId: asset.id,
+      deletedAt: asset.deleted_at,
+      purgedAt: asset.purged_at,
+      cleanupPending: false,
+    };
+  }
+
+  const storageKeys = [...new Set(
+    [asset.storage_key, asset.thumbnail_storage_key].filter((key): key is string => Boolean(key)),
+  )];
+  let cleanupPending = false;
+  for (const storageKey of storageKeys) {
+    try {
+      await deleteR2Object(storageKey);
+    } catch {
+      cleanupPending = true;
+    }
+  }
+
+  if (!cleanupPending) {
+    const purgedAt = new Date().toISOString();
+    const rows = await supabaseRest<MediaAssetRecord[]>(
+      `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&deleted_at=not.is.null&purged_at=is.null&select=*`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({ purged_at: purgedAt, updated_at: purgedAt }),
+      },
+    );
+    asset = rows?.[0] ?? await getMediaAssetRecord(ownerId, assetId, true) ?? asset;
+  }
+
+  return {
+    assetId: asset.id,
+    deletedAt: asset.deleted_at!,
+    purgedAt: asset.purged_at ?? null,
+    cleanupPending,
   };
 }
 

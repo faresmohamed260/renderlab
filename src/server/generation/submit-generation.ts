@@ -1,6 +1,7 @@
 import type { GenerationJob, GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
+import { getMediaAsset } from "@/server/media/media-assets";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
 const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
@@ -44,6 +45,18 @@ function parseGenerationJob(value: unknown): GenerationJob | null {
   };
 }
 
+async function durableMediaInputsAvailable(ownerId: string, request: GenerationRequest) {
+  const assetIds = [...new Set(
+    request.inputs
+      .filter((input) => input.source.type === "media-asset")
+      .map((input) => input.source.id),
+  )];
+  if (!assetIds.length) return true;
+
+  const assets = await Promise.all(assetIds.map((assetId) => getMediaAsset(ownerId, assetId)));
+  return assets.every(Boolean);
+}
+
 async function submitToRenderLabBackend(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
   try {
     const response = await fetch(`${backendUrl!.replace(/\/$/, "")}/jobs`, {
@@ -82,6 +95,16 @@ async function submitToRenderLabBackend(ownerId: string, request: GenerationRequ
 }
 
 export async function submitGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
+  if (!(await durableMediaInputsAvailable(ownerId, request))) {
+    return {
+      ok: false,
+      error: {
+        code: "generation_submission_failed",
+        message: "One or more media inputs are no longer available.",
+      },
+    };
+  }
+
   if (isExternalGenerationBackendConfigured()) return submitToRenderLabBackend(ownerId, request);
   if (isNativeGenerationConfigured()) return submitNativeGeneration(ownerId, request);
 

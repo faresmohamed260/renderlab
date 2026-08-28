@@ -57,10 +57,16 @@ export type MediaAssetSuccess = {
   asset: PublicMediaAsset;
 };
 
+export type DeleteMediaAssetSuccess = {
+  ok: true;
+  deleted: true;
+  cleanupPending: boolean;
+};
+
 export type MediaAssetError = {
   ok: false;
   error: {
-    code: "invalid_request" | "media_unavailable" | "asset_not_found";
+    code: "invalid_request" | "authentication_required" | "media_unavailable" | "asset_not_found";
     message: string;
   };
 };
@@ -74,3 +80,4 @@ export type RenameMediaAssetRequest = {
 
 export type RenameMediaAssetResponse = MediaAssetResponse;
 export type FavoriteMediaAssetResponse = MediaAssetResponse;
+export type DeleteMediaAssetResponse = DeleteMediaAssetSuccess | MediaAssetError;
