@@ -22,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; Library Collections v0.1 / UI-032 is approved and merged through PR #24 as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` after final 14-gate head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578`, with migrations `0007`/`0008` applied and verified. Durable Media Delete v0.1 / UI-033 is approved and merged through PR #25 as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; additive `0009_media_asset_deletion.sql` is applied as `20260828221611 renderlab_media_asset_deletion`, and final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates. Activity remains a placeholder.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; Library Collections v0.1 / UI-032 is approved and merged through PR #24 as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` after final 14-gate head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578`, with migrations `0007`/`0008` applied and verified. Durable Media Delete v0.1 / UI-033 is approved and merged through PR #25 as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; additive `0009_media_asset_deletion.sql` is applied as `20260828221611 renderlab_media_asset_deletion`, and final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates. Library Batch Delete v0.1 / UI-034 is in final validation on PR #29; it adds no schema migration and implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed all 16 affected gates. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -40,6 +40,7 @@ Current normalized primitive layer:
 - Alert / AlertDescription
 - AlertDialog / Action / Cancel / Content / Description / Title / Trigger
 - Button
+- Checkbox (UI-034 candidate)
 - Collapsible / Trigger / Content
 - DropdownMenu / Content / Group / Item / Label / Separator / RadioGroup / RadioItem
 - Empty composition
@@ -79,6 +80,7 @@ Rules:
 - Durable Download uses the Viewer asset route context and a product API; the browser never treats an R2 key/signed URL as durable identity.
 - Durable Rename stays on the Viewer asset identity; the client submits a bounded display-name mutation and refreshes server-rendered asset state.
 - Durable Delete / UI-033 stays Viewer-contextual: confirmation is local client state, while owner-scoped tombstone + R2 purge is a server product mutation. Deleted asset IDs remain valid only as preserved generation-history references, not active product media.
+- UI-034 Library batch selection is transient current-page browser state, not URL/durable state. Library navigation resets selection. Batch Delete composes the existing owner-scoped UI-033 mutation per item and reports partial success rather than claiming cross-service transactionality.
 - Library drag/drop is transient browser interaction state only; it does not become URL or durable media-management state.
 - Settings owns requirement-backed account/application state. UI-029 uses it for Supabase Auth identity. UI-030 does not turn the entire application into a redirect-based login wall: signed-out Create remains draftable, while private Library/Viewer data and persistent generation/upload actions require a verified account.
 
@@ -94,6 +96,7 @@ GET      /api/media/assets
 GET      /api/media/assets/[assetId]
 PATCH    /api/media/assets/[assetId]
 DELETE   /api/media/assets/[assetId]
+POST     /api/media/assets/batch-delete
 PUT      /api/media/assets/[assetId]/favorite
 DELETE   /api/media/assets/[assetId]/favorite
 GET      /api/media/assets/[assetId]/content
@@ -109,7 +112,7 @@ POST     /api/media/uploads/upload-tickets
 POST     /api/media/uploads/upload-completions
 ```
 
-`GET /api/media/assets` accepts bounded `kind`, `q`, `sort`, `favorite`, `collection`, `limit`, `offset`; `favorite` accepts only `true`, `collection` requires a UUID when present, and `sort` accepts only `newest|oldest` with newest as default. `PATCH /api/media/assets/[assetId]` remains the UI-025 Rename mutation; UI-031 uses idempotent owner-scoped favorite PUT/DELETE; UI-032 uses owner-scoped collection list/create plus idempotent membership PUT/DELETE. UI-033 adds owner-scoped idempotent `DELETE /api/media/assets/[assetId]`: tombstone first, then R2 primary/thumbnail purge, with `purged_at` recorded only after physical cleanup succeeds. Picker and drag/drop persistent uploads both use the same existing media-upload ticket/completion APIs. Browser components do not call workers, Supabase service-role APIs or raw R2 credentials directly.
+`GET /api/media/assets` accepts bounded `kind`, `q`, `sort`, `favorite`, `collection`, `limit`, `offset`; `favorite` accepts only `true`, `collection` requires a UUID when present, and `sort` accepts only `newest|oldest` with newest as default. `PATCH /api/media/assets/[assetId]` remains the UI-025 Rename mutation; UI-031 uses idempotent owner-scoped favorite PUT/DELETE; UI-032 uses owner-scoped collection list/create plus idempotent membership PUT/DELETE. UI-033 adds owner-scoped idempotent `DELETE /api/media/assets/[assetId]`: tombstone first, then R2 primary/thumbnail purge, with `purged_at` recorded only after physical cleanup succeeds. UI-034 adds owner-scoped `POST /api/media/assets/batch-delete`, capped at 24 deduplicated UUIDs, which composes that same single-asset deletion per item and returns per-item outcomes/summary. Picker and drag/drop persistent uploads both use the same existing media-upload ticket/completion APIs. Browser components do not call workers, Supabase service-role APIs or raw R2 credentials directly.
 
 UI-029 account operations use the maintained Supabase Auth client contract rather than adding parallel RenderLab password/session APIs. UI-030 resolves the verified non-anonymous account at the product boundary and threads that owner through media, upload, reference and generation services. Foreign opaque IDs are resolved through owner-scoped service queries and collapse to ordinary not-found state rather than exposing another account's record.
 
@@ -135,6 +138,7 @@ src/
 │   ├── create/
 │   └── library/
 │       ├── library-view.tsx
+│       ├── library-batch-selection.tsx
 │       ├── library-sort-menu.tsx
 │       ├── library-upload-button.tsx
 │       ├── library-drop-upload-surface.tsx
@@ -177,7 +181,7 @@ Do not extract generic upload/search/history/download/rename/dropzone/auth-form 
 Library route composition, Library search/history/Favorites/collection query resolution, Media Viewer + collection loading, root Create continuation validation and Settings account-state loading are server-owned. UI-030 resolves account context before private service-role media/job queries are made from Server Components.
 
 ### Client Components deliberately
-Use for Create workspace/polling, temporary reference interaction, Library upload file selection/feedback, Library transient drag/drop interaction, the small Library sort/collection navigation menus, Viewer Favorite/Collections/Rename interaction state plus UI-033 Delete confirmation/busy/error state, Settings account form actions and interactions that truly require browser state.
+Use for Create workspace/polling, temporary reference interaction, Library upload file selection/feedback, Library transient drag/drop interaction, UI-034 page-scoped selection/batch-delete feedback, the small Library sort/collection navigation menus, Viewer Favorite/Collections/Rename interaction state plus UI-033 Delete confirmation/busy/error state, Settings account form actions and interactions that truly require browser state.
 
 Library picker/drop interactions share feature-owned `library-upload-client.ts`; that client owns validation and the existing ticket → signed PUT → completion transaction, while the Library dataset itself remains server-owned and is refreshed after successful completion. `LibraryDropUploadSurface` owns only transient DragEvent/DataTransfer state and local feedback; it does not copy Library media into a global client store or create a second upload contract. Library search remains a URL-owned native GET form while its visible input/actions use maintained primitives and its hidden kind/sort state remains native plumbing. `LibrarySortMenu` uses a small client component only for Radix menu interaction + URL navigation; actual ordering remains server-owned. Media Viewer Download uses normal product-route navigation. Rename uses one small Viewer-owned client component, submits to the product API, then calls router refresh so the server-rendered Viewer title/metadata stays authoritative. AccountSettings calls Supabase Auth through the public browser client for sign-in/create-account/sign-out, then refreshes the server-rendered Settings account state. No global media-management or auth client store exists.
 
@@ -201,10 +205,11 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 ### Local transient browser state
 - Create form/runtime interaction state;
 - Library file-picker/drop uploading, drag-active and local feedback state;
+- UI-034 current-page selected media IDs, batch confirmation/busy/error state and immediately hidden successful-delete IDs while server data refreshes;
 - Viewer Rename editor, Favorite mutation feedback and Collections disclosure/create/membership state;
 - Settings account-form fields/busy/local feedback state.
 
-Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 ownership enforcement is complete; approved UI-031 keeps Favorites on the durable asset, approved UI-032 keeps Collections as a separate owner-scoped relation, and approved UI-033 keeps deletion state server-owned through durable tombstones rather than a global client media-management store.
+Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 ownership enforcement is complete; approved UI-031 keeps Favorites on the durable asset, approved UI-032 keeps Collections as a separate owner-scoped relation, approved UI-033 keeps deletion state server-owned through durable tombstones, and UI-034 keeps selection bounded to one rendered Library page rather than creating a global client media-management store.
 
 ## Durable Media Delete Flow — UI-033 / PR #25 (approved)
 
@@ -230,6 +235,32 @@ Rules:
 - batch/card selection, multi-delete atomicity and recovery UX are separate future contracts.
 
 Final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates, including Media Delete `33218433320`, Account Ownership `33218433329`, Generation `33218433335` and Video Generation `33218433309`. Desktop/mobile confirmation artifacts were visually reviewed clean. PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; merged-`main` UI Shell `33218646377`, Reference Upload `33218646539`, Generation Integration `33218646527`, and Video Generation `33218646602` passed and post-merge cleanup returned to zero.
+
+## Library Batch Delete Flow — UI-034 / PR #29 (final validation)
+
+```text
+server-rendered Library page (<= 24 active assets)
+  -> explicit local Select mode
+  -> transient selected opaque media IDs
+  -> POST /api/media/assets/batch-delete
+  -> verified owner + UUID/dedupe/page-size validation
+  -> sequential per-item UI-033 deleteMediaAsset(owner, id)
+  -> per-item deleted/cleanupPending/not-found/unavailable result
+  -> successful cards disappear locally + router.refresh()
+  -> failed active IDs stay selected for retry
+```
+
+Rules:
+- selection is current-page transient state and resets across Library URL/server-view navigation;
+- batch requests are capped at 24 IDs and add no durable selection table/state;
+- each asset keeps the existing UI-033 tombstone-first/R2 cleanup semantics and owner boundary;
+- batch execution is intentionally best-effort because database tombstones and distributed R2 deletion cannot truthfully provide one cross-service transaction;
+- completed item deletion is never reversed because another selected item fails;
+- foreign/missing IDs remain indistinguishable as per-item not-found;
+- no new migration is required; applied `0009_media_asset_deletion.sql` remains the schema authority;
+- cross-page selection, Trash/restore, retention, batch Favorites/Collections and generic bulk action infrastructure are outside v0.1.
+
+Implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed all 16 affected workflows, including Library Batch Delete `33220127853`, Media Delete `33220127873`, Account Ownership `33220127858`, Library Lifecycle `33220127864`, Generation `33220127851` and Video Generation `33220127855`. Successful desktop/mobile batch artifacts were visually reviewed clean and the shared-resource audit returned to zero. Final exact documentation-head rerun/merge remains required.
 
 ## Account Identity Flow
 UI-029 (merged PR #16):
