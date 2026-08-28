@@ -359,5 +359,5 @@ UI-033 resolves the previously blocked destructive-media contract with the small
 **Current gate:** documentation-finalize UI-033, rerun all 15 affected workflows on that exact head, then merge only after a clean shared-resource audit.
 **Next product slice:** after UI-033 is fully approved, batch media management may be considered as a separate contract; do not infer selection, multi-delete atomicity, recovery UX or card actions from the single-asset Viewer Delete implementation.
 
-## Session Handoff Rule## Session Handoff Rule
+## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
