@@ -5,7 +5,7 @@ import { mkdir } from "node:fs/promises";
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const artifactDir = process.env.RENDERLAB_ACCOUNT_ARTIFACT_DIR || "artifacts";
 const cleanupOnly = process.argv.includes("--cleanup-only");
 const runToken = process.env.GITHUB_RUN_ID || "local";
@@ -13,7 +13,7 @@ const runToken = process.env.GITHUB_RUN_ID || "local";
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
   SUPABASE_SERVICE_ROLE_KEY: serviceRoleKey,
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
+  SUPABASE_PUBLISHABLE_KEY: publishableKey,
 })) {
   if (!value) throw new Error(`${name} is required for configured account identity verification.`);
 }
