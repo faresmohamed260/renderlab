@@ -1,0 +1,42 @@
+name: Temporary UI-031 Final Documentation Sync
+
+on:
+  push:
+    branches: [tmp/ui031-final-doc-sync]
+    paths:
+      - ".github/workflows/tmp-ui031-final-doc-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/ui031-final-doc-sync
+          path: helper
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/library-favorites-v0-1
+          path: repo
+
+      - name: Prepare final UI-031 documentation
+        run: python helper/scripts/tmp-ui031-final-doc-sync.py repo
+
+      - name: Validate and push one final documentation commit
+        working-directory: repo
+        shell: bash
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md src/server/media/media-assets.ts
+          git commit -m "Finalize UI-031 verification handoff"
+          git push origin HEAD:work/library-favorites-v0-1
