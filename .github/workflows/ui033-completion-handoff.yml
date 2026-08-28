@@ -1,0 +1,57 @@
+name: UI-033 Completion Handoff
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ui033-completion-handoff.yml"
+      - "scripts/ui033-completion-handoff.mjs"
+
+permissions:
+  contents: write
+
+jobs:
+  handoff:
+    if: github.head_ref == 'tmp/ui033-completion-handoff'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout helper
+        uses: actions/checkout@v4
+        with:
+          path: helper
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: target
+          fetch-depth: 0
+
+      - name: Verify expected merged main
+        shell: bash
+        run: |
+          cd target
+          current="$(git rev-parse HEAD)"
+          if [ "$current" != "40945ff8c4c7e3a3db0e115c4d7cae9f50db4445" ]; then
+            echo "::error::main moved from expected UI-033 merge SHA: $current"
+            exit 1
+          fi
+
+      - name: Patch authoritative completion handoff
+        run: node helper/scripts/ui033-completion-handoff.mjs target
+
+      - name: Validate and push docs-only handoff
+        shell: bash
+        run: |
+          cd target
+          git diff --check
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md
+          if git diff --cached --quiet; then
+            echo "No UI-033 completion changes needed."
+            exit 0
+          fi
+          git commit -m "Record UI-033 completion handoff"
+          git push origin HEAD:main
