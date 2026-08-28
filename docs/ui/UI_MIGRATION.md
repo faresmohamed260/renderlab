@@ -260,11 +260,25 @@ Direct browser PUT CORS remains exact-origin restricted to the approved localhos
 ### Follow-ups after Core Account Ownership
 - [x] PR #17 merged after final documentation-head validation; the merge did not authorize or complete a production rollout.
 - [x] Owner-aware runtime is live through the separately authorized rollout; no-unowned-row audits passed before enforcement; corrected `0005` is applied and verified; the live post-enforcement two-account suite and cleanup are green.
-- [ ] Favorites/collections or another organization model only as a separately approved follow-up; the owner-scoped data boundary is now fully enforced.
+- [x] Select Favorites v0.1 / UI-031 as the next approved personal-organization slice now that the owner-scoped data boundary is fully enforced; Collections remains a separate later contract.
 - [ ] Delete and batch management after storage/reference/recovery semantics are explicit.
 - [ ] Other Library interaction enhancements only when separately justified.
 
 These require explicit RenderLab-owned contracts. Do not infer Saga organization/destructive-action schemas automatically.
+
+### Library Favorites v0.1 — UI-031
+Favorites is the first personal Library organization slice after completed UI-030 ownership enforcement. Keep it intentionally smaller than a Collections or batch-management system.
+
+- [x] Establish the RenderLab-owned UI-031 contract: durable account-owned `media_assets` carry nullable favorite state; Library gets a URL/server-owned Favorites filter; Media Viewer gets one owner-scoped toggle.
+- [ ] Commit and apply additive `0006_media_favorites.sql` with nullable `favorited_at` and an owner/favorites browse index; preserve RLS and zero browser grants.
+- [ ] Extend the typed media contract and owner-scoped list service with favorite state plus `favorite=true` filtering that composes with kind/search/sort/pagination.
+- [ ] Add an idempotent owner-scoped favorite mutation API with signed-out denial and foreign-ID not-found behavior.
+- [ ] Integrate a compact Favorites filter into the approved Library toolbar without redesigning the media grid or adding a new top-level destination.
+- [ ] Integrate one accessible favorite toggle into Media Viewer Actions while preserving Rename/Download behavior and continuation hierarchy.
+- [ ] Add configured Favorites verification covering own/foreign accounts, signed-out denial, favorite/unfavorite idempotence, Library query composition, responsive Viewer/Library screenshots and exact DB/R2/Auth cleanup.
+- [ ] Run the affected exact-head GitHub gates, review responsive artifacts, audit shared Supabase cleanup/security state, then update authoritative docs from verified implementation reality before merge.
+
+**Library Favorites v0.1 status: `IN PROGRESS`. Collections, Library-card/batch favorite actions and Delete/batch remain out of scope.**
 
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
@@ -287,11 +301,11 @@ These require explicit RenderLab-owned contracts. Do not infer Saga organization
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** none. Core account ownership v0.1 / UI-030 is complete and approved after production rollout plus enforced-schema verification.
+**Current product slice:** Library Favorites v0.1 / UI-031 — IN PROGRESS. UI-030 is complete and provides the enforced account-private prerequisite.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, and Core Account Ownership PR #17 / UI-030 are merged and approved.
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current gate:** none for UI-030. Production is live on the Next.js Vercel project, the environment preflight passes, corrected `0005` is enforced, post-enforcement account isolation is green, and the canonical production origin is included in the verified R2 browser-upload CORS rule.
-**Next product slice:** none selected. Start no new Phase 4 slice until explicitly approved; Favorites/Collections still needs its own product contract, and Delete still requires durable storage/reference/recovery semantics.
+**Current gate:** implement and remotely verify UI-031 Favorites v0.1 against the enforced owner boundary; no production deployment is authorized by this development slice.
+**Next product slice:** none selected beyond active UI-031. Collections remains separate; Delete still requires durable storage/reference/recovery semantics.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

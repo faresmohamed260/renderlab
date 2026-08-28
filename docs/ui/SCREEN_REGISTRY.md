@@ -61,7 +61,7 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED — Library v0.1 + persistent Upload + search v0.1 + history ordering v0.1 + drag/drop upload v0.1  
+**Status:** APPROVED base Library; Favorites v0.1 / UI-031 IN PROGRESS
 **Implementation:** `src/features/library/library-view.tsx`  
 **Sort control:** `src/features/library/library-sort-menu.tsx`  
 **Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`  
@@ -103,7 +103,7 @@ Approved behavior:
 - direct Supabase cleanup after drag/drop verification found `0` drag/drop sessions/assets and `0` known legacy lifecycle sessions/assets;
 - UI-030 exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265` and Account Ownership `33131090207`; signed-out desktop/mobile and signed-in Library artifacts were reviewed clean.
 
-**Still intentionally open:** UI-030 owner scoping is implemented, merged through PR #17 and verified on `main`, but its rollout remains incomplete until owner-aware code is actually live and corrected `0005` is applied/verified after a no-unowned-row audit. Favorites/Collections remain blocked until that enforcement is complete. Delete/batch management remains separately blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
+**Active extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031 is now in progress as a small owner-scoped extension to the approved Library/Viewer model. Collections remains a separate later contract; Delete/batch remains blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
@@ -176,7 +176,7 @@ Approved behavior:
 - direct Supabase verification found `0` account CI fixture users after cleanup;
 - UI-030 exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Account Identity `33131090197` and Account Ownership `33131090207` while the private product routes consumed the same verified account principal.
 
-**Still intentionally open:** UI-030 strict database enforcement remains a rollout prerequisite before personal Library organization. Other Settings sections remain requirement-driven.
+**Still intentionally open:** UI-030 strict database enforcement is complete. Personal Library organization remains owned by Library/Viewer rather than Settings; other Settings sections remain requirement-driven.
 
 ## Creation Experience Resolution
 - Prompt + Image → Create Image.
@@ -184,7 +184,7 @@ Approved behavior:
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity, UI-027 Library history ordering, UI-028 Library drag/drop upload, UI-029 account identity and UI-030 core account ownership.
+Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity, UI-027 Library history ordering, UI-028 Library drag/drop upload, UI-029 account identity, UI-030 core account ownership and active UI-031 Favorites.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.

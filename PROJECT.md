@@ -68,6 +68,11 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Durable generated and uploaded media share RenderLab `media_assets`, product APIs and opaque `media-asset` identity.
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
+### Active product slice
+- Library Favorites v0.1 / UI-031 is **IN PROGRESS** as the first personal-organization slice after completed UI-030 ownership enforcement.
+- v0.1 scope is intentionally narrow: one owner-scoped favorite marker on existing durable `media_assets`, a URL/server-owned Favorites Library filter that composes with kind/search/sort/pagination, and one Media Viewer favorite toggle.
+- Collections, Library-card/batch favorite actions, Delete/batch management, new top-level navigation and a global client media store remain out of scope.
+
 ### Latest completed product slice
 - Core Account Ownership v0.1 / UI-030 is **APPROVED**. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; owner-aware production deployment `dpl_DYs48pvBEvzDuDbHwcEn4f9LGabE` is READY at `https://renderlab-lake.vercel.app` from exact application SHA `5f5d3cee9b45af175f072050f48da4549d5f416c`; corrected `0005` was applied as `20260828174940 renderlab_core_account_ownership_enforce` after live two-account verification and a zero-unowned-row audit.
 - Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured PR gates: Account Ownership `33131090207`, Account Identity `33131090197`, UI Shell `33131090250`, Create Lifecycle `33131090243`, Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265`, Media Download `33131090206`, Media Rename `33131090198`, Reference Upload `33131090263`, Generation Integration `33131090251`, and Video Generation `33131090262`.
@@ -77,7 +82,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Shared Supabase has both ownership migrations applied: `20260827203604 renderlab_core_account_ownership_prepare` and `20260828174940 renderlab_core_account_ownership_enforce`. All four owner columns are `NOT NULL`; six UI-030 enforcement triggers and their three functions are active; RLS remains enabled; browser roles still have no raw core-table grants; final cleanup left 0 core rows and 0 RenderLab fixture Auth users.
 - The repository is public, which resolved the previous private-repository hosted Actions capacity failure. Mid-development validation remains GitHub-first. Repository `vercel.json` disables automatic Git deployments and pins `framework: nextjs`; `scripts/verify-vercel-env.mjs` runs as a Vercel-only prebuild guard for required Supabase/R2 configuration. During the authorized rollout the Vercel project preset was corrected to Next.js and the stale explicit `dist` output override was removed. Automatic Git deployment remains disabled, so production deployment is still explicit only.
 - Deployment Readiness v0.1 merged through PR #18 as `2b8a5170df0675a691deb8d5a7031f1dc14d803b`. Exact candidate `da7f9c23224f5a03ba0832fe8fcd773d1586e0c2` passed all 15 configured gates; merged `main` Deployment Readiness `33137972011`, UI Shell `33137972042`, Reference Upload `33137972130`, Generation Integration `33137972033`, and Video Generation `33137972021` all passed. Vercel created no deployment for the PR #18 merge. During the later authorized rollout the dashboard project preset was corrected from Vite to Next.js and the stale `dist` output override was removed while repository `vercel.json` continued to disable automatic Git deployments. Final post-merge Supabase audit found 0 core rows, 0 null owners, 0 RenderLab fixture users, 0 browser core-table grants, four still-nullable owner columns, 0 enforcement triggers, and migration history still ending at applied `0004`.
-- No new Phase 4 product slice is active. Favorites/Collections, Delete/batch, and other follow-ups remain unstarted until separately approved with their own RenderLab contracts.
+- UI-030 leaves the ownership prerequisite satisfied for the active Favorites v0.1 / UI-031 slice; Collections, Delete/batch and other organization/management follow-ups remain separate and unstarted.
 
 Do not redesign approved surfaces merely because new media capabilities or ownership enforcement are added.
 
@@ -212,12 +217,13 @@ Implementation head `9cde5180acb932b255e956c0f257b0246c0e381c` passed Library Hi
 
 Final exact documentation head `cae17cb2850f3a995bbe3d106669ce651e3e0aa1` passed UI Shell `33097006928`, Create Lifecycle `33097006913`, Persistent Media Upload Integration `33097007064`, Library Lifecycle `33097006853`, Library Search `33097007092`, Library History `33097006833`, Media Download `33097006968`, and Media Rename `33097006959`. PR #14 merged as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; the merged `main` UI Shell run `33097463519` passed.
 
-UI-030 is now the active prerequisite for personal organization. Favorites/Collections remain deferred until its owner-scoped boundary is fully enforced; do not encode them as global durable-media flags. Delete remains deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
+UI-030 ownership enforcement is complete in production. Favorites v0.1 / UI-031 is now the active personal-organization slice and stays owner-scoped on existing durable media; Collections remains a separate later contract. Delete remains deliberately deferred until database/R2/reference-history cleanup plus recovery/tombstone semantics are defined.
 
 ## R2 Browser CORS State
 The admin-capable R2 access-key credentials manage the exact-origin `renderlab-browser-uploads` rule through the S3 API for:
 - `http://127.0.0.1:3000`
 - `http://localhost:3000`
+- `https://renderlab-lake.vercel.app`
 - `https://renderlab-faresmohamed260-6733s-projects.vercel.app`
 - `https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app`
 
@@ -226,14 +232,13 @@ Download uses product-route → signed-R2 top-level GET navigation. Rename is a 
 If a future user-facing production origin changes, add that exact origin before serving direct browser uploads there. Do not use broad wildcard CORS or replace direct-to-R2 transfers with an application-server proxy merely for convenience.
 
 ## Still Open in Phase 4
-Core account ownership / UI-030 is the active Phase 4 slice and must finish before any other product slice is selected. Remaining work, in order:
-- make the verified owner-aware application code live only through a separately authorized production rollout;
-- recheck for unowned rows, then apply and verify corrected `0005_core_account_ownership_enforce.sql` (`NOT NULL`, owner immutability, table-specific same-owner relational guards);
-- favorites/collections or another personal organization model only after UI-030 is fully enforced;
-- delete and batch management after durable storage/reference/recovery semantics are explicit;
+Library Favorites v0.1 / UI-031 is the active Phase 4 slice. Remaining follow-ups, in order:
+- complete and verify Favorites v0.1 against the enforced account boundary;
+- evaluate Collections only through a separate RenderLab-owned organization contract after Favorites evidence exists;
+- delete and batch management only after durable storage/reference/recovery semantics are explicit;
 - other Library interaction enhancements only when separately justified.
 
-Do not infer Saga organization/destructive-action schemas automatically. Do not reverse the ownership rollout order merely because the implementation and configured PR suite are green.
+Do not infer Saga organization/destructive-action schemas automatically. UI-030 is complete; future personal organization must continue using the verified account-private product boundary rather than global flags or legacy `studio_*` state.
 
 ## Infrastructure Cleanup Still Open
 - Remove the transitional Studio compatibility adapter once no migration/debugging requirement depends on it.
