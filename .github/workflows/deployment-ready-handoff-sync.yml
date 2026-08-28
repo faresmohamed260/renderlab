@@ -1,0 +1,38 @@
+name: Deployment Ready Handoff Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/sync-deployment-ready-handoff.mjs"
+      - ".github/workflows/deployment-ready-handoff-sync.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Synchronize deployment-ready handoff
+        run: node scripts/sync-deployment-ready-handoff.mjs
+
+      - name: Verify documentation diff
+        run: git diff --check
+
+      - name: Commit handoff and remove temporary updater
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/INFRASTRUCTURE.md
+          git rm scripts/sync-deployment-ready-handoff.mjs .github/workflows/deployment-ready-handoff-sync.yml
+          git commit -m "Close deployment readiness handoff"
+          git push origin HEAD:main
