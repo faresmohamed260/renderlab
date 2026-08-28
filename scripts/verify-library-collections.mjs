@@ -264,6 +264,12 @@ try {
   await page.getByRole("button", { name: "Create and add", exact: true }).click();
   const clientButton = page.getByRole("button", { name: "Client Selects", exact: true });
   await clientButton.waitFor({ state: "visible", timeout: 30_000 });
+  await page.waitForFunction(
+    () => Array.from(document.querySelectorAll('button[aria-pressed="true"]'))
+      .some((button) => button.textContent?.trim() === "Client Selects"),
+    null,
+    { timeout: 30_000 },
+  );
   assert(await clientButton.getAttribute("aria-pressed") === "true", "Viewer create-and-add did not persist collection membership.");
 
   await moodButton.click();
