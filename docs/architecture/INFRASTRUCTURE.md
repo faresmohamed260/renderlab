@@ -25,8 +25,11 @@ Legacy `studio_*` tables remain separate and must not be renamed, repurposed or 
 - `0003_persistent_media_uploads.sql` — applied as `20260827031630 renderlab_persistent_media_uploads`; adds durable origin/name/size fields and server-owned `media_upload_sessions`, RLS enabled.
 - `0004_core_account_ownership_prepare.sql` — applied as `20260827203604 renderlab_core_account_ownership_prepare`; adds nullable `owner_id -> auth.users.id ON DELETE RESTRICT`, owner-time indexes and revoke direct `anon`/`authenticated` raw-table grants while keeping RLS enabled.
 - `0005_core_account_ownership_enforce.sql` — applied as `20260828174940 renderlab_core_account_ownership_enforce` after the owner-aware runtime was live, live two-account verification passed, and the final no-unowned-row audit was clean. It makes all four owners `NOT NULL`, makes `owner_id` immutable, and enforces same-owner links for generated media → generation job and upload session → promoted media asset. The migration was corrected at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after rollback-only semantic testing exposed that one shared polymorphic trigger function could reference a field unavailable on `media_assets`; the applied migration uses separate media→job and upload→asset owner-link trigger functions.
+- `0006_media_favorites.sql` — applied as `20260828183102 renderlab_media_favorites`; adds nullable `media_assets.favorited_at` plus partial `media_assets_owner_favorite_created_at_idx` for owner/favorite browsing. Post-apply audit found 0 media rows, `owner_id` still `NOT NULL`, RLS enabled and 0 direct browser grants. It changes no R2 contract.
 
-Do not reapply migrations 0003, 0004 or 0005. The required 0005 sequencing was satisfied: exact owner-aware application SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` became READY in production, live account isolation passed, and a final zero-unowned-row audit completed before enforcement.
+Do not reapply migrations 0003, 0004, 0005 or 0006. The required 0005 sequencing was satisfied: exact owner-aware application SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` became READY in production, live account isolation passed, and a final zero-unowned-row audit completed before enforcement. UI-031 implementation-head verification left all four core tables empty, zero RenderLab fixture Auth users, zero browser core-table grants, four RLS-enabled core tables, four `NOT NULL` owner columns and all six UI-030 enforcement triggers intact; `favorited_at` remains nullable and `media_assets_owner_favorite_created_at_idx` remains present.
+
+Post-UI-031 Supabase security advisors report only the expected informational `rls_enabled_no_policy` notices for the deliberately server-owned core tables. Performance advisors report unused-index INFO findings on currently empty/low-traffic tables, including the new favorite index; no schema remediation is justified from those observations alone.
 
 Service-role access remains server-only. UI-029 added public Supabase Auth client configuration only. UI-030 / PR #17 threads the verified account principal through server product routes and persistence while keeping the raw core tables server-owned; the owner-aware runtime is live and corrected 0005 enforcement is applied and verified.
 
@@ -48,7 +51,7 @@ Rules:
 - `SUPABASE_SERVICE_ROLE_KEY` remains server/CI-only and is never used by product browser code;
 - server account identity uses verified Supabase claims rather than trusting an unverified browser-supplied user ID;
 - UI-029 itself added no owner columns or account-scoped media/job persistence;
-- UI-030 now satisfies the ownership-isolation prerequisite for future personal organization; Favorites/Collections remain a separate unapproved product slice.
+- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites is the verified first organization slice, while Collections remains a separate future contract.
 
 Configured Account Identity Visual `33111299356` created a run-owned confirmed test user through the server-only Auth admin API, signed in through the actual Settings UI, verified session persistence across reload, signed out and deleted the exact user. Direct verification afterward found no matching account-CI users.
 

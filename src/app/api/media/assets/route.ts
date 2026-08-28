@@ -25,6 +25,8 @@ export async function GET(request: Request) {
   const kind = rawKind && rawKind !== "all" ? rawKind : undefined;
   const rawSort = url.searchParams.get("sort");
   const sort = (rawSort || "newest") as MediaAssetSortOrder;
+  const rawFavorite = url.searchParams.get("favorite");
+  const favoriteOnly = rawFavorite === "true";
   const search = normalizeMediaAssetSearchQuery(url.searchParams.get("q"));
   const limit = integerParam(url.searchParams.get("limit"), 24);
   const offset = integerParam(url.searchParams.get("offset"), 0);
@@ -32,6 +34,7 @@ export async function GET(request: Request) {
   if (
     (kind && !kinds.has(kind as MediaAssetKind))
     || !sortOrders.has(sort)
+    || (rawFavorite != null && rawFavorite !== "true")
     || (search && search.length > MEDIA_ASSET_SEARCH_MAX_LENGTH)
     || limit == null
     || offset == null
@@ -62,6 +65,7 @@ export async function GET(request: Request) {
       ownerId: account.id,
       ...(kind ? { kind: kind as MediaAssetKind } : {}),
       ...(search ? { search } : {}),
+      ...(favoriteOnly ? { favoriteOnly: true } : {}),
       sort,
       limit,
       offset,

@@ -30,6 +30,7 @@ export type MediaAssetRecord = {
   provenance: Record<string, unknown>;
   metadata: Record<string, unknown>;
   created_at: string;
+  favorited_at?: string | null;
   updated_at: string;
 };
 
@@ -148,10 +149,32 @@ export async function renameMediaAsset(ownerId: string, assetId: string, request
   return rows?.[0] ?? null;
 }
 
+// Favorite state is metadata on the already owner-scoped durable asset. Keep the
+// mutation idempotent so repeated PUT/DELETE preserves the original favorite timestamp.
+export async function setMediaAssetFavorite(ownerId: string, assetId: string, favorite: boolean) {
+  const current = await getMediaAsset(ownerId, assetId);
+  if (!current) return null;
+  if (Boolean(current.favorited_at) === favorite) return current;
+
+  const rows = await supabaseRest<MediaAssetRecord[]>(
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(assetId)}&select=*`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        favorited_at: favorite ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      }),
+    },
+  );
+  return rows?.[0] ?? null;
+}
+
 export async function listMediaAssets({
   ownerId,
   kind,
   search,
+  favoriteOnly = false,
   sort = "newest",
   limit = 24,
   offset = 0,
@@ -159,6 +182,7 @@ export async function listMediaAssets({
   ownerId: string;
   kind?: MediaAssetKind;
   search?: string | null;
+  favoriteOnly?: boolean;
   sort?: MediaAssetSortOrder;
   limit?: number;
   offset?: number;
@@ -179,6 +203,7 @@ export async function listMediaAssets({
     offset: String(safeOffset),
   });
   if (kind) params.set("kind", `eq.${kind}`);
+  if (favoriteOnly) params.set("favorited_at", "not.is.null");
   if (normalizedSearch) params.set("or", mediaSearchFilter(normalizedSearch));
 
   const rows = await supabaseRest<MediaAssetRecord[]>(
@@ -214,6 +239,7 @@ export function publicMediaAsset(asset: MediaAssetRecord): PublicMediaAsset {
     model: provenanceString(asset, "model"),
     operation: provenanceOperation(asset),
     createdAt: asset.created_at,
+    isFavorite: Boolean(asset.favorited_at),
     contentUrl: `/api/media/assets/${encodeURIComponent(asset.id)}/content`,
     thumbnailUrl: asset.thumbnail_storage_key
       ? `/api/media/assets/${encodeURIComponent(asset.id)}/thumbnail`

@@ -22,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; PR #15 merged Library drag/drop upload/UI-028 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; PR #16 merged Account Identity Foundation/UI-029 as `bcb20365db102252db51263968de96fc795be518`. Core Account Ownership/UI-030 remains the active rollout slice after PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`: exact implementation and final documentation heads passed the complete configured suite, and merged `main` push checks are green. Production rollout and corrected `0005` enforcement remain outstanding. Activity remains a placeholder.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is verified for merge through PR #23; final documentation-head CI remains the current gate. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -72,7 +72,7 @@ Rules:
 Rules:
 - Create remains the default route.
 - Image/Video/Edit/Animate/models/workflows are not separate top-level routes by default.
-- Library `kind`, `q`, `sort`, `offset` are URL-owned shareable browsing/discovery/history state after account context is resolved.
+- Library `kind`, `q`, `sort`, `offset` are URL-owned shareable browsing/discovery/history state after account context is resolved. Active UI-031 will add optional `favorite=true` as another server-owned Library filter without changing route hierarchy.
 - `sort=newest|oldest`; Newest is canonical and omitted from clean links.
 - Viewer → Create `source` + `action` are untrusted navigation intent; the server reloads durable media for the verified owner and validates compatibility.
 - Durable Download uses the Viewer asset route context and a product API; the browser never treats an R2 key/signed URL as durable identity.
@@ -91,6 +91,8 @@ POST     /api/assets/reference/upload-completions
 GET      /api/media/assets
 GET      /api/media/assets/[assetId]
 PATCH    /api/media/assets/[assetId]
+PUT      /api/media/assets/[assetId]/favorite
+DELETE   /api/media/assets/[assetId]/favorite
 GET      /api/media/assets/[assetId]/content
 GET      /api/media/assets/[assetId]/thumbnail
 GET      /api/media/assets/[assetId]/download
@@ -98,7 +100,7 @@ POST     /api/media/uploads/upload-tickets
 POST     /api/media/uploads/upload-completions
 ```
 
-`GET /api/media/assets` accepts bounded `kind`, `q`, `sort`, `limit`, `offset`; `sort` accepts only `newest|oldest` and defaults to newest. `PATCH /api/media/assets/[assetId]` currently owns the UI-025 durable display-name Rename mutation only. Picker and drag/drop persistent uploads both use the same existing media-upload ticket/completion APIs. Browser components do not call workers, Supabase service-role APIs or raw R2 credentials directly.
+`GET /api/media/assets` accepts bounded `kind`, `q`, `sort`, `favorite`, `limit`, `offset`; `favorite` accepts only `true` when present, and `sort` accepts only `newest|oldest` with newest as default. `PATCH /api/media/assets/[assetId]` remains the UI-025 Rename mutation; UI-031 uses idempotent owner-scoped `PUT`/`DELETE /api/media/assets/[assetId]/favorite`. Picker and drag/drop persistent uploads both use the same existing media-upload ticket/completion APIs. Browser components do not call workers, Supabase service-role APIs or raw R2 credentials directly.
 
 UI-029 account operations use the maintained Supabase Auth client contract rather than adding parallel RenderLab password/session APIs. UI-030 resolves the verified non-anonymous account at the product boundary and threads that owner through media, upload, reference and generation services. Foreign opaque IDs are resolved through owner-scoped service queries and collapse to ordinary not-found state rather than exposing another account's record.
 
@@ -172,7 +174,7 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 
 ## State Architecture
 ### URL state
-- Library `kind` / `q` / `sort` / `offset`;
+- Library `kind` / `q` / `sort` / `favorite` / `offset`;
 - durable asset ID in `/library/[assetId]`;
 - Viewer → Create `source` / `action` intent.
 
@@ -189,10 +191,10 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 ### Local transient browser state
 - Create form/runtime interaction state;
 - Library file-picker/drop uploading, drag-active and local feedback state;
-- Viewer Rename editor state;
+- Viewer Rename editor and Favorite mutation feedback state;
 - Settings account-form fields/busy/local feedback state.
 
-Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 is the active prerequisite for personal Library organization; Favorites/Collections remain deferred until the prepared ownership model is fully enforced through corrected `0005` after safe rollout.
+Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 ownership enforcement is complete; active UI-031 adds Favorites directly to the existing owner-scoped durable-media contract while Collections remains deferred.
 
 ## Account Identity Flow
 UI-029 (merged PR #16):
@@ -211,12 +213,12 @@ Rules:
 - public browser configuration is `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`;
 - service-role credentials stay in server/CI boundaries and are never used by the account browser component;
 - server identity is derived from verified Supabase claims, not a browser-provided owner UUID;
-- UI-029 introduced identity without silently redesigning the approved product loop; UI-030 is the separate ownership/enforcement layer now in progress.
+- UI-029 introduced identity without silently redesigning the approved product loop; UI-030 is now the completed production ownership/enforcement layer used by later personal organization.
 
 Configured Account Identity exact head `55a5df4351b5f9f23bde7dc9b2e73213481dd9e2` passed the nine affected gates, including Account Identity `33112405837`; PR #16 merged as `bcb20365db102252db51263968de96fc795be518`, and merged-main UI Shell `33113289145` plus Reference Upload Integration `33113289156` passed.
 
 ## Core Account Ownership Flow
-UI-030 (PR #17; implementation verified, rollout in progress):
+UI-030 (PR #17; production enforced):
 ```text
 browser cookie or Authorization bearer session
   -> getCurrentRenderLabAccount()
@@ -233,12 +235,32 @@ Rules:
 - upload/reference completion can mutate only the authenticated owner's pending record;
 - generation jobs, inputs, polling and persisted outputs carry the same owner;
 - raw core tables remain server-owned: RLS is enabled and browser roles have no direct table grants;
-- corrected `0005_core_account_ownership_enforce.sql` is staged, not applied. It makes all four owners non-null/immutable and enforces table-specific same-owner generation/media and upload/media links only after owner-aware code is safely live and a final no-unowned-row audit passes;
+- corrected `0005_core_account_ownership_enforce.sql` is applied as `20260828174940 renderlab_core_account_ownership_enforce`; all four owners are non-null/immutable and table-specific same-owner generation/media and upload/media guards are active;
 - optional external generation is a server-to-server owner boundary: it requires both `RENDERLAB_GENERATION_BACKEND_URL` and `RENDERLAB_GENERATION_BACKEND_TOKEN`; submit and poll authenticate with the bearer token before sending `x-renderlab-owner-id`, and the external service must verify that token before trusting the header.
 
 Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed the complete 14-gate configured PR suite, including Account Ownership `33131090207`, Create Lifecycle `33131090243`, Library Lifecycle `33131090245`, Generation Integration `33131090251` and Video Generation `33131090262`. The resumed suite also verified the final external-backend authentication hardening and corrected ownership persistence. A verifier-only signed-media redirect issue was found and fixed in the shared Playwright auth helper; local product media routes are authenticated without carrying the fixture bearer across the external signed-R2 redirect. Fresh desktop/mobile artifacts were reviewed and shared Supabase/Auth cleanup returned to zero.
 
-Corrected `0005` independently passes rollback-only live-schema same-owner/cross-owner/immutability/null-owner/Auth-delete and FK-cleanup compatibility simulations, with zero persistent rows/users/triggers afterward. It remains unapplied until the owner-aware runtime is actually live and a final no-unowned-row audit passes.
+Corrected `0005` first passed rollback-only live-schema same-owner/cross-owner/immutability/null-owner/Auth-delete and FK-cleanup compatibility simulations, then was applied only after the owner-aware runtime was live and the final no-unowned-row audit passed. Post-enforcement production Account Ownership verification remained green and cleanup returned shared RenderLab rows/users to zero.
+
+## Library Favorites v0.1 Architecture — UI-031 (verified for merge)
+Verified contract:
+```text
+verified account + durable media asset
+  -> owner-scoped favorite mutation
+  -> media_assets.favorited_at nullable timestamp
+  -> GET /api/media/assets?favorite=true
+  -> server-owned Library Favorites view
+```
+
+Rules:
+- favorite state belongs to the existing account-owned durable asset; do not create a parallel user-media identity or global flag outside the owner boundary;
+- the additive schema change must preserve RLS and zero direct browser grants;
+- Library favorite filtering composes with existing kind/search/sort/pagination URL state and remains server-owned;
+- Viewer owns the initial favorite toggle; v0.1 does not redesign cards or introduce batch actions;
+- foreign asset IDs remain ordinary not-found state and signed-out mutation remains authentication-required;
+- Collections remain a separate future relation/model rather than being inferred from Favorites.
+
+Exact implementation head `85460b7920afe66eee7ff35da03d4f43c9f207fd` passed all 13 applicable configured gates, including Library Favorites `33200364267`, Account Ownership `33200364288`, Library Lifecycle `33200364235`, Media Download `33200364193`, Media Rename `33200364178`, Generation Integration `33200364233` and Video Generation `33200364198`. Four fresh desktop/mobile Library/Viewer artifacts were visually reviewed clean. The post-suite Supabase audit returned zero shared RenderLab rows/fixture users/browser grants while preserving four RLS-enabled tables, four `NOT NULL` owner columns, all six UI-030 enforcement triggers, nullable `favorited_at` and the UI-031 partial index.
 
 ## Capability Architecture
 ```text

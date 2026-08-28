@@ -152,6 +152,7 @@ export function MediaViewer({ asset }: { asset: PublicMediaAsset }) {
                 assetId={asset.id}
                 displayName={asset.displayName}
                 fallbackTitle={title}
+                isFavorite={asset.isFavorite}
               />
             </div>
           </div>

@@ -39,6 +39,10 @@ function parseSearch(value: string | string[] | undefined) {
   return normalized?.slice(0, MEDIA_ASSET_SEARCH_MAX_LENGTH) ?? null;
 }
 
+function parseFavorite(value: string | string[] | undefined) {
+  return firstParam(value) === "true";
+}
+
 export default async function LibraryPage({
   searchParams,
 }: {
@@ -49,6 +53,7 @@ export default async function LibraryPage({
   const kind = parseKind(params.kind);
   const sort = parseSort(params.sort);
   const searchQuery = parseSearch(params.q);
+  const favoriteOnly = parseFavorite(params.favorite);
   const offset = parseOffset(params.offset);
   let available = isSupabaseConfigured() && isR2Configured();
   let items: PublicMediaAsset[] = [];
@@ -60,6 +65,7 @@ export default async function LibraryPage({
         ownerId: account.id,
         ...(kind === "all" ? {} : { kind }),
         ...(searchQuery ? { search: searchQuery } : {}),
+        ...(favoriteOnly ? { favoriteOnly: true } : {}),
         sort,
         limit: pageSize,
         offset,
@@ -80,6 +86,7 @@ export default async function LibraryPage({
       kind={kind}
       sort={sort}
       searchQuery={searchQuery}
+      favoriteOnly={favoriteOnly}
       offset={offset}
       limit={pageSize}
       hasMore={hasMore}

@@ -35,6 +35,7 @@ export type PublicMediaAsset = {
   model: string | null;
   operation: CreativeOperation | null;
   createdAt: string;
+  isFavorite: boolean;
   contentUrl: string;
   thumbnailUrl: string | null;
 };
@@ -72,3 +73,4 @@ export type RenameMediaAssetRequest = {
 };
 
 export type RenameMediaAssetResponse = MediaAssetResponse;
+export type FavoriteMediaAssetResponse = MediaAssetResponse;
