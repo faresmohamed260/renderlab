@@ -12,6 +12,7 @@ import { isR2Configured } from "@/server/storage/r2";
 
 const kinds = new Set<MediaAssetKind>(["image", "video"]);
 const sortOrders = new Set<MediaAssetSortOrder>(["newest", "oldest"]);
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function integerParam(value: string | null, fallback: number) {
   if (value == null || value === "") return fallback;
@@ -27,6 +28,8 @@ export async function GET(request: Request) {
   const sort = (rawSort || "newest") as MediaAssetSortOrder;
   const rawFavorite = url.searchParams.get("favorite");
   const favoriteOnly = rawFavorite === "true";
+  const rawCollection = url.searchParams.get("collection");
+  const collectionId = rawCollection || undefined;
   const search = normalizeMediaAssetSearchQuery(url.searchParams.get("q"));
   const limit = integerParam(url.searchParams.get("limit"), 24);
   const offset = integerParam(url.searchParams.get("offset"), 0);
@@ -35,6 +38,7 @@ export async function GET(request: Request) {
     (kind && !kinds.has(kind as MediaAssetKind))
     || !sortOrders.has(sort)
     || (rawFavorite != null && rawFavorite !== "true")
+    || (rawCollection != null && !uuidPattern.test(rawCollection))
     || (search && search.length > MEDIA_ASSET_SEARCH_MAX_LENGTH)
     || limit == null
     || offset == null
@@ -66,6 +70,7 @@ export async function GET(request: Request) {
       ...(kind ? { kind: kind as MediaAssetKind } : {}),
       ...(search ? { search } : {}),
       ...(favoriteOnly ? { favoriteOnly: true } : {}),
+      ...(collectionId ? { collectionId } : {}),
       sort,
       limit,
       offset,

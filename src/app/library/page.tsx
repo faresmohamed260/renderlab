@@ -5,16 +5,19 @@ import {
   type MediaAssetSortOrder,
   type PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
+import type { PublicMediaCollection } from "@/lib/api/media-collections-contract";
 import { LibraryView } from "@/features/library/library-view";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
+import { listMediaCollections } from "@/server/media/media-collections";
 import { isMediaUploadConfigured } from "@/server/media/media-uploads";
 import { isR2Configured } from "@/server/storage/r2";
 
 export const dynamic = "force-dynamic";
 
 const pageSize = 24;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -43,6 +46,11 @@ function parseFavorite(value: string | string[] | undefined) {
   return firstParam(value) === "true";
 }
 
+function parseCollection(value: string | string[] | undefined) {
+  const resolved = firstParam(value);
+  return resolved && uuidPattern.test(resolved) ? resolved : null;
+}
+
 export default async function LibraryPage({
   searchParams,
 }: {
@@ -54,18 +62,33 @@ export default async function LibraryPage({
   const sort = parseSort(params.sort);
   const searchQuery = parseSearch(params.q);
   const favoriteOnly = parseFavorite(params.favorite);
+  const selectedCollectionId = parseCollection(params.collection);
   const offset = parseOffset(params.offset);
   let available = isSupabaseConfigured() && isR2Configured();
   let items: PublicMediaAsset[] = [];
+  let collections: PublicMediaCollection[] = [];
   let hasMore = false;
+  let collectionMissing = false;
 
-  if (account && available) {
+  if (account && isSupabaseConfigured()) {
+    try {
+      collections = await listMediaCollections(account.id);
+      collectionMissing = Boolean(
+        selectedCollectionId && !collections.some((collection) => collection.id === selectedCollectionId),
+      );
+    } catch {
+      available = false;
+    }
+  }
+
+  if (account && available && !collectionMissing) {
     try {
       const result = await listMediaAssets({
         ownerId: account.id,
         ...(kind === "all" ? {} : { kind }),
         ...(searchQuery ? { search: searchQuery } : {}),
         ...(favoriteOnly ? { favoriteOnly: true } : {}),
+        ...(selectedCollectionId ? { collectionId: selectedCollectionId } : {}),
         sort,
         limit: pageSize,
         offset,
@@ -83,6 +106,9 @@ export default async function LibraryPage({
       available={available}
       uploadAvailable={Boolean(account) && isMediaUploadConfigured()}
       items={items}
+      collections={collections}
+      selectedCollectionId={selectedCollectionId}
+      collectionMissing={collectionMissing}
       kind={kind}
       sort={sort}
       searchQuery={searchQuery}

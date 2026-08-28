@@ -26,10 +26,12 @@ Legacy `studio_*` tables remain separate and must not be renamed, repurposed or 
 - `0004_core_account_ownership_prepare.sql` — applied as `20260827203604 renderlab_core_account_ownership_prepare`; adds nullable `owner_id -> auth.users.id ON DELETE RESTRICT`, owner-time indexes and revoke direct `anon`/`authenticated` raw-table grants while keeping RLS enabled.
 - `0005_core_account_ownership_enforce.sql` — applied as `20260828174940 renderlab_core_account_ownership_enforce` after the owner-aware runtime was live, live two-account verification passed, and the final no-unowned-row audit was clean. It makes all four owners `NOT NULL`, makes `owner_id` immutable, and enforces same-owner links for generated media → generation job and upload session → promoted media asset. The migration was corrected at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after rollback-only semantic testing exposed that one shared polymorphic trigger function could reference a field unavailable on `media_assets`; the applied migration uses separate media→job and upload→asset owner-link trigger functions.
 - `0006_media_favorites.sql` — applied as `20260828183102 renderlab_media_favorites`; adds nullable `media_assets.favorited_at` plus partial `media_assets_owner_favorite_created_at_idx` for owner/favorite browsing. Post-apply audit found 0 media rows, `owner_id` still `NOT NULL`, RLS enabled and 0 direct browser grants. It changes no R2 contract.
+- `0007_media_collections.sql` — applied as `20260828201740 renderlab_media_collections`; creates account-owned `media_collections` and many-to-many `media_collection_items` with `owner_id NOT NULL -> auth.users.id ON DELETE RESTRICT`, RLS enabled, zero browser grants, immutable owners and a trigger that rejects collection/media membership unless both share the membership owner.
+- `0008_media_collection_asset_fk_index.sql` — applied as `20260828202601 renderlab_media_collection_asset_fk_index`; adds leading `media_asset_id` coverage for the membership foreign-key lookup/cascade path identified by the Supabase performance advisor. It changes no product behavior or R2 contract.
 
-Do not reapply migrations 0003, 0004, 0005 or 0006. The required 0005 sequencing was satisfied: exact owner-aware application SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` became READY in production, live account isolation passed, and a final zero-unowned-row audit completed before enforcement. UI-031 implementation-head verification left all four core tables empty, zero RenderLab fixture Auth users, zero browser core-table grants, four RLS-enabled core tables, four `NOT NULL` owner columns and all six UI-030 enforcement triggers intact; `favorited_at` remains nullable and `media_assets_owner_favorite_created_at_idx` remains present.
+Do not reapply migrations 0003, 0004, 0005, 0006, 0007 or 0008. The required 0005 sequencing was satisfied: exact owner-aware application SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` became READY in production, live account isolation passed, and a final zero-unowned-row audit completed before enforcement. UI-031 implementation-head verification left all four core tables empty, zero RenderLab fixture Auth users, zero browser core-table grants, four RLS-enabled core tables, four `NOT NULL` owner columns and all six UI-030 enforcement triggers intact; `favorited_at` remains nullable and `media_assets_owner_favorite_created_at_idx` remains present.
 
-Post-UI-031 Supabase security advisors report only the expected informational `rls_enabled_no_policy` notices for the deliberately server-owned core tables. Performance advisors report unused-index INFO findings on currently empty/low-traffic tables, including the new favorite index; no schema remediation is justified from those observations alone.
+Post-UI-032 implementation-head security advisors report only expected informational `rls_enabled_no_policy` notices for the six deliberately server-owned RenderLab tables. Performance advisors initially identified `media_collection_items.media_asset_id` as an uncovered foreign key; additive `0008` fixed that actionable issue. The remaining performance notices are unused-index INFO on empty/low-traffic RenderLab/legacy tables, including the new Collections FK index before production traffic, and do not justify removal during this slice.
 
 UI-031 / PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431` after exact final head `4bd41d55af27c7240d75862424039fc59027988e` passed all 13 affected gates. Merged `main` UI Shell `33205766730`, Reference Upload `33205766693`, Generation Integration `33205766671`, and Video Generation `33205766691` passed. Post-merge Supabase cleanup returned all four core tables and RenderLab fixture users to zero while preserving RLS, browser-grant revocation, six ownership triggers, four `NOT NULL` owners, nullable `favorited_at`, and the favorite index. Vercel reported zero RenderLab deployments created after the PR #23 merge, confirming automatic Git deployment remained disabled; UI-031 has not been separately deployed to production.
 
@@ -53,7 +55,7 @@ Rules:
 - `SUPABASE_SERVICE_ROLE_KEY` remains server/CI-only and is never used by product browser code;
 - server account identity uses verified Supabase claims rather than trusting an unverified browser-supplied user ID;
 - UI-029 itself added no owner columns or account-scoped media/job persistence;
-- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites is the approved first organization slice, while Collections remains a separate future contract.
+- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites is approved and UI-032 Collections is the separately modeled second organization slice now in final validation.
 
 Configured Account Identity Visual `33111299356` created a run-owned confirmed test user through the server-only Auth admin API, signed in through the actual Settings UI, verified session persistence across reload, signed out and deleted the exact user. Direct verification afterward found no matching account-CI users.
 
@@ -90,7 +92,7 @@ Verified ownership state in shared Supabase after production rollout:
 - no RenderLab configured-test Auth users remain after cleanup;
 - all four owner columns are `NOT NULL` after applied `0005` enforcement;
 - all six UI-030 enforcement triggers are active: four owner-immutability triggers plus media→job and upload→asset same-owner guards;
-- migration history now includes `20260828174940 renderlab_core_account_ownership_enforce` as the latest RenderLab migration;
+- migration history includes `20260828174940 renderlab_core_account_ownership_enforce`; later organization migrations `20260828183102 renderlab_media_favorites`, `20260828201740 renderlab_media_collections` and `20260828202601 renderlab_media_collection_asset_fk_index` are also applied;
 - before rollout, corrected `0005` was executed in rollback-only live-schema transactions. Same-owner generation/media/upload relationships succeeded; cross-owner media→job and upload→asset links were rejected on insert/update; owner reassignment and missing ownership were rejected; Auth-owner deletion was restricted while owned rows existed; all six enforcement triggers existed inside the transaction;
 - a second rollback-only compatibility simulation verified existing FK cleanup remains valid under corrected `0005`: deleting a generation job still sets `media_assets.generation_job_id` to null, while deleting a media asset still cascades its `media_upload_sessions` row;
 - that pre-rollout rollback verification found four still-nullable owner columns, zero enforcement triggers/functions, zero simulation Auth users and zero core rows before production enforcement.
@@ -110,6 +112,23 @@ Production rollout verification: deployment `dpl_DYs48pvBEvzDuDbHwcEn4f9LGabE` i
 Supabase advisor result after production enforcement:
 - security: only informational `RLS enabled, no policy` notices on the four deliberately server-owned tables; this is expected while browser roles have no direct grants;
 - performance: unused-index INFO notices on empty/low-traffic RenderLab/legacy tables; no UI-030 schema change is justified from those notices.
+
+### Library Collections boundary — UI-032 / PR #24 (final validation)
+UI-032 adds two RenderLab-owned server tables without coupling to legacy `studio_*`:
+- `media_collections` — named account-owned collection identity;
+- `media_collection_items` — many-to-many same-owner relation between a collection and durable `media_assets`.
+
+Database boundary:
+- `0007_media_collections.sql` applied as `20260828201740 renderlab_media_collections`;
+- both owner columns are `NOT NULL` Auth foreign keys with `ON DELETE RESTRICT` and immutable-owner triggers;
+- membership has a database trigger that rejects collection/media links unless both rows share `media_collection_items.owner_id`;
+- RLS is enabled on both tables and `anon`/`authenticated` have no direct grants;
+- owner-normalized collection name uniqueness is enforced;
+- `0008_media_collection_asset_fk_index.sql` applied as `20260828202601 renderlab_media_collection_asset_fk_index` after the performance advisor identified the `media_asset_id` FK as uncovered; rerunning advisors removed that warning.
+
+Verification boundary: exact implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed the complete 14-gate affected suite, including Collections `33207939064`, Account Ownership `33207939069`, Favorites `33207939053`, Library Lifecycle `33207939113`, Generation `33207939088` and Video Generation `33207939039`. Configured Collections verification covers signed-out denial, two-account own/foreign boundaries, database same-owner/immutability enforcement, idempotent membership, composed Library filtering, responsive Viewer/Library interactions and exact cleanup.
+
+Post-suite audit found zero rows in all six RenderLab tables, zero fixture Auth users, zero browser grants, six RLS-enabled tables, six `NOT NULL` owner columns and nine ownership/integrity triggers. UI-032 adds no new R2 prefix or browser-upload CORS requirement; Collections store only account-owned organization metadata around existing durable media identity.
 
 ### GitHub Actions / repository visibility
 The repository is **public** as of 2026-08-28. This is a deliberate remote-development infrastructure decision.

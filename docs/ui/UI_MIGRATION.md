@@ -286,6 +286,29 @@ Implementation-head evidence: Library Favorites `33200364267`, Account Ownership
 
 Final documentation-head evidence: Library Favorites `33205471360`, Account Ownership `33205471266`, UI Shell `33205471298`, Create Lifecycle `33205471299`, Library Search `33205471263`, Library History `33205471326`, Library Lifecycle `33205471335`, Library Drag Drop `33205471286`, Persistent Media Upload `33205471255`, Media Download `33205471419`, Media Rename `33205471361`, Generation Integration `33205471331`, and Video Generation `33205471358` all passed on unchanged product tree plus finalized documentation. Final pre-merge and post-merge Supabase verification returned 0 core rows, 0 null owners, 0 fixture users, 0 browser grants, four RLS-enabled core tables, four non-null owner columns and all six UI-030 enforcement triggers; `favorited_at` remains nullable, the partial favorite index remains present, and `0006` remains latest. Security advisors remain only the expected informational RLS-with-no-policy notices for deliberately server-owned tables, while performance advisors report unused-index INFO on empty/low-traffic tables including the favorite index.
 
+### Library Collections v0.1 — UI-032
+Collections is the second personal Library organization slice after approved Favorites. It remains a separate owner-scoped relation/model rather than expanding `favorited_at` into a generic organization system.
+
+- [x] Select Collections as the next Phase 4 slice in the documented order.
+- [x] Establish the RenderLab-owned UI-032 contract: account-owned named collections; many-to-many membership over same-owner durable `media_assets`; one URL/server-owned Library collection filter; Viewer-only create/add/remove membership.
+- [x] Apply additive `0007_media_collections.sql` as `20260828201740 renderlab_media_collections`; verify RLS, zero browser grants, `NOT NULL` immutable owners and same-owner collection/media membership enforcement.
+- [x] Implement owner-scoped collection list/create and idempotent membership APIs; signed-out mutation is denied and foreign collection/asset IDs collapse to owner-scoped not-found behavior.
+- [x] Compose `collection=<uuid>` with existing Library kind/search/Favorites/sort/pagination without client-only filtering or a new top-level route.
+- [x] Integrate the compact Library collection selector and Viewer collection membership panel without redesigning cards or continuation hierarchy.
+- [x] Add configured two-account Collections verification with database integrity assertions, real Chromium Library/Viewer interaction, four responsive screenshots and exact DB/R2/Auth cleanup.
+- [x] Fix the verifier-only create-and-add timing assertion exposed by the first browser run; the UI optimistically renders the created collection before the add-membership request finishes, so verification now waits for the persisted `aria-pressed=true` state instead of asserting immediately on visibility.
+- [x] Exact implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed all 14 applicable gates: Library Collections `33207939064`, Account Ownership `33207939069`, UI Shell `33207939112`, Create Lifecycle `33207939051`, Library Search `33207939090`, Library History `33207939166`, Library Lifecycle `33207939113`, Library Drag Drop `33207939119`, Persistent Media Upload `33207939078`, Media Download `33207939031`, Media Rename `33207939044`, Library Favorites `33207939053`, Generation Integration `33207939088`, and Video Generation `33207939039`.
+- [x] Visually review the four passing Collections artifacts: desktop/mobile Library preserve the approved grid/toolbar hierarchy; desktop/mobile Viewer keep Continue dominant and Collections contextual beneath Favorites without displacing Rename/Download.
+- [x] Audit shared Supabase after the implementation-head suite: zero rows across `generation_sources`, `generation_jobs`, `media_assets`, `media_upload_sessions`, `media_collections`, and `media_collection_items`; zero fixture users; zero browser grants; six RLS-enabled tables; six `NOT NULL` owners; all nine ownership/integrity triggers active.
+- [x] Run Supabase advisors and remediate the one actionable UI-032 finding with additive `0008_media_collection_asset_fk_index.sql`, applied as `20260828202601 renderlab_media_collection_asset_fk_index`; the unindexed foreign-key warning is gone, leaving only expected RLS-with-no-policy and unused-index INFO notices.
+- [ ] Finalize authoritative documentation, rerun the same 14-gate matrix on the documentation-finalized exact head, merge PR #24, then verify merged `main`, shared-resource cleanup and the no-automatic-Vercel-deployment boundary.
+
+**Library Collections v0.1 status: `IN FINAL VALIDATION`. Collection rename/delete, card/batch membership and Delete/batch media management remain out of scope.**
+
+Implementation-head evidence: Library Collections `33207939064`, Account Ownership `33207939069`, UI Shell `33207939112`, Create Lifecycle `33207939051`, Library Search `33207939090`, Library History `33207939166`, Library Lifecycle `33207939113`, Library Drag Drop `33207939119`, Persistent Media Upload `33207939078`, Media Download `33207939031`, Media Rename `33207939044`, Library Favorites `33207939053`, Generation Integration `33207939088`, and Video Generation `33207939039` all passed on `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a`. The configured Collections lifecycle verified signed-out denial, two-account collection isolation, same-owner database enforcement, owner immutability, idempotent PUT/DELETE membership, composed `collection + favorite + kind + search + sort` filtering, real Viewer create/add/remove behavior, responsive Library filtering and exact cleanup.
+
+Applied schema evidence: `0007 = 20260828201740 renderlab_media_collections`; `0008 = 20260828202601 renderlab_media_collection_asset_fk_index`. The post-suite audit returned all six RenderLab tables and fixture users to zero while retaining zero browser grants, six RLS-enabled tables, six `NOT NULL` owner columns and nine ownership/integrity triggers.
+
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
 - [ ] Models/workflows only if dedicated user-facing surfaces are justified.
@@ -307,11 +330,11 @@ Final documentation-head evidence: Library Favorites `33205471360`, Account Owne
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** none. Library Favorites v0.1 / UI-031 is complete and approved.
+**Current product slice:** Library Collections v0.1 / UI-032 — IN FINAL VALIDATION.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, and Library Favorites PR #23 / UI-031 are merged and approved.
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current gate:** none for UI-031. PR #23 is merged, final and post-merge checks are green, cleanup is clean, and automatic Vercel Git deployment remained disabled.
-**Next product slice:** none selected. Collections remains a separate possible future organization contract; Delete still requires durable storage/reference/recovery semantics.
+**Current gate:** rerun the complete 14-gate matrix on the documentation-finalized PR #24 head, then merge and verify post-merge cleanup/no-deployment state. No production deployment is authorized by this development slice.
+**Next product slice:** after UI-032, Delete/batch remains blocked until durable storage/reference/recovery semantics are explicit; other Library work remains requirement-driven.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

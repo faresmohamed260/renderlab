@@ -5,6 +5,7 @@ import { MediaViewer } from "@/features/library/media-viewer";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
+import { listMediaCollections } from "@/server/media/media-collections";
 import { isR2Configured } from "@/server/storage/r2";
 
 export const dynamic = "force-dynamic";
@@ -49,5 +50,13 @@ export default async function MediaViewerPage({
   const asset = await getMediaAsset(account.id, assetId).catch(() => null);
   if (!asset) notFound();
 
-  return <MediaViewer asset={publicMediaAsset(asset)} />;
+  const collections = await listMediaCollections(account.id, asset.id).catch(() => null);
+
+  return (
+    <MediaViewer
+      asset={publicMediaAsset(asset)}
+      collections={collections ?? []}
+      collectionsAvailable={collections !== null}
+    />
+  );
 }

@@ -61,12 +61,12 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED — Library base + Favorites v0.1 / UI-031
+**Status:** APPROVED base + Favorites v0.1 / UI-031; Collections v0.1 / UI-032 IN FINAL VALIDATION
 **Implementation:** `src/features/library/library-view.tsx`  
 **Sort control:** `src/features/library/library-sort-menu.tsx`  
 **Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`  
 **Shared browser upload transaction:** `src/features/library/library-upload-client.ts`  
-**Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `GET /api/media/assets`, media-upload ticket/completion routes  
+**Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `src/server/media/media-collections.ts`, `GET /api/media/assets`, `GET|POST /api/media/collections`, collection membership routes, media-upload ticket/completion routes
 **Approved design artifacts:** `design/penpot/library-v0.1.svg`, `design/penpot/library-v0.2-upload.svg`
 
 **Purpose:** Find, inspect, reuse and continue from durable RenderLab media. Library is a reusable creative-asset workspace, not merely generation history.
@@ -90,6 +90,8 @@ Approved behavior:
 - UI-030 makes Library private to the verified account: signed-out users see an explicit sign-in state rather than media/search/upload controls, while signed-in list/search/history/upload queries are owner-scoped.
 - UI-031 adds URL-owned `favorite=true` as a server-side owner-scoped Favorites view that composes with kind/search/sort/pagination and preserves clean URL state when Favorites is inactive.
 - Favorites remains a compact Library toolbar filter, not a new top-level destination or client-only card filter.
+- UI-032 adds optional URL-owned `collection=<uuid>` as an owner-scoped server-side Library view that composes with kind/search/Favorites/sort/pagination.
+- Collections remain a compact Library selector plus Viewer contextual membership action, not a new top-level destination, card/batch action system or client-owned media store.
 
 **Approval evidence:**
 - base Library/Viewer lifecycle `33034606396`;
@@ -106,17 +108,18 @@ Approved behavior:
 - UI-030 exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265` and Account Ownership `33131090207`; signed-out desktop/mobile and signed-in Library artifacts were reviewed clean.
 - UI-031 exact implementation head `85460b7920afe66eee7ff35da03d4f43c9f207fd` passed Library Favorites `33200364267`, Library Search `33200364171`, Library History `33200364183`, Library Lifecycle `33200364235`, Library Drag Drop `33200364254`, Persistent Media Upload `33200364229`, Account Ownership `33200364288` and UI Shell `33200364256`; fresh desktop/mobile Favorites Library screenshots were visually reviewed clean and shared-resource cleanup returned to zero.
 - Final UI-031 head `4bd41d55af27c7240d75862424039fc59027988e` passed the complete 13-gate affected suite, then PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; merged `main` UI Shell `33205766730`, Reference Upload `33205766693`, Generation `33205766671`, and Video Generation `33205766691` passed, and the post-merge shared-resource audit returned to zero.
+- UI-032 implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed the complete 14-gate affected suite including Collections `33207939064`, Account Ownership `33207939069`, Favorites `33207939053`, Library Lifecycle `33207939113`, Generation `33207939088` and Video Generation `33207939039`; four responsive Collections artifacts were visually reviewed and shared-resource cleanup returned to zero.
 
-**Approved extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031 is approved as a small owner-scoped extension to the Library/Viewer model. Collections remains a separate later contract; Delete/batch remains blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
+**Approved extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031 is approved. Collections v0.1 / UI-032 is the separately contracted owner-scoped relation currently in final validation; Delete/batch remains blocked until database/R2/reference-history cleanup and recovery/tombstone semantics are explicit.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** APPROVED — Media Viewer v0.1 + uploaded-media presentation + Download v0.1 + Rename v0.1 + Favorites v0.1 / UI-031
+**Status:** APPROVED base + Download/Rename/Favorites; Collections v0.1 / UI-032 IN FINAL VALIDATION
 **Implementation:** `src/features/library/media-viewer.tsx`  
 **Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
-**Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts`, `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/lib/api/media-assets-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`
+**Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts`, `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/app/api/media/collections/route.ts`, collection membership route, `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-collections.ts`
 **Design artifact:** `design/penpot/media-viewer-v0.1.svg`
 
 **Approved behavior:**
@@ -136,6 +139,7 @@ Approved behavior:
 - Rename preserves original filename, MIME, R2 storage key, generated provenance/prompt and Download filename semantics;
 - Rename and Download remain side-by-side while the inline edit form expands beneath them on desktop/mobile;
 - UI-031 adds one full-width accessible `Favorite` / `Favorited` Viewer action above Rename/Download; it exposes `aria-pressed`, local saving/error feedback and an idempotent owner-scoped product mutation without changing continuation hierarchy;
+- UI-032 adds one contextual `Collections` disclosure below Favorites; it lists only the verified owner's collections, supports create-and-add plus idempotent membership toggles with pressed state, and keeps Rename/Download plus continuation hierarchy unchanged.
 - UI-030 requires a verified account for private Viewer state; the asset is loaded by owner and foreign IDs collapse to normal not-found behavior. Signed-out access renders the compact sign-in state rather than exposing private media.
 
 **Download approval evidence:**
@@ -153,7 +157,9 @@ Approved behavior:
 
 **Favorites approval evidence:** exact UI-031 implementation head `85460b7920afe66eee7ff35da03d4f43c9f207fd` passed Library Favorites `33200364267`, Media Download `33200364193`, Media Rename `33200364178`, Library Lifecycle `33200364235`, Account Ownership `33200364288` and UI Shell `33200364256`. Final head `4bd41d55af27c7240d75862424039fc59027988e` passed the full 13-gate affected suite before PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431`. Configured Chromium verified favorite/unfavorite state, `aria-pressed`, owner isolation, idempotent persistence and responsive Viewer composition; desktop/mobile Viewer screenshots were visually reviewed clean.
 
-**Do not change:** Provider/worker/R2 identity stays internal. Viewer continuation remains capability-derived. Favorite/Download/Rename remain contextual product actions; do not expose raw R2 keys/signed URLs as durable product links or add Library-card/batch/delete/collection actions without a separate contract.
+**Collections verification evidence:** UI-032 implementation head `bf4b047e55b99e3d673c5d5d6c31b46d3e1b383a` passed Collections `33207939064`, Account Ownership `33207939069`, Favorites `33207939053`, Media Download `33207939031`, Media Rename `33207939044`, Library Lifecycle `33207939113` and UI Shell `33207939112`. Configured Chromium verified create/add/remove membership, `aria-pressed` persistence, Library collection navigation and responsive Viewer composition; desktop/mobile Viewer screenshots were visually reviewed clean.
+
+**Do not change:** Provider/worker/R2 identity stays internal. Viewer continuation remains capability-derived. Favorite/Collections/Download/Rename remain contextual product actions; do not expose raw R2 keys/signed URLs as durable product links or add collection rename/delete, Library-card/batch membership or destructive media actions without their own contract.
 
 ### Activity
 **Route:** `/activity`  
