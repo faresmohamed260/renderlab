@@ -22,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; Library Collections v0.1 / UI-032 is approved and merged through PR #24 as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` after final 14-gate head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578`, with migrations `0007`/`0008` applied and verified. Durable Media Delete v0.1 / UI-033 is in final validation on PR #25; additive `0009_media_asset_deletion.sql` is applied as `20260828221611 renderlab_media_asset_deletion`, and decision-finalized head `1d087e5791bd713e4b0f1d540bff18bea5fae386` passed all 15 affected gates. Activity remains a placeholder.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; Library Collections v0.1 / UI-032 is approved and merged through PR #24 as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` after final 14-gate head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578`, with migrations `0007`/`0008` applied and verified. Durable Media Delete v0.1 / UI-033 is approved and merged through PR #25 as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; additive `0009_media_asset_deletion.sql` is applied as `20260828221611 renderlab_media_asset_deletion`, and final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -38,7 +38,7 @@ Conventional visible controls are centralized rather than hand-styled in feature
 
 Current normalized primitive layer:
 - Alert / AlertDescription
-- AlertDialog / Action / Cancel / Content / Description / Title / Trigger (UI-033 candidate)
+- AlertDialog / Action / Cancel / Content / Description / Title / Trigger
 - Button
 - Collapsible / Trigger / Content
 - DropdownMenu / Content / Group / Item / Label / Separator / RadioGroup / RadioItem
@@ -204,9 +204,9 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 - Viewer Rename editor, Favorite mutation feedback and Collections disclosure/create/membership state;
 - Settings account-form fields/busy/local feedback state.
 
-Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 ownership enforcement is complete; approved UI-031 keeps Favorites on the durable asset, while active UI-032 adds Collections as a separate owner-scoped relation rather than a global client organization store.
+Temporary references and pending uploads have different lifetimes from durable media. Avoid an ad-hoc global client store until multiple features genuinely need one. UI-030 ownership enforcement is complete; approved UI-031 keeps Favorites on the durable asset, approved UI-032 keeps Collections as a separate owner-scoped relation, and approved UI-033 keeps deletion state server-owned through durable tombstones rather than a global client media-management store.
 
-## Durable Media Delete Flow — UI-033 / PR #25 (final validation)
+## Durable Media Delete Flow — UI-033 / PR #25 (approved)
 
 ```text
 verified owner + opaque media asset ID
@@ -229,7 +229,7 @@ Rules:
 - successful tombstone + failed R2 cleanup is represented as cleanup pending and is retryable through the idempotent DELETE route;
 - batch/card selection, multi-delete atomicity and recovery UX are separate future contracts.
 
-Decision-finalized head `1d087e5791bd713e4b0f1d540bff18bea5fae386` passed all 15 affected gates, including Media Delete `33216665876`, Account Ownership `33216665938`, Generation `33216665787` and Video Generation `33216665774`. Desktop/mobile confirmation artifacts were visually reviewed clean. Final documentation-head rerun/merge remains required before UI-033 is APPROVED.
+Final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates, including Media Delete `33218433320`, Account Ownership `33218433329`, Generation `33218433335` and Video Generation `33218433309`. Desktop/mobile confirmation artifacts were visually reviewed clean. PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; merged-`main` UI Shell `33218646377`, Reference Upload `33218646539`, Generation Integration `33218646527`, and Video Generation `33218646602` passed and post-merge cleanup returned to zero.
 
 ## Account Identity Flow
 UI-029 (merged PR #16):

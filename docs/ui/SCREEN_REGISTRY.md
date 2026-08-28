@@ -61,7 +61,7 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED — Library base + Favorites v0.1 / UI-031 + Collections v0.1 / UI-032; UI-033 tombstone filtering IN FINAL VALIDATION
+**Status:** APPROVED — Library base + Favorites v0.1 / UI-031 + Collections v0.1 / UI-032 + UI-033 tombstone filtering
 **Implementation:** `src/features/library/library-view.tsx`  
 **Sort control:** `src/features/library/library-sort-menu.tsx`  
 **Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`  
@@ -110,13 +110,13 @@ Approved behavior:
 - Final UI-031 head `4bd41d55af27c7240d75862424039fc59027988e` passed the complete 13-gate affected suite, then PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; merged `main` UI Shell `33205766730`, Reference Upload `33205766693`, Generation `33205766671`, and Video Generation `33205766691` passed, and the post-merge shared-resource audit returned to zero.
 - UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed all 14 affected gates, including Collections `33210501106`, Account Ownership `33210501089`, Favorites `33210501168`, Library Lifecycle `33210501160`, Generation `33210501178` and Video Generation `33210501167`; four responsive Collections artifacts were visually reviewed, PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d`, merged-main checks UI Shell `33210876059`, Reference Upload `33210876022`, Generation Integration `33210876042`, and Video Generation `33210876085` passed, and post-merge shared-resource cleanup returned to zero.
 
-**Current extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031 and Collections v0.1 / UI-032 are approved organization contracts. UI-033 now has an explicit tombstone/R2/history contract and is in final validation for single-asset Viewer Delete; batch management remains a separate future contract.
+**Approved extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031, Collections v0.1 / UI-032 and single-asset Durable Media Delete v0.1 / UI-033 are approved. Batch management remains a separate future contract.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** APPROVED — Media Viewer base + Download + Rename + Favorites + Collections v0.1 / UI-032; Delete v0.1 / UI-033 IN FINAL VALIDATION
+**Status:** APPROVED — Media Viewer base + Download + Rename + Favorites + Collections v0.1 / UI-032 + Delete v0.1 / UI-033
 **Implementation:** `src/features/library/media-viewer.tsx`  
 **Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
 **Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts` (GET/PATCH/DELETE), `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/app/api/media/collections/route.ts`, collection membership route, `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-collections.ts`
@@ -140,7 +140,7 @@ Approved behavior:
 - Rename and Download remain side-by-side while the inline edit form expands beneath them on desktop/mobile;
 - UI-031 adds one full-width accessible `Favorite` / `Favorited` Viewer action above Rename/Download; it exposes `aria-pressed`, local saving/error feedback and an idempotent owner-scoped product mutation without changing continuation hierarchy;
 - UI-032 adds one contextual `Collections` disclosure below Favorites; it lists only the verified owner's collections, supports create-and-add plus idempotent membership toggles with pressed state, and keeps Rename/Download plus continuation hierarchy unchanged.
-- UI-033 candidate adds one visually secondary permanent `Delete` action beneath existing durable actions. Confirmation uses the maintained AlertDialog primitive; successful deletion tombstones first, removes collection/upload links, purges R2 content/thumbnail, preserves generation-history IDs and returns to Library. Tombstoned media is not reusable as a new generation input.
+- UI-033 adds one visually secondary permanent `Delete` action beneath existing durable actions. Confirmation uses the maintained AlertDialog primitive; successful deletion tombstones first, removes collection/upload links, purges R2 content/thumbnail, preserves generation-history IDs and returns to Library. Tombstoned media is not reusable as a new generation input.
 - UI-030 requires a verified account for private Viewer state; the asset is loaded by owner and foreign IDs collapse to normal not-found behavior. Signed-out access renders the compact sign-in state rather than exposing private media.
 
 **Download approval evidence:**
@@ -160,7 +160,7 @@ Approved behavior:
 
 **Collections approval evidence:** UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106`, Account Ownership `33210501089`, Favorites `33210501168`, Media Download `33210501133`, Media Rename `33210501203`, Library Lifecycle `33210501160` and UI Shell `33210501226`; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and merged-main checks UI Shell `33210876059`, Reference Upload `33210876022`, Generation Integration `33210876042`, and Video Generation `33210876085` passed. Configured Chromium verified create/add/remove membership, `aria-pressed` persistence, Library collection navigation and responsive Viewer composition; desktop/mobile Viewer screenshots were visually reviewed clean.
 
-**Delete validation evidence:** decision-finalized head `1d087e5791bd713e4b0f1d540bff18bea5fae386` passed Media Delete `33216665876` plus the complete 14 existing affected regressions. Configured verification proved signed-out/foreign denial, database tombstone cleanup, R2 primary/thumbnail purge, generation-history preservation, idempotent retry and rejected post-delete generation reuse. Desktop/mobile confirmation screenshots were visually reviewed clean. Final documentation-head rerun and merge remain pending.
+**Delete approval evidence:** final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed Media Delete `33218433320`, Account Ownership `33218433329`, UI Shell `33218433381`, Create Lifecycle `33218433291`, Library Search `33218433357`, Library History `33218433299`, Library Lifecycle `33218433285`, Library Drag Drop `33218433305`, Persistent Media Upload `33218433348`, Media Download `33218433296`, Media Rename `33218433406`, Library Favorites `33218433314`, Library Collections `33218433301`, Generation Integration `33218433335`, and Video Generation `33218433309`. Configured verification proved signed-out/foreign denial, database tombstone cleanup, R2 primary/thumbnail purge, generation-history preservation, idempotent retry and rejected post-delete generation reuse. Desktop/mobile confirmation screenshots were visually reviewed clean. PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; merged-`main` UI Shell `33218646377`, Reference Upload `33218646539`, Generation Integration `33218646527`, and Video Generation `33218646602` passed and post-merge shared-resource cleanup returned to zero.
 
 **Do not change:** Provider/worker/R2 identity stays internal. Viewer continuation remains capability-derived. Favorite/Collections/Download/Rename remain contextual product actions; UI-033 Delete follows its explicit tombstone/purge contract. Do not expose raw R2 keys/signed URLs as durable product links or infer collection rename/delete, Library-card selection or batch destructive actions from the single-asset Viewer action.
 

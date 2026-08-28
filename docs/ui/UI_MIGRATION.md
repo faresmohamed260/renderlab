@@ -326,11 +326,11 @@ UI-033 resolves the previously blocked destructive-media contract with the small
 - [x] Visually review desktop/mobile Delete confirmation artifacts; Continue remains dominant, existing Favorite/Collections/Rename/Download composition is preserved and mobile confirmation remains touch-friendly.
 - [x] Pre-finalization shared-resource audit returned all six RenderLab tables and configured fixture users to zero with six RLS tables, six non-null owners, zero browser grants, nullable `deleted_at`/`purged_at`, deletion triggers and `media_assets_owner_active_created_at_idx` intact.
 - [x] Post-`0009` Supabase advisors show no new actionable security/performance issue: expected server-owned no-policy INFO plus unused-index INFO only.
-- [ ] Pass the complete 15-gate suite on the documentation-finalized exact PR head.
-- [ ] Merge PR #25 and verify merged-`main` push checks.
-- [ ] Verify post-merge Supabase/R2 cleanup and zero unintended Vercel deployment.
+- [x] Final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed the complete 15-gate suite: Media Delete `33218433320`, Account Ownership `33218433329`, UI Shell `33218433381`, Create Lifecycle `33218433291`, Library Search `33218433357`, Library History `33218433299`, Library Lifecycle `33218433285`, Library Drag Drop `33218433305`, Persistent Media Upload `33218433348`, Media Download `33218433296`, Media Rename `33218433406`, Library Favorites `33218433314`, Library Collections `33218433301`, Generation Integration `33218433335`, and Video Generation `33218433309`.
+- [x] Merge PR #25 as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; merged-`main` checks UI Shell `33218646377`, Reference Upload `33218646539`, Generation Integration `33218646527`, and Video Generation `33218646602` passed.
+- [x] Verify post-merge shared-resource cleanup: all six RenderLab tables and configured fixture users returned to zero; RLS/owner/grant/deletion invariants remain intact; Vercel created zero deployments from the merge.
 
-**Durable Media Delete v0.1 status: `IN FINAL VALIDATION`. Batch media management remains out of scope until single-delete is approved and a separate batch interaction/atomicity contract is selected.**
+**Durable Media Delete v0.1 status: `APPROVED`. PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445` after final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates. Batch media management remains a separate future contract.**
 
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
@@ -353,11 +353,11 @@ UI-033 resolves the previously blocked destructive-media contract with the small
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** Durable Media Delete v0.1 / UI-033 is IN FINAL VALIDATION on PR #25.
-**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, and Library Collections PR #24 / UI-032 are merged and approved.
+**Current product slice:** None. UI-033 is complete; no next Phase 4 product slice has been selected.
+**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, and Durable Media Delete PR #25 / UI-033 are merged and approved.
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current gate:** documentation-finalize UI-033, rerun all 15 affected workflows on that exact head, then merge only after a clean shared-resource audit.
-**Next product slice:** after UI-033 is fully approved, batch media management may be considered as a separate contract; do not infer selection, multi-delete atomicity, recovery UX or card actions from the single-asset Viewer Delete implementation.
+**Current gate:** No active Phase 4 implementation gate. Select the next slice explicitly before implementation.
+**Next product slice:** Batch media management is the next documented candidate, but it is not yet selected. Define selection, multi-delete atomicity, partial-failure/retry and recovery UX explicitly before implementation; do not infer them from UI-033.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

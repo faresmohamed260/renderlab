@@ -56,7 +56,7 @@ Rules:
 - `SUPABASE_SERVICE_ROLE_KEY` remains server/CI-only and is never used by product browser code;
 - server account identity uses verified Supabase claims rather than trusting an unverified browser-supplied user ID;
 - UI-029 itself added no owner columns or account-scoped media/job persistence;
-- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites and UI-032 Collections are approved separate organization slices. UI-033 now owns the explicit single-asset tombstone/R2/history semantics in final validation; batch media management remains separate.
+- UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites and UI-032 Collections are approved separate organization slices. UI-033 owns the approved single-asset tombstone/R2/history semantics; batch media management remains separate.
 
 Configured Account Identity Visual `33111299356` created a run-owned confirmed test user through the server-only Auth admin API, signed in through the actual Settings UI, verified session persistence across reload, signed out and deleted the exact user. Direct verification afterward found no matching account-CI users.
 
@@ -131,7 +131,7 @@ Verification boundary: final exact head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd657
 
 Final post-merge audit found zero rows in all six RenderLab tables, zero fixture Auth users, zero browser grants, six RLS-enabled tables, six `NOT NULL` owner columns, nine ownership/integrity triggers and `0008` as latest migration. Vercel listed zero RenderLab deployments created after the PR #24 merge, preserving the disabled automatic-Git-deployment boundary. UI-032 adds no new R2 prefix or browser-upload CORS requirement; Collections store only account-owned organization metadata around existing durable media identity.
 
-### Durable media deletion boundary — UI-033 / PR #25 (final validation)
+### Durable media deletion boundary — UI-033 / PR #25 (approved)
 UI-033 resolves the previously deferred destructive storage/reference/history contract for one durable asset without introducing batch selection or a user Trash model.
 
 Database boundary:
@@ -149,9 +149,9 @@ Storage/runtime boundary:
 - previously issued short-lived signed URLs cannot be revoked, but active product routes issue no new signed media after tombstoning;
 - new generation submission preflights durable inputs so tombstoned media cannot be sent to native or external generation backends; already-running jobs are not cancelled implicitly.
 
-Verification state before final documentation-head rerun: decision-finalized head `1d087e5791bd713e4b0f1d540bff18bea5fae386` passed all 15 affected PR gates, including Media Delete `33216665876`, Account Ownership `33216665938`, Generation `33216665787`, Video Generation `33216665774`, Favorites `33216665770` and Collections `33216665804`. Configured Delete verification covered two-account denial, database cleanup, R2 primary/thumbnail purge, preserved generation history, idempotent retry, rejected post-delete generation reuse, responsive confirmation UI and exact cleanup.
+Final verification: exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected PR gates, including Media Delete `33218433320`, Account Ownership `33218433329`, Generation `33218433335`, Video Generation `33218433309`, Favorites `33218433314` and Collections `33218433301`. Configured Delete verification covered two-account denial, database cleanup, R2 primary/thumbnail purge, preserved generation history, idempotent retry, rejected post-delete generation reuse, responsive confirmation UI and exact cleanup. PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; merged-`main` UI Shell `33218646377`, Reference Upload `33218646539`, Generation Integration `33218646527`, and Video Generation `33218646602` passed.
 
-Shared-resource audit after that suite returned all six RenderLab tables and configured fixture users to zero, with six RLS-enabled tables, six non-null owners, zero browser grants, nullable deletion timestamps, deletion guards and the active-media index intact. Post-`0009` security advisors report only expected `rls_enabled_no_policy` INFO for deliberately server-owned tables; performance advisors report unused-index INFO only, including the new active index on the currently empty/low-traffic dataset. No advisor requires a UI-033 schema change.
+Final pre-merge and post-merge shared-resource audits returned all six RenderLab tables and configured fixture users to zero, with six RLS-enabled tables, six non-null owners, zero browser grants, nullable deletion timestamps, deletion guards and the active-media index intact. Vercel listed zero RenderLab deployments created after the PR #25 merge, preserving the disabled automatic-Git-deployment boundary. Post-`0009` security advisors report only expected `rls_enabled_no_policy` INFO for deliberately server-owned tables; performance advisors report unused-index INFO only, including the new active index on the currently empty/low-traffic dataset. No advisor requires a UI-033 schema change.
 
 Batch/card selection, multi-delete atomicity, retention/recovery and collection deletion remain separate future contracts.
 

@@ -72,21 +72,21 @@ Before copying/installing an external component:
 **Status:** APPROVED  
 **Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`  
 **Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics  
-**Current primitives:** Alert, AlertDialog (UI-033 candidate), Button, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.
+**Current primitives:** Alert, AlertDialog, Button, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.
 **Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/Collections/empty state, Media Viewer and Viewer Favorite/Collections/Rename/Download actions.
 **Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
 **Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
 **Notes:** UI-026. `npm run verify:ui-purity` is the CI enforcement gate. The refactor preserved the approved surface design while centralizing control mechanics. During verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics, and UI-027 added the maintained Radix Dropdown Menu for Library ordering instead of a bespoke selector.
 
 ### AlertDialog
-**Status:** EXPERIMENTAL
+**Status:** APPROVED
 **Source:** `src/components/ui/alert-dialog.tsx`
 **Origin:** shadcn/Radix AlertDialog wrapper normalized to RenderLab tokens
 **Purpose:** Accessible modal confirmation for a genuinely destructive action with focus trapping/restoration, labelled title/description and explicit cancel/action semantics.
-**Used by:** UI-033 Media Viewer Delete candidate only while PR #25 is in final validation.
+**Used by:** UI-033 Media Viewer Delete.
 **Reuse rules:** Use for destructive confirmation that truly requires an interruptive modal decision; keep product mutation/copy outside the primitive.
 **Do not:** Turn ordinary confirmations into modal friction, hide destructive consequences, or bypass feature-owned authorization/data contracts.
-**Notes:** UI-033 decision-finalized head `1d087e5791bd713e4b0f1d540bff18bea5fae386` passed UI purity/build, Media Delete `33216665876` and responsive desktop/mobile confirmation review. Promote to APPROVED only after PR #25 final exact-head validation/merge.
+**Notes:** UI-033 final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed Media Delete `33218433320`, UI Shell `33218433381` and the complete affected suite; PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`. Desktop/mobile confirmation review verified focus-safe destructive confirmation without hierarchy drift.
 
 ### AppShell
 **Status:** APPROVED  
@@ -196,7 +196,7 @@ Before copying/installing an external component:
 **Source:** `src/features/library/media-viewer.tsx`
 **Origin:** RenderLab composition based on `design/penpot/media-viewer-v0.1.svg`
 **Purpose:** Contextual durable-media workspace: media-primary presentation, truthful metadata, capability-derived continuation and secondary durable asset actions.
-**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Favorite, Collections, Download and Rename; UI-033 single-asset Delete candidate in final validation.
+**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Favorite, Collections, Download and Rename; approved UI-033 single-asset Delete.
 **Used by:** `/library/[assetId]`
 **Dependencies:** Next.js Link, maintained Button/AlertDialog primitives, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media/collection routes, feature-owned `MediaViewerActions` and `MediaViewerCollections`.
 **Reuse rules:** Keep continuation derivation in the capability model. Keep durable actions on opaque media IDs/product routes. Extend Viewer actions deliberately rather than adding card/batch controls by implication.
@@ -207,12 +207,12 @@ Before copying/installing an external component:
 **Status:** APPROVED
 **Source:** `src/features/library/media-viewer-actions.tsx`
 **Origin:** RenderLab feature composition using maintained Button/Input/AlertDialog primitives, React client state and Lucide React.
-**Purpose:** Viewer-owned secondary action group for durable Favorite + Collections + Rename + Download plus the UI-033 single-asset Delete candidate, including local mutation/confirmation state and the feature-owned Collections composition.
+**Purpose:** Viewer-owned secondary action group for durable Favorite + Collections + Rename + Download plus approved UI-033 single-asset Delete, including local mutation/confirmation state and the feature-owned Collections composition.
 **Used by:** `MediaViewer` only.
 **Dependencies:** favorite PUT/DELETE, Rename PATCH, asset DELETE, Download route, `MediaViewerCollections`, display-name/delete contracts, maintained AlertDialog and Next.js router navigation/refresh.
 **Reuse rules:** Keep this feature-owned while only Media Viewer needs the action composition. Extract generic mechanics only after a second real reuse need.
-**Do not:** Turn it into a global media-management framework, mutate R2 identity from the client, or infer batch/card selection/collection-management actions from the UI-033 single-asset Delete candidate.
-**Notes:** Favorite remains full-width above the action stack; Collections is contextual below it; Rename/Download remain paired. UI-033 places Delete below the existing action stack as a visually secondary destructive action. Decision-finalized head `1d087e5791bd713e4b0f1d540bff18bea5fae386` passed the 15 affected gates and desktop/mobile confirmation review; final documentation-head validation/merge is still required before this extension is approved.
+**Do not:** Turn it into a global media-management framework, mutate R2 identity from the client, or infer batch/card selection/collection-management actions from the UI-033 single-asset Delete action.
+**Notes:** Favorite remains full-width above the action stack; Collections is contextual below it; Rename/Download remain paired. UI-033 places Delete below the existing action stack as a visually secondary destructive action. Final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates and desktop/mobile confirmation review; PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445` and merged-`main` checks remained green.
 
 ### MediaViewerCollections
 **Status:** APPROVED
