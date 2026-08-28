@@ -1,0 +1,29 @@
+name: Deployment Readiness Doc Cleanup
+
+on:
+  push:
+    branches:
+      - work/deployment-readiness-v0-1
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.event.head_commit.message == 'Apply deployment readiness doc cleanup'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/deployment-readiness-v0-1
+          fetch-depth: 0
+      - run: node scripts/fix-deployment-readiness-docs.mjs
+      - run: git diff --check
+      - name: Commit cleanup and remove temporary updater
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md
+          git rm scripts/fix-deployment-readiness-docs.mjs .github/workflows/deployment-readiness-doc-cleanup.yml
+          git commit -m "Clean deployment readiness handoff"
+          git push origin HEAD:work/deployment-readiness-v0-1
