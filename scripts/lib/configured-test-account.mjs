@@ -174,19 +174,34 @@ export function withAccountAuthorization(account, init = {}) {
   return { ...init, headers };
 }
 
+function isSignedMediaRedirectPath(pathname) {
+  return /^\/api\/media\/assets\/[^/]+\/(?:content|thumbnail|download)$/.test(pathname);
+}
+
 export async function routeLocalAppRequestsWithAccount(page, baseUrl, account) {
   const origin = new URL(baseUrl).origin;
   await page.route("**/*", async (route) => {
     const request = route.request();
-    if (new URL(request.url()).origin !== origin) {
+    const requestUrl = new URL(request.url());
+    if (requestUrl.origin !== origin) {
       await route.continue();
       return;
     }
-    await route.continue({
-      headers: {
-        ...request.headers(),
-        authorization: `Bearer ${account.accessToken}`,
-      },
-    });
+
+    const headers = {
+      ...request.headers(),
+      authorization: `Bearer ${account.accessToken}`,
+    };
+
+    // Playwright carries route.continue header overrides across redirects. RenderLab media
+    // routes intentionally redirect to signed R2 GETs, so authenticate only the local route
+    // and let the browser follow the returned 3xx as a fresh external request.
+    if (isSignedMediaRedirectPath(requestUrl.pathname)) {
+      const response = await route.fetch({ headers, maxRedirects: 0 });
+      await route.fulfill({ response });
+      return;
+    }
+
+    await route.continue({ headers });
   });
 }
