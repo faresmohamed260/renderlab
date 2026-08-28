@@ -7,13 +7,12 @@ if (!isVercelBuild) {
 
 const required = [
   "SUPABASE_URL",
+  "SUPABASE_PUBLISHABLE_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-  "R2_ACCOUNT_ID",
-  "R2_ACCESS_KEY_ID",
-  "R2_SECRET_ACCESS_KEY",
-  "R2_BUCKET_NAME",
+  "CLOUDFLARE_R2_ACCOUNT_ID",
+  "CLOUDFLARE_R2_ACCESS_KEY_ID",
+  "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+  "CLOUDFLARE_R2_BUCKET",
 ];
 
 const missing = required.filter((name) => !process.env[name]?.trim());
@@ -22,11 +21,10 @@ if (missing.length > 0) {
 }
 
 const expectedSupabaseUrl = "https://rashyleshocuvpgcooxy.supabase.co";
-const privateSupabaseUrl = process.env.SUPABASE_URL.trim().replace(/\/$/, "");
-const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL.trim().replace(/\/$/, "");
+const supabaseUrl = process.env.SUPABASE_URL.trim().replace(/\/$/, "");
 
-if (privateSupabaseUrl !== expectedSupabaseUrl || publicSupabaseUrl !== expectedSupabaseUrl) {
-  throw new Error("Vercel Supabase URLs must target the approved shared RenderLab/Saga project.");
+if (supabaseUrl !== expectedSupabaseUrl) {
+  throw new Error("Vercel SUPABASE_URL must target the approved shared RenderLab/Saga project.");
 }
 
 const externalBackendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();

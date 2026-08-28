@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "package.json"
+      - "next.config.ts"
       - "proxy.ts"
       - "src/lib/supabase/**"
       - "src/features/account/**"
@@ -21,9 +22,8 @@ jobs:
     timeout-minutes: 15
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
 
     steps:
