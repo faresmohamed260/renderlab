@@ -43,7 +43,7 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_TEST_BASE_URL: https://renderlab-lake.vercel.app
 
     steps:
       - name: Checkout
