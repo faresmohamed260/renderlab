@@ -226,8 +226,7 @@ If a future user-facing production origin changes, add that exact origin before 
 
 ## Still Open in Phase 4
 Core account ownership / UI-030 is the active Phase 4 slice and must finish before any other product slice is selected. Remaining work, in order:
-- deploy the verified owner-aware `main` only through a separately authorized production rollout;
-- make the owner-aware application code live only through a separately authorized deployment/rollout step;
+- make the verified owner-aware application code live only through a separately authorized production rollout;
 - recheck for unowned rows, then apply and verify corrected `0005_core_account_ownership_enforce.sql` (`NOT NULL`, owner immutability, table-specific same-owner relational guards);
 - favorites/collections or another personal organization model only after UI-030 is fully enforced;
 - delete and batch management after durable storage/reference/recovery semantics are explicit;
