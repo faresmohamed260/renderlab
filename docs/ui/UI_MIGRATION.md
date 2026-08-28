@@ -309,6 +309,29 @@ Final exact-head evidence: Library Collections `33210501106`, Account Ownership 
 
 Applied schema evidence: `0007 = 20260828201740 renderlab_media_collections`; `0008 = 20260828202601 renderlab_media_collection_asset_fk_index`. Final pre-merge and post-merge audits both returned all six RenderLab tables and fixture users to zero while retaining zero browser grants, six RLS-enabled tables, six `NOT NULL` owner columns, nine ownership/integrity triggers and the normalized-name/owner-asset/asset-FK indexes.
 
+### Durable media Delete v0.1 — PR #25 / UI-033
+UI-033 resolves the previously blocked destructive-media contract with the smallest coherent action: one permanent Media Viewer Delete. Batch/card selection remains a separate future slice.
+
+- [x] Define tombstone-first semantics in `UI_DECISIONS.md`: `deleted_at` makes media immediately unavailable; `purged_at` records completed R2 cleanup; user restore/trash is not part of v0.1.
+- [x] Preserve generation-job input/output media IDs as historical opaque references instead of rewriting execution history.
+- [x] Apply `0009_media_asset_deletion.sql` as `20260828221611 renderlab_media_asset_deletion`.
+- [x] Keep deleted rows out of ordinary owner-scoped Library/Viewer/content/thumbnail/download/Favorites/Collections reads and out of new generation-input resolution.
+- [x] Clear Favorite state plus collection/upload-session links on the first tombstone at the database boundary.
+- [x] Add owner-scoped idempotent `DELETE /api/media/assets/[assetId]`; purge primary + optional thumbnail R2 objects and set `purged_at` only after physical cleanup succeeds.
+- [x] Return truthful cleanup-pending state when tombstoning succeeds but R2 cleanup does not; never reverse a tombstone.
+- [x] Reject tombstoned media before native or external generation submission; do not implicitly cancel generation already in flight.
+- [x] Add maintained Radix/shadcn AlertDialog confirmation and one visually secondary Viewer Delete action; do not add Library-card or batch actions.
+- [x] Add configured two-account Media Delete lifecycle covering signed-out/foreign denial, database cleanup, R2 purge, historical-job preservation, idempotence, generation-input rejection, responsive confirmation UI and exact cleanup.
+- [x] Decision-finalized head `1d087e5791bd713e4b0f1d540bff18bea5fae386` passed all 15 applicable gates: Media Delete `33216665876`, Account Ownership `33216665938`, UI Shell `33216665773`, Create Lifecycle `33216665796`, Library Search `33216665758`, Library History `33216665833`, Library Lifecycle `33216665791`, Library Drag Drop `33216665793`, Persistent Media Upload `33216665806`, Media Download `33216665819`, Media Rename `33216665790`, Library Favorites `33216665770`, Library Collections `33216665804`, Generation Integration `33216665787`, and Video Generation `33216665774`.
+- [x] Visually review desktop/mobile Delete confirmation artifacts; Continue remains dominant, existing Favorite/Collections/Rename/Download composition is preserved and mobile confirmation remains touch-friendly.
+- [x] Pre-finalization shared-resource audit returned all six RenderLab tables and configured fixture users to zero with six RLS tables, six non-null owners, zero browser grants, nullable `deleted_at`/`purged_at`, deletion triggers and `media_assets_owner_active_created_at_idx` intact.
+- [x] Post-`0009` Supabase advisors show no new actionable security/performance issue: expected server-owned no-policy INFO plus unused-index INFO only.
+- [ ] Pass the complete 15-gate suite on the documentation-finalized exact PR head.
+- [ ] Merge PR #25 and verify merged-`main` push checks.
+- [ ] Verify post-merge Supabase/R2 cleanup and zero unintended Vercel deployment.
+
+**Durable Media Delete v0.1 status: `IN FINAL VALIDATION`. Batch media management remains out of scope until single-delete is approved and a separate batch interaction/atomicity contract is selected.**
+
 ## Phase 5 — Operational & Secondary Experiences
 - [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
 - [ ] Models/workflows only if dedicated user-facing surfaces are justified.
@@ -330,11 +353,11 @@ Applied schema evidence: `0007 = 20260828201740 renderlab_media_collections`; `0
 
 ## Current Work
 **Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** none selected; Library Collections v0.1 / UI-032 is APPROVED and complete.
+**Current product slice:** Durable Media Delete v0.1 / UI-033 is IN FINAL VALIDATION on PR #25.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, and Library Collections PR #24 / UI-032 are merged and approved.
 **Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current gate:** no active product slice. Before Delete/batch implementation, define and approve durable database + R2 + reference-history cleanup plus recovery/tombstone semantics; other Library work remains requirement-driven.
-**Next product slice:** Delete/batch contract design is the next documented management candidate, but implementation remains blocked until durable storage/reference/recovery semantics are explicit; other Library work remains requirement-driven.
+**Current gate:** documentation-finalize UI-033, rerun all 15 affected workflows on that exact head, then merge only after a clean shared-resource audit.
+**Next product slice:** after UI-033 is fully approved, batch media management may be considered as a separate contract; do not infer selection, multi-delete atomicity, recovery UX or card actions from the single-asset Viewer Delete implementation.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

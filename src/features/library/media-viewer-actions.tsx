@@ -1,8 +1,19 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { Check, Download, Pencil, Star, X } from "lucide-react";
+import { Check, Download, Pencil, Star, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -11,6 +22,7 @@ import { MediaViewerCollections } from "@/features/library/media-viewer-collecti
 import type { PublicMediaCollection } from "@/lib/api/media-collections-contract";
 import {
   MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH,
+  type DeleteMediaAssetResponse,
   type FavoriteMediaAssetResponse,
   type RenameMediaAssetResponse,
 } from "@/lib/api/media-assets-contract";
@@ -40,6 +52,9 @@ export function MediaViewerActions({
   const [favorite, setFavorite] = useState(isFavorite);
   const [favoriteSaving, setFavoriteSaving] = useState(false);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   function beginEditing() {
     setDraft(displayName ?? "");
@@ -102,6 +117,29 @@ export function MediaViewerActions({
       setError(renameError instanceof Error ? renameError.message : "Media could not be renamed.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteAsset() {
+    if (deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const response = await fetch(`/api/media/assets/${encodeURIComponent(assetId)}`, {
+        method: "DELETE",
+      });
+      const payload = await response.json().catch(() => null) as DeleteMediaAssetResponse | null;
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload && !payload.ok ? payload.error.message : "Media could not be deleted.");
+      }
+
+      setDeleteOpen(false);
+      router.push("/library");
+      router.refresh();
+    } catch (deleteRequestError) {
+      setDeleteError(deleteRequestError instanceof Error ? deleteRequestError.message : "Media could not be deleted.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -184,6 +222,49 @@ export function MediaViewerActions({
           </div>
         </form>
       ) : null}
+
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          if (deleting) return;
+          setDeleteError(null);
+          setDeleteOpen(open);
+        }}
+      >
+        <AlertDialogTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            className="col-span-2 w-full text-danger hover:text-danger"
+          >
+            <Trash2 aria-hidden="true" data-icon="inline-start" />
+            Delete
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete media?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes this media from your Library and collections. It cannot be restored or reused in new generations. Existing generation history remains.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError ? <p role="alert" className="mt-3 text-sm text-danger">{deleteError}</p> : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(event) => {
+                event.preventDefault();
+                void deleteAsset();
+              }}
+            >
+              {deleting ? <Spinner data-icon="inline-start" /> : <Trash2 aria-hidden="true" data-icon="inline-start" />}
+              {deleting ? "Deleting…" : "Delete permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

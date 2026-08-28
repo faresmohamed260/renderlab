@@ -69,8 +69,12 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 ### Active product slice
-- None. UI-032 is complete; no next Phase 4 product slice has been selected.
-- Delete/batch is the next documented management candidate, but implementation remains blocked until database + R2 + reference-history cleanup and recovery/tombstone semantics are explicitly contracted and verified.
+- Durable Media Delete v0.1 / UI-033 is **IN FINAL VALIDATION** on PR #25.
+- UI-033 is intentionally single-asset and Viewer-contextual: tombstone first, retryable R2 purge second, generation history preserved, and no restore/trash or batch/card-selection framework in v0.1.
+- Additive migration `0009_media_asset_deletion.sql` is applied as `20260828221611 renderlab_media_asset_deletion`.
+- Decision-finalized head `1d087e5791bd713e4b0f1d540bff18bea5fae386` passed the complete 15-gate affected suite (Media Delete `33216665876`, Account Ownership `33216665938`, UI Shell `33216665773`, Create Lifecycle `33216665796`, Library Search `33216665758`, Library History `33216665833`, Library Lifecycle `33216665791`, Library Drag Drop `33216665793`, Persistent Media Upload `33216665806`, Media Download `33216665819`, Media Rename `33216665790`, Library Favorites `33216665770`, Library Collections `33216665804`, Generation Integration `33216665787`, and Video Generation `33216665774`). Desktop/mobile destructive confirmation artifacts were visually reviewed without hierarchy drift.
+- Shared Supabase cleanup is back to zero across all six RenderLab tables and configured fixture users; six RLS tables, six non-null owners, zero browser grants, deletion guards and the active-media index remain intact. Security advisors report only the expected no-policy INFO notices on deliberately server-owned tables; performance advisors report only unused-index INFO notices.
+- Remaining gate before merge: synchronize the full repository handoff on the PR head, rerun the same 15-gate matrix on that exact documentation-finalized head, then merge and verify merged-`main` cleanup/no-deployment state.
 
 ### Latest completed product slice
 - Library Collections v0.1 / UI-032 is **APPROVED**. PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` after final exact head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed all 14 applicable gates: Library Collections `33210501106`, Account Ownership `33210501089`, UI Shell `33210501226`, Create Lifecycle `33210501211`, Library Search `33210501182`, Library History `33210501191`, Library Lifecycle `33210501160`, Library Drag Drop `33210501202`, Persistent Media Upload `33210501130`, Media Download `33210501133`, Media Rename `33210501203`, Library Favorites `33210501168`, Generation Integration `33210501178`, and Video Generation `33210501167`.
