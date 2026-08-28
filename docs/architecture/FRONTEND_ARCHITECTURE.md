@@ -22,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; Library Collections v0.1 / UI-032 is approved and merged through PR #24 as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` after final 14-gate head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578`, with migrations `0007`/`0008` applied and verified. Durable Media Delete v0.1 / UI-033 is approved and merged through PR #25 as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; additive `0009_media_asset_deletion.sql` is applied as `20260828221611 renderlab_media_asset_deletion`, and final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates. Library Batch Delete v0.1 / UI-034 is in final validation on PR #29; it adds no schema migration and implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed all 16 affected gates. Activity remains a placeholder.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1, Rename v0.1, Account Identity/UI-029 and fully enforced Core Account Ownership/UI-030. PR #17 merged as `dac7aa9ab382ffa3cf2abf197ff72ef1ca3597d1`; exact owner-aware production SHA `5f5d3cee9b45af175f072050f48da4549d5f416c` is live and migration `20260828174940 renderlab_core_account_ownership_enforce` is applied/verified. Library Favorites v0.1 / UI-031 is approved and merged through PR #23 as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; Library Collections v0.1 / UI-032 is approved and merged through PR #24 as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` after final 14-gate head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578`, with migrations `0007`/`0008` applied and verified. Durable Media Delete v0.1 / UI-033 is approved and merged through PR #25 as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; additive `0009_media_asset_deletion.sql` is applied as `20260828221611 renderlab_media_asset_deletion`, and final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates. Library Batch Delete v0.1 / UI-034 is approved and merged through PR #29 as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`; it adds no schema migration and final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed all 16 affected gates. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -40,7 +40,7 @@ Current normalized primitive layer:
 - Alert / AlertDescription
 - AlertDialog / Action / Cancel / Content / Description / Title / Trigger
 - Button
-- Checkbox (UI-034 candidate)
+- Checkbox
 - Collapsible / Trigger / Content
 - DropdownMenu / Content / Group / Item / Label / Separator / RadioGroup / RadioItem
 - Empty composition
@@ -236,7 +236,7 @@ Rules:
 
 Final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed all 15 affected gates, including Media Delete `33218433320`, Account Ownership `33218433329`, Generation `33218433335` and Video Generation `33218433309`. Desktop/mobile confirmation artifacts were visually reviewed clean. PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`; merged-`main` UI Shell `33218646377`, Reference Upload `33218646539`, Generation Integration `33218646527`, and Video Generation `33218646602` passed and post-merge cleanup returned to zero.
 
-## Library Batch Delete Flow — UI-034 / PR #29 (final validation)
+## Library Batch Delete Flow — UI-034 / PR #29 (approved)
 
 ```text
 server-rendered Library page (<= 24 active assets)
@@ -260,7 +260,7 @@ Rules:
 - no new migration is required; applied `0009_media_asset_deletion.sql` remains the schema authority;
 - cross-page selection, Trash/restore, retention, batch Favorites/Collections and generic bulk action infrastructure are outside v0.1.
 
-Implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed all 16 affected workflows, including Library Batch Delete `33220127853`, Media Delete `33220127873`, Account Ownership `33220127858`, Library Lifecycle `33220127864`, Generation `33220127851` and Video Generation `33220127855`. Successful desktop/mobile batch artifacts were visually reviewed clean and the shared-resource audit returned to zero. Final exact documentation-head rerun/merge remains required.
+Final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed all 16 affected workflows: Library Batch Delete `33220710307`, Account Ownership `33220710301`, UI Shell `33220710365`, Create Lifecycle `33220710378`, Library Search `33220710297`, Library History `33220710393`, Library Lifecycle `33220710305`, Library Drag Drop `33220710389`, Persistent Media Upload `33220710300`, Media Download `33220710329`, Media Rename `33220710371`, Library Favorites `33220710303`, Library Collections `33220710404`, Media Delete `33220710375`, Generation Integration `33220710351`, and Video Generation `33220710347`. Successful desktop/mobile batch artifacts were visually reviewed clean. PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`; merged-`main` UI Shell `33221101101`, Generation Integration `33221101106`, and Video Generation `33221101117` passed, the post-merge shared-resource audit returned all six RenderLab tables and configured fixture users to zero with the deletion/ownership boundary intact, and Vercel created zero deployments after the merge.
 
 ## Account Identity Flow
 UI-029 (merged PR #16):

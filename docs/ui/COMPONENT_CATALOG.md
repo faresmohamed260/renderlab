@@ -72,7 +72,7 @@ Before copying/installing an external component:
 **Status:** APPROVED  
 **Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`  
 **Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics  
-**Current primitives:** Alert, AlertDialog, Button, Checkbox (UI-034 candidate), Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.
+**Current primitives:** Alert, AlertDialog, Button, Checkbox, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.
 **Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/Collections/selection/empty state, Media Viewer and Viewer Favorite/Collections/Rename/Download/Delete actions.
 **Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
 **Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
@@ -83,20 +83,20 @@ Before copying/installing an external component:
 **Source:** `src/components/ui/alert-dialog.tsx`
 **Origin:** shadcn/Radix AlertDialog wrapper normalized to RenderLab tokens
 **Purpose:** Accessible modal confirmation for a genuinely destructive action with focus trapping/restoration, labelled title/description and explicit cancel/action semantics.
-**Used by:** UI-033 Media Viewer Delete.
+**Used by:** UI-033 Media Viewer Delete and UI-034 Library Batch Delete confirmation.
 **Reuse rules:** Use for destructive confirmation that truly requires an interruptive modal decision; keep product mutation/copy outside the primitive.
 **Do not:** Turn ordinary confirmations into modal friction, hide destructive consequences, or bypass feature-owned authorization/data contracts.
 **Notes:** UI-033 final exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed Media Delete `33218433320`, UI Shell `33218433381` and the complete affected suite; PR #25 merged as `40945ff8c4c7e3a3db0e115c4d7cae9f50db4445`. Desktop/mobile confirmation review verified focus-safe destructive confirmation without hierarchy drift.
 
 ### Checkbox
-**Status:** EXPERIMENTAL
+**Status:** APPROVED
 **Source:** `src/components/ui/checkbox.tsx`
 **Origin:** shadcn/Radix Checkbox wrapper normalized to RenderLab tokens
 **Purpose:** Accessible checked/unchecked selection control for UI-034 page-scoped Library media selection.
-**Used by:** `LibraryBatchSelection` only while PR #29 is in final validation.
+**Used by:** `LibraryBatchSelection`.
 **Reuse rules:** Use maintained checked-state/focus semantics for real multi-selection; keep media IDs and batch product behavior outside the primitive.
 **Do not:** Turn Checkbox into durable selection state, a card data store or a substitute for URL/server-owned Library filtering.
-**Notes:** UI-034 implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed UI Shell `33220127872`, Library Batch Delete `33220127853` and the complete affected implementation matrix. Promote the UI-034 usage to approved only after exact documentation-head validation and merge.
+**Notes:** UI-034 final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed UI Shell `33220710365`, Library Batch Delete `33220710307` and the complete 16-gate affected suite; PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`. Responsive selection/confirmation review was clean.
 
 ### AppShell
 **Status:** APPROVED  
@@ -138,7 +138,7 @@ Before copying/installing an external component:
 ### LibraryView
 **Status:** APPROVED
 **Source:** `src/features/library/library-view.tsx`
-**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop/Favorites/Collections behavior and the UI-034 batch-selection candidate.
+**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop/Favorites/Collections behavior and approved UI-034 batch selection.
 **Purpose:** Durable-media Library with URL-owned literal search, kind/Favorites/collection filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry, page-scoped batch selection and Viewer deep links.
 **Variants:** All/Images/Videos; Favorites on/off; optional selected collection; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; transient desktop drag-active upload state; UI-034 selection/confirmation state; desktop/mobile.
 **Dependencies:** Next.js Link, maintained Button/Checkbox/Input/DropdownMenu/Alert/AlertDialog/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort/favorite/collection/batch-delete contracts, feature-owned `LibraryBatchSelection`, `LibraryUploadButton`, `LibraryDropUploadSurface`, `LibrarySortMenu` and `LibraryCollectionMenu`.
@@ -147,7 +147,7 @@ Before copying/installing an external component:
 **Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search PR #10; history UI-027; drag/drop UI-028; Favorites UI-031. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` plus all 13 affected regressions; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and desktop/mobile collection-filtered Library artifacts were reviewed clean.
 
 ### LibraryBatchSelection
-**Status:** EXPERIMENTAL
+**Status:** APPROVED
 **Source:** `src/features/library/library-batch-selection.tsx`
 **Origin:** RenderLab feature composition using maintained Checkbox/Button/AlertDialog/Alert primitives and the UI-033 deletion contract.
 **Purpose:** Explicit page-scoped Library selection plus permanent Delete for the currently rendered media page.
@@ -155,7 +155,7 @@ Before copying/installing an external component:
 **Dependencies:** `POST /api/media/assets/batch-delete`, `PublicMediaAsset`, maintained Checkbox/AlertDialog/Button/Alert/Spinner, Next.js router refresh.
 **Reuse rules:** Selection is transient browser interaction state over the current server-rendered page. A keyed Library view resets it across kind/search/Favorites/collection/sort/pagination navigation. Successful items may disappear locally while server-owned data refreshes.
 **Do not:** Persist selection globally, select across pages, promise all-or-nothing R2/database deletion, add batch Favorites/Collections implicitly, or expose storage identity.
-**Notes:** UI-034 implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed Library Batch Delete `33220127853` plus the complete 15 existing affected regressions; desktop/mobile selection and confirmation artifacts were reviewed clean. Final documentation-head validation/merge remains required.
+**Notes:** UI-034 final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed Library Batch Delete `33220710307` plus all 15 existing affected regressions; desktop/mobile selection and confirmation artifacts were reviewed clean. PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`; merged-`main` UI Shell `33221101101`, Generation Integration `33221101106`, and Video Generation `33221101117` passed and post-merge cleanup returned to zero.
 
 ### LibraryUploadButton
 **Status:** APPROVED  

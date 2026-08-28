@@ -155,7 +155,12 @@ Final verification: exact head `53b0eb4c648b47a17fee2e735b7dddc85d345518` passed
 
 Final pre-merge and post-merge shared-resource audits returned all six RenderLab tables and configured fixture users to zero, with six RLS-enabled tables, six non-null owners, zero browser grants, nullable deletion timestamps, deletion guards and the active-media index intact. Vercel listed zero RenderLab deployments created after the PR #25 merge, preserving the disabled automatic-Git-deployment boundary. Post-`0009` security advisors report only expected `rls_enabled_no_policy` INFO for deliberately server-owned tables; performance advisors report unused-index INFO only, including the new active index on the currently empty/low-traffic dataset. No advisor requires a UI-033 schema change.
 
-Batch/card selection, multi-delete atomicity, retention/recovery and collection deletion remain separate future contracts.
+UI-034 now implements page-scoped batch selection and best-effort per-item Delete by composing the UI-033 contract. Cross-page selection, global atomic multi-delete, retention/recovery, batch Favorites/Collections and collection deletion remain separate future contracts.
+
+### Library Batch Delete boundary — UI-034 / PR #29 (approved)
+UI-034 adds no schema migration or storage namespace. `POST /api/media/assets/batch-delete` accepts at most 24 deduplicated durable UUIDs under the verified owner and sequentially composes the existing idempotent UI-033 delete contract per item. Completed tombstones/purges are never rolled back because another selected item fails; foreign/missing IDs collapse to per-item not-found and cleanup-pending success remains truthful/retryable.
+
+Final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed all 16 affected gates: Library Batch Delete `33220710307`, Account Ownership `33220710301`, UI Shell `33220710365`, Create Lifecycle `33220710378`, Library Search `33220710297`, Library History `33220710393`, Library Lifecycle `33220710305`, Library Drag Drop `33220710389`, Persistent Media Upload `33220710300`, Media Download `33220710329`, Media Rename `33220710371`, Library Favorites `33220710303`, Library Collections `33220710404`, Media Delete `33220710375`, Generation Integration `33220710351`, and Video Generation `33220710347`. PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`; merged-`main` UI Shell `33221101101`, Generation Integration `33221101106`, and Video Generation `33221101117` passed. The final post-merge audit found zero rows in all six RenderLab tables, zero configured fixture users, six RLS-enabled tables, six non-null owners, zero browser grants, nullable `deleted_at`/`purged_at`, all three deletion-integrity triggers and `media_assets_owner_active_created_at_idx` intact, with `20260828221611 renderlab_media_asset_deletion` still the latest migration. Vercel listed zero deployments created after the PR #29 merge, preserving the disabled automatic-Git-deployment boundary.
 
 ### GitHub Actions / repository visibility
 The repository is **public** as of 2026-08-28. This is a deliberate remote-development infrastructure decision.
@@ -362,6 +367,8 @@ Product media APIs:
 - `GET /api/media/assets`
 - `GET /api/media/assets/:assetId`
 - `PATCH /api/media/assets/:assetId` — current bounded UI-025 display-name Rename mutation
+- `DELETE /api/media/assets/:assetId` — UI-033 owner-scoped tombstone + R2 purge
+- `POST /api/media/assets/batch-delete` — UI-034 page-bounded best-effort composition of UI-033 Delete
 - `GET /api/media/assets/:assetId/content`
 - `GET /api/media/assets/:assetId/thumbnail`
 - `GET /api/media/assets/:assetId/download`
@@ -424,6 +431,7 @@ Key workflows:
 - `verify-create-lifecycle.mjs` + `create-lifecycle-visual.yml`
 - `verify-media-upload.mjs` + `media-upload-integration.yml`
 - `verify-library-lifecycle.mjs` + `library-lifecycle-visual.yml` — shared-resource lifecycle is serialized and exact durable fixture identity is used for browser targeting
+- `verify-library-batch-delete.mjs` + `library-batch-delete-visual.yml` — page-scoped selection, per-item partial success, R2/database cleanup, ownership isolation, idempotence and responsive confirmation
 - `verify-library-search.mjs` + `library-search-visual.yml`
 - `verify-media-download.mjs` + `media-download-visual.yml`
 - `verify-media-rename.mjs` + `media-rename-visual.yml`

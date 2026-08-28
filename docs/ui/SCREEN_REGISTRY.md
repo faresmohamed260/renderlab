@@ -61,7 +61,7 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED base + Favorites / UI-031 + Collections / UI-032 + UI-033 tombstone filtering; Library Batch Delete / UI-034 IN FINAL VALIDATION
+**Status:** APPROVED — Library base + Favorites / UI-031 + Collections / UI-032 + UI-033 tombstone filtering + Library Batch Delete / UI-034
 **Implementation:** `src/features/library/library-view.tsx`  
 **Batch selection:** `src/features/library/library-batch-selection.tsx`
 **Sort control:** `src/features/library/library-sort-menu.tsx`  
@@ -93,7 +93,7 @@ Approved behavior:
 - Favorites remains a compact Library toolbar filter, not a new top-level destination or client-only card filter.
 - UI-032 adds optional URL-owned `collection=<uuid>` as an owner-scoped server-side Library view that composes with kind/search/Favorites/sort/pagination.
 - Collections remain a compact Library selector plus Viewer contextual membership action, not a new top-level destination, card/batch action system or client-owned media store.
-- UI-034 candidate adds an explicit Library `Select` mode over only the current rendered page, maintained Checkbox selection, Select/Clear Page, Cancel and one destructive batch Delete action. Selection resets when the Library URL/server view changes.
+- UI-034 adds an explicit Library `Select` mode over only the current rendered page, maintained Checkbox selection, Select/Clear Page, Cancel and one destructive batch Delete action. Selection resets when the Library URL/server view changes.
 - UI-034 batch Delete is capped at 24 IDs and best-effort per item; successful items are not rolled back because another selected item fails, while failed items remain selected for retry. It reuses UI-033 tombstone/R2 semantics and adds no schema migration.
 
 **Approval evidence:**
@@ -113,8 +113,9 @@ Approved behavior:
 - Final UI-031 head `4bd41d55af27c7240d75862424039fc59027988e` passed the complete 13-gate affected suite, then PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431`; merged `main` UI Shell `33205766730`, Reference Upload `33205766693`, Generation `33205766671`, and Video Generation `33205766691` passed, and the post-merge shared-resource audit returned to zero.
 - UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed all 14 affected gates, including Collections `33210501106`, Account Ownership `33210501089`, Favorites `33210501168`, Library Lifecycle `33210501160`, Generation `33210501178` and Video Generation `33210501167`; four responsive Collections artifacts were visually reviewed, PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d`, merged-main checks UI Shell `33210876059`, Reference Upload `33210876022`, Generation Integration `33210876042`, and Video Generation `33210876085` passed, and post-merge shared-resource cleanup returned to zero.
 - UI-034 implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` passed all 16 affected gates: Library Batch Delete `33220127853`, Account Ownership `33220127858`, UI Shell `33220127872`, Create Lifecycle `33220127874`, Library Search `33220127883`, Library History `33220127859`, Library Lifecycle `33220127864`, Library Drag Drop `33220127921`, Persistent Media Upload `33220127879`, Media Download `33220127852`, Media Rename `33220127885`, Library Favorites `33220127888`, Library Collections `33220127868`, Media Delete `33220127873`, Generation Integration `33220127851`, and Video Generation `33220127855`. Configured validation covered request bounds, signed-out and foreign denial, mixed partial success, database/R2 cleanup, preserved generation history, idempotence, Library-view selection reset and responsive real-browser deletion. Desktop selected/confirmation and mobile confirmation artifacts were visually reviewed clean; the shared-resource audit returned to zero with `0009` still latest.
+- UI-034 final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed all 16 affected gates: Library Batch Delete `33220710307`, Account Ownership `33220710301`, UI Shell `33220710365`, Create Lifecycle `33220710378`, Library Search `33220710297`, Library History `33220710393`, Library Lifecycle `33220710305`, Library Drag Drop `33220710389`, Persistent Media Upload `33220710300`, Media Download `33220710329`, Media Rename `33220710371`, Library Favorites `33220710303`, Library Collections `33220710404`, Media Delete `33220710375`, Generation Integration `33220710351`, and Video Generation `33220710347`. PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`; merged-`main` UI Shell `33221101101`, Generation Integration `33221101106`, and Video Generation `33221101117` passed, the post-merge shared-resource audit returned to zero, and Vercel created no deployment from the merge.
 
-**Current extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031, Collections v0.1 / UI-032 and single-asset Durable Media Delete v0.1 / UI-033 are approved. Library Batch Delete v0.1 / UI-034 is IN FINAL VALIDATION on PR #29 and deliberately remains page-scoped/best-effort.
+**Current extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031, Collections v0.1 / UI-032, single-asset Durable Media Delete v0.1 / UI-033 and Library Batch Delete v0.1 / UI-034 are approved. UI-034 deliberately remains page-scoped and best-effort per item.
 
 **Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
