@@ -4,8 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/ui033-final-doc-sync.yml"
-      - "scripts/ui033-finalize-docs.mjs"
-      - "scripts/ui033-normalize-doc-whitespace.mjs"
+      - "scripts/ui033-fix-doc-headings.mjs"
 
 permissions:
   contents: write
@@ -28,23 +27,20 @@ jobs:
           path: target
           fetch-depth: 0
 
-      - name: Patch authoritative UI-033 handoff docs
-        run: |
-          node helper/scripts/ui033-finalize-docs.mjs target
-          node helper/scripts/ui033-normalize-doc-whitespace.mjs target
+      - name: Correct duplicate documentation headings
+        run: node helper/scripts/ui033-fix-doc-headings.mjs target
 
-      - name: Validate and push docs commit
+      - name: Validate and push docs fix
         shell: bash
         run: |
           cd target
           git diff --check
-          git status --short
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md
+          git add PROJECT.md docs/ui/UI_MIGRATION.md
           if git diff --cached --quiet; then
-            echo "No UI-033 documentation changes needed."
+            echo "No heading correction needed."
             exit 0
           fi
-          git commit -m "Finalize UI-033 pre-merge handoff"
+          git commit -m "Fix UI-033 handoff headings"
           git push origin HEAD:work/media-delete-v0-1
