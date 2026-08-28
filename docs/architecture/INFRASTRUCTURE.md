@@ -25,11 +25,11 @@ Legacy `studio_*` tables remain separate and must not be renamed, repurposed or 
 - `0003_persistent_media_uploads.sql` — applied as `20260827031630 renderlab_persistent_media_uploads`; adds durable origin/name/size fields and server-owned `media_upload_sessions`, RLS enabled.
 - `0004_core_account_ownership_prepare.sql` — applied as `20260827203604 renderlab_core_account_ownership_prepare`; adds nullable `owner_id -> auth.users.id` with `ON DELETE RESTRICT` to generation sources/jobs, media assets and upload sessions, adds owner-time indexes, and revokes direct raw-table privileges from `anon` / `authenticated` while keeping RLS enabled.
 
-`0005_core_account_ownership_enforce.sql` is committed on draft PR #17 but is **not applied**. It is the tightening step that refuses unowned rows, makes all four owners `NOT NULL`, makes `owner_id` immutable, and enforces same-owner links for generated media → generation job and upload session → promoted media asset. The staged migration was corrected at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after rollback-only semantic testing exposed that one shared polymorphic trigger function could reference a field unavailable on `media_assets`; the corrected migration uses separate media→job and upload→asset owner-link trigger functions.
+`0005_core_account_ownership_enforce.sql` is committed on PR #17 but is **not applied**. It is the tightening step that refuses unowned rows, makes all four owners `NOT NULL`, makes `owner_id` immutable, and enforces same-owner links for generated media → generation job and upload session → promoted media asset. The staged migration was corrected at `7f0b74887ec8bb84a3fb17c4542d83f0ddc8177e` after rollback-only semantic testing exposed that one shared polymorphic trigger function could reference a field unavailable on `media_assets`; the corrected migration uses separate media→job and upload→asset owner-link trigger functions.
 
-Do not reapply migrations 0003 or 0004. Do not apply corrected 0005 before the owner-aware application code is safely live and the configured ownership suite can execute again; tightening the shared schema first could break the currently deployed writer.
+Do not reapply migrations 0003 or 0004. Do not apply corrected 0005 before the owner-aware application code is safely live and a final no-unowned-row audit passes; tightening the shared schema first could break an older deployed writer.
 
-Service-role access remains server-only. UI-029 added public Supabase Auth client configuration only. UI-030 / PR #17 is the in-progress ownership slice that threads the verified account principal through server product routes and persistence while keeping the raw core tables server-owned.
+Service-role access remains server-only. UI-029 added public Supabase Auth client configuration only. UI-030 / PR #17 threads the verified account principal through server product routes and persistence while keeping the raw core tables server-owned; its implementation is exact-head verified, but rollout remains incomplete until merge/live deployment and corrected 0005 enforcement are completed in that order.
 
 ### Account identity boundary — UI-029
 Supabase Auth `auth.users.id` is the canonical RenderLab account principal.
@@ -53,7 +53,7 @@ Rules:
 
 Configured Account Identity Visual `33111299356` created a run-owned confirmed test user through the server-only Auth admin API, signed in through the actual Settings UI, verified session persistence across reload, signed out and deleted the exact user. Direct verification afterward found no matching account-CI users.
 
-### Core account ownership boundary — UI-030 / PR #17 (in progress)
+### Core account ownership boundary — UI-030 / PR #17 (implementation verified; rollout in progress)
 PR #17 establishes account-private ownership for the four RenderLab core durable/pending record types:
 - `generation_sources.owner_id`
 - `generation_jobs.owner_id`
@@ -69,7 +69,7 @@ verified Supabase claims.sub
   -> RenderLab core table row with owner_id
 ```
 
-Current branch behavior:
+Verified branch behavior:
 - Library, Media Viewer, media metadata/content/thumbnail/download/rename, persistent upload, temporary reference upload, generation submission/polling and generation input resolution require a verified non-anonymous account where they touch private state;
 - list/get/update/completion queries include `owner_id`; foreign opaque IDs resolve as ordinary not-found state rather than disclosing ownership;
 - persistent upload sessions/assets and temporary reference sources are created with the authenticated owner;
@@ -78,26 +78,44 @@ Current branch behavior:
 - raw core tables remain unavailable to browser roles: actual grants show `service_role` retains required privileges while `anon` and `authenticated` have none;
 - an optional external RenderLab generation service is active only when both its URL and a server-only bearer token are configured. RenderLab authenticates both submit and poll calls before forwarding `x-renderlab-owner-id`; a backend must verify the bearer token before trusting that owner header. URL-only configuration falls back to native orchestration rather than trusting an unauthenticated external owner boundary.
 
-Verified rollout state in shared Supabase:
-- all four ownership tables currently contain `0` rows and therefore `0` null owners;
+Verified rollout state in shared Supabase after exact-head CI:
+- all four ownership tables contain `0` rows and therefore `0` null owners;
 - all four owner FKs use `ON DELETE RESTRICT`;
 - RLS is enabled on all four tables;
 - there are intentionally no browser RLS policies because browser roles have no direct table grants and product routes are the access boundary;
 - no RenderLab configured-test Auth users remain after cleanup;
+- all four owner columns remain nullable for rolling compatibility;
+- UI-030 enforcement trigger count is `0`;
+- migration history ends at applied `0004`; corrected `0005` remains unapplied;
 - corrected `0005` was executed only inside live-schema transactions and rolled back. Same-owner generation/media/upload relationships succeeded; cross-owner media→job and upload→asset links were rejected on insert/update; owner reassignment and missing ownership were rejected; Auth-owner deletion was restricted while owned rows existed; all six enforcement triggers existed inside the transaction;
 - a second rollback-only compatibility simulation verified existing FK cleanup remains valid under corrected `0005`: deleting a generation job still sets `media_assets.generation_job_id` to null, while deleting a media asset still cascades its `media_upload_sessions` row;
-- post-rollback verification found four still-nullable owner columns, zero enforcement triggers/functions, zero simulation Auth users and zero core rows; migration history still contains only applied `0004`.
+- post-rollback verification found four still-nullable owner columns, zero enforcement triggers/functions, zero simulation Auth users and zero core rows.
 
 Configured ownership evidence:
-- exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b` passed Account Ownership run `33115683962`, including build, configured application startup, two real confirmed Supabase accounts, own-vs-foreign media/job access, foreign rename/content/download/completion denial, owner-bound upload/reference writes, raw Data API denial and cleanup;
-- subsequent exact-scope hardening changed corrected staged `0005` and the external generation adapter's submit/poll authentication. These newer code/schema changes have independent static/transactional evidence but still require final executable exact-head hosted validation before approval;
-- configured test cleanup now uses deterministic fixture account ownership so a rerun on a fresh runner can recover its own stale DB/R2 rows without deleting another workflow's fixtures;
-- Generation Image/Edit and Video/Animate PR workflows now carry timeout budgets that exceed their own sequential verifier deadlines.
+- original owner-aware product SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b` passed Account Ownership run `33115683962`, including build, configured application startup, two real confirmed Supabase accounts, own-vs-foreign media/job access, foreign rename/content/download/completion denial, owner-bound upload/reference writes, raw Data API denial and cleanup;
+- final validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured PR gates: Account Ownership `33131090207`, Account Identity `33131090197`, UI Shell `33131090250`, Create Lifecycle `33131090243`, Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265`, Media Download `33131090206`, Media Rename `33131090198`, Reference Upload `33131090263`, Generation Integration `33131090251`, and Video Generation `33131090262`;
+- resumed CI exposed one verifier-only bearer-leak issue: Playwright header overrides followed local media-route 302 redirects to signed R2 URLs. The shared helper now uses a non-following authenticated fetch for the local product route and lets Chromium follow the external signed redirect without the fixture bearer; Create, Library Lifecycle, Download and Rename all pass after the fix;
+- fresh exact-head signed-out/signed-in Create/Library/Viewer desktop/mobile artifacts were visually reviewed without unintended hierarchy drift;
+- configured test cleanup uses deterministic fixture account ownership so a rerun on a fresh runner can recover its own stale DB/R2 rows without deleting another workflow's fixtures;
+- Generation Image/Edit and Video/Animate PR workflows carry timeout budgets that exceed their own sequential verifier deadlines.
 
-Current external validation blocker:
-- GitHub-hosted Actions jobs currently fail before executing step 1 (`steps: null`, no job log) on PR #17, including heads containing the corrected migration and later external-backend authentication hardening;
-- rerunning the previously successful merged-main UI Shell job from run `33113289145` now fails with the same zero-step symptom, proving the runner-start failure is independent of PR #17 code;
-- therefore PR #17 remains draft and corrected 0005 remains unapplied until exact-head hosted execution becomes available again.
+Supabase advisor result after exact-head CI:
+- security: only informational `RLS enabled, no policy` notices on the four deliberately server-owned tables; this is expected while browser roles have no direct grants;
+- performance: unused-index INFO notices on empty/low-traffic RenderLab/legacy tables; no UI-030 schema change is justified from those notices.
+
+### GitHub Actions / repository visibility
+The repository is **public** as of 2026-08-28. This is a deliberate remote-development infrastructure decision.
+
+Why:
+- while the repository was private, RenderLab exhausted metered GitHub-hosted Actions capacity and all workflows began failing before runner allocation with `steps: null` and no job log;
+- making the repository public restored GitHub-hosted runner allocation immediately and the complete exact-head suite executed normally;
+- repository Actions secrets remain secret and are not exposed by public repository visibility; committed code/history are public and must continue to contain no private credentials.
+
+Validation consequences:
+- public GitHub Actions is the normal mid-development remote validation path;
+- Vercel preview deployment is not required for iterative UI/application verification;
+- final exact-head validation remains mandatory; a future runner outage still does not waive required gates;
+- connector-driven writes should continue to batch cohesive changes into as few commits as practical.
 
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
@@ -243,7 +261,7 @@ Initial submission may try another worker only before a provider call ID is acce
 - Media Download configured lifecycle — `33070792343`; final documentation-head gates passed before PR #11 merged as `ed62700ab0392979bf760f1a7dc49ef434f6a9ef`.
 - Media Rename configured lifecycle — `33074480356`; refined-head UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, and Library Lifecycle `33074480489` on rerun all passed.
 - Account Identity configured lifecycle — `33111299356`; exact run-owned auth fixture, real Settings sign-in/session persistence/sign-out and cleanup passed.
-- Account Ownership configured lifecycle — `33115683962` on exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b`; two-account private-media/job boundary, owner-bound upload/reference persistence, raw Data API denial and cleanup passed before later verifier/test hardening, corrected staged `0005`, and external-backend authentication hardening.
+- Account Ownership final implementation coverage — exact head `49f08013dc428d8d390a1bd803b10886f853cd82` passed the complete 14-gate ownership/media/generation suite listed above after the earlier two-account foundation run `33115683962`.
 
 Search/upload/download/rename/account configured verifiers do not invoke ComfyUI. Generation Image/Edit and Video/Animate verifiers do invoke the configured worker fleet.
 
@@ -312,7 +330,7 @@ R2 credentials currently require Admin Read & Write because configured browser u
 - Raw `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions` stay server-owned. Browser roles have no direct table grants; product routes/services enforce owner scope while using server-only service-role access.
 - Keep RLS enabled on the four core tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
 - An external generation service must authenticate the server-only bearer token before trusting `x-renderlab-owner-id`; owner headers alone are not authorization.
-- UI-030 ownership is still in progress until PR #17 receives exact-head configured execution and corrected 0005 is safely enforced. Do not approve Favorites/Collections or other personal organization before that rollout completes.
+- UI-030 implementation is exact-head verified, but the ownership rollout is not complete until PR #17 is merged, owner-aware code is actually live, a final no-unowned-row audit passes, and corrected `0005` is applied/verified. Do not approve Favorites/Collections or other personal organization before that rollout completes.
 - Direct browser uploads use short-lived signed URLs + exact-origin CORS.
 - Durable reads/downloads use short-lived signed R2 GETs behind opaque product routes.
 - Rename uses a server-side service-role metadata mutation and never exposes service-role credentials to the browser.
@@ -325,11 +343,12 @@ R2 credentials currently require Admin Read & Write because configured browser u
 Ordinary UI CI runs without production secrets and validates truthful unavailable states. Configured workflows use GitHub Secrets and self-clean shared production fixtures.
 
 Actions budget discipline:
+- the repository is public, so normal GitHub-hosted public-repository runner usage is the approved mid-development validation path;
 - final exact-head validation remains mandatory; budget pressure or runner-start failure is not permission to waive a required gate;
 - only workflows whose interrupted state is safely reconstructible use `cancel-in-progress: true`. Current cancellation-safe workflows are UI Shell, Persistent Media Upload Integration, and Reference Upload Integration;
 - worker-backed Create/Generation/Video workflows, the shared Library Lifecycle/Drag Drop lock, and visual fixtures that can place R2 objects before their DB row remain non-canceling;
 - configured helper accounts use deterministic owner-scoped identities so a superseding/fresh run can reconstruct its own cleanup without deleting another workflow's fixtures;
-- connector-driven repository writes should batch cohesive changes into as few commits as practical so intermediate heads do not launch redundant expensive workflows.
+- connector-driven repository writes should batch cohesive changes into as few commits as practical so intermediate heads do not launch redundant workflows.
 
 Key workflows:
 - `verify-create-lifecycle.mjs` + `create-lifecycle-visual.yml`
@@ -346,8 +365,8 @@ Key workflows:
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
 ## Next Infrastructure Work
-1. Complete UI-030 / PR #17: when GitHub-hosted runners can execute again, rerun the exact-head configured suite including corrected `0005` and external-backend authentication hardening, inspect any real failures/artifacts, and re-audit shared-resource cleanup.
-2. After owner-aware code is safely merged/live, verify there are no unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, and confirm `NOT NULL`, immutable ownership and table-specific same-owner link triggers. Do not reverse this rollout order.
+1. Validate the final documentation head for UI-030 / PR #17 and merge the owner-aware application code when green. This repository merge is not permission to apply corrected `0005` or to perform an explicit deployment action.
+2. Through a separately authorized rollout, make owner-aware code actually live; then verify there are no unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, and confirm `NOT NULL`, immutable ownership and table-specific same-owner link triggers. Do not reverse this rollout order.
 3. Only after UI-030 is fully enforced may personal organization such as Favorites/Collections be reconsidered.
 4. Add any future public upload origin explicitly to R2 CORS before deployment/use.
 5. Remove transitional Studio compatibility when no migration/debugging need remains.

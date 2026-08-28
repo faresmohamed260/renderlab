@@ -22,7 +22,7 @@ Core stack from `package.json`:
 
 `components.json` configures shadcn with the `radix-nova` style. RenderLab owns the normalized wrapper layer under `src/components/ui`; shadcn/Radix supplies maintained mechanics and accessibility behavior while RenderLab owns semantic tokens, variants, spacing, required semantic elements and reviewed product integration.
 
-Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; PR #15 merged Library drag/drop upload/UI-028 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; PR #16 merged Account Identity Foundation/UI-029 as `bcb20365db102252db51263968de96fc795be518`. Core Account Ownership/UI-030 is the active in-progress slice on draft PR #17; Activity remains a placeholder.
+Approved product state includes Application Shell, Create, Library v0.1, persistent Upload, Library search v0.1, Library history ordering v0.1, Library drag/drop upload v0.1, Media Viewer v0.1, Download v0.1 and Rename v0.1. PR #12 merged as `d76f0ce30502e2aff2384dcd168f07b2184768a4`; PR #13 merged the foundation-only maintained-primitive refactor under UI-026; PR #14 merged Library chronological direction/UI-027 as `a7ecaa6a704e4378b31e694e5f21c5629920b520`; PR #15 merged Library drag/drop upload/UI-028 as `5484638e0a2f70e1e7bb7679a3157f9fb4b4a3d8`; PR #16 merged Account Identity Foundation/UI-029 as `bcb20365db102252db51263968de96fc795be518`. Core Account Ownership/UI-030 is the active in-progress slice on PR #17: exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed the complete 14-gate configured suite, while merge/live rollout and corrected `0005` enforcement remain outstanding. Activity remains a placeholder.
 
 ## Framework
 **Framework:** Next.js App Router  
@@ -214,7 +214,7 @@ Rules:
 Configured Account Identity exact head `55a5df4351b5f9f23bde7dc9b2e73213481dd9e2` passed the nine affected gates, including Account Identity `33112405837`; PR #16 merged as `bcb20365db102252db51263968de96fc795be518`, and merged-main UI Shell `33113289145` plus Reference Upload Integration `33113289156` passed.
 
 ## Core Account Ownership Flow
-UI-030 (draft PR #17):
+UI-030 (PR #17; implementation verified, rollout in progress):
 ```text
 browser cookie or Authorization bearer session
   -> getCurrentRenderLabAccount()
@@ -234,7 +234,9 @@ Rules:
 - corrected `0005_core_account_ownership_enforce.sql` is staged, not applied. It makes all four owners non-null/immutable and enforces table-specific same-owner generation/media and upload/media links only after owner-aware code is safely live and a final no-unowned-row audit passes;
 - optional external generation is a server-to-server owner boundary: it requires both `RENDERLAB_GENERATION_BACKEND_URL` and `RENDERLAB_GENERATION_BACKEND_TOKEN`; submit and poll authenticate with the bearer token before sending `x-renderlab-owner-id`, and the external service must verify that token before trusting the header.
 
-Original owner-aware product SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b` passed Account Ownership `33115683962` with two real accounts and configured production build/startup. Later exact-scope hardening corrected a runtime-only trigger bug in staged `0005`, strengthened verifiers/cleanup, and authenticated the optional external generation adapter. Corrected `0005` passes rollback-only live-schema same-owner/cross-owner/immutability/null-owner/Auth-delete and FK-cleanup compatibility simulations, with zero persistent rows/users/triggers afterward. Those later changes still require executable exact-head hosted CI before PR #17 is merge-ready.
+Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed the complete 14-gate configured PR suite, including Account Ownership `33131090207`, Create Lifecycle `33131090243`, Library Lifecycle `33131090245`, Generation Integration `33131090251` and Video Generation `33131090262`. The resumed suite also verified the final external-backend authentication hardening and corrected ownership persistence. A verifier-only signed-media redirect issue was found and fixed in the shared Playwright auth helper; local product media routes are authenticated without carrying the fixture bearer across the external signed-R2 redirect. Fresh desktop/mobile artifacts were reviewed and shared Supabase/Auth cleanup returned to zero.
+
+Corrected `0005` independently passes rollback-only live-schema same-owner/cross-owner/immutability/null-owner/Auth-delete and FK-cleanup compatibility simulations, with zero persistent rows/users/triggers afterward. It remains unapplied until the owner-aware runtime is actually live and a final no-unowned-row audit passes.
 
 ## Capability Architecture
 ```text
@@ -422,7 +424,7 @@ Product application-table access remains behind server-only service-role credent
 Do not disable browser security, use broad wildcard upload CORS, proxy transfers solely for convenience, expose raw storage identity, or implement Rename by moving storage objects.
 
 ## Remote Validation Architecture
-GitHub-based iteration; no Vercel preview dependency.
+GitHub-based iteration; no Vercel preview dependency. The repository is public so the normal mid-development GitHub-hosted Actions path is not constrained by private-repository minute exhaustion; Actions secrets remain private.
 
 Key workflows:
 - `.github/workflows/ui-shell.yml` — UI purity audit, production build, credential-free signed-out UI/API behavior and responsive screenshots;
@@ -508,12 +510,14 @@ Final exact head `55a5df4351b5f9f23bde7dc9b2e73213481dd9e2` passed all nine affe
 
 The account verifier created an exact run-owned confirmed Supabase Auth user through the server-only admin API, signed in through the actual Settings form, verified the cookie session survived reload, captured clean desktop/mobile signed-in and mobile signed-out states, signed out and removed the exact fixture. Direct Supabase verification afterward found `0` matching CI users. PR #16 merged as `bcb20365db102252db51263968de96fc795be518`; merged-main UI Shell `33113289145` and Reference Upload Integration `33113289156` passed.
 
-### PR #17 Core account ownership verification — in progress
+### PR #17 Core account ownership verification — implementation green, rollout in progress
 Original product SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b` passed Account Ownership `33115683962`: production build/startup, two real confirmed accounts, own-vs-foreign private media/job behavior, owner-bound upload/reference writes, raw Data API denial and cleanup.
 
 Later PR #17 hardening corrected staged `0005` after a rollback-only semantic simulation found an invalid polymorphic trigger-field reference, strengthened deterministic owner cleanup/verifiers, added safe workflow cancellation where cleanup is reconstructible, and requires authenticated server-to-server submit/poll for the optional external generation adapter. The corrected migration passes rollback-only enforcement and existing FK-cleanup compatibility simulations with no persistent schema/data/auth residue.
 
-Current exact-head GitHub-hosted jobs fail before step 1 with `steps: null` and no log; rerunning a previously successful merged-main UI Shell job reproduces the same failure. PR #17 therefore remains draft, no later hardening is marked approved from zero-step red checks, and corrected `0005` remains unapplied.
+After the repository was made public, hosted Actions runner allocation resumed. Exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured PR gates. The resumed suite exposed and then verified the fix for one CI-only media redirect-auth problem: Playwright no longer carries the fixture bearer onto signed R2 redirects. Fresh responsive Create/Library/Viewer artifacts were reviewed and the post-suite shared-resource audit found 0 core rows, 0 fixture Auth users, no browser direct grants and no enforcement triggers.
+
+PR #17 can proceed through final documentation-head validation and merge. Corrected `0005` remains unapplied until owner-aware code is actually live and a final no-unowned-row audit passes; no deployment is implied by this documentation/merge step.
 
 ## Naming Conventions
 - React files: `kebab-case.tsx`

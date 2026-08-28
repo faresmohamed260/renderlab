@@ -69,13 +69,13 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 ### Active product slice
-- Core Account Ownership v0.1 / UI-030 is **IN PROGRESS** on draft PR #17.
-- The original owner-aware product implementation passed configured two-account build/isolation run `33115683962` on exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b`.
-- Later UI-030 hardening found and fixed a runtime-only bug in staged `0005_core_account_ownership_enforce.sql`: the original generic owner-link trigger referenced a field absent from `media_assets`. Corrected table-specific owner-link triggers pass a rollback-only two-owner semantic matrix plus existing FK cleanup compatibility checks against the live prepared schema.
-- Later UI-030 hardening also requires the optional external generation adapter to have both `RENDERLAB_GENERATION_BACKEND_URL` and server-only `RENDERLAB_GENERATION_BACKEND_TOKEN`; submit and poll authenticate with that token before forwarding the owner header. Native generation remains the fallback when the external pair is incomplete.
-- Shared Supabase has the compatible prepare migration `20260827203604 renderlab_core_account_ownership_prepare` applied. Corrected `0005_core_account_ownership_enforce.sql` remains staged but not applied; post-simulation rollback verified 0 simulation users/core rows, 4 nullable owner columns and 0 enforcement triggers/functions.
-- Current exact-head GitHub-hosted jobs cannot execute step 1 (`steps: null`, no job log), and the same runner-start failure reproduces when rerunning a previously successful merged-main UI Shell job. PR #17 therefore stays draft until the newer migration and external-backend hardening receive exact-head hosted execution.
-- Do not start Favorites/Collections, Delete/batch, or another Phase 4 product slice while UI-030 is incomplete.
+- Core Account Ownership v0.1 / UI-030 is **IN PROGRESS** on PR #17. The owner-aware implementation and configured verification are green; merge/live rollout and strict database enforcement remain separate steps.
+- Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured PR gates: Account Ownership `33131090207`, Account Identity `33131090197`, UI Shell `33131090250`, Create Lifecycle `33131090243`, Library Search `33131090279`, Library History `33131090264`, Library Lifecycle `33131090245`, Library Drag Drop `33131090242`, Persistent Media Upload `33131090265`, Media Download `33131090206`, Media Rename `33131090198`, Reference Upload `33131090263`, Generation Integration `33131090251`, and Video Generation `33131090262`.
+- The staged `0005_core_account_ownership_enforce.sql` was corrected after rollback-only semantic testing found an invalid shared trigger-field reference. Table-specific owner-link triggers pass same-owner, cross-owner, null-owner, owner-immutability, Auth-delete restriction and existing FK cleanup compatibility simulations against the live prepared schema.
+- The optional external generation adapter requires both `RENDERLAB_GENERATION_BACKEND_URL` and server-only `RENDERLAB_GENERATION_BACKEND_TOKEN`; submit and poll authenticate with that token before forwarding the owner header. Native generation remains the fallback when the external pair is incomplete.
+- Shared Supabase has the compatible prepare migration `20260827203604 renderlab_core_account_ownership_prepare` applied. Corrected `0005_core_account_ownership_enforce.sql` remains staged but not applied; post-CI audit found 0 core rows, 0 null-owner rows, 0 RenderLab fixture Auth users, four still-nullable owner columns and 0 enforcement triggers.
+- The repository is now public. This resolved the previous private-repository hosted Actions capacity failure; exact-head runners execute normally again. No Vercel preview/deployment is required for mid-development validation.
+- Do not start Favorites/Collections, Delete/batch, or another Phase 4 product slice while UI-030 rollout is incomplete.
 
 Do not redesign approved surfaces merely because new media capabilities or ownership enforcement are added.
 
@@ -122,9 +122,11 @@ UI-030 owner-scopes the existing core persistence model without introducing a pa
 - `0005` must not be applied before the owner-aware application code is safely merged/live and a final no-unowned-row audit passes.
 - Configured fixtures are isolated by deterministic test owner; cleanup reconstructs DB/R2 state by owner, deletes in dependency order, then removes the Auth fixture. Active workflows must not perform namespace-wide service-role deletion across owners.
 
-Passing product evidence: Account Ownership `33115683962` built and started the configured app and passed two-account isolation on exact SHA `7dfda5e61b787f6ac30ed905ccc565e3bc32266b`. Subsequent exact-scope hardening changed the staged enforcement migration after its runtime trigger bug was found and changed external-backend submit/poll authentication. The corrected migration has independent rollback-only semantic verification, but these newer code/schema changes remain unapproved until the final exact-head hosted suite can execute. Current verifier/workflow hardening is also unexecuted because GitHub-hosted jobs fail before step 1 even for previously green merged-main code. This is a validation availability blocker, not permission to waive the final exact-head gate.
+Validated implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed all 14 configured PR gates, including the two-account Account Ownership gate, owner-bound upload/reference/generation persistence, signed-out denial, foreign opaque-ID denial, real browser Library/Viewer/Create lifecycles, generated image/video flows, Download/Rename, responsive UI artifacts and exact cleanup. The resumed suite exposed one verifier-only issue: Playwright's header override followed product-media 302 redirects and leaked the fixture bearer to signed R2 requests. The shared helper now authenticates the local route with a non-following fetch and lets Chromium follow the signed external redirect cleanly; the four affected lifecycle tests all pass after that fix.
 
-**Core Account Ownership v0.1 status: `IN PROGRESS`; PR #17 remains draft and `0005` remains unapplied.**
+The corrected `0005` has independent rollback-only live-schema semantic verification and remains **unapplied**. Post-suite shared-resource audit found zero rows in all four ownership tables, zero null owners, zero RenderLab fixture Auth users, RLS enabled on all four tables, no direct `anon`/`authenticated` grants, four nullable owner columns and zero UI-030 enforcement triggers. Supabase security advisors report only the expected informational no-policy notices for these deliberately server-owned tables; performance notices are unused-index INFO findings on empty/low-traffic tables.
+
+**Core Account Ownership v0.1 status: `IN PROGRESS`; PR #17 implementation is exact-head verified, while merge/live rollout and corrected `0005` enforcement remain outstanding.**
 
 ## Persistent Media Upload Contract
 UI-022 defines the approved durable upload model.
@@ -223,14 +225,14 @@ If a future user-facing production origin changes, add that exact origin before 
 
 ## Still Open in Phase 4
 Core account ownership / UI-030 is the active Phase 4 slice and must finish before any other product slice is selected. Remaining work, in order:
-- restore executable GitHub-hosted exact-head validation for PR #17, rerun the configured suite, inspect fresh artifacts and re-audit shared cleanup;
-- merge and safely make the owner-aware application code live only after that gate passes;
+- merge PR #17 after final documentation-head validation;
+- make the owner-aware application code live only through a separately authorized deployment/rollout step;
 - recheck for unowned rows, then apply and verify corrected `0005_core_account_ownership_enforce.sql` (`NOT NULL`, owner immutability, table-specific same-owner relational guards);
 - favorites/collections or another personal organization model only after UI-030 is fully enforced;
 - delete and batch management after durable storage/reference/recovery semantics are explicit;
 - other Library interaction enhancements only when separately justified.
 
-Do not infer Saga organization/destructive-action schemas automatically. Do not waive the ownership rollout order merely because current GitHub-hosted jobs are unavailable.
+Do not infer Saga organization/destructive-action schemas automatically. Do not reverse the ownership rollout order merely because the implementation and configured PR suite are green.
 
 ## Infrastructure Cleanup Still Open
 - Remove the transitional Studio compatibility adapter once no migration/debugging requirement depends on it.
