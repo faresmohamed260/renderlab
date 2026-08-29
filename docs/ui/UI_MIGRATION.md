@@ -487,7 +487,7 @@ Phase 6 is not a visual redesign phase. Capture new screenshots only when a prod
 Before Phase 6 can close, verified results must be recorded in:
 - `PROJECT.md` — current Cycle 2 priority/boundary and Phase 7 handoff;
 - `docs/ui/UI_MIGRATION.md` — Phase 6 evidence, blockers and completion status;
-- `docs/architecture/PRODUCT_CAPABILIES.md` — current generation capability plus multi-reference/video-resolution audit results;
+- `docs/architecture/PRODUCT_CAPABILITIES.md` — current generation capability plus multi-reference/video-resolution audit results;
 - `docs/architecture/INFRASTRUCTURE.md` — actual Vercel/custom-domain/env/storage/worker/operational baseline;
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` only if the audit reveals a real frontend architecture change;
 - screen/UI/component docs only if rendered product behavior or approved composition actually changes.
@@ -512,6 +512,7 @@ Before Phase 7 can be expanded into its own execution-ready contract, Phase 6 mu
 - any blocker or required maintenance slice that Phase 7 planning must account for.
 
 **Phase 6 gate:** this expanded contract may be merged as planning, but Phase 6 execution does not begin until the user explicitly authorizes the audit.
+
 ### Phase 7 — Create v2 / Deeper Creative Iteration
 - [ ] **Multi-reference Image Edit v0.1** — planned first product slice after Phase 6, contingent on verified backend support. Extend the capability/input-slot contract and the existing Create workspace without adding a separate Edit app or generic workflow form.
 - [ ] Preserve the simple one-reference case; reveal additional reference slots only when used and keep temporary/durable media identities opaque and owner-safe.
