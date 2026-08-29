@@ -169,7 +169,9 @@ Configured Create Durable Upload run `33256497167` verified that a Create upload
 - Qwen gateway audit `33263338596` verified `ready=true`, `multiple_references=true`, async `/jobs/edit` and repeated multipart `image_files`. Qwen semantic run `33263401453` completed the same bounded outfit/two-person cases, but human review found noticeably more facial/stylistic drift than FLUX while still following the broad edit/composition instruction.
 - Accepted v0.1 boundary under UI-046: Image may use at most **2** image references; Video remains at most **1** image input. With two Image inputs, slot 1 is `primary-image` and slot 2 is `reference`. Stable aliases remain attached to media identity when order changes.
 - FLUX remains the internal v0.1 Image/Edit route. Qwen remains verified/available internally but is not selected or exposed as a product model choice. This is an evidence-based routing choice, not a claim that FLUX will obey every semantic relation deterministically.
-- User-facing second-reference exposure and authoritative count/role enforcement are the active implementation slice; the contextual audit alone does not mark the multi-reference UI complete.
+- PR #53 completed user-facing second-reference exposure and authoritative count/role/media/ownership enforcement. Image supports at most two attached image inputs; Video remains at most one. Create supports second durable upload, replacement without alias churn, explicit `Make primary` reordering, multi-item mention selection, and blocks a two-reference switch to Video instead of discarding an input.
+- Polished product commit `360fa79ea85dd09ce90101518fedaca5645aaa71` and exact validation retrigger head `acf3f8e792c2b895a9999cca24060a1c33484463` are tree-identical. The exact head passed all nine affected PR gates; configured Create Lifecycle `33266025789` exercised the durable two-reference interaction/submit contract and exact cleanup. PR #53 merged as `0286b18802fc3d766d9d09e2ba8ed9a494eabd08`.
+- Responsive review confirmed the two-reference composition remains readable on narrow layouts after the action cluster was allowed to wrap; desktop remains compact. No model selector, schema, route or infrastructure contract was added.
 
 ### Verified Advanced product controls
 Create v0.3 intentionally exposes only currently justified Advanced controls:
@@ -203,10 +205,10 @@ Phase 6 re-audited current RenderLab code plus the configured deployed worker pa
 
 ### Multi-reference image edit
 - RenderLab's normalized request already models `inputs` as an array, and native image submission forwards every resolved source as repeated `image_files` in request order. Temporary `generation_sources` and durable `media_assets` can both be resolved to server-side bytes without exposing R2 keys.
-- The approved Create UI still submits at most one reference. The current request parser validates input object shape but does **not** yet enforce media-kind compatibility, per-role multiplicity or a maximum input count. Multi-reference v0.1 must add those server-side input-slot constraints before exposing additional reference controls.
+- At the Phase 6 audit baseline, the approved Create UI still submitted at most one reference and the request parser did not yet enforce media-kind compatibility, per-role multiplicity or a product maximum. UI-046 / PR #53 later implemented those product constraints; this bullet is retained only as historical audit evidence.
 - The current deployed FLUX gateway reports `multiple_references=true`; a bounded two-reference live probe was accepted with `reference_count=2` and returned PNG successfully in about 12.6 seconds total.
 - Audited worker runtime dynamically creates additional reference-conditioning nodes for every image after the first and has no explicit reference-count ceiling. The first image controls normalized output dimensions; later images are auxiliary conditioning references. Worker permissiveness is **not** a product maximum: Phase 7 must choose and document a deliberate bounded user-facing count.
-- Existing per-file reference limits remain image MIME types and at most 25 MB per input at the worker boundary. Phase 7 must preserve the simpler one-reference path and validate both temporary/durable input media compatibility server-side.
+- Existing per-file reference limits remain image MIME types and at most 25 MB per input at the worker boundary. Phase 7B preserves the simpler one-reference path and PR #53 validates temporary/durable input image availability and owner-scoped media compatibility server-side.
 
 ### Video resolution
 - RenderLab's current normalized product request has no resolution field. Native REDGraft submission is currently fixed to `480p`; that is the actual current product behavior even though the deployed runtime supports more.
@@ -220,11 +222,11 @@ Phase 6 re-audited current RenderLab code plus the configured deployed worker pa
 - Provider per-generation cost/credit consumption is not reliably observable through the current product/worker health contracts. Phase 7 must not invent cost labels or promises from unavailable data; Phase 10 must account for capacity/abuse controls if access broadens.
 
 ## Accepted Cycle 2 Create v2 Direction — implementation in progress
-The following items are accepted product direction from closed-beta feedback, but remain **unimplemented until Phase 7 execution and verification**:
+The following items are accepted product direction from closed-beta feedback; implemented items are marked by their merged evidence while later Phase 7 slices remain pending:
 - reference-backed Edit/Animate should default to source-aware `Original` geometry with explicit supported-ratio override;
 - aspect-ratio choices should expand only from verified worker/capability behavior;
 - user uploads initiated from Create now promote to durable owner-scoped `media_assets` after verification and remain in Library even if no generation is submitted; configured run `33256497167` verifies this Phase 7A foundation;
-- stable `@imageN` alias/order/role persistence and prompt-level reference addressing are implemented through PR #51; Phase 7B now adds the UI/server bounded two-reference slot contract from UI-046;
+- stable `@imageN` alias/order/role persistence and prompt-level reference addressing are implemented through PR #51; UI-046's bounded two-reference Image / one-reference Video slot contract is implemented and verified through PR #53;
 - FLUX/Qwen bounded contextual audits are complete (`33263044354`, `33263338596`, `33263401453`); FLUX is selected for v0.1 because it preserved the tested synthetic identities more strongly, while product guarantees remain limited to deterministic mapping rather than probabilistic model obedience;
 - reported LTX/REDGraft Director/frame/dialogue/sound controls require a fresh audit of the configured workflow before they can become a curated Director product mode;
 - Video quality may expose verified 480p/720p/1080p/2K through a deliberate contextual product control; 4K remains unsupported/hidden;
