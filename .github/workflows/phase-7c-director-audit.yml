@@ -1,0 +1,122 @@
+name: Phase 7C Director Audit
+
+on:
+  push:
+    branches:
+      - audit/phase-7c-director
+    paths:
+      - .github/workflows/phase-7c-director-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Probe configured REDGraft gateways
+        env:
+          PRIMARY: https://dreadcipher67--saga-ltx25-gateway-web.modal.run
+          STANDBY: https://blackzerox67--saga-ltx25-gateway-web.modal.run
+        run: |
+          set -euo pipefail
+          mkdir -p audit
+          curl --fail --silent --show-error --retry 3 --retry-all-errors "$PRIMARY/health" -o audit/primary-health.json
+          curl --fail --silent --show-error --retry 3 --retry-all-errors "$STANDBY/health" -o audit/standby-health.json
+          curl --fail --silent --show-error --retry 3 --retry-all-errors "$PRIMARY/openapi.json" -o audit/primary-openapi.json
+          curl --fail --silent --show-error --retry 3 --retry-all-errors "$STANDBY/openapi.json" -o audit/standby-openapi.json
+          curl --fail --silent --show-error --retry 2 --retry-all-errors --max-time 900 "$PRIMARY/runtime-health" -o audit/primary-runtime-health.json
+
+      - name: Summarize live Director capability boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('audit')
+          primary = json.loads((root/'primary-health.json').read_text())
+          standby = json.loads((root/'standby-health.json').read_text())
+          runtime = json.loads((root/'primary-runtime-health.json').read_text())
+          po = json.loads((root/'primary-openapi.json').read_text())
+          so = json.loads((root/'standby-openapi.json').read_text())
+
+          def video_schema(doc):
+              op = doc['paths']['/jobs/video']['post']
+              content = op['requestBody']['content']['multipart/form-data']['schema']
+              if '$ref' in content:
+                  name = content['$ref'].split('/')[-1]
+                  content = doc['components']['schemas'][name]
+              props = content.get('properties', {})
+              required = content.get('required', [])
+              return sorted(props), sorted(required)
+
+          primary_fields, primary_required = video_schema(po)
+          standby_fields, standby_required = video_schema(so)
+          expected = sorted([
+              'prompt','negative_prompt','seed','steps','cfg','resolution',
+              'duration_seconds','audio_enabled','aspect_ratio','frame_rate','image_file'
+          ])
+          director_specific = {
+              'frames','frame_files','storyboard','scenes','scene_prompt','action',
+              'dialogue','speech','speaker','sound','ambient_sound','audio_prompt',
+              'camera','shot','keyframes','start_frame','end_frame'
+          }
+          found_director = sorted(set(primary_fields) & director_specific)
+
+          assert primary.get('ready') is True, primary
+          assert standby.get('ready') is True, standby
+          assert primary_fields == expected, (primary_fields, expected)
+          assert standby_fields == expected, (standby_fields, expected)
+          assert primary_fields == standby_fields
+          assert primary_required == standby_required
+          assert not found_director, found_director
+          assert runtime.get('ready') is True, runtime
+
+          summary = {
+              'gateway_primary': {
+                  'gateway': primary.get('gateway'),
+                  'build': primary.get('build'),
+                  'runtime_app': primary.get('runtime_app'),
+                  'runtime_class': primary.get('runtime_class'),
+                  'async_jobs': primary.get('async_jobs'),
+                  'cancel_jobs': primary.get('cancel_jobs'),
+              },
+              'gateway_standby': {
+                  'gateway': standby.get('gateway'),
+                  'build': standby.get('build'),
+                  'runtime_app': standby.get('runtime_app'),
+                  'runtime_class': standby.get('runtime_class'),
+                  'async_jobs': standby.get('async_jobs'),
+                  'cancel_jobs': standby.get('cancel_jobs'),
+              },
+              'video_submit_fields': primary_fields,
+              'video_required_fields': primary_required,
+              'director_specific_fields': found_director,
+              'runtime': {
+                  'app': runtime.get('app'),
+                  'runtime_build': runtime.get('runtime_build'),
+                  'gpu': runtime.get('gpu'),
+                  'frame_rates': runtime.get('frame_rates'),
+                  'enabled_resolutions': runtime.get('enabled_resolutions'),
+                  'recipe': runtime.get('recipe'),
+              },
+              'conclusion': (
+                  'Live configured gateway exposes one optional image_file and one shared prompt; '
+                  'no structured storyboard/frame/dialogue/speech/ambient-sound/Director fields are deployed.'
+              ),
+          }
+          (root/'summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-7c-director-audit
+          path: audit/
+          if-no-files-found: error
+          retention-days: 14
