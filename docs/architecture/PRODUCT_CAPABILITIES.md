@@ -129,7 +129,7 @@ Current generation inputs remain opaque product identities:
 - `{ type: "media-asset", id }` for durable user uploads and durable RenderLab results;
 - `{ type: "temporary-source", id }` remains accepted for internal compatibility/staging but is no longer the user-facing identity for newly uploaded Create references.
 
-The browser never submits R2 keys. Phase 7A PR #45 extracted one persistent browser upload transaction shared by Create and Library; feature-specific picker/drop behavior remains feature-owned.
+The browser never submits R2 keys. Phase 7A PR #46 extracted one persistent browser upload transaction shared by Create and Library; feature-specific picker/drop behavior remains feature-owned.
 
 ### Current supported reference upload behavior
 - PNG, JPEG, WebP;
@@ -143,11 +143,19 @@ Configured Create Durable Upload run `33256497167` verified that a Create upload
 
 ### Initial default/contextual values
 - Image/Video is the explicit main output choice.
-- Image aspect ratios: `1:1`, `16:9`, `9:16`, `4:3`, `3:4`.
-- Video aspect ratios: `16:9`, `9:16`, `1:1`.
+- Curated fixed Image aspect ratios: `1:1`, `4:5`, `3:4`, `2:3`, `9:16`, `5:4`, `4:3`, `3:2`, `16:10`, `16:9`, `21:9`.
+- Curated fixed Video aspect ratios: `1:1`, `4:5`, `3:4`, `2:3`, `9:16`, `5:4`, `4:3`, `3:2`, `16:10`, `16:9`, `21:9`.
+- Source-backed Edit Image and Animate Image additionally support `Original`; requests without a source cannot select `Original`.
 - Video durations: 5, 10, 15, 20, 30 seconds.
 - Video audio generation: explicit on/off, default ON, carried as `output.audioEnabled`.
 - A compatible image input resolves Image → Edit and Video → Animate.
+
+### Phase 7A source-aware geometry — Verified in RenderLab
+- `Original` is persisted normalized product intent rather than being rewritten into an arbitrary preset ratio.
+- FLUX output geometry follows its first image input. Create Image therefore supplies a server-created neutral execution canvas at the selected fixed ratio; no user-visible reference is fabricated.
+- Edit Image + `Original` sends the owner-scoped source image unchanged to FLUX. Explicit Edit ratios center-crop and high-quality resize only an execution-time derivative of the primary image; the durable Library asset and any additional references are not modified.
+- Animate Image + `Original` derives the display-oriented source W:H and submits that ratio to REDGraft when it falls within the verified 0.4–2.5 runtime range. Explicit Animate ratios continue using REDGraft's verified worker-side center-crop behavior.
+- Exact implementation head `789358e8a276ab54d8eeae7e4b7dcb64c2c4c60f` live-verified Create Image 16:9 → Edit Original 16:9 → Edit override 4:5 in `33258831654`, and Create Video 16:9 → Animate Original from a 128×64 / 2:1 source in `33258831636`. Final same-head retriggered Generation `33259410952` and Video Generation `33259411008` also passed. PR #47 merged as `de50efe6ba462ec604ea2cace741e11904a62425`.
 
 ### Verified Advanced product controls
 Create v0.3 intentionally exposes only currently justified Advanced controls:

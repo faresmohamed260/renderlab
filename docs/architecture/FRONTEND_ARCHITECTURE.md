@@ -12,6 +12,7 @@ Core stack from `package.json`:
 - Tailwind CSS `4.3.3`
 - Lucide React `1.34.0`
 - `radix-ui` `1.6.7`
+- `sharp` `0.34.3` — server-side execution geometry preparation/inspection, never a browser media store
 - `@supabase/ssr` `0.12.5`
 - `@supabase/supabase-js` `2.112.4`
 - `class-variance-authority` `0.7.1`
@@ -32,6 +33,9 @@ Approved product state includes Application Shell, Create, Library v0.1, persist
 **Components:** approved RenderLab components first; conventional visible controls use the maintained `src/components/ui` layer; new mechanics follow the approved source order in `docs/ui/COMPONENT_CATALOG.md`.
 
 Deployment configuration: repository `vercel.json` pins the Vercel framework to `nextjs` and disables automatic Git-triggered deployments. `scripts/verify-vercel-env.mjs` runs as a Vercel-only prebuild guard for required Supabase/R2 configuration and the approved shared Supabase URL. GitHub remains the development/validation path; production deployment is an explicit operation.
+
+### Phase 7A source-aware generation geometry boundary
+`src/server/generation/geometry.ts` owns execution-only image geometry preparation. It may create the neutral first-input canvas required to make FLUX Create ratios truthful, derive display-oriented source W:H for Animate `Original`, or create an explicit-ratio primary-image derivative for FLUX Edit. These transformations are server execution details: they do not mutate the durable `media_asset`, change opaque media identity or move geometry state into the browser. Normalized product intent retains `aspectRatio: "original"` for source-backed operations while server routing resolves the worker-specific execution geometry.
 
 ## Maintained Primitive Boundary — UI-026
 Conventional visible controls are centralized rather than hand-styled in feature/shell code.
@@ -169,7 +173,7 @@ Ownership rules:
 - `lib/supabase` — public/server Supabase Auth client/session boundary; browser code never receives service-role credentials; `getCurrentRenderLabAccount()` derives the product owner only from verified claims and rejects anonymous principals;
 - `lib/capabilities` — user-facing capability definitions/resolution;
 - `lib/api` — typed product API/query contracts;
-- `server/generation` — owner-scoped orchestration/worker boundaries. Native jobs and outputs persist the account owner. The optional external backend is active only with URL + server-only bearer token and must authenticate RenderLab before trusting `x-renderlab-owner-id`;
+- `server/generation` — owner-scoped orchestration/worker boundaries. Native jobs and outputs persist the account owner. Server-only `sharp` preprocessing may derive execution geometry without mutating durable media or exposing worker-specific geometry mechanics to the browser. The optional external backend is active only with URL + server-only bearer token and must authenticate RenderLab before trusting `x-renderlab-owner-id`;
 - `server/media` — owner-scoped durable media/query/upload/download/rename/delete/reference plus Collections services;
 - `server/storage` — R2 implementation;
 - `server/data` — server-only Supabase/repository access.

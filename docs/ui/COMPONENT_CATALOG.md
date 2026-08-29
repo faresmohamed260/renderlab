@@ -122,10 +122,10 @@ Before copying/installing an external component:
 **Source:** `src/features/create/create-workspace.tsx`  
 **Purpose:** Authoritative task-oriented Create experience: prompt, Image/Video intent, references, typed generation, truthful runtime state, durable results, continuation and Advanced disclosure.  
 **Variants:** Create Image, Edit Image, Create Video, Animate Image; responsive desktop/mobile.  
-**Dependencies:** RenderLab generation/media contracts, shared persistent browser media-upload client, capabilities, React client state, Lucide, maintained Button/Textarea/ToggleGroup/Alert/Spinner/Collapsible primitives.
+**Dependencies:** RenderLab generation/media contracts, shared persistent browser media-upload client, capabilities, React client state, Lucide, maintained Button/Textarea/ToggleGroup/DropdownMenu/Alert/Spinner/Collapsible primitives.
 **Reuse rules:** Extend or deliberately extract reusable subcomponents rather than creating competing Create surfaces.  
 **Do not:** Expose worker/storage IDs, fabricate progress or push technical worker controls into default UI.  
-**Notes:** All four native operations verified; complete configured browser lifecycle `33031817744`. Image/Video intent is an accessible required single-choice Radix radiogroup.
+**Notes:** All four native operations verified; complete configured browser lifecycle `33031817744`. Image/Video intent is an accessible required single-choice Radix radiogroup. Phase 7A PR #47 adds the maintained Dropdown Menu geometry selector, source-backed `Original` intent for Edit/Animate and curated fixed-ratio expansion; exact head `789358e8a276ab54d8eeae7e4b7dcb64c2c4c60f` passed responsive Create Lifecycle `33258831638` and live image/video geometry verification `33258831654` / `33258831636` before merge as `de50efe6ba462ec604ea2cace741e11904a62425`.
 
 ### CreateAdvancedPanel
 **Status:** APPROVED
