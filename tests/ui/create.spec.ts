@@ -17,7 +17,7 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Add reference", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeDisabled();
   await expect(page.getByText("Generation is not connected in this environment yet.")).toBeVisible();
-  await expect(page.getByText("Reference uploads are not connected in this environment yet.")).toBeVisible();
+  await expect(page.getByText("Image uploads are not connected in this environment yet.")).toBeVisible();
 
   await page.getByRole("textbox", { name: "Prompt" }).fill("A quiet futuristic coastal city at blue hour");
   await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeDisabled();
