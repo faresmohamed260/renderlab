@@ -395,7 +395,7 @@ R2 credentials currently require Admin Read & Write because configured browser u
 
 ### Optional
 - `CLOUDFLARE_R2_PUBLIC_BASE_URL` — existing project variable; not required by current private signed-R2 delivery paths
-- `CLOUDFLARE_API_TOKEN` — REST CORS fallback
+- `CLOUDFLARE_API_TOKEN` — optional zone-DNS token for Cloudflare-managed custom-domain records; its presence does not imply R2 administration authority
 - `RENDERLAB_GENERATION_BACKEND_URL` — optional external RenderLab generation service; only active together with the token below
 - `RENDERLAB_GENERATION_BACKEND_TOKEN` — server-only bearer secret required to authenticate the optional external generation service before `x-renderlab-owner-id` is trusted
 
@@ -449,6 +449,13 @@ A production browser upload reported as `Failed to fetch` from `https://renderla
 PR #36 adds `https://renderlab.faresuniform.uk` to the canonical `RENDERLAB_BROWSER_UPLOAD_ORIGINS` used by configured Library lifecycle and drag/drop validation. Final head `a66bcff942efa82b9823f031b25487e97eeb3fa6` passed Library Lifecycle `33238196620` and Library Drag Drop `33238196599`; configured verification received a successful `204` PUT preflight and completed the real ticket → signed PUT → completion → HEAD verification → durable promotion lifecycle. PR #36 merged as `0d4f05980e78a3c3b29beb68e91ebf0e225d2815`; merged-`main` Generation Integration `33238360406`, Video Generation `33238360399`, and UI Shell `33238360429` passed.
 
 This maintenance changes no Supabase schema, browser credential boundary, R2 key exposure, upload data model or account ownership semantics. Future public browser origins still require deliberate CORS addition and configured validation before use.
+
+### Custom-domain DNS and Cloudflare credential roles — 2026-08-29
+`renderlab.faresuniform.uk` is configured in the Cloudflare `faresuniform.uk` zone as a **DNS-only** `CNAME` to Vercel's assigned target `736ea4abfec91fb9.vercel-dns-017.com`. Cloudflare API read-back and public DNS-over-HTTPS both verified that exact record after creation.
+
+The repository secret `CLOUDFLARE_API_TOKEN` is deliberately scoped for zone DNS editing and must not be treated as proof of R2 administration authority. `scripts/ensure-r2-browser-cors.mjs` may try the Cloudflare R2 API when that token is present, but an R2 authorization `401`/`403` is a credential-role mismatch, not an upload/CORS failure; the script must fall back to the existing R2 S3 credentials and continue exact-origin reconciliation/probing. Non-authorization Cloudflare API errors remain hard failures.
+
+This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
 
 ## Infrastructure Operating Rules
 No infrastructure rollout is currently queued by the repository. UI-030 ownership enforcement is complete, Favorites/Collections are approved, and the currently defined Phase 5 backlog is complete.

@@ -59,7 +59,9 @@ async function cloudflareRequest(method, body) {
   );
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.success === false) {
-    throw new Error(`Cloudflare R2 CORS ${method} failed (${response.status}): ${JSON.stringify(payload?.errors ?? payload)}`);
+    const error = new Error(`Cloudflare R2 CORS ${method} failed (${response.status}): ${JSON.stringify(payload?.errors ?? payload)}`);
+    error.cloudflareStatus = response.status;
+    throw error;
   }
   return payload?.result ?? payload;
 }
@@ -149,9 +151,16 @@ async function probeCors() {
 
 let managed = false;
 if (cloudflareApiToken) {
-  await ensureWithCloudflareApi();
-  managed = true;
-} else {
+  try {
+    await ensureWithCloudflareApi();
+    managed = true;
+  } catch (error) {
+    if (error?.cloudflareStatus !== 401 && error?.cloudflareStatus !== 403) throw error;
+    console.log(`Configured Cloudflare API token cannot administer R2 CORS (${error.cloudflareStatus}); falling back to R2 S3 credentials.`);
+  }
+}
+
+if (!managed) {
   try {
     await ensureWithS3Api();
     managed = true;
