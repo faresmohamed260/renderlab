@@ -377,6 +377,29 @@ UI-035 replaces the Activity placeholder with the smallest useful account-privat
 - [x] Settings account identity foundation backed by Supabase Auth / UI-029; broader settings remain requirement-driven.
 - [x] Audit additional capability-specific experiences against the current verified capability set. No additional experience is approved today; extensibility categories remain architecture pressure-tests, and any future approved user goal becomes a new explicit slice instead of an indefinite open checkbox.
 
+## Post-Phase-5 Production Usability Maintenance
+
+### Custom-domain browser upload CORS — PR #36
+- [x] Trace the reported browser `Failed to fetch` during direct signed-R2 upload from `https://renderlab.faresuniform.uk` to missing browser-origin coverage rather than changing the upload API/session/ownership model.
+- [x] Add `https://renderlab.faresuniform.uk` to the canonical `RENDERLAB_BROWSER_UPLOAD_ORIGINS` used by configured Library upload lifecycle validation.
+- [x] Keep the approved ticket → signed PUT → completion → HEAD verification → durable promotion contract unchanged.
+- [x] Final head `a66bcff942efa82b9823f031b25487e97eeb3fa6` passed Library Lifecycle `33238196620` and Library Drag Drop `33238196599`; configured verification returned a successful `204` PUT preflight and completed a real upload lifecycle.
+- [x] Merge PR #36 as `0d4f05980e78a3c3b29beb68e91ebf0e225d2815`; merged-`main` Generation Integration `33238360406`, Video Generation `33238360399`, and UI Shell `33238360429` passed.
+
+**Custom-domain upload CORS status: `APPROVED` maintenance. No upload API, schema, authentication or ownership contract changed.**
+
+### Video audio control — PR #37 / UI-036
+- [x] Expose Audio on/off only for Video output as an understandable contextual Create control; default ON.
+- [x] Centralize `defaultVideoAudioEnabled = true` in the capability contract and serialize the user choice as `output.audioEnabled`.
+- [x] Validate `audioEnabled` as a boolean video-only field; reject it on Image requests.
+- [x] Map the validated product value to native REDGraft `audio_enabled` instead of hardcoding audio on.
+- [x] Keep the control on the maintained Toggle primitive and preserve the approved Create composition; mobile essential controls wrap so Audio, duration, Advanced and Generate remain reachable.
+- [x] Extend configured Video Generation verification to exercise Audio OFF for Create Video and Audio ON for Animate Image and verify persisted job request parameters.
+- [x] Final head `5178ef95ab63e816925c66a3305c9c255708886e` passed all eight affected gates: Account Ownership `33239584670`, UI Shell `33239584665`, Create Lifecycle `33239584685`, Video Generation `33239584671`, Generation Integration `33239584676`, Media Delete `33239584663`, Library Lifecycle `33239584662`, and Activity `33239584661`.
+- [x] Merge PR #37 as `713e8a6940c25fd0dc82994507537fe1a0d06b42`; merged-`main` Generation Integration `33239701484`, UI Shell `33239701487`, and Video Generation `33239701476` passed.
+
+**Video audio control status: `APPROVED` maintenance. No schema migration or unrelated Create redesign was introduced.**
+
 ## Feature/Surface Procedure
 1. Establish the user goal and required behavior.
 2. Inspect applicable RenderLab decisions/components and architecture.
@@ -391,11 +414,11 @@ UI-035 replaces the Activity placeholder with the smallest useful account-privat
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current phase:** Phase 5 — Operational & Secondary Experiences.
-**Current product slice:** None. Activity v0.1 / UI-035 is complete and approved.
+**Current phase:** Phase 5 complete; post-Phase-5 production usability maintenance is complete.
+**Current product slice:** None. Activity v0.1 / UI-035 is complete and approved; PR #36 custom-domain upload CORS and PR #37 / UI-036 Video audio maintenance are also complete.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, Durable Media Delete PR #25 / UI-033, Library Batch Delete PR #29 / UI-034, and Activity PR #34 / UI-035 are merged and approved.
-**Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing.
-**Current gate:** None. The currently defined Phase 5 backlog is complete.
+**Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing; PR #36 added the custom production upload origin to configured R2 CORS coverage; PR #37 / UI-036 added the verified Video audio on/off contract.
+**Current gate:** None. The currently defined Phase 5 backlog and the latest production usability maintenance are complete.
 **Next product slice:** None selected. Models/Workflows and additional capability-specific experiences were evaluated against the current verified capability set and are not justified as separate surfaces today; future approved user goals require new explicit contracts.
 
 ## Session Handoff Rule

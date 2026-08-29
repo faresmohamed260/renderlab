@@ -43,6 +43,7 @@ Approved behavior:
 
 **Verified behavior:**
 - prompt + Image/Video output intent;
+- Video output includes contextual Audio on/off, default ON, carried through the validated generation contract as `output.audioEnabled`;
 - PNG/JPEG/WebP temporary reference input up to 25 MB;
 - signed-R2 temporary reference input with opaque source identity;
 - reference preview/removal/replacement;
@@ -56,6 +57,8 @@ Approved behavior:
 - signed-in generation jobs, reference/media inputs and persisted outputs remain within the verified account owner boundary.
 
 **UI-030 evidence:** exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Create Lifecycle `33131090243`, Generation Integration `33131090251`, Video Generation Integration `33131090262` and Account Ownership `33131090207`. Desktop/mobile generated-result artifacts were visually reviewed without unintended Create hierarchy drift.
+
+**UI-036 / PR #37 audio evidence:** final exact head `5178ef95ab63e816925c66a3305c9c255708886e` passed all eight affected gates, including Create Lifecycle `33239584685`, Video Generation `33239584671`, Generation Integration `33239584676` and UI Shell `33239584665`. Audio OFF is verified for Create Video, Audio ON for Animate Image, persisted request parameters retain the choice, Image requests reject the Video-only field, and the mobile essential-control row keeps Audio/duration/Advanced/Generate reachable. PR #37 merged as `713e8a6940c25fd0dc82994507537fe1a0d06b42`; merged-`main` Generation `33239701484`, UI Shell `33239701487`, and Video Generation `33239701476` passed.
 
 **Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 
