@@ -95,6 +95,11 @@ Rules:
 - Library drag/drop is transient browser interaction state only; it does not become URL or durable media-management state.
 - Settings owns requirement-backed account/application state. UI-029 uses it for Supabase Auth identity. UI-030 does not turn the entire application into a redirect-based login wall: signed-out Create remains draftable, while private Library/Viewer data and persistent generation/upload actions require a verified account.
 
+### Accepted Phase 9 Retry boundary — planned, not implemented
+UI-050 keeps Activity data server-owned and adds only a small failed-row client mutation after implementation. Planned `POST /api/generation/jobs/[jobId]/retry` receives no generation payload from the browser: the server loads that historical job under the verified owner, reconstructs product intent from persisted prompt/output/inputs/parameters, applies the bounded legacy compatibility in UI-050, runs the current generation parser and owner/source preflight, then uses the ordinary `submitGeneration` boundary. An accepted attempt is a distinct job; the original row is not mutated. Foreign jobs collapse to not-found. Active/succeeded/cancelled jobs and current-invalid/unavailable-source intent fail closed.
+
+The existing Product API list below remains implementation reality until the Phase 9 code lands. No Cancel endpoint is planned in v0.1. Static orchestration audit shows current `pollNativeGeneration` reassignment/result persistence can race a cancellation because there is no cancellation-aware compare-and-set/version/lease, and the external adapter currently defines submit + poll only. The optional shell attention indicator is also deferred; `AppShell` stays free of account/job polling and no global client job store is introduced.
+
 ## Product API Boundaries
 ```text
 POST     /api/generation/jobs

@@ -195,6 +195,9 @@ Approved behavior:
 
 **Approval evidence:** final exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed Activity `33223434378`, Account Ownership `33223434363`, UI Shell `33223434381`, Create Lifecycle `33223434428`, Generation Integration `33223434364`, and Video Generation `33223434355`. PR #34 merged as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4`; merged-`main` UI Shell `33223633751`, Generation Integration `33223633631`, and Video Generation `33223633627` passed. Configured two-account Activity verification covered privacy, pagination, real state, error redaction, active/deleted result links, responsive rendering and exact cleanup. Post-merge shared-resource audit returned to zero and Vercel created no deployment.
 
+**Phase 9 accepted extension — NOT YET IMPLEMENTED:** UI-050 adds a compact contextual `Retry` action to failed job rows only. The browser posts only the historical job ID; the server reconstructs and current-revalidates stored product intent, blocks unavailable/foreign/tombstoned sources and submits a distinct new job without changing the historical row. Active/succeeded/cancelled rows do not expose Retry in v0.1. Cancel remains absent because current native persistence/reassignment lacks cancellation-safe atomic race guards. No shell-global status badge/polling is added in this slice.
+
+
 ### Settings
 **Route:** `/settings`  
 **Status:** APPROVED — Account Identity Foundation v0.1 / UI-029  
