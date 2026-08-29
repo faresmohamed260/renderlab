@@ -14,10 +14,14 @@ function parseFlow(value: string | null): RenderLabEmailFlow | null {
   return value === "invite" || value === "recovery" ? value : null;
 }
 
-function redirect(request: NextRequest, path: string) {
-  const response = NextResponse.redirect(new URL(path, request.url));
-  response.headers.set("Cache-Control", "private, no-store");
-  return response;
+function redirectWithinApp(path: string) {
+  return new NextResponse(null, {
+    status: 307,
+    headers: {
+      Location: path,
+      "Cache-Control": "private, no-store",
+    },
+  });
 }
 
 function verifiedIdentity(user: User | null) {
@@ -31,42 +35,42 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code")?.trim() || null;
 
   if (!flow || (!tokenHash && !code)) {
-    return redirect(request, "/settings?auth=link_invalid");
+    return redirectWithinApp("/settings?auth=link_invalid");
   }
 
   const supabase = await createServerSupabaseClient();
-  if (!supabase) return redirect(request, "/settings?auth=unavailable");
+  if (!supabase) return redirectWithinApp("/settings?auth=unavailable");
 
   let user: User | null = null;
   if (tokenHash) {
     const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: flow });
-    if (error) return redirect(request, "/settings?auth=link_invalid");
+    if (error) return redirectWithinApp("/settings?auth=link_invalid");
     user = data.user;
   } else if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) return redirect(request, "/settings?auth=link_invalid");
+    if (error) return redirectWithinApp("/settings?auth=link_invalid");
     user = data.user;
   }
 
   const identity = verifiedIdentity(user);
-  if (!identity) return redirect(request, "/settings?auth=link_invalid");
+  if (!identity) return redirectWithinApp("/settings?auth=link_invalid");
 
   if (flow === "invite") {
     try {
       const access = await claimRenderLabBetaInvitation(identity);
       if (!access || access.status !== "active") {
-        return redirect(request, "/settings?auth=invitation_required");
+        return redirectWithinApp("/settings?auth=invitation_required");
       }
     } catch {
-      return redirect(request, "/settings?auth=unavailable");
+      return redirectWithinApp("/settings?auth=unavailable");
     }
-    return redirect(request, "/settings?auth=invitation_accepted");
+    return redirectWithinApp("/settings?auth=invitation_accepted");
   }
 
   const marker = createPasswordRecoveryMarker(identity.id);
-  if (!marker) return redirect(request, "/settings?auth=unavailable");
+  if (!marker) return redirectWithinApp("/settings?auth=unavailable");
 
-  const response = redirect(request, "/settings/password");
+  const response = redirectWithinApp("/settings/password");
   response.cookies.set(PASSWORD_RECOVERY_COOKIE_NAME, marker, {
     httpOnly: true,
     sameSite: "lax",
