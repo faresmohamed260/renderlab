@@ -18,12 +18,12 @@ jobs:
       - name: Enumerate reference contract callsites
         run: |
           echo '=== generation input / request callsites ==='
-          rg -n --glob '!docs/**' --glob '!design/**' 'GenerationInput|GenerationRequest|request\.inputs|inputs:' src tests scripts || true
+          grep -R -n -E 'GenerationInput|GenerationRequest|request\.inputs|inputs:' src tests scripts --exclude-dir=node_modules || true
           echo '=== role/source literals ==='
-          rg -n --glob '!docs/**' --glob '!design/**' 'primary-image|first-frame|temporary-source|media-asset' src tests scripts || true
+          grep -R -n -E 'primary-image|first-frame|temporary-source|media-asset' src tests scripts --exclude-dir=node_modules || true
           echo '=== generation job persistence schema ==='
-          rg -n 'generation_jobs|inputs json|parameters json' supabase/migrations src/server || true
+          grep -R -n -E 'generation_jobs|inputs.*json|parameters.*json' supabase/migrations src/server --exclude-dir=node_modules || true
           echo '=== maintained picker/menu mechanics ==='
-          rg -n 'DropdownMenu|Popover|Combobox|Command' src/components/ui src/features/create || true
+          grep -R -n -E 'DropdownMenu|Popover|Combobox|Command' src/components/ui src/features/create --exclude-dir=node_modules || true
           echo '=== create reference state ==='
-          rg -n 'reference|continuationSource|uploadReference|clearReference' src/features/create/create-workspace.tsx || true
+          grep -n -E 'reference|continuationSource|uploadReference|clearReference' src/features/create/create-workspace.tsx || true
