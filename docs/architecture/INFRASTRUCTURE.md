@@ -36,7 +36,7 @@ Post-UI-032 implementation-head security advisors report only expected informati
 
 UI-031 / PR #23 merged as `45991e1d55b75dcc13eab162093fc1be1f5c2431` after exact final head `4bd41d55af27c7240d75862424039fc59027988e` passed all 13 affected gates. Merged `main` UI Shell `33205766730`, Reference Upload `33205766693`, Generation Integration `33205766671`, and Video Generation `33205766691` passed. Post-merge Supabase cleanup returned all four core tables and RenderLab fixture users to zero while preserving RLS, browser-grant revocation, six ownership triggers, four `NOT NULL` owners, nullable `favorited_at`, and the favorite index. Vercel reported zero RenderLab deployments created after the PR #23 merge, confirming automatic Git deployment remained disabled; UI-031 has not been separately deployed to production.
 
-UI-034 / PR #29 adds no Supabase migration and no new R2 contract. Implementation head `78015dcfb5881639b32f22f8877874af2c3a336b` reuses applied `0009_media_asset_deletion.sql` per selected asset and passed all 16 affected workflows, including configured mixed owner/foreign partial-success deletion. The implementation-head shared-resource audit found all six RenderLab tables and configured fixture users are back to zero; six RLS tables, six non-null owner columns, zero browser grants, nullable `deleted_at`/`purged_at`, all three deletion-integrity triggers and `media_assets_owner_active_created_at_idx` remain intact; `20260828221611 renderlab_media_asset_deletion` remains the latest migration. Final documentation-head rerun/merge remains required before UI-034 is approved.
+UI-034 / PR #29 adds no Supabase migration and no new R2 contract. Final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed all 16 affected workflows, including configured mixed owner/foreign partial-success deletion, before PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`. Merged-`main` UI Shell `33221101101`, Generation Integration `33221101106`, and Video Generation `33221101117` passed. Post-merge cleanup returned all six RenderLab tables and configured fixture users to zero with six RLS tables, six non-null owner columns, zero browser grants, nullable `deleted_at`/`purged_at`, all three deletion-integrity triggers and `media_assets_owner_active_created_at_idx` intact; `20260828221611 renderlab_media_asset_deletion` remains the latest migration. Vercel created zero deployments after the merge.
 
 Service-role access remains server-only. UI-029 added public Supabase Auth client configuration only. UI-030 / PR #17 threads the verified account principal through server product routes and persistence while keeping the raw core tables server-owned; the owner-aware runtime is live and corrected 0005 enforcement is applied and verified.
 
@@ -443,10 +443,10 @@ Key workflows:
 - `verify-vercel-env.mjs` + `deployment-readiness.yml` — non-deploying Next.js/Vercel configuration, canonical Vercel environment preflight and production-build gate
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
-## Next Infrastructure Work
-1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout, and repository merges are never permission to apply corrected `0005`.
-2. Through a separately authorized rollout, make owner-aware code actually live; then verify there are no unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, and confirm `NOT NULL`, immutable ownership and table-specific same-owner link triggers. Do not reverse this rollout order.
-3. Only after UI-030 is fully enforced may personal organization such as Favorites/Collections be reconsidered.
-4. Add any future public upload origin explicitly to R2 CORS before deployment/use.
-5. Keep Library/Activity against RenderLab-owned `media_assets`/`generation_jobs`, never legacy `studio_*`.
-6. Preserve conservative duplicate-avoidance if worker routing evolves.
+## Infrastructure Operating Rules
+No infrastructure rollout is currently queued by the repository. UI-030 ownership enforcement is complete, Favorites/Collections are approved, and the currently defined Phase 5 backlog is complete.
+
+1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout; a repository merge is never implicit permission to deploy or apply a future schema change.
+2. Add any future public upload origin explicitly to R2 CORS before deployment/use.
+3. Keep Library/Activity against RenderLab-owned `media_assets`/`generation_jobs`, never legacy `studio_*`.
+4. Preserve conservative duplicate-avoidance if worker routing evolves.
