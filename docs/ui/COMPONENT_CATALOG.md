@@ -136,14 +136,14 @@ Before copying/installing an external component:
 **Do not:** Add provider/worker identifiers or unverified workflow parameters.
 
 ### ActivityView
-**Status:** EXPERIMENTAL
+**Status:** APPROVED
 **Source:** `src/features/activity/activity-view.tsx`
 **Origin:** RenderLab feature composition using maintained Alert/Button/Empty primitives plus owner-scoped `generation_jobs` state.
 **Purpose:** Account-private current/recent generation history with real lifecycle state, sanitized failures, bounded pagination and active-result continuation.
 **Dependencies:** `generation-activity-contract`, `generation-activity` server query, `ActivityAutoRefresh`, maintained Alert/Button/Empty, Lucide.
 **Reuse rules:** Keep job data server-owned and product-level. The tiny client refresh helper may refresh only while active jobs exist.
 **Do not:** Expose worker/provider/workflow/failover data, fabricate progress, create a global job store or infer cancel/retry controls without a separate contract.
-**Notes:** UI-035 implementation head `153e2a10daebea7c0a8fdfa0dfb786533b9c1c4c` passed Activity `33222845134` plus all five affected existing regressions; desktop/mobile artifacts were reviewed clean. Final exact-head validation/merge remains required before approval.
+**Notes:** UI-035 final exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed Activity `33223434378`, Account Ownership `33223434363`, UI Shell `33223434381`, Create Lifecycle `33223434428`, Generation Integration `33223434364`, and Video Generation `33223434355`; desktop/mobile implementation artifacts were reviewed clean. PR #34 merged as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4`, merged-`main` UI Shell `33223633751`, Generation Integration `33223633631`, and Video Generation `33223633627` passed, post-merge cleanup returned to zero and Vercel created no deployment.
 
 ### LibraryView
 **Status:** APPROVED

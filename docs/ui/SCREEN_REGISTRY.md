@@ -171,14 +171,14 @@ Approved behavior:
 
 ### Activity
 **Route:** `/activity`  
-**Status:** UI-035 IN FINAL VALIDATION on PR #34
+**Status:** APPROVED — Activity v0.1 / UI-035
 **Implementation:** `src/app/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`
 **Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/server/generation/generation-activity.ts`, existing owner-aware generation polling
 **Purpose:** Show current/recent account-owned RenderLab `generation_jobs`, real execution state and actionable product failures without exposing worker infrastructure as user responsibility.
 
 **UI-035 behavior:** newest-first 20-job pages; queued/preparing/running/persisting/succeeded/failed/cancelled product state; lightweight refresh only while jobs are active; sanitized failure copy; result links only for currently active owner media; signed-out/unavailable/empty states; no cancel/retry/worker/workflow/model controls.
 
-**Implementation evidence:** exact head `153e2a10daebea7c0a8fdfa0dfb786533b9c1c4c` passed Activity `33222845134`, Account Ownership `33222845130`, UI Shell `33222845124`, Create Lifecycle `33222845174`, Generation Integration `33222845170`, and Video Generation `33222845127`. Desktop/mobile Activity artifacts were reviewed clean and the shared-resource audit returned to zero.
+**Approval evidence:** final exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed Activity `33223434378`, Account Ownership `33223434363`, UI Shell `33223434381`, Create Lifecycle `33223434428`, Generation Integration `33223434364`, and Video Generation `33223434355`. PR #34 merged as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4`; merged-`main` UI Shell `33223633751`, Generation Integration `33223633631`, and Video Generation `33223633627` passed. Configured two-account Activity verification covered privacy, pagination, real state, error redaction, active/deleted result links, responsive rendering and exact cleanup. Post-merge shared-resource audit returned to zero and Vercel created no deployment.
 
 ### Settings
 **Route:** `/settings`  

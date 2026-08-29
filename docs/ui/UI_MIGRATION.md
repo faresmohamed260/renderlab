@@ -368,10 +368,10 @@ UI-035 replaces the Activity placeholder with the smallest useful account-privat
 - [x] Implementation head `153e2a10daebea7c0a8fdfa0dfb786533b9c1c4c` passed Activity `33222845134`, Account Ownership `33222845130`, UI Shell `33222845124`, Create Lifecycle `33222845174`, Generation Integration `33222845170`, and Video Generation `33222845127`.
 - [x] Visually review the passing Activity desktop/mobile artifacts; status hierarchy, secondary result action, failure treatment and existing shell behavior remain coherent.
 - [x] Pre-finalization shared-resource audit returned all six RenderLab tables and configured fixture users to zero with six RLS tables, six non-null owners, zero browser grants and `20260828221611 renderlab_media_asset_deletion` still latest.
-- [ ] Pass the complete six-gate suite on the documentation-finalized exact PR head.
-- [ ] Merge PR #34 and verify merged-`main` checks, post-merge cleanup and zero unintended Vercel deployment.
+- [x] Final exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed all six affected gates: Activity `33223434378`, Account Ownership `33223434363`, UI Shell `33223434381`, Create Lifecycle `33223434428`, Generation Integration `33223434364`, and Video Generation `33223434355`.
+- [x] Merge PR #34 as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4`; merged-`main` UI Shell `33223633751`, Generation Integration `33223633631`, and Video Generation `33223633627` passed. Post-merge shared-resource cleanup returned all six RenderLab tables and configured fixture users to zero with six RLS tables, six non-null owners and zero browser grants; `0009` remains latest. Vercel created zero deployments after the merge.
 
-**Activity v0.1 status: `IN FINAL VALIDATION`. Cancellation/retry controls, global job state, worker management and workflow/model inspection are not part of UI-035.**
+**Activity v0.1 status: `APPROVED`. PR #34 merged as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4` after exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed the complete six-gate suite. Cancellation/retry controls, global job state, worker management and workflow/model inspection are not part of UI-035.**
 
 - [x] Evaluate Models/Workflows as dedicated user-facing surfaces. The current verified capability set does not justify them: Create already exposes the approved user goals while model/workflow/ecosystem identity remains replaceable execution metadata under UI-008/UI-011 and `PRODUCT_CAPABILITIES.md`.
 - [x] Settings account identity foundation backed by Supabase Auth / UI-029; broader settings remain requirement-driven.
@@ -392,11 +392,11 @@ UI-035 replaces the Activity placeholder with the smallest useful account-privat
 
 ## Current Work
 **Current phase:** Phase 5 — Operational & Secondary Experiences.
-**Current product slice:** Activity v0.1 / UI-035 is IN FINAL VALIDATION on PR #34.
-**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, Durable Media Delete PR #25 / UI-033, and Library Batch Delete PR #29 / UI-034 are merged and approved.
+**Current product slice:** None. Activity v0.1 / UI-035 is complete and approved.
+**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, Durable Media Delete PR #25 / UI-033, Library Batch Delete PR #29 / UI-034, and Activity PR #34 / UI-035 are merged and approved.
 **Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing.
-**Current gate:** rerun the six affected workflows on the exact documentation-finalized UI-035 head, then merge only after a clean shared-resource audit.
-**Next product slice:** None selected after UI-035. Models/Workflows and additional capability-specific experiences were evaluated against the current verified capability set and are not justified as separate surfaces today; future approved user goals require new explicit contracts.
+**Current gate:** None. The currently defined Phase 5 backlog is complete.
+**Next product slice:** None selected. Models/Workflows and additional capability-specific experiences were evaluated against the current verified capability set and are not justified as separate surfaces today; future approved user goals require new explicit contracts.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
