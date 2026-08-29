@@ -55,6 +55,27 @@ export type GenerationInput = {
   role: GenerationInputRole;
 };
 
+export const generationInputCapabilities = {
+  image: {
+    maxCount: 2,
+    roles: ["primary-image", "reference"] as const,
+  },
+  video: {
+    maxCount: 1,
+    roles: ["first-frame"] as const,
+  },
+} as const;
+
+export function maxGenerationInputsForOutput(kind: OutputKind) {
+  return generationInputCapabilities[kind].maxCount;
+}
+
+export function generationInputRoleForIndex(kind: OutputKind, index: number): GenerationInputRole | null {
+  if (!Number.isInteger(index) || index < 0) return null;
+  const roles = generationInputCapabilities[kind].roles as readonly GenerationInputRole[];
+  return roles[index] ?? null;
+}
+
 export const defaultVideoAudioEnabled = true;
 
 export const generationAdvancedCapabilities = {

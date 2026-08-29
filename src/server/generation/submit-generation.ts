@@ -2,6 +2,7 @@ import type { GenerationJob, GenerationRequest } from "@/lib/capabilities/genera
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
 import { getMediaAsset } from "@/server/media/media-assets";
+import { supabaseRest } from "@/server/data/supabase-rest";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
 const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
@@ -45,16 +46,21 @@ function parseGenerationJob(value: unknown): GenerationJob | null {
   };
 }
 
-async function durableMediaInputsAvailable(ownerId: string, request: GenerationRequest) {
-  const assetIds = [...new Set(
-    request.inputs
-      .filter((input) => input.source.type === "media-asset")
-      .map((input) => input.source.id),
-  )];
-  if (!assetIds.length) return true;
+async function generationImageInputsAvailable(ownerId: string, request: GenerationRequest) {
+  const available = await Promise.all(request.inputs.map(async (input) => {
+    if (input.source.type === "media-asset") {
+      const asset = await getMediaAsset(ownerId, input.source.id);
+      return asset?.kind === "image";
+    }
 
-  const assets = await Promise.all(assetIds.map((assetId) => getMediaAsset(ownerId, assetId)));
-  return assets.every((asset) => asset?.kind === "image");
+    const rows = await supabaseRest<Array<{ mime_type: string; status: string }>>(
+      `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(input.source.id)}&select=mime_type,status&limit=1`,
+      { method: "GET" },
+    );
+    const source = rows?.[0];
+    return source?.status === "ready" && source.mime_type.startsWith("image/");
+  }));
+  return available.every(Boolean);
 }
 
 async function submitToRenderLabBackend(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
@@ -95,12 +101,12 @@ async function submitToRenderLabBackend(ownerId: string, request: GenerationRequ
 }
 
 export async function submitGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
-  if (!(await durableMediaInputsAvailable(ownerId, request))) {
+  if (!(await generationImageInputsAvailable(ownerId, request))) {
     return {
       ok: false,
       error: {
         code: "generation_submission_failed",
-        message: "One or more media inputs are unavailable or are not images.",
+        message: "One or more image inputs are unavailable, not ready, not images, or not owned by this account.",
       },
     };
   }
