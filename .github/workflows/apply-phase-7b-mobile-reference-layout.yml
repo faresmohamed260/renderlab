@@ -1,0 +1,56 @@
+name: Apply Phase 7B Mobile Reference Layout
+
+on:
+  push:
+    branches:
+      - work/phase-7b-multi-reference-v0-1
+    paths:
+      - .github/workflows/apply-phase-7b-mobile-reference-layout.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply responsive layout polish
+        run: python .github/scripts/apply-phase-7b-mobile-reference-layout.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify maintained UI primitives
+        run: npm run verify:ui-purity
+
+      - name: Build
+        run: npm run build
+
+      - name: Finalize product commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- next-env.d.ts || true
+          rm -f package-lock.json
+          rm .github/workflows/apply-phase-7b-mobile-reference-layout.yml
+          rm .github/scripts/apply-phase-7b-mobile-reference-layout.py
+          git diff --check
+          git add -A
+          git diff --cached --check
+          git config user.name "RenderLab Phase 7B Bot"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git commit -m "Polish mobile multi-reference layout"
+          git push
