@@ -194,6 +194,17 @@ Phase 6 re-audited current RenderLab code plus the configured deployed worker pa
 - The current product has no per-user generation rate/concurrency/abuse limiter at the generation route. Worker source serializes each container invocation; exact deployment-wide autoscaling/capacity is not exposed by current health APIs.
 - Provider per-generation cost/credit consumption is not reliably observable through the current product/worker health contracts. Phase 7 must not invent cost labels or promises from unavailable data; Phase 10 must account for capacity/abuse controls if access broadens.
 
+## Accepted Cycle 2 Create v2 Direction — not yet implemented
+The following items are accepted product direction from closed-beta feedback, but remain **unimplemented until Phase 7 execution and verification**:
+- reference-backed Edit/Animate should default to source-aware `Original` geometry with explicit supported-ratio override;
+- aspect-ratio choices should expand only from verified worker/capability behavior;
+- user uploads initiated from Create should promote to durable owner-scoped `media_assets` after verification and remain in Library even if no generation is submitted;
+- multi-reference inputs need stable aliases/order, task-relevant roles and prompt-level reference addressing plus strict server media-kind/count/ownership validation;
+- FLUX and Qwen multi-input behavior must be audited for real subject/outfit/pose/style/background-style tasks, while product guarantees remain limited to deterministic mapping rather than probabilistic model obedience;
+- reported LTX/REDGraft Director/frame/dialogue/sound controls require a fresh audit of the configured workflow before they can become a curated Director product mode;
+- Video quality may expose verified 480p/720p/1080p/2K through a deliberate contextual product control; 4K remains unsupported/hidden;
+- capability growth must not crowd the default composer: task controls stay contextual and technical controls stay Advanced/internal.
+
 ## Extensibility Categories
 These must remain representable if/when production workflows are introduced, but are **not current feature commitments**:
 - inpainting/outpainting and mask-based editing;
@@ -207,6 +218,18 @@ These must remain representable if/when production workflows are introduced, but
 - workflow chaining/branching;
 - reusable presets;
 - expert workflow inspection/control as a deliberately separate experience if ever justified.
+
+## Accepted post-Cycle-2 direction — LoRA/model adapters
+User-selectable LoRA support is now an accepted future product direction rather than only an abstract pressure-test. It is **not a Cycle 2 implementation commitment**. A later phase/cycle must verify and define:
+- Civitai/Hugging Face or other approved source discovery/import contracts;
+- durable LoRA identity, source/version/hash/license metadata and compatibility with base model/workflow;
+- safe download/file handling plus worker cache/storage/eviction behavior;
+- admin approval/policy and any content/safety constraints;
+- generation selection UX and strength range/defaults;
+- whether multiple LoRAs can compose and how ordering/combined strength is represented;
+- reproducible persisted generation intent without exposing raw worker filesystem paths.
+
+The current capability/request model should remain extensible enough to attach optional model adapters later, but ordinary users must not see fake LoRA controls before this subsystem exists.
 
 ## Progressive Disclosure Boundary
 ### Default
@@ -236,4 +259,4 @@ The initial Create capability set is implemented and approved: Create Image, Edi
 
 The Phase 5 capability-surface audit found no current user goal that justifies dedicated Models or Workflows screens. Qwen and registered workflow/model/ecosystem identities remain execution choices behind the capability boundary, while all currently approved creative operations are already reachable through Create/Viewer. Likewise, none of the extensibility categories above is a current product commitment, so there is no additional capability-specific screen to implement now. Future capability work must start from a verified user need and an explicit product slice rather than pre-populating navigation or controls from backend possibilities.
 
-Phase 6 has now verified the next capability handoff rather than implementing it: deployed two-reference FLUX editing works, REDGraft enables 480p/720p/1080p/2K while RenderLab remains fixed at 480p, and current request parsing needs a stricter input-slot/media-kind/multiplicity/count contract before Multi-reference Image Edit becomes a product feature. Phase 7 must be expanded from this evidence only after Phase 6 closes.
+Phase 6 verified the capability handoff and is complete under Closed Beta. The first production-feedback pass has now expanded Phase 7 around the prerequisites that evidence exposed: source-aware geometry, durable Create uploads, composer de-crowding, explicit reference identity/prompt mapping, FLUX/Qwen multi-input verification, an audit-first Director-video slice and curated Video resolution. Phase 7 execution has not started; verified current behavior above remains authoritative until each new contract is implemented and validated.

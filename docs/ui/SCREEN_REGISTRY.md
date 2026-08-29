@@ -12,7 +12,7 @@ Tracks approved product surfaces and actual route/status/component composition.
 ## Initial Information Architecture
 Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextual: **Media Viewer**.
 
-Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default.
+Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default. Cycle 2 now plans a **privileged Admin** surface in Phase 10 and a **Brand/Landing** surface in Phase 11; both remain route-TBD planning items until their phase contracts lock information architecture.
 
 ## Application Shell
 **Status:** APPROVED  
@@ -55,6 +55,8 @@ Approved behavior:
 - uploaded-media continuation preserves uploaded display identity;
 - UI-030 keeps prompt/settings draftable while signed out, but generation/reference upload and other persistent actions require a verified non-anonymous account;
 - signed-in generation jobs, reference/media inputs and persisted outputs remain within the verified account owner boundary.
+
+**Planned Phase 7 Create v2 extension — not yet implemented:** de-crowded progressive composer; source-aware `Original` geometry with explicit ratio override; curated ratio expansion; durable Library persistence for Create-originated user uploads; named/ordered/role-aware references with prompt addressing; multi-reference FLUX/Qwen verification; audited Director Video; curated 480p/720p/1080p/2K Video quality; deliberate premium motion/interaction treatment under UI-043. Current approved Create behavior remains authoritative until each slice is implemented and verified.
 
 **UI-030 evidence:** exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Create Lifecycle `33131090243`, Generation Integration `33131090251`, Video Generation Integration `33131090262` and Account Ownership `33131090207`. Desktop/mobile generated-result artifacts were visually reviewed without unintended Create hierarchy drift.
 
@@ -208,13 +210,27 @@ Approved behavior:
 
 **Still intentionally open:** UI-030 strict database enforcement is complete. Personal Library organization remains owned by Library/Viewer rather than Settings; other Settings sections remain requirement-driven.
 
+### Admin — planned Cycle 2 privileged surface
+**Route:** TBD
+**Status:** PLANNED — Phase 10
+**Purpose:** Closed-beta administration for explicitly authorized operators: access/user management, generation limit/feature-flag controls and useful operational health/failure visibility behind a server-authoritative admin boundary.
+**Boundary:** This is not ordinary Settings and does not make worker/provider/secret mutation an ordinary-user capability. Exact route, role/claim model and mutations are decided in the Phase 10 contract.
+
+### Brand / Landing — planned Cycle 2 launch surface
+**Route:** TBD; current `/` remains Create until Phase 11 explicitly changes information architecture.
+**Status:** PLANNED — Phase 11
+**Purpose:** RenderLab brand identity, logo/banners, landing/onboarding presentation and launch messaging appropriate to the access posture.
+**Boundary:** Phase 11 must explicitly decide whether a landing page takes `/` and Create moves elsewhere or whether landing uses another route. No route change is implied by planning alone.
+
 ## Creation Experience Resolution
 - Prompt + Image → Create Image.
 - Prompt + ready image reference/media asset + Image → Edit Image.
 - Prompt + Video, no reference → Create Video.
 - Prompt + ready image reference/media asset + Video → Animate Image.
 
-Current durable product decisions are in `docs/ui/UI_DECISIONS.md`, including UI-022 persistent uploaded-media identity, UI-023 Library search, UI-024 durable media Download, UI-025 durable display-name Rename, UI-026 maintained conventional control purity, UI-027 Library history ordering, UI-028 Library drag/drop upload, UI-029 account identity, UI-030 core account ownership and active UI-031 Favorites.
+Phase 7 will extend these current rules with durable Create uploads, source-aware geometry, named/ordered multi-reference inputs and audited Director-video semantics. Until those slices are implemented, the current four resolution rules above remain the production contract.
+
+Current durable product decisions are in `docs/ui/UI_DECISIONS.md`; UI-038–UI-043 now additionally govern the revised Cycle 2 roadmap, source-aware geometry, durable Create uploads, explicit multi-reference addressing, curated hidden-workflow productization and the premium maintained-component visual-quality target.
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.

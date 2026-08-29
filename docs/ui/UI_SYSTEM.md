@@ -22,6 +22,17 @@ Design-tool explorations are not automatically `APPROVED` or `LOCKED`. They beco
 - High-quality direct manipulation and motion where it improves understanding
 - Strong accessibility and touch/keyboard parity
 
+## Visual Quality Bar
+RenderLab should feel like a **premium modern creative application**, not a default component-library demo or a generic admin dashboard. Maintained primitives are the accessibility/interaction foundation, not the visual ceiling.
+
+- Compose approved mechanics with RenderLab-specific hierarchy, spacing, media treatment and spatial continuity.
+- Prefer purposeful layout/shared-element transitions, morphing disclosures, direct-manipulation feedback, reference reordering motion and coherent result/state transitions when they improve understanding.
+- A screen being clean and functional is necessary but not sufficient when the creative workflow would materially benefit from stronger interaction design.
+- Do not add motion/effects just to imitate fashionable AI landing pages. Avoid gratuitous physics, glow, cursor effects, parallax or animation that competes with media/task focus.
+- `prefers-reduced-motion`, keyboard/touch parity, performance and accessibility remain non-negotiable. Every animated interaction needs a clear static/reduced-motion equivalent.
+
+Phase 7 Create v2 is the first planned product phase expected to deliberately apply this elevated interaction-quality bar while preserving the established RenderLab visual language.
+
 ## Semantic Color Foundation
 Dark theme is the initial product theme. Values below are the initial approved baseline and may be tuned through visual implementation review without changing their semantic roles.
 

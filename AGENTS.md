@@ -59,6 +59,7 @@ RenderLab should support sophisticated and expanding ComfyUI capabilities withou
 - Put advanced/model-specific controls behind progressive disclosure when appropriate.
 - Do not mirror ComfyUI node graphs or technical workflow terminology into the default UI.
 - ComfyUI is the generation engine, not the product interface.
+- The visual-quality target is a premium modern creative application. Maintained primitives/libraries provide accessible mechanics, not a visual ceiling: compose them with deliberate spatial transitions, motion and distinctive RenderLab styling when those choices improve understanding or creative flow. Avoid gratuitous effects, preserve performance, and always honor reduced motion.
 
 ## Capability Growth
 Design internal contracts so new workflows, models, media inputs, parameters, outputs, continuation actions, and post-processing capabilities can be added without repeatedly redesigning the application.
