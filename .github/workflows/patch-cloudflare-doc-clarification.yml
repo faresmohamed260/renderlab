@@ -1,0 +1,37 @@
+name: Patch Cloudflare token role clarification
+
+on:
+  push:
+    branches: [fix/cloudflare-dns-token-r2-fallback]
+    paths:
+      - ".github/workflows/patch-cloudflare-doc-clarification.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/cloudflare-dns-token-r2-fallback
+      - name: Clarify Cloudflare token role and remove helper workflow
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("docs/architecture/INFRASTRUCTURE.md")
+          text = path.read_text()
+          old = "- `CLOUDFLARE_API_TOKEN` — REST CORS fallback"
+          new = "- `CLOUDFLARE_API_TOKEN` — optional zone-DNS token for Cloudflare-managed custom-domain records; its presence does not imply R2 administration authority"
+          if old not in text:
+              raise SystemExit("Cloudflare token role marker not found")
+          path.write_text(text.replace(old, new, 1))
+          PY
+          rm .github/workflows/patch-cloudflare-doc-clarification.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/architecture/INFRASTRUCTURE.md .github/workflows/patch-cloudflare-doc-clarification.yml
+          git commit -m "Clarify Cloudflare DNS token role"
+          git push origin HEAD:fix/cloudflare-dns-token-r2-fallback
