@@ -1,0 +1,21 @@
+name: Mark PR 45 ready
+
+on:
+  push:
+    branches:
+      - ops/mark-pr45-ready
+    paths:
+      - .github/workflows/mark-pr45-ready.yml
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  mark-ready:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark PR 45 ready for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr ready 45 --repo faresmohamed260/renderlab
