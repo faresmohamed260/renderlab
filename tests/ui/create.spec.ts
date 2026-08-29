@@ -44,6 +44,20 @@ test("Create switches to video essentials without exposing backend workflow deta
   await page.screenshot({ path: "artifacts/create-desktop-video.png", fullPage: true });
 });
 
+test("mobile Video keeps audio available in the essentials row", async ({ page }) => {
+  await page.setViewportSize(mobileViewport);
+  await page.goto("/");
+
+  await page.getByRole("radio", { name: "Video", exact: true }).click();
+  const audio = page.getByRole("button", { name: "Audio on" });
+  await expect(audio).toBeVisible();
+  await expect(audio).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();
+
+  await page.screenshot({ path: "artifacts/create-mobile-video.png", fullPage: true });
+});
+
 test("Advanced controls use progressive disclosure and preserve per-output drafts", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/");
