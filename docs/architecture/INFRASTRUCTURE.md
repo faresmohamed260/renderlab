@@ -429,7 +429,7 @@ Phase 6 performed a fresh, non-deploying production/custom-domain/shared-resourc
 - Performance advisors report unused-index INFO only; no Phase 6 schema change is justified by those notices.
 
 ### Cycle 2 operating-boundary implication
-The verified technical baseline is healthy for continued controlled use. Because app-level generation rate/concurrency/abuse controls are absent, provider cost is not product-observable and leaked-password protection is disabled, **closed beta** is the recommended Cycle 2 operating boundary until Phase 10 hardens broader-access requirements. This is a recommendation only until the user explicitly selects the operating boundary.
+The verified technical baseline is healthy for continued controlled use. The user explicitly selected **Closed Beta** as the Cycle 2 operating boundary on 2026-08-29. Because app-level generation rate/concurrency/abuse controls are absent, provider cost is not product-observable and leaked-password protection is disabled, access remains controlled until Phase 10 hardens broader-access requirements. Any move to broader beta is a separate explicit decision.
 
 ## Security Rules
 - Never commit service-role/R2/provider/backend bearer credentials.

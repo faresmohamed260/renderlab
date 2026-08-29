@@ -505,7 +505,7 @@ Before Phase 6 can close, verified results must be recorded in:
 - [x] Final shared-resource audit found zero Phase 6 fixture rows and zero Phase 6 Auth users. All six RenderLab tables retain RLS, `owner_id NOT NULL`, zero `anon`/`authenticated` grants and the expected ownership/integrity triggers; latest migration remains `20260828221611 renderlab_media_asset_deletion`. Pre-existing non-fixture data was not modified.
 - [x] Supabase security advisors show the expected server-owned `rls_enabled_no_policy` INFO notices plus `auth_leaked_password_protection` WARN. Performance advisors show unused-index INFO only. No Phase 6 schema/Auth/config mutation is justified from those notices.
 - [x] Vercel reported no production runtime error cluster during/after the audit and no deployment was created by the temporary audit branch. The temporary audit branch was reset to `main` after evidence collection.
-- [ ] Operating boundary remains a user decision. Current evidence supports **closed beta** as the recommendation until Phase 10 adds broader-access rate/concurrency/abuse hardening and addresses the Auth warning.
+- [x] Operating boundary selected: **Closed Beta**. Keep access controlled until Phase 10 adds broader-access rate/concurrency/abuse hardening and addresses the Auth warning; broader beta requires a separate explicit decision.
 
 #### Exit criteria
 Phase 6 is complete only when all of the following are true:
@@ -514,7 +514,7 @@ Phase 6 is complete only when all of the following are true:
 - [x] Multi-reference image-edit support is documented with exact input semantics/limits from current RenderLab + configured worker evidence.
 - [x] Video resolution support is documented with accepted/produced resolutions, defaults/interactions and operational constraints.
 - [x] Reliably observable latency/resource/cost/quota evidence is recorded and unobservable items are marked unresolved rather than guessed.
-- [ ] The user-approved Cycle 2 beta operating boundary is recorded.
+- [x] The user-approved Cycle 2 beta operating boundary is recorded as **Closed Beta**.
 - [x] All Phase 6 fixtures are cleaned and Supabase/R2/Auth security invariants remain intact.
 - [x] Authoritative docs are updated from verified reality and no Phase 7 feature has been implemented.
 
@@ -582,12 +582,12 @@ Generic Models/Workflows screens, ComfyUI graph editing, provider/worker managem
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 baseline evidence is complete pending the operating-boundary decision.
-**Current phase:** Phase 6 — Cycle 2 Baseline & Production Hardening is `IN PROGRESS`; remote production/capability audit `33250031468` passed and only the user-approved operating boundary remains before formal close.
-**Current product slice:** None. Phase 6 is an audit/documentation phase; do not begin Phase 7 feature implementation while the operating-boundary gate remains open.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete with Closed Beta selected as the operating boundary.
+**Current phase:** Phase 6 — Cycle 2 Baseline & Production Hardening is `COMPLETE`; remote production/capability audit `33250031468` passed, exact fixtures were cleaned and the user selected Closed Beta on 2026-08-29.
+**Current product slice:** None. Before Phase 7 contract expansion or feature implementation, triage the user-reported problems in the current production product and resolve any blocking defects through narrow maintenance slices.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, Durable Media Delete PR #25 / UI-033, Library Batch Delete PR #29 / UI-034, and Activity PR #34 / UI-035 are merged and approved.
 **Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing; PR #36 added the custom production upload origin to configured R2 CORS coverage; PR #37 / UI-036 added the verified Video audio on/off contract; PR #39 recorded custom-domain DNS activation and separated the zone-DNS Cloudflare token from R2-admin authority.
-**Current gate:** Record the user-approved Cycle 2 operating boundary (private use, closed beta or broader beta). Closed beta is the evidence-backed recommendation; no deployment is authorized by Phase 6.
+**Current gate:** Production-issue triage before Phase 7 planning. Closed Beta is the approved Cycle 2 operating boundary; Phase 6 authorizes no deployment by itself.
 **Next planned feature slice after Phase 6:** Multi-reference Image Edit v0.1, contingent on the baseline capability audit. Video quality/resolution follows as the next planned Create v2 slice. Library v2, Activity v2, Account/Beta readiness and final Cycle 2 release validation follow in the accepted Phase 8–11 order unless the user deliberately changes the roadmap.
 **Persistent scope boundary:** Models/Workflows remain non-destinations; new workflow/model/provider capability does not surface automatically. Trash/restore, cancellation and billing each require their own evidence/decision and are not implied by the Cycle 2 roadmap.
 ## Session Handoff Rule
