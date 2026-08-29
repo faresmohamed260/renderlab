@@ -1,0 +1,34 @@
+name: Apply Phase 7A durable upload docs
+
+on:
+  push:
+    branches:
+      - work/phase-7a-create-foundation
+    paths:
+      - .github/workflows/apply-phase-7a-durable-upload-docs.yml
+      - .github/scripts/apply-phase-7a-durable-upload-docs.py
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-7a-create-foundation
+      - name: Apply verified durable-upload documentation
+        run: python .github/scripts/apply-phase-7a-durable-upload-docs.py
+      - name: Validate and commit docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git config user.name "RenderLab Phase 7A Bot"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/PRODUCT_CAPABILITIES.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md
+          git commit -m "Record durable Create upload foundation"
+          git rm .github/workflows/apply-phase-7a-durable-upload-docs.yml .github/scripts/apply-phase-7a-durable-upload-docs.py
+          git commit -m "Remove Phase 7A docs helpers"
+          git push origin HEAD:work/phase-7a-create-foundation
