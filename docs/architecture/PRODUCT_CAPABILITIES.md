@@ -180,6 +180,17 @@ UI-047 therefore closes Phase 7C as **audit-complete / Director deferred**. The 
 
 The same audit found a product-contract drift: live `/jobs/video` does not expose `steps` or `cfg`, even though current RenderLab still serializes Video `steps`/`guidance`. A no-generation probe sent deliberately invalid `steps=999` / `cfg=999` alongside invalid duration and the live endpoint proceeded to duration validation, confirming the extra tuning fields are not active live controls. Phase 7D must reconcile this before claiming Video steps/guidance are effective.
 
+### Accepted Phase 7D Video resolution contract — planned, not implemented
+UI-048 establishes the next Video product contract from the verified Phase 7C worker evidence. This section records accepted product intent; the currently verified implementation remains fixed-480p and still contains the drift described below until Phase 7D implementation is completed and reverified.
+
+- User-facing Video resolution values are exactly `480p`, `720p`, `1080p`, `2K`; disabled `4K` remains hidden and invalid.
+- Product language is **Resolution**, not `Quality`. Default remains `480p` because it is both current RenderLab behavior and the deployed worker default, while higher-mode latency/capacity/cost evidence is bounded or unresolved.
+- Canonical Video intent gains Video-only `output.resolution`; omission at the public request boundary normalizes server-side to `480p` before orchestration/persistence. Image cannot carry the field.
+- Resolution composes with the existing curated Video aspect ratios, 5/10/15/20/30-second durations, 24/25/30 fps, Audio and source-backed Animate `Original`. Animate Original keeps source-derived W:H while resolution independently selects the delivery-resolution class.
+- Video Steps/Guidance are removed/rejected because live `/jobs/video` has no `steps`/`cfg`. Image Steps/Guidance remain verified and unchanged. Native Video multipart must stop sending inactive fields.
+- No schema migration is planned: the existing generation parameter JSON persists canonical output intent. Historical jobs are not rewritten; future Retry revalidates current capability, treats missing legacy Video resolution as `480p` and does not replay legacy inactive Video tuning.
+- Phase 7D must pass the exact server-combination, four-case configured REDGraft, contextual-output, responsive/accessibility/reduced-motion and cleanup matrix in `docs/ui/UI_MIGRATION.md` before being marked implemented.
+
 ### Advanced product controls
 Current capability metadata is centralized in `src/lib/capabilities/generation.ts`, but verified worker effect is output-specific:
 - Image: negative prompt, seed, steps and guidance remain the verified FLUX tuning surface.
