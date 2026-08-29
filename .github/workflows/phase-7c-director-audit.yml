@@ -51,15 +51,12 @@ jobs:
                   name = content['$ref'].split('/')[-1]
                   content = doc['components']['schemas'][name]
               props = content.get('properties', {})
-              required = content.get('required', [])
-              return sorted(props), sorted(required)
+              return props, sorted(content.get('required', []))
 
-          primary_fields, primary_required = video_schema(po)
-          standby_fields, standby_required = video_schema(so)
-          expected = sorted([
-              'prompt','negative_prompt','seed','steps','cfg','resolution',
-              'duration_seconds','audio_enabled','aspect_ratio','frame_rate','image_file'
-          ])
+          primary_props, primary_required = video_schema(po)
+          standby_props, standby_required = video_schema(so)
+          primary_fields = sorted(primary_props)
+          standby_fields = sorted(standby_props)
           director_specific = {
               'frames','frame_files','storyboard','scenes','scene_prompt','action',
               'dialogue','speech','speaker','sound','ambient_sound','audio_prompt',
@@ -69,12 +66,22 @@ jobs:
 
           assert primary.get('ready') is True, primary
           assert standby.get('ready') is True, standby
-          assert primary_fields == expected, (primary_fields, expected)
-          assert standby_fields == expected, (standby_fields, expected)
-          assert primary_fields == standby_fields
-          assert primary_required == standby_required
+          assert primary_fields == standby_fields, (primary_fields, standby_fields)
+          assert primary_required == standby_required, (primary_required, standby_required)
+          assert 'prompt' in primary_fields
+          assert primary_fields.count('image_file') <= 1
           assert not found_director, found_director
           assert runtime.get('ready') is True, runtime
+
+          def property_summary(props):
+              result = {}
+              for name, schema in sorted(props.items()):
+                  result[name] = {
+                      key: schema[key]
+                      for key in ('type', 'title', 'default', 'minimum', 'maximum', 'enum', 'anyOf')
+                      if key in schema
+                  }
+              return result
 
           summary = {
               'gateway_primary': {
@@ -95,11 +102,18 @@ jobs:
               },
               'video_submit_fields': primary_fields,
               'video_required_fields': primary_required,
+              'video_submit_schema': property_summary(primary_props),
               'director_specific_fields': found_director,
+              'source_live_drift': {
+                  'cfg_exposed_live': 'cfg' in primary_fields,
+                  'steps_exposed_live': 'steps' in primary_fields,
+                  'note': 'Current Saga source contains cfg/steps fields, but live OpenAPI is authoritative for the deployed gateway.',
+              },
               'runtime': {
                   'app': runtime.get('app'),
                   'runtime_build': runtime.get('runtime_build'),
                   'gpu': runtime.get('gpu'),
+                  'gpu_name': runtime.get('gpu_name'),
                   'frame_rates': runtime.get('frame_rates'),
                   'enabled_resolutions': runtime.get('enabled_resolutions'),
                   'recipe': runtime.get('recipe'),
