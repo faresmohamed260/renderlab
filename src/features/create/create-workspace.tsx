@@ -157,7 +157,11 @@ function VideoSettingsMenu({
           <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-48">
+      <DropdownMenuContent
+        align="start"
+        collisionPadding={8}
+        className="min-w-48 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto"
+      >
         <DropdownMenuLabel>Resolution</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={resolution}
