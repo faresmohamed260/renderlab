@@ -179,8 +179,8 @@ try {
   );
   await page.getByRole("heading", { name: "Set a new password", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   assert((await page.getByLabel("Current password").count()) === 0, "Verified recovery flow should not ask for the old password.");
-  await page.getByLabel("New password").fill(updatedPassword);
-  await page.getByLabel("Confirm new password").fill(updatedPassword);
+  await page.getByLabel("New password", { exact: true }).fill(updatedPassword);
+  await page.getByLabel("Confirm new password", { exact: true }).fill(updatedPassword);
   await page.getByRole("button", { name: "Update password", exact: true }).click();
   await page.getByText("Password updated.", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-recovery-complete.png`, fullPage: true });
