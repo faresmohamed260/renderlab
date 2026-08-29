@@ -140,6 +140,18 @@ Once RenderLab tokens exist, never introduce arbitrary visual values when an app
 ## Foundation State
 Current product/UI foundation state is tracked in `docs/ui/UI_MIGRATION.md`. Do not restart or reinterpret it from old conversation history. Update it when verified project state changes.
 
+## Progressive Phase Planning
+RenderLab uses progressive phase planning for multi-phase development cycles. A cycle roadmap sets direction and order; only the immediate next phase is expanded into an execution-ready contract.
+
+Before any phase begins:
+1. Re-establish current repository, production, capability and dependency reality.
+2. Expand the immediate next phase into a phase contract covering: goal, user value, verified starting state, in-scope work, explicit out-of-scope work, architecture/contracts affected, UI/UX decisions required, backend/infrastructure dependencies, data/schema implications, security/ownership implications, validation matrix, responsive/visual review requirements, documentation outputs, exit criteria and next-phase dependencies.
+3. Merge the phase contract into the repository before implementation starts.
+4. Do not fully expand later phases before their predecessors produce the evidence needed to plan them. Keep later phases at roadmap level unless an early cross-phase constraint must be locked.
+5. When a phase completes, update the cycle roadmap from verified reality, then expand the next phase. Planning detail is not evidence that work is complete.
+
+Accepting a phase contract does not authorize deployment, does not waive exact-head validation, and does not permit unrelated scope expansion.
+
 ## Session Continuity
 At the beginning of substantial work:
 1. Inspect relevant repository documentation.

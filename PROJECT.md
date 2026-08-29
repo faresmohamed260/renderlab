@@ -63,6 +63,11 @@ Cycle 2 continues the existing phase numbering:
 - **Phase 10 — Account & Beta Readiness:** add only requirement-backed continuing-product account and access controls such as recovery/password reset and, if access broadens beyond a controlled group, generation concurrency/rate/abuse boundaries. Billing/credits are not committed by this cycle and require a separate product decision.
 - **Phase 11 — Cycle 2 Release Validation:** run an exact-head end-to-end release pass across Account → Create → generation → Library → Viewer → continuation → organization → Activity → recovery, audit shared Supabase/R2/configuration state, then perform one deliberate production rollout only when explicitly authorized.
 
+### Phase planning protocol
+Cycle roadmaps are directional. Before each phase starts, the immediate next phase must be expanded into an execution-ready contract from current repository, production and capability evidence. Later phases remain at roadmap level until their predecessors are complete unless an early cross-phase decision is required to avoid rework.
+
+Each phase contract covers goal, user value, verified starting state, in/out of scope, affected architecture/contracts, required UI/UX decisions, backend/infrastructure dependencies, data/schema and security/ownership implications, validation and responsive review, documentation outputs, exit criteria and next-phase dependencies. The contract is merged before phase execution. Accepting or expanding a phase does not mark it started or complete and does not authorize deployment.
+
 ### Cycle 2 scope boundary
 The accepted Cycle 2 roadmap does **not** approve generic Models or Workflows screens, ComfyUI graph editing, provider/worker management, arbitrary workflow-parameter forms, inpainting/outpainting, structural guidance, LoRA management, workflow chaining, a full billing system, a global media client store or a cross-page selection framework. Those remain future explicit product decisions. Qwen and other workflow/model identities remain internal execution choices until a concrete user-facing need justifies surfacing them.
 
