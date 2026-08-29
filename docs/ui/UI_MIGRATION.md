@@ -773,8 +773,8 @@ For every live case:
 
 ### Phase 8 — Library v2 / Media Workflow Productivity
 
-**Phase contract status:** `EXPANDED / PLANNED` under UI-049.
-**Execution status:** `NOT STARTED`. This contract is merged before implementation. No deployment is included or authorized.
+**Phase contract status:** `EXPANDED / EXECUTING` under UI-049.
+**Execution status:** `IN PROGRESS` — Phase 8A Collection Management is `COMPLETE / VERIFIED`; Phase 8B Page-scoped Batch Organization is `NOT STARTED`. No deployment is included or authorized.
 
 #### Goal
 Turn the existing account-private Library organization primitives into a faster repeated-work workflow without changing durable media identity or introducing a broad media-management framework. Phase 8 adds collection lifecycle management and current-page batch organization while preserving the server-owned Library dataset, URL-owned filters and the UI-034 selection boundary.
@@ -805,6 +805,14 @@ Users should be able to maintain named collections and organize the media alread
 7. If the user deletes the collection currently selected in `collection=<uuid>`, navigate to the canonical equivalent Library view with `collection` removed and `offset` reset while preserving compatible `kind`, `q`, `sort` and `favorite` state. Deleting or renaming another collection refreshes the current server-owned view without inventing client-owned collection state.
 8. Keep Viewer focused on current-asset membership/create-and-add. Viewer must reflect renamed/deleted collections after server refresh, but Phase 8A does not duplicate collection rename/delete controls into Viewer.
 9. Compose the manager from maintained Button/DropdownMenu/Field/Input/AlertDialog/Spinner mechanics and existing Library tokens. No generic collection-management framework, modal console or new dependency is approved.
+
+#### Phase 8A implementation evidence — COMPLETE / VERIFIED
+- PR #60 exact code/test head `34f9573eaabff6a91c780266ff03fedc9058df56` implements the accepted 8A boundary only: zero-collection-capable Library management, existing collection create reuse, owner-scoped rename/delete, explicit collection-delete confirmation, active-filter canonicalization and Viewer remaining membership-only.
+- The complete minimum/affected exact-head suite passed: UI Shell `33275470009`, Account Ownership `33275469977`, Library Collections `33275469972`, Library Favorites `33275470058`, Library Batch Delete `33275470041`, Library Lifecycle `33275469967`, Library Search `33275469987`, Library History `33275469981`, Library Drag Drop `33275469963`, Persistent Media Upload `33275794675`, Media Download `33275795313`, Media Rename `33275795970`, Media Delete `33275470098`, Create Lifecycle `33275469978`, Generation Integration `33275469986`, and Video Generation Integration `33275469940`.
+- Configured Library Collections `33275469972` verified own rename, normalized duplicate rejection, signed-out/foreign denial, membership cascade, preserved media/Favorite/content/history, empty-account first collection creation, active-filter deletion/canonicalization, responsive manager/confirmation composition and exact two-account cleanup.
+- Artifact `9721370669` (`renderlab-library-collections-screenshots`, `sha256:26eb381867bf2b270363dbb8561c0cfbe93df873e2d191873b4aeda5bb208389`) contains nine exact-head screenshots. Human review found the desktop/narrow manager, destructive confirmation, zero-collection state, active-filter deletion and Viewer membership states clean with no hierarchy drift or clipping.
+- Collection deletion remains collection/membership-only; it does not tombstone media, clear Favorites, mutate R2, rewrite generation history or alter provenance. The existing schema remains sufficient: no migration, package, route-hierarchy, provider/generation, infrastructure or deployment change was introduced.
+- Shared-resource cleanup completed in the configured Collections and all manually dispatched minimum regressions; Video Generation cleanup also removed its run-owned account after all four unchanged Phase 7D cases passed. Phase 8B remains deliberately unimplemented.
 
 ##### Phase 8B — Page-scoped Batch Organization v0.1
 1. Extend the existing `LibraryBatchSelection`; do not add a second selection store/component framework. Selection remains transient, current-page only and capped to the current 24-item page.
@@ -882,8 +890,8 @@ Users should be able to maintain named collections and organize the media alread
 - `docs/architecture/INFRASTRUCTURE.md` only if shared-resource/workflow cancellation/fixture reality truly changes.
 
 #### Phase 8 exit criteria
-- [ ] 8A Collection Management is implemented and exact-head verified without a new top-level route or duplicate Viewer management surface.
-- [ ] Collection Delete demonstrably removes only the collection/memberships and preserves media, Favorite state, R2 content and generation history.
+- [x] 8A Collection Management is implemented and exact-head verified without a new top-level route or duplicate Viewer management surface.
+- [x] Collection Delete demonstrably removes only the collection/memberships and preserves media, Favorite state, R2 content and generation history.
 - [ ] 8B reuses the current-page UI-034 selection model for explicit Favorite/Unfavorite and Add/Remove Collection target-state actions with bounded best-effort APIs.
 - [ ] Uploaded and generated media follow the same organization path; no parallel Uploads identity/surface is introduced.
 - [ ] Cross-page selection and Trash/restore remain deferred rather than being smuggled into the phase.
@@ -940,9 +948,9 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete under Closed Beta and the roadmap has been revised from the first production-feedback pass.
-**Current phase contract:** Phase 8 — Library v2 / Media Workflow Productivity is `EXPANDED/PLANNED` under UI-049; execution is `NOT STARTED`.
-**Current product slice:** Phase 8A Collection Management v0.1 is next, followed by Phase 8B Page-scoped Batch Organization v0.1 only after 8A is verified/merged.
-**Current gate:** Implement the accepted 8A contract against the existing owner-scoped Collections schema and Library composition. Do not start 8B early, add a schema migration, reopen completed Phase 7 contracts or deploy without the applicable evidence/authorization.
+**Current phase contract:** Phase 8 — Library v2 / Media Workflow Productivity is `EXPANDED/EXECUTING` under UI-049; execution is `IN PROGRESS`.
+**Current product slice:** Phase 8A Collection Management v0.1 is `COMPLETE / VERIFIED` at exact code/test head `34f9573eaabff6a91c780266ff03fedc9058df56`; Phase 8B Page-scoped Batch Organization v0.1 is next after the 8A merge.
+**Current gate:** Merge the verified 8A implementation/documentation record, then implement only the already-accepted 8B contract against UI-034 page-scoped selection. Do not add a schema migration, cross-page selection, Trash/restore, reopen completed Phase 7 contracts or deploy without separate evidence/authorization.
 **Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Resolution — all complete/evaluated within their accepted boundaries.
 **Later Cycle 2:** Phase 8 Library v2 → Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
