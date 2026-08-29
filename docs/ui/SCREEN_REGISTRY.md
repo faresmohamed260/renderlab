@@ -186,16 +186,16 @@ Approved behavior:
 
 ### Activity
 **Route:** `/activity`  
-**Status:** APPROVED — Activity v0.1 / UI-035
-**Implementation:** `src/app/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`
-**Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/server/generation/generation-activity.ts`, existing owner-aware generation polling
+**Status:** APPROVED — Activity v0.1 / UI-035 + failed-job Retry v0.1 / UI-050
+**Implementation:** `src/app/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`, `src/features/activity/activity-retry-button.tsx`
+**Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/lib/api/generation-retry-contract.ts`, `src/server/generation/generation-activity.ts`, `src/server/generation/retry-generation.ts`, `POST /api/generation/jobs/[jobId]/retry`, existing owner-aware generation polling/submission
 **Purpose:** Show current/recent account-owned RenderLab `generation_jobs`, real execution state and actionable product failures without exposing worker infrastructure as user responsibility.
 
-**UI-035 behavior:** newest-first 20-job pages; queued/preparing/running/persisting/succeeded/failed/cancelled product state; lightweight refresh only while jobs are active; sanitized failure copy; result links only for currently active owner media; signed-out/unavailable/empty states; no cancel/retry/worker/workflow/model controls.
+**UI-035/UI-050 behavior:** newest-first 20-job pages; queued/preparing/running/persisting/succeeded/failed/cancelled product state; lightweight refresh only while jobs are active; sanitized failure copy; result links only for currently active owner media; signed-out/unavailable/empty states; compact `Retry` only on failed rows with disabled `Retrying…` state, sanitized inline feedback and server refresh after acceptance; no Cancel, general Run Again, worker/workflow/model controls or shell-global job polling.
 
 **Approval evidence:** final exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed Activity `33223434378`, Account Ownership `33223434363`, UI Shell `33223434381`, Create Lifecycle `33223434428`, Generation Integration `33223434364`, and Video Generation `33223434355`. PR #34 merged as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4`; merged-`main` UI Shell `33223633751`, Generation Integration `33223633631`, and Video Generation `33223633627` passed. Configured two-account Activity verification covered privacy, pagination, real state, error redaction, active/deleted result links, responsive rendering and exact cleanup. Post-merge shared-resource audit returned to zero and Vercel created no deployment.
 
-**Phase 9 accepted extension — NOT YET IMPLEMENTED:** UI-050 adds a compact contextual `Retry` action to failed job rows only. The browser posts only the historical job ID; the server reconstructs and current-revalidates stored product intent, blocks unavailable/foreign/tombstoned sources and submits a distinct new job without changing the historical row. Active/succeeded/cancelled rows do not expose Retry in v0.1. Cancel remains absent because current native persistence/reassignment lacks cancellation-safe atomic race guards. No shell-global status badge/polling is added in this slice.
+**Phase 9 verified extension:** UI-050 is implemented at exact code/test head `ab33e146ccaa7770f3dd66146708f01933cc0173`. The browser posts only the historical failed job ID; the server reconstructs product intent, applies bounded legacy compatibility, runs current parser and owner/source preflight, then creates a distinct ordinary job through current submission while the historical row remains immutable. Activity `33279062575` verified status/privacy/input/legacy/provider-isolation semantics and exact cleanup against a run-local authenticated mock backend without generation spend. Final artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) was visually reviewed clean after fixing a prior narrow success-feedback flex defect. Active/succeeded/cancelled rows still do not expose Retry; Cancel and shell-global status polling remain absent/deferred.
 
 
 ### Settings

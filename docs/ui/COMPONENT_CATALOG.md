@@ -154,11 +154,23 @@ Before copying/installing an external component:
 **Status:** APPROVED
 **Source:** `src/features/activity/activity-view.tsx`
 **Origin:** RenderLab feature composition using maintained Alert/Button/Empty primitives plus owner-scoped `generation_jobs` state.
-**Purpose:** Account-private current/recent generation history with real lifecycle state, sanitized failures, bounded pagination and active-result continuation.
-**Dependencies:** `generation-activity-contract`, `generation-activity` server query, `ActivityAutoRefresh`, maintained Alert/Button/Empty, Lucide.
+**Purpose:** Account-private current/recent generation history with real lifecycle state, sanitized failures, bounded pagination, active-result continuation and failed-job recovery under UI-050.
+**Dependencies:** `generation-activity-contract`, `generation-activity` server query, `ActivityAutoRefresh`, failed-row `ActivityRetryButton`, maintained Alert/Button/Empty, Lucide.
 **Reuse rules:** Keep job data server-owned and product-level. The tiny client refresh helper may refresh only while active jobs exist.
-**Do not:** Expose worker/provider/workflow/failover data, fabricate progress, create a global job store or infer cancel/retry controls without a separate contract.
-**Notes:** UI-035 final exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed Activity `33223434378`, Account Ownership `33223434363`, UI Shell `33223434381`, Create Lifecycle `33223434428`, Generation Integration `33223434364`, and Video Generation `33223434355`; desktop/mobile implementation artifacts were reviewed clean. PR #34 merged as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4`, merged-`main` UI Shell `33223633751`, Generation Integration `33223633631`, and Video Generation `33223633627` passed, post-merge cleanup returned to zero and Vercel created no deployment.
+**Do not:** Expose worker/provider/workflow/failover data, fabricate progress, create a global job store, add Cancel without a cancellation-safe execution contract, or broaden failed-job Retry into a general Run Again surface without a separate decision.
+**Notes:** UI-035 final exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed Activity `33223434378`, Account Ownership `33223434363`, UI Shell `33223434381`, Create Lifecycle `33223434428`, Generation Integration `33223434364`, and Video Generation `33223434355`; desktop/mobile implementation artifacts were reviewed clean. PR #34 merged as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4`, merged-`main` UI Shell `33223633751`, Generation Integration `33223633631`, and Video Generation `33223633627` passed, post-merge cleanup returned to zero and Vercel created no deployment. UI-050 Phase 9A extends only failed rows with Activity-owned Retry. Exact code/test head `ab33e146ccaa7770f3dd66146708f01933cc0173` passed the seven affected gates; Activity `33279062575` and final artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) verified desktop/narrow Retry/busy/success/error composition and exact cleanup.
+
+
+### ActivityRetryButton
+**Status:** APPROVED
+**Source:** `src/features/activity/activity-retry-button.tsx`
+**Origin:** RenderLab Activity composition using maintained Button, Spinner and Alert mechanics plus Next.js router refresh
+**Purpose:** Submit one explicit failed-job Retry attempt, disable duplicate in-flight clicks, show sanitized local success/error feedback and refresh the server-owned Activity list after acceptance.
+**Used by:** `ActivityView` failed rows only.
+**Dependencies:** `POST /api/generation/jobs/[jobId]/retry`, `generation-retry-contract`, maintained Button/Spinner/Alert, Lucide, Next.js router.
+**Reuse rules:** Keep the browser payload to the historical job ID only. Keep product intent reconstruction, ownership/input validation and new-job creation server-side. On narrow layouts the action occupies its own full-width row; at `sm+` it returns to compact contextual placement.
+**Do not:** Send historical prompt/settings/provider payload from the browser, mutate the historical row, expose raw backend/provider errors, add Retry to active/succeeded/cancelled rows, or turn this into Cancel/general Run Again/global job state.
+**Notes:** UI-050 exact head `ab33e146ccaa7770f3dd66146708f01933cc0173`; Activity `33279062575`. Human review of the preceding green artifact caught success feedback squeezing row content on narrow layouts; final artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) was reviewed clean after the responsive fix.
 
 ### LibraryView
 **Status:** APPROVED

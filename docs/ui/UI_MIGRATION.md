@@ -909,8 +909,8 @@ Users should be able to maintain named collections and organize the media alread
 
 ### Phase 9 — Activity v2 / Recovery & Job Control
 
-**Phase contract status:** `EXPANDED / READY FOR EXECUTION` under UI-050.
-**Execution status:** `NOT STARTED` until this contract is merged. No deployment is included or authorized.
+**Phase contract status:** `COMPLETE / VERIFIED` under UI-050.
+**Execution status:** `COMPLETE / VERIFIED`. No deployment was included, performed or authorized.
 
 #### Goal
 Make failed generation work recoverable from Activity without asking the user to reconstruct the request in Create, while preserving RenderLab's owner-scoped product-job model and refusing to expose a Cancel control that the current orchestration cannot yet make race-safe.
@@ -1015,15 +1015,24 @@ The Phase 9 planning audit found a concrete app-level race blocker, so no genera
 - `docs/architecture/INFRASTRUCTURE.md` only if execution-safety/backend/shared-resource reality changes beyond the planning audit recorded here.
 
 #### Phase 9 exit criteria
-- [ ] Failed-job Retry creates a distinct new owner-scoped job from current-revalidated stored product intent and never mutates/replays the historical execution payload.
-- [ ] Legacy Video retry normalization is exactly bounded: missing resolution -> 480p and inactive Video Steps/Guidance are not replayed; other current-invalid intent fails closed.
-- [ ] Missing/foreign/tombstoned/not-ready inputs cannot be resubmitted through Retry.
-- [ ] Activity Retry is responsive/accessibly reviewed and existing job history/result/pagination/auto-refresh behavior remains intact.
+- [x] Failed-job Retry creates a distinct new owner-scoped job from current-revalidated stored product intent and never mutates/replays the historical execution payload.
+- [x] Legacy Video retry normalization is exactly bounded: missing resolution -> 480p and inactive Video Steps/Guidance are not replayed; other current-invalid intent fails closed.
+- [x] Missing/foreign/tombstoned/not-ready inputs cannot be resubmitted through Retry.
+- [x] Activity Retry is responsive/accessibly reviewed and existing job history/result/pagination/auto-refresh behavior remains intact.
 - [x] Cancellation safety was audited from current orchestration; Cancel is deliberately deferred because late persistence/reassignment races lack a cancellation-aware atomic guard.
 - [x] Shell-global attention is deliberately deferred; Phase 9 v0.1 adds no cross-route polling/global job store.
-- [ ] No schema migration, new top-level route, provider/admin control or deployment is introduced.
-- [ ] Exact-head affected CI, configured Retry verification, human artifact review and exact fixture cleanup all pass.
-- [ ] Authoritative docs match implementation reality, then Phase 10 is expanded before Admin/account-operations implementation begins.
+- [x] No schema migration, new top-level route, provider/admin control or deployment is introduced.
+- [x] Exact-head affected CI, configured Retry verification, human artifact review and exact fixture cleanup all pass.
+- [x] Authoritative docs match implementation reality. Phase 10 must be expanded before Admin/account-operations implementation begins.
+
+
+#### Phase 9 implementation evidence — verified 2026-08-29
+- Exact accepted code/test head: `ab33e146ccaa7770f3dd66146708f01933cc0173`.
+- Exact-head minimum/affected suite passed: UI Shell `33279062584`, Activity `33279062575`, Account Ownership `33279062570`, Media Delete `33279062563`, Create Lifecycle `33279062581`, Generation Integration `33279062568`, and Video Generation Integration `33279062569`.
+- Configured Activity Retry exercised 22 historical fixtures and six authenticated mock-backend submissions without ComfyUI generation spend. It verified failed-only eligibility, malformed/signed-out/missing/foreign privacy boundaries, immutable original rows, distinct new attempts, current parser/capability/input validation, positional alias compatibility, legacy Video missing-resolution -> `480p`, inactive legacy Video Steps/Guidance removal, durable/temporary input availability, provider/execution-metadata isolation, and sanitized backend rejection/unavailability.
+- Final configured Activity artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) contains ten desktop/narrow baseline, Retry, busy, success and error screenshots. Human review found the first green candidate squeezed prompt/timestamp content beside narrow success feedback; `ActivityRetryButton` was changed to a full-width narrow row with compact `sm+` placement. The final artifact was re-run and reviewed clean with readable prompts, reachable touch targets and no horizontal clipping.
+- Final Activity cleanup deleted the exact owner and foreign fixture accounts plus owned jobs/media/sources; cleanup-only passed. No Phase 9 schema migration or generation R2 fixture was required.
+- Cancel remains deliberately deferred; no shell-global polling/job store, successful-job Run Again, provider/admin UI, schema migration or deployment was added.
 
 ### Phase 10 — Account, Admin & Closed-Beta Operations
 - [ ] Add account recovery/password reset and improve requirement-backed verification/session failure handling through the maintained Supabase Auth/session boundary.
@@ -1067,12 +1076,12 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–8 are complete and verified under the Closed Beta boundary.
-**Current phase contract:** Phase 9 — Activity v2 / Recovery & Job Control is `EXPANDED / READY FOR EXECUTION` under UI-050; execution is `NOT STARTED` until the contract merge.
-**Current product slice:** Phase 9A Generation Retry v0.1 — failed-job-only Retry from stored product intent with current capability/input revalidation and a distinct new job identity.
-**Current gate:** Merge this Phase 9 contract, then implement only Retry v0.1. Do not add Cancel, shell-global job polling, a schema migration, general “Run again,” provider/admin controls or deployment. The cancellation audit is already sufficient to defer Cancel because current native persistence/reassignment races lack an atomic cancellation guard.
-**Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2.
-**Later Cycle 2:** Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–9 are complete and verified under the Closed Beta boundary.
+**Current completed phase contract:** Phase 9 — Activity v2 / Recovery & Job Control is `COMPLETE / VERIFIED` under UI-050.
+**Completed product slice:** Phase 9A Generation Retry v0.1 — failed-job-only Retry from stored product intent with current capability/input revalidation and a distinct new job identity.
+**Current gate:** Expand and merge the Phase 10 Account/Admin/Closed-Beta Operations contract before implementation. Do not add Phase 10 features or deploy merely because Phase 9 is complete.
+**Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
+**Later Cycle 2:** Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
 **Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation productization, billing and cross-page selection still require their own evidence/decisions.
 

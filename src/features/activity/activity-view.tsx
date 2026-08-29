@@ -21,6 +21,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ActivityAutoRefresh } from "@/features/activity/activity-auto-refresh";
+import { ActivityRetryButton } from "@/features/activity/activity-retry-button";
 import type { PublicGenerationActivity } from "@/lib/api/generation-activity-contract";
 import { isActiveGenerationStatus } from "@/lib/api/generation-activity-contract";
 
@@ -155,7 +156,7 @@ export function ActivityView({
             {items.map((item) => (
               <li key={item.id} className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-text">
                         {item.outputKind === "video"
@@ -180,6 +181,8 @@ export function ActivityView({
                     <Button asChild variant="secondary" size="sm">
                       <Link href={`/library/${encodeURIComponent(item.outputAssetIds[0])}`}>View result</Link>
                     </Button>
+                  ) : item.status === "failed" ? (
+                    <ActivityRetryButton jobId={item.id} />
                   ) : null}
                 </div>
 

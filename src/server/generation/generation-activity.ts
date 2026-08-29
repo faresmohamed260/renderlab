@@ -27,8 +27,8 @@ function activityError(row: Pick<GenerationActivityRow, "status" | "error_code" 
   return {
     code,
     message: code === "generation_submission_failed"
-      ? "Generation could not be started. Review your inputs and try again from Create."
-      : "Generation did not complete. Try again from Create.",
+      ? "Generation could not be started. Retry when you’re ready."
+      : "Generation did not complete. Retry when you’re ready.",
   };
 }
 
