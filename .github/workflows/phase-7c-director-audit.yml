@@ -31,6 +31,18 @@ jobs:
           curl --fail --silent --show-error --retry 3 --retry-all-errors "$STANDBY/openapi.json" -o audit/standby-openapi.json
           curl --fail --silent --show-error --retry 2 --retry-all-errors --max-time 900 "$PRIMARY/runtime-health" -o audit/primary-runtime-health.json
 
+          # This request cannot spawn generation because duration_seconds=1 is invalid.
+          # It deliberately includes the RenderLab-posted cfg/steps fields to determine
+          # whether the live gateway still validates them or simply ignores them.
+          status="$(curl --silent --show-error -o audit/primary-extra-fields.json -w '%{http_code}' \
+            -X POST "$PRIMARY/jobs/video" \
+            -F 'prompt=renderlab phase 7c contract audit' \
+            -F 'resolution=480p' \
+            -F 'duration_seconds=1' \
+            -F 'steps=999' \
+            -F 'cfg=999')"
+          printf '%s\n' "$status" > audit/primary-extra-fields-status.txt
+
       - name: Summarize live Director capability boundary
         run: |
           python - <<'PY'
@@ -43,6 +55,8 @@ jobs:
           runtime = json.loads((root/'primary-runtime-health.json').read_text())
           po = json.loads((root/'primary-openapi.json').read_text())
           so = json.loads((root/'standby-openapi.json').read_text())
+          extra_status = (root/'primary-extra-fields-status.txt').read_text().strip()
+          extra_body = json.loads((root/'primary-extra-fields.json').read_text())
 
           def video_schema(doc):
               op = doc['paths']['/jobs/video']['post']
@@ -72,6 +86,11 @@ jobs:
           assert primary_fields.count('image_file') <= 1
           assert not found_director, found_director
           assert runtime.get('ready') is True, runtime
+          assert extra_status == '400', (extra_status, extra_body)
+          extra_detail = str(extra_body.get('detail') or extra_body.get('error') or '')
+          assert 'duration' in extra_detail.lower(), extra_body
+          assert 'step' not in extra_detail.lower(), extra_body
+          assert 'cfg' not in extra_detail.lower(), extra_body
 
           def property_summary(props):
               result = {}
@@ -107,7 +126,14 @@ jobs:
               'source_live_drift': {
                   'cfg_exposed_live': 'cfg' in primary_fields,
                   'steps_exposed_live': 'steps' in primary_fields,
-                  'note': 'Current Saga source contains cfg/steps fields, but live OpenAPI is authoritative for the deployed gateway.',
+                  'invalid_duration_probe_status': extra_status,
+                  'invalid_duration_probe_detail': extra_detail,
+                  'probe_sent_cfg': 999,
+                  'probe_sent_steps': 999,
+                  'conclusion': (
+                      'The live endpoint proceeded to duration validation despite invalid cfg/steps values, '
+                      'confirming those extra multipart fields are not active live controls.'
+                  ),
               },
               'runtime': {
                   'app': runtime.get('app'),
