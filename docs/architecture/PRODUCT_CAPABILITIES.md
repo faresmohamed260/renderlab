@@ -180,21 +180,24 @@ UI-047 therefore closes Phase 7C as **audit-complete / Director deferred**. The 
 
 The same audit found a product-contract drift: live `/jobs/video` does not expose `steps` or `cfg`, even though current RenderLab still serializes Video `steps`/`guidance`. A no-generation probe sent deliberately invalid `steps=999` / `cfg=999` alongside invalid duration and the live endpoint proceeded to duration validation, confirming the extra tuning fields are not active live controls. Phase 7D must reconcile this before claiming Video steps/guidance are effective.
 
-### Accepted Phase 7D Video resolution contract — planned, not implemented
-UI-048 establishes the next Video product contract from the verified Phase 7C worker evidence. This section records accepted product intent; the currently verified implementation remains fixed-480p and still contains the drift described below until Phase 7D implementation is completed and reverified.
+### Phase 7D Video resolution — Verified in RenderLab
+UI-048 is implemented and exact-head/live verified. Video and Animate now expose a truthful delivery-resolution product contract without exposing disabled or worker-internal tuning.
 
-- User-facing Video resolution values are exactly `480p`, `720p`, `1080p`, `2K`; disabled `4K` remains hidden and invalid.
-- Product language is **Resolution**, not `Quality`. Default remains `480p` because it is both current RenderLab behavior and the deployed worker default, while higher-mode latency/capacity/cost evidence is bounded or unresolved.
-- Canonical Video intent gains Video-only `output.resolution`; omission at the public request boundary normalizes server-side to `480p` before orchestration/persistence. Image cannot carry the field.
-- Resolution composes with the existing curated Video aspect ratios, 5/10/15/20/30-second durations, 24/25/30 fps, Audio and source-backed Animate `Original`. Animate Original keeps source-derived W:H while resolution independently selects the delivery-resolution class.
-- Video Steps/Guidance are removed/rejected because live `/jobs/video` has no `steps`/`cfg`. Image Steps/Guidance remain verified and unchanged. Native Video multipart must stop sending inactive fields.
-- No schema migration is planned: the existing generation parameter JSON persists canonical output intent. Historical jobs are not rewritten; future Retry revalidates current capability, treats missing legacy Video resolution as `480p` and does not replay legacy inactive Video tuning.
-- Phase 7D must pass the exact server-combination, four-case configured REDGraft, contextual-output, responsive/accessibility/reduced-motion and cleanup matrix in `docs/ui/UI_MIGRATION.md` before being marked implemented.
+- User-facing Video resolution values are exactly `480p`, `720p`, `1080p`, `2K`; `480p` is the default and disabled `4K` is hidden/rejected.
+- Product language is **Resolution**, not Quality. No cost, ETA or perceptual-quality tier is inferred from the setting.
+- Video-only `output.resolution` is server validated. Omission at the public request boundary normalizes to `480p` before persistence/orchestration; canonical persisted Video intent therefore has an explicit resolution. Image requests reject the field.
+- Resolution composes with the 11 curated fixed Video ratios, 5/10/15/20/30-second durations, 24/25/30 fps, Audio and source-backed Animate `Original`. `Original` retains source-derived W:H independently of delivery resolution.
+- Video Steps/Guidance are no longer product controls: new Video requests reject `advanced.steps` / `advanced.guidance`, and native REDGraft multipart no longer sends `steps` / `cfg`. Image Steps/Guidance remain unchanged.
+- The existing `generation_jobs.parameters.output` JSON persists the normalized resolution; no database migration or new durable table was added. Historical jobs are not rewritten. Future Retry must revalidate current capability, normalize a legacy missing Video resolution to 480p and not replay legacy inactive Video tuning.
+- Exact implementation code/test head `594ad7eb39a9d5eec1d2f0283ac6e327f86129b3` passed the 1,320-combination fixed product matrix and all nine affected PR workflows: UI Shell `33270777087`, Account Ownership `33270777089`, Media Delete `33270777092`, Activity `33270777133`, Create Durable Upload `33270777088`, Library Lifecycle `33270777082`, Generation Integration `33270777083`, Create Lifecycle `33270777086`, and Video Generation Integration `33270777081`.
+- The exact live matrix produced: 480p 16:9 → `854×480`; matched 1080p 16:9 → `1920×1080`; 720p 9:16 with Audio → `720×1280`; and 2K Animate `Original` from a 2:1 source → `2304×1152`. Duration/fps/audio/persisted owner/product state also matched each request. Observed timings are samples, not SLAs.
+- Contextual review accepted the matched 480p/1080p outputs as usable; the portrait city-scene result was coherent with its prompt; and the 2K Animate output preserved visible influence and 2:1 geometry from its run-owned solid-blue source. Model obedience is probabilistic; RenderLab guarantees correct mapping/validation rather than deterministic creative output.
+- Configured fixtures were exactly cleaned, including the earlier diagnostic run. No route, model/provider selector, Director UI, schema or deployment change was introduced.
 
 ### Advanced product controls
-Current capability metadata is centralized in `src/lib/capabilities/generation.ts`, but verified worker effect is output-specific:
-- Image: negative prompt, seed, steps and guidance remain the verified FLUX tuning surface.
-- Video: the deployed gateway exposes negative prompt, seed and frame rate; audio remains a contextual output setting. `steps`/`guidance` are still present in the current RenderLab draft/request shape but are **not verified active REDGraft controls** and must not remain represented as effective Video tuning after the next Video contract reconciliation.
+Capability metadata is centralized in `src/lib/capabilities/generation.ts`, and the verified surface is output-specific:
+- Image: negative prompt, seed, Steps and Guidance.
+- Video: negative prompt, seed and Frame rate. Audio remains a contextual Video setting in the compact Video settings menu; Steps/Guidance are rejected and are not forwarded as native REDGraft fields.
 
 Advanced remains collapsed by default. A worker/source parameter is not sufficient reason to expose a control; the deployed contract and verified behavior govern product truth.
 
