@@ -12,6 +12,7 @@ Core stack from `package.json`:
 - Tailwind CSS `4.3.3`
 - Lucide React `1.34.0`
 - `radix-ui` `1.6.7`
+- Motion for React `13.1.1`
 - `sharp` `0.34.3` — server-side execution geometry preparation/inspection, never a browser media store
 - `@supabase/ssr` `0.12.5`
 - `@supabase/supabase-js` `2.112.4`
@@ -33,6 +34,9 @@ Approved product state includes Application Shell, Create, Library v0.1, persist
 **Components:** approved RenderLab components first; conventional visible controls use the maintained `src/components/ui` layer; new mechanics follow the approved source order in `docs/ui/COMPONENT_CATALOG.md`.
 
 Deployment configuration: repository `vercel.json` pins the Vercel framework to `nextjs` and disables automatic Git-triggered deployments. `scripts/verify-vercel-env.mjs` runs as a Vercel-only prebuild guard for required Supabase/R2 configuration and the approved shared Supabase URL. GitHub remains the development/validation path; production deployment is an explicit operation.
+
+### Phase 7A premium interaction/motion boundary
+`motion` `13.1.1` is adopted under UI-043 as a feature-local Create interaction mechanic, imported from `motion/react`. `CreateWorkspace` uses reduced-motion-aware presence/layout transitions for operation/context copy, stable-key reference add/remove/reorder, Image↔Video contextual controls and saved-result arrival; `CreateAdvancedPanel` uses the same boundary for verified field-set changes. Stable product identities, request state, ownership and routing stay in existing React/product contracts—Motion is not a data store, authorization boundary or generic application framework. `prefers-reduced-motion` resolves these transitions to static/zero-duration behavior. The pass changes no route, product API, server orchestration, schema, provider or deployment boundary. Exact head `51c293dad114c98754933ab192b13427a90d9570` passed UI Shell `33273370797`, Create Lifecycle `33273370720` and all 19 affected workflows.
 
 ### Phase 7A source-aware generation geometry boundary
 `src/server/generation/geometry.ts` owns execution-only image geometry preparation. It may create the neutral first-input canvas required to make FLUX Create ratios truthful, derive display-oriented source W:H for Animate `Original`, or create an explicit-ratio primary-image derivative for FLUX Edit. These transformations are server execution details: they do not mutate the durable `media_asset`, change opaque media identity or move geometry state into the browser. Normalized product intent retains `aspectRatio: "original"` for source-backed operations while server routing resolves the worker-specific execution geometry.

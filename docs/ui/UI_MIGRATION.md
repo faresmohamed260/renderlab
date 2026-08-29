@@ -559,7 +559,7 @@ Make Create capable of richer reference-driven image/video work without turning 
 - [x] **Durable Create uploads:** newly uploaded Create references now reuse the persistent media ticket/R2/completion transaction and become owner-scoped durable `media_assets` before generation. Create binds the resulting opaque `media-asset` into generation requests, and the asset remains ordinary Library media even if Generate is never pressed. Configured run `33256497167` verified upload/session ownership, persisted dimensions/provenance, Library visibility, request binding and exact cleanup without spending a generation. `generation_sources` remains internal compatibility/staging only and is no longer the user-facing identity for newly uploaded Create references.
 - [x] **Reference identity/order/roles:** PR #51 merged stable `@imageN` identities, structured alias/source/role persistence, unique-alias parsing, deterministic alias→worker-position translation and continuation-safe alias allocation. Removing/replacing/continuing does not silently retarget an old alias; unresolved prompt aliases block generation. Exact head `c8fbe9d733eb9b983b209da995b2f9865808f66a` passed all nine affected gates before merge as `7afe257b069e74d322d8f83c1a0868a30acd3686`.
 - [x] **Prompt reference foundation:** PR #51 uses the initial `@imageN` grammar and a Create-owned thumbnail mention menu composed from the approved maintained Button + Radix DropdownMenu layer. Typing `@...` or selecting the attached-reference alias inserts the structured alias; prompt text itself never authorizes media access, and server parsing rejects unresolved aliases.
-- [ ] **Premium interaction pass:** apply deliberate spatial/layout transitions, reference motion/reordering feedback and contextual control transitions using approved maintained mechanics; basic default-library styling is not the quality target. Preserve reduced motion, keyboard/touch parity and performance.
+- [x] **Premium interaction pass:** PR #58 candidate exact code/test head `51c293dad114c98754933ab192b13427a90d9570` adopts Motion for React `13.1.1` for purposeful feature-local Create continuity: operation/context copy, reference add/remove/reorder, Image↔Video contextual controls, Advanced field changes and result arrival. Reference rows keep stable aliases and use layout-position transitions; configured Create Lifecycle `33273370720` proved an in-flight reorder transform, settled `@image2` into the primary slot, and verified reduced-motion mode transitions settle with `transform: none`. UI Shell `33273370797` passed the reduced-motion Playwright coverage. The complete 19-workflow exact-head affected suite passed, including Deployment Readiness `33273370765` and Video Generation Integration `33273370754`; the latter cleaned to zero run-owned jobs/sources/assets/users. Artifact `9720784693` (`sha256:0bc1ce993c5c21feb3e00f8c8166c8e484b8dd0939633e8ccca5fb734cdf8f1d`) contains the configured Create screenshots; desktop reorder and narrow reduced-motion states were visually reviewed clean. No backend/schema/provider/route/infrastructure/deployment scope changed.
 
 #### Phase 7B — Multi-reference Image Editing
 - [x] Choose and enforce a deliberate bounded product maximum: **2 image references for Image output, 1 image reference for Video output**. UI-046 records the evidence-backed v0.1 boundary and PR #53 implements it in the centralized capability, request-validation and Create UI contracts rather than relying on worker permissiveness.
@@ -706,7 +706,7 @@ For every live case:
 - [x] Contextual real-output review is complete, including the paired 480p/1080p review and 2K Animate Original case; limitations are documented without overclaiming quality/model obedience.
 - [x] Desktop/narrow, keyboard/touch/focus and reduced-motion review passes without re-crowding Create.
 - [x] Exact fixtures are clean, no schema/provider/model/deployment scope drift occurred, and authoritative docs match verified reality.
-- [x] Completing Phase 7D does **not** close Phase 7 while the separate Phase 7A premium-interaction pass remains open.
+- [x] Completing Phase 7D did **not** close Phase 7 by itself; Phase 7 closes only after the separate Phase 7A premium-interaction pass is also verified.
 
 #### Recommended Phase 7 evaluations — not automatic exit criteria
 - `Reuse settings` / `Remix` from persisted normalized generation intent.
@@ -761,15 +761,15 @@ For every live case:
 - `docs/architecture/INFRASTRUCTURE.md` only if worker/storage/admin infrastructure reality changes.
 
 #### Exit criteria
-- [x] The Phase 7A dependency foundation required by later slices is implemented and verified: durable Create uploads, source-aware geometry/ratios, composer hierarchy, stable reference identity/order/roles and prompt addressing are merged. The separate Phase 7A premium-interaction pass remains open as its own Phase 7 exit item and is not misrepresented as complete.
+- [x] Phase 7A is implemented and verified: durable Create uploads, source-aware geometry/ratios, composer hierarchy, stable reference identity/order/roles, prompt addressing and the separate premium interaction/motion pass all satisfy their accepted boundaries.
 - [x] Source-aware geometry + explicit override and curated ratios are verified on exact head `789358e8a276ab54d8eeae7e4b7dcb64c2c4c60f`; live output-dimension evidence includes Generation `33258831654`, Video Generation `33258831636`, Create Lifecycle `33258831638` and final exact-head Library Lifecycle `33259411170`.
 - [x] Create-originated user uploads are durable Library media regardless of generation submission/use; configured evidence `33256497167`.
 - [x] Reference identity/order/roles and prompt addressing are deterministic and server-validated through PR #51 / merge `7afe257b069e74d322d8f83c1a0868a30acd3686`; PR #53 / merge `0286b18802fc3d766d9d09e2ba8ed9a494eabd08` adds the bounded count/slot/media/ownership enforcement.
 - [x] Multi-reference image editing has bounded product semantics plus configured contextual evidence. FLUX/Qwen evidence is recorded in `33263044354`, `33263338596`, `33263401453`; PR #53 merged the two-Image/one-Video product UI/server contract after exact validation head `acf3f8e792c2b895a9999cca24060a1c33484463` passed all nine affected gates, including configured Create Lifecycle `33266025789` with durable two-reference attach/replace/reorder/alias/Video-limit coverage and exact cleanup. Desktop/narrow artifacts were reviewed clean after the narrow reference-row polish.
 - [x] Director-video capability is explicitly documented as blocked/deferred under UI-047 from live audit `33266905978`; no speculative Director/node UI ships.
-- [ ] Curated Video resolution is implemented from verified enabled modes with a deliberate default.
-- [ ] Create visual density/motion/accessibility is reviewed on desktop/narrow layouts and feels intentionally productized rather than mechanically appended.
-- [ ] Exact-head affected CI passes, shared fixtures are clean and authoritative docs match implementation reality.
+- [x] Curated Video Resolution is implemented and live/exact-head verified under UI-048 with enabled 480p/720p/1080p/2K modes, deliberate 480p default and hidden/rejected 4K.
+- [x] Create visual density/motion/accessibility is reviewed on desktop/narrow layouts: Phase 7A exact head `51c293dad114c98754933ab192b13427a90d9570` verifies purposeful spatial continuity plus reduced-motion static behavior without re-crowding the approved composer.
+- [x] Exact-head affected CI passes, shared fixtures are clean and authoritative docs match implementation reality. The final Phase 7A head passed all 19 affected workflows; configured Create and Video fixture cleanup completed successfully.
 
 ### Phase 8 — Library v2 / Media Workflow Productivity
 - [ ] Collection Rename as an owner-scoped Library/Viewer organization contract.
@@ -829,10 +829,10 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete under Closed Beta and the roadmap has been revised from the first production-feedback pass.
-**Current phase contract:** Phase 7 — Create v2 / Creative Direction is `EXPANDED/PLANNED`; execution is `IN PROGRESS`.
-**Current product slice:** Phase 7D Video Resolution is `COMPLETE / VERIFIED` under UI-048 at exact code/test head `594ad7eb39a9d5eec1d2f0283ac6e327f86129b3`. The Phase 7A premium interaction/motion pass remains the open Phase 7 exit item.
-**Current gate:** Finish the remaining Phase 7A premium interaction/motion pass against the already-approved Create/reference/Resolution composition. Phase 7D is complete; do not reopen its product contract without new evidence or an explicit decision. No deployment is authorized.
-**Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Quality/Resolution.
+**Current phase contract:** Phase 7 — Create v2 / Creative Direction is `EXPANDED/EXECUTED`; execution is `COMPLETE / VERIFIED`.
+**Current product slice:** Phase 7A premium interaction/motion is `COMPLETE / VERIFIED` at exact code/test head `51c293dad114c98754933ab192b13427a90d9570`, closing the remaining Phase 7 exit item. Phase 7D remains independently complete/verified under UI-048.
+**Current gate:** Expand Phase 8 Library v2 into an execution-ready contract from current repository reality before any Phase 8 implementation. Do not reopen completed Phase 7 contracts without new evidence or an explicit decision. No deployment is authorized.
+**Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Resolution — all complete/evaluated within their accepted boundaries.
 **Later Cycle 2:** Phase 8 Library v2 → Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
 **Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation, billing and cross-page selection still require their own evidence/decisions.
