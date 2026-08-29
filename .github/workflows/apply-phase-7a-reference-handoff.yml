@@ -1,0 +1,126 @@
+name: Apply Phase 7A reference handoff documentation
+
+on:
+  push:
+    branches:
+      - docs/phase-7a-reference-handoff
+    paths:
+      - .github/workflows/apply-phase-7a-reference-handoff.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/phase-7a-reference-handoff
+          fetch-depth: 0
+
+      - name: Apply authoritative documentation updates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          # PROJECT.md — verified PR #49 state and next reference slice.
+          replace_once(
+              'PROJECT.md',
+              '**Cycle 2 — Creative Productivity & Beta Maturity. Phase 6 is complete under the Closed Beta boundary; Phase 7A Create Foundation is in progress with durable Create uploads plus source-aware geometry and curated ratio expansion now verified and merged.**',
+              '**Cycle 2 — Creative Productivity & Beta Maturity. Phase 6 is complete under the Closed Beta boundary; Phase 7A Create Foundation is in progress with durable Create uploads, source-aware geometry/curated ratios, and composer hierarchy/de-crowding now verified and merged.**',
+          )
+          replace_once(
+              'PROJECT.md',
+              '- Current product slice: **Phase 7A — Composer Hierarchy / De-crowding** is next and has not started implementation. Durable Create uploads are merged through PR #46; source-aware geometry + curated ratios are merged through PR #47. The broader Phase 7A foundation remains incomplete.',
+              '- Current product slice: **Phase 7A — Reference Identity / Order / Roles + Prompt Reference Foundation** is next and has not started implementation. Durable Create uploads are merged through PR #46, source-aware geometry + curated ratios through PR #47, and composer hierarchy/de-crowding through PR #49. The broader Phase 7A foundation remains incomplete.',
+          )
+          replace_once(
+              'PROJECT.md',
+              '- The shared browser upload transaction now serves both Library and Create while feature-specific picker/drop validation remains feature-owned. User-facing Create no longer depends on temporary `generation_sources` for newly uploaded references; temporary-source APIs remain an internal compatibility/staging capability until separately retired.\n- Next Phase 7A slice: **Composer Hierarchy / De-crowding**. Preserve the verified durable-media and geometry contracts while reducing default control density; reference identity/order/roles, prompt addressing and the premium interaction pass remain subsequent 7A work.',
+              '- The shared browser upload transaction now serves both Library and Create while feature-specific picker/drop validation remains feature-owned. User-facing Create no longer depends on temporary `generation_sources` for newly uploaded references; temporary-source APIs remain an internal compatibility/staging capability until separately retired.\n- Composer hierarchy/de-crowding merged through PR #49 as `d324d7c8a520052d3c4bdc81f5f6c11edbdf50ee`. Exact implementation head `d52db83efb2af056e2e1598b54b988794ff19ab1` passed UI Shell `33261129925`, Create Lifecycle `33261129910`, Library Lifecycle `33261129917`, Account Ownership `33261129909`, Create Durable Upload `33261129940`, and Video Generation `33261129918`. Desktop/narrow artifacts were reviewed: Video duration/audio/Advanced are contextualized through maintained Dropdown Menu mechanics, Image/Video uses the maintained compact ToggleGroup, and Advanced expands below the primary controls/Generate row. No generation/API/schema/worker/route/deployment contract changed.\n- Next Phase 7A slice: **Reference Identity / Order / Roles + Prompt Reference Foundation**. Lock stable `@image1`, `@image2`, … aliases tied to attached references, deterministic request order and structured alias→opaque-input mapping, plus a maintained thumbnail picker/autocomplete for inserting attached references. Reordering/removal must not silently retarget an existing prompt alias; unresolved aliases block generation until fixed. The premium interaction pass remains subsequent 7A work.\n- Phase 7B contextual acceptance requires real output artifacts, not only accepted requests or dimension checks: bounded synthetic-person outfit edits should preserve recognizable subject appearance, two-person multi-reference cases should visibly represent both intended people, and `@imageN`-directed prompts should be reviewed against the intended mapping. RenderLab guarantees deterministic mapping/validation, while model obedience and identity fidelity remain probabilistic and are evaluated truthfully rather than promised deterministically.',
+          )
+
+          # UI_MIGRATION.md — mark composer verified; lock reference syntax, picker, and semantic evidence.
+          replace_once(
+              'docs/ui/UI_MIGRATION.md',
+              '- [ ] **Composer hierarchy / de-crowding:** keep prompt, active references and Generate immediately understandable; move task-dependent settings into compact contextual controls/disclosures and keep technical reproducibility under Advanced. Avoid an always-visible wall of Video controls.',
+              '- [x] **Composer hierarchy / de-crowding:** PR #49 keeps reference entry, Image/Video intent, aspect ratio and Generate in the immediate hierarchy; Video duration/audio/Advanced are consolidated into a maintained contextual Dropdown Menu, Image keeps direct Advanced disclosure, and Advanced expands below the primary actions. Exact head `d52db83efb2af056e2e1598b54b988794ff19ab1` passed UI Shell `33261129925`, Create Lifecycle `33261129910`, Library Lifecycle `33261129917`, Account Ownership `33261129909`, Create Durable Upload `33261129940`, and Video Generation `33261129918`; desktop/narrow artifacts were reviewed before PR #49 merged as `d324d7c8a520052d3c4bdc81f5f6c11edbdf50ee`.',
+          )
+          replace_once(
+              'docs/ui/UI_MIGRATION.md',
+              '- [ ] **Reference identity/order/roles:** establish stable human-visible reference aliases, deterministic request order, optional task-relevant semantic roles, and reordering/removal behavior before multi-reference UI expands.',
+              '- [ ] **Reference identity/order/roles:** attach stable human-visible aliases beginning `@image1`, `@image2`, … to reference identities, preserve deterministic request order, support optional task-relevant semantic roles, and define reorder/removal behavior before multi-reference UI expands. Reordering or removing a reference must not silently retarget an alias already used in prompt text; unresolved aliases are surfaced and block generation until corrected.',
+          )
+          replace_once(
+              'docs/ui/UI_MIGRATION.md',
+              '- [ ] **Prompt reference foundation:** define a product-level reference-addressing grammar/autocomplete (for example an `@reference` interaction) that resolves only to inputs attached to the current request and persists enough structured mapping to reconstruct intent. Final syntax is locked before Phase 7B implementation.',
+              '- [ ] **Prompt reference foundation:** use the initial product grammar `@image1`, `@image2`, … and a maintained thumbnail picker/autocomplete that exposes only references attached to the current request. Typing/inserting a reference resolves through structured alias/order/role metadata persisted with normalized intent; prompt text itself is never authorization. Generic picker/popover/combobox mechanics must come from the approved maintained component source order in UI-013 / `COMPONENT_CATALOG.md`; do not build a bespoke generic autocomplete when an approved implementation is suitable.',
+          )
+          replace_once(
+              'docs/ui/UI_MIGRATION.md',
+              '- [ ] Audit current FLUX and Qwen multi-input behavior for subject/outfit/pose/style/background-like use cases, output geometry and failure semantics. Route/model choice remains internal unless evidence shows a user-facing choice provides concrete value.',
+              '- [ ] Audit current FLUX and Qwen multi-input behavior with real contextual output artifacts, not only request acceptance: include subject/outfit/pose/style/background-like cases, a bounded synthetic-person outfit edit where recognizable subject appearance should remain coherent, a two-distinct-person composition where both intended people should be visibly represented, `@imageN`-directed mapping cases, output geometry and failure semantics. Route/model choice remains internal unless evidence shows a user-facing choice provides concrete value.',
+          )
+          replace_once(
+              'docs/ui/UI_MIGRATION.md',
+              '| Multi-reference | FLUX/Qwen verified cases, bounded count, same-owner/media-kind/role validation, truthful probabilistic-semantics messaging |',
+              '| Multi-reference | FLUX/Qwen bounded real-output cases including outfit/subject preservation, two-person composition and `@imageN` mapping; bounded count; same-owner/media-kind/role validation; deterministic mapping separated clearly from probabilistic model obedience |',
+          )
+          replace_once(
+              'docs/ui/UI_MIGRATION.md',
+              '- [ ] Multi-reference image editing has bounded product semantics and configured FLUX/Qwen evidence appropriate to the final routing contract.',
+              '- [ ] Multi-reference image editing has bounded product semantics plus configured FLUX/Qwen contextual output evidence appropriate to the final routing contract; technical request success or correct dimensions alone are insufficient.',
+          )
+          replace_once(
+              'docs/ui/UI_MIGRATION.md',
+              '**Current product slice:** Phase 7A — Composer Hierarchy / De-crowding is next and has not started implementation. Durable Create uploads are verified/merged through PR #46 and source-aware geometry + curated ratios through PR #47; Phase 7A as a whole remains incomplete.\n**Current gate:** Continue Phase 7A with composer hierarchy / de-crowding from the verified durable-media + geometry foundation; do not advance reference identity/prompt addressing or premium-motion completion until those contracts are actually implemented and verified.',
+              '**Current product slice:** Phase 7A — Reference Identity / Order / Roles + Prompt Reference Foundation is next and has not started implementation. Durable Create uploads are verified/merged through PR #46, source-aware geometry + curated ratios through PR #47, and composer hierarchy/de-crowding through PR #49; Phase 7A as a whole remains incomplete.\n**Current gate:** Continue Phase 7A by locking and implementing stable `@imageN` reference identity/order/role mapping plus a maintained thumbnail picker/autocomplete. Do not advance Phase 7B multi-reference exposure until aliases resolve deterministically through same-owner server validation and contextual output evidence has been defined; premium-motion completion remains subsequent 7A work.',
+          )
+
+          # UI_DECISIONS.md — refine UI-041 with explicit accepted interaction/evidence rules.
+          decisions = Path('docs/ui/UI_DECISIONS.md')
+          text = decisions.read_text()
+          if '### UI-044 — Stable `@imageN` aliases use maintained thumbnail-picker mechanics' in text:
+              raise SystemExit('UI-044 already exists')
+          text += '''\n\n### UI-044 — Stable `@imageN` aliases use maintained thumbnail-picker mechanics\n**Status:** Accepted\n**Decision:** Phase 7 reference addressing uses stable human-visible image aliases beginning `@image1`, `@image2`, …, each bound to one currently attached reference identity. Prompt editing exposes a thumbnail picker/autocomplete limited to attached references and inserts/selects those aliases. RenderLab persists structured alias/order/role → same-owner opaque-input mapping and translates that product intent through the selected generation adapter; alias text itself never authorizes media access. Generic picker/popover/combobox mechanics come from the approved maintained component source order before any custom mechanic is considered.\n**Reason:** Users need an understandable way to say which image they mean, while raw upload order and free text are too ambiguous for multi-reference creative work. Maintained interaction primitives give the picker reliable keyboard/focus/touch behavior without rebuilding solved UI infrastructure.\n**Consequences:** Reordering or removing a reference must not silently retarget an alias already present in prompt text. A removed reference leaves its prompt alias unresolved and Generate is blocked until the user removes or replaces that reference. Server-side same-owner/media-kind/slot validation remains authoritative. If a new Popover/Command/combobox-style primitive is adopted, normalize the maintained implementation into `src/components/ui` and record it in `COMPONENT_CATALOG.md`; do not build a competing bespoke generic autocomplete.\n\n### UI-045 — Reference capability approval requires contextual output evidence\n**Status:** Accepted\n**Decision:** A reference/edit capability is not approved merely because the worker accepts the request, returns media, persists correctly or produces the requested dimensions. Phase 7B requires bounded real-output artifact review using controlled synthetic references for intended semantic relationships: at minimum a person/outfit edit should preserve recognizable subject appearance, a two-distinct-person composition should visibly represent both intended people, and `@imageN`-directed prompts should be reviewed against the intended alias mapping.\n**Reason:** The product value of reference-guided generation is semantic. Geometry and transport tests can prove deterministic plumbing while completely missing identity drift, dropped references or incorrect prompt-to-image association.\n**Consequences:** RenderLab may guarantee deterministic input membership/order/role/alias resolution, but model obedience and identity fidelity remain probabilistic and must be described as such. Human artifact review is the acceptance mechanism; biometric/face-recognition scoring is not required. If a configured model/workflow repeatedly fails the bounded contextual cases, that route may be blocked, changed or deferred even when its API technically succeeds. Exact test fixtures remain synthetic/run-owned and are cleaned after evidence capture.'''
+          decisions.write_text(text)
+
+          # COMPONENT_CATALOG.md — record verified PR #49 composition and next sourcing boundary.
+          replace_once(
+              'docs/ui/COMPONENT_CATALOG.md',
+              '**Notes:** All four native operations verified; complete configured browser lifecycle `33031817744`. Image/Video intent is an accessible required single-choice Radix radiogroup. Phase 7A PR #47 adds the maintained Dropdown Menu geometry selector, source-backed `Original` intent for Edit/Animate and curated fixed-ratio expansion; exact head `789358e8a276ab54d8eeae7e4b7dcb64c2c4c60f` passed responsive Create Lifecycle `33258831638` and live image/video geometry verification `33258831654` / `33258831636` before merge as `de50efe6ba462ec604ea2cace741e11904a62425`.',
+              '**Notes:** All four native operations verified; complete configured browser lifecycle `33031817744`. Image/Video intent is an accessible required single-choice Radix radiogroup. Phase 7A PR #47 adds the maintained Dropdown Menu geometry selector, source-backed `Original` intent for Edit/Animate and curated fixed-ratio expansion; exact head `789358e8a276ab54d8eeae7e4b7dcb64c2c4c60f` passed responsive Create Lifecycle `33258831638` and live image/video geometry verification `33258831654` / `33258831636` before merge as `de50efe6ba462ec604ea2cace741e11904a62425`. Phase 7A PR #49 de-crowds the composer using the existing maintained DropdownMenu/ToggleGroup/Collapsible/Button mechanics: exact head `d52db83efb2af056e2e1598b54b988794ff19ab1` passed UI Shell `33261129925`, Create Lifecycle `33261129910`, Library Lifecycle `33261129917`, Account Ownership `33261129909`, Create Durable Upload `33261129940`, and Video Generation `33261129918` before merge as `d324d7c8a520052d3c4bdc81f5f6c11edbdf50ee`. The next reference-addressing slice must source thumbnail autocomplete/popover/combobox mechanics from this catalog\'s approved maintained source order before any custom generic picker is considered; record any adopted local primitive here when implementation actually exists.',
+          )
+
+          # SCREEN_REGISTRY.md — verified Create composition and next remaining reference work.
+          replace_once(
+              'docs/ui/SCREEN_REGISTRY.md',
+              '**Phase 7 Create v2 extension:** durable Library persistence for newly uploaded Create references is implemented/verified through PR #46 and Create Durable Upload `33256497167`. Source-aware `Original` geometry, explicit overrides and the curated fixed ratio expansion are implemented/verified through PR #47 (`de50efe6ba462ec604ea2cace741e11904a62425`): Generation `33258831654` proved Create 16:9 → Edit Original → Edit 4:5 output geometry, Video Generation `33258831636` proved Animate Original from a 2:1 source, and final same-head Lifecycle/Shell regressions passed. Still planned/not yet implemented: de-crowded progressive composer; named/ordered/role-aware references with prompt addressing; multi-reference FLUX/Qwen verification; audited Director Video; curated 480p/720p/1080p/2K Video quality; deliberate premium motion/interaction treatment under UI-043. Existing verified behavior remains authoritative for every unfinished item.',
+              '**Phase 7 Create v2 extension:** durable Library persistence for newly uploaded Create references is implemented/verified through PR #46 and Create Durable Upload `33256497167`. Source-aware `Original` geometry, explicit overrides and the curated fixed ratio expansion are implemented/verified through PR #47 (`de50efe6ba462ec604ea2cace741e11904a62425`): Generation `33258831654` proved Create 16:9 → Edit Original → Edit 4:5 output geometry, Video Generation `33258831636` proved Animate Original from a 2:1 source, and final same-head Lifecycle/Shell regressions passed. Composer hierarchy/de-crowding is implemented/verified through PR #49 (`d324d7c8a520052d3c4bdc81f5f6c11edbdf50ee`): exact head `d52db83efb2af056e2e1598b54b988794ff19ab1` passed UI Shell `33261129925`, Create Lifecycle `33261129910`, Library Lifecycle `33261129917`, Account Ownership `33261129909`, Create Durable Upload `33261129940`, and Video Generation `33261129918`, with desktop/narrow artifacts reviewed. Still planned/not yet implemented: stable `@imageN` named/ordered/role-aware references with a maintained thumbnail picker/autocomplete and deterministic server mapping; contextual multi-reference FLUX/Qwen output verification; audited Director Video; curated 480p/720p/1080p/2K Video quality; deliberate premium motion/interaction treatment under UI-043. Existing verified behavior remains authoritative for every unfinished item.',
+          )
+          PY
+
+      - name: Remove documentation helper
+        run: rm .github/workflows/apply-phase-7a-reference-handoff.yml
+
+      - name: Validate documentation diff
+        run: |
+          git diff --check
+          git diff --name-only
+
+      - name: Commit documentation handoff
+        run: |
+          git config user.name "RenderLab Phase 7A Bot"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/COMPONENT_CATALOG.md docs/ui/SCREEN_REGISTRY.md .github/workflows/apply-phase-7a-reference-handoff.yml
+          git commit -m "Lock Phase 7A reference handoff"
+          git push origin HEAD:docs/phase-7a-reference-handoff
