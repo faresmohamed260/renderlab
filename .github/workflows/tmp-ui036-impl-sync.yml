@@ -1,0 +1,146 @@
+name: Temporary UI-036 Implementation Sync
+
+on:
+  push:
+    branches: [tmp/ui036-impl-sync]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch UI-036 implementation branch
+        shell: bash
+        run: |
+          git fetch origin work/video-audio-control
+          git checkout -B work/video-audio-control origin/work/video-audio-control
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected block not found in {path}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          # Capability contract: audio is a contextual video output setting, default on.
+          replace(
+              "src/lib/capabilities/generation.ts",
+              '      frameRate: 24 as const,\n',
+              '      frameRate: 24 as const,\n      audioEnabled: true,\n',
+          )
+          replace(
+              "src/lib/capabilities/generation.ts",
+              '    durationSeconds?: number;\n',
+              '    durationSeconds?: number;\n    audioEnabled?: boolean;\n',
+          )
+
+          # API parsing: accept/canonicalize video audio and reject it for image requests.
+          replace(
+              "src/lib/api/generation-contract.ts",
+              '  const durationSeconds = value.output.durationSeconds;\n',
+              '  const durationSeconds = value.output.durationSeconds;\n  const audioEnabled = value.output.audioEnabled;\n',
+          )
+          replace(
+              "src/lib/api/generation-contract.ts",
+              '    if (!Number.isInteger(durationSeconds) || (durationSeconds as number) < 5 || (durationSeconds as number) > 30) {\n      return { ok: false, error: { code: "invalid_request", message: "Video duration must be between 5 and 30 seconds." } };\n    }\n  } else if (durationSeconds !== undefined) {\n    return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include a video duration." } };\n  }\n',
+              '    if (!Number.isInteger(durationSeconds) || (durationSeconds as number) < 5 || (durationSeconds as number) > 30) {\n      return { ok: false, error: { code: "invalid_request", message: "Video duration must be between 5 and 30 seconds." } };\n    }\n    if (audioEnabled !== undefined && typeof audioEnabled !== "boolean") {\n      return { ok: false, error: { code: "invalid_request", message: "Video audio setting must be on or off." } };\n    }\n  } else if (durationSeconds !== undefined || audioEnabled !== undefined) {\n    return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include video-only settings." } };\n  }\n',
+          )
+          replace(
+              "src/lib/api/generation-contract.ts",
+              '        ...(kind === "video" ? { durationSeconds: durationSeconds as number } : {}),\n',
+              '        ...(kind === "video"\n          ? { durationSeconds: durationSeconds as number, audioEnabled: audioEnabled === undefined ? true : audioEnabled }\n          : {}),\n',
+          )
+
+          # Native REDGraft form: respect the validated product setting instead of hardcoding the workflow default.
+          replace(
+              "src/server/generation/native-generation.ts",
+              '  form.append("audio_enabled", String(workflow.defaults.audioEnabled));\n',
+              '  form.append("audio_enabled", String(request.output.audioEnabled ?? workflow.defaults.audioEnabled));\n',
+          )
+
+          # Create UI: use the approved maintained Toggle as a contextual video control.
+          replace(
+              "src/features/create/create-workspace.tsx",
+              'import { ImageIcon, MoreHorizontal, Plus, X } from "lucide-react";\n',
+              'import { ImageIcon, MoreHorizontal, Plus, Volume2, VolumeX, X } from "lucide-react";\n',
+          )
+          replace(
+              "src/features/create/create-workspace.tsx",
+              'import { Textarea } from "@/components/ui/textarea";\n',
+              'import { Textarea } from "@/components/ui/textarea";\nimport { Toggle } from "@/components/ui/toggle";\n',
+          )
+          replace(
+              "src/features/create/create-workspace.tsx",
+              '  const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);\n',
+              '  const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);\n  const [audioEnabled, setAudioEnabled] = useState(true);\n',
+          )
+          replace(
+              "src/features/create/create-workspace.tsx",
+              '            ...(outputKind === "video" ? { durationSeconds } : {}),\n',
+              '            ...(outputKind === "video" ? { durationSeconds, audioEnabled } : {}),\n',
+          )
+          replace(
+              "src/features/create/create-workspace.tsx",
+              '''                {outputKind === "video" ? (\n                  <Button\n                    type="button"\n                    variant="secondary"\n                    onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}\n                    aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}\n                    className="shrink-0"\n                  >\n                    {durationSeconds} s\n                  </Button>\n                ) : null}\n''',
+              '''                {outputKind === "video" ? (\n                  <>\n                    <Button\n                      type="button"\n                      variant="secondary"\n                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}\n                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}\n                      className="shrink-0"\n                    >\n                      {durationSeconds} s\n                    </Button>\n                    <Toggle\n                      pressed={audioEnabled}\n                      onPressedChange={setAudioEnabled}\n                      size="sm"\n                      aria-label={`Audio ${audioEnabled ? "on" : "off"}`}\n                      title={audioEnabled ? "Generate video with audio" : "Generate video without audio"}\n                      className="shrink-0 gap-1.5 bg-surface-2"\n                    >\n                      {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}\n                      Audio\n                    </Toggle>\n                  </>\n                ) : null}\n''',
+          )
+
+          # Credential-free UI/API coverage.
+          replace(
+              "tests/ui/create.spec.ts",
+              '  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();\n',
+              '  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();\n  const audio = page.getByRole("button", { name: "Audio on" });\n  await expect(audio).toBeVisible();\n  await expect(audio).toHaveAttribute("aria-pressed", "true");\n  await audio.click();\n  await expect(page.getByRole("button", { name: "Audio off" })).toHaveAttribute("aria-pressed", "false");\n',
+          )
+          replace(
+              "tests/ui/create.spec.ts",
+              '  expect(advancedBody.error.code).toBe("invalid_request");\n});\n',
+              '  expect(advancedBody.error.code).toBe("invalid_request");\n\n  const invalidAudio = await request.post("/api/generation/jobs", {\n    data: {\n      prompt: "A valid video prompt",\n      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: "yes" },\n      inputs: [],\n    },\n  });\n  expect(invalidAudio.status()).toBe(400);\n  const audioBody = await invalidAudio.json();\n  expect(audioBody.ok).toBe(false);\n  expect(audioBody.error.code).toBe("invalid_request");\n});\n',
+          )
+
+          # Configured native integration: exercise both audio off and audio on and verify persisted product parameters.
+          replace(
+              "scripts/verify-video-generation.mjs",
+              '        `generation_jobs?id=eq.${encodeURIComponent(id)}&select=id,status,operation,owner_id&limit=1`,\n',
+              '        `generation_jobs?id=eq.${encodeURIComponent(id)}&select=id,status,operation,owner_id,parameters&limit=1`,\n',
+          )
+          replace(
+              "scripts/verify-video-generation.mjs",
+              '        || persistedJob.operation !== operation\n        || list.length !== 1\n',
+              '        || persistedJob.operation !== operation\n        || persistedJob.parameters?.output?.audioEnabled !== request.output.audioEnabled\n        || list.length !== 1\n',
+          )
+          replace(
+              "scripts/verify-video-generation.mjs",
+              '      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },\n',
+              '      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: false },\n',
+          )
+          replace(
+              "scripts/verify-video-generation.mjs",
+              '      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },\n',
+              '      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: true },\n',
+          )
+
+          for path in [
+              "src/lib/capabilities/generation.ts",
+              "src/lib/api/generation-contract.ts",
+              "src/server/generation/native-generation.ts",
+              "src/features/create/create-workspace.tsx",
+              "tests/ui/create.spec.ts",
+              "scripts/verify-video-generation.mjs",
+          ]:
+              if Path(path).read_text().endswith("\n\n"):
+                  raise SystemExit(f"Unexpected duplicate EOF newline in {path}")
+          PY
+          git diff --check
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/capabilities/generation.ts src/lib/api/generation-contract.ts src/server/generation/native-generation.ts src/features/create/create-workspace.tsx tests/ui/create.spec.ts scripts/verify-video-generation.mjs
+          git commit -m "Add video audio control"
+          git push origin HEAD:work/video-audio-control
