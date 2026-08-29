@@ -157,6 +157,20 @@ Configured Create Durable Upload run `33256497167` verified that a Create upload
 - Animate Image + `Original` derives the display-oriented source W:H and submits that ratio to REDGraft when it falls within the verified 0.4–2.5 runtime range. Explicit Animate ratios continue using REDGraft's verified worker-side center-crop behavior.
 - Exact implementation head `789358e8a276ab54d8eeae7e4b7dcb64c2c4c60f` live-verified Create Image 16:9 → Edit Original 16:9 → Edit override 4:5 in `33258831654`, and Create Video 16:9 → Animate Original from a 128×64 / 2:1 source in `33258831636`. Final same-head retriggered Generation `33259410952` and Video Generation `33259411008` also passed. PR #47 merged as `de50efe6ba462ec604ea2cace741e11904a62425`.
 
+### Phase 7A reference addressing — Verified in RenderLab
+- PR #51 merged stable product aliases `@image1`, `@image2`, … as structured `GenerationInput.alias` values alongside opaque source identity and semantic role. Aliases are unique within a request and persist in normalized generation intent.
+- Prompt parsing detects `@imageN` mentions and blocks unresolved aliases both in Create and at the server request boundary. Alias text itself is never authorization.
+- Native execution translates each alias to the current worker input position immediately before submission, so prompt addressing is deterministic even when array order differs from alias numbering. Continuation allocates a new alias rather than retargeting an older prompt mention; replace/remove semantics preserve the existing alias identity until explicitly removed.
+- Durable media inputs are reloaded by authenticated owner and must be active image media before either native or authenticated external generation is attempted.
+- Exact head `c8fbe9d733eb9b983b209da995b2f9865808f66a` passed nine affected gates and responsive reference-menu review before PR #51 merged as `7afe257b069e74d322d8f83c1a0868a30acd3686`.
+
+### Phase 7B contextual model evidence and v0.1 boundary
+- FLUX semantic-output audit `33263044354` ran on merged product SHA `7afe257b069e74d322d8f83c1a0868a30acd3686` with run-owned synthetic adult portraits. Human review found the outfit-only edit preserved recognizable appearance strongly while changing clothing, and the two-person case visibly represented both intended people with `@image1` on the requested left and `@image2` on the requested right despite deliberately reversed physical request ordering. Exact Auth/Supabase/R2 fixtures were cleaned after artifact capture.
+- Qwen gateway audit `33263338596` verified `ready=true`, `multiple_references=true`, async `/jobs/edit` and repeated multipart `image_files`. Qwen semantic run `33263401453` completed the same bounded outfit/two-person cases, but human review found noticeably more facial/stylistic drift than FLUX while still following the broad edit/composition instruction.
+- Accepted v0.1 boundary under UI-046: Image may use at most **2** image references; Video remains at most **1** image input. With two Image inputs, slot 1 is `primary-image` and slot 2 is `reference`. Stable aliases remain attached to media identity when order changes.
+- FLUX remains the internal v0.1 Image/Edit route. Qwen remains verified/available internally but is not selected or exposed as a product model choice. This is an evidence-based routing choice, not a claim that FLUX will obey every semantic relation deterministically.
+- User-facing second-reference exposure and authoritative count/role enforcement are the active implementation slice; the contextual audit alone does not mark the multi-reference UI complete.
+
 ### Verified Advanced product controls
 Create v0.3 intentionally exposes only currently justified Advanced controls:
 - negative prompt;
@@ -205,13 +219,13 @@ Phase 6 re-audited current RenderLab code plus the configured deployed worker pa
 - The current product has no per-user generation rate/concurrency/abuse limiter at the generation route. Worker source serializes each container invocation; exact deployment-wide autoscaling/capacity is not exposed by current health APIs.
 - Provider per-generation cost/credit consumption is not reliably observable through the current product/worker health contracts. Phase 7 must not invent cost labels or promises from unavailable data; Phase 10 must account for capacity/abuse controls if access broadens.
 
-## Accepted Cycle 2 Create v2 Direction — not yet implemented
+## Accepted Cycle 2 Create v2 Direction — implementation in progress
 The following items are accepted product direction from closed-beta feedback, but remain **unimplemented until Phase 7 execution and verification**:
 - reference-backed Edit/Animate should default to source-aware `Original` geometry with explicit supported-ratio override;
 - aspect-ratio choices should expand only from verified worker/capability behavior;
 - user uploads initiated from Create now promote to durable owner-scoped `media_assets` after verification and remain in Library even if no generation is submitted; configured run `33256497167` verifies this Phase 7A foundation;
-- multi-reference inputs need stable aliases/order, task-relevant roles and prompt-level reference addressing plus strict server media-kind/count/ownership validation;
-- FLUX and Qwen multi-input behavior must be audited for real subject/outfit/pose/style/background-style tasks, while product guarantees remain limited to deterministic mapping rather than probabilistic model obedience;
+- stable `@imageN` alias/order/role persistence and prompt-level reference addressing are implemented through PR #51; Phase 7B now adds the UI/server bounded two-reference slot contract from UI-046;
+- FLUX/Qwen bounded contextual audits are complete (`33263044354`, `33263338596`, `33263401453`); FLUX is selected for v0.1 because it preserved the tested synthetic identities more strongly, while product guarantees remain limited to deterministic mapping rather than probabilistic model obedience;
 - reported LTX/REDGraft Director/frame/dialogue/sound controls require a fresh audit of the configured workflow before they can become a curated Director product mode;
 - Video quality may expose verified 480p/720p/1080p/2K through a deliberate contextual product control; 4K remains unsupported/hidden;
 - capability growth must not crowd the default composer: task controls stay contextual and technical controls stay Advanced/internal.

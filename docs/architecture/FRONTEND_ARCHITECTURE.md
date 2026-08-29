@@ -37,6 +37,9 @@ Deployment configuration: repository `vercel.json` pins the Vercel framework to 
 ### Phase 7A source-aware generation geometry boundary
 `src/server/generation/geometry.ts` owns execution-only image geometry preparation. It may create the neutral first-input canvas required to make FLUX Create ratios truthful, derive display-oriented source W:H for Animate `Original`, or create an explicit-ratio primary-image derivative for FLUX Edit. These transformations are server execution details: they do not mutate the durable `media_asset`, change opaque media identity or move geometry state into the browser. Normalized product intent retains `aspectRatio: "original"` for source-backed operations while server routing resolves the worker-specific execution geometry.
 
+### Phase 7A reference-addressing boundary
+Normalized image inputs now carry stable product alias + opaque source + semantic role. Prompt `@imageN` mentions are parsed against attached aliases before submission; unresolved mentions are rejected in both the browser experience and server request contract. Alias text never authorizes access. Owner-scoped durable media is reloaded server-side and must be active image media before routing. Native generation translates aliases to the current request-array worker positions only at the adapter boundary, so aliases can remain stable while explicit reordering changes primary/reference execution order. PR #51 merged this foundation as `7afe257b069e74d322d8f83c1a0868a30acd3686`. UI-046 bounds the first multi-reference product exposure to two Image inputs / one Video input and keeps FLUX as the internal v0.1 Image/Edit route; Qwen remains internal/unselected.
+
 ## Maintained Primitive Boundary — UI-026
 Conventional visible controls are centralized rather than hand-styled in feature/shell code.
 
