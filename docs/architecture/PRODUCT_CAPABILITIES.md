@@ -143,6 +143,7 @@ The browser does not submit R2 keys.
 - Image aspect ratios: `1:1`, `16:9`, `9:16`, `4:3`, `3:4`.
 - Video aspect ratios: `16:9`, `9:16`, `1:1`.
 - Video durations: 5, 10, 15, 20, 30 seconds.
+- Video audio generation: explicit on/off, default ON, carried as `output.audioEnabled`.
 - A compatible image input resolves Image → Edit and Video → Animate.
 
 ### Verified Advanced product controls
@@ -153,7 +154,7 @@ Create v0.3 intentionally exposes only currently justified Advanced controls:
 - guidance;
 - frame rate for Video only (24/25/30 fps).
 
-Current UI/API capability metadata is centralized in `src/lib/capabilities/generation.ts`. Advanced is collapsed by default. A worker supporting more parameters is not sufficient reason to expose them.
+Current UI/API capability metadata is centralized in `src/lib/capabilities/generation.ts`. Advanced is collapsed by default. A worker supporting more parameters is not sufficient reason to expose them. Video audio is contextual output intent rather than an Advanced control; `defaultVideoAudioEnabled = true` is centralized beside the other capability defaults.
 
 ### Verified continuation actions
 Persisted image results currently expose:
@@ -209,6 +210,6 @@ Provider routing, worker selection, ecosystem IDs, R2 keys, ComfyUI node/graph i
 8. Unsurfaced capabilities may exist in architecture without being advertised prematurely.
 
 ## Current Capability Work
-The initial Create capability set is implemented and approved: Create Image, Edit Image, Create Video and Animate Image all have live configured coverage, durable continuation is established, and UI-035 now adds account-private Activity over persisted `generation_jobs`.
+The initial Create capability set is implemented and approved: Create Image, Edit Image, Create Video and Animate Image all have live configured coverage, durable continuation is established, and UI-035 adds account-private Activity over persisted `generation_jobs`. PR #37 / UI-036 additionally makes REDGraft video audio an explicit verified user choice: Video defaults audio ON, `output.audioEnabled` is validated/persisted, and native submission maps it to `audio_enabled`.
 
 The Phase 5 capability-surface audit found no current user goal that justifies dedicated Models or Workflows screens. Qwen and registered workflow/model/ecosystem identities remain execution choices behind the capability boundary, while all currently approved creative operations are already reachable through Create/Viewer. Likewise, none of the extensibility categories above is a current product commitment, so there is no additional capability-specific screen to implement now. Future capability work must start from a verified user need and an explicit product slice rather than pre-populating navigation or controls from backend possibilities.
