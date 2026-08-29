@@ -35,9 +35,9 @@ test("Create keeps Video duration, audio, and Advanced contextual without exposi
   await expect(page.getByRole("button", { name: /Aspect ratio 16:9/ })).toBeVisible();
   const settings = page.getByRole("button", { name: /Video settings\. Duration 5 seconds\. Audio on/ });
   await expect(settings).toBeVisible();
-  await expect(page.getByRole("button", { name: "Audio on" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Audio on", exact: true })).toHaveCount(0);
   await settings.click();
-  await expect(page.getByRole("menuitemradio", { name: "5 seconds" })).toHaveAttribute("data-state", "checked");
+  await expect(page.getByRole("menuitemradio", { name: "5 seconds", exact: true })).toHaveAttribute("data-state", "checked");
   const audio = page.getByRole("menuitemcheckbox", { name: "Audio" });
   await expect(audio).toHaveAttribute("data-state", "checked");
   await audio.click();
@@ -59,7 +59,7 @@ test("mobile Video keeps the essential row compact and contextual settings reach
   expect(settingsBox!.x).toBeGreaterThanOrEqual(0);
   expect(settingsBox!.x + settingsBox!.width).toBeLessThanOrEqual(mobileViewport.width);
   await settings.click();
-  await expect(page.getByRole("menuitemradio", { name: "5 seconds" })).toBeVisible();
+  await expect(page.getByRole("menuitemradio", { name: "5 seconds", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitemcheckbox", { name: "Audio" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Advanced controls" })).toBeVisible();
   await page.keyboard.press("Escape");
