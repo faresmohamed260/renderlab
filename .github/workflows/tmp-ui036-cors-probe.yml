@@ -18,7 +18,7 @@ jobs:
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN || secrets.CLOUDFLARE_R2_ADMIN_TOKEN }}
       RENDERLAB_BROWSER_UPLOAD_ORIGINS: http://127.0.0.1:3000,http://localhost:3000,https://renderlab-lake.vercel.app,https://renderlab-faresmohamed260-6733s-projects.vercel.app,https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app
-      RENDERLAB_BROWSER_UPLOAD_PROBE_ORIGINS: https://renderlab-kp0t2ljsg-faresmohamed260-6733s-projects.vercel.app
+      PROBE_ORIGIN: https://renderlab-kp0t2ljsg-faresmohamed260-6733s-projects.vercel.app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,4 +27,44 @@ jobs:
           cache: npm
           cache-dependency-path: package.json
       - run: npm install --no-audit --no-fund
-      - run: node scripts/ensure-r2-browser-cors.mjs
+      - name: Reconcile approved stable origins
+        run: node scripts/ensure-r2-browser-cors.mjs
+      - name: Confirm immutable deployment origin is rejected
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+          import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+          const client = new S3Client({
+            region: 'auto',
+            endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            credentials: {
+              accessKeyId: process.env.R2_ACCESS_KEY_ID,
+              secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+            },
+            requestChecksumCalculation: 'WHEN_REQUIRED',
+            responseChecksumValidation: 'WHEN_REQUIRED',
+          });
+          const url = await getSignedUrl(client, new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: `renderlab/cors-probes/ui036-${Date.now()}.png`,
+            ContentType: 'image/png',
+          }), { expiresIn: 300, signableHeaders: new Set(['content-type']) });
+          const response = await fetch(url, {
+            method: 'OPTIONS',
+            headers: {
+              origin: process.env.PROBE_ORIGIN,
+              'access-control-request-method': 'PUT',
+              'access-control-request-headers': 'content-type',
+            },
+          });
+          const allowOrigin = response.headers.get('access-control-allow-origin');
+          const allowMethods = response.headers.get('access-control-allow-methods') || '';
+          const allowHeaders = response.headers.get('access-control-allow-headers') || '';
+          const allowed = response.ok
+            && (allowOrigin === process.env.PROBE_ORIGIN || allowOrigin === '*')
+            && allowMethods.toUpperCase().split(/\s*,\s*/).includes('PUT')
+            && (allowHeaders === '*' || allowHeaders.toLowerCase().split(/\s*,\s*/).includes('content-type'));
+          if (allowed) throw new Error(`Unexpectedly allowed immutable origin ${process.env.PROBE_ORIGIN}`);
+          console.log(`Confirmed immutable deployment origin is not CORS-authorized: ${process.env.PROBE_ORIGIN}`);
+          NODE
