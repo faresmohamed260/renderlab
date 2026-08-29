@@ -20,6 +20,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Correct staging patch typo
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/apply-phase-7d-video-resolution.py')
+          text = path.read_text()
+          text = text.replace("Audio on/);',", "Audio on/ });',")
+          path.write_text(text)
+          PY
+
       - name: Apply Phase 7D patch
         run: python scripts/apply-phase-7d-video-resolution.py
 
