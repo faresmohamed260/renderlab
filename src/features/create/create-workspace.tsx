@@ -471,10 +471,9 @@ export function CreateWorkspace({
   function startContinuation(action: ContinuationAction) {
     if (!resultAsset) return;
     revokePreviewUrl(referencePreviewUrl);
-    if (!referenceAlias) {
-      setReferenceAlias(generationInputAlias(nextReferenceNumber));
-      setNextReferenceNumber((current) => current + 1);
-    }
+    const nextAlias = generationInputAlias(nextReferenceNumber);
+    setReferenceAlias(nextAlias);
+    setNextReferenceNumber((current) => current + 1);
     setReference(null);
     setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });
     setReferencePreviewUrl(resultAsset.contentUrl);
