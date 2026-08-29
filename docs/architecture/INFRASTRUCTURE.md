@@ -450,6 +450,13 @@ PR #36 adds `https://renderlab.faresuniform.uk` to the canonical `RENDERLAB_BROW
 
 This maintenance changes no Supabase schema, browser credential boundary, R2 key exposure, upload data model or account ownership semantics. Future public browser origins still require deliberate CORS addition and configured validation before use.
 
+### Custom-domain DNS and Cloudflare credential roles — 2026-08-29
+`renderlab.faresuniform.uk` is configured in the Cloudflare `faresuniform.uk` zone as a **DNS-only** `CNAME` to Vercel's assigned target `736ea4abfec91fb9.vercel-dns-017.com`. Cloudflare API read-back and public DNS-over-HTTPS both verified that exact record after creation.
+
+The repository secret `CLOUDFLARE_API_TOKEN` is deliberately scoped for zone DNS editing and must not be treated as proof of R2 administration authority. `scripts/ensure-r2-browser-cors.mjs` may try the Cloudflare R2 API when that token is present, but an R2 authorization `401`/`403` is a credential-role mismatch, not an upload/CORS failure; the script must fall back to the existing R2 S3 credentials and continue exact-origin reconciliation/probing. Non-authorization Cloudflare API errors remain hard failures.
+
+This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
+
 ## Infrastructure Operating Rules
 No infrastructure rollout is currently queued by the repository. UI-030 ownership enforcement is complete, Favorites/Collections are approved, and the currently defined Phase 5 backlog is complete.
 
