@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-video-generation.mjs"
       - "src/features/create/**"
       - "src/lib/capabilities/generation.ts"
@@ -20,6 +21,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-video-generation.mjs"
       - "src/features/create/**"
       - "src/lib/capabilities/generation.ts"
