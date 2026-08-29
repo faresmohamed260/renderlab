@@ -651,7 +651,7 @@ export function CreateWorkspace({
               {references.map((reference, index) => (
                 <div
                   key={reference.alias}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 p-2"
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-2 sm:flex-nowrap sm:gap-3"
                 >
                   <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-surface-3">
                     <img
@@ -660,7 +660,7 @@ export function CreateWorkspace({
                       className="size-full object-cover"
                     />
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-32 flex-1 sm:min-w-0">
                     <p className="truncate text-sm font-semibold text-text">
                       {outputKind === "video"
                         ? "Animating this image"
@@ -672,8 +672,9 @@ export function CreateWorkspace({
                     </p>
                     <p className="truncate text-xs text-text-muted">{reference.label}</p>
                   </div>
-                  <CreateReferenceMentionMenu
-                    triggerAlias={reference.alias}
+                  <div className="ml-auto flex items-center gap-1 sm:contents">
+                    <CreateReferenceMentionMenu
+                      triggerAlias={reference.alias}
                     references={mentionOptions}
                     open={referenceMentionOpen && mentionMenuAnchorAlias === reference.alias}
                     onOpenChange={(open) => {
@@ -706,16 +707,17 @@ export function CreateWorkspace({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeReference(reference.alias)}
-                    disabled={referenceUploading}
-                    aria-label={`Remove @${reference.alias}`}
-                  >
-                    <X aria-hidden="true" />
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeReference(reference.alias)}
+                      disabled={referenceUploading}
+                      aria-label={`Remove @${reference.alias}`}
+                    >
+                      <X aria-hidden="true" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
