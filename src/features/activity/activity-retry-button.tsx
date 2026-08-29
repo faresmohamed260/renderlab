@@ -48,7 +48,7 @@ export function ActivityRetryButton({ jobId }: { jobId: string }) {
   }
 
   return (
-    <div className="flex min-w-0 flex-col items-start gap-2">
+    <div className="flex min-w-0 w-full flex-col items-start gap-2 sm:w-auto">
       <Button type="button" variant="secondary" size="sm" disabled={submitting} onClick={retry}>
         {submitting ? (
           <>
