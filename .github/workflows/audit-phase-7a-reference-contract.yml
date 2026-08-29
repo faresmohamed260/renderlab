@@ -1,0 +1,29 @@
+name: Audit Phase 7A reference contract callsites
+
+on:
+  push:
+    branches:
+      - audit/phase-7a-reference-contract
+    paths:
+      - .github/workflows/audit-phase-7a-reference-contract.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enumerate reference contract callsites
+        run: |
+          echo '=== generation input / request callsites ==='
+          rg -n --glob '!docs/**' --glob '!design/**' 'GenerationInput|GenerationRequest|request\.inputs|inputs:' src tests scripts || true
+          echo '=== role/source literals ==='
+          rg -n --glob '!docs/**' --glob '!design/**' 'primary-image|first-frame|temporary-source|media-asset' src tests scripts || true
+          echo '=== generation job persistence schema ==='
+          rg -n 'generation_jobs|inputs json|parameters json' supabase/migrations src/server || true
+          echo '=== maintained picker/menu mechanics ==='
+          rg -n 'DropdownMenu|Popover|Combobox|Command' src/components/ui src/features/create || true
+          echo '=== create reference state ==='
+          rg -n 'reference|continuationSource|uploadReference|clearReference' src/features/create/create-workspace.tsx || true
