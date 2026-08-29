@@ -27,25 +27,27 @@ jobs:
           from pathlib import Path
           path = Path('src/features/create/create-workspace.tsx')
           text = path.read_text()
-          old = '''  function startContinuation(action: ContinuationAction) {
-    if (!resultAsset) return;
-    revokePreviewUrl(referencePreviewUrl);
-    if (!referenceAlias) {
-      setReferenceAlias(generationInputAlias(nextReferenceNumber));
-      setNextReferenceNumber((current) => current + 1);
-    }
-    setReference(null);
-    setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });
-'''
-          new = '''  function startContinuation(action: ContinuationAction) {
-    if (!resultAsset) return;
-    revokePreviewUrl(referencePreviewUrl);
-    const nextAlias = generationInputAlias(nextReferenceNumber);
-    setReferenceAlias(nextAlias);
-    setNextReferenceNumber((current) => current + 1);
-    setReference(null);
-    setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });
-'''
+          old = "\n".join([
+              "  function startContinuation(action: ContinuationAction) {",
+              "    if (!resultAsset) return;",
+              "    revokePreviewUrl(referencePreviewUrl);",
+              "    if (!referenceAlias) {",
+              "      setReferenceAlias(generationInputAlias(nextReferenceNumber));",
+              "      setNextReferenceNumber((current) => current + 1);",
+              "    }",
+              "    setReference(null);",
+              "    setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });",
+          ])
+          new = "\n".join([
+              "  function startContinuation(action: ContinuationAction) {",
+              "    if (!resultAsset) return;",
+              "    revokePreviewUrl(referencePreviewUrl);",
+              "    const nextAlias = generationInputAlias(nextReferenceNumber);",
+              "    setReferenceAlias(nextAlias);",
+              "    setNextReferenceNumber((current) => current + 1);",
+              "    setReference(null);",
+              "    setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });",
+          ])
           if old not in text:
               raise SystemExit('Expected startContinuation block not found')
           path.write_text(text.replace(old, new, 1))
