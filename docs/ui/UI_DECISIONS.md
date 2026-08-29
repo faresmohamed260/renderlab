@@ -230,7 +230,44 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 **Consequences:** `defaultVideoAudioEnabled = true` is the centralized capability default. Create uses the maintained Toggle primitive and keeps the approved task-oriented composition; narrow layouts must keep Audio, duration, Advanced and Generate reachable. Server validation remains authoritative, persisted generation parameters retain the resolved choice, and provider/workflow identity stays internal. No schema migration or separate Video screen follows from this decision.
 
 ### UI-037 — Cycle 2 prioritizes creative productivity and beta maturity
-**Status:** Accepted
+**Status:** Superseded
+**Superseded by:** UI-038
 **Decision:** After completed Phases 0–5, RenderLab's second major development cycle is organized as Phase 6 baseline/production hardening, Phase 7 Create v2, Phase 8 Library v2, Phase 9 Activity v2, Phase 10 Account/Beta readiness and Phase 11 integrated release validation. The planned first feature after the Phase 6 audit is Multi-reference Image Edit v0.1, followed by a curated Video quality/resolution slice. Library v2 prioritizes collection management and page-scoped batch organization; Activity v2 prioritizes safe Retry before any cancellation contract; Account/Beta work stays requirement-driven. Generic Models/Workflows surfaces, ComfyUI graph editing, infrastructure management and billing are not implied by this cycle. Implementation does not begin merely because this decision is accepted; Phase 6 waits for explicit user authorization.
 **Reason:** Cycle 1 established a complete functional product foundation. The highest-value next step is deeper repeated creative productivity and beta maturity while preserving RenderLab's task-oriented UX and stable infrastructure/ownership boundaries, rather than surfacing backend taxonomy or accumulating speculative screens.
 **Consequences:** Future sessions treat the Phase 6–11 roadmap in `PROJECT.md` and `UI_MIGRATION.md` as the accepted order unless the user explicitly changes it. Phase 6 must reverify current production/capability/cost reality before feature implementation. Multi-reference editing must extend the existing Create capability/input-slot model; video resolution must be curated from verified capability and operational evidence. Trash/restore would supersede part of UI-033 and therefore requires a separate explicit decision; Cancel requires an execution-safety audit; billing/credits require separate product scope. Roadmap acceptance does not mark any Phase 6–11 checkbox complete, authorize a Vercel deployment, create a new top-level route, or relax UI-008/UI-011/provider-storage privacy rules.
+
+### UI-038 — Cycle 2 roadmap incorporates closed-beta production feedback
+**Status:** Accepted
+**Decision:** The post-Phase-6 Cycle 2 roadmap is revised so Phase 7 begins with Create foundations before multi-reference: 7A Create Foundation, 7B Multi-reference Image Editing, 7C verified Director Video, 7D Video Quality/Resolution; Phase 8 remains Library v2; Phase 9 Activity v2; Phase 10 expands to Account, Admin & Closed-Beta Operations; Phase 11 becomes Brand & Launch Experience; final integrated release validation moves to Phase 12. LoRA/model-adapter library work is an accepted post-Cycle-2 direction rather than part of Cycle 2.
+**Reason:** Real production use exposed input-geometry, upload durability, prompt-reference, composer-density, hidden-workflow, admin, branding and visual-quality needs that are prerequisites or later-cycle concerns, not a single multi-reference feature.
+**Consequences:** UI-037's original Phase 6–11 ordering is superseded. Phase 7A must establish the Create input/media/composer foundation before later Phase 7 slices are considered complete. Admin and branding are now explicit later Cycle 2 work; LoRA remains future scope with architecture compatibility preserved now.
+
+### UI-039 — Reference-backed Create defaults to source-aware geometry with explicit override
+**Status:** Accepted
+**Decision:** Edit/Animate tasks that begin from user image media should default to an understandable `Original`/source-aware geometry behavior instead of silently applying an unrelated preset aspect ratio. The user may explicitly override to another capability-supported ratio. Create without a constraining reference may keep a normal product default.
+**Reason:** The source image is part of the user's creative intent; surprising geometry changes make Edit/Animate feel destructive or arbitrary.
+**Consequences:** Phase 7 audits exact worker resize/crop/normalization semantics before implementation, adds only verified ratios, keeps server validation authoritative and avoids promising literal pixel preservation where a worker requires normalized delivery dimensions.
+
+### UI-040 — User uploads initiated from Create become durable Library media
+**Status:** Accepted
+**Decision:** Once a signed-in user's image upload initiated from Create is successfully transferred and server-verified, it becomes an owner-scoped durable `media_asset` and remains available in Library whether or not the user presses Generate or ultimately uses it in a job. Temporary provider/source staging may remain internal, but it is not the durable user-facing identity of the upload.
+**Reason:** User-provided creative assets are reusable owned media, and discarding a successfully uploaded asset merely because a generation was abandoned conflicts with Library's role as the reusable media workspace.
+**Consequences:** Phase 7 should reuse UI-022's persistent-upload promotion/media identity where practical, preserve opaque R2 boundaries and integrate Create uploads with existing Library search/Favorites/Collections/Viewer/Delete semantics. Do not expose `generation_sources` as a second durable Library asset type.
+
+### UI-041 — Multi-reference inputs require explicit product identity and prompt addressing
+**Status:** Accepted
+**Decision:** Multi-reference Create gives each attached input a stable human-visible identity, deterministic order and task-relevant role metadata where useful. Prompt editing provides a product-level way to address attached references (for example via an `@reference` interaction/autocomplete) and the server persists/resolves that mapping against same-owner opaque media identities.
+**Reason:** Multiple unlabeled files plus free text makes intent ambiguous for subject/outfit/pose/style/background/frame relationships and is difficult to reconstruct or validate.
+**Consequences:** RenderLab guarantees correct input membership/order/role/prompt mapping and server validation, but does not claim a probabilistic image model will obey every semantic relation deterministically. Exact alias syntax, product maximum and FLUX/Qwen routing are locked from Phase 7 evidence rather than worker permissiveness.
+
+### UI-042 — Hidden workflow capability becomes curated creative modes, not node controls
+**Status:** Accepted
+**Decision:** Useful capabilities discovered in ComfyUI workflows may be surfaced when they serve a concrete user goal, but they are translated into purpose-built product interactions. For the reported LTX/REDGraft frame/story/dialogue/sound capability, Phase 7 audits the actual configured workflow first and may expose a curated `Director` experience with storyboard/frame, action, dialogue and sound intent rather than raw node names/parameters.
+**Reason:** Backend capability is valuable, while exposing graph structure would recreate ComfyUI complexity and worsen the already crowded Create experience.
+**Consequences:** A user report or hidden node is a reason to audit, not proof of product support. Unverified/unstable inputs stay hidden. Director uses the same durable upload/reference contracts and must coexist with simple default Video creation through progressive disclosure.
+
+### UI-043 — Maintained components are the mechanics foundation, not the visual ceiling
+**Status:** Accepted
+**Decision:** RenderLab's quality target is a premium modern creative application. shadcn/Radix and other approved maintained sources remain the default way to obtain reliable mechanics/accessibility, but feature composition should use deliberate RenderLab styling, spatial continuity, morphing/layout transitions, direct-manipulation feedback and other reviewed motion patterns when they materially improve the creative workflow.
+**Reason:** Reuse prevents needless reinvention; it does not require the product to look like default component demos or a visually basic admin tool.
+**Consequences:** Future visual reviews judge both usability and product quality. Motion must be purposeful, performant, touch/keyboard complete and reduced-motion safe; decorative physics/glow/parallax is not added merely to look AI-generated or fashionable.

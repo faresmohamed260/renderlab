@@ -526,47 +526,166 @@ Before Phase 7 can be expanded into its own execution-ready contract, Phase 6 mu
 - user-approved beta operating boundary;
 - any blocker or required maintenance slice that Phase 7 planning must account for.
 
-**Phase 6 gate:** audit execution is complete and evidence is documented; Phase 6 remains `IN PROGRESS` only until the user selects and the repository records the Cycle 2 operating boundary.
+**Phase 6 status:** `COMPLETE`. Closed Beta was selected on 2026-08-29. The subsequent production-feedback triage is complete at roadmap level and is incorporated into the Phase 7 contract below.
 
-### Phase 7 — Create v2 / Deeper Creative Iteration
-- [ ] **Multi-reference Image Edit v0.1** — planned first product slice after Phase 6, contingent on verified backend support. Extend the capability/input-slot contract and the existing Create workspace without adding a separate Edit app or generic workflow form.
-- [ ] Preserve the simple one-reference case; reveal additional reference slots only when used and keep temporary/durable media identities opaque and owner-safe.
-- [ ] Verify multi-reference normalization, server validation, persistence, responsive interaction and continuation without exposing workflow/provider/ComfyUI identity.
-- [ ] **Video quality/resolution v0.1** — after cost/performance audit, expose a curated understandable quality/resolution choice derived from verified REDGraft support. Do not blindly expose every backend value or move it into infrastructure UI.
-- [ ] Keep Models/Workflows and Qwen selection internal unless a separate user-facing requirement justifies a deliberate product choice.
+### Phase 7 — Create v2 / Creative Direction
+**Contract status:** `EXPANDED/PLANNED`
+**Execution status:** `NOT STARTED`
+
+#### Goal
+Make Create capable of richer reference-driven image/video work without turning the existing composer into a dense workflow form. Phase 7 establishes the media/input/geometry and interaction foundations first, then layers multi-reference editing, verified Director-video capability and curated video quality on top.
+
+#### User value
+- Reference-backed Edit/Animate begins from the user's source geometry rather than silently assuming an unrelated aspect ratio, while still allowing an explicit override.
+- User-uploaded creative inputs remain available as owned Library assets even if the user never submits a generation.
+- Multi-reference prompts can identify which input is which instead of relying only on implicit upload order.
+- Video can grow into richer directed creation without exposing ComfyUI nodes or crowding the default composer.
+- The workspace should feel like a premium modern creative application while remaining clear, accessible and performant.
+
+#### Verified starting state
+- Phase 6 verified the current production/custom-domain/account/storage/generation baseline and selected Closed Beta.
+- Current Create supports one user-facing image reference through temporary `generation_sources`; generated/persistent Library media is durable `media_assets`.
+- Current image ratios are `1:1`, `16:9`, `9:16`, `4:3`, `3:4`; current video ratios are `16:9`, `9:16`, `1:1`. Reference-backed operations currently resolve through these product ratios rather than a dedicated source-aware `Original` choice.
+- Deployed FLUX accepted a bounded two-reference edit and has no explicit worker-side reference-count ceiling; current RenderLab request parsing still lacks product-level media-kind/role/multiplicity/count enforcement.
+- Qwen Image Edit remains an audited available ecosystem but is not a user-facing model selector today.
+- REDGraft runtime enables `480p`, `720p`, `1080p`, `2K`; `4K` is disabled. RenderLab still submits fixed `480p`.
+- Director/frame/dialogue/ambient-sound behavior described from workflow use is a **user-reported capability to verify** against the actual current deployed LTX/REDGraft workflow before product UI is approved. Do not document node-level assumptions as verified capability until audited.
+- The existing Create composer is approved and functional but closed-beta feedback reports increasing control density, especially in Video mode; Phase 7 may refine its internal composition without creating separate Image/Video/Edit/Animate apps.
+
+#### Phase 7A — Create Foundation
+- [ ] **Composer hierarchy / de-crowding:** keep prompt, active references and Generate immediately understandable; move task-dependent settings into compact contextual controls/disclosures and keep technical reproducibility under Advanced. Avoid an always-visible wall of Video controls.
+- [ ] **Source-aware geometry:** for Edit/Animate with an attached source image, default to an understandable `Original`/source geometry behavior rather than an arbitrary preset ratio. Let the user explicitly override to another supported ratio. Audit exact worker normalization/crop/resize behavior before locking the product rule for each operation.
+- [ ] **Aspect-ratio expansion:** audit common useful image/video ratios against current worker contracts and add only a curated verified set. Do not turn the selector into an exhaustive geometry console.
+- [ ] **Durable Create uploads:** once a user upload is verified, it becomes an owner-scoped durable `media_asset` visible in Library whether or not Generate is pressed or the asset is ultimately used. Reuse the existing persistent-upload/media promotion contract where practical; `generation_sources` may remain internal staging only if needed, not the user's durable product identity.
+- [ ] **Reference identity/order/roles:** establish stable human-visible reference aliases, deterministic request order, optional task-relevant semantic roles, and reordering/removal behavior before multi-reference UI expands.
+- [ ] **Prompt reference foundation:** define a product-level reference-addressing grammar/autocomplete (for example an `@reference` interaction) that resolves only to inputs attached to the current request and persists enough structured mapping to reconstruct intent. Final syntax is locked before Phase 7B implementation.
+- [ ] **Premium interaction pass:** apply deliberate spatial/layout transitions, reference motion/reordering feedback and contextual control transitions using approved maintained mechanics; basic default-library styling is not the quality target. Preserve reduced motion, keyboard/touch parity and performance.
+
+#### Phase 7B — Multi-reference Image Editing
+- [ ] Choose and enforce a deliberate bounded product maximum for reference count; worker permissiveness is not the product contract.
+- [ ] Add server-authoritative media-kind, role, multiplicity and same-owner validation for every input slot.
+- [ ] Guarantee deterministic input ordering, alias/role mapping and prompt-reference resolution from RenderLab to the selected worker request.
+- [ ] Audit current FLUX and Qwen multi-input behavior for subject/outfit/pose/style/background-like use cases, output geometry and failure semantics. Route/model choice remains internal unless evidence shows a user-facing choice provides concrete value.
+- [ ] Be explicit that RenderLab can guarantee correct input mapping/validation but **cannot guarantee probabilistic model obedience** to every semantic relation in the prompt; validation must not imply deterministic generative compliance.
+- [ ] Preserve the simple one-reference case and avoid exposing a generic model/workflow form.
+
+#### Phase 7C — Director Video
+- [ ] Audit the actual current deployed LTX/REDGraft workflow/gateway/runtime for Director-like inputs: supported frame count/order, image/frame semantics, scene/action text, character dialogue/speech intent, ambient/background sound intent, audio interactions, duration/resolution/fps constraints and failure behavior.
+- [ ] If the audited capability is stable and useful, expose it as a curated **Director** creative mode inside Create: storyboard/frame inputs plus understandable action/dialogue/sound controls. Do not expose ComfyUI node names or raw graph parameters.
+- [ ] Director frame uploads use the durable Create-upload foundation from Phase 7A and the same reference identity/order rules rather than creating another upload identity.
+- [ ] If a reported workflow capability is not present/reliable in the current configured worker, record the blocker truthfully instead of creating fake UI.
+
+#### Phase 7D — Video Quality / Resolution
+- [ ] Add a curated Video quality/resolution product choice from verified `480p`, `720p`, `1080p`, `2K`; keep disabled `4K` hidden.
+- [ ] Decide default resolution from verified latency/resource/quality evidence; do not silently raise the default merely because higher modes exist.
+- [ ] Validate resolution with aspect, duration, fps, audio and Director/reference geometry; server validation remains authoritative.
+- [ ] Keep resolution contextual to Video rather than adding infrastructure/model UI.
+
+#### Recommended Phase 7 evaluations — not automatic exit criteria
+- `Reuse settings` / `Remix` from persisted normalized generation intent.
+- Before/after comparison for Edit when the source/result relationship is available.
+- Variations that reuse a recipe without reconstructing the task manually.
+- Prompt/settings history only if it can be owned cleanly without creating a premature global preset system.
+
+#### Explicitly out of Phase 7
+- LoRA/Civitai/Hugging Face model library, download/cache or LoRA strength UI.
+- Privileged Admin panel and beta-user management (Phase 10).
+- Logo/brand/landing-page work (Phase 11).
+- Generic Models/Workflows screens, ComfyUI graph editing or raw node-parameter forms.
+- Library collection-management/batch-organization work beyond integration of newly durable Create uploads.
+- Activity Retry/Cancel, billing/credits, Trash/restore, cross-page selection or broad account lifecycle work.
+
+#### Architecture / contracts to inspect
+- `src/features/create/*` and maintained UI primitives/motion sources — composer hierarchy, contextual disclosure, reference interaction and visual quality.
+- `src/lib/capabilities/generation.ts` — source-aware geometry, ratio sets, input-slot count/roles, resolution and visibility tiers.
+- generation request/API contracts under `src/lib/api` and `/api/generation/jobs` — structured reference mapping, role/count/media validation and persisted normalized intent.
+- `src/server/generation/*` plus configured FLUX/Qwen/REDGraft worker contracts — ordering, prompt construction, output geometry, Director capability and resolution behavior.
+- `src/server/media/*`, upload routes and `media_upload_sessions`/`media_assets` — reuse the durable persistent-upload contract for Create-originated user uploads before considering new schema.
+- Library/Viewer continuation contracts — durable input reuse must remain opaque, owner-scoped and compatible with existing search/Favorites/Collections/Delete behavior.
+
+#### Data / security / ownership implications
+- Durable Create uploads must be owned by the authenticated account and must not depend on whether a generation job is later created.
+- Do not expose raw R2 keys or signed URLs; reuse opaque `media-asset` identity.
+- Prompt reference aliases are request/product metadata, never authorization. Server resolution is by same-owner opaque asset identity and validated slot membership.
+- Multi-reference foreign IDs must preserve not-found/denial behavior; user-facing alias/order cannot bypass ownership checks.
+- Audit whether existing `media_upload_sessions` + `media_assets` and persisted generation parameter JSON are sufficient before proposing schema changes. Any migration must be justified by a concrete contract gap and separately validated.
+- Director and Qwen/FLUX routing remain server-owned. Ordinary users never gain provider/worker credentials or graph access.
+
+#### Validation matrix
+| Area | Required evidence before Phase 7 closes |
+| --- | --- |
+| Composer | Desktop/narrow Create remains understandable with Image/Video, one/many references and expanded Video settings; no essential control is crowded out |
+| Geometry | Edit/Animate defaults preserve source-aware geometry truthfully and explicit ratio overrides produce validated output behavior |
+| Ratios | Curated expanded ratios are capability-backed and server-validated |
+| Durable inputs | Create upload becomes Library-visible durable media even without Generate; reuse/search/Viewer/ownership/delete paths stay coherent |
+| Reference semantics | Alias/order/role/reorder/removal and prompt addressing round-trip into normalized product intent deterministically |
+| Multi-reference | FLUX/Qwen verified cases, bounded count, same-owner/media-kind/role validation, truthful probabilistic-semantics messaging |
+| Director | Actual configured worker capability audited; any implemented frame/action/dialogue/sound controls work end-to-end without raw node UI |
+| Video quality | 480p/720p/1080p/2K request/production validation with aspect/duration/fps/audio interactions |
+| Motion/accessibility | Intentional motion reviewed in normal + reduced-motion modes; keyboard/touch/focus behavior remains complete |
+| Persistence/cleanup | Generated results and newly durable user inputs persist correctly; exact configured fixtures clean without touching user data |
+
+#### Documentation outputs
+- `PROJECT.md` — verified Phase 7 outcomes and next-phase handoff.
+- `docs/ui/UI_MIGRATION.md` — slice status/evidence.
+- `docs/ui/UI_DECISIONS.md` — final geometry, durable-upload, reference and Director UX contracts.
+- `docs/architecture/PRODUCT_CAPABILITIES.md` — verified ratios/reference/Director/resolution capability.
+- `docs/ui/UI_SYSTEM.md`, `COMPONENT_CATALOG.md`, `SCREEN_REGISTRY.md` only where implemented composition/components/routes actually change.
+- `docs/architecture/INFRASTRUCTURE.md` only if worker/storage/admin infrastructure reality changes.
+
+#### Exit criteria
+- [ ] Phase 7A foundation is implemented and verified before Phase 7B/7C/7D are treated as complete.
+- [ ] Source-aware geometry + explicit override and curated ratios are verified.
+- [ ] Create-originated user uploads are durable Library media regardless of generation submission/use.
+- [ ] Reference identity/order/roles and prompt addressing are deterministic and server-validated.
+- [ ] Multi-reference image editing has bounded product semantics and configured FLUX/Qwen evidence appropriate to the final routing contract.
+- [ ] Director-video capability is either implemented from verified current worker behavior or explicitly documented as blocked/deferred; no speculative node UI ships.
+- [ ] Curated Video resolution is implemented from verified enabled modes with a deliberate default.
+- [ ] Create visual density/motion/accessibility is reviewed on desktop/narrow layouts and feels intentionally productized rather than mechanically appended.
+- [ ] Exact-head affected CI passes, shared fixtures are clean and authoritative docs match implementation reality.
 
 ### Phase 8 — Library v2 / Media Workflow Productivity
 - [ ] Collection Rename as an owner-scoped Library/Viewer organization contract.
 - [ ] Collection Delete with explicit membership/media consequences; deleting a collection must not imply deleting its media.
 - [ ] Reuse UI-034 page-scoped selection for batch Add/Remove Collection rather than inventing a global media store.
 - [ ] Reuse UI-034 page-scoped selection for batch Favorite/Unfavorite.
+- [ ] Ensure durable Create-originated reference/frame uploads from Phase 7 compose with existing Library search/Favorites/Collections/Viewer/Delete behavior as ordinary `media_assets`; do not create a parallel Uploads destination merely for them.
 - [ ] Keep cross-page selection deferred until real usage shows the page-scoped model is insufficient.
 - [ ] Treat Trash/restore/retention as a separate explicit decision because UI-033 currently makes deletion permanent to the user and tombstone reversal is forbidden.
-- [ ] Avoid adding persistent card-action clutter merely because an operation exists; preserve the approved media-first Library hierarchy.
 
 ### Phase 9 — Activity v2 / Recovery & Job Control
-- [ ] **Generation Retry v0.1** — planned first Activity mutation. Retry must create a new owner-scoped generation job from persisted normalized product intent after revalidating current capability, parameters, referenced media and availability; do not replay raw historical worker/ComfyUI payloads.
-- [ ] Audit cancellation semantics by execution state/provider before approving any Cancel UI. A `cancelled` product state alone does not prove safe cancellation behavior.
-- [ ] If verified useful, add restrained shell-level running/failed attention while keeping Activity the operational surface and preserving UI-011/UI-035 worker/provider/workflow privacy.
+- [ ] **Generation Retry v0.1** creates a new owner-scoped job from persisted normalized product intent after revalidating current capability, parameters and referenced media; never replay raw historical worker/ComfyUI payloads.
+- [ ] Audit cancellation semantics by execution state/provider before approving any Cancel UI.
+- [ ] If useful, add restrained shell-level running/failed attention while Activity remains the operational surface and provider/workflow detail stays internal.
 - [ ] Do not introduce a global client job store merely for Activity refresh/status presentation.
 
-### Phase 10 — Account & Beta Readiness
-- [ ] Add account recovery/password reset only through the maintained Supabase Auth/session boundary and only after defining the exact user flow.
-- [ ] Improve requirement-backed verification/session failure handling without turning Settings into infrastructure administration.
-- [ ] If the operating boundary expands beyond a controlled group, establish server-enforced generation concurrency/rate/abuse limits before broad access.
-- [ ] Evaluate account/data-deletion requirements separately from UI-033 media deletion.
-- [ ] Billing/credits are explicitly not committed by Cycle 2; monetization requires a separate product decision and scope.
+### Phase 10 — Account, Admin & Closed-Beta Operations
+- [ ] Add account recovery/password reset and improve requirement-backed verification/session failure handling through the maintained Supabase Auth/session boundary.
+- [ ] Address the Phase 6 leaked-password-protection warning before broader access if supported by the chosen Auth plan/configuration.
+- [ ] Define an explicit server-authoritative admin authorization role/claim before exposing any privileged route or mutation.
+- [ ] Build a privileged Admin surface for closed-beta user/access management, generation concurrency/rate limits, feature flags and useful job/service-health/failure visibility. Keep it separate from ordinary user Settings.
+- [ ] Admin may expose more operational context than ordinary Activity, but raw secrets and unsafe arbitrary cloud/provider mutation are not implied.
+- [ ] Establish server-enforced generation concurrency/rate/abuse limits before any deliberate move beyond controlled Closed Beta.
+- [ ] Evaluate account/data deletion separately from UI-033 media deletion.
+- [ ] Billing/credits remain a separate product decision.
 
-### Phase 11 — Cycle 2 Release Validation
-- [ ] Run exact-head GitHub validation for every affected slice and a final integrated Account → Create → generation → Library → Viewer → continuation → organization → Activity → recovery path.
-- [ ] Review required desktop/narrow implementation artifacts and accessibility/reduced-motion behavior; a passing build alone is insufficient.
-- [ ] Audit RenderLab Supabase schema/owners/RLS/browser grants/fixtures, R2 fixtures/CORS, generation configuration and custom-domain production routing.
+### Phase 11 — Brand & Launch Experience
+- [ ] Establish RenderLab logo/brand identity and production-ready brand assets/banners.
+- [ ] Design and implement a launch/landing/onboarding experience appropriate to the selected access posture.
+- [ ] Make an explicit information-architecture decision before changing `/`: either keep Create at `/` with a separate landing route or deliberately move Create (for example to `/create`) and update shell/deep-link/auth behavior consistently. Until that decision is implemented, `/` remains Create.
+- [ ] Keep marketing motion/visual richness consistent with the premium RenderLab quality bar without contaminating the dense application workspace with decorative marketing patterns.
+- [ ] Verify responsive/accessibility/performance and update brand/design/screen docs from the actual implementation.
+
+### Phase 12 — Cycle 2 Release Validation
+- [ ] Run exact-head GitHub validation for every affected slice and a final integrated Account → Create → generation → durable input reuse → Library → Viewer → organization → Activity/recovery path plus Admin authorization boundary and launch surfaces.
+- [ ] Review required desktop/narrow artifacts, normal/reduced motion, accessibility and performance; a passing build alone is insufficient.
+- [ ] Audit RenderLab Supabase schema/owners/RLS/browser grants/fixtures, Auth/admin boundary, R2 fixtures/CORS, generation configuration and custom-domain production routing.
 - [ ] Record the final approved application SHA and release evidence in the authoritative docs.
 - [ ] Deploy to Vercel only with explicit user authorization; merge remains distinct from deployment.
 - [ ] Reverify the live custom-domain product after the deliberate rollout and clean all configured verification fixtures.
 
 ### Cycle 2 explicit non-commitments
-Generic Models/Workflows screens, ComfyUI graph editing, provider/worker management, arbitrary workflow-parameter generation, inpainting/outpainting, pose/depth/edge guidance, LoRA management, workflow chaining, full billing, a global media client store and cross-page selection are not part of the accepted Cycle 2 backlog. Any of them requires a new explicit product slice/decision.
+Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter system, generic Models/Workflows screens, ComfyUI graph editing, ordinary-user provider/worker management, arbitrary workflow-parameter generation, inpainting/outpainting, pose/depth/edge guidance, workflow chaining, full billing, a global media client store or cross-page selection. LoRA/model-adapter support is now an accepted post-Cycle-2 direction rather than an ignored idea. Safe cancellation and Trash/restore remain contingent on their own evidence/decisions.
 
 ## Feature/Surface Procedure
 1. Establish the user goal and required behavior.
@@ -582,13 +701,14 @@ Generic Models/Workflows screens, ComfyUI graph editing, provider/worker managem
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete with Closed Beta selected as the operating boundary.
-**Current phase:** Phase 6 — Cycle 2 Baseline & Production Hardening is `COMPLETE`; remote production/capability audit `33250031468` passed, exact fixtures were cleaned and the user selected Closed Beta on 2026-08-29.
-**Current product slice:** None. Before Phase 7 contract expansion or feature implementation, triage the user-reported problems in the current production product and resolve any blocking defects through narrow maintenance slices.
-**Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, Durable Media Delete PR #25 / UI-033, Library Batch Delete PR #29 / UI-034, and Activity PR #34 / UI-035 are merged and approved.
-**Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing; PR #36 added the custom production upload origin to configured R2 CORS coverage; PR #37 / UI-036 added the verified Video audio on/off contract; PR #39 recorded custom-domain DNS activation and separated the zone-DNS Cloudflare token from R2-admin authority.
-**Current gate:** Production-issue triage before Phase 7 planning. Closed Beta is the approved Cycle 2 operating boundary; Phase 6 authorizes no deployment by itself.
-**Next planned feature slice after Phase 6:** Multi-reference Image Edit v0.1, contingent on the baseline capability audit. Video quality/resolution follows as the next planned Create v2 slice. Library v2, Activity v2, Account/Beta readiness and final Cycle 2 release validation follow in the accepted Phase 8–11 order unless the user deliberately changes the roadmap.
-**Persistent scope boundary:** Models/Workflows remain non-destinations; new workflow/model/provider capability does not surface automatically. Trash/restore, cancellation and billing each require their own evidence/decision and are not implied by the Cycle 2 roadmap.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete under Closed Beta and the roadmap has been revised from the first production-feedback pass.
+**Current phase contract:** Phase 7 — Create v2 / Creative Direction is `EXPANDED/PLANNED`; execution is `NOT STARTED`.
+**Current product slice:** None.
+**Current gate:** User authorization to start **Phase 7A — Create Foundation**.
+**Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Quality/Resolution.
+**Later Cycle 2:** Phase 8 Library v2 → Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
+**Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
+**Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation, billing and cross-page selection still require their own evidence/decisions.
+
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
