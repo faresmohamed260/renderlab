@@ -578,7 +578,7 @@ Make Create capable of richer reference-driven image/video work without turning 
 
 #### Phase 7D — Video Quality / Resolution
 **Contract status:** `EXPANDED/PLANNED`
-**Execution status:** `NOT STARTED` — this contract must merge before implementation begins. Contract acceptance does not authorize deployment.
+**Execution status:** `NOT STARTED` — this contract merge establishes the Phase 7D implementation boundary; no Phase 7D code or deployment is included.
 
 ##### Goal
 Give Video and Animate users an explicit, truthful delivery-resolution choice backed by the deployed REDGraft contract, while removing Video tuning controls that the deployed worker does not actually expose. Preserve the Phase 7A de-crowded Create hierarchy and keep provider/model/runtime complexity internal.
@@ -818,7 +818,7 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete under Closed Beta and the roadmap has been revised from the first production-feedback pass.
 **Current phase contract:** Phase 7 — Create v2 / Creative Direction is `EXPANDED/PLANNED`; execution is `IN PROGRESS`.
 **Current product slice:** Phase 7D Video Quality/Resolution contract is `EXPANDED/PLANNED`; implementation has not started. UI-048 locks the 480p default, Resolution language, exact 480p/720p/1080p/2K set and removal of inactive Video Steps/Guidance. The Phase 7A premium-interaction pass remains an open Phase 7 exit item.
-**Current gate:** Merge this Phase 7D execution-ready contract before implementation. After merge, implementation must follow UI-048 exactly: Resolution (not Quality), 480p default, verified 480p/720p/1080p/2K only, canonical `output.resolution`, inactive Video Steps/Guidance removed/rejected, bounded contextual live-output review, and no provider/ComfyUI/deployment scope drift.
+**Current gate:** With the Phase 7D contract merged, the next authorized work is Phase 7D implementation from UI-048: Resolution (not Quality), 480p default, verified 480p/720p/1080p/2K only, canonical `output.resolution`, inactive Video Steps/Guidance removed/rejected, bounded contextual live-output review, and no provider/ComfyUI/deployment scope drift.
 **Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Quality/Resolution.
 **Later Cycle 2:** Phase 8 Library v2 → Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
