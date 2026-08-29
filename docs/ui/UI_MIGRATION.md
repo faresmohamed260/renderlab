@@ -67,7 +67,7 @@ This is foundation maintenance, not a product redesign or new Phase 4 media capa
 - [x] Implement conservative poll-time reassignment and bounded client polling recovery.
 - [x] Implement compact Advanced disclosure from verified capability definitions.
 - [x] Complete configured browser lifecycle review in `33031817744` with responsive screenshots and cleanup.
-- [ ] Remove the transitional Studio compatibility adapter after migration/debugging dependence is gone.
+- [x] Remove the transitional Studio compatibility adapter after verifying current product generation no longer depends on it; PR #33 deletes `src/server/generation/studio-compat.ts` and keeps generation routed only through the authenticated external RenderLab backend or RenderLab-native orchestration.
 
 **Create status: `APPROVED`.**
 
