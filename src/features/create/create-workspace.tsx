@@ -502,7 +502,7 @@ export function CreateWorkspace({
             />
 
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
                 <input
                   ref={fileInputRef}
                   type="file"
