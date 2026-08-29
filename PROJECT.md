@@ -50,7 +50,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Cycle 2 — Creative Productivity & Beta Maturity. Roadmap accepted; implementation has not started.**
+**Cycle 2 — Creative Productivity & Beta Maturity. Phase 6 baseline audit is in progress; verified evidence is complete pending the beta operating-boundary decision.**
 
 ### Cycle 2 objective
 Move RenderLab from a solid functional MVP into a product that supports repeated serious creative work: deeper iteration, efficient media organization, useful job recovery and a production/beta experience that stays simple by default while preserving the existing account/private-media and infrastructure boundaries.
@@ -73,10 +73,23 @@ The accepted Cycle 2 roadmap does **not** approve generic Models or Workflows sc
 
 ### Cycle 2 execution gate
 - Roadmap status: `ACCEPTED`.
-- Implementation status: `NOT STARTED`.
-- Current product slice: `None`.
-- Next gate: wait for explicit user authorization to start **Phase 6 — Cycle 2 Baseline & Production Hardening**.
-- Phase 6 must verify current repository/production/capability reality before Multi-reference Image Edit or any other Cycle 2 feature begins.
+- Cycle execution status: `IN PROGRESS`.
+- Current phase: **Phase 6 — Cycle 2 Baseline & Production Hardening**, execution `IN PROGRESS`.
+- Current product slice: `None`; no Phase 7 feature implementation has started.
+- Phase 6 production/custom-domain/account/upload/generation/capability evidence passed in remote audit run `33250031468` and exact fixtures were cleaned.
+- Remaining Phase 6 gate: obtain and record the user's operating-boundary choice for private use vs closed beta vs broader beta.
+- Do not expand Phase 7 into its execution-ready contract until that Phase 6 gate is resolved and Phase 6 is formally closed.
+
+### Phase 6 verified baseline — 2026-08-29
+- Audit starting `main`: `5072fe96495ea53d06f4891c6073b16203c819d2`. Vercel production remains READY on deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` from application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; the repository delta from that production SHA through the audit-starting `main` is documentation-only, so there is no executable application drift.
+- The latest production build passed the canonical Vercel environment preflight without exposing secret values. Fresh custom-domain verification returned the exact CNAME `736ea4abfec91fb9.vercel-dns-017.com`, HTTPS `200` from Vercel and a valid TLS certificate for `renderlab.faresuniform.uk`.
+- Remote production audit run `33250031468` passed account session, two-account privacy/ownership, custom-domain persistent upload → Library → Viewer → Edit handoff, Create Image → durable Edit continuation, Create Video and Animate Image on the real production domain. Vercel reported no runtime errors during/after the audit and no deployment was created by the audit branch.
+- Deployed FLUX primary live-accepted and completed a two-reference edit (`reference_count=2`) in a bounded probe. The worker/runtime code has no explicit reference-count ceiling, but RenderLab's current UI still submits at most one reference and the current request parser does not yet enforce media-kind compatibility, role multiplicity or a product maximum. Phase 7 must define those server-side input-slot rules before exposing multi-reference UI.
+- REDGraft live runtime health enables `480p`, `720p`, `1080p` and `2K`; `4K` is represented internally but disabled and is not a product capability. RenderLab currently submits Video at fixed `480p`. A bounded live `720p`, `16:9`, 5-second, 24-fps, audio-off probe produced a verified `1280×720` MP4.
+- One bounded sample observed: account identity 7s, ownership 15s, custom-domain upload/media 16s, Create Image + durable Edit 91s, Create Video + Animate 155s, direct two-reference FLUX 12.6s and direct 720p Video 62.7s. These are audit samples, not SLAs. Provider per-generation cost and exact deployment-wide worker capacity are not reliably observable from current contracts and remain unresolved rather than estimated.
+- RenderLab still has no app-level per-user generation rate/concurrency/abuse limit. Supabase security advisors remain the expected server-owned RLS-with-no-policy INFO notices plus a beta-readiness warning that leaked-password protection is disabled. This audit makes no Auth/config mutation.
+- Final cleanup verified zero Phase 6 fixture rows and zero Phase 6 Auth users while preserving RLS, `owner_id NOT NULL`, zero browser grants, ownership/integrity triggers and latest migration `20260828221611 renderlab_media_asset_deletion`. Pre-existing non-fixture product data was left untouched.
+- Evidence supports **closed beta** as the recommended operating boundary until Phase 10 addresses rate/concurrency/abuse controls and the Auth warning, but this remains a recommendation until the user explicitly selects the Cycle 2 operating boundary.
 
 ### Approved product state
 - Application shell: `APPROVED`.

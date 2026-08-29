@@ -172,6 +172,28 @@ Run `33027460976` live-verified `Create Image → persisted media asset → Edit
 - conservative poll-time reassignment only on explicit safe evidence;
 - no automatic poll-time resubmission for generic 429/5xx/network ambiguity.
 
+## Cycle 2 Phase 6 Capability Audit — 2026-08-29
+
+Phase 6 re-audited current RenderLab code plus the configured deployed worker paths. Audit run `33250031468` is the live evidence source; Saga worker source remains implementation-reference evidence only.
+
+### Multi-reference image edit
+- RenderLab's normalized request already models `inputs` as an array, and native image submission forwards every resolved source as repeated `image_files` in request order. Temporary `generation_sources` and durable `media_assets` can both be resolved to server-side bytes without exposing R2 keys.
+- The approved Create UI still submits at most one reference. The current request parser validates input object shape but does **not** yet enforce media-kind compatibility, per-role multiplicity or a maximum input count. Multi-reference v0.1 must add those server-side input-slot constraints before exposing additional reference controls.
+- The current deployed FLUX gateway reports `multiple_references=true`; a bounded two-reference live probe was accepted with `reference_count=2` and returned PNG successfully in about 12.6 seconds total.
+- Audited worker runtime dynamically creates additional reference-conditioning nodes for every image after the first and has no explicit reference-count ceiling. The first image controls normalized output dimensions; later images are auxiliary conditioning references. Worker permissiveness is **not** a product maximum: Phase 7 must choose and document a deliberate bounded user-facing count.
+- Existing per-file reference limits remain image MIME types and at most 25 MB per input at the worker boundary. Phase 7 must preserve the simpler one-reference path and validate both temporary/durable input media compatibility server-side.
+
+### Video resolution
+- RenderLab's current normalized product request has no resolution field. Native REDGraft submission is currently fixed to `480p`; that is the actual current product behavior even though the deployed runtime supports more.
+- Live REDGraft runtime health reports enabled resolutions `480p`, `720p`, `1080p` and `2K`, with frame rates 24/25/30. `4K` appears in internal resolution metadata but is **not enabled** and must not be surfaced as supported product capability.
+- A bounded live `720p`, `16:9`, 5-second, 24-fps, audio-off request completed successfully and produced a verified `1280×720` MP4. Higher enabled modes were not exhaustively generated because Phase 6 intentionally avoids an expensive benchmark when live runtime capability evidence is sufficient.
+- Resolution interacts with aspect ratio through final delivery dimensions rather than exposing the runtime's internal base preset geometry directly. Duration remains 5–30 seconds, audio remains on/off and frame rate remains 24/25/30 under the existing worker contract.
+
+### Operational evidence for product defaults
+- Production-domain samples from the same run: Create Image + durable Edit 91s total; Create Video + Animate 155s total; direct two-reference FLUX 12.6s; direct 720p 5-second Video 62.7s. These are bounded audit samples and are not latency SLAs or percentile measurements.
+- The current product has no per-user generation rate/concurrency/abuse limiter at the generation route. Worker source serializes each container invocation; exact deployment-wide autoscaling/capacity is not exposed by current health APIs.
+- Provider per-generation cost/credit consumption is not reliably observable through the current product/worker health contracts. Phase 7 must not invent cost labels or promises from unavailable data; Phase 10 must account for capacity/abuse controls if access broadens.
+
 ## Extensibility Categories
 These must remain representable if/when production workflows are introduced, but are **not current feature commitments**:
 - inpainting/outpainting and mask-based editing;
