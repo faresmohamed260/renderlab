@@ -1,0 +1,53 @@
+name: Fix Phase 7A composer test locators
+
+on:
+  push:
+    branches:
+      - work/phase-7a-composer-hierarchy
+    paths:
+      - .github/workflows/fix-phase-7a-composer-tests.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-7a-composer-hierarchy
+          fetch-depth: 0
+
+      - name: Tighten Playwright locators
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('tests/ui/create.spec.ts')
+          text = path.read_text()
+          text = text.replace(
+              'page.getByRole("button", { name: "Audio on" })',
+              'page.getByRole("button", { name: "Audio on", exact: true })',
+          )
+          text = text.replace(
+              'page.getByRole("menuitemradio", { name: "5 seconds" })',
+              'page.getByRole("menuitemradio", { name: "5 seconds", exact: true })',
+          )
+          path.write_text(text)
+          PY
+
+      - name: Remove helper workflow
+        run: rm .github/workflows/fix-phase-7a-composer-tests.yml
+
+      - name: Validate diff
+        run: |
+          git diff --check
+          git diff --exit-code -- . ':!tests/ui/create.spec.ts' ':!.github/workflows/fix-phase-7a-composer-tests.yml'
+
+      - name: Commit locator fix
+        run: |
+          git config user.name "RenderLab Phase 7A Bot"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add tests/ui/create.spec.ts .github/workflows/fix-phase-7a-composer-tests.yml
+          git commit -m "Tighten composer UI test locators"
+          git push origin HEAD:work/phase-7a-composer-hierarchy
