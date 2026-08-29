@@ -14,9 +14,12 @@ on:
       - "src/app/library/**"
       - "src/features/library/**"
       - "src/app/api/media/assets/**"
+      - "src/app/api/media/collections/**"
       - "src/server/media/media-assets.ts"
+      - "src/server/media/media-collections.ts"
       - "src/server/storage/r2.ts"
       - "src/lib/api/media-assets-contract.ts"
+      - "src/lib/api/media-collections-contract.ts"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "supabase/migrations/0006_media_favorites.sql"
@@ -93,7 +96,7 @@ jobs:
           cat /tmp/renderlab-next.log || true
           exit 1
 
-      - name: Verify Library batch delete lifecycle
+      - name: Verify Library batch actions lifecycle
         run: node scripts/verify-library-batch-delete.mjs
 
       - name: Cleanup Library batch delete fixtures
@@ -108,7 +111,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: renderlab-library-batch-delete-screenshots
-          path: artifacts/library-batch-delete-*.png
+          name: renderlab-library-batch-actions-screenshots
+          path: artifacts/library-batch-*.png
           if-no-files-found: warn
           retention-days: 14
