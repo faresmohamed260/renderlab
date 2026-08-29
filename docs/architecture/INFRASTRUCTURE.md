@@ -335,6 +335,7 @@ Initial submission may try another worker only before a provider call ID is acce
 - Media Rename configured lifecycle — `33074480356`; refined-head UI Shell `33074480462`, Search `33074480419`, Upload Integration `33074480288`, Download `33074480319`, and Library Lifecycle `33074480489` on rerun all passed.
 - Account Identity configured lifecycle — `33111299356`; exact run-owned auth fixture, real Settings sign-in/session persistence/sign-out and cleanup passed.
 - Account Ownership final implementation coverage — exact head `49f08013dc428d8d390a1bd803b10886f853cd82` passed the complete 14-gate ownership/media/generation suite listed above after the earlier two-account foundation run `33115683962`.
+- Phase 7A source-aware geometry — exact head `789358e8a276ab54d8eeae7e4b7dcb64c2c4c60f` passed live image geometry `33258831654`, live video geometry `33258831636`, responsive Create Lifecycle `33258831638`, and after a pre-job concurrency cancellation, a same-head Library Lifecycle retrigger `33259411170`; the complete same-head 20-workflow retriggered suite passed before PR #47 merged as `de50efe6ba462ec604ea2cace741e11904a62425`. Geometry verification cleaned its generated media/jobs/reference/Auth fixtures.
 
 Search/upload/download/rename/account configured verifiers do not invoke ComfyUI. Generation Image/Edit and Video/Animate verifiers do invoke the configured worker fleet.
 
@@ -470,8 +471,8 @@ Key workflows:
 - `verify-account-identity.mjs` + `account-identity-visual.yml` — exact run-owned confirmed Auth user, real Settings session lifecycle, responsive screenshots and exact cleanup; now also validates the canonical `SUPABASE_PUBLISHABLE_KEY` → browser-bundle mapping
 - `verify-account-ownership.mjs` + `account-ownership.yml` — two-account private-record isolation, signed-out denial, foreign opaque-ID denial, raw table-access denial and exact fixture cleanup
 - `verify-reference-upload.mjs` + `reference-upload-integration.yml` — owner-bound temporary source persistence
-- `verify-generation-bridge.mjs` + `generation-bridge-integration.yml` — owner-bound Create Image/Edit Image persistence and continuation
-- `verify-video-generation.mjs` + `video-generation-integration.yml` — owner-bound Create Video/Animate Image plus temporary reference ownership
+- `verify-generation-bridge.mjs` + `generation-bridge-integration.yml` — owner-bound Create Image/Edit Image persistence and continuation plus actual output-dimension assertions for fixed Create geometry, Edit `Original` and explicit Edit override
+- `verify-video-generation.mjs` + `video-generation-integration.yml` — owner-bound Create Video/Animate Image plus temporary reference ownership; CI installs `ffmpeg`/`ffprobe` so real persisted MP4 dimensions verify fixed Video and source-derived Animate `Original` geometry
 - `verify-vercel-env.mjs` + `deployment-readiness.yml` — non-deploying Next.js/Vercel configuration, canonical Vercel environment preflight and production-build gate
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
