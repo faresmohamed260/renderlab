@@ -125,18 +125,21 @@ The initial Create workspace supports and live-verifies:
 All four operations have native live-infrastructure verification. Qwen remains an audited available ecosystem but is not the default initial product workflow.
 
 ### Input identities
-Current generation inputs are opaque product identities:
-- `{ type: "temporary-source", id }` for ready uploaded references;
-- `{ type: "media-asset", id }` for durable RenderLab results.
+Current generation inputs remain opaque product identities:
+- `{ type: "media-asset", id }` for durable user uploads and durable RenderLab results;
+- `{ type: "temporary-source", id }` remains accepted for internal compatibility/staging but is no longer the user-facing identity for newly uploaded Create references.
 
-The browser does not submit R2 keys.
+The browser never submits R2 keys. Phase 7A PR #45 extracted one persistent browser upload transaction shared by Create and Library; feature-specific picker/drop behavior remains feature-owned.
 
-### Initial supported reference behavior
+### Current supported reference upload behavior
 - PNG, JPEG, WebP;
 - ≤25 MB;
 - signed direct-R2 upload;
-- server HEAD verification;
-- opaque `generation_sources.id` binding.
+- server HEAD verification before promotion;
+- authenticated owner-scoped `media_upload_sessions` → durable `media_assets`;
+- persisted dimensions plus ordinary Library/Viewer/search/organization semantics immediately after successful completion, independent of whether a generation is ever submitted.
+
+Configured Create Durable Upload run `33256497167` verified that a Create upload persisted with `generation_job_id = null`, appeared in Library, and was subsequently referenced by the generation request as the same owner-scoped `{ type: "media-asset", id }`; exact R2/database/Auth cleanup passed.
 
 ### Initial default/contextual values
 - Image/Video is the explicit main output choice.
@@ -198,7 +201,7 @@ Phase 6 re-audited current RenderLab code plus the configured deployed worker pa
 The following items are accepted product direction from closed-beta feedback, but remain **unimplemented until Phase 7 execution and verification**:
 - reference-backed Edit/Animate should default to source-aware `Original` geometry with explicit supported-ratio override;
 - aspect-ratio choices should expand only from verified worker/capability behavior;
-- user uploads initiated from Create should promote to durable owner-scoped `media_assets` after verification and remain in Library even if no generation is submitted;
+- user uploads initiated from Create now promote to durable owner-scoped `media_assets` after verification and remain in Library even if no generation is submitted; configured run `33256497167` verifies this Phase 7A foundation;
 - multi-reference inputs need stable aliases/order, task-relevant roles and prompt-level reference addressing plus strict server media-kind/count/ownership validation;
 - FLUX and Qwen multi-input behavior must be audited for real subject/outfit/pose/style/background-style tasks, while product guarantees remain limited to deterministic mapping rather than probabilistic model obedience;
 - reported LTX/REDGraft Director/frame/dialogue/sound controls require a fresh audit of the configured workflow before they can become a curated Director product mode;
