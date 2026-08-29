@@ -399,14 +399,46 @@ R2 credentials currently require Admin Read & Write because configured browser u
 - `RENDERLAB_GENERATION_BACKEND_URL` — optional external RenderLab generation service; only active together with the token below
 - `RENDERLAB_GENERATION_BACKEND_TOKEN` — server-only bearer secret required to authenticate the optional external generation service before `x-renderlab-owner-id` is trusted
 
+## Cycle 2 Phase 6 Production Baseline — 2026-08-29
+
+Phase 6 performed a fresh, non-deploying production/custom-domain/shared-resource audit through GitHub Actions run `33250031468` plus read-only Vercel/Supabase inspection.
+
+### Repository and Vercel reconciliation
+- Audit-starting repository `main` was `5072fe96495ea53d06f4891c6073b16203c819d2`.
+- Actual READY production deployment remains `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` from application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`. The complete repository delta from that production SHA to the audit-starting `main` is documentation-only (`AGENTS.md`, `PROJECT.md`, `UI_DECISIONS.md`, `UI_MIGRATION.md`), so production has no executable application/package/schema drift relative to current source.
+- The latest production build ran `scripts/verify-vercel-env.mjs` successfully and reported the canonical production environment contract complete. Phase 6 verified environment names/presence through that preflight and did not read or expose secret values. Current Vercel connector capability does not enumerate optional secret values, so optional external-backend configuration is not inferred from absence/presence guesses.
+- No Vercel deployment was created by the Phase 6 audit branch; automatic Git deployment remains disabled. Vercel reported no runtime error cluster in the audit window.
+
+### Custom domain
+- Fresh public DNS verification returned `renderlab.faresuniform.uk` CNAME → `736ea4abfec91fb9.vercel-dns-017.com`.
+- Fresh HTTPS returned `200` with Vercel edge headers. TLS 1.3 verification succeeded with a certificate whose CN/SAN includes `renderlab.faresuniform.uk`, issued by Let's Encrypt and valid through 2026-11-27.
+- The real production custom-domain persistent browser upload → Library → Viewer → Edit continuation lifecycle passed in 16s and exact fixture cleanup succeeded; the approved signed-R2/exact-origin CORS/storage identity contract remains unchanged.
+
+### Production application and worker baseline
+- Account session lifecycle passed in 7s; two-account ownership/privacy verification passed in 15s.
+- Create Image → durable Edit continuation passed in 91s total on native FLUX primary routing with no observed failover. Create Video + Animate passed in 155s total on native REDGraft primary routing with no observed failover. One sampled 5-second Create Video job was about 101s from product-job creation through durable completion.
+- Deployed FLUX gateway health reported async jobs, cancel capability and `multiple_references=true`; a two-reference live probe completed successfully in about 12.6s.
+- Deployed REDGraft runtime health reported NVIDIA A10, enabled `480p`/`720p`/`1080p`/`2K`, 24/25/30 fps and disabled `4K`. A bounded 720p 16:9 5-second 24-fps probe produced 1280×720 MP4 in 62.7s total, about 59.0s reported worker time.
+- These timings are one bounded audit sample, not SLAs. Worker source serializes each container invocation; exact deployment-wide autoscaling/capacity and provider per-generation billing/cost are not reliably exposed by current health/product contracts and remain unresolved rather than estimated.
+- RenderLab currently has no app-level per-user generation rate/concurrency/abuse limiter. Broader beta access therefore requires a separate server-enforced capacity/abuse contract in Phase 10; Phase 6 does not add one.
+
+### Shared Supabase and cleanup baseline
+- Final post-run audit found **zero Phase 6 fixture rows** across all six RenderLab tables and **zero Phase 6 Auth users**. Pre-existing non-fixture product data was deliberately left untouched.
+- All six RenderLab tables retain RLS, `owner_id NOT NULL`, zero `anon`/`authenticated` table grants and their expected ownership/integrity triggers. Latest migration remains `20260828221611 renderlab_media_asset_deletion`.
+- Security advisors continue to report informational `rls_enabled_no_policy` notices for the deliberately server-owned tables; this matches the zero-browser-grant architecture. They additionally report `auth_leaked_password_protection` WARN because leaked-password protection is disabled. Treat that as a beta-readiness item; Phase 6 makes no Auth configuration mutation.
+- Performance advisors report unused-index INFO only; no Phase 6 schema change is justified by those notices.
+
+### Cycle 2 operating-boundary implication
+The verified technical baseline is healthy for continued controlled use. Because app-level generation rate/concurrency/abuse controls are absent, provider cost is not product-observable and leaked-password protection is disabled, **closed beta** is the recommended Cycle 2 operating boundary until Phase 10 hardens broader-access requirements. This is a recommendation only until the user explicitly selects the operating boundary.
+
 ## Security Rules
 - Never commit service-role/R2/provider/backend bearer credentials.
 - Only the Supabase project URL and publishable key are intentionally exposed to browser code. `next.config.ts` maps those public-safe values from `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`; service-role and R2 credentials must never be published.
 - Supabase Auth `auth.users.id` remains the canonical account principal; do not trust a browser-supplied owner ID.
 - Raw `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions` stay server-owned. Browser roles have no direct table grants; product routes/services enforce owner scope while using server-only service-role access.
-- Keep RLS enabled on the four core tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
+- Keep RLS enabled on all six current RenderLab tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
 - An external generation service must authenticate the server-only bearer token before trusting `x-renderlab-owner-id`; owner headers alone are not authorization.
-- UI-030 is merged and GitHub-verified, but the ownership rollout is not complete until owner-aware code is actually live, a final no-unowned-row audit passes, and corrected `0005` is applied/verified. Do not approve Favorites/Collections or other personal organization before that rollout completes.
+- UI-030 ownership rollout is complete: owner-aware code is live, the no-unowned-row gate passed and corrected `0005` is applied/verified. Preserve that boundary for all current and future private product state; do not weaken owner scope or browser-grant isolation when adding Cycle 2 features.
 - Direct browser uploads use short-lived signed URLs + exact-origin CORS.
 - Durable reads/downloads use short-lived signed R2 GETs behind opaque product routes.
 - Rename uses a server-side service-role metadata mutation and never exposes service-role credentials to the browser.
@@ -458,7 +490,7 @@ The repository secret `CLOUDFLARE_API_TOKEN` is deliberately scoped for zone DNS
 This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
 
 ## Infrastructure Operating Rules
-No infrastructure rollout is currently queued by the repository. UI-030 ownership enforcement is complete, Favorites/Collections are approved, and the currently defined Phase 5 backlog is complete.
+No infrastructure rollout is currently queued by the repository. Cycle 2 Phase 6 baseline evidence is complete pending the user-approved operating boundary; no Phase 7 implementation or production rollout is authorized by that audit.
 
 1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout; a repository merge is never implicit permission to deploy or apply a future schema change.
 2. Add any future public upload origin explicitly to R2 CORS before deployment/use.

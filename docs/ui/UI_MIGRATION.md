@@ -402,13 +402,13 @@ UI-035 replaces the Activity placeholder with the smallest useful account-privat
 
 ## Cycle 2 — Creative Productivity & Beta Maturity
 
-**Roadmap status: `ACCEPTED`. Implementation status: `NOT STARTED`.**
+**Roadmap status: `ACCEPTED`. Cycle execution status: `IN PROGRESS`.**
 
 Cycle 1 / Phases 0–5 and the post-Phase-5 production-usability maintenance established the product foundation. Cycle 2 is a new development cycle focused on repeated creative productivity and beta maturity; it must not reinterpret completed Cycle 1 work as unfinished backlog.
 
 ### Phase 6 — Cycle 2 Baseline & Production Hardening
 
-**Phase contract status: `EXPANDED/PLANNED`. Execution status: `NOT STARTED`.**
+**Phase contract status: `EXPANDED/PLANNED`. Execution status: `IN PROGRESS`; verified audit evidence is complete pending the beta operating-boundary decision.**
 
 #### Goal
 Establish a truthful, current Cycle 2 baseline before new product capability is implemented. Phase 6 reconciles the authoritative repository with actual production deployment, custom-domain behavior, shared infrastructure, current generation capability and operational constraints.
@@ -492,16 +492,31 @@ Before Phase 6 can close, verified results must be recorded in:
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` only if the audit reveals a real frontend architecture change;
 - screen/UI/component docs only if rendered product behavior or approved composition actually changes.
 
+#### Verified audit evidence — run `33250031468`
+- [x] Reconciled audit-starting `main` `5072fe96495ea53d06f4891c6073b16203c819d2` with READY Vercel production deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` / application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; every repository change between those SHAs is documentation-only. The latest production build passed `verify-vercel-env.mjs`, proving required canonical environment-variable presence without reading secret values.
+- [x] Fresh DNS/TLS/HTTPS verification on `renderlab.faresuniform.uk`: exact DNS-only CNAME target `736ea4abfec91fb9.vercel-dns-017.com`, HTTPS `200`, Vercel edge headers, TLS 1.3 and certificate verification OK for the custom hostname.
+- [x] Production Account Identity completed in 7s and configured two-account Ownership completed in 15s; signed-out/private/foreign isolation behavior passed and exact Auth/data fixtures were removed.
+- [x] Custom-domain persistent upload → Library → Media Viewer → Edit handoff completed in 16s using real direct-R2 upload and durable media; the exact upload/media fixture was removed.
+- [x] Production Create Image → durable Edit continuation completed in 91s total. Create Image and Edit both persisted successfully through native FLUX primary routing with no observed failover; exact output/R2/job fixtures were removed.
+- [x] Production Create Video + Animate Image completed in 155s total through REDGraft primary routing with no observed failover; the 5-second Create Video job took about 101s created→completed in this sample. Exact jobs/media/reference/R2 fixtures were removed.
+- [x] Deployed FLUX health advertises `multiple_references=true`; a bounded two-reference live edit was accepted with `reference_count=2` and returned PNG in 12.6s total. The runtime dynamically conditions every reference after the first and has no explicit worker-side count ceiling. Phase 7 must still choose a deliberate product maximum and add server media-kind/role/count validation because current RenderLab parsing is more permissive than the future multi-reference product contract should be.
+- [x] Deployed REDGraft runtime enables `480p`, `720p`, `1080p` and `2K`, with 24/25/30 fps; `4K` is present in internal resolution metadata but disabled. RenderLab currently hardwires native Video submission to `480p`. A bounded live `720p`, `16:9`, 5-second, 24-fps, audio-off probe returned a `1280×720` MP4 in 62.7s total / about 59.0s worker time.
+- [x] Operational evidence is intentionally bounded: no app-level generation rate/concurrency/abuse gate exists; worker source serializes each container invocation, while exact deployment-wide autoscaling/capacity and provider per-generation billing are not reliably exposed by current health/contracts. Treat both as unresolved rather than guessed. Observed timings are samples, not SLAs.
+- [x] Final shared-resource audit found zero Phase 6 fixture rows and zero Phase 6 Auth users. All six RenderLab tables retain RLS, `owner_id NOT NULL`, zero `anon`/`authenticated` grants and the expected ownership/integrity triggers; latest migration remains `20260828221611 renderlab_media_asset_deletion`. Pre-existing non-fixture data was not modified.
+- [x] Supabase security advisors show the expected server-owned `rls_enabled_no_policy` INFO notices plus `auth_leaked_password_protection` WARN. Performance advisors show unused-index INFO only. No Phase 6 schema/Auth/config mutation is justified from those notices.
+- [x] Vercel reported no production runtime error cluster during/after the audit and no deployment was created by the temporary audit branch. The temporary audit branch was reset to `main` after evidence collection.
+- [ ] Operating boundary remains a user decision. Current evidence supports **closed beta** as the recommendation until Phase 10 adds broader-access rate/concurrency/abuse hardening and addresses the Auth warning.
+
 #### Exit criteria
 Phase 6 is complete only when all of the following are true:
-- [ ] Current `main` and actual Vercel production deployment/custom-domain/env contract are reconciled and documented.
-- [ ] Critical custom-domain account/privacy, upload/media, image-generation and video-generation baselines are verified, or a truthful blocker is recorded and handled as a separate slice.
-- [ ] Multi-reference image-edit support is documented with exact input semantics/limits from current RenderLab + configured worker evidence.
-- [ ] Video resolution support is documented with accepted/produced resolutions, defaults/interactions and operational constraints.
-- [ ] Reliably observable latency/resource/cost/quota evidence is recorded and unobservable items are marked unresolved rather than guessed.
+- [x] Current `main` and actual Vercel production deployment/custom-domain/env contract are reconciled and documented.
+- [x] Critical custom-domain account/privacy, upload/media, image-generation and video-generation baselines are verified, or a truthful blocker is recorded and handled as a separate slice.
+- [x] Multi-reference image-edit support is documented with exact input semantics/limits from current RenderLab + configured worker evidence.
+- [x] Video resolution support is documented with accepted/produced resolutions, defaults/interactions and operational constraints.
+- [x] Reliably observable latency/resource/cost/quota evidence is recorded and unobservable items are marked unresolved rather than guessed.
 - [ ] The user-approved Cycle 2 beta operating boundary is recorded.
-- [ ] All Phase 6 fixtures are cleaned and Supabase/R2/Auth security invariants remain intact.
-- [ ] Authoritative docs are updated from verified reality and no Phase 7 feature has been implemented.
+- [x] All Phase 6 fixtures are cleaned and Supabase/R2/Auth security invariants remain intact.
+- [x] Authoritative docs are updated from verified reality and no Phase 7 feature has been implemented.
 
 #### Next-phase dependencies
 Before Phase 7 can be expanded into its own execution-ready contract, Phase 6 must hand off:
@@ -511,7 +526,7 @@ Before Phase 7 can be expanded into its own execution-ready contract, Phase 6 mu
 - user-approved beta operating boundary;
 - any blocker or required maintenance slice that Phase 7 planning must account for.
 
-**Phase 6 gate:** this expanded contract may be merged as planning, but Phase 6 execution does not begin until the user explicitly authorizes the audit.
+**Phase 6 gate:** audit execution is complete and evidence is documented; Phase 6 remains `IN PROGRESS` only until the user selects and the repository records the Cycle 2 operating boundary.
 
 ### Phase 7 — Create v2 / Deeper Creative Iteration
 - [ ] **Multi-reference Image Edit v0.1** — planned first product slice after Phase 6, contingent on verified backend support. Extend the capability/input-slot contract and the existing Create workspace without adding a separate Edit app or generic workflow form.
@@ -567,12 +582,12 @@ Generic Models/Workflows screens, ComfyUI graph editing, provider/worker managem
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity roadmap is accepted; implementation has not started.
-**Current phase:** Phase 6 — Cycle 2 Baseline & Production Hardening has an expanded execution-ready planning contract; execution is not started.
-**Current product slice:** None. Do not create an implementation branch or begin the Phase 6 audit until the user explicitly authorizes starting the cycle.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 baseline evidence is complete pending the operating-boundary decision.
+**Current phase:** Phase 6 — Cycle 2 Baseline & Production Hardening is `IN PROGRESS`; remote production/capability audit `33250031468` passed and only the user-approved operating boundary remains before formal close.
+**Current product slice:** None. Phase 6 is an audit/documentation phase; do not begin Phase 7 feature implementation while the operating-boundary gate remains open.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, Durable Media Delete PR #25 / UI-033, Library Batch Delete PR #29 / UI-034, and Activity PR #34 / UI-035 are merged and approved.
 **Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing; PR #36 added the custom production upload origin to configured R2 CORS coverage; PR #37 / UI-036 added the verified Video audio on/off contract; PR #39 recorded custom-domain DNS activation and separated the zone-DNS Cloudflare token from R2-admin authority.
-**Current gate:** Phase 6 planning is expanded; await explicit user authorization before executing the audit. Planning acceptance is not implementation approval and does not authorize deployment.
+**Current gate:** Record the user-approved Cycle 2 operating boundary (private use, closed beta or broader beta). Closed beta is the evidence-backed recommendation; no deployment is authorized by Phase 6.
 **Next planned feature slice after Phase 6:** Multi-reference Image Edit v0.1, contingent on the baseline capability audit. Video quality/resolution follows as the next planned Create v2 slice. Library v2, Activity v2, Account/Beta readiness and final Cycle 2 release validation follow in the accepted Phase 8–11 order unless the user deliberately changes the roadmap.
 **Persistent scope boundary:** Models/Workflows remain non-destinations; new workflow/model/provider capability does not surface automatically. Trash/restore, cancellation and billing each require their own evidence/decision and are not implied by the Cycle 2 roadmap.
 ## Session Handoff Rule
