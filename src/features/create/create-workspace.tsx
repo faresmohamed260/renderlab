@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ImageIcon, MoreHorizontal, Plus, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, ImageIcon, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -18,7 +20,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   advancedParametersFromDraft,
@@ -102,6 +103,65 @@ function AspectRatioMenu({
             <DropdownMenuRadioItem key={option} value={option}>{option}</DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function VideoSettingsMenu({
+  durationSeconds,
+  audioEnabled,
+  advancedOpen,
+  onDurationChange,
+  onAudioChange,
+  onAdvancedToggle,
+}: {
+  durationSeconds: (typeof videoDurations)[number];
+  audioEnabled: boolean;
+  advancedOpen: boolean;
+  onDurationChange: (value: (typeof videoDurations)[number]) => void;
+  onAudioChange: (value: boolean) => void;
+  onAdvancedToggle: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="secondary"
+          aria-label={`Video settings. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
+          className="shrink-0 gap-1.5"
+        >
+          <span>{durationSeconds} s</span>
+          <span className="hidden text-xs text-text-muted sm:inline">· {audioEnabled ? "Audio" : "Silent"}</span>
+          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-48">
+        <DropdownMenuLabel>Duration</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={String(durationSeconds)}
+          onValueChange={(next) => onDurationChange(Number(next) as (typeof videoDurations)[number])}
+        >
+          {videoDurations.map((duration) => (
+            <DropdownMenuRadioItem key={duration} value={String(duration)}>
+              {duration} seconds
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem
+          checked={audioEnabled}
+          onCheckedChange={(checked) => onAudioChange(checked === true)}
+        >
+          <Volume2 aria-hidden="true" />
+          Audio
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onAdvancedToggle}>
+          <MoreHorizontal aria-hidden="true" />
+          {advancedOpen ? "Hide Advanced controls" : "Advanced controls"}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -499,13 +559,6 @@ export function CreateWorkspace({
           ) : null}
 
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-            <CreateAdvancedPanel
-              outputKind={outputKind}
-              draft={advancedDraft}
-              onDraftChange={setAdvancedDraft}
-              onReset={resetAdvanced}
-            />
-
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:flex-nowrap sm:overflow-visible sm:pb-0">
                 <input
@@ -561,6 +614,7 @@ export function CreateWorkspace({
                         : current,
                     );
                   }}
+                  size="sm"
                   className="shrink-0"
                 >
                   <ToggleGroupItem value="image">Image</ToggleGroupItem>
@@ -579,46 +633,35 @@ export function CreateWorkspace({
                 />
 
                 {outputKind === "video" ? (
-                  <>
-                    <Toggle
-                      pressed={audioEnabled}
-                      onPressedChange={setAudioEnabled}
-                      size="sm"
-                      aria-label={`Audio ${audioEnabled ? "on" : "off"}`}
-                      title={audioEnabled ? "Generate video with audio" : "Generate video without audio"}
-                      className="shrink-0 gap-1.5 bg-surface-2"
-                    >
-                      {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}
-                      <span className="hidden sm:inline">Audio</span>
-                    </Toggle>
+                  <VideoSettingsMenu
+                    durationSeconds={durationSeconds}
+                    audioEnabled={audioEnabled}
+                    advancedOpen={advancedOpen}
+                    onDurationChange={(value) => {
+                      setDurationSeconds(value);
+                      setError(null);
+                    }}
+                    onAudioChange={(value) => {
+                      setAudioEnabled(value);
+                      setError(null);
+                    }}
+                    onAdvancedToggle={() => setAdvancedOpen((current) => !current)}
+                  />
+                ) : (
+                  <CollapsibleTrigger asChild>
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => {
-                        const currentIndex = videoDurations.indexOf(durationSeconds);
-                        setDurationSeconds(videoDurations[(currentIndex + 1) % videoDurations.length]);
-                      }}
-                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
-                      className="shrink-0"
+                      size="icon"
+                      aria-pressed={advancedOpen}
+                      aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
+                      title="Advanced generation controls"
+                      className={advancedOpen ? "bg-surface-3" : undefined}
                     >
-                      {durationSeconds} s
+                      <MoreHorizontal aria-hidden="true" />
                     </Button>
-                  </>
-                ) : null}
-
-                <CollapsibleTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    aria-pressed={advancedOpen}
-                    aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
-                    title="Advanced generation controls"
-                    className={advancedOpen ? "bg-surface-3" : undefined}
-                  >
-                    <MoreHorizontal aria-hidden="true" />
-                  </Button>
-                </CollapsibleTrigger>
+                  </CollapsibleTrigger>
+                )}
               </div>
 
               <Button type="submit" size="lg" disabled={!canSubmit} className="w-full sm:w-auto">
@@ -626,6 +669,13 @@ export function CreateWorkspace({
                 {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
               </Button>
             </div>
+
+            <CreateAdvancedPanel
+              outputKind={outputKind}
+              draft={advancedDraft}
+              onDraftChange={setAdvancedDraft}
+              onReset={resetAdvanced}
+            />
           </Collapsible>
         </form>
 
