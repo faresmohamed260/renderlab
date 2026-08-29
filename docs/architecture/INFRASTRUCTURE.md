@@ -436,9 +436,9 @@ The verified technical baseline is healthy for continued controlled use. Because
 - Only the Supabase project URL and publishable key are intentionally exposed to browser code. `next.config.ts` maps those public-safe values from `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`; service-role and R2 credentials must never be published.
 - Supabase Auth `auth.users.id` remains the canonical account principal; do not trust a browser-supplied owner ID.
 - Raw `generation_sources`, `generation_jobs`, `media_assets` and `media_upload_sessions` stay server-owned. Browser roles have no direct table grants; product routes/services enforce owner scope while using server-only service-role access.
-- Keep RLS enabled on the four core tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
+- Keep RLS enabled on all six current RenderLab tables. No browser RLS policy is required while browser roles have no direct grants; if the access architecture changes later, define owner policies deliberately before granting table access.
 - An external generation service must authenticate the server-only bearer token before trusting `x-renderlab-owner-id`; owner headers alone are not authorization.
-- UI-030 is merged and GitHub-verified, but the ownership rollout is not complete until owner-aware code is actually live, a final no-unowned-row audit passes, and corrected `0005` is applied/verified. Do not approve Favorites/Collections or other personal organization before that rollout completes.
+- UI-030 ownership rollout is complete: owner-aware code is live, the no-unowned-row gate passed and corrected `0005` is applied/verified. Preserve that boundary for all current and future private product state; do not weaken owner scope or browser-grant isolation when adding Cycle 2 features.
 - Direct browser uploads use short-lived signed URLs + exact-origin CORS.
 - Durable reads/downloads use short-lived signed R2 GETs behind opaque product routes.
 - Rename uses a server-side service-role metadata mutation and never exposes service-role credentials to the browser.
@@ -490,7 +490,7 @@ The repository secret `CLOUDFLARE_API_TOKEN` is deliberately scoped for zone DNS
 This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
 
 ## Infrastructure Operating Rules
-No infrastructure rollout is currently queued by the repository. UI-030 ownership enforcement is complete, Favorites/Collections are approved, and the currently defined Phase 5 backlog is complete.
+No infrastructure rollout is currently queued by the repository. Cycle 2 Phase 6 baseline evidence is complete pending the user-approved operating boundary; no Phase 7 implementation or production rollout is authorized by that audit.
 
 1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout; a repository merge is never implicit permission to deploy or apply a future schema change.
 2. Add any future public upload origin explicitly to R2 CORS before deployment/use.

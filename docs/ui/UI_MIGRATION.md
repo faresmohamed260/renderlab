@@ -526,7 +526,7 @@ Before Phase 7 can be expanded into its own execution-ready contract, Phase 6 mu
 - user-approved beta operating boundary;
 - any blocker or required maintenance slice that Phase 7 planning must account for.
 
-**Phase 6 gate:** this expanded contract may be merged as planning, but Phase 6 execution does not begin until the user explicitly authorizes the audit.
+**Phase 6 gate:** audit execution is complete and evidence is documented; Phase 6 remains `IN PROGRESS` only until the user selects and the repository records the Cycle 2 operating boundary.
 
 ### Phase 7 — Create v2 / Deeper Creative Iteration
 - [ ] **Multi-reference Image Edit v0.1** — planned first product slice after Phase 6, contingent on verified backend support. Extend the capability/input-slot contract and the existing Create workspace without adding a separate Edit app or generic workflow form.
