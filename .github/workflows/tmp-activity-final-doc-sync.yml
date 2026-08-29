@@ -28,6 +28,39 @@ jobs:
       - name: Patch finalized Activity state
         run: python .github/tmp/update-activity-final-docs.py target
 
+      - name: Normalize generated Markdown
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path("target")
+
+          replacements = {
+              "docs/ui/SCREEN_REGISTRY.md": {
+                  "**Status:** UI-035 IN FINAL VALIDATION on PR #34  \n": "**Status:** UI-035 IN FINAL VALIDATION on PR #34\n",
+                  "**Implementation:** `src/app/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`  \n": "**Implementation:** `src/app/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`\n",
+                  "**Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/server/generation/generation-activity.ts`, existing owner-aware generation polling  \n": "**Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/server/generation/generation-activity.ts`, existing owner-aware generation polling\n",
+              },
+              "docs/ui/UI_MIGRATION.md": {
+                  "**Current phase:** Phase 5 — Operational & Secondary Experiences.  \n": "**Current phase:** Phase 5 — Operational & Secondary Experiences.\n",
+                  "**Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing.  \n": "**Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing.\n",
+              },
+          }
+
+          for relative, mapping in replacements.items():
+              path = root / relative
+              text = path.read_text()
+              for old, new in mapping.items():
+                  if old not in text:
+                      raise SystemExit(f"Expected generated line not found in {relative}: {old!r}")
+                  text = text.replace(old, new, 1)
+              path.write_text(text)
+
+          decisions = root / "docs/ui/UI_DECISIONS.md"
+          decisions.write_text(decisions.read_text().rstrip() + "\n")
+          PY
+
       - name: Validate and push target handoff
         working-directory: target
         run: |
