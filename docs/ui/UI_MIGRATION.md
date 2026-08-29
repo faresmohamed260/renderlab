@@ -773,8 +773,8 @@ For every live case:
 
 ### Phase 8 — Library v2 / Media Workflow Productivity
 
-**Phase contract status:** `EXPANDED / EXECUTING` under UI-049.
-**Execution status:** `IN PROGRESS` — Phase 8A Collection Management is `COMPLETE / VERIFIED`; Phase 8B Page-scoped Batch Organization is `NOT STARTED`. No deployment is included or authorized.
+**Phase contract status:** `EXPANDED / COMPLETE` under UI-049.
+**Execution status:** `COMPLETE / VERIFIED` — Phase 8A Collection Management and Phase 8B Page-scoped Batch Organization are both exact-head verified. No deployment is included or authorized.
 
 #### Goal
 Turn the existing account-private Library organization primitives into a faster repeated-work workflow without changing durable media identity or introducing a broad media-management framework. Phase 8 adds collection lifecycle management and current-page batch organization while preserving the server-owned Library dataset, URL-owned filters and the UI-034 selection boundary.
@@ -825,6 +825,14 @@ Users should be able to maintain named collections and organize the media alread
 8. For collection batch membership, resolve the collection once under the verified owner before processing assets. Invalid/missing/foreign collection identity fails the whole request as `collection_not_found`; an unauthorized collection is never used to probe asset ownership.
 9. Non-destructive organization actions do not require destructive confirmation. Keep selection on still-visible items after completion so users can chain organization tasks. If the active Favorites or Collection filter means successful items no longer belong in the current server view, the existing refresh/item reconciliation naturally removes those items and prunes their selection.
 10. Uploaded and generated assets use the same organization APIs and UI. Phase 8 introduces no origin-specific path.
+
+#### Phase 8B implementation evidence — COMPLETE / VERIFIED
+- PR #61 exact implementation head `e460a7e9e805ac9eb214277eb495adddd3c50f38` implements the accepted 8B boundary only: the existing current-page `LibraryBatchSelection` gains one non-destructive Organize disclosure, explicit Favorite/Unfavorite target states and existing-collection Add/Remove target states while permanent Delete stays separate.
+- The complete minimum/affected exact-head suite passed: UI Shell `33276766491`, Account Ownership `33276766501`, Library Collections `33276766508`, Library Favorites `33276766502`, Library Batch Delete/Actions `33276766476`, Library Lifecycle `33276766549`, Library Search `33276766510`, Library History `33276766481`, Library Drag Drop `33276766492`, Persistent Media Upload `33276766522`, Media Download `33276766512`, Media Rename `33276766480`, Media Delete `33276766497`, Create Lifecycle `33276766503`, Generation Integration `33276766505`, and Video Generation Integration `33276766504`.
+- Configured Library Batch Delete/Actions `33276766476` verified empty/1/24/25/UUID/dedupe/idempotence boundaries, signed-out and two-account privacy, foreign/tombstoned per-item not-found behavior, collection prevalidation, mixed best-effort success, identical uploaded/generated organization, active Favorites/Collection reconciliation, preserved durable media/R2/provenance/history and the unchanged permanent Delete lifecycle.
+- artifact `9721752806` (`renderlab-library-batch-actions-screenshots`, `sha256:9dfebfad4a97aa79e6bd11a2b86de5071fa7a1e6739258d95688d37496b3adb0`) contains eight exact-head screenshots. Human review found the desktop/narrow Organize disclosure, completion feedback, Favorites pruning, Collection pruning and existing Delete confirmation clean: actions wrap without horizontal clipping, practical touch targets remain reachable, and Organize stays visually secondary to permanent Delete.
+- Exact cleanup succeeded. The configured verifier removed 8 run-owned owner assets and 9 owner R2 objects plus 1 foreign fixture asset/object; its cleanup-only step passed. The additionally triggered Video Generation regression `33276766504` also passed its cleanup step.
+- Phase 8B adds no schema migration, package, route hierarchy, global media store, cross-page selection, provider/generation contract, R2 identity/provenance or deployment change. `0009_media_asset_deletion.sql` remains the latest migration. Phase 8 is complete; Phase 9 must be expanded and merged before Activity v2 implementation begins.
 
 #### Explicitly out of Phase 8
 - Cross-page or durable selection; Select All Across Results; a global media client store.
@@ -892,12 +900,12 @@ Users should be able to maintain named collections and organize the media alread
 #### Phase 8 exit criteria
 - [x] 8A Collection Management is implemented and exact-head verified without a new top-level route or duplicate Viewer management surface.
 - [x] Collection Delete demonstrably removes only the collection/memberships and preserves media, Favorite state, R2 content and generation history.
-- [ ] 8B reuses the current-page UI-034 selection model for explicit Favorite/Unfavorite and Add/Remove Collection target-state actions with bounded best-effort APIs.
-- [ ] Uploaded and generated media follow the same organization path; no parallel Uploads identity/surface is introduced.
-- [ ] Cross-page selection and Trash/restore remain deferred rather than being smuggled into the phase.
-- [ ] No schema migration is introduced unless this contract is explicitly amended from new evidence.
-- [ ] Exact-head affected CI, responsive/accessibility artifact review and exact shared-fixture cleanup all pass.
-- [ ] Authoritative documentation matches implementation reality, then Phase 9 is expanded before Activity v2 implementation begins.
+- [x] 8B reuses the current-page UI-034 selection model for explicit Favorite/Unfavorite and Add/Remove Collection target-state actions with bounded best-effort APIs.
+- [x] Uploaded and generated media follow the same organization path; no parallel Uploads identity/surface is introduced.
+- [x] Cross-page selection and Trash/restore remain deferred rather than being smuggled into the phase.
+- [x] No schema migration is introduced; `0009_media_asset_deletion.sql` remains latest.
+- [x] Exact-head affected CI, responsive/accessibility artifact review and exact shared-fixture cleanup all pass.
+- [x] Authoritative documentation matches implementation reality; Phase 9 contract expansion is the next step before Activity v2 implementation begins.
 
 ### Phase 9 — Activity v2 / Recovery & Job Control
 - [ ] **Generation Retry v0.1** creates a new owner-scoped job from persisted normalized product intent after revalidating current capability, parameters and referenced media; never replay raw historical worker/ComfyUI payloads.

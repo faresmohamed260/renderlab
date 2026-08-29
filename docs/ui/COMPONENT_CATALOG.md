@@ -163,8 +163,8 @@ Before copying/installing an external component:
 ### LibraryView
 **Status:** APPROVED
 **Source:** `src/features/library/library-view.tsx`
-**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop/Favorites/Collections behavior, approved UI-034 batch selection and UI-049 Phase 8A collection management.
-**Purpose:** Durable-media Library with URL-owned literal search, kind/Favorites/collection filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry, page-scoped batch selection, Library-owned collection lifecycle management and Viewer deep links.
+**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop/Favorites/Collections behavior, approved UI-034 batch selection and UI-049 Phase 8A collection management + Phase 8B page-scoped batch organization.
+**Purpose:** Durable-media Library with URL-owned literal search, kind/Favorites/collection filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry, page-scoped batch selection with explicit organization target states, Library-owned collection lifecycle management and Viewer deep links.
 **Variants:** All/Images/Videos; Favorites on/off; optional selected collection; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; zero/existing collections; transient collection-manager/create/rename/delete-confirmation state; transient desktop drag-active upload state; UI-034 selection/confirmation state; desktop/mobile.
 **Dependencies:** Next.js Link, maintained Button/Checkbox/Input/DropdownMenu/Field/Alert/AlertDialog/Empty/Spinner primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort/favorite/collection/batch-delete contracts, feature-owned `LibraryBatchSelection`, `LibraryUploadButton`, `LibraryDropUploadSurface`, `LibrarySortMenu`, `LibraryCollectionMenu` and `LibraryCollectionManager`.
 **Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search/history/Favorites/Collections URL/server-owned; keep UI-034 selection transient/page-scoped; keep persistent upload paths on the shared feature-owned transaction.
@@ -174,13 +174,13 @@ Before copying/installing an external component:
 ### LibraryBatchSelection
 **Status:** APPROVED
 **Source:** `src/features/library/library-batch-selection.tsx`
-**Origin:** RenderLab feature composition using maintained Checkbox/Button/AlertDialog/Alert primitives and the UI-033 deletion contract.
-**Purpose:** Explicit page-scoped Library selection plus permanent Delete for the currently rendered media page.
+**Origin:** RenderLab feature composition using maintained Checkbox/Button/Collapsible/NativeSelect/AlertDialog/Alert primitives, UI-034 page-scoped selection/Delete and UI-049 Phase 8B organization.
+**Purpose:** Explicit transient current-page Library selection with one non-destructive Organize disclosure for Favorite/Unfavorite and existing-collection Add/Remove target states, plus permanent Delete kept as a separate destructive action.
 **Used by:** `LibraryView` when media items are present.
-**Dependencies:** `POST /api/media/assets/batch-delete`, `PublicMediaAsset`, maintained Checkbox/AlertDialog/Button/Alert/Spinner, Next.js router refresh.
-**Reuse rules:** Selection is transient browser interaction state over the current server-rendered page. A keyed Library view resets it across kind/search/Favorites/collection/sort/pagination navigation. Successful items may disappear locally while server-owned data refreshes.
-**Do not:** Persist selection globally, select across pages, promise all-or-nothing R2/database deletion, add batch Favorites/Collections implicitly, or expose storage identity.
-**Notes:** UI-034 final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed Library Batch Delete `33220710307` plus all 15 existing affected regressions; desktop/mobile selection and confirmation artifacts were reviewed clean. PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`; merged-`main` UI Shell `33221101101`, Generation Integration `33221101106`, and Video Generation `33221101117` passed and post-merge cleanup returned to zero.
+**Dependencies:** `POST /api/media/assets/batch-delete`, `POST /api/media/assets/batch-favorite`, `POST /api/media/collections/[collectionId]/items/batch`, `PublicMediaAsset`, `PublicMediaCollection`, maintained Checkbox/Collapsible/NativeSelect/AlertDialog/Button/Alert/Spinner, Next.js router refresh.
+**Reuse rules:** Selection remains transient browser interaction state over exactly the current server-rendered page. A keyed Library view resets it across kind/search/Favorites/collection/sort/pagination navigation. Non-destructive organization keeps still-visible selections for chaining; server refresh naturally prunes selected items that no longer satisfy an active Favorites/Collection filter.
+**Do not:** Persist selection globally, select across pages, create collections inside Organize, turn target-state actions into ambiguous toggles, merge permanent Delete into Organize, promise all-or-nothing best-effort mutations or expose storage identity.
+**Notes:** UI-034 final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` established page-scoped Delete. UI-049 Phase 8B exact head `e460a7e9e805ac9eb214277eb495adddd3c50f38` passed all 16 minimum/affected regressions including configured Batch Actions `33276766476`; artifact `9721752806` (`renderlab-library-batch-actions-screenshots`, `sha256:9dfebfad4a97aa79e6bd11a2b86de5071fa7a1e6739258d95688d37496b3adb0`) was reviewed clean across desktop/narrow organization/filter-reconciliation/Delete-regression states and exact fixtures cleaned.
 
 ### LibraryUploadButton
 **Status:** APPROVED
