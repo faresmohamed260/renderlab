@@ -1,0 +1,40 @@
+name: Temporary UI-035 Post-Merge Handoff
+
+on:
+  push:
+    branches:
+      - tmp/ui035-post-merge-handoff
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/ui035-post-merge-handoff
+          fetch-depth: 0
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: target
+          fetch-depth: 0
+
+      - name: Patch approved UI-035 handoff
+        run: python .github/tmp/update-ui035-post-merge.py target
+
+      - name: Validate and push main handoff
+        working-directory: target
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/architecture/FRONTEND_ARCHITECTURE.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Record UI-035 approval"
+          git push origin HEAD:main
