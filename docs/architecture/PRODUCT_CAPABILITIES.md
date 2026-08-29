@@ -173,15 +173,19 @@ Configured Create Durable Upload run `33256497167` verified that a Create upload
 - Polished product commit `360fa79ea85dd09ce90101518fedaca5645aaa71` and exact validation retrigger head `acf3f8e792c2b895a9999cca24060a1c33484463` are tree-identical. The exact head passed all nine affected PR gates; configured Create Lifecycle `33266025789` exercised the durable two-reference interaction/submit contract and exact cleanup. PR #53 merged as `0286b18802fc3d766d9d09e2ba8ed9a494eabd08`.
 - Responsive review confirmed the two-reference composition remains readable on narrow layouts after the action cluster was allowed to wrap; desktop remains compact. No model selector, schema, route or infrastructure contract was added.
 
-### Verified Advanced product controls
-Create v0.3 intentionally exposes only currently justified Advanced controls:
-- negative prompt;
-- seed;
-- steps;
-- guidance;
-- frame rate for Video only (24/25/30 fps).
+### Phase 7C live REDGraft contract audit
+Live audit `33266905978` is authoritative for the currently deployed REDGraft boundary. Both configured gateways expose the same `/jobs/video` multipart fields: required `prompt`; optional `negative_prompt`, `seed`, `resolution`, `duration_seconds`, `audio_enabled`, `aspect_ratio`, `frame_rate`, and one optional `image_file`. No structured storyboard/frame/scene/action/dialogue/speech/sound/audio-prompt/camera/shot fields are deployed. Primary runtime health is ready on NVIDIA A10 with enabled 480p/720p/1080p/2K and 24/25/30 fps.
 
-Current UI/API capability metadata is centralized in `src/lib/capabilities/generation.ts`. Advanced is collapsed by default. A worker supporting more parameters is not sufficient reason to expose them. Video audio is contextual output intent rather than an Advanced control; `defaultVideoAudioEnabled = true` is centralized beside the other capability defaults.
+UI-047 therefore closes Phase 7C as **audit-complete / Director deferred**. The current Video/Animate surface remains one shared prompt plus at most one first-frame image and ordinary Video settings. RenderLab must not present separate Director fields as if they map to distinct worker semantics. A future Director slice requires fresh deployed-worker evidence; upstream LTX capabilities and Saga reference code alone are insufficient.
+
+The same audit found a product-contract drift: live `/jobs/video` does not expose `steps` or `cfg`, even though current RenderLab still serializes Video `steps`/`guidance`. A no-generation probe sent deliberately invalid `steps=999` / `cfg=999` alongside invalid duration and the live endpoint proceeded to duration validation, confirming the extra tuning fields are not active live controls. Phase 7D must reconcile this before claiming Video steps/guidance are effective.
+
+### Advanced product controls
+Current capability metadata is centralized in `src/lib/capabilities/generation.ts`, but verified worker effect is output-specific:
+- Image: negative prompt, seed, steps and guidance remain the verified FLUX tuning surface.
+- Video: the deployed gateway exposes negative prompt, seed and frame rate; audio remains a contextual output setting. `steps`/`guidance` are still present in the current RenderLab draft/request shape but are **not verified active REDGraft controls** and must not remain represented as effective Video tuning after the next Video contract reconciliation.
+
+Advanced remains collapsed by default. A worker/source parameter is not sufficient reason to expose a control; the deployed contract and verified behavior govern product truth.
 
 ### Verified continuation actions
 Persisted image results currently expose:
@@ -286,4 +290,4 @@ The initial Create capability set is implemented and approved: Create Image, Edi
 
 The Phase 5 capability-surface audit found no current user goal that justifies dedicated Models or Workflows screens. Qwen and registered workflow/model/ecosystem identities remain execution choices behind the capability boundary, while all currently approved creative operations are already reachable through Create/Viewer. Likewise, none of the extensibility categories above is a current product commitment, so there is no additional capability-specific screen to implement now. Future capability work must start from a verified user need and an explicit product slice rather than pre-populating navigation or controls from backend possibilities.
 
-Phase 6 verified the capability handoff and is complete under Closed Beta. The first production-feedback pass has now expanded Phase 7 around the prerequisites that evidence exposed: source-aware geometry, durable Create uploads, composer de-crowding, explicit reference identity/prompt mapping, FLUX/Qwen multi-input verification, an audit-first Director-video slice and curated Video resolution. Phase 7 execution has not started; verified current behavior above remains authoritative until each new contract is implemented and validated.
+Phase 6 verified the capability handoff and is complete under Closed Beta. Phase 7 execution is in progress: 7A foundations and 7B bounded multi-reference Image Edit are merged; Phase 7C live audit `33266905978` found no structured Director contract and UI-047 defers that productization; Phase 7D Video Quality/Resolution is next planned and has not started. Verified current behavior above remains authoritative until each new contract is implemented and validated.
