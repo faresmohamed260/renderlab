@@ -130,6 +130,18 @@ test("generation API validates requests and reports backend availability truthfu
   expect(body.ok).toBe(false);
   expect(body.error.code).toBe("invalid_request");
 
+  const invalidOriginal = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "A valid prompt",
+      output: { kind: "image", aspectRatio: "original" },
+      inputs: [],
+    },
+  });
+  expect(invalidOriginal.status()).toBe(400);
+  const originalBody = await invalidOriginal.json();
+  expect(originalBody.ok).toBe(false);
+  expect(originalBody.error.message).toContain("requires a source image");
+
   const invalidAdvanced = await request.post("/api/generation/jobs", {
     data: {
       prompt: "A valid prompt",
