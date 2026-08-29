@@ -46,7 +46,7 @@ function parseGenerationJob(value: unknown): GenerationJob | null {
   };
 }
 
-async function generationImageInputsAvailable(ownerId: string, request: GenerationRequest) {
+export async function generationImageInputsAvailable(ownerId: string, request: GenerationRequest) {
   const available = await Promise.all(request.inputs.map(async (input) => {
     if (input.source.type === "media-asset") {
       const asset = await getMediaAsset(ownerId, input.source.id);
