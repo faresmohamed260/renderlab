@@ -81,11 +81,6 @@ jobs:
               "- [ ] The user-approved Cycle 2 beta operating boundary is recorded.",
               "- [x] The user-approved Cycle 2 beta operating boundary is recorded as **Closed Beta**.",
           )
-          replace(
-              "docs/ui/UI_MIGRATION.md",
-              "**Phase 6 gate:** this expanded contract may be merged as planning, but Phase 6 execution does not begin until the user explicitly authorizes the audit.",
-              "**Phase 6 status:** `COMPLETE`. Closed Beta was selected on 2026-08-29. Before Phase 7 is expanded into an execution-ready contract, triage the user-reported current-production problems; blocking defects take precedence over new feature work.",
-          )
 
           replace(
               "docs/architecture/INFRASTRUCTURE.md",
