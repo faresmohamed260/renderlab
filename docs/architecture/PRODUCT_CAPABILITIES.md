@@ -194,6 +194,15 @@ UI-048 is implemented and exact-head/live verified. Video and Animate now expose
 - Contextual review accepted the matched 480p/1080p outputs as usable; the portrait city-scene result was coherent with its prompt; and the 2K Animate output preserved visible influence and 2:1 geometry from its run-owned solid-blue source. Model obedience is probabilistic; RenderLab guarantees correct mapping/validation rather than deterministic creative output.
 - Configured fixtures were exactly cleaned, including the earlier diagnostic run. No route, model/provider selector, Director UI, schema or deployment change was introduced.
 
+### Phase 9 Retry contract — Accepted / not yet implemented
+- Retry is a product-level recovery operation for `failed` jobs only in v0.1. It creates a new job from current-revalidated persisted product intent; it is not a provider-job replay or mutation of the historical job.
+- Authoritative reconstruction fields are `prompt`, `output_kind`, `inputs`, `parameters.output` and `parameters.advanced`. Historical workflow/model/ecosystem/worker/provider/failover/error/output metadata is ignored for new routing.
+- Current `parseGenerationRequest` remains authoritative. Missing input aliases may receive positional aliases for compatibility. Legacy Video retries discard inactive `steps`/`guidance`; missing Video resolution normalizes to current default `480p`. No other invalid historical value is silently migrated.
+- Current input ownership/readiness/activity is revalidated. Tombstoned/missing/foreign durable media and missing/not-ready temporary sources cannot be retried.
+- A retry may route through current internal workflow/model implementation and does not promise bit-identical reproduction even when persisted seed/prompt remain valid.
+- Current cancellation capability is **not** a product capability: although configured gateways report cancellation support, RenderLab's native reassignment/persistence path lacks cancellation-aware atomic guards, so Cancel remains deferred.
+- No schema migration or retry lineage relation is planned for v0.1.
+
 ### Advanced product controls
 Capability metadata is centralized in `src/lib/capabilities/generation.ts`, and the verified surface is output-specific:
 - Image: negative prompt, seed, Steps and Guidance.

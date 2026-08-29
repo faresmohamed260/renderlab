@@ -908,10 +908,122 @@ Users should be able to maintain named collections and organize the media alread
 - [x] Authoritative documentation matches implementation reality; Phase 9 contract expansion is the next step before Activity v2 implementation begins.
 
 ### Phase 9 — Activity v2 / Recovery & Job Control
-- [ ] **Generation Retry v0.1** creates a new owner-scoped job from persisted normalized product intent after revalidating current capability, parameters and referenced media; never replay raw historical worker/ComfyUI payloads.
-- [ ] Audit cancellation semantics by execution state/provider before approving any Cancel UI.
-- [ ] If useful, add restrained shell-level running/failed attention while Activity remains the operational surface and provider/workflow detail stays internal.
-- [ ] Do not introduce a global client job store merely for Activity refresh/status presentation.
+
+**Phase contract status:** `EXPANDED / READY FOR EXECUTION` under UI-050.
+**Execution status:** `NOT STARTED` until this contract is merged. No deployment is included or authorized.
+
+#### Goal
+Make failed generation work recoverable from Activity without asking the user to reconstruct the request in Create, while preserving RenderLab's owner-scoped product-job model and refusing to expose a Cancel control that the current orchestration cannot yet make race-safe.
+
+#### User value
+A failed generation should have one obvious recovery action: Retry. The user can launch a fresh attempt from the historical job they already recognize, with current capability/security checks applied automatically. Activity remains the operational history; infrastructure routing stays internal and no fake progress, global job store or provider console is introduced.
+
+#### Verified planning starting state — merged `main` `40acf2efd6977d7a8b19fc8380513c8eb085a256`
+- Activity v0.1 / UI-035 is approved and server-owned: newest-first 20-job pages, queued/preparing/running/persisting/succeeded/failed/cancelled product states, sanitized failure copy, owner-scoped result links and a 5-second `router.refresh()` helper only while the Activity page contains active work.
+- `generation_jobs` already persists the product reconstruction fields required for Retry: `prompt`, `output_kind`, structured `inputs` and `parameters.output` / `parameters.advanced`. Worker ID, provider call ID, workflow/model/ecosystem and failover history are execution metadata and must not drive Retry.
+- Current `parseGenerationRequest` is the authoritative request validator. It can synthesize missing positional `@imageN` aliases, defaults missing Video resolution to `480p`, enforces current input count/roles/aliases/ratios/durations/frame rates/audio/resolution and rejects Video Steps/Guidance.
+- `submitGeneration(ownerId, request)` already revalidates owner-scoped active image inputs before either the authenticated external backend or native orchestration is used. Tombstoned durable media is therefore unavailable to new work.
+- Native submission always creates a new `generation_jobs` identity before provider execution. Native polling treats succeeded/failed/cancelled as terminal and persists output only after worker completion.
+- The optional authenticated external generation boundary supports submit + poll only in RenderLab's current adapter. There is no RenderLab cancellation abstraction/product route.
+- Deployed FLUX and REDGraft gateways report cancellation capability, but worker support alone is insufficient for a truthful product Cancel contract.
+
+#### Cancellation safety audit conclusion — Cancel deferred
+The Phase 9 planning audit found a concrete app-level race blocker, so no generation spend is needed merely to discover that the current product orchestration is unsafe for Cancel:
+1. RenderLab has no owner-scoped cancel route/service or external-backend cancel contract.
+2. `pollNativeGeneration` may already be fetching a completed result while another request marks a job cancelled; `persistResult` writes R2/media and then marks success without a cancellation-aware compare-and-set/version guard.
+3. Poll-time safe reassignment may concurrently submit a standby worker, and there is no cancellation token/lease checked before or after that resubmission.
+4. Therefore a local Cancel acknowledgement could race a late result persistence or a second worker submission. Exposing Cancel now would overpromise execution termination and spend prevention.
+
+**Decision:** Phase 9 v0.1 does not add Cancel UI/API. Future cancellation requires a separate execution-synchronization contract (including external/native provider semantics, atomic state transition/race handling, failover interaction and late-result suppression) before implementation. If that solution requires schema state/versioning, it must be explicitly planned rather than hidden inside Retry.
+
+#### Phase 9A — Generation Retry v0.1
+1. Add owner-scoped `POST /api/generation/jobs/[jobId]/retry` with no user-supplied generation payload. The route accepts only a valid job UUID and verified account context.
+2. Retry is exposed only as recovery for `failed` jobs in v0.1. Active, succeeded and cancelled jobs return bounded `retry_not_available`; a future successful-job “Run again” or cancelled-job retry contract is separate.
+3. Load the historical job under the verified owner. Missing/foreign IDs collapse to `job_not_found` and never reveal another account's job.
+4. Reconstruct only product intent from persisted `prompt`, `output_kind`, `inputs`, `parameters.output` and `parameters.advanced`. Ignore historical `workflow_id`, `model`, `ecosystem`, `worker_id`, `provider_job_id`, `worker_state`, `failover_history`, output IDs and raw error data.
+5. Legacy compatibility is deliberately bounded before current validation:
+   - missing input aliases receive stable positional `image1`, `image2`, … aliases;
+   - legacy Video `advanced.steps` / `advanced.guidance` are discarded because UI-048 proved they were inactive deployed controls;
+   - missing Video `output.resolution` is left for the current parser to normalize to `480p`;
+   - no other obsolete/invalid value is silently guessed. If current `parseGenerationRequest` rejects the reconstructed intent, Retry returns `retry_not_available` without backend submission.
+6. The reconstructed operation derived by current capability must match the stored historical operation/output kind; mismatch is not silently rerouted.
+7. Revalidate referenced media/source availability and ownership before backend submission. Missing/foreign/tombstoned/not-ready inputs make Retry unavailable and must not reach a worker/provider.
+8. An accepted Retry calls the ordinary current `submitGeneration` path and returns a **distinct new job ID**. The original job row/status/error/output history is never mutated or repurposed.
+9. Retry means “make another attempt,” not an idempotent state setter: separate explicit successful Retry requests may create separate new jobs. The Activity UI must disable the button while one click is in flight to prevent accidental concurrent duplicate submission; v0.1 does not add a durable idempotency-key framework.
+10. Current routing/capability applies. A historical job may retry through a newer internal workflow/model/default implementation, while supported persisted creative intent such as prompt/seed remains preserved. RenderLab does not promise bit-identical output reproduction.
+11. Activity keeps the existing server-owned list. Add a small feature-owned client Retry control to failed job rows using maintained Button/Spinner/Alert feedback; success refreshes Activity so the new job appears in ordinary chronological state. Retry does not require destructive confirmation.
+12. Sanitize Retry errors. The UI may explain `retry_not_available`, backend unavailable and submission failure at product level, but never show worker/provider/workflow/failover identities or raw backend detail.
+
+#### Explicitly out of Phase 9 v0.1
+- Cancel mutation/UI, pause/resume, queue manipulation or worker termination controls.
+- Retry for succeeded/cancelled/active jobs; “Run again” as a general duplication feature.
+- Editing the stored prompt/settings inside Activity before Retry; Create remains the authoring workspace.
+- Retry lineage tables, attempt trees, durable idempotency keys or a schema migration.
+- A shell-global running/failed badge. `AppShell` currently has no account/job data boundary; adding cross-route polling/global status state is not justified by the Retry user goal and is deferred.
+- Worker/provider/model/workflow/failover details, percentage progress, generic job admin, rate/concurrency controls or privileged operational tools (Phase 10 territory).
+- Deployment.
+
+#### Accepted API / architecture boundary
+- Existing `POST /api/generation/jobs` and `GET /api/generation/jobs/[jobId]` remain authoritative submit/poll contracts.
+- Phase 9A adds `POST /api/generation/jobs/[jobId]/retry` and a server-owned retry reconstruction/service boundary; the browser never sends the historical generation payload back to the server.
+- Keep `ActivityView` server-rendered. Only the per-row Retry interaction is client state; on success it refreshes the server-owned Activity dataset.
+- Reuse current `parseGenerationRequest`, owner-scoped input preflight and `submitGeneration`; do not duplicate capability or authorization logic in the Activity client.
+- No new top-level route, global job store or worker-facing browser request.
+
+#### Data / security / ownership implications
+- No schema migration is planned. `generation_jobs` already stores sufficient normalized product intent for bounded Retry.
+- The original historical job is immutable during Retry. The new attempt is a normal separately owned `generation_jobs` row with its own provider/runtime/output lifecycle.
+- Foreign job/source/media IDs preserve existing not-found privacy. Raw core tables remain RLS-enabled, server-only and without browser grants.
+- Tombstoned media cannot be revived by Retry. A historical reference is evidence of past intent, not authorization to reuse unavailable content.
+- Temporary-source retries succeed only while the exact same owner-scoped source remains ready; Phase 9 does not promote legacy temporary sources into durable media.
+
+#### UI / responsive / accessibility requirements
+- Preserve Activity's current media/job-history hierarchy. Retry is a compact contextual secondary action on failed rows, not a new toolbar or control rail.
+- Button copy is simply `Retry`; while submitting use a clear busy state such as `Retrying…` with Spinner and disabled control.
+- Product-level inline feedback must be announced accessibly and must not shift the row into a destructive visual treatment.
+- Keyboard/touch/focus behavior must come from maintained Button mechanics. On narrow layouts the status, prompt, failure copy and Retry action wrap without clipping or sub-practical touch targets.
+- Existing active-job auto-refresh stays Activity-local; reduced motion continues to suppress spinner animation through the established motion-safe behavior.
+
+#### Validation matrix
+| Area | Required evidence before Phase 9 closes |
+| --- | --- |
+| Retry ownership/status | Valid own failed job accepted; malformed ID 400; signed-out 401; missing/foreign 404; queued/running/persisting/succeeded/cancelled reject with `retry_not_available` and no submission |
+| New job semantics | Accepted Retry returns a distinct job ID; original row is byte-for-byte unchanged in status/intent/runtime/output/error fields; separate explicit retries create separate attempts |
+| Current intent validation | Current Image/Video request parser runs; missing aliases normalize positionally; legacy Video missing resolution -> 480p; legacy Video Steps/Guidance are not replayed; unsupported current ratio/duration/input-role/alias values reject without submission |
+| Input revalidation | Own active durable input can retry; missing/foreign/tombstoned media and missing/not-ready temporary sources reject before backend/provider submission |
+| Provider isolation | Retry submission contains only normalized product request + owner auth boundary; historical worker/provider/workflow/failover/error/output metadata never reaches the new submit request |
+| UI lifecycle | Failed rows show Retry; other statuses do not; one in-flight click disables; success refreshes to the new ordinary job; bounded failure feedback stays local/product-level |
+| Responsive/accessibility | Desktop + narrow failed/retrying/success/error states reviewed; keyboard/focus/touch/status feedback passes; no shell hierarchy drift |
+| Security/cleanup | Two-account job/source/media isolation and exact run-owned Auth/Supabase fixture cleanup; no R2 fixture required for Phase 9-specific mock-backend verification |
+
+#### Remote verification plan
+- Extend the existing configured **Activity Visual** verifier instead of creating another Activity workflow.
+- For Phase 9-specific Retry API/UI acceptance, run Activity against the already-supported authenticated external-backend adapter pointed at a run-local mock RenderLab backend. The mock verifies bearer/owner forwarding, captures the normalized retry request and persists a run-owned synthetic new job in Supabase; it does **not** invoke ComfyUI or spend generation. This is test orchestration only, not a new product backend mode.
+- The configured verifier creates exact failed/current/legacy/foreign/non-retryable/source-unavailable job fixtures, exercises Retry through real product routes/UI, verifies persisted original/new state, screenshots desktop/narrow states and deletes the two exact test accounts so owned job/media/source rows clean by existing FKs/cleanup helpers.
+- Exact implementation head must pass every path-triggered workflow. Minimum acceptance set: UI Shell, Activity, Account Ownership, Media Delete, Create Lifecycle, Generation Integration and Video Generation Integration, plus every additionally triggered workflow.
+- Phase 9-specific acceptance requires no live image/video generation spend. Existing configured Generation/Video regressions must still pass if triggered by shared generation paths.
+- Human review is required for Activity desktop/narrow Retry artifacts; build/DOM assertions alone are insufficient.
+
+#### Documentation outputs after verified implementation
+- `PROJECT.md` — Phase 9 completion evidence and Phase 10 handoff.
+- `docs/ui/UI_MIGRATION.md` — exact-head runs, Activity artifact review, cleanup and exit status.
+- `docs/ui/UI_DECISIONS.md` — UI-050 implementation evidence or a separately approved amendment.
+- `docs/ui/COMPONENT_CATALOG.md` — actual Activity Retry composition after implementation.
+- `docs/ui/SCREEN_REGISTRY.md` — verified Activity v2 behavior.
+- `docs/architecture/FRONTEND_ARCHITECTURE.md` — actual retry route/service/client boundary after implementation.
+- `docs/architecture/PRODUCT_CAPABILITIES.md` — verified Retry compatibility/normalization behavior.
+- `docs/architecture/INFRASTRUCTURE.md` only if execution-safety/backend/shared-resource reality changes beyond the planning audit recorded here.
+
+#### Phase 9 exit criteria
+- [ ] Failed-job Retry creates a distinct new owner-scoped job from current-revalidated stored product intent and never mutates/replays the historical execution payload.
+- [ ] Legacy Video retry normalization is exactly bounded: missing resolution -> 480p and inactive Video Steps/Guidance are not replayed; other current-invalid intent fails closed.
+- [ ] Missing/foreign/tombstoned/not-ready inputs cannot be resubmitted through Retry.
+- [ ] Activity Retry is responsive/accessibly reviewed and existing job history/result/pagination/auto-refresh behavior remains intact.
+- [x] Cancellation safety was audited from current orchestration; Cancel is deliberately deferred because late persistence/reassignment races lack a cancellation-aware atomic guard.
+- [x] Shell-global attention is deliberately deferred; Phase 9 v0.1 adds no cross-route polling/global job store.
+- [ ] No schema migration, new top-level route, provider/admin control or deployment is introduced.
+- [ ] Exact-head affected CI, configured Retry verification, human artifact review and exact fixture cleanup all pass.
+- [ ] Authoritative docs match implementation reality, then Phase 10 is expanded before Admin/account-operations implementation begins.
 
 ### Phase 10 — Account, Admin & Closed-Beta Operations
 - [ ] Add account recovery/password reset and improve requirement-backed verification/session failure handling through the maintained Supabase Auth/session boundary.
@@ -955,14 +1067,14 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete under Closed Beta and the roadmap has been revised from the first production-feedback pass.
-**Current phase contract:** Phase 8 — Library v2 / Media Workflow Productivity is `EXPANDED/EXECUTING` under UI-049; execution is `IN PROGRESS`.
-**Current product slice:** Phase 8A Collection Management v0.1 is `COMPLETE / VERIFIED` at exact code/test head `34f9573eaabff6a91c780266ff03fedc9058df56`; Phase 8B Page-scoped Batch Organization v0.1 is next after the 8A merge.
-**Current gate:** Merge the verified 8A implementation/documentation record, then implement only the already-accepted 8B contract against UI-034 page-scoped selection. Do not add a schema migration, cross-page selection, Trash/restore, reopen completed Phase 7 contracts or deploy without separate evidence/authorization.
-**Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Resolution — all complete/evaluated within their accepted boundaries.
-**Later Cycle 2:** Phase 8 Library v2 → Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–8 are complete and verified under the Closed Beta boundary.
+**Current phase contract:** Phase 9 — Activity v2 / Recovery & Job Control is `EXPANDED / READY FOR EXECUTION` under UI-050; execution is `NOT STARTED` until the contract merge.
+**Current product slice:** Phase 9A Generation Retry v0.1 — failed-job-only Retry from stored product intent with current capability/input revalidation and a distinct new job identity.
+**Current gate:** Merge this Phase 9 contract, then implement only Retry v0.1. Do not add Cancel, shell-global job polling, a schema migration, general “Run again,” provider/admin controls or deployment. The cancellation audit is already sufficient to defer Cancel because current native persistence/reassignment races lack an atomic cancellation guard.
+**Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2.
+**Later Cycle 2:** Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
-**Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation, billing and cross-page selection still require their own evidence/decisions.
+**Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation productization, billing and cross-page selection still require their own evidence/decisions.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

@@ -323,6 +323,11 @@ Worker completion is not product completion. `succeeded` occurs only after durab
 ### Worker reassignment safety
 Initial submission may try another worker only before a provider call ID is accepted. Once accepted, the job is pinned. Poll-time reassignment requires explicit safe evidence such as credit/budget exhaustion or explicit unavailable state. Generic 429/5xx/network ambiguity does not trigger automatic duplicate-prone resubmission. Failover history is persisted and bounded.
 
+### Phase 9 cancellation safety audit — product Cancel deferred
+Configured FLUX/REDGraft gateways have previously reported cancellation capability, but the RenderLab orchestration itself is not currently cancellation-safe enough for a user-facing promise. There is no owner-scoped cancel product route/service and the authenticated external backend adapter defines submit + poll only. More importantly, native `pollNativeGeneration` can already be inside a safe standby reassignment or successful-result persistence while a hypothetical cancel request changes local state; `reassignPollJob` has no cancellation lease/token check and `persistResult` writes R2/media then marks success without a cancellation-aware conditional state/version guard. A local `cancelled` row therefore cannot yet prove that no standby was submitted and no late durable result can appear.
+
+UI-050 consequently **does not implement Cancel**. A future cancellation contract must define provider cancellation for native + external paths, eligible execution states, atomic/conditional state ownership, interaction with poll-time failover, late-result suppression/cleanup, repeated cancel semantics and exact verification before exposing a control. If that requires a schema version/lease/cancel-request field, it must be an explicit migration decision rather than hidden inside Phase 9 Retry. No live cancellation spend is required to establish this current blocker.
+
 ## Verified Native/Media Coverage
 - Temporary reference upload — verified/self-cleaning.
 - Create Image/Edit Image/Create Video/Animate Image — live verified.
