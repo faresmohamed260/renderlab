@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: package.json
       - name: Fix continuation alias semantics
         run: |
           python - <<'PY'
@@ -54,7 +55,7 @@ jobs:
           PY
       - name: Validate product tree
         run: |
-          npm ci
+          npm install --no-audit --no-fund
           npm run verify:ui-purity
           npm run build
           git diff --check
