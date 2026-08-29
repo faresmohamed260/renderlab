@@ -1,0 +1,57 @@
+name: Patch Cloudflare DNS token docs
+
+on:
+  push:
+    branches: [fix/cloudflare-dns-token-r2-fallback]
+    paths:
+      - ".github/workflows/patch-cloudflare-token-docs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/cloudflare-dns-token-r2-fallback
+      - name: Patch authoritative docs and remove helper workflow
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          project = Path("PROJECT.md")
+          text = project.read_text()
+          marker = "- PR #36 and PR #37 add no schema migration and do not redesign Create or change the account/private-media ownership model. Automatic Git deployment remains disabled; repository merge is not implicit production deployment authorization."
+          addition = "- Custom-domain DNS activation / 2026-08-29: Cloudflare now has a DNS-only `CNAME` for `renderlab.faresuniform.uk` targeting Vercel's assigned `736ea4abfec91fb9.vercel-dns-017.com`. The repository `CLOUDFLARE_API_TOKEN` is intentionally zone-DNS scoped and is not an R2-admin credential. R2 browser-CORS reconciliation must therefore fall back to the existing R2 S3 credentials when the generic Cloudflare token receives an R2 authorization `401`/`403`; a DNS-scoped token must not break upload verification.\n"
+          if addition.strip() not in text:
+              if marker not in text:
+                  raise SystemExit("PROJECT.md insertion marker not found")
+              text = text.replace(marker, addition + marker, 1)
+              project.write_text(text)
+
+          infra = Path("docs/architecture/INFRASTRUCTURE.md")
+          text = infra.read_text()
+          marker = "## Infrastructure Operating Rules"
+          addition = """### Custom-domain DNS and Cloudflare credential roles — 2026-08-29
+`renderlab.faresuniform.uk` is configured in the Cloudflare `faresuniform.uk` zone as a **DNS-only** `CNAME` to Vercel's assigned target `736ea4abfec91fb9.vercel-dns-017.com`. Cloudflare API read-back and public DNS-over-HTTPS both verified that exact record after creation.
+
+The repository secret `CLOUDFLARE_API_TOKEN` is deliberately scoped for zone DNS editing and must not be treated as proof of R2 administration authority. `scripts/ensure-r2-browser-cors.mjs` may try the Cloudflare R2 API when that token is present, but an R2 authorization `401`/`403` is a credential-role mismatch, not an upload/CORS failure; the script must fall back to the existing R2 S3 credentials and continue exact-origin reconciliation/probing. Non-authorization Cloudflare API errors remain hard failures.
+
+This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
+
+"""
+          if addition.strip() not in text:
+              if marker not in text:
+                  raise SystemExit("INFRASTRUCTURE.md insertion marker not found")
+              text = text.replace(marker, addition + marker, 1)
+              infra.write_text(text)
+          PY
+          rm .github/workflows/patch-cloudflare-token-docs.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/architecture/INFRASTRUCTURE.md .github/workflows/patch-cloudflare-token-docs.yml
+          git commit -m "Document custom-domain DNS credential boundary"
+          git push origin HEAD:fix/cloudflare-dns-token-r2-fallback
