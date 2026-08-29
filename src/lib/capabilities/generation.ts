@@ -77,6 +77,7 @@ export type GenerationRequest = {
     kind: OutputKind;
     aspectRatio: AspectRatio;
     durationSeconds?: number;
+    audioEnabled?: boolean;
   };
   inputs: GenerationInput[];
   advanced?: GenerationAdvancedParameters;
@@ -114,6 +115,7 @@ export type ContinuationAction = {
 export const imageAspectRatios: AspectRatio[] = ["1:1", "16:9", "9:16", "4:3", "3:4"];
 export const videoAspectRatios: AspectRatio[] = ["16:9", "9:16", "1:1"];
 export const videoDurations = [5, 10, 15, 20, 30] as const;
+export const videoAudioDefault = true;
 
 const imageContinuationActions: ContinuationAction[] = [
   { id: "edit-image", label: "Edit", outputKind: "image", inputRole: "primary-image" },

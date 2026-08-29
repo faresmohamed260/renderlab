@@ -377,6 +377,21 @@ UI-035 replaces the Activity placeholder with the smallest useful account-privat
 - [x] Settings account identity foundation backed by Supabase Auth / UI-029; broader settings remain requirement-driven.
 - [x] Audit additional capability-specific experiences against the current verified capability set. No additional experience is approved today; extensibility categories remain architecture pressure-tests, and any future approved user goal becomes a new explicit slice instead of an indefinite open checkbox.
 
+### Create Upload Reliability + Video Audio v0.1 — UI-036
+- [x] Reproduce/trace the production reference-upload failure: ticket creation succeeds, completion is never reached, and exact-origin R2 CORS rejects the immutable manual-deployment hostname while approved stable RenderLab aliases pass.
+- [x] Keep exact-origin R2 CORS; do not add wildcard deployment-host access. Treat stable production aliases as the supported direct-browser-upload entry points.
+- [x] Add a shared browser-upload origin guard for the existing Create reference and Library persistent upload paths so unsupported Vercel deployment URLs fail before creating storage tickets and return actionable product copy instead of raw `Failed to fetch`.
+- [x] On failed Create reference upload, remove the unverified local preview so Create cannot silently fall back from Edit/Animate to a no-reference operation.
+- [x] Add a contextual Video audio on/off Toggle using the maintained primitive; default audio on.
+- [x] Thread `audioEnabled` through the typed generation request/API validation and native worker form while preserving default-on compatibility for callers that omit the field.
+- [ ] Pass production build, UI purity, reference/upload, Create, ownership, generation and video regressions on the implementation head.
+- [ ] Review desktop/mobile Video audio-control artifacts.
+- [ ] Finalize authoritative architecture/screen/component documentation from verified implementation evidence.
+- [ ] Pass the complete affected suite on the exact documentation-finalized head.
+- [ ] Merge, verify merged `main`, shared-resource cleanup and Vercel no-automatic-deployment boundary.
+
+**UI-036 status: `IN IMPLEMENTATION`. No schema migration or worker-fleet change is part of this slice.**
+
 ## Feature/Surface Procedure
 1. Establish the user goal and required behavior.
 2. Inspect applicable RenderLab decisions/components and architecture.

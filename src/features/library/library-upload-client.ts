@@ -8,6 +8,7 @@ import {
   maxMediaUploadBytes,
   supportedMediaUploadMimeTypes,
 } from "@/lib/api/media-upload-contract";
+import { assertBrowserUploadOriginSupported, browserUploadFetchErrorMessage } from "@/lib/uploads/browser-upload-origin";
 
 async function readImageDimensions(file: File) {
   try {
@@ -33,6 +34,7 @@ export function validateLibraryUploadFile(file: File) {
 
 export async function uploadLibraryFile(file: File) {
   const mimeType = validateLibraryUploadFile(file);
+  assertBrowserUploadOriginSupported();
 
   const ticketResponse = await fetch("/api/media/uploads/upload-tickets", {
     method: "POST",
@@ -48,11 +50,16 @@ export async function uploadLibraryFile(file: File) {
     throw new Error(ticketPayload.ok ? "Library upload could not be prepared." : ticketPayload.error.message);
   }
 
-  const uploadResponse = await fetch(ticketPayload.ticket.uploadUrl, {
-    method: ticketPayload.ticket.method,
-    headers: ticketPayload.ticket.headers,
-    body: file,
-  });
+  let uploadResponse: Response;
+  try {
+    uploadResponse = await fetch(ticketPayload.ticket.uploadUrl, {
+      method: ticketPayload.ticket.method,
+      headers: ticketPayload.ticket.headers,
+      body: file,
+    });
+  } catch (error) {
+    throw new Error(browserUploadFetchErrorMessage(error, "Library upload could not reach storage."));
+  }
   if (!uploadResponse.ok) throw new Error("The image could not be uploaded.");
 
   const dimensions = await readImageDimensions(file);

@@ -143,6 +143,7 @@ The browser does not submit R2 keys.
 - Image aspect ratios: `1:1`, `16:9`, `9:16`, `4:3`, `3:4`.
 - Video aspect ratios: `16:9`, `9:16`, `1:1`.
 - Video durations: 5, 10, 15, 20, 30 seconds.
+- Video audio generation: contextual on/off, default on (UI-036).
 - A compatible image input resolves Image → Edit and Video → Animate.
 
 ### Verified Advanced product controls

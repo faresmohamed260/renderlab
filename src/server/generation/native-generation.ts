@@ -238,7 +238,7 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, sources
   form.append("cfg", String(request.advanced?.guidance ?? workflow.defaults.guidance));
   form.append("resolution", workflow.defaults.resolution!);
   form.append("duration_seconds", String(request.output.durationSeconds ?? workflow.defaults.durationSeconds));
-  form.append("audio_enabled", String(workflow.defaults.audioEnabled));
+  form.append("audio_enabled", String(request.output.audioEnabled ?? workflow.defaults.audioEnabled));
   form.append("aspect_ratio", request.output.aspectRatio);
   form.append("frame_rate", String(request.advanced?.frameRate ?? workflow.defaults.frameRate));
   return form;

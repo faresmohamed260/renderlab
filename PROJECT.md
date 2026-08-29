@@ -70,8 +70,9 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Activity v0.1 / UI-035 is `APPROVED` and account-private over RenderLab `generation_jobs`.
 
 ### Active product slice
-- None. Activity v0.1 / UI-035 is complete and approved; no next product slice has been selected.
-- The Phase 5 Models/Workflows evaluation found no dedicated user-facing surface justified by the current verified capability set, and the capability audit found no additional approved capability-specific experience beyond Create/Viewer/Activity. Future new user goals require explicit new slices rather than speculative empty screens.
+- Create Upload Reliability + Video Audio v0.1 / UI-036 is **IN IMPLEMENTATION**.
+- User-reported production evidence showed reference upload tickets succeed while the browser signed-R2 PUT fails on immutable Vercel deployment URLs that are outside the exact-origin CORS allowlist. UI-036 keeps strict CORS, treats the stable production aliases as the supported browser-upload entry points, prevents ticket creation on unsupported Vercel deployment origins, and replaces raw browser `Failed to fetch` copy with product-level upload feedback. The same guard covers Create references and Library persistent uploads.
+- UI-036 also exposes REDGraft video audio generation as a contextual Video on/off control, defaulting on, and threads the boolean through the normalized generation request to native/external orchestration without adding schema or worker identity to the UI.
 
 ### Latest completed product slice
 - Activity v0.1 / UI-035 is **APPROVED**. PR #34 merged as `7e1e7c4e3c1dc1f6d226998e7d372715c2220bc4` after final exact head `f0a1100ea379a5aaba43d2694bb34496b563a1b2` passed all six affected gates: Activity `33223434378`, Account Ownership `33223434363`, UI Shell `33223434381`, Create Lifecycle `33223434428`, Generation Integration `33223434364`, and Video Generation `33223434355`.

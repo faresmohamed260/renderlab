@@ -161,7 +161,7 @@ async function uploadReference(account) {
   return uploadTicket.sourceId;
 }
 
-async function verifyAsset(account, assetId) {
+async function verifyAsset(account, assetId, expectedAudioEnabled) {
   const meta = await req(`${baseUrl}/api/media/assets/${encodeURIComponent(assetId)}`, account, {
     headers: { accept: "application/json" },
   });
@@ -175,9 +175,14 @@ async function verifyAsset(account, assetId) {
   if (!content.ok || !String(content.headers.get("content-type") || "").startsWith("video/")) {
     throw new Error(`Video content invalid (${content.status}, ${content.headers.get("content-type")})`);
   }
+  const bytes = Buffer.from(await content.arrayBuffer());
+  const hasAudioTrack = bytes.includes(Buffer.from("soun"));
+  if (hasAudioTrack !== expectedAudioEnabled) {
+    throw new Error(`Video audio track mismatch: expected audio=${expectedAudioEnabled}, detected audio=${hasAudioTrack}.`);
+  }
 }
 
-async function generate(account, request, operation, label) {
+async function generate(account, request, operation, label, expectedAudioEnabled) {
   const submit = await req(`${baseUrl}/api/generation/jobs`, account, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -211,7 +216,7 @@ async function generate(account, request, operation, label) {
     if (job.status === "succeeded") {
       if (job.outputAssetIds?.length !== 1) throw new Error(`${label} missing persisted output`);
       const jobRows = await rows(
-        `generation_jobs?id=eq.${encodeURIComponent(id)}&select=id,status,operation,owner_id&limit=1`,
+        `generation_jobs?id=eq.${encodeURIComponent(id)}&select=id,status,operation,owner_id,parameters&limit=1`,
       );
       const persistedJob = jobRows[0];
       const list = await assets(id);
@@ -219,6 +224,7 @@ async function generate(account, request, operation, label) {
         persistedJob?.owner_id !== account.id
         || persistedJob.status !== "succeeded"
         || persistedJob.operation !== operation
+        || persistedJob.parameters?.output?.audioEnabled !== expectedAudioEnabled
         || list.length !== 1
         || list[0].owner_id !== account.id
         || !list[0].mime_type.startsWith("video/")
@@ -228,7 +234,7 @@ async function generate(account, request, operation, label) {
       if (!job.outputAssetIds.includes(list[0].id)) {
         throw new Error(`${label} output IDs do not match persisted media.`);
       }
-      await verifyAsset(account, list[0].id);
+      await verifyAsset(account, list[0].id, expectedAudioEnabled);
       console.log(`${label} verified owner=${account.id} asset=${list[0].id}`);
       return { jobId: id, assetId: list[0].id };
     }
@@ -254,11 +260,12 @@ try {
     account,
     {
       prompt: "RenderLab video integration verification: a blue sphere slowly rotating on a neutral studio background",
-      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },
+      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: false },
       inputs: [],
     },
     "create-video",
     "Create Video",
+    false,
   );
 
   sourceId = await uploadReference(account);
@@ -266,11 +273,12 @@ try {
     account,
     {
       prompt: "Slowly rotate the sphere with a subtle camera push-in",
-      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },
+      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: true },
       inputs: [{ source: { type: "temporary-source", id: sourceId }, role: "first-frame" }],
     },
     "animate-image",
     "Animate Image",
+    true,
   );
 
   console.log(`Native Create Video + Animate Image integration verified successfully for owner=${account.id}.`);

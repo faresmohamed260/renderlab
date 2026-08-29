@@ -234,6 +234,8 @@ Configured browser verification uses the local RenderLab origin directly and doe
 
 If a future public RenderLab origin changes, add that exact origin before direct browser uploads there. Do not use broad wildcard CORS merely for convenience.
 
+UI-036 production diagnosis confirmed the stable aliases above pass the managed CORS preflight while Vercel immutable deployment hostnames such as `renderlab-<deployment>-...vercel.app` are intentionally outside the allowlist. Product browser uploads therefore fail early with canonical-origin guidance on unsupported Vercel deployment hosts rather than creating a ticket and surfacing raw browser network failure. This preserves exact-origin CORS without accumulating one-off deployment URLs.
+
 ### Durable media read/download contract
 Ordinary media presentation and user download both stay behind RenderLab product routes.
 

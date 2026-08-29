@@ -133,6 +133,22 @@ try {
 
   await page.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
 
+  const videoIntent = page.getByRole("radio", { name: "Video", exact: true });
+  await videoIntent.click();
+  const audioOn = page.getByRole("button", { name: "Audio generation on", exact: true });
+  await audioOn.waitFor({ state: "visible", timeout: 30_000 });
+  assert(await audioOn.getAttribute("aria-pressed") === "true", "Video audio did not default to enabled.");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-controls.png`, fullPage: true });
+  await page.setViewportSize(mobileViewport);
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-video-controls.png`, fullPage: true });
+  await audioOn.click();
+  const audioOff = page.getByRole("button", { name: "Audio generation off", exact: true });
+  await audioOff.waitFor({ state: "visible", timeout: 30_000 });
+  assert(await audioOff.getAttribute("aria-pressed") === "false", "Video audio toggle did not turn off.");
+  await page.setViewportSize(desktopViewport);
+  await page.getByRole("radio", { name: "Image", exact: true }).click();
+
   const prompt = page.getByRole("textbox", { name: "Prompt" });
   await prompt.waitFor({ state: "visible", timeout: 30_000 });
   await prompt.fill("A clean studio photograph of a matte cobalt-blue sphere centered on a warm gray background, soft even light, no text");

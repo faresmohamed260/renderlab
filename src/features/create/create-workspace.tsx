@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ImageIcon, MoreHorizontal, Plus, X } from "lucide-react";
+import { ImageIcon, MoreHorizontal, Plus, Volume2, VolumeX, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   advancedParametersFromDraft,
@@ -28,6 +29,7 @@ import {
   continuationActionsForMedia,
   imageAspectRatios,
   videoAspectRatios,
+  videoAudioDefault,
   videoDurations,
 } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
@@ -37,6 +39,7 @@ import type {
   ReferenceSource,
 } from "@/lib/api/reference-upload-contract";
 import { maxReferenceUploadBytes, supportedReferenceMimeTypes } from "@/lib/api/reference-upload-contract";
+import { assertBrowserUploadOriginSupported, browserUploadFetchErrorMessage } from "@/lib/uploads/browser-upload-origin";
 
 type ContinuationSource = {
   id: string;
@@ -101,6 +104,7 @@ export function CreateWorkspace({
   const [imageAspect, setImageAspect] = useState<AspectRatio>("1:1");
   const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
+  const [audioEnabled, setAudioEnabled] = useState(videoAudioDefault);
   const [reference, setReference] = useState<ReferenceSource | null>(null);
   const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(() =>
     initialContinuation
@@ -314,6 +318,14 @@ export function CreateWorkspace({
       return;
     }
 
+    try {
+      assertBrowserUploadOriginSupported();
+    } catch (originError) {
+      setError(originError instanceof Error ? originError.message : "Reference upload is not available from this URL.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setReferenceUploading(true);
     setError(null);
 
@@ -356,8 +368,12 @@ export function CreateWorkspace({
 
       setReference(completionPayload.source);
     } catch (uploadError) {
+      revokePreviewUrl(previewUrl);
+      setReferencePreviewUrl(null);
       setReference(null);
-      setError(uploadError instanceof Error ? uploadError.message : "Reference upload failed.");
+      setContinuationSource(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setError(browserUploadFetchErrorMessage(uploadError, "Reference upload could not reach storage."));
     } finally {
       setReferenceUploading(false);
     }
@@ -405,7 +421,7 @@ export function CreateWorkspace({
           output: {
             kind: outputKind,
             aspectRatio,
-            ...(outputKind === "video" ? { durationSeconds } : {}),
+            ...(outputKind === "video" ? { durationSeconds, audioEnabled } : {}),
           },
           inputs,
           advanced,
@@ -560,15 +576,28 @@ export function CreateWorkspace({
                 </Button>
 
                 {outputKind === "video" ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
-                    aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
-                    className="shrink-0"
-                  >
-                    {durationSeconds} s
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
+                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
+                      className="shrink-0"
+                    >
+                      {durationSeconds} s
+                    </Button>
+                    <Toggle
+                      pressed={audioEnabled}
+                      onPressedChange={setAudioEnabled}
+                      variant="outline"
+                      aria-label={`Audio generation ${audioEnabled ? "on" : "off"}`}
+                      title={audioEnabled ? "Generate video with audio" : "Generate video without audio"}
+                      className="shrink-0 gap-2"
+                    >
+                      {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}
+                      {audioEnabled ? "Audio on" : "Audio off"}
+                    </Toggle>
+                  </>
                 ) : null}
 
                 <CollapsibleTrigger asChild>

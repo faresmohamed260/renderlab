@@ -7,7 +7,7 @@ import type {
   GenerationRequest,
   OutputKind,
 } from "@/lib/capabilities/generation";
-import { generationAdvancedCapabilities } from "@/lib/capabilities/generation";
+import { generationAdvancedCapabilities, videoAudioDefault } from "@/lib/capabilities/generation";
 
 export type SubmitGenerationSuccess = {
   ok: true;
@@ -119,6 +119,7 @@ export function parseGenerationRequest(value: unknown):
   const kind = value.output.kind;
   const aspectRatio = value.output.aspectRatio;
   const durationSeconds = value.output.durationSeconds;
+  const audioEnabled = value.output.audioEnabled;
 
   if (typeof kind !== "string" || !outputKinds.has(kind as OutputKind)) {
     return { ok: false, error: { code: "invalid_request", message: "Output kind must be image or video." } };
@@ -132,8 +133,16 @@ export function parseGenerationRequest(value: unknown):
     if (!Number.isInteger(durationSeconds) || (durationSeconds as number) < 5 || (durationSeconds as number) > 30) {
       return { ok: false, error: { code: "invalid_request", message: "Video duration must be between 5 and 30 seconds." } };
     }
-  } else if (durationSeconds !== undefined) {
-    return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include a video duration." } };
+    if (audioEnabled !== undefined && typeof audioEnabled !== "boolean") {
+      return { ok: false, error: { code: "invalid_request", message: "Video audio must be on or off." } };
+    }
+  } else {
+    if (durationSeconds !== undefined) {
+      return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include a video duration." } };
+    }
+    if (audioEnabled !== undefined) {
+      return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include video audio settings." } };
+    }
   }
 
   const inputs = parseInputs(value.inputs);
@@ -153,7 +162,7 @@ export function parseGenerationRequest(value: unknown):
       output: {
         kind: kind as OutputKind,
         aspectRatio: aspectRatio as AspectRatio,
-        ...(kind === "video" ? { durationSeconds: durationSeconds as number } : {}),
+        ...(kind === "video" ? { durationSeconds: durationSeconds as number, audioEnabled: audioEnabled ?? videoAudioDefault } : {}),
       },
       inputs,
       ...(advanced ? { advanced } : {}),
