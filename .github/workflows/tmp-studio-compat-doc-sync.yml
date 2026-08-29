@@ -1,7 +1,9 @@
 name: Temporary Studio Compatibility Docs Sync
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - tmp/remove-studio-compat-doc-sync
 
 permissions:
   contents: write
