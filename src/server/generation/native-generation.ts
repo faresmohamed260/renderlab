@@ -4,7 +4,7 @@ import type {
   GenerationJob,
   GenerationRequest,
 } from "@/lib/capabilities/generation";
-import { resolveCreativeOperation } from "@/lib/capabilities/generation";
+import { defaultVideoAudioEnabled, resolveCreativeOperation } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
@@ -119,7 +119,7 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
       megapixels: 1,
       resolution: "480p",
       durationSeconds: 5,
-      audioEnabled: true,
+      audioEnabled: defaultVideoAudioEnabled,
       frameRate: 24,
     },
   };

@@ -27,6 +27,7 @@ import type {
 } from "@/lib/capabilities/generation";
 import {
   continuationActionsForMedia,
+  defaultVideoAudioEnabled,
   imageAspectRatios,
   videoAspectRatios,
   videoDurations,
@@ -102,7 +103,7 @@ export function CreateWorkspace({
   const [imageAspect, setImageAspect] = useState<AspectRatio>("1:1");
   const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
-  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);
   const [reference, setReference] = useState<ReferenceSource | null>(null);
   const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(() =>
     initialContinuation

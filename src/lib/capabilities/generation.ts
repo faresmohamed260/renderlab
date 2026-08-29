@@ -19,6 +19,8 @@ export type GenerationInput = {
   role: GenerationInputRole;
 };
 
+export const defaultVideoAudioEnabled = true;
+
 export const generationAdvancedCapabilities = {
   seed: {
     label: "Seed",
@@ -50,7 +52,6 @@ export const generationAdvancedCapabilities = {
       steps: 11,
       guidance: 1,
       frameRate: 24 as const,
-      audioEnabled: true,
     },
     frameRates: [24, 25, 30] as const,
   },

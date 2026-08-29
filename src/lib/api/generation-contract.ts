@@ -7,7 +7,7 @@ import type {
   GenerationRequest,
   OutputKind,
 } from "@/lib/capabilities/generation";
-import { generationAdvancedCapabilities } from "@/lib/capabilities/generation";
+import { defaultVideoAudioEnabled, generationAdvancedCapabilities } from "@/lib/capabilities/generation";
 
 export type SubmitGenerationSuccess = {
   ok: true;
@@ -158,7 +158,7 @@ export function parseGenerationRequest(value: unknown):
         kind: kind as OutputKind,
         aspectRatio: aspectRatio as AspectRatio,
         ...(kind === "video"
-          ? { durationSeconds: durationSeconds as number, audioEnabled: audioEnabled === undefined ? true : audioEnabled }
+          ? { durationSeconds: durationSeconds as number, audioEnabled: audioEnabled === undefined ? defaultVideoAudioEnabled : audioEnabled }
           : {}),
       },
       inputs,
