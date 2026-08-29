@@ -40,6 +40,12 @@ jobs:
       - name: Verify UI purity
         run: npm run verify:ui-purity
 
+      - name: Keep workflow and generated-file changes separate
+        run: |
+          git checkout HEAD -- next-env.d.ts
+          git checkout HEAD -- .github/workflows/generation-bridge-integration.yml
+          git checkout HEAD -- .github/workflows/video-generation-integration.yml
+
       - name: Remove migration helpers
         run: rm scripts/apply-phase-7a-geometry.py .github/workflows/apply-phase-7a-geometry.yml
 
