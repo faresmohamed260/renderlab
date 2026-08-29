@@ -423,6 +423,12 @@ Phase 6 performed a fresh, non-deploying production/custom-domain/shared-resourc
 - These timings are one bounded audit sample, not SLAs. Worker source serializes each container invocation; exact deployment-wide autoscaling/capacity and provider per-generation billing/cost are not reliably exposed by current health/product contracts and remain unresolved rather than estimated.
 - RenderLab currently has no app-level per-user generation rate/concurrency/abuse limiter. Broader beta access therefore requires a separate server-enforced capacity/abuse contract in Phase 10; Phase 6 does not add one.
 
+### Phase 7C live REDGraft gateway contract — 2026-08-29
+- Audit `33266905978` queried both configured REDGraft gateway `/health` and `/openapi.json` endpoints plus primary `/runtime-health`; no generation job was spawned. Primary/standby both report gateway build `a10-normalvram-poster-v2`, runtime `saga-ltx25-video` / `LTX25Worker`, async jobs and cancellation capability.
+- Both deployed gateways expose the same `/jobs/video` fields: `prompt`, `negative_prompt`, `seed`, `resolution`, `duration_seconds`, `audio_enabled`, `aspect_ratio`, `frame_rate`, and optional single `image_file`. No structured Director/storyboard/multi-frame/dialogue/speech/sound/audio-prompt/camera/shot fields are present.
+- Primary runtime health remained ready on NVIDIA A10 with enabled `480p`, `720p`, `1080p`, `2K` and frame rates 24/25/30. This confirms the Phase 7D resolution basis while UI-047 defers Director UI under the current worker contract.
+- Live/source drift exists: current Saga reference source contains gateway `steps`/`cfg`, but deployed OpenAPI does not. A deliberately invalid, non-generating request sent `steps=999`, `cfg=999`, and `duration_seconds=1`; the deployed gateway returned only the duration validation error, confirming `steps`/`cfg` are not active live inputs. RenderLab currently serializes those extras for Video, so product capability documentation/UI must be reconciled before the next Video slice is accepted.
+
 ### Shared Supabase and cleanup baseline
 - Final post-run audit found **zero Phase 6 fixture rows** across all six RenderLab tables and **zero Phase 6 Auth users**. Pre-existing non-fixture product data was deliberately left untouched.
 - All six RenderLab tables retain RLS, `owner_id NOT NULL`, zero `anon`/`authenticated` table grants and their expected ownership/integrity triggers. Latest migration remains `20260828221611 renderlab_media_asset_deletion`.
