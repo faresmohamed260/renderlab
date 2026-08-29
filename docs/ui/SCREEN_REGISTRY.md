@@ -44,8 +44,10 @@ Approved behavior:
 **Verified behavior:**
 - prompt + Image/Video output intent;
 - Video output includes contextual Audio on/off, default ON, carried through the validated generation contract as `output.audioEnabled`;
-- PNG/JPEG/WebP temporary reference input up to 25 MB;
-- signed-R2 temporary reference input with opaque source identity;
+- PNG/JPEG/WebP user reference input up to 25 MB;
+- signed-R2 persistent upload promoted to an owner-scoped durable `media_asset` before generation;
+- newly uploaded Create references remain ordinary Library media even if Generate is never pressed;
+- generation binds newly uploaded references through opaque `media-asset` identity rather than exposing R2/storage identity;
 - reference preview/removal/replacement;
 - Image + reference → Edit; Video + reference → Animate;
 - RenderLab `generation_jobs` + durable `media_assets` persistence;
@@ -56,7 +58,7 @@ Approved behavior:
 - UI-030 keeps prompt/settings draftable while signed out, but generation/reference upload and other persistent actions require a verified non-anonymous account;
 - signed-in generation jobs, reference/media inputs and persisted outputs remain within the verified account owner boundary.
 
-**Planned Phase 7 Create v2 extension — not yet implemented:** de-crowded progressive composer; source-aware `Original` geometry with explicit ratio override; curated ratio expansion; durable Library persistence for Create-originated user uploads; named/ordered/role-aware references with prompt addressing; multi-reference FLUX/Qwen verification; audited Director Video; curated 480p/720p/1080p/2K Video quality; deliberate premium motion/interaction treatment under UI-043. Current approved Create behavior remains authoritative until each slice is implemented and verified.
+**Phase 7 Create v2 extension:** durable Library persistence for newly uploaded Create references is now implemented/verified through PR #45 and configured Create Durable Upload run `33256497167`. Still planned/not yet implemented: de-crowded progressive composer; source-aware `Original` geometry with explicit ratio override; curated ratio expansion; named/ordered/role-aware references with prompt addressing; multi-reference FLUX/Qwen verification; audited Director Video; curated 480p/720p/1080p/2K Video quality; deliberate premium motion/interaction treatment under UI-043. Existing verified behavior remains authoritative for every unfinished item.
 
 **UI-030 evidence:** exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Create Lifecycle `33131090243`, Generation Integration `33131090251`, Video Generation Integration `33131090262` and Account Ownership `33131090207`. Desktop/mobile generated-result artifacts were visually reviewed without unintended Create hierarchy drift.
 

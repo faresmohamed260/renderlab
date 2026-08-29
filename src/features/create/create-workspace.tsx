@@ -18,6 +18,12 @@ import {
   type AdvancedDraft,
 } from "@/features/create/create-advanced-panel";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
+import {
+  maxMediaUploadBytes,
+  supportedMediaUploadMimeTypes,
+  type MediaUploadMimeType,
+} from "@/lib/api/media-upload-contract";
+import { uploadPersistentImageFile } from "@/lib/browser/media-upload-client";
 import type {
   AspectRatio,
   ContinuationAction,
@@ -33,12 +39,6 @@ import {
   videoDurations,
 } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
-import type {
-  CompleteReferenceUploadResponse,
-  CreateReferenceUploadTicketResponse,
-  ReferenceSource,
-} from "@/lib/api/reference-upload-contract";
-import { maxReferenceUploadBytes, supportedReferenceMimeTypes } from "@/lib/api/reference-upload-contract";
 
 type ContinuationSource = {
   id: string;
@@ -69,17 +69,6 @@ function revokePreviewUrl(url: string | null) {
   if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
 }
 
-async function readImageDimensions(file: File) {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const dimensions = { width: bitmap.width, height: bitmap.height };
-    bitmap.close();
-    return dimensions;
-  } catch {
-    return {};
-  }
-}
-
 function isTerminalJob(job: GenerationJob | null) {
   return Boolean(job && ["succeeded", "failed", "cancelled"].includes(job.status));
 }
@@ -87,13 +76,13 @@ function isTerminalJob(job: GenerationJob | null) {
 export function CreateWorkspace({
   accountAvailable,
   generationAvailable,
-  referenceUploadAvailable,
+  mediaUploadAvailable,
   initialContinuation = null,
   initialContinuationError = null,
 }: {
   accountAvailable: boolean;
   generationAvailable: boolean;
-  referenceUploadAvailable: boolean;
+  mediaUploadAvailable: boolean;
   initialContinuation?: InitialContinuation | null;
   initialContinuationError?: string | null;
 }) {
@@ -104,7 +93,7 @@ export function CreateWorkspace({
   const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
   const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);
-  const [reference, setReference] = useState<ReferenceSource | null>(null);
+  const [reference, setReference] = useState<PublicMediaAsset | null>(null);
   const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(() =>
     initialContinuation
       ? { id: initialContinuation.asset.id, inputRole: initialContinuation.action.inputRole }
@@ -305,14 +294,14 @@ export function CreateWorkspace({
   }
 
   async function uploadReference(file: File) {
-    if (!accountAvailable || !referenceUploadAvailable) return;
+    if (!accountAvailable || !mediaUploadAvailable) return;
 
     const mimeType = file.type.toLowerCase();
-    if (!(supportedReferenceMimeTypes as readonly string[]).includes(mimeType)) {
+    if (!(supportedMediaUploadMimeTypes as readonly string[]).includes(mimeType)) {
       setError("References must be PNG, JPEG, or WebP images.");
       return;
     }
-    if (file.size < 1 || file.size > maxReferenceUploadBytes) {
+    if (file.size < 1 || file.size > maxMediaUploadBytes) {
       setError("Reference images must be no larger than 25 MB.");
       return;
     }
@@ -327,37 +316,8 @@ export function CreateWorkspace({
     setContinuationSource(null);
 
     try {
-      const ticketResponse = await fetch("/api/assets/reference/upload-tickets", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ filename: file.name, mimeType, sizeBytes: file.size }),
-      });
-      const ticketPayload = (await ticketResponse.json()) as CreateReferenceUploadTicketResponse;
-      if (!ticketResponse.ok || !ticketPayload.ok) {
-        throw new Error(ticketPayload.ok ? "Reference upload could not be prepared." : ticketPayload.error.message);
-      }
-
-      const uploadResponse = await fetch(ticketPayload.ticket.uploadUrl, {
-        method: ticketPayload.ticket.method,
-        headers: ticketPayload.ticket.headers,
-        body: file,
-      });
-      if (!uploadResponse.ok) throw new Error("Reference image could not be uploaded.");
-
-      const dimensions = await readImageDimensions(file);
-      const completionResponse = await fetch("/api/assets/reference/upload-completions", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sourceId: ticketPayload.ticket.sourceId, ...dimensions }),
-      });
-      const completionPayload = (await completionResponse.json()) as CompleteReferenceUploadResponse;
-      if (!completionResponse.ok || !completionPayload.ok) {
-        throw new Error(
-          completionPayload.ok ? "Reference upload could not be verified." : completionPayload.error.message,
-        );
-      }
-
-      setReference(completionPayload.source);
+      const asset = await uploadPersistentImageFile(file, mimeType as MediaUploadMimeType);
+      setReference(asset);
     } catch (uploadError) {
       setReference(null);
       setError(uploadError instanceof Error ? uploadError.message : "Reference upload failed.");
@@ -393,7 +353,7 @@ export function CreateWorkspace({
       : reference
         ? [
             {
-              source: { type: "temporary-source" as const, id: reference.id },
+              source: { type: "media-asset" as const, id: reference.id },
               role: outputKind === "image" ? ("primary-image" as const) : ("first-frame" as const),
             },
           ]
@@ -464,7 +424,9 @@ export function CreateWorkspace({
                   {referenceUploading ? "Uploading reference…" : outputKind === "image" ? "Editing this image" : "Animating this image"}
                 </p>
                 <p className="truncate text-xs text-text-muted">
-                  {continuationSource ? continuationSourceLabel : reference?.filename ?? "Reference image"}
+                  {continuationSource
+                    ? continuationSourceLabel
+                    : reference?.displayName ?? reference?.originalFilename ?? "Reference image"}
                 </p>
               </div>
               <Button
@@ -505,13 +467,13 @@ export function CreateWorkspace({
                   type="button"
                   variant="secondary"
                   size="icon"
-                  disabled={!accountAvailable || !referenceUploadAvailable || referenceUploading}
+                  disabled={!accountAvailable || !mediaUploadAvailable || referenceUploading}
                   onClick={() => fileInputRef.current?.click()}
                   aria-label={hasReference ? "Replace reference" : "Add reference"}
                   title={
                     !accountAvailable
                       ? "Sign in to add a private reference image."
-                      : referenceUploadAvailable
+                      : mediaUploadAvailable
                         ? "Add a reference image"
                         : "Reference upload storage is not configured in this environment."
                   }
@@ -621,11 +583,11 @@ export function CreateWorkspace({
           </Alert>
         ) : null}
 
-        {!generationAvailable || !referenceUploadAvailable ? (
+        {!generationAvailable || !mediaUploadAvailable ? (
           <Alert className="mt-3" role="status">
             <AlertDescription className="space-y-1 text-text-muted">
               {!generationAvailable ? <p>Generation is not connected in this environment yet.</p> : null}
-              {!referenceUploadAvailable ? <p>Reference uploads are not connected in this environment yet.</p> : null}
+              {!mediaUploadAvailable ? <p>Image uploads are not connected in this environment yet.</p> : null}
             </AlertDescription>
           </Alert>
         ) : null}

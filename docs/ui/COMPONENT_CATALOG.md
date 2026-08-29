@@ -69,7 +69,7 @@ Before copying/installing an external component:
 ## Components
 
 ### Maintained UI Primitive Layer
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`  
 **Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics  
 **Current primitives:** Alert, AlertDialog, Button, Checkbox, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.
@@ -99,7 +99,7 @@ Before copying/installing an external component:
 **Notes:** UI-034 final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed UI Shell `33220710365`, Library Batch Delete `33220710307` and the complete 16-gate affected suite; PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`. Responsive selection/confirmation review was clean.
 
 ### AppShell
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/components/shell/app-shell.tsx`  
 **Origin:** RenderLab composition using approved `Button`, Next.js navigation + Lucide React  
 **Purpose:** Persistent responsive application chrome: desktop sidebar, compact top bar, mobile bottom navigation, route context and utility navigation.  
@@ -109,7 +109,7 @@ Before copying/installing an external component:
 **Notes:** Production build + Playwright desktop/mobile rendering approved; not locked.
 
 ### Collapsible
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/components/ui/collapsible.tsx`  
 **Origin:** shadcn/Radix Collapsible wrapper through `radix-ui`  
 **Purpose:** Generic accessible disclosure primitive.  
@@ -118,17 +118,17 @@ Before copying/installing an external component:
 **Notes:** Adopted through PR #6 and normalized into the maintained primitive foundation through PR #13.
 
 ### CreateWorkspace
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/features/create/create-workspace.tsx`  
 **Purpose:** Authoritative task-oriented Create experience: prompt, Image/Video intent, references, typed generation, truthful runtime state, durable results, continuation and Advanced disclosure.  
 **Variants:** Create Image, Edit Image, Create Video, Animate Image; responsive desktop/mobile.  
-**Dependencies:** RenderLab generation/reference/media contracts, capabilities, React client state, Lucide, maintained Button/Textarea/ToggleGroup/Alert/Spinner/Collapsible primitives.  
+**Dependencies:** RenderLab generation/media contracts, shared persistent browser media-upload client, capabilities, React client state, Lucide, maintained Button/Textarea/ToggleGroup/Alert/Spinner/Collapsible primitives.
 **Reuse rules:** Extend or deliberately extract reusable subcomponents rather than creating competing Create surfaces.  
 **Do not:** Expose worker/storage IDs, fabricate progress or push technical worker controls into default UI.  
 **Notes:** All four native operations verified; complete configured browser lifecycle `33031817744`. Image/Video intent is an accessible required single-choice Radix radiogroup.
 
 ### CreateAdvancedPanel
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/features/create/create-advanced-panel.tsx`  
 **Purpose:** Advanced generation controls without turning the default composer into a technical form.  
 **Current fields:** negative prompt, seed, steps, guidance; frame rate for Video.  
@@ -168,18 +168,18 @@ Before copying/installing an external component:
 **Notes:** UI-034 final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed Library Batch Delete `33220710307` plus all 15 existing affected regressions; desktop/mobile selection and confirmation artifacts were reviewed clean. PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`; merged-`main` UI Shell `33221101101`, Generation Integration `33221101106`, and Video Generation `33221101117` passed and post-merge cleanup returned to zero.
 
 ### LibraryUploadButton
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/features/library/library-upload-button.tsx`  
 **Origin:** RenderLab feature composition using maintained Button/Spinner plus the browser native file chooser  
 **Purpose:** Keyboard/touch/mobile baseline for one persistent Library image upload.  
 **Used by:** `LibraryView` only.  
 **Dependencies:** feature-owned `uploadLibraryFile`, native hidden file input, Next.js router refresh.  
-**Reuse rules:** Keep picker interaction feature-owned while the persistent upload contract belongs to Library. Share the transaction through `library-upload-client.ts` rather than duplicating ticket/R2/completion logic.  
+**Reuse rules:** Keep picker interaction Library-owned while persistent upload transport is shared through the product browser media-upload client. `library-upload-client.ts` owns Library-specific validation/copy and delegates the ticket/R2/completion transaction rather than duplicating it.
 **Do not:** Replace the native file chooser plumbing with a bespoke visible raw control or introduce a second upload data contract.  
 **Notes:** UI-022 + UI-028. Existing picker lifecycle remained green after the shared upload transaction extraction.
 
 ### LibraryDropUploadSurface
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/features/library/library-drop-upload-surface.tsx`  
 **Origin:** RenderLab feature composition using browser DragEvent/DataTransfer semantics, maintained Spinner, Lucide and the existing persistent upload transaction  
 **Purpose:** Optional desktop drag/drop path for adding one compatible image to Library without adding a permanent dropzone.  
@@ -189,19 +189,30 @@ Before copying/installing an external component:
 **Do not:** Turn it into a global dropzone framework, accept batch uploads implicitly, hide the ordinary Upload button, or create a parallel storage/upload contract.  
 **Notes:** UI-028. The drag affordance exists only while a file drag is active; multi-file drops are rejected before network upload. Configured run `33102672468` verified exact one-ticket/one-completion/one-session/one-asset/one-card behavior plus responsive screenshots and cleanup.
 
+### PersistentBrowserMediaUpload
+**Status:** APPROVED
+**Source:** `src/lib/browser/media-upload-client.ts`
+**Origin:** UI-040 / Phase 7A extraction of the already-approved persistent media upload transaction
+**Purpose:** Shared browser transport for authenticated image upload ticket → signed R2 PUT → dimension read → verified durable-media completion.
+**Used by:** Create reference upload and Library's `LibraryUploadClient`.
+**Dependencies:** `media-upload-contract`, browser `fetch`, `createImageBitmap`.
+**Reuse rules:** Share the network/promotion transaction across product features that create the same durable user media identity; keep feature-specific picker/drop UX, validation wording and post-upload behavior in the owning feature.
+**Do not:** Expose credentials/storage keys, skip server HEAD/completion verification, or turn this helper into a client-side media store.
+**Notes:** Configured Create Durable Upload run `33256497167` verifies durable Create persistence + Library visibility + `media-asset` generation binding and exact cleanup. Existing Library upload regressions stayed green on the same code head.
+
 ### LibraryUploadClient
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/features/library/library-upload-client.ts`  
-**Origin:** RenderLab feature-owned browser transaction extracted from the approved picker upload behavior  
-**Purpose:** One shared validation + ticket/R2 PUT/completion transaction for Library picker and drag/drop interaction paths.  
+**Origin:** Library-specific validation wrapper over `PersistentBrowserMediaUpload`
+**Purpose:** Library picker/drop validation and copy while delegating the persistent ticket/R2/completion transaction to the shared product helper.
 **Used by:** `LibraryUploadButton`, `LibraryDropUploadSurface`.  
-**Dependencies:** `media-upload-contract`, browser `fetch`, `createImageBitmap`.  
-**Reuse rules:** Share it only across Library persistent upload interaction paths; it is not a generic application upload service.  
-**Do not:** Expose R2 credentials/storage keys, bypass server completion verification, or merge temporary Create reference uploads into this durable Library contract.  
-**Notes:** UI-028. PNG/JPEG/WebP and 25 MB validation remains identical across picker/drop paths.
+**Dependencies:** `media-upload-contract`, `src/lib/browser/media-upload-client.ts`.
+**Reuse rules:** Keep Library-specific behavior here; reuse the lower-level persistent upload helper when another feature creates the same durable media identity.
+**Do not:** Duplicate the persistent transaction, expose R2 credentials/storage keys, or bypass server completion verification.
+**Notes:** UI-028 + UI-040. PNG/JPEG/WebP and 25 MB validation remains identical across Library picker/drop paths.
 
 ### LibrarySortMenu
-**Status:** APPROVED  
+**Status:** APPROVED
 **Source:** `src/features/library/library-sort-menu.tsx`  
 **Origin:** RenderLab feature composition using the maintained shadcn/Radix Dropdown Menu + Button primitives  
 **Purpose:** Compact Library-owned Newest/Oldest navigation without moving media ordering into client state.  

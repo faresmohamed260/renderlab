@@ -227,7 +227,7 @@ export async function completeMediaUpload(ownerId: string, request: CompleteMedi
         width: request.width ?? null,
         height: request.height ?? null,
         duration_ms: null,
-        provenance: { source: "library-upload" },
+        provenance: { source: "user-upload" },
         metadata: { etag: object.etag || null },
       }),
     });

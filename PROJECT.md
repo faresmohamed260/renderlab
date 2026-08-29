@@ -50,7 +50,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Cycle 2 — Creative Productivity & Beta Maturity. Phase 6 is complete under the Closed Beta boundary; closed-beta production feedback has been triaged into a revised Create v2 plan and the Phase 7 contract is expanded/planned but not started.**
+**Cycle 2 — Creative Productivity & Beta Maturity. Phase 6 is complete under the Closed Beta boundary; Phase 7A Create Foundation is now in progress and its first verified slice makes Create-originated user uploads durable Library media.**
 
 ### Cycle 2 objective
 Move RenderLab from a solid functional MVP into a product that supports repeated serious creative work: richer reference-driven creation, durable reusable inputs, clearer task-oriented controls, useful job recovery, closed-beta operations, and a premium modern creative experience without exposing ComfyUI/provider complexity to ordinary users.
@@ -79,10 +79,12 @@ User-selectable LoRA support is an **accepted future product direction**, but it
 - Roadmap status: `ACCEPTED / REVISED FROM CLOSED-BETA FEEDBACK`.
 - Cycle execution status: `IN PROGRESS`.
 - Phase 6: `COMPLETE`; operating boundary: **Closed Beta**.
-- Current phase contract: **Phase 7 — Create v2 / Creative Direction**, `EXPANDED/PLANNED`; execution `NOT STARTED`.
-- Current product slice: `None`; no Phase 7 implementation has started.
-- Production-feedback triage classified the reported items into Phase 7 Create foundations/capability work, Phase 10 privileged admin/beta operations, Phase 11 brand/launch work, and post-Cycle-2 LoRA/model extensibility. No item from the list has yet been verified as an emergency security/privacy defect; implementation audits may still surface a narrow maintenance blocker and such a blocker takes precedence.
-- Next gate: explicit user authorization to start **Phase 7A — Create Foundation**. Phase 7B/7C/7D must not bypass the Phase 7A input/media/composer foundations they depend on.
+- Current phase contract: **Phase 7 — Create v2 / Creative Direction**, `EXPANDED/PLANNED`; execution `IN PROGRESS`.
+- Current product slice: **Phase 7A — Durable Create Upload Foundation** is implemented and configured-verified in PR #45; the broader Phase 7A foundation remains incomplete.
+- Configured Create Durable Upload run `33256497167` verified signed persistent upload → owner-scoped `media_asset` with no generation job → ordinary Library visibility → generation request binding through the same opaque `media-asset` identity → exact R2/database/Auth cleanup. No generation spend was required for that contract test.
+- The shared browser upload transaction now serves both Library and Create while feature-specific picker/drop validation remains feature-owned. User-facing Create no longer depends on temporary `generation_sources` for newly uploaded references; temporary-source APIs remain an internal compatibility/staging capability until separately retired.
+- Next Phase 7A slice: **source-aware geometry + explicit ratio override**, including correcting the current mismatch where native FLUX output geometry is controlled by its first image input rather than the persisted Image aspect-ratio field. Composer de-crowding, reference identity/prompt addressing and the premium interaction pass remain subsequent 7A work.
+- Phase 7B/7C/7D must not bypass the Phase 7A input/media/composer foundations they depend on.
 
 ### Phase 6 verified baseline — 2026-08-29
 - Audit starting `main`: `5072fe96495ea53d06f4891c6073b16203c819d2`. Vercel production remains READY on deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` from application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; the repository delta from that production SHA through the audit-starting `main` is documentation-only, so there is no executable application drift.

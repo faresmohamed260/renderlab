@@ -530,7 +530,7 @@ Before Phase 7 can be expanded into its own execution-ready contract, Phase 6 mu
 
 ### Phase 7 — Create v2 / Creative Direction
 **Contract status:** `EXPANDED/PLANNED`
-**Execution status:** `NOT STARTED`
+**Execution status:** `IN PROGRESS`
 
 #### Goal
 Make Create capable of richer reference-driven image/video work without turning the existing composer into a dense workflow form. Phase 7 establishes the media/input/geometry and interaction foundations first, then layers multi-reference editing, verified Director-video capability and curated video quality on top.
@@ -556,7 +556,7 @@ Make Create capable of richer reference-driven image/video work without turning 
 - [ ] **Composer hierarchy / de-crowding:** keep prompt, active references and Generate immediately understandable; move task-dependent settings into compact contextual controls/disclosures and keep technical reproducibility under Advanced. Avoid an always-visible wall of Video controls.
 - [ ] **Source-aware geometry:** for Edit/Animate with an attached source image, default to an understandable `Original`/source geometry behavior rather than an arbitrary preset ratio. Let the user explicitly override to another supported ratio. Audit exact worker normalization/crop/resize behavior before locking the product rule for each operation.
 - [ ] **Aspect-ratio expansion:** audit common useful image/video ratios against current worker contracts and add only a curated verified set. Do not turn the selector into an exhaustive geometry console.
-- [ ] **Durable Create uploads:** once a user upload is verified, it becomes an owner-scoped durable `media_asset` visible in Library whether or not Generate is pressed or the asset is ultimately used. Reuse the existing persistent-upload/media promotion contract where practical; `generation_sources` may remain internal staging only if needed, not the user's durable product identity.
+- [x] **Durable Create uploads:** newly uploaded Create references now reuse the persistent media ticket/R2/completion transaction and become owner-scoped durable `media_assets` before generation. Create binds the resulting opaque `media-asset` into generation requests, and the asset remains ordinary Library media even if Generate is never pressed. Configured run `33256497167` verified upload/session ownership, persisted dimensions/provenance, Library visibility, request binding and exact cleanup without spending a generation. `generation_sources` remains internal compatibility/staging only and is no longer the user-facing identity for newly uploaded Create references.
 - [ ] **Reference identity/order/roles:** establish stable human-visible reference aliases, deterministic request order, optional task-relevant semantic roles, and reordering/removal behavior before multi-reference UI expands.
 - [ ] **Prompt reference foundation:** define a product-level reference-addressing grammar/autocomplete (for example an `@reference` interaction) that resolves only to inputs attached to the current request and persists enough structured mapping to reconstruct intent. Final syntax is locked before Phase 7B implementation.
 - [ ] **Premium interaction pass:** apply deliberate spatial/layout transitions, reference motion/reordering feedback and contextual control transitions using approved maintained mechanics; basic default-library styling is not the quality target. Preserve reduced motion, keyboard/touch parity and performance.
@@ -636,7 +636,7 @@ Make Create capable of richer reference-driven image/video work without turning 
 #### Exit criteria
 - [ ] Phase 7A foundation is implemented and verified before Phase 7B/7C/7D are treated as complete.
 - [ ] Source-aware geometry + explicit override and curated ratios are verified.
-- [ ] Create-originated user uploads are durable Library media regardless of generation submission/use.
+- [x] Create-originated user uploads are durable Library media regardless of generation submission/use; configured evidence `33256497167`.
 - [ ] Reference identity/order/roles and prompt addressing are deterministic and server-validated.
 - [ ] Multi-reference image editing has bounded product semantics and configured FLUX/Qwen evidence appropriate to the final routing contract.
 - [ ] Director-video capability is either implemented from verified current worker behavior or explicitly documented as blocked/deferred; no speculative node UI ships.
@@ -702,9 +702,9 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete under Closed Beta and the roadmap has been revised from the first production-feedback pass.
-**Current phase contract:** Phase 7 — Create v2 / Creative Direction is `EXPANDED/PLANNED`; execution is `NOT STARTED`.
-**Current product slice:** None.
-**Current gate:** User authorization to start **Phase 7A — Create Foundation**.
+**Current phase contract:** Phase 7 — Create v2 / Creative Direction is `EXPANDED/PLANNED`; execution is `IN PROGRESS`.
+**Current product slice:** Phase 7A — Durable Create Upload Foundation is verified in PR #45; Phase 7A as a whole remains incomplete.
+**Current gate:** Continue Phase 7A with source-aware geometry + explicit ratio override from the verified durable media foundation.
 **Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Quality/Resolution.
 **Later Cycle 2:** Phase 8 Library v2 → Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.

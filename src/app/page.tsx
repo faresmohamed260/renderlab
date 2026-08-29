@@ -5,7 +5,7 @@ import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { isGenerationBackendConfigured } from "@/server/generation/submit-generation";
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
-import { isReferenceUploadConfigured } from "@/server/media/reference-uploads";
+import { isMediaUploadConfigured } from "@/server/media/media-uploads";
 import { isR2Configured } from "@/server/storage/r2";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -62,7 +62,7 @@ export default async function CreatePage({
     <CreateWorkspace
       accountAvailable={Boolean(account)}
       generationAvailable={isGenerationBackendConfigured()}
-      referenceUploadAvailable={isReferenceUploadConfigured()}
+      mediaUploadAvailable={isMediaUploadConfigured()}
       initialContinuation={initialContinuation}
       initialContinuationError={initialContinuationError}
     />
