@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDown, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,8 @@ function referenceAssetLabel(asset: PublicMediaAsset) {
 }
 
 const maxPollRetries = 5;
+const createMotionTween = { duration: 0.2, ease: "easeOut" } as const;
+const createMotionSpring = { type: "spring", stiffness: 420, damping: 38, mass: 0.7 } as const;
 
 function AspectRatioMenu({
   value,
@@ -228,6 +231,9 @@ export function CreateWorkspace({
   initialContinuation?: InitialContinuation | null;
   initialContinuationError?: string | null;
 }) {
+  const reduceMotion = Boolean(useReducedMotion());
+  const contextTransition = reduceMotion ? { duration: 0 } : createMotionTween;
+  const layoutTransition = reduceMotion ? { duration: 0 } : createMotionSpring;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const promptSelectionRef = useRef({ start: 0, end: 0 });
@@ -392,6 +398,7 @@ export function CreateWorkspace({
     : outputKind === "image"
       ? "Start with an idea. Add a reference only when you need one."
       : "Only the essentials stay visible. More control is available when you ask for it.";
+  const createContextKey = `${outputKind}:${hasReference ? references.length : 0}`;
 
   const unresolvedReferenceAliases = useMemo(
     () => unresolvedGenerationPromptReferenceAliases(
@@ -649,10 +656,20 @@ export function CreateWorkspace({
   return (
     <section className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-5xl flex-col px-4 pb-24 pt-12 sm:px-8 sm:pt-20 lg:pb-12 lg:pt-36">
       <div className="mx-auto w-full max-w-3xl">
-        <div className="mb-12 sm:mb-24">
-          <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text sm:text-[30px]">{heading}</h2>
-          <p className="mt-1 text-[15px] text-text-muted">{supportingText}</p>
-        </div>
+        <AnimatePresence initial={false} mode="wait">
+          <motion.div
+            key={createContextKey}
+            data-create-motion="context"
+            className="mb-12 sm:mb-24"
+            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+            transition={contextTransition}
+          >
+            <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text sm:text-[30px]">{heading}</h2>
+            <p className="mt-1 text-[15px] text-text-muted">{supportingText}</p>
+          </motion.div>
+        </AnimatePresence>
 
         <form onSubmit={submit} noValidate className="rounded-xl border border-border bg-surface-1 p-3 sm:p-4">
           <Label htmlFor="create-prompt" className="sr-only">Prompt</Label>
@@ -675,11 +692,19 @@ export function CreateWorkspace({
 
           {references.length ? (
             <div className="mb-3 space-y-2" aria-label="Attached references">
-              {references.map((reference, index) => (
-                <div
-                  key={reference.alias}
-                  className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-2 sm:flex-nowrap sm:gap-3"
-                >
+              <AnimatePresence initial={false} mode="popLayout">
+                {references.map((reference, index) => (
+                  <motion.div
+                    key={reference.alias}
+                    layout="position"
+                    data-create-motion="reference-row"
+                    data-reference-alias={reference.alias}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-2 sm:flex-nowrap sm:gap-3"
+                    initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.985 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={reduceMotion ? undefined : { opacity: 0, y: -6, scale: 0.985 }}
+                    transition={layoutTransition}
+                  >
                   <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-surface-3">
                     <img
                       src={reference.previewUrl}
@@ -745,8 +770,9 @@ export function CreateWorkspace({
                       <X aria-hidden="true" />
                     </Button>
                   </div>
-                </div>
-              ))}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           ) : null}
 
@@ -823,41 +849,54 @@ export function CreateWorkspace({
                   }}
                 />
 
-                {outputKind === "video" ? (
-                  <VideoSettingsMenu
-                    resolution={videoResolution}
-                    durationSeconds={durationSeconds}
-                    audioEnabled={audioEnabled}
-                    advancedOpen={advancedOpen}
-                    onResolutionChange={(value) => {
-                      setVideoResolution(value);
-                      setError(null);
-                    }}
-                    onDurationChange={(value) => {
-                      setDurationSeconds(value);
-                      setError(null);
-                    }}
-                    onAudioChange={(value) => {
-                      setAudioEnabled(value);
-                      setError(null);
-                    }}
-                    onAdvancedToggle={() => setAdvancedOpen((current) => !current)}
-                  />
-                ) : (
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      aria-pressed={advancedOpen}
-                      aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
-                      title="Advanced generation controls"
-                      className={advancedOpen ? "bg-surface-3" : undefined}
-                    >
-                      <MoreHorizontal aria-hidden="true" />
-                    </Button>
-                  </CollapsibleTrigger>
-                )}
+                <AnimatePresence initial={false} mode="popLayout">
+                  <motion.div
+                    key={outputKind}
+                    layout="position"
+                    data-create-motion="mode-control"
+                    className="shrink-0"
+                    initial={reduceMotion ? false : { opacity: 0, x: 6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
+                    transition={contextTransition}
+                  >
+                    {outputKind === "video" ? (
+                      <VideoSettingsMenu
+                        resolution={videoResolution}
+                        durationSeconds={durationSeconds}
+                        audioEnabled={audioEnabled}
+                        advancedOpen={advancedOpen}
+                        onResolutionChange={(value) => {
+                          setVideoResolution(value);
+                          setError(null);
+                        }}
+                        onDurationChange={(value) => {
+                          setDurationSeconds(value);
+                          setError(null);
+                        }}
+                        onAudioChange={(value) => {
+                          setAudioEnabled(value);
+                          setError(null);
+                        }}
+                        onAdvancedToggle={() => setAdvancedOpen((current) => !current)}
+                      />
+                    ) : (
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          aria-pressed={advancedOpen}
+                          aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
+                          title="Advanced generation controls"
+                          className={advancedOpen ? "bg-surface-3" : undefined}
+                        >
+                          <MoreHorizontal aria-hidden="true" />
+                        </Button>
+                      </CollapsibleTrigger>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
               <Button type="submit" size="lg" disabled={!canSubmit} className="w-full sm:w-auto">
@@ -915,50 +954,68 @@ export function CreateWorkspace({
           </Alert>
         ) : null}
 
-        {resultLoading ? (
-          <div className="mt-8 flex min-h-64 items-center justify-center rounded-xl border border-border bg-surface-1 text-sm text-text-muted" role="status">
-            <Spinner className="mr-2 size-5" />
-            Loading saved result…
-          </div>
-        ) : null}
-
-        {resultAsset ? (
-          <article className="mt-8 overflow-hidden rounded-xl border border-border bg-surface-1" aria-label="Generated result">
-            <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-text">Generated result</p>
-                <p className="text-xs text-text-muted">Saved to your RenderLab media library.</p>
-              </div>
-              {continuationActions.length ? (
-                <div className="flex items-center gap-2" aria-label="Continue from result">
-                  {continuationActions.map((action) => (
-                    <Button
-                      key={action.id}
-                      type="button"
-                      variant="secondary"
-                      onClick={() => startContinuation(action)}
-                    >
-                      {action.label}
-                    </Button>
-                  ))}
+        <AnimatePresence initial={false} mode="wait">
+          {resultLoading ? (
+            <motion.div
+              key="result-loading"
+              data-create-motion="result"
+              className="mt-8 flex min-h-64 items-center justify-center rounded-xl border border-border bg-surface-1 text-sm text-text-muted"
+              role="status"
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+              transition={contextTransition}
+            >
+              <Spinner className="mr-2 size-5" />
+              Loading saved result…
+            </motion.div>
+          ) : resultAsset ? (
+            <motion.article
+              key={resultAsset.id}
+              data-create-motion="result"
+              className="mt-8 overflow-hidden rounded-xl border border-border bg-surface-1"
+              aria-label="Generated result"
+              initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.995 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+              transition={contextTransition}
+            >
+              <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-text">Generated result</p>
+                  <p className="text-xs text-text-muted">Saved to your RenderLab media library.</p>
                 </div>
-              ) : null}
-            </div>
-            <div className="bg-surface-2">
-              {resultAsset.kind === "image" ? (
-                <img src={resultAsset.contentUrl} alt="Generated result" className="max-h-[70vh] w-full object-contain" />
-              ) : (
-                <video
-                  src={resultAsset.contentUrl}
-                  controls
-                  playsInline
-                  className="max-h-[70vh] w-full"
-                  aria-label="Generated video"
-                />
-              )}
-            </div>
-          </article>
-        ) : null}
+                {continuationActions.length ? (
+                  <div className="flex items-center gap-2" aria-label="Continue from result">
+                    {continuationActions.map((action) => (
+                      <Button
+                        key={action.id}
+                        type="button"
+                        variant="secondary"
+                        onClick={() => startContinuation(action)}
+                      >
+                        {action.label}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <div className="bg-surface-2">
+                {resultAsset.kind === "image" ? (
+                  <img src={resultAsset.contentUrl} alt="Generated result" className="max-h-[70vh] w-full object-contain" />
+                ) : (
+                  <video
+                    src={resultAsset.contentUrl}
+                    controls
+                    playsInline
+                    className="max-h-[70vh] w-full"
+                    aria-label="Generated video"
+                  />
+                )}
+              </div>
+            </motion.article>
+          ) : null}
+        </AnimatePresence>
       </div>
     </section>
   );

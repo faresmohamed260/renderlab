@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { CollapsibleContent } from "@/components/ui/collapsible";
 import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
@@ -81,6 +82,9 @@ export function CreateAdvancedPanel({
   onDraftChange: (next: AdvancedDraft) => void;
   onReset: () => void;
 }) {
+  const reduceMotion = Boolean(useReducedMotion());
+  const transition = reduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
+
   return (
     <CollapsibleContent className="mt-3 rounded-xl border border-border bg-surface-2 p-4">
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -96,9 +100,18 @@ export function CreateAdvancedPanel({
         </Button>
       </div>
 
-      <FieldSet>
-        <FieldLegend className="sr-only">Advanced generation controls</FieldLegend>
-        <FieldGroup className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <AnimatePresence initial={false} mode="wait">
+        <motion.div
+          key={outputKind}
+          data-create-motion="advanced-fields"
+          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+          transition={transition}
+        >
+          <FieldSet>
+            <FieldLegend className="sr-only">Advanced generation controls</FieldLegend>
+            <FieldGroup className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Field className="col-span-2 sm:col-span-3">
             <FieldLabel htmlFor="advanced-negative-prompt">
               {generationAdvancedCapabilities.negativePrompt.label}
@@ -174,8 +187,10 @@ export function CreateAdvancedPanel({
               </NativeSelect>
             </Field>
           ) : null}
-        </FieldGroup>
-      </FieldSet>
+            </FieldGroup>
+          </FieldSet>
+        </motion.div>
+      </AnimatePresence>
     </CollapsibleContent>
   );
 }

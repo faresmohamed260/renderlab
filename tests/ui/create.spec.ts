@@ -79,6 +79,23 @@ test("mobile Video keeps the essential row compact and contextual settings reach
   await page.screenshot({ path: "artifacts/create-mobile-video.png", fullPage: true });
 });
 
+test("Create honors reduced motion for contextual mode transitions", async ({ page }) => {
+  await page.setViewportSize(mobileViewport);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  await page.getByRole("radio", { name: "Video", exact: true }).click();
+  const modeControl = page.locator('[data-create-motion="mode-control"]');
+  await expect(modeControl).toBeVisible();
+  await expect(modeControl).toHaveCSS("transform", "none");
+  await expect(modeControl).toHaveCSS("opacity", "1");
+
+  await page.getByRole("radio", { name: "Image", exact: true }).click();
+  await expect(modeControl).toBeVisible();
+  await expect(modeControl).toHaveCSS("transform", "none");
+  await expect(page.locator('[data-create-motion="context"]')).toHaveCSS("transform", "none");
+});
+
 test("Advanced controls use progressive disclosure and preserve per-output drafts", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/");
