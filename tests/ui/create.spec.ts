@@ -173,6 +173,58 @@ test("generation API validates requests and reports backend availability truthfu
   });
   expect(duplicateAliases.status()).toBe(400);
 
+  const tooManyImageInputs = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "Use three references",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [
+        { alias: "image1", source: { type: "temporary-source", id: "fixture-a" }, role: "primary-image" },
+        { alias: "image2", source: { type: "temporary-source", id: "fixture-b" }, role: "reference" },
+        { alias: "image3", source: { type: "temporary-source", id: "fixture-c" }, role: "reference" },
+      ],
+    },
+  });
+  expect(tooManyImageInputs.status()).toBe(400);
+  expect((await tooManyImageInputs.json()).error.message).toContain("at most 2");
+
+  const invalidImageRoleOrder = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "Use both references",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [
+        { alias: "image1", source: { type: "temporary-source", id: "fixture-a" }, role: "reference" },
+        { alias: "image2", source: { type: "temporary-source", id: "fixture-b" }, role: "primary-image" },
+      ],
+    },
+  });
+  expect(invalidImageRoleOrder.status()).toBe(400);
+  expect((await invalidImageRoleOrder.json()).error.message).toContain("primary-image");
+
+  const tooManyVideoInputs = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "Animate two images",
+      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },
+      inputs: [
+        { alias: "image1", source: { type: "temporary-source", id: "fixture-a" }, role: "first-frame" },
+        { alias: "image2", source: { type: "temporary-source", id: "fixture-b" }, role: "reference" },
+      ],
+    },
+  });
+  expect(tooManyVideoInputs.status()).toBe(400);
+  expect((await tooManyVideoInputs.json()).error.message).toContain("at most 1");
+
+  const invalidVideoRole = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "Animate this image",
+      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },
+      inputs: [
+        { alias: "image1", source: { type: "temporary-source", id: "fixture-a" }, role: "primary-image" },
+      ],
+    },
+  });
+  expect(invalidVideoRole.status()).toBe(400);
+  expect((await invalidVideoRole.json()).error.message).toContain("first-frame");
+
   const legacyPositionalAlias = await request.post("/api/generation/jobs", {
     data: {
       prompt: "Use @image1 as the source",

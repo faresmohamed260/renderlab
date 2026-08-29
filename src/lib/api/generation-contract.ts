@@ -12,7 +12,9 @@ import {
   generationAdvancedCapabilities,
   generationInputAlias,
   generationInputAliasPattern,
+  generationInputRoleForIndex,
   imageAspectRatios,
+  maxGenerationInputsForOutput,
   unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
 } from "@/lib/capabilities/generation";
@@ -145,6 +147,30 @@ export function parseGenerationRequest(value: unknown):
   const inputs = parseInputs(value.inputs);
   if (!inputs) {
     return { ok: false, error: { code: "invalid_request", message: "Generation inputs are invalid." } };
+  }
+
+  const outputKind = kind as OutputKind;
+  const maxInputs = maxGenerationInputsForOutput(outputKind);
+  if (inputs.length > maxInputs) {
+    return {
+      ok: false,
+      error: {
+        code: "invalid_request",
+        message: `${outputKind === "image" ? "Image" : "Video"} accepts at most ${maxInputs} image ${maxInputs === 1 ? "input" : "inputs"}.`,
+      },
+    };
+  }
+  for (const [index, input] of inputs.entries()) {
+    const expectedRole = generationInputRoleForIndex(outputKind, index);
+    if (!expectedRole || input.role !== expectedRole) {
+      return {
+        ok: false,
+        error: {
+          code: "invalid_request",
+          message: `${outputKind === "image" ? "Image" : "Video"} input ${index + 1} must use the ${expectedRole ?? "supported"} role.`,
+        },
+      };
+    }
   }
 
   const unresolvedReferences = unresolvedGenerationPromptReferenceAliases(

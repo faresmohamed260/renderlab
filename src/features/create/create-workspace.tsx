@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ImageIcon, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
+import { ChevronDown, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,6 @@ import type {
   ContinuationAction,
   GenerationInputAlias,
   GenerationJob,
-  GenerationInputRole,
   OutputKind,
   PresetAspectRatio,
 } from "@/lib/capabilities/generation";
@@ -48,22 +47,33 @@ import {
   continuationActionsForMedia,
   defaultVideoAudioEnabled,
   generationInputAlias,
+  generationInputRoleForIndex,
   imageAspectRatios,
+  maxGenerationInputsForOutput,
   unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
   videoDurations,
 } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 
-type ContinuationSource = {
-  id: string;
-  inputRole: Extract<GenerationInputRole, "primary-image" | "first-frame">;
-};
-
 type InitialContinuation = {
   asset: PublicMediaAsset;
   action: ContinuationAction;
 };
+
+type AttachedReference = {
+  alias: GenerationInputAlias;
+  asset: PublicMediaAsset;
+  previewUrl: string;
+  label: string;
+};
+
+function referenceAssetLabel(asset: PublicMediaAsset) {
+  if (asset.origin === "uploaded") {
+    return asset.displayName || asset.originalFilename || "Uploaded image";
+  }
+  return "Generated result";
+}
 
 const maxPollRetries = 5;
 
@@ -179,10 +189,6 @@ function isRetryablePollStatus(status: number) {
   return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
-function revokePreviewUrl(url: string | null) {
-  if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
-}
-
 function isTerminalJob(job: GenerationJob | null) {
   return Boolean(job && ["succeeded", "failed", "cancelled"].includes(job.status));
 }
@@ -209,21 +215,23 @@ export function CreateWorkspace({
   const [videoAspect, setVideoAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
   const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);
-  const [reference, setReference] = useState<PublicMediaAsset | null>(null);
-  const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(() =>
+  const [references, setReferences] = useState<AttachedReference[]>(() =>
     initialContinuation
-      ? { id: initialContinuation.asset.id, inputRole: initialContinuation.action.inputRole }
-      : null,
-  );
-  const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(() =>
-    initialContinuation?.asset.contentUrl ?? null,
-  );
-  const [referenceAlias, setReferenceAlias] = useState<GenerationInputAlias | null>(() =>
-    initialContinuation ? generationInputAlias(1) : null,
+      ? [{
+          alias: generationInputAlias(1),
+          asset: initialContinuation.asset,
+          previewUrl: initialContinuation.asset.contentUrl,
+          label: referenceAssetLabel(initialContinuation.asset),
+        }]
+      : [],
   );
   const [nextReferenceNumber, setNextReferenceNumber] = useState(initialContinuation ? 2 : 1);
   const [referenceMentionOpen, setReferenceMentionOpen] = useState(false);
+  const [mentionMenuAnchorAlias, setMentionMenuAnchorAlias] = useState<GenerationInputAlias | null>(() =>
+    initialContinuation ? generationInputAlias(1) : null,
+  );
   const [mentionRange, setMentionRange] = useState<{ start: number; end: number } | null>(null);
+  const [referenceUploadTargetAlias, setReferenceUploadTargetAlias] = useState<GenerationInputAlias | null>(null);
   const [referenceUploading, setReferenceUploading] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("image"));
@@ -234,9 +242,6 @@ export function CreateWorkspace({
   const [resultAsset, setResultAsset] = useState<PublicMediaAsset | null>(null);
   const [resultLoading, setResultLoading] = useState(false);
 
-  useEffect(() => {
-    return () => revokePreviewUrl(referencePreviewUrl);
-  }, [referencePreviewUrl]);
 
   useEffect(() => {
     if (!job || isTerminalJob(job)) return;
@@ -348,7 +353,8 @@ export function CreateWorkspace({
   const aspectRatio = outputKind === "image" ? imageAspect : videoAspect;
   const advancedDraft = outputKind === "image" ? imageAdvanced : videoAdvanced;
   const setAdvancedDraft = outputKind === "image" ? setImageAdvanced : setVideoAdvanced;
-  const hasReference = Boolean(reference || continuationSource);
+  const hasReference = references.length > 0;
+  const maxReferences = maxGenerationInputsForOutput(outputKind);
   const heading = hasReference
     ? outputKind === "image"
       ? "Edit an image"
@@ -357,7 +363,9 @@ export function CreateWorkspace({
       ? "What do you want to create?"
       : "Create a video";
   const supportingText = hasReference
-    ? "Your reference sets the creative context automatically."
+    ? references.length > 1
+      ? "Your references set the creative context. The first image controls the primary edit geometry."
+      : "Your reference sets the creative context automatically."
     : outputKind === "image"
       ? "Start with an idea. Add a reference only when you need one."
       : "Only the essentials stay visible. More control is available when you ask for it.";
@@ -365,33 +373,28 @@ export function CreateWorkspace({
   const unresolvedReferenceAliases = useMemo(
     () => unresolvedGenerationPromptReferenceAliases(
       prompt,
-      hasReference && referenceAlias ? [referenceAlias] : [],
+      references.map((reference) => reference.alias),
     ),
-    [hasReference, prompt, referenceAlias],
+    [prompt, references],
+  );
+  const mentionOptions = useMemo(
+    () => references.map((reference) => ({
+      alias: reference.alias,
+      previewUrl: reference.previewUrl,
+      label: reference.label,
+    })),
+    [references],
   );
   const jobActive = Boolean(job && !isTerminalJob(job));
   const canSubmit =
     accountAvailable
     && generationAvailable
     && Boolean(prompt.trim())
-    && (!hasReference || Boolean(referenceAlias))
     && unresolvedReferenceAliases.length === 0
     && !submitting
     && !referenceUploading
     && !jobActive;
   const continuationActions = resultAsset ? continuationActionsForMedia(resultAsset.kind) : [];
-  const continuationSourceLabel = continuationSource
-    ? continuationSource.id === initialContinuation?.asset.id
-      ? initialContinuation.asset.origin === "uploaded"
-        ? initialContinuation.asset.displayName
-          || initialContinuation.asset.originalFilename
-          || "Uploaded image"
-        : "Generated result"
-      : "Generated result"
-    : null;
-  const referenceLabel = continuationSource
-    ? continuationSourceLabel ?? "Generated result"
-    : reference?.displayName ?? reference?.originalFilename ?? "Reference image";
 
   const statusText = useMemo(() => {
     if (!job) return null;
@@ -421,7 +424,8 @@ export function CreateWorkspace({
 
     const beforeCaret = nextPrompt.slice(0, start);
     const match = beforeCaret.match(/(?:^|\s)(@[A-Za-z0-9]*)$/);
-    if (referenceAlias && match) {
+    if (references.length && match) {
+      setMentionMenuAnchorAlias(references[0].alias);
       setMentionRange({ start: start - match[1].length, end: start });
       setReferenceMentionOpen(true);
       return;
@@ -431,20 +435,20 @@ export function CreateWorkspace({
     setReferenceMentionOpen(false);
   }
 
-  function insertReferenceMention() {
-    if (!referenceAlias) return;
+  function insertReferenceMention(alias: GenerationInputAlias) {
     const range = mentionRange ?? promptSelectionRef.current;
     const before = prompt.slice(0, range.start);
     const after = prompt.slice(range.end);
     const leadingSpace = before && !/\s$/.test(before) ? " " : "";
     const trailingSpace = after && /^\s/.test(after) ? "" : " ";
-    const mention = `@${referenceAlias}`;
+    const mention = `@${alias}`;
     const insertion = `${leadingSpace}${mention}${trailingSpace}`;
     const nextPrompt = `${before}${insertion}${after}`;
     const cursor = before.length + insertion.length;
 
     setPrompt(nextPrompt);
     setReferenceMentionOpen(false);
+    setMentionMenuAnchorAlias(alias);
     setMentionRange(null);
     setError(null);
     promptSelectionRef.current = { start: cursor, end: cursor };
@@ -454,29 +458,52 @@ export function CreateWorkspace({
     });
   }
 
-  function clearReference() {
-    revokePreviewUrl(referencePreviewUrl);
-    setReferencePreviewUrl(null);
-    setReference(null);
-    setContinuationSource(null);
-    setReferenceAlias(null);
-    setReferenceMentionOpen(false);
-    setMentionRange(null);
-    setImageAspect((current) => current === "original" ? "1:1" : current);
-    setVideoAspect((current) => current === "original" ? "16:9" : current);
+  function removeReference(alias: GenerationInputAlias) {
+    setReferences((current) => {
+      const next = current.filter((reference) => reference.alias !== alias);
+      if (!next.length) {
+        setImageAspect((value) => value === "original" ? "1:1" : value);
+        setVideoAspect((value) => value === "original" ? "16:9" : value);
+      }
+      return next;
+    });
+    if (mentionMenuAnchorAlias === alias) {
+      setReferenceMentionOpen(false);
+      setMentionMenuAnchorAlias(null);
+      setMentionRange(null);
+    }
     setError(null);
+  }
+
+  function makeReferencePrimary(alias: GenerationInputAlias) {
+    if (outputKind !== "image") return;
+    setReferences((current) => {
+      const index = current.findIndex((reference) => reference.alias === alias);
+      if (index <= 0) return current;
+      const next = [...current];
+      [next[0], next[index]] = [next[index], next[0]];
+      return next;
+    });
+    setError(null);
+  }
+
+  function chooseReferenceFile(targetAlias: GenerationInputAlias | null) {
+    setReferenceUploadTargetAlias(targetAlias);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    fileInputRef.current?.click();
   }
 
   function startContinuation(action: ContinuationAction) {
     if (!resultAsset) return;
-    revokePreviewUrl(referencePreviewUrl);
     const nextAlias = generationInputAlias(nextReferenceNumber);
-    setReferenceAlias(nextAlias);
+    setReferences([{
+      alias: nextAlias,
+      asset: resultAsset,
+      previewUrl: resultAsset.contentUrl,
+      label: referenceAssetLabel(resultAsset),
+    }]);
+    setMentionMenuAnchorAlias(nextAlias);
     setNextReferenceNumber((current) => current + 1);
-    setReference(null);
-    setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });
-    setReferencePreviewUrl(resultAsset.contentUrl);
     setImageAspect("original");
     setVideoAspect("original");
     setOutputKind(action.outputKind);
@@ -492,7 +519,7 @@ export function CreateWorkspace({
     setError(null);
   }
 
-  async function uploadReference(file: File) {
+  async function uploadReference(file: File, targetAlias: GenerationInputAlias | null) {
     if (!accountAvailable || !mediaUploadAvailable) return;
 
     const mimeType = file.type.toLowerCase();
@@ -504,41 +531,45 @@ export function CreateWorkspace({
       setError("Reference images must be no larger than 25 MB.");
       return;
     }
+    if (!targetAlias && references.length >= maxGenerationInputsForOutput(outputKind)) {
+      setError(outputKind === "image" ? "Image supports up to two references." : "Video supports one source image.");
+      return;
+    }
 
     setReferenceUploading(true);
     setError(null);
-
-    const existingAlias = referenceAlias;
-    const uploadAlias = existingAlias ?? generationInputAlias(nextReferenceNumber);
-    const previewUrl = URL.createObjectURL(file);
-    revokePreviewUrl(referencePreviewUrl);
-    setReferencePreviewUrl(previewUrl);
-    setReference(null);
-    setContinuationSource(null);
+    const uploadAlias = targetAlias ?? generationInputAlias(nextReferenceNumber);
 
     try {
       const asset = await uploadPersistentImageFile(file, mimeType as MediaUploadMimeType);
-      setReference(asset);
-      setReferenceAlias(uploadAlias);
-      if (!existingAlias) setNextReferenceNumber((current) => current + 1);
-      setImageAspect("original");
-      setVideoAspect("original");
+      const attached: AttachedReference = {
+        alias: uploadAlias,
+        asset,
+        previewUrl: asset.contentUrl,
+        label: referenceAssetLabel(asset),
+      };
+      if (targetAlias) {
+        setReferences((current) => current.map((reference) => reference.alias === targetAlias ? attached : reference));
+      } else {
+        setReferences((current) => [...current, attached]);
+        setMentionMenuAnchorAlias((current) => current ?? uploadAlias);
+        setNextReferenceNumber((current) => current + 1);
+      }
+      if (!targetAlias && references.length === 0) {
+        setImageAspect("original");
+        setVideoAspect("original");
+      }
     } catch (uploadError) {
-      setReference(null);
       setError(uploadError instanceof Error ? uploadError.message : "Reference upload failed.");
     } finally {
       setReferenceUploading(false);
+      setReferenceUploadTargetAlias(null);
     }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
-    if (hasReference && !referenceAlias) {
-      setError("The attached reference is missing its product identity. Reattach it before generating.");
-      return;
-    }
-
     const advanced = advancedParametersFromDraft(advancedDraft, outputKind);
     if (!advanced) {
       setAdvancedOpen(true);
@@ -552,23 +583,11 @@ export function CreateWorkspace({
     setResultAsset(null);
     setResultLoading(false);
 
-    const inputs = continuationSource
-      ? [
-          {
-            alias: referenceAlias!,
-            source: { type: "media-asset" as const, id: continuationSource.id },
-            role: continuationSource.inputRole,
-          },
-        ]
-      : reference
-        ? [
-            {
-              alias: referenceAlias!,
-              source: { type: "media-asset" as const, id: reference.id },
-              role: outputKind === "image" ? ("primary-image" as const) : ("first-frame" as const),
-            },
-          ]
-        : [];
+    const inputs = references.map((reference, index) => ({
+      alias: reference.alias,
+      source: { type: "media-asset" as const, id: reference.asset.id },
+      role: generationInputRoleForIndex(outputKind, index)!,
+    }));
 
     try {
       const response = await fetch("/api/generation/jobs", {
@@ -627,40 +646,80 @@ export function CreateWorkspace({
             className="min-h-32 px-1 py-1 text-[16px] leading-6 sm:min-h-28"
           />
 
-          {referencePreviewUrl ? (
-            <div className="mb-3 flex items-center gap-3 rounded-lg border border-border bg-surface-2 p-2">
-              <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-surface-3">
-                <img src={referencePreviewUrl} alt="Reference preview" className="size-full object-cover" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-text">
-                  {referenceUploading ? "Uploading reference…" : outputKind === "image" ? "Editing this image" : "Animating this image"}
-                </p>
-                <p className="truncate text-xs text-text-muted">{referenceLabel}</p>
-              </div>
-              {referenceAlias ? (
-                <CreateReferenceMentionMenu
-                  alias={referenceAlias}
-                  previewUrl={referencePreviewUrl}
-                  label={referenceLabel}
-                  open={referenceMentionOpen}
-                  onOpenChange={(open) => {
-                    setReferenceMentionOpen(open);
-                    if (!open) setMentionRange(null);
-                  }}
-                  onSelect={insertReferenceMention}
-                />
-              ) : null}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={clearReference}
-                disabled={referenceUploading}
-                aria-label="Remove reference"
-              >
-                <X aria-hidden="true" />
-              </Button>
+          {references.length ? (
+            <div className="mb-3 space-y-2" aria-label="Attached references">
+              {references.map((reference, index) => (
+                <div
+                  key={reference.alias}
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-2 sm:flex-nowrap sm:gap-3"
+                >
+                  <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-surface-3">
+                    <img
+                      src={reference.previewUrl}
+                      alt={references.length === 1 ? "Reference preview" : `Reference @${reference.alias} preview`}
+                      className="size-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-32 flex-1 sm:min-w-0">
+                    <p className="truncate text-sm font-semibold text-text">
+                      {outputKind === "video"
+                        ? "Animating this image"
+                        : references.length === 1
+                          ? "Editing this image"
+                          : index === 0
+                            ? "Primary image"
+                            : "Reference image"}
+                    </p>
+                    <p className="truncate text-xs text-text-muted">{reference.label}</p>
+                  </div>
+                  <div className="ml-auto flex items-center gap-1 sm:contents">
+                    <CreateReferenceMentionMenu
+                      triggerAlias={reference.alias}
+                    references={mentionOptions}
+                    open={referenceMentionOpen && mentionMenuAnchorAlias === reference.alias}
+                    onOpenChange={(open) => {
+                      setReferenceMentionOpen(open);
+                      if (open) setMentionMenuAnchorAlias(reference.alias);
+                      else if (mentionMenuAnchorAlias === reference.alias) setMentionRange(null);
+                    }}
+                    onSelect={insertReferenceMention}
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={referenceUploading}
+                        aria-label={`Reference actions for @${reference.alias}`}
+                      >
+                        <MoreHorizontal aria-hidden="true" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {outputKind === "image" && index > 0 ? (
+                        <DropdownMenuItem onSelect={() => makeReferencePrimary(reference.alias)}>
+                          Make primary
+                        </DropdownMenuItem>
+                      ) : null}
+                      <DropdownMenuItem onSelect={() => chooseReferenceFile(reference.alias)}>
+                        Replace image
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeReference(reference.alias)}
+                      disabled={referenceUploading}
+                      aria-label={`Remove @${reference.alias}`}
+                    >
+                      <X aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : null}
 
@@ -675,31 +734,34 @@ export function CreateWorkspace({
                   aria-label="Reference image file"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
-                    if (file) void uploadReference(file);
+                    if (file) void uploadReference(file, referenceUploadTargetAlias);
                   }}
                 />
                 <Button
                   type="button"
                   variant="secondary"
                   size="icon"
-                  disabled={!accountAvailable || !mediaUploadAvailable || referenceUploading}
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label={hasReference ? "Replace reference" : "Add reference"}
+                  disabled={
+                    !accountAvailable
+                    || !mediaUploadAvailable
+                    || referenceUploading
+                    || references.length >= maxReferences
+                  }
+                  onClick={() => chooseReferenceFile(null)}
+                  aria-label="Add reference"
                   title={
                     !accountAvailable
                       ? "Sign in to add a private reference image."
-                      : mediaUploadAvailable
-                        ? "Add a reference image"
-                        : "Reference upload storage is not configured in this environment."
+                      : !mediaUploadAvailable
+                        ? "Reference upload storage is not configured in this environment."
+                        : references.length >= maxReferences
+                          ? outputKind === "image"
+                            ? "Image supports up to two references."
+                            : "Video supports one source image."
+                          : "Add a reference image"
                   }
                 >
-                  {referenceUploading ? (
-                    <Spinner />
-                  ) : hasReference ? (
-                    <ImageIcon aria-hidden="true" />
-                  ) : (
-                    <Plus aria-hidden="true" />
-                  )}
+                  {referenceUploading ? <Spinner /> : <Plus aria-hidden="true" />}
                 </Button>
 
                 <ToggleGroup
@@ -709,16 +771,12 @@ export function CreateWorkspace({
                   onValueChange={(value) => {
                     if (!value) return;
                     const kind = value as OutputKind;
+                    if (references.length > maxGenerationInputsForOutput(kind)) {
+                      setError("Video uses one source image. Remove one reference before switching to Video.");
+                      return;
+                    }
                     setOutputKind(kind);
                     setError(null);
-                    setContinuationSource((current) =>
-                      current
-                        ? {
-                            ...current,
-                            inputRole: kind === "image" ? "primary-image" : "first-frame",
-                          }
-                        : current,
-                    );
                   }}
                   size="sm"
                   className="shrink-0"
