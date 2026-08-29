@@ -25,7 +25,7 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
   await page.screenshot({ path: "artifacts/create-desktop-image.png", fullPage: true });
 });
 
-test("Create keeps Video duration, audio, and Advanced contextual without exposing backend workflow details", async ({ page }) => {
+test("Create keeps Video resolution, duration, audio, and Advanced contextual without exposing backend workflow details", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/");
 
@@ -33,15 +33,18 @@ test("Create keeps Video duration, audio, and Advanced contextual without exposi
 
   await expect(page.getByRole("heading", { name: "Create a video" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Aspect ratio 16:9/ })).toBeVisible();
-  const settings = page.getByRole("button", { name: /Video settings\. Duration 5 seconds\. Audio on/ });
+  const settings = page.getByRole("button", { name: /Video settings\. Resolution 480p\. Duration 5 seconds\. Audio on/ });
   await expect(settings).toBeVisible();
   await expect(page.getByRole("button", { name: "Audio on", exact: true })).toHaveCount(0);
   await settings.click();
+  await expect(page.getByRole("menuitemradio", { name: "480p", exact: true })).toHaveAttribute("data-state", "checked");
+  await expect(page.getByRole("menuitemradio", { name: "2K", exact: true })).toBeVisible();
+  await expect(page.getByRole("menuitemradio", { name: "4K", exact: true })).toHaveCount(0);
   await expect(page.getByRole("menuitemradio", { name: "5 seconds", exact: true })).toHaveAttribute("data-state", "checked");
   const audio = page.getByRole("menuitemcheckbox", { name: "Audio" });
   await expect(audio).toHaveAttribute("data-state", "checked");
   await audio.click();
-  await expect(page.getByRole("button", { name: /Video settings\. Duration 5 seconds\. Audio off/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Video settings\. Resolution 480p\. Duration 5 seconds\. Audio off/ })).toBeVisible();
   await expect(page.getByText("workflow", { exact: false })).toHaveCount(0);
 
   await page.screenshot({ path: "artifacts/create-desktop-video.png", fullPage: true });
@@ -52,13 +55,21 @@ test("mobile Video keeps the essential row compact and contextual settings reach
   await page.goto("/");
 
   await page.getByRole("radio", { name: "Video", exact: true }).click();
-  const settings = page.getByRole("button", { name: /Video settings\. Duration 5 seconds\. Audio on/ });
+  const settings = page.getByRole("button", { name: /Video settings\. Resolution 480p\. Duration 5 seconds\. Audio on/ });
   await expect(settings).toBeVisible();
   const settingsBox = await settings.boundingBox();
   expect(settingsBox).not.toBeNull();
   expect(settingsBox!.x).toBeGreaterThanOrEqual(0);
   expect(settingsBox!.x + settingsBox!.width).toBeLessThanOrEqual(mobileViewport.width);
   await settings.click();
+  const menu = page.locator('[data-slot="dropdown-menu-content"]');
+  await expect(menu).toBeVisible();
+  const menuBox = await menu.boundingBox();
+  expect(menuBox).not.toBeNull();
+  expect(menuBox!.y).toBeGreaterThanOrEqual(0);
+  expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(mobileViewport.height);
+  await expect(page.getByRole("menuitemradio", { name: "480p", exact: true })).toHaveAttribute("data-state", "checked");
+  await expect(page.getByRole("menuitemradio", { name: "2K", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitemradio", { name: "5 seconds", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitemcheckbox", { name: "Audio" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Advanced controls" })).toBeVisible();
@@ -79,16 +90,25 @@ test("Advanced controls use progressive disclosure and preserve per-output draft
   await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("4");
   await expect(page.getByRole("spinbutton", { name: "Guidance" })).toHaveValue("1");
   await expect(page.getByRole("combobox", { name: "Frame rate" })).toHaveCount(0);
+  await page.getByRole("spinbutton", { name: "Steps" }).fill("5");
+  await page.getByRole("spinbutton", { name: "Guidance" }).fill("2");
 
   await page.getByRole("radio", { name: "Video", exact: true }).click();
-  await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("11");
-  await expect(page.getByRole("combobox", { name: "Frame rate" })).toHaveValue("24");
-  await page.getByRole("spinbutton", { name: "Steps" }).fill("12");
+  await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveCount(0);
+  await expect(page.getByRole("spinbutton", { name: "Guidance" })).toHaveCount(0);
+  const frameRate = page.getByRole("combobox", { name: "Frame rate" });
+  await expect(frameRate).toHaveValue("24");
+  await frameRate.selectOption("30");
 
   await page.getByRole("radio", { name: "Image", exact: true }).click();
-  await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("4");
+  await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("5");
+  await expect(page.getByRole("spinbutton", { name: "Guidance" })).toHaveValue("2");
+  await expect(page.getByRole("combobox", { name: "Frame rate" })).toHaveCount(0);
+
   await page.getByRole("radio", { name: "Video", exact: true }).click();
-  await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("12");
+  await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveCount(0);
+  await expect(page.getByRole("spinbutton", { name: "Guidance" })).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Frame rate" })).toHaveValue("30");
   await expect(page.getByRole("radio", { name: "Image", exact: true })).not.toBeChecked();
   await expect(page.getByRole("radio", { name: "Video", exact: true })).toBeChecked();
   await page.waitForTimeout(200);

@@ -42,10 +42,12 @@ import type {
   GenerationJob,
   OutputKind,
   PresetAspectRatio,
+  VideoResolution,
 } from "@/lib/capabilities/generation";
 import {
   continuationActionsForMedia,
   defaultVideoAudioEnabled,
+  defaultVideoResolution,
   generationInputAlias,
   generationInputRoleForIndex,
   imageAspectRatios,
@@ -53,6 +55,7 @@ import {
   unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
   videoDurations,
+  videoResolutions,
 } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 
@@ -123,16 +126,20 @@ function AspectRatioMenu({
 }
 
 function VideoSettingsMenu({
+  resolution,
   durationSeconds,
   audioEnabled,
   advancedOpen,
+  onResolutionChange,
   onDurationChange,
   onAudioChange,
   onAdvancedToggle,
 }: {
+  resolution: VideoResolution;
   durationSeconds: (typeof videoDurations)[number];
   audioEnabled: boolean;
   advancedOpen: boolean;
+  onResolutionChange: (value: VideoResolution) => void;
   onDurationChange: (value: (typeof videoDurations)[number]) => void;
   onAudioChange: (value: boolean) => void;
   onAdvancedToggle: () => void;
@@ -143,15 +150,30 @@ function VideoSettingsMenu({
         <Button
           type="button"
           variant="secondary"
-          aria-label={`Video settings. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
+          aria-label={`Video settings. Resolution ${resolution}. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
           className="shrink-0 gap-1.5"
         >
-          <span>{durationSeconds} s</span>
-          <span className="hidden text-xs text-text-muted sm:inline">· {audioEnabled ? "Audio" : "Silent"}</span>
+          <span>{resolution} · {durationSeconds} s</span>
           <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-48">
+      <DropdownMenuContent
+        align="start"
+        collisionPadding={8}
+        className="min-w-48 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto"
+      >
+        <DropdownMenuLabel>Resolution</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={resolution}
+          onValueChange={(next) => onResolutionChange(next as VideoResolution)}
+        >
+          {videoResolutions.map((option) => (
+            <DropdownMenuRadioItem key={option} value={option}>
+              {option}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>Duration</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={String(durationSeconds)}
@@ -213,6 +235,7 @@ export function CreateWorkspace({
   const [outputKind, setOutputKind] = useState<OutputKind>(() => initialContinuation?.action.outputKind ?? "image");
   const [imageAspect, setImageAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "1:1");
   const [videoAspect, setVideoAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "16:9");
+  const [videoResolution, setVideoResolution] = useState<VideoResolution>(defaultVideoResolution);
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
   const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);
   const [references, setReferences] = useState<AttachedReference[]>(() =>
@@ -573,7 +596,11 @@ export function CreateWorkspace({
     const advanced = advancedParametersFromDraft(advancedDraft, outputKind);
     if (!advanced) {
       setAdvancedOpen(true);
-      setError("Check the Advanced values before generating. Seed must be an integer, steps must be 1–200, and guidance must be 0–100.");
+      setError(
+        outputKind === "video"
+          ? "Check the Advanced values before generating. Seed must be an integer."
+          : "Check the Advanced values before generating. Seed must be an integer, steps must be 1–200, and guidance must be 0–100.",
+      );
       return;
     }
 
@@ -598,7 +625,7 @@ export function CreateWorkspace({
           output: {
             kind: outputKind,
             aspectRatio,
-            ...(outputKind === "video" ? { durationSeconds, audioEnabled } : {}),
+            ...(outputKind === "video" ? { resolution: videoResolution, durationSeconds, audioEnabled } : {}),
           },
           inputs,
           advanced,
@@ -798,9 +825,14 @@ export function CreateWorkspace({
 
                 {outputKind === "video" ? (
                   <VideoSettingsMenu
+                    resolution={videoResolution}
                     durationSeconds={durationSeconds}
                     audioEnabled={audioEnabled}
                     advancedOpen={advancedOpen}
+                    onResolutionChange={(value) => {
+                      setVideoResolution(value);
+                      setError(null);
+                    }}
                     onDurationChange={(value) => {
                       setDurationSeconds(value);
                       setError(null);

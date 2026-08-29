@@ -6,6 +6,7 @@ on:
     paths:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-video-generation.mjs"
+      - "scripts/verify-video-contract.ts"
       - "src/features/create/**"
       - "src/lib/capabilities/generation.ts"
       - "src/lib/api/generation-contract.ts"
@@ -23,6 +24,7 @@ on:
     paths:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-video-generation.mjs"
+      - "scripts/verify-video-contract.ts"
       - "src/features/create/**"
       - "src/lib/capabilities/generation.ts"
       - "src/lib/api/generation-contract.ts"
@@ -79,6 +81,9 @@ jobs:
       - name: Install media inspection tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
+      - name: Verify Phase 7D product contract
+        run: npx --yes tsx@4.20.6 scripts/verify-video-contract.ts
+
       - name: Build
         run: npm run build
 
@@ -103,3 +108,12 @@ jobs:
       - name: Print server log on failure
         if: failure()
         run: cat /tmp/renderlab-next.log || true
+
+      - name: Upload Phase 7D contextual review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-phase7d-video-review
+          path: artifacts/phase7d-video-*
+          if-no-files-found: warn
+          retention-days: 14

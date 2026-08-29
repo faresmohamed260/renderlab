@@ -9,6 +9,7 @@ import type {
 } from "@/lib/capabilities/generation";
 import {
   defaultVideoAudioEnabled,
+  defaultVideoResolution,
   generationAdvancedCapabilities,
   generationInputAlias,
   generationInputAliasPattern,
@@ -17,6 +18,9 @@ import {
   maxGenerationInputsForOutput,
   unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
+  videoDurations,
+  videoResolutions,
+  type VideoResolution,
 } from "@/lib/capabilities/generation";
 
 export type SubmitGenerationSuccess = {
@@ -44,6 +48,8 @@ const outputKinds = new Set<OutputKind>(["image", "video"]);
 const inputRoles = new Set<GenerationInput["role"]>(["reference", "primary-image", "first-frame"]);
 const inputSourceTypes = new Set<GenerationInput["source"]["type"]>(["temporary-source", "media-asset"]);
 const frameRates = new Set<number>(generationAdvancedCapabilities.video.frameRates);
+const videoDurationSet = new Set<number>(videoDurations);
+const videoResolutionSet = new Set<string>(videoResolutions);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -80,7 +86,10 @@ function parseInputs(value: unknown): GenerationInput[] | null {
   return inputs;
 }
 
-function parseAdvanced(value: unknown): GenerationAdvancedParameters | null | undefined {
+function parseAdvanced(
+  value: unknown,
+  kind: OutputKind,
+): GenerationAdvancedParameters | null | undefined {
   if (value === undefined) return undefined;
   if (!isRecord(value)) return null;
 
@@ -95,6 +104,7 @@ function parseAdvanced(value: unknown): GenerationAdvancedParameters | null | un
     advanced.seed = value.seed as number;
   }
   if (value.steps !== undefined) {
+    if (kind !== "image") return null;
     if (
       !Number.isInteger(value.steps)
       || (value.steps as number) < generationAdvancedCapabilities.steps.min
@@ -103,6 +113,7 @@ function parseAdvanced(value: unknown): GenerationAdvancedParameters | null | un
     advanced.steps = value.steps as number;
   }
   if (value.guidance !== undefined) {
+    if (kind !== "image") return null;
     if (
       typeof value.guidance !== "number"
       || !Number.isFinite(value.guidance)
@@ -112,6 +123,7 @@ function parseAdvanced(value: unknown): GenerationAdvancedParameters | null | un
     advanced.guidance = value.guidance;
   }
   if (value.frameRate !== undefined) {
+    if (kind !== "video") return null;
     if (typeof value.frameRate !== "number" || !frameRates.has(value.frameRate)) return null;
     advanced.frameRate = value.frameRate as GenerationFrameRate;
   }
@@ -139,6 +151,7 @@ export function parseGenerationRequest(value: unknown):
   const aspectRatio = value.output.aspectRatio;
   const durationSeconds = value.output.durationSeconds;
   const audioEnabled = value.output.audioEnabled;
+  const resolution = value.output.resolution;
 
   if (typeof kind !== "string" || !outputKinds.has(kind as OutputKind)) {
     return { ok: false, error: { code: "invalid_request", message: "Output kind must be image or video." } };
@@ -201,18 +214,26 @@ export function parseGenerationRequest(value: unknown):
     };
   }
 
+  let normalizedVideoResolution: VideoResolution | undefined;
   if (kind === "video") {
-    if (!Number.isInteger(durationSeconds) || (durationSeconds as number) < 5 || (durationSeconds as number) > 30) {
-      return { ok: false, error: { code: "invalid_request", message: "Video duration must be between 5 and 30 seconds." } };
+    if (resolution === undefined) {
+      normalizedVideoResolution = defaultVideoResolution;
+    } else if (typeof resolution === "string" && videoResolutionSet.has(resolution)) {
+      normalizedVideoResolution = resolution as VideoResolution;
+    } else {
+      return { ok: false, error: { code: "invalid_request", message: "Unsupported video resolution." } };
+    }
+    if (typeof durationSeconds !== "number" || !videoDurationSet.has(durationSeconds)) {
+      return { ok: false, error: { code: "invalid_request", message: "Unsupported video duration." } };
     }
     if (audioEnabled !== undefined && typeof audioEnabled !== "boolean") {
       return { ok: false, error: { code: "invalid_request", message: "Video audio setting must be on or off." } };
     }
-  } else if (durationSeconds !== undefined || audioEnabled !== undefined) {
+  } else if (durationSeconds !== undefined || audioEnabled !== undefined || resolution !== undefined) {
     return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include video-only settings." } };
   }
 
-  const advanced = parseAdvanced(value.advanced);
+  const advanced = parseAdvanced(value.advanced, outputKind);
   if (advanced === null) {
     return { ok: false, error: { code: "invalid_request", message: "Advanced generation parameters are invalid." } };
   }
@@ -225,7 +246,11 @@ export function parseGenerationRequest(value: unknown):
         kind: kind as OutputKind,
         aspectRatio: aspectRatio as AspectRatio,
         ...(kind === "video"
-          ? { durationSeconds: durationSeconds as number, audioEnabled: audioEnabled === undefined ? defaultVideoAudioEnabled : audioEnabled }
+          ? {
+              durationSeconds: durationSeconds as number,
+              audioEnabled: audioEnabled === undefined ? defaultVideoAudioEnabled : audioEnabled,
+              resolution: normalizedVideoResolution!,
+            }
           : {}),
       },
       inputs,

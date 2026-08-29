@@ -144,6 +144,65 @@ try {
   const generate = page.getByRole("button", { name: "Generate", exact: true });
   assert(await generate.isEnabled(), "Configured Create did not enable Generate with a valid prompt for an authenticated account.");
 
+  const videoMode = page.getByRole("radio", { name: "Video", exact: true });
+  await videoMode.click();
+  const videoSettings = page.getByRole("button", { name: /^Video settings\./ });
+  assert(
+    (await videoSettings.getAttribute("aria-label")) === "Video settings. Resolution 480p. Duration 5 seconds. Audio on",
+    `Video settings did not initialize to the Phase 7D defaults: ${await videoSettings.getAttribute("aria-label")}`,
+  );
+  await videoSettings.click();
+  const defaultResolution = page.getByRole("menuitemradio", { name: "480p", exact: true });
+  assert((await defaultResolution.getAttribute("data-state")) === "checked", "480p was not the selected Video resolution default.");
+  assert(await page.getByRole("menuitemradio", { name: "2K", exact: true }).isVisible(), "2K resolution is not reachable in Video settings.");
+  assert(await page.getByRole("menuitemradio", { name: "4K", exact: true }).count() === 0, "Disabled 4K leaked into Video settings.");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-settings.png`, fullPage: true });
+  await page.getByRole("menuitemradio", { name: "1080p", exact: true }).click();
+  assert((await videoSettings.textContent())?.includes("1080p · 5 s"), "Video settings trigger did not summarize resolution and duration.");
+
+  await videoSettings.click();
+  await page.getByRole("menuitem", { name: "Advanced controls", exact: true }).click();
+  await page.getByLabel("Frame rate").waitFor({ state: "visible", timeout: 10_000 });
+  assert(await page.getByLabel("Steps").count() === 0, "Inactive Video Steps control is still rendered.");
+  assert(await page.getByLabel("Guidance").count() === 0, "Inactive Video Guidance control is still rendered.");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-advanced.png`, fullPage: true });
+
+  await page.setViewportSize(mobileViewport);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await videoSettings.click();
+  await page.getByText("Resolution", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-video-settings-reduced.png`, fullPage: true });
+  await page.keyboard.press("Escape");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.setViewportSize(desktopViewport);
+
+  let capturedVideoRequest = null;
+  await page.route("**/api/generation/jobs", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
+    capturedVideoRequest = route.request().postDataJSON();
+    await route.fulfill({
+      status: 400,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: false, error: { code: "invalid_request", message: "Intentional Phase 7D browser serialization probe." } }),
+    });
+  }, { times: 1 });
+  await generate.click();
+  await page.waitForTimeout(250);
+  assert(capturedVideoRequest?.output?.resolution === "1080p", `Create did not serialize the selected Video resolution: ${JSON.stringify(capturedVideoRequest)}`);
+  assert(capturedVideoRequest?.advanced?.frameRate === 24, "Create did not serialize the Video frame rate.");
+  assert(!("steps" in (capturedVideoRequest?.advanced || {})), "Create still serialized inactive Video Steps.");
+  assert(!("guidance" in (capturedVideoRequest?.advanced || {})), "Create still serialized inactive Video Guidance.");
+  await page.unroute("**/api/generation/jobs");
+
+  await page.getByRole("radio", { name: "Image", exact: true }).click();
+  const closeAdvanced = page.getByRole("button", { name: "Close Advanced controls" });
+  if (await closeAdvanced.isVisible()) await closeAdvanced.click();
+  assert(await page.getByLabel("Steps").count() === 0, "Closed Image Advanced controls unexpectedly remained visible.");
+  assert(await generate.isEnabled(), "Configured Create did not restore Image Generate after the Video serialization probe.");
+
   const submissionPromise = page.waitForResponse(
     (response) => {
       const url = new URL(response.url());

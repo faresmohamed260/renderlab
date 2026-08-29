@@ -77,6 +77,9 @@ export function generationInputRoleForIndex(kind: OutputKind, index: number): Ge
 }
 
 export const defaultVideoAudioEnabled = true;
+export const videoResolutions = ["480p", "720p", "1080p", "2K"] as const;
+export type VideoResolution = (typeof videoResolutions)[number];
+export const defaultVideoResolution: VideoResolution = "480p";
 
 export const generationAdvancedCapabilities = {
   seed: {
@@ -106,8 +109,6 @@ export const generationAdvancedCapabilities = {
   video: {
     defaults: {
       seed: 42,
-      steps: 11,
-      guidance: 1,
       frameRate: 24 as const,
     },
     frameRates: [24, 25, 30] as const,
@@ -137,6 +138,7 @@ export type GenerationRequest = {
     aspectRatio: AspectRatio;
     durationSeconds?: number;
     audioEnabled?: boolean;
+    resolution?: VideoResolution;
   };
   inputs: GenerationInput[];
   advanced?: GenerationAdvancedParameters;
