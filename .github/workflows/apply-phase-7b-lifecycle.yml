@@ -1,0 +1,74 @@
+name: Apply Phase 7B Lifecycle Coverage
+
+on:
+  push:
+    branches:
+      - work/phase-7b-multi-reference-v0-1
+    paths:
+      - .github/workflows/apply-phase-7b-lifecycle.yml
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply lifecycle patch
+        run: python .github/scripts/apply-phase-7b-lifecycle.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify maintained UI primitives
+        run: npm run verify:ui-purity
+
+      - name: Build
+        run: npm run build
+
+      - name: Parse configured lifecycle verifier
+        run: node --check scripts/verify-create-lifecycle.mjs
+
+      - name: Run Create request-contract tests
+        run: |
+          npx playwright install --with-deps chromium
+          npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
+          echo $! > /tmp/renderlab-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then break; fi
+            sleep 1
+          done
+          npx playwright test tests/ui/create.spec.ts
+
+      - name: Finalize product commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/apply-phase-7b-lifecycle.yml
+          rm .github/scripts/apply-phase-7b-lifecycle.py
+          rm -f package-lock.json
+          git checkout -- next-env.d.ts
+          git diff --check
+          git add -A
+          git diff --cached --check
+          git config user.name "RenderLab Phase 7B Bot"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git commit -m "Verify multi-reference Create lifecycle"
+          git push
+
+      - name: Print server log on failure
+        if: failure()
+        run: cat /tmp/renderlab-next.log || true
