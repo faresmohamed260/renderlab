@@ -271,6 +271,7 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 **Decision:** RenderLab's quality target is a premium modern creative application. shadcn/Radix and other approved maintained sources remain the default way to obtain reliable mechanics/accessibility, but feature composition should use deliberate RenderLab styling, spatial continuity, morphing/layout transitions, direct-manipulation feedback and other reviewed motion patterns when they materially improve the creative workflow.
 **Reason:** Reuse prevents needless reinvention; it does not require the product to look like default component demos or a visually basic admin tool.
 **Consequences:** Future visual reviews judge both usability and product quality. Motion must be purposeful, performant, touch/keyboard complete and reduced-motion safe; decorative physics/glow/parallax is not added merely to look AI-generated or fashionable.
+**Implementation evidence:** Phase 7A adopts Motion for React `13.1.1` only for feature-local Create spatial continuity. Exact head `51c293dad114c98754933ab192b13427a90d9570` passed UI Shell `33273370797`, configured Create Lifecycle `33273370720` and the complete 19-workflow affected suite. The configured browser proved active reference reorder motion, settled geometry and `prefers-reduced-motion` static transforms; responsive artifacts were reviewed clean. This does not create a generic animation framework or reopen reference/Resolution product contracts.
 
 
 ### UI-044 — Stable `@imageN` aliases use maintained thumbnail-picker mechanics

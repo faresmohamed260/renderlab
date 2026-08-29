@@ -169,6 +169,17 @@ try {
 
   await page.setViewportSize(mobileViewport);
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("radio", { name: "Image", exact: true }).click();
+  await page.getByRole("radio", { name: "Video", exact: true }).click();
+  const reducedModeControl = page.locator('[data-create-motion="mode-control"]');
+  await page.waitForFunction(
+    () => document.querySelectorAll('[data-create-motion="mode-control"]').length === 1,
+    undefined,
+    { timeout: 10_000 },
+  );
+  await reducedModeControl.waitFor({ state: "visible", timeout: 10_000 });
+  const reducedModeTransform = await reducedModeControl.evaluate((element) => getComputedStyle(element).transform);
+  assert(reducedModeTransform === "none", `Reduced-motion mode transition still applied a transform: ${reducedModeTransform}`);
   await videoSettings.click();
   await page.getByText("Resolution", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-video-settings-reduced.png`, fullPage: true });
@@ -374,8 +385,30 @@ try {
 
   await page.setViewportSize(desktopViewport);
   await page.waitForTimeout(250);
+  const movingReference = page.locator('[data-reference-alias="image2"]');
+  const beforeReorder = await movingReference.boundingBox();
+  assert(beforeReorder, "Could not measure @image2 before reference reorder.");
   await page.getByRole("button", { name: "Reference actions for @image2" }).click();
   await page.getByRole("menuitem", { name: "Make primary", exact: true }).click();
+  await page.waitForFunction(
+    () => {
+      const element = document.querySelector('[data-reference-alias="image2"]');
+      return element && getComputedStyle(element).transform !== "none";
+    },
+    undefined,
+    { timeout: 2_000 },
+  );
+  await page.waitForFunction(
+    () => {
+      const element = document.querySelector('[data-reference-alias="image2"]');
+      return element && getComputedStyle(element).transform === "none";
+    },
+    undefined,
+    { timeout: 3_000 },
+  );
+  const afterReorder = await movingReference.boundingBox();
+  assert(afterReorder && afterReorder.y < beforeReorder.y, "@image2 did not visibly move into the primary reference slot.");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-reference-reordered.png`, fullPage: true });
 
   const primaryRow = page.getByText("Primary image", { exact: true }).locator("..").locator("..");
   const secondaryRow = page.getByText("Reference image", { exact: true }).locator("..").locator("..");
