@@ -338,7 +338,7 @@ Initial submission may try another worker only before a provider call ID is acce
 
 Search/upload/download/rename/account configured verifiers do not invoke ComfyUI. Generation Image/Edit and Video/Animate verifiers do invoke the configured worker fleet.
 
-## External Generation & Studio Compatibility Boundary
+## External Generation Boundary
 Current product generation routing is:
 1. an intentionally configured **authenticated external RenderLab backend** only when both `RENDERLAB_GENERATION_BACKEND_URL` and `RENDERLAB_GENERATION_BACKEND_TOKEN` are present;
 2. RenderLab-native orchestration when shared Supabase/R2 credentials are configured;
@@ -346,7 +346,7 @@ Current product generation routing is:
 
 For the external path, RenderLab sends `Authorization: Bearer <server-token>` plus `x-renderlab-owner-id` on submit and poll. The external service must authenticate the bearer token before trusting the forwarded owner ID. A bare owner header is not an authorization boundary.
 
-`src/server/generation/studio-compat.ts` remains transitional migration/debugging code only. It is **not part of current product generation routing** and must not become a deployed Studio runtime dependency. Remove the adapter when no migration/debugging workflow requires it.
+The transitional Studio compatibility adapter has been removed after repository audit confirmed it was not part of current product generation routing. RenderLab no longer recognizes a Studio compatibility runtime URL; generation stays on the authenticated external RenderLab backend or RenderLab-native orchestration described above.
 
 ## Temporary Reference Upload Flow
 ```text
@@ -398,7 +398,6 @@ R2 credentials currently require Admin Read & Write because configured browser u
 - `CLOUDFLARE_API_TOKEN` — REST CORS fallback
 - `RENDERLAB_GENERATION_BACKEND_URL` — optional external RenderLab generation service; only active together with the token below
 - `RENDERLAB_GENERATION_BACKEND_TOKEN` — server-only bearer secret required to authenticate the optional external generation service before `x-renderlab-owner-id` is trusted
-- `RENDERLAB_STUDIO_COMPAT_URL` — transitional migration/debugging compatibility only; not current product generation routing
 
 ## Security Rules
 - Never commit service-role/R2/provider/backend bearer credentials.
@@ -448,6 +447,5 @@ Key workflows:
 2. Through a separately authorized rollout, make owner-aware code actually live; then verify there are no unowned rows, apply corrected `0005_core_account_ownership_enforce.sql`, and confirm `NOT NULL`, immutable ownership and table-specific same-owner link triggers. Do not reverse this rollout order.
 3. Only after UI-030 is fully enforced may personal organization such as Favorites/Collections be reconsidered.
 4. Add any future public upload origin explicitly to R2 CORS before deployment/use.
-5. Remove transitional Studio compatibility when no migration/debugging need remains.
-6. Keep Library/Activity against RenderLab-owned `media_assets`/`generation_jobs`, never legacy `studio_*`.
-7. Preserve conservative duplicate-avoidance if worker routing evolves.
+5. Keep Library/Activity against RenderLab-owned `media_assets`/`generation_jobs`, never legacy `studio_*`.
+6. Preserve conservative duplicate-avoidance if worker routing evolves.
