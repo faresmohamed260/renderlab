@@ -1,0 +1,44 @@
+name: Phase 7D Decision Diff Cleanup
+
+on:
+  push:
+    branches:
+      - plan/phase-7d-video-resolution-contract
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore decision history and append UI-048 only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show origin/main:docs/ui/UI_DECISIONS.md > docs/ui/UI_DECISIONS.md
+          cat >> docs/ui/UI_DECISIONS.md <<'EOF'
+
+### UI-048 — Video resolution is contextual and 480p remains the default
+**Status:** Accepted
+**Decision:** Phase 7D exposes exactly `480p`, `720p`, `1080p` and `2K` as a Video-only **Resolution** setting inside the existing compact Video settings Dropdown Menu. `480p` remains the default; disabled `4K` stays hidden and server-rejected. Canonical Video intent carries `output.resolution` and persists it explicitly after server normalization. Video Steps/Guidance are removed from the product surface and rejected on new Video requests because the deployed REDGraft contract does not expose `steps`/`cfg`; Image Steps/Guidance remain unchanged.
+**Reason:** Live audit `33266905978` verifies the four enabled resolution classes, a live `480p` gateway default, and no active Video `steps`/`cfg`. Phase 6 proved one bounded 720p generation, but higher-mode latency/capacity/cost evidence is not exhaustive and provider cost/deployment-wide capacity are not reliably observable. Calling the control `Quality` or silently raising the default would imply guarantees the product cannot currently support.
+**Consequences:** The Video settings trigger summarizes the current resolution + duration, while the menu orders Resolution, Duration, Audio and Advanced. Video Advanced retains only negative prompt, seed and frame rate. Resolution composes with all curated fixed Video ratios and source-backed Animate `Original`, duration, 24/25/30 fps and Audio without changing durable source media. The existing maintained Button/DropdownMenu/Collapsible/Field/Input/NativeSelect layer is reused; no new generic primitive, route, model/provider selector, schema or infrastructure surface is introduced. Historical jobs are not backfilled; future Retry revalidates current capability, treats legacy missing Video resolution as 480p and does not replay legacy inactive Video Steps/Guidance. Implementation requires the exact configured server/live/output/responsive/reduced-motion matrix recorded in `UI_MIGRATION.md`. This decision does not authorize deployment and does not close the separate Phase 7A premium-interaction exit item.
+EOF
+
+      - name: Commit narrowed decision diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "renderlab-doc-bot"
+          git config user.email "renderlab-doc-bot@users.noreply.github.com"
+          git rm .github/workflows/phase-7d-decisions-cleanup.yml
+          git add docs/ui/UI_DECISIONS.md
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "Narrow Phase 7D decision record"
+          git push origin HEAD:plan/phase-7d-video-resolution-contract
