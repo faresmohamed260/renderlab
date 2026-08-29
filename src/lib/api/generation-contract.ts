@@ -7,7 +7,12 @@ import type {
   GenerationRequest,
   OutputKind,
 } from "@/lib/capabilities/generation";
-import { defaultVideoAudioEnabled, generationAdvancedCapabilities } from "@/lib/capabilities/generation";
+import {
+  defaultVideoAudioEnabled,
+  generationAdvancedCapabilities,
+  imageAspectRatios,
+  videoAspectRatios,
+} from "@/lib/capabilities/generation";
 
 export type SubmitGenerationSuccess = {
   ok: true;
@@ -28,7 +33,8 @@ export type SubmitGenerationError = {
 
 export type SubmitGenerationResponse = SubmitGenerationSuccess | SubmitGenerationError;
 
-const aspectRatios = new Set<AspectRatio>(["1:1", "16:9", "9:16", "4:3", "3:4"]);
+const imageAspectRatioSet = new Set<AspectRatio>(imageAspectRatios);
+const videoAspectRatioSet = new Set<AspectRatio>(videoAspectRatios);
 const outputKinds = new Set<OutputKind>(["image", "video"]);
 const inputRoles = new Set<GenerationInput["role"]>(["reference", "primary-image", "first-frame"]);
 const inputSourceTypes = new Set<GenerationInput["source"]["type"]>(["temporary-source", "media-asset"]);
@@ -125,8 +131,23 @@ export function parseGenerationRequest(value: unknown):
     return { ok: false, error: { code: "invalid_request", message: "Output kind must be image or video." } };
   }
 
-  if (typeof aspectRatio !== "string" || !aspectRatios.has(aspectRatio as AspectRatio)) {
+  const inputs = parseInputs(value.inputs);
+  if (!inputs) {
+    return { ok: false, error: { code: "invalid_request", message: "Generation inputs are invalid." } };
+  }
+
+  const supportedAspectRatios = kind === "video" ? videoAspectRatioSet : imageAspectRatioSet;
+  if (
+    typeof aspectRatio !== "string"
+    || (aspectRatio !== "original" && !supportedAspectRatios.has(aspectRatio as AspectRatio))
+  ) {
     return { ok: false, error: { code: "invalid_request", message: "Unsupported aspect ratio." } };
+  }
+  if (aspectRatio === "original" && inputs.length === 0) {
+    return {
+      ok: false,
+      error: { code: "invalid_request", message: "Original geometry requires a source image." },
+    };
   }
 
   if (kind === "video") {
@@ -138,11 +159,6 @@ export function parseGenerationRequest(value: unknown):
     }
   } else if (durationSeconds !== undefined || audioEnabled !== undefined) {
     return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include video-only settings." } };
-  }
-
-  const inputs = parseInputs(value.inputs);
-  if (!inputs) {
-    return { ok: false, error: { code: "invalid_request", message: "Generation inputs are invalid." } };
   }
 
   const advanced = parseAdvanced(value.advanced);

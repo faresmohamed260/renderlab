@@ -6,7 +6,20 @@ export type CreativeOperation =
   | "create-video"
   | "animate-image";
 
-export type AspectRatio = "1:1" | "16:9" | "9:16" | "4:3" | "3:4";
+export type PresetAspectRatio =
+  | "1:1"
+  | "4:5"
+  | "3:4"
+  | "2:3"
+  | "9:16"
+  | "5:4"
+  | "4:3"
+  | "3:2"
+  | "16:10"
+  | "16:9"
+  | "21:9";
+
+export type AspectRatio = "original" | PresetAspectRatio;
 
 export type GenerationInputRole = "reference" | "primary-image" | "first-frame";
 
@@ -114,8 +127,12 @@ export type ContinuationAction = {
   inputRole: Extract<GenerationInputRole, "primary-image" | "first-frame">;
 };
 
-export const imageAspectRatios: AspectRatio[] = ["1:1", "16:9", "9:16", "4:3", "3:4"];
-export const videoAspectRatios: AspectRatio[] = ["16:9", "9:16", "1:1"];
+export const imageAspectRatios: PresetAspectRatio[] = [
+  "1:1", "4:5", "3:4", "2:3", "9:16", "5:4", "4:3", "3:2", "16:10", "16:9", "21:9",
+];
+export const videoAspectRatios: PresetAspectRatio[] = [
+  "1:1", "4:5", "3:4", "2:3", "9:16", "5:4", "4:3", "3:2", "16:10", "16:9", "21:9",
+];
 export const videoDurations = [5, 10, 15, 20, 30] as const;
 
 const imageContinuationActions: ContinuationAction[] = [

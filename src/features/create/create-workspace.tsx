@@ -1,11 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { ImageIcon, MoreHorizontal, Plus, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, ImageIcon, MoreHorizontal, Plus, Volume2, VolumeX, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +39,7 @@ import type {
   GenerationJob,
   GenerationInputRole,
   OutputKind,
+  PresetAspectRatio,
 } from "@/lib/capabilities/generation";
 import {
   continuationActionsForMedia,
@@ -52,9 +62,49 @@ type InitialContinuation = {
 
 const maxPollRetries = 5;
 
-function nextValue<T>(values: readonly T[], current: T) {
-  const currentIndex = values.indexOf(current);
-  return values[(currentIndex + 1) % values.length];
+function AspectRatioMenu({
+  value,
+  options,
+  sourceAware,
+  onValueChange,
+}: {
+  value: AspectRatio;
+  options: readonly PresetAspectRatio[];
+  sourceAware: boolean;
+  onValueChange: (value: AspectRatio) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="secondary"
+          aria-label={`Aspect ratio ${value === "original" ? "Original" : value}`}
+          className="shrink-0 gap-1.5"
+        >
+          {value === "original" ? "Original" : value}
+          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-44">
+        <DropdownMenuLabel>Aspect ratio</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={value} onValueChange={(next) => onValueChange(next as AspectRatio)}>
+          {sourceAware ? (
+            <DropdownMenuRadioItem value="original">
+              <span className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                <span>Original</span>
+                <span className="text-xs text-text-muted">From source</span>
+              </span>
+            </DropdownMenuRadioItem>
+          ) : null}
+          {sourceAware ? <DropdownMenuSeparator /> : null}
+          {options.map((option) => (
+            <DropdownMenuRadioItem key={option} value={option}>{option}</DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 function pollRetryDelay(attempt: number) {
@@ -89,8 +139,8 @@ export function CreateWorkspace({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [prompt, setPrompt] = useState("");
   const [outputKind, setOutputKind] = useState<OutputKind>(() => initialContinuation?.action.outputKind ?? "image");
-  const [imageAspect, setImageAspect] = useState<AspectRatio>("1:1");
-  const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
+  const [imageAspect, setImageAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "1:1");
+  const [videoAspect, setVideoAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
   const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);
   const [reference, setReference] = useState<PublicMediaAsset | null>(null);
@@ -270,6 +320,8 @@ export function CreateWorkspace({
     setReferencePreviewUrl(null);
     setReference(null);
     setContinuationSource(null);
+    setImageAspect((current) => current === "original" ? "1:1" : current);
+    setVideoAspect((current) => current === "original" ? "16:9" : current);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -280,6 +332,8 @@ export function CreateWorkspace({
     setReference(null);
     setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });
     setReferencePreviewUrl(resultAsset.contentUrl);
+    setImageAspect("original");
+    setVideoAspect("original");
     setOutputKind(action.outputKind);
     setJob(null);
     setError(null);
@@ -318,6 +372,8 @@ export function CreateWorkspace({
     try {
       const asset = await uploadPersistentImageFile(file, mimeType as MediaUploadMimeType);
       setReference(asset);
+      setImageAspect("original");
+      setVideoAspect("original");
     } catch (uploadError) {
       setReference(null);
       setError(uploadError instanceof Error ? uploadError.message : "Reference upload failed.");
@@ -511,18 +567,16 @@ export function CreateWorkspace({
                   <ToggleGroupItem value="video">Video</ToggleGroupItem>
                 </ToggleGroup>
 
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    if (outputKind === "image") setImageAspect(nextValue(imageAspectRatios, imageAspect));
-                    else setVideoAspect(nextValue(videoAspectRatios, videoAspect));
+                <AspectRatioMenu
+                  value={aspectRatio}
+                  options={outputKind === "image" ? imageAspectRatios : videoAspectRatios}
+                  sourceAware={hasReference}
+                  onValueChange={(value) => {
+                    if (outputKind === "image") setImageAspect(value);
+                    else setVideoAspect(value);
+                    setError(null);
                   }}
-                  aria-label={`Aspect ratio ${aspectRatio}. Activate to choose the next ratio.`}
-                  className="shrink-0"
-                >
-                  {aspectRatio}
-                </Button>
+                />
 
                 {outputKind === "video" ? (
                   <>
@@ -540,7 +594,10 @@ export function CreateWorkspace({
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
+                      onClick={() => {
+                        const currentIndex = videoDurations.indexOf(durationSeconds);
+                        setDurationSeconds(videoDurations[(currentIndex + 1) % videoDurations.length]);
+                      }}
                       aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
                       className="shrink-0"
                     >

@@ -1,4 +1,12 @@
+import { execFile } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import sharp from "sharp";
+
+const execFileAsync = promisify(execFile);
 import {
   configuredTestAccountIdentity,
   createConfiguredTestAccount,
@@ -15,10 +23,9 @@ const fixtureAccount = configuredTestAccountIdentity("video-generation");
 const fixtureJobIds = new Set();
 const fixtureSourceIds = new Set();
 const referenceFilename = "renderlab-video-reference.png";
-const reference = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAATUlEQVR42u3PQQ0AAAgEIDX5RTeFDzdoQCepz6aeExAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQELi3oiwCAJt186UAAAAASUVORK5CYII=",
-  "base64",
-);
+const reference = await sharp({
+  create: { width: 128, height: 64, channels: 3, background: { r: 128, g: 128, b: 128 } },
+}).png().toBuffer();
 
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
@@ -140,7 +147,7 @@ async function uploadReference(account) {
   const done = await req(`${baseUrl}/api/assets/reference/upload-completions`, account, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ sourceId: uploadTicket.sourceId, width: 64, height: 64 }),
+    body: JSON.stringify({ sourceId: uploadTicket.sourceId, width: 128, height: 64 }),
   });
   if (!done.response.ok || !done.payload?.ok) {
     throw new Error(`Reference completion failed (${done.response.status}): ${JSON.stringify(done.payload)}`);
@@ -161,7 +168,7 @@ async function uploadReference(account) {
   return uploadTicket.sourceId;
 }
 
-async function verifyAsset(account, assetId) {
+async function verifyAsset(account, assetId, expectedAspect) {
   const meta = await req(`${baseUrl}/api/media/assets/${encodeURIComponent(assetId)}`, account, {
     headers: { accept: "application/json" },
   });
@@ -175,9 +182,28 @@ async function verifyAsset(account, assetId) {
   if (!content.ok || !String(content.headers.get("content-type") || "").startsWith("video/")) {
     throw new Error(`Video content invalid (${content.status}, ${content.headers.get("content-type")})`);
   }
+  const directory = await mkdtemp(join(tmpdir(), "renderlab-video-"));
+  const filename = join(directory, "output.mp4");
+  try {
+    await writeFile(filename, Buffer.from(await content.arrayBuffer()));
+    const { stdout } = await execFileAsync("ffprobe", [
+      "-v", "error",
+      "-select_streams", "v:0",
+      "-show_entries", "stream=width,height",
+      "-of", "csv=p=0:s=x",
+      filename,
+    ]);
+    const [width, height] = stdout.trim().split("x").map(Number);
+    const [expectedWidth, expectedHeight] = expectedAspect.split(":").map(Number);
+    if (!(width > 0) || !(height > 0) || Math.abs(width / height - expectedWidth / expectedHeight) > 0.04) {
+      throw new Error(`Video geometry mismatch: got ${width}x${height}, expected ${expectedAspect}.`);
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 }
 
-async function generate(account, request, operation, label) {
+async function generate(account, request, operation, label, expectedAspect) {
   const submit = await req(`${baseUrl}/api/generation/jobs`, account, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -220,6 +246,7 @@ async function generate(account, request, operation, label) {
         || persistedJob.status !== "succeeded"
         || persistedJob.operation !== operation
         || persistedJob.parameters?.output?.audioEnabled !== request.output.audioEnabled
+        || persistedJob.parameters?.output?.aspectRatio !== request.output.aspectRatio
         || list.length !== 1
         || list[0].owner_id !== account.id
         || !list[0].mime_type.startsWith("video/")
@@ -229,7 +256,7 @@ async function generate(account, request, operation, label) {
       if (!job.outputAssetIds.includes(list[0].id)) {
         throw new Error(`${label} output IDs do not match persisted media.`);
       }
-      await verifyAsset(account, list[0].id);
+      await verifyAsset(account, list[0].id, expectedAspect);
       console.log(`${label} verified owner=${account.id} asset=${list[0].id}`);
       return { jobId: id, assetId: list[0].id };
     }
@@ -260,6 +287,7 @@ try {
     },
     "create-video",
     "Create Video",
+    "16:9",
   );
 
   sourceId = await uploadReference(account);
@@ -267,11 +295,12 @@ try {
     account,
     {
       prompt: "Slowly rotate the sphere with a subtle camera push-in",
-      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: true },
+      output: { kind: "video", aspectRatio: "original", durationSeconds: 5, audioEnabled: true },
       inputs: [{ source: { type: "temporary-source", id: sourceId }, role: "first-frame" }],
     },
     "animate-image",
-    "Animate Image",
+    "Animate Image Original",
+    "2:1",
   );
 
   console.log(`Native Create Video + Animate Image integration verified successfully for owner=${account.id}.`);

@@ -9,6 +9,7 @@ import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
 import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
+import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 
 type WorkflowConfig = {
   id: string;
@@ -86,11 +87,6 @@ const explicitUnavailablePatterns = [
   "app is stopped",
   "app stopped",
 ];
-
-const grayPng = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAATUlEQVR42u3PQQ0AAAgEIDX5RTeFDzdoQCepz6aeExAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQELi3oiwCAJt186UAAAAASUVORK5CYII=",
-  "base64",
-);
 
 function workflowFor(request: GenerationRequest): WorkflowConfig {
   const operation = resolveCreativeOperation(request);
@@ -213,11 +209,61 @@ async function resolveInputs(ownerId: string, request: GenerationRequest): Promi
   return resolved;
 }
 
-function buildForm(request: GenerationRequest, workflow: WorkflowConfig, sources: InputBytes[]) {
+type PreparedWorkerPayload = {
+  sources: InputBytes[];
+  aspectRatio: string;
+};
+
+async function prepareWorkerPayload(
+  request: GenerationRequest,
+  workflow: WorkflowConfig,
+  sources: InputBytes[],
+): Promise<PreparedWorkerPayload> {
+  const operation = resolveCreativeOperation(request);
+
+  if (workflow.kind === "image") {
+    if (operation === "create-image") {
+      if (request.output.aspectRatio === "original") {
+        throw new Error("Original geometry requires a source image.");
+      }
+      return {
+        sources: [await createImageGenerationCanvas(request.output.aspectRatio)],
+        aspectRatio: request.output.aspectRatio,
+      };
+    }
+
+    if (!sources.length) throw new Error("Image editing requires a source image.");
+    if (request.output.aspectRatio === "original") {
+      return { sources, aspectRatio: "original" };
+    }
+
+    const [primary, ...rest] = sources;
+    const preparedPrimary = await prepareImageAspectOverride(primary.bytes, request.output.aspectRatio);
+    return {
+      sources: [
+        {
+          bytes: preparedPrimary,
+          contentType: "image/png",
+          filename: `${primary.filename.replace(/\.[^.]+$/, "")}-renderlab-${request.output.aspectRatio.replace(":", "x")}.png`,
+        },
+        ...rest,
+      ],
+      aspectRatio: request.output.aspectRatio,
+    };
+  }
+
+  if (request.output.aspectRatio !== "original") {
+    return { sources, aspectRatio: request.output.aspectRatio };
+  }
+  const primary = sources[0];
+  if (!primary) throw new Error("Original geometry requires a source image.");
+  return { sources, aspectRatio: await sourceVideoAspectRatio(primary.bytes) };
+}
+
+function buildForm(request: GenerationRequest, workflow: WorkflowConfig, prepared: PreparedWorkerPayload) {
   const form = new FormData();
   if (workflow.kind === "image") {
-    const imageSources = sources.length ? sources : [{ bytes: grayPng, contentType: "image/png", filename: "canvas.png" }];
-    for (const source of imageSources) {
+    for (const source of prepared.sources) {
       form.append("image_files", new Blob([Uint8Array.from(source.bytes).buffer], { type: source.contentType }), source.filename);
     }
     form.append("prompt", request.prompt);
@@ -229,7 +275,7 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, sources
     return form;
   }
 
-  const source = sources[0];
+  const source = prepared.sources[0];
   if (source) form.append("image_file", new Blob([Uint8Array.from(source.bytes).buffer], { type: source.contentType }), source.filename);
   form.append("prompt", request.prompt);
   form.append("negative_prompt", request.advanced?.negativePrompt ?? "");
@@ -239,7 +285,7 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, sources
   form.append("resolution", workflow.defaults.resolution!);
   form.append("duration_seconds", String(request.output.durationSeconds ?? workflow.defaults.durationSeconds));
   form.append("audio_enabled", String(request.output.audioEnabled ?? workflow.defaults.audioEnabled));
-  form.append("aspect_ratio", request.output.aspectRatio);
+  form.append("aspect_ratio", prepared.aspectRatio);
   form.append("frame_rate", String(request.advanced?.frameRate ?? workflow.defaults.frameRate));
   return form;
 }
@@ -285,12 +331,13 @@ function failureKind(status: number, body: Record<string, unknown>) {
 }
 
 async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
+  const prepared = await prepareWorkerPayload(request, workflow, sources);
   const failures: Array<Record<string, unknown>> = [];
   for (const worker of workersForEcosystem(workflow.ecosystem)) {
     try {
       const response = await fetch(`${worker.gatewayUrl}${workflow.submitPath}`, {
         method: "POST",
-        body: buildForm(request, workflow, sources),
+        body: buildForm(request, workflow, prepared),
         cache: "no-store",
       });
       if (!response.ok) {
@@ -462,6 +509,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
   }
 
   const sources = await resolveInputs(row.owner_id, request);
+  const prepared = await prepareWorkerPayload(request, workflow, sources);
   const excluded = attemptedWorkerIds(row);
   const candidate = workersForEcosystem(workflow.ecosystem).find((worker) => !excluded.has(worker.id));
   if (!candidate) return null;
@@ -483,7 +531,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
   try {
     response = await fetch(`${candidate.gatewayUrl}${workflow.submitPath}`, {
       method: "POST",
-      body: buildForm(request, workflow, sources),
+      body: buildForm(request, workflow, prepared),
       cache: "no-store",
     });
   } catch {

@@ -1,4 +1,5 @@
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import sharp from "sharp";
 import {
   configuredTestAccountIdentity,
   createConfiguredTestAccount,
@@ -113,9 +114,23 @@ async function verifyMediaAsset(account, assetId, expectedKind) {
   if (expectedKind === "video" && !contentType.startsWith("video/")) {
     throw new Error(`Media content is not a video: ${contentType}`);
   }
+  const bytes = Buffer.from(await content.arrayBuffer());
+  if (expectedKind !== "image") return null;
+  const imageMetadata = await sharp(bytes).metadata();
+  if (!imageMetadata.width || !imageMetadata.height) throw new Error("Generated image dimensions could not be read.");
+  return { width: imageMetadata.width, height: imageMetadata.height };
 }
 
-async function verifyGeneration(account, request, expectedOperation, label) {
+function assertAspectRatio(dimensions, expected, label) {
+  const [expectedWidth, expectedHeight] = expected.split(":").map(Number);
+  const actual = dimensions.width / dimensions.height;
+  const target = expectedWidth / expectedHeight;
+  if (Math.abs(actual - target) > 0.035) {
+    throw new Error(`${label} geometry mismatch: got ${dimensions.width}x${dimensions.height}, expected ${expected}.`);
+  }
+}
+
+async function verifyGeneration(account, request, expectedOperation, label, expectedAspect = null) {
   console.log(`Submitting ${label} through ${baseUrl}`);
   const submission = await jsonRequest(`${baseUrl}/api/generation/jobs`, account, {
     method: "POST",
@@ -163,7 +178,8 @@ async function verifyGeneration(account, request, expectedOperation, label) {
       if (!job.outputAssetIds.includes(assets[0].id)) {
         throw new Error(`${label} output IDs do not match persisted media: ${JSON.stringify({ job, assets })}`);
       }
-      await verifyMediaAsset(account, assets[0].id, request.output.kind);
+      const dimensions = await verifyMediaAsset(account, assets[0].id, request.output.kind);
+      if (expectedAspect && dimensions) assertAspectRatio(dimensions, expectedAspect, label);
       console.log(`${label} verified. owner=${account.id} job=${jobId} asset=${assets[0].id}`);
       return { jobId, assetId: assets[0].id };
     }
@@ -175,6 +191,7 @@ async function verifyGeneration(account, request, expectedOperation, label) {
 
 let createResult = null;
 let editResult = null;
+let overrideResult = null;
 try {
   await cleanupFixtureAccount();
   const account = await createConfiguredTestAccount("generation-bridge");
@@ -182,18 +199,19 @@ try {
     account,
     {
       prompt: "RenderLab integration verification: a simple blue sphere centered on a neutral studio background",
-      output: { kind: "image", aspectRatio: "1:1" },
+      output: { kind: "image", aspectRatio: "16:9" },
       inputs: [],
     },
     "create-image",
     "Create Image",
+    "16:9",
   );
 
   editResult = await verifyGeneration(
     account,
     {
       prompt: "Change the sphere to red while keeping the simple studio composition",
-      output: { kind: "image", aspectRatio: "1:1" },
+      output: { kind: "image", aspectRatio: "original" },
       inputs: [
         {
           source: { type: "media-asset", id: createResult.assetId },
@@ -202,11 +220,30 @@ try {
       ],
     },
     "edit-image",
-    "Edit Image from persisted media asset",
+    "Edit Image Original from persisted media asset",
+    "16:9",
   );
 
-  console.log(`Native Create Image -> persisted media asset -> Edit Image continuation verified successfully for owner=${account.id}.`);
+  overrideResult = await verifyGeneration(
+    account,
+    {
+      prompt: "Reframe the red sphere as a portrait while preserving the subject",
+      output: { kind: "image", aspectRatio: "4:5" },
+      inputs: [
+        {
+          source: { type: "media-asset", id: createResult.assetId },
+          role: "primary-image",
+        },
+      ],
+    },
+    "edit-image",
+    "Edit Image explicit 4:5 override",
+    "4:5",
+  );
+
+  console.log(`Native Create ratio -> Edit Original -> Edit override verified successfully for owner=${account.id}.`);
 } finally {
+  if (overrideResult?.jobId) fixtureJobIds.add(overrideResult.jobId);
   if (editResult?.jobId) fixtureJobIds.add(editResult.jobId);
   if (createResult?.jobId) fixtureJobIds.add(createResult.jobId);
   await cleanupFixtureAccount();
