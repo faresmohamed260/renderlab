@@ -1,0 +1,40 @@
+name: Temporary UI-036 Mobile Layout Fix
+
+on:
+  push:
+    branches: [tmp/ui036-implementation-sync]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/create-upload-audio-v0-1
+          fetch-depth: 0
+      - name: Keep Video controls visible on mobile
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/features/create/create-workspace.tsx')
+          text = path.read_text()
+          old = 'className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0"'
+          new = 'className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap"'
+          if old not in text:
+              raise SystemExit('Create control-row anchor not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+      - name: Commit mobile layout fix
+        shell: bash
+        run: |
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add src/features/create/create-workspace.tsx
+          git commit -m "Keep video audio controls visible on mobile"
+          git push origin HEAD:work/create-upload-audio-v0-1
