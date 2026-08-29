@@ -1,11 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
+import {
+  getRenderLabAccountAccess,
+  isRenderLabAccessEnforcementEnabled,
+} from "@/server/account/account-access";
 
-export type RenderLabAccount = {
+export type RenderLabIdentity = {
   id: string;
   email: string | null;
 };
+
+export type RenderLabAccount = RenderLabIdentity;
 
 export async function createServerSupabaseClient() {
   const config = getSupabaseAuthConfig();
@@ -34,7 +40,7 @@ function bearerToken(value: string | null) {
   return match?.[1]?.trim() || null;
 }
 
-export async function getCurrentRenderLabAccount(): Promise<RenderLabAccount | null> {
+export async function getCurrentRenderLabIdentity(): Promise<RenderLabIdentity | null> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
 
@@ -56,4 +62,18 @@ export async function getCurrentRenderLabAccount(): Promise<RenderLabAccount | n
     id: claims.sub,
     email: typeof claims.email === "string" ? claims.email : null,
   };
+}
+
+export async function getCurrentRenderLabAccount(): Promise<RenderLabAccount | null> {
+  const identity = await getCurrentRenderLabIdentity();
+  if (!identity) return null;
+  if (!isRenderLabAccessEnforcementEnabled()) return identity;
+
+  try {
+    const access = await getRenderLabAccountAccess(identity.id);
+    return access?.status === "active" ? identity : null;
+  } catch {
+    // Access enforcement is fail-closed when the server-side admission store is unavailable.
+    return null;
+  }
 }
