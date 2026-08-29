@@ -40,7 +40,6 @@ import type {
   ContinuationAction,
   GenerationInputAlias,
   GenerationJob,
-  GenerationInputRole,
   OutputKind,
   PresetAspectRatio,
 } from "@/lib/capabilities/generation";
@@ -556,8 +555,10 @@ export function CreateWorkspace({
         setMentionMenuAnchorAlias((current) => current ?? uploadAlias);
         setNextReferenceNumber((current) => current + 1);
       }
-      setImageAspect("original");
-      setVideoAspect("original");
+      if (!targetAlias && references.length === 0) {
+        setImageAspect("original");
+        setVideoAspect("original");
+      }
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Reference upload failed.");
     } finally {
