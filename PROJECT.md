@@ -50,7 +50,28 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Phase 5 — Operational & Secondary Experiences.**
+**Cycle 2 — Creative Productivity & Beta Maturity. Roadmap accepted; implementation has not started.**
+
+### Cycle 2 objective
+Move RenderLab from a solid functional MVP into a product that supports repeated serious creative work: deeper iteration, efficient media organization, useful job recovery and a production/beta experience that stays simple by default while preserving the existing account/private-media and infrastructure boundaries.
+
+Cycle 2 continues the existing phase numbering:
+- **Phase 6 — Cycle 2 Baseline & Production Hardening:** reconcile current `main` with the actual production deployment/domain, re-audit available worker/capability behavior plus latency/cost/resource constraints, and define the intended private/closed-beta/public-beta operating boundary before exposing new expensive or operational behavior. This phase must not redesign approved UI.
+- **Phase 7 — Create v2 / Deeper Creative Iteration:** first planned product slice is **Multi-reference Image Edit v0.1**, contingent on the Phase 6 capability audit. The next planned Create slice is curated **Video quality/resolution**, with user-facing choices derived from verified REDGraft capability and cost/performance evidence rather than blindly mirroring every backend value.
+- **Phase 8 — Library v2 / Media Workflow Productivity:** collection rename/delete, page-scoped batch add/remove Collection and batch Favorite/Unfavorite are the planned organization improvements. Cross-page selection remains deferred until page-scoped selection proves insufficient. Trash/restore is not implied; changing UI-033 permanent deletion requires a separate explicit product/database decision.
+- **Phase 9 — Activity v2 / Recovery & Job Control:** generation Retry is the planned first recovery mutation and must create a newly validated product generation from persisted normalized intent, not replay raw backend payloads. Cancellation is conditional on a separate execution-safety audit. A restrained global running/failed attention indicator may be added while Activity remains the operational surface and worker/provider detail remains internal.
+- **Phase 10 — Account & Beta Readiness:** add only requirement-backed continuing-product account and access controls such as recovery/password reset and, if access broadens beyond a controlled group, generation concurrency/rate/abuse boundaries. Billing/credits are not committed by this cycle and require a separate product decision.
+- **Phase 11 — Cycle 2 Release Validation:** run an exact-head end-to-end release pass across Account → Create → generation → Library → Viewer → continuation → organization → Activity → recovery, audit shared Supabase/R2/configuration state, then perform one deliberate production rollout only when explicitly authorized.
+
+### Cycle 2 scope boundary
+The accepted Cycle 2 roadmap does **not** approve generic Models or Workflows screens, ComfyUI graph editing, provider/worker management, arbitrary workflow-parameter forms, inpainting/outpainting, structural guidance, LoRA management, workflow chaining, a full billing system, a global media client store or a cross-page selection framework. Those remain future explicit product decisions. Qwen and other workflow/model identities remain internal execution choices until a concrete user-facing need justifies surfacing them.
+
+### Cycle 2 execution gate
+- Roadmap status: `ACCEPTED`.
+- Implementation status: `NOT STARTED`.
+- Current product slice: `None`.
+- Next gate: wait for explicit user authorization to start **Phase 6 — Cycle 2 Baseline & Production Hardening**.
+- Phase 6 must verify current repository/production/capability reality before Multi-reference Image Edit or any other Cycle 2 feature begins.
 
 ### Approved product state
 - Application shell: `APPROVED`.

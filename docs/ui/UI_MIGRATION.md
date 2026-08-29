@@ -400,6 +400,62 @@ UI-035 replaces the Activity placeholder with the smallest useful account-privat
 
 **Video audio control status: `APPROVED` maintenance. No schema migration or unrelated Create redesign was introduced.**
 
+## Cycle 2 — Creative Productivity & Beta Maturity
+
+**Roadmap status: `ACCEPTED`. Implementation status: `NOT STARTED`.**
+
+Cycle 1 / Phases 0–5 and the post-Phase-5 production-usability maintenance established the product foundation. Cycle 2 is a new development cycle focused on repeated creative productivity and beta maturity; it must not reinterpret completed Cycle 1 work as unfinished backlog.
+
+### Phase 6 — Cycle 2 Baseline & Production Hardening
+- [ ] Re-establish exact current `main` and verify the actual Vercel production deployment SHA, aliases/custom domain and relevant environment state before relying on production behavior.
+- [ ] Run the critical production-domain user journeys needed to establish a Cycle 2 baseline without redesigning approved Create/Library/Viewer/Activity surfaces.
+- [ ] Re-audit the currently available native/external generation capability and worker behavior, including multi-reference support and video resolution support, against repository contracts rather than Saga assumptions.
+- [ ] Record latency/cost/resource constraints that should influence defaults or limits before exposing additional expensive controls.
+- [ ] Decide the intended operating boundary for this cycle (private product, closed beta or broader beta) so rate/concurrency/abuse requirements are evidence-driven.
+- [ ] Update authoritative architecture/capability/infrastructure docs from the verified baseline before selecting the first implementation branch.
+
+**Phase 6 gate:** do not begin Cycle 2 implementation until the user explicitly authorizes the phase. Completing the planning documentation does not satisfy the baseline audit.
+
+### Phase 7 — Create v2 / Deeper Creative Iteration
+- [ ] **Multi-reference Image Edit v0.1** — planned first product slice after Phase 6, contingent on verified backend support. Extend the capability/input-slot contract and the existing Create workspace without adding a separate Edit app or generic workflow form.
+- [ ] Preserve the simple one-reference case; reveal additional reference slots only when used and keep temporary/durable media identities opaque and owner-safe.
+- [ ] Verify multi-reference normalization, server validation, persistence, responsive interaction and continuation without exposing workflow/provider/ComfyUI identity.
+- [ ] **Video quality/resolution v0.1** — after cost/performance audit, expose a curated understandable quality/resolution choice derived from verified REDGraft support. Do not blindly expose every backend value or move it into infrastructure UI.
+- [ ] Keep Models/Workflows and Qwen selection internal unless a separate user-facing requirement justifies a deliberate product choice.
+
+### Phase 8 — Library v2 / Media Workflow Productivity
+- [ ] Collection Rename as an owner-scoped Library/Viewer organization contract.
+- [ ] Collection Delete with explicit membership/media consequences; deleting a collection must not imply deleting its media.
+- [ ] Reuse UI-034 page-scoped selection for batch Add/Remove Collection rather than inventing a global media store.
+- [ ] Reuse UI-034 page-scoped selection for batch Favorite/Unfavorite.
+- [ ] Keep cross-page selection deferred until real usage shows the page-scoped model is insufficient.
+- [ ] Treat Trash/restore/retention as a separate explicit decision because UI-033 currently makes deletion permanent to the user and tombstone reversal is forbidden.
+- [ ] Avoid adding persistent card-action clutter merely because an operation exists; preserve the approved media-first Library hierarchy.
+
+### Phase 9 — Activity v2 / Recovery & Job Control
+- [ ] **Generation Retry v0.1** — planned first Activity mutation. Retry must create a new owner-scoped generation job from persisted normalized product intent after revalidating current capability, parameters, referenced media and availability; do not replay raw historical worker/ComfyUI payloads.
+- [ ] Audit cancellation semantics by execution state/provider before approving any Cancel UI. A `cancelled` product state alone does not prove safe cancellation behavior.
+- [ ] If verified useful, add restrained shell-level running/failed attention while keeping Activity the operational surface and preserving UI-011/UI-035 worker/provider/workflow privacy.
+- [ ] Do not introduce a global client job store merely for Activity refresh/status presentation.
+
+### Phase 10 — Account & Beta Readiness
+- [ ] Add account recovery/password reset only through the maintained Supabase Auth/session boundary and only after defining the exact user flow.
+- [ ] Improve requirement-backed verification/session failure handling without turning Settings into infrastructure administration.
+- [ ] If the operating boundary expands beyond a controlled group, establish server-enforced generation concurrency/rate/abuse limits before broad access.
+- [ ] Evaluate account/data-deletion requirements separately from UI-033 media deletion.
+- [ ] Billing/credits are explicitly not committed by Cycle 2; monetization requires a separate product decision and scope.
+
+### Phase 11 — Cycle 2 Release Validation
+- [ ] Run exact-head GitHub validation for every affected slice and a final integrated Account → Create → generation → Library → Viewer → continuation → organization → Activity → recovery path.
+- [ ] Review required desktop/narrow implementation artifacts and accessibility/reduced-motion behavior; a passing build alone is insufficient.
+- [ ] Audit RenderLab Supabase schema/owners/RLS/browser grants/fixtures, R2 fixtures/CORS, generation configuration and custom-domain production routing.
+- [ ] Record the final approved application SHA and release evidence in the authoritative docs.
+- [ ] Deploy to Vercel only with explicit user authorization; merge remains distinct from deployment.
+- [ ] Reverify the live custom-domain product after the deliberate rollout and clean all configured verification fixtures.
+
+### Cycle 2 explicit non-commitments
+Generic Models/Workflows screens, ComfyUI graph editing, provider/worker management, arbitrary workflow-parameter generation, inpainting/outpainting, pose/depth/edge guidance, LoRA management, workflow chaining, full billing, a global media client store and cross-page selection are not part of the accepted Cycle 2 backlog. Any of them requires a new explicit product slice/decision.
+
 ## Feature/Surface Procedure
 1. Establish the user goal and required behavior.
 2. Inspect applicable RenderLab decisions/components and architecture.
@@ -414,12 +470,13 @@ UI-035 replaces the Activity placeholder with the smallest useful account-privat
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current phase:** Phase 5 complete; post-Phase-5 production usability maintenance is complete.
-**Current product slice:** None. Activity v0.1 / UI-035 is complete and approved; PR #36 custom-domain upload CORS and PR #37 / UI-036 Video audio maintenance are also complete.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity roadmap is accepted; implementation has not started.
+**Current phase:** Phase 6 — Cycle 2 Baseline & Production Hardening is next, but is not started.
+**Current product slice:** None. Do not create an implementation branch or begin the Phase 6 audit until the user explicitly authorizes starting the cycle.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, Durable Media Delete PR #25 / UI-033, Library Batch Delete PR #29 / UI-034, and Activity PR #34 / UI-035 are merged and approved.
-**Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing; PR #36 added the custom production upload origin to configured R2 CORS coverage; PR #37 / UI-036 added the verified Video audio on/off contract.
-**Current gate:** None. The currently defined Phase 5 backlog and the latest production usability maintenance are complete.
-**Next product slice:** None selected. Models/Workflows and additional capability-specific experiences were evaluated against the current verified capability set and are not justified as separate surfaces today; future approved user goals require new explicit contracts.
-
+**Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing; PR #36 added the custom production upload origin to configured R2 CORS coverage; PR #37 / UI-036 added the verified Video audio on/off contract; PR #39 recorded custom-domain DNS activation and separated the zone-DNS Cloudflare token from R2-admin authority.
+**Current gate:** Await explicit user authorization to start Phase 6. Planning acceptance is not implementation approval and does not authorize deployment.
+**Next planned feature slice after Phase 6:** Multi-reference Image Edit v0.1, contingent on the baseline capability audit. Video quality/resolution follows as the next planned Create v2 slice. Library v2, Activity v2, Account/Beta readiness and final Cycle 2 release validation follow in the accepted Phase 8–11 order unless the user deliberately changes the roadmap.
+**Persistent scope boundary:** Models/Workflows remain non-destinations; new workflow/model/provider capability does not surface automatically. Trash/restore, cancellation and billing each require their own evidence/decision and are not implied by the Cycle 2 roadmap.
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
