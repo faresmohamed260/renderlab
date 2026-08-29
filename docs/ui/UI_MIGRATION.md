@@ -577,10 +577,123 @@ Make Create capable of richer reference-driven image/video work without turning 
 - [x] Record the Phase 7C live-contract drift: deployed `/jobs/video` does not expose `steps` or `cfg`; a non-generating invalid-duration probe with `steps=999` and `cfg=999` still reached duration validation, confirming those extras are inactive live controls. Reconcile Video steps/guidance before Phase 7D is accepted.
 
 #### Phase 7D — Video Quality / Resolution
-- [ ] Add a curated Video quality/resolution product choice from verified `480p`, `720p`, `1080p`, `2K`; keep disabled `4K` hidden.
-- [ ] Decide default resolution from verified latency/resource/quality evidence; do not silently raise the default merely because higher modes exist.
-- [ ] Validate resolution with aspect, duration, fps, audio and Director/reference geometry; server validation remains authoritative.
-- [ ] Keep resolution contextual to Video rather than adding infrastructure/model UI.
+**Contract status:** `EXPANDED/PLANNED`
+**Execution status:** `NOT STARTED` — this contract merge establishes the Phase 7D implementation boundary; no Phase 7D code or deployment is included.
+
+##### Goal
+Give Video and Animate users an explicit, truthful delivery-resolution choice backed by the deployed REDGraft contract, while removing Video tuning controls that the deployed worker does not actually expose. Preserve the Phase 7A de-crowded Create hierarchy and keep provider/model/runtime complexity internal.
+
+##### Verified evidence boundary
+- Live audit `33266905978` verified both configured REDGraft gateways expose the same `/jobs/video` multipart fields: required `prompt`; optional `negative_prompt`, `seed`, `resolution`, `duration_seconds`, `audio_enabled`, `aspect_ratio`, `frame_rate`, and at most one `image_file`.
+- The same live OpenAPI reports `resolution` as a string with worker default `480p`. Runtime health on NVIDIA A10 reports enabled resolutions `480p`, `720p`, `1080p`, `2K` and frame rates 24/25/30. Internal `4K` metadata is disabled and is not a product capability.
+- Phase 6 live evidence includes a bounded `720p`, `16:9`, 5-second, 24-fps, audio-off generation that produced a verified `1280×720` MP4 in 62.7s total / about 59.0s worker time. Current RenderLab still submits fixed `480p`.
+- Production timing evidence is sample-only, not an SLA. Exact deployment-wide autoscaling/capacity and provider per-generation cost are not reliably observable, and RenderLab currently has no app-level per-user generation rate/concurrency/abuse limiter.
+- Live `/jobs/video` does **not** expose `steps` or `cfg`. The Phase 7C invalid-duration probe deliberately sent `steps=999` and `cfg=999`; the endpoint ignored both and reached duration validation. They are not active deployed Video controls.
+
+##### Product resolution contract
+- User-facing Video resolutions are exactly **`480p`, `720p`, `1080p`, `2K`**. Preserve these literal familiar labels; do not expose disabled `4K`, arbitrary numeric dimensions or runtime preset names.
+- User-facing language is **Resolution**, not `Quality`. Resolution is the verified worker capability; calling the selector Quality would imply broader perceptual-quality guarantees that are not established by current evidence.
+- **Default resolution remains `480p`.** It is both the current RenderLab behavior and the deployed gateway default. Do not silently increase the default while higher-resolution latency/capacity/cost evidence remains bounded or unresolved. `720p`, `1080p` and `2K` are deliberate user opt-ins.
+- Do not add `Fast`, `Balanced`, `High quality`, cost, credit or ETA labels. Current evidence does not justify those promises.
+
+##### Server-authoritative request / persistence contract
+- Add Video-only product field **`output.resolution`** with string enum semantics `"480p" | "720p" | "1080p" | "2K"`.
+- The public request boundary may accept an omitted Video resolution for backward compatibility, but the server must normalize omission to `480p` **before orchestration and persistence**. Canonical persisted Video intent therefore contains an explicit resolution.
+- Reject unknown values, wrong types/casing and `4K`. Reject `output.resolution` on Image requests as a Video-only setting. The browser is not the authority for this validation.
+- Native REDGraft submission must forward the normalized product value as multipart `resolution`; it must no longer hardwire `480p` independently of normalized intent.
+- Persist the normalized value in the existing `generation_jobs.parameters.output` JSON with aspect/duration/audio and keep provider request details out of product identity. No database migration or new durable table is justified.
+- The optional authenticated external generation adapter receives the same normalized product intent; no provider-specific resolution surface is introduced.
+
+##### Video steps / guidance reconciliation
+- **Remove Steps and Guidance from Video product controls.** Keep them unchanged for Image/FLUX, where they remain verified active controls.
+- After Phase 7D, Video Advanced contains only deployed Video controls: negative prompt, seed and frame rate. Audio remains a contextual Video setting in the compact Video menu rather than Advanced.
+- New Video requests that include `advanced.steps` or `advanced.guidance` must fail server validation instead of being silently accepted/ignored. A stale client must not be allowed to imply that inactive tuning changed execution.
+- Native `/jobs/video` multipart construction must stop sending `steps` and `cfg`. Internal runtime recipe values remain worker-owned and are not product controls.
+- Historical jobs are not rewritten or backfilled. Future Phase 9 Retry must revalidate historical normalized intent against current capability: a legacy Video job missing resolution normalizes to `480p`, and legacy Video `steps`/`guidance` are not replayed as worker parameters. Retry must never replay a raw historical worker payload.
+
+##### Interaction with existing Video settings
+- Resolution is contextual to **Video output only** and applies equally to Create Video and Animate Image. It does not create a separate Video screen, model selector or Director mode.
+- Preserve the curated Video aspect-ratio set. Fixed aspect ratios and resolution are independent product dimensions; do not infer one from the other.
+- `Original` remains available only for source-backed Animate. Animate `Original` continues deriving the source W:H for REDGraft while the selected resolution independently controls the delivery-resolution class. Resolution must not mutate, resize or replace the durable source asset.
+- Video durations remain `5, 10, 15, 20, 30` seconds, frame rates remain `24, 25, 30` fps, and Audio remains boolean with default ON. Phase 7D does not broaden those sets.
+- Do not pre-disable otherwise valid resolution/aspect/duration/fps/audio combinations without evidence. Product validation accepts the Cartesian product of the curated sets; configured live validation below is intentionally bounded. If an enabled worker mode rejects a representative supported combination, stop and reconcile the contract rather than hiding the mismatch.
+- Within one Create browser session, keep Video-specific draft state when switching Image ↔ Video, consistent with existing duration/audio/Advanced behavior. A fresh Create or fresh Animate continuation initializes resolution to `480p`; do not infer resolution from source pixel dimensions.
+
+##### UI placement and maintained component choice
+- Extend the existing Create-owned **Video settings Dropdown Menu** introduced in Phase 7A; do not add another always-visible control row or a new settings panel.
+- The compact Video settings trigger summarizes the direct values **`<resolution> · <duration>`** (for example `480p · 5 s`). Its accessible name must also include current Audio state. Aspect ratio remains the separate direct-value selector required by UI-017.
+- Menu order: **Resolution** radio group → Duration radio group → Audio checkbox → Advanced controls. The selected resolution is visible through maintained Radix Dropdown Menu radio semantics.
+- Advanced continues expanding below the primary action row through the existing maintained Collapsible. For Video it renders negative prompt, seed and frame rate only; Image Advanced continues to render its verified Image tuning controls.
+- Reuse the approved `Button`, `DropdownMenu` radio/checkbox mechanics, `Collapsible`, `Field`, `Input` and `NativeSelect` wrappers already in RenderLab. No new generic primitive, dependency or third-party mechanic is approved by this contract.
+- This slice must integrate with the approved visual language; it does **not** absorb the separate Phase 7A premium interaction/motion exit item. Do not add decorative motion merely for the new selector.
+
+##### Responsive, accessibility and reduced-motion requirements
+- Keep the Video settings trigger compact and non-overflowing on the existing narrow Create layout while keeping Generate and the aspect selector reachable. Maintain practical 44×44 touch targets and no hover-only behavior.
+- Resolution selection must be keyboard-operable with correct radio semantics, visible focus, menu focus restoration and touch parity through the maintained Radix mechanics.
+- Essential state must remain understandable with `prefers-reduced-motion: reduce`; no resolution state change may depend on animation. Existing menu/disclosure transitions must have a reduced-motion-safe equivalent.
+- Implementation review must inspect closed/open Video settings and Video Advanced on desktop and narrow/mobile output. The Advanced review must explicitly confirm Video Steps/Guidance are gone while Image Steps/Guidance remain.
+
+##### Latency / resource implications
+- Keep `480p` as the default until better evidence justifies a change. Higher resolutions may take materially more compute/time, but current evidence does not support user-facing ETA, price or resource multipliers.
+- Configured live validation records observed end-to-end/worker timing for each bounded case as **samples only**. Do not convert those observations into SLAs or marketing labels.
+- No provider-credit, GPU, autoscaling or worker-routing detail appears in ordinary Video UI. Closed-Beta operational/rate controls remain Phase 10 work.
+
+##### Exact configured validation matrix
+**Server / product-contract validation — non-generating where possible**
+- [ ] Exact resolution enum is `480p|720p|1080p|2K`; omitted Video resolution normalizes to `480p`; `4K`, unknown strings, wrong casing and non-string values reject.
+- [ ] Image requests reject `output.resolution`; Video requests persist explicit normalized `output.resolution` in `generation_jobs.parameters.output`.
+- [ ] New Video requests reject `advanced.steps` and `advanced.guidance`; Image requests continue accepting/validating their existing Steps/Guidance contract.
+- [ ] Video Advanced accepts only the verified fields needed by the product: negative prompt, seed and one of 24/25/30 fps.
+- [ ] Table-driven request validation accepts every curated fixed combination of **4 resolutions × 11 fixed Video aspect ratios × 5 durations × 3 frame rates × 2 Audio states** without spending worker generation. `Original` rejects without a source and is validated separately with one owner-scoped image source.
+- [ ] Native form inspection proves the normalized resolution is posted and Video `steps`/`cfg` are absent. Ownership/media-kind/input-count validation remains unchanged.
+
+**Bounded configured live REDGraft validation — exact implementation head**
+| Case | Operation | Resolution | Geometry | Duration | FPS | Audio | Purpose |
+| --- | --- | --- | --- | ---: | ---: | --- | --- |
+| A | Create Video | `480p` | `16:9` | 5 s | 24 | OFF | default-resolution baseline |
+| B | Create Video | `1080p` | `16:9` | 5 s | 24 | OFF | paired higher-resolution contextual review using the same prompt + seed as A |
+| C | Create Video | `720p` | `9:16` | 10 s | 25 | ON | portrait + non-default duration/fps + audio interaction |
+| D | Animate Image | `2K` | `Original` from a run-owned **2:1** image | 5 s | 30 | OFF | highest enabled mode + first-frame/source-aware geometry interaction |
+
+For every live case:
+- [ ] verify job success only after durable output persistence; inspect persisted normalized resolution/geometry/duration/fps/audio and exact owner scope;
+- [ ] inspect the encoded MP4 with media metadata tooling for actual frame dimensions/aspect, duration, frame rate and expected audio-stream presence/absence; use worker/codec alignment reality rather than inventing unverified pixel dimensions;
+- [ ] visually review the output for severe stretch/crop/encoding corruption and whether the requested creative intent remains coherent;
+- [ ] record observed timings as bounded samples, not guarantees;
+- [ ] clean the exact run-owned generation/media/reference/R2/Auth fixtures without touching user data.
+
+**Contextual output-quality review**
+- [ ] Cases A/B use the same prompt and seed so human review can compare 480p vs 1080p delivery at matched product settings. Acceptance requires both to be usable and truthfully delivered at their requested resolution class; it does **not** require pixel-identical motion/composition or claim deterministic perceptual improvement from a probabilistic model.
+- [ ] Case D must be reviewed for visible first-frame/source influence and preservation of the requested `Original` geometry without obvious stretching. RenderLab guarantees correct source/resolution/geometry mapping, not deterministic model obedience.
+
+**Exact-head application / UI gates**
+- [ ] `npm run verify:ui-purity` and production build pass.
+- [ ] At minimum UI Shell, Create Lifecycle, Generation Integration, Video Generation Integration and Account Ownership pass on the exact implementation head; every additional workflow triggered by the shared capability/request/Create paths must also pass before merge.
+- [ ] Desktop and narrow/mobile artifacts show the compact `resolution · duration` trigger, open Resolution menu, and Video Advanced without Steps/Guidance. Keyboard/focus/touch behavior and reduced-motion mode are explicitly checked.
+- [ ] Vercel automatic Git deployment remains disabled and no deployment is created or authorized by validation/merge.
+
+##### Documentation outputs
+**Contract merge:**
+- `docs/ui/UI_MIGRATION.md` — this execution-ready Phase 7D contract and current gate;
+- `docs/ui/UI_DECISIONS.md` — UI-048 resolution/default/tuning-reconciliation decision;
+- `PROJECT.md` — Phase 7D contract expanded, implementation still not started;
+- `docs/architecture/PRODUCT_CAPABILITIES.md` — accepted planned product contract separated from current verified implementation.
+
+**Implementation completion later:**
+- update `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md` and `docs/architecture/PRODUCT_CAPABILITIES.md` with exact-head/live evidence;
+- update `docs/architecture/FRONTEND_ARCHITECTURE.md` only if the normalized-request/type boundary materially changes beyond the already-approved capability architecture;
+- update `COMPONENT_CATALOG.md` / `SCREEN_REGISTRY.md` from actual composition changes, not from this plan alone;
+- update `INFRASTRUCTURE.md` only if live worker/storage/deployment reality changes.
+
+##### Phase 7D exit criteria
+- [ ] Only `480p`, `720p`, `1080p`, `2K` are user-facing; `480p` is default and disabled `4K` is hidden/rejected.
+- [ ] `output.resolution` is server-validated, canonicalized, persisted and forwarded to REDGraft for Video/Animate; Image cannot carry it.
+- [ ] Video Steps/Guidance are removed from UI/product validation/native multipart while Image Steps/Guidance remain unchanged.
+- [ ] Existing aspect/duration/fps/audio/Animate-Original semantics compose with resolution and the exact configured validation matrix passes on the implementation head.
+- [ ] Contextual real-output review is complete, including the paired 480p/1080p review and 2K Animate Original case; limitations are documented without overclaiming quality/model obedience.
+- [ ] Desktop/narrow, keyboard/touch/focus and reduced-motion review passes without re-crowding Create.
+- [ ] Exact fixtures are clean, no schema/provider/model/deployment scope drift occurred, and authoritative docs match verified reality.
+- [ ] Completing Phase 7D does **not** close Phase 7 while the separate Phase 7A premium-interaction pass remains open.
 
 #### Recommended Phase 7 evaluations — not automatic exit criteria
 - `Reuse settings` / `Remix` from persisted normalized generation intent.
@@ -629,7 +742,7 @@ Make Create capable of richer reference-driven image/video work without turning 
 #### Documentation outputs
 - `PROJECT.md` — verified Phase 7 outcomes and next-phase handoff.
 - `docs/ui/UI_MIGRATION.md` — slice status/evidence.
-- `docs/ui/UI_DECISIONS.md` — final geometry, durable-upload, reference and Director UX contracts.
+- `docs/ui/UI_DECISIONS.md` — final geometry, durable-upload, reference, Director and Video-resolution UX contracts.
 - `docs/architecture/PRODUCT_CAPABILITIES.md` — verified ratios/reference/Director/resolution capability.
 - `docs/ui/UI_SYSTEM.md`, `COMPONENT_CATALOG.md`, `SCREEN_REGISTRY.md` only where implemented composition/components/routes actually change.
 - `docs/architecture/INFRASTRUCTURE.md` only if worker/storage/admin infrastructure reality changes.
@@ -704,8 +817,8 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete under Closed Beta and the roadmap has been revised from the first production-feedback pass.
 **Current phase contract:** Phase 7 — Create v2 / Creative Direction is `EXPANDED/PLANNED`; execution is `IN PROGRESS`.
-**Current product slice:** None — Phase 7C Director Video audit is complete/deferred under UI-047 from live run `33266905978`. The next planned slice is Phase 7D Video Quality/Resolution; it has not started. The Phase 7A premium-interaction pass remains an open Phase 7 exit item.
-**Current gate:** Expand/reconcile Phase 7D from the live worker contract before implementation: expose only verified 480p/720p/1080p/2K choices, keep disabled 4K hidden, choose a deliberate default from evidence, and remove or otherwise reconcile Video steps/guidance because the deployed gateway does not expose `steps`/`cfg`. Keep provider/ComfyUI identity internal and retain the existing deployment authorization boundary.
+**Current product slice:** Phase 7D Video Quality/Resolution contract is `EXPANDED/PLANNED`; implementation has not started. UI-048 locks the 480p default, Resolution language, exact 480p/720p/1080p/2K set and removal of inactive Video Steps/Guidance. The Phase 7A premium-interaction pass remains an open Phase 7 exit item.
+**Current gate:** With the Phase 7D contract merged, the next authorized work is Phase 7D implementation from UI-048: Resolution (not Quality), 480p default, verified 480p/720p/1080p/2K only, canonical `output.resolution`, inactive Video Steps/Guidance removed/rejected, bounded contextual live-output review, and no provider/ComfyUI/deployment scope drift.
 **Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Quality/Resolution.
 **Later Cycle 2:** Phase 8 Library v2 → Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
