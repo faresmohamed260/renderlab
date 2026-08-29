@@ -1,0 +1,40 @@
+name: Temporary Activity Final Docs Sync
+
+on:
+  push:
+    branches:
+      - tmp/activity-final-doc-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/activity-final-doc-sync
+          fetch-depth: 0
+
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/activity-v0-1
+          path: target
+          fetch-depth: 0
+
+      - name: Patch finalized Activity state
+        run: python .github/tmp/update-activity-final-docs.py target
+
+      - name: Validate and push target handoff
+        working-directory: target
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs src/features/activity/activity-view.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Finalize Activity v0.1 contract"
+          git push origin HEAD:work/activity-v0-1
