@@ -25,7 +25,7 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
   await page.screenshot({ path: "artifacts/create-desktop-image.png", fullPage: true });
 });
 
-test("Create switches to video essentials without exposing backend workflow details", async ({ page }) => {
+test("Create keeps Video duration, audio, and Advanced contextual without exposing backend workflow details", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/");
 
@@ -33,36 +33,36 @@ test("Create switches to video essentials without exposing backend workflow deta
 
   await expect(page.getByRole("heading", { name: "Create a video" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Aspect ratio 16:9/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();
-  const audio = page.getByRole("button", { name: "Audio on" });
-  await expect(audio).toBeVisible();
-  await expect(audio).toHaveAttribute("aria-pressed", "true");
+  const settings = page.getByRole("button", { name: /Video settings\. Duration 5 seconds\. Audio on/ });
+  await expect(settings).toBeVisible();
+  await expect(page.getByRole("button", { name: "Audio on", exact: true })).toHaveCount(0);
+  await settings.click();
+  await expect(page.getByRole("menuitemradio", { name: "5 seconds", exact: true })).toHaveAttribute("data-state", "checked");
+  const audio = page.getByRole("menuitemcheckbox", { name: "Audio" });
+  await expect(audio).toHaveAttribute("data-state", "checked");
   await audio.click();
-  await expect(page.getByRole("button", { name: "Audio off" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: /Video settings\. Duration 5 seconds\. Audio off/ })).toBeVisible();
   await expect(page.getByText("workflow", { exact: false })).toHaveCount(0);
 
   await page.screenshot({ path: "artifacts/create-desktop-video.png", fullPage: true });
 });
 
-test("mobile Video keeps audio available in the essentials row", async ({ page }) => {
+test("mobile Video keeps the essential row compact and contextual settings reachable", async ({ page }) => {
   await page.setViewportSize(mobileViewport);
   await page.goto("/");
 
   await page.getByRole("radio", { name: "Video", exact: true }).click();
-  const audio = page.getByRole("button", { name: "Audio on" });
-  await expect(audio).toBeVisible();
-  await expect(audio).toHaveAttribute("aria-pressed", "true");
-  const audioBox = await audio.boundingBox();
-  expect(audioBox).not.toBeNull();
-  expect(audioBox!.x).toBeGreaterThanOrEqual(0);
-  expect(audioBox!.x + audioBox!.width).toBeLessThanOrEqual(mobileViewport.width);
-  const duration = page.getByRole("button", { name: /Duration 5 seconds/ });
-  await expect(duration).toBeVisible();
-  const durationBox = await duration.boundingBox();
-  expect(durationBox).not.toBeNull();
-  expect(durationBox!.x).toBeGreaterThanOrEqual(0);
-  expect(durationBox!.x + durationBox!.width).toBeLessThanOrEqual(mobileViewport.width);
-  await expect(page.getByRole("button", { name: "Open Advanced controls" })).toBeVisible();
+  const settings = page.getByRole("button", { name: /Video settings\. Duration 5 seconds\. Audio on/ });
+  await expect(settings).toBeVisible();
+  const settingsBox = await settings.boundingBox();
+  expect(settingsBox).not.toBeNull();
+  expect(settingsBox!.x).toBeGreaterThanOrEqual(0);
+  expect(settingsBox!.x + settingsBox!.width).toBeLessThanOrEqual(mobileViewport.width);
+  await settings.click();
+  await expect(page.getByRole("menuitemradio", { name: "5 seconds", exact: true })).toBeVisible();
+  await expect(page.getByRole("menuitemcheckbox", { name: "Audio" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Advanced controls" })).toBeVisible();
+  await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();
 
   await page.screenshot({ path: "artifacts/create-mobile-video.png", fullPage: true });
@@ -108,7 +108,13 @@ test("mobile Create keeps Generate on its own row and Advanced remains usable", 
   await page.getByRole("button", { name: "Open Advanced controls" }).click();
   await expect(page.getByText("Advanced", { exact: true })).toBeVisible();
   await expect(page.getByRole("spinbutton", { name: "Seed" })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
+  const mobileNavigation = page.getByRole("navigation", { name: "Mobile navigation" });
+  await expect(mobileNavigation).toBeVisible();
+  const generateAfterOpen = await generate.boundingBox();
+  const navigationBox = await mobileNavigation.boundingBox();
+  expect(generateAfterOpen).not.toBeNull();
+  expect(navigationBox).not.toBeNull();
+  expect(generateAfterOpen!.y + generateAfterOpen!.height).toBeLessThan(navigationBox!.y);
   await page.screenshot({ path: "artifacts/create-mobile-advanced.png", fullPage: true });
 });
 

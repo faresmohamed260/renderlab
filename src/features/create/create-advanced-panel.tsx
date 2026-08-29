@@ -78,7 +78,7 @@ export function CreateAdvancedPanel({
   onReset: () => void;
 }) {
   return (
-    <CollapsibleContent className="mb-3 rounded-xl border border-border bg-surface-2 p-4">
+    <CollapsibleContent className="mt-3 rounded-xl border border-border bg-surface-2 p-4">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-text">Advanced</p>
