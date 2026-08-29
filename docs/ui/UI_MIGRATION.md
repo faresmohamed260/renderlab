@@ -772,13 +772,124 @@ For every live case:
 - [x] Exact-head affected CI passes, shared fixtures are clean and authoritative docs match implementation reality. The final Phase 7A head passed all 19 affected workflows; configured Create and Video fixture cleanup completed successfully.
 
 ### Phase 8 — Library v2 / Media Workflow Productivity
-- [ ] Collection Rename as an owner-scoped Library/Viewer organization contract.
-- [ ] Collection Delete with explicit membership/media consequences; deleting a collection must not imply deleting its media.
-- [ ] Reuse UI-034 page-scoped selection for batch Add/Remove Collection rather than inventing a global media store.
-- [ ] Reuse UI-034 page-scoped selection for batch Favorite/Unfavorite.
-- [ ] Ensure durable Create-originated reference/frame uploads from Phase 7 compose with existing Library search/Favorites/Collections/Viewer/Delete behavior as ordinary `media_assets`; do not create a parallel Uploads destination merely for them.
-- [ ] Keep cross-page selection deferred until real usage shows the page-scoped model is insufficient.
-- [ ] Treat Trash/restore/retention as a separate explicit decision because UI-033 currently makes deletion permanent to the user and tombstone reversal is forbidden.
+
+**Phase contract status:** `EXPANDED / PLANNED` under UI-049.
+**Execution status:** `NOT STARTED`. This contract is merged before implementation. No deployment is included or authorized.
+
+#### Goal
+Turn the existing account-private Library organization primitives into a faster repeated-work workflow without changing durable media identity or introducing a broad media-management framework. Phase 8 adds collection lifecycle management and current-page batch organization while preserving the server-owned Library dataset, URL-owned filters and the UI-034 selection boundary.
+
+#### User value
+Users should be able to maintain named collections and organize the media already visible on a Library page without opening every asset in Viewer. The workflow stays predictable: explicit target states instead of ambiguous toggles, reversible organization actions stay lightweight, permanent media Delete remains clearly separate, and collection deletion never implies media deletion.
+
+#### Verified planning starting state — merged `main` `974f2a45e80465f9929218f5a88d681a2a31ac14`
+- Phase 7 Create v2 is complete. Create-originated user uploads are ordinary owner-scoped durable `media_assets`, so Phase 8 must not create an Uploads-specific organization path.
+- Library is already `APPROVED` with server/URL-owned kind, literal search, Newest/Oldest, Favorites and Collection filters, durable upload, page-scoped selection and permanent batch Delete.
+- UI-031 stores Favorite state as nullable `media_assets.favorited_at` and exposes idempotent owner-scoped single-asset PUT/DELETE mutations.
+- UI-032 stores account-owned `media_collections` plus same-owner many-to-many `media_collection_items`; one asset may belong to multiple collections. Existing create/list and single-asset membership APIs are verified.
+- `0007_media_collections.sql` already gives `media_collection_items.collection_id` `ON DELETE CASCADE`; deleting a collection therefore removes membership rows but does not delete `media_assets`, Favorites, R2 objects or generation history. Same-owner triggers, RLS and zero browser grants remain enforced. `0009_media_asset_deletion.sql` remains the latest migration.
+- Collection names already normalize controls/whitespace, require 1–120 characters and are unique per owner by normalized name. The current service lacks rename/delete functions and there is no `/api/media/collections/[collectionId]` route.
+- `LibraryBatchSelection` already owns transient selection for exactly the current server-rendered page, is keyed by kind/search/Favorites/collection/sort/offset, and currently exposes Select Page / Clear Page / Cancel plus permanent Delete. UI-034 caps batch requests at 24 IDs and uses best-effort per-item outcomes.
+- The current Library collection selector is navigation-only and is hidden when no collection exists. Viewer remains the current create-and-add / membership surface.
+- Existing configured verification already proves two-account collection privacy, normalized-name uniqueness, idempotent membership, database same-owner enforcement, composed collection filtering, responsive Viewer/Library behavior and exact cleanup. Favorites and batch Delete have their own configured regressions.
+
+#### Ordered implementation slices
+
+##### Phase 8A — Collection Management v0.1
+1. Keep collection management inside Library. Do not add a `/collections` route or a top-level Collections destination.
+2. Make the Library Collections control reachable for a signed-in account whenever the collections service is available, including when the account currently has zero collections.
+3. Add a Library-owned `Manage collections` path from the existing collection control into a compact feature-owned inline management panel. Reuse the existing `POST /api/media/collections` create contract there so an empty account can create its first collection without visiting Viewer.
+4. Add `PATCH /api/media/collections/[collectionId]` with `{ name }`. Rename uses the exact existing create normalization, 1–120 character bound and normalized per-owner uniqueness. Missing/foreign collection IDs collapse to `collection_not_found`; duplicate/invalid names return the existing bounded invalid-request behavior.
+5. Add `DELETE /api/media/collections/[collectionId]`. The server resolves the collection under the verified owner before deletion. Success deletes the collection row and its cascade-owned membership rows only. It must not tombstone/delete media, clear Favorite state, touch R2, rewrite generation history or mutate uploaded/generated provenance.
+6. Collection Delete is intentionally separate from UI-033 media Delete and uses maintained `AlertDialog` confirmation with explicit copy that the media remains in Library.
+7. If the user deletes the collection currently selected in `collection=<uuid>`, navigate to the canonical equivalent Library view with `collection` removed and `offset` reset while preserving compatible `kind`, `q`, `sort` and `favorite` state. Deleting or renaming another collection refreshes the current server-owned view without inventing client-owned collection state.
+8. Keep Viewer focused on current-asset membership/create-and-add. Viewer must reflect renamed/deleted collections after server refresh, but Phase 8A does not duplicate collection rename/delete controls into Viewer.
+9. Compose the manager from maintained Button/DropdownMenu/Field/Input/AlertDialog/Spinner mechanics and existing Library tokens. No generic collection-management framework, modal console or new dependency is approved.
+
+##### Phase 8B — Page-scoped Batch Organization v0.1
+1. Extend the existing `LibraryBatchSelection`; do not add a second selection store/component framework. Selection remains transient, current-page only and capped to the current 24-item page.
+2. Add one non-destructive `Organize` disclosure in the selection toolbar while leaving permanent Delete visibly separate and unchanged.
+3. Batch Favorite actions are explicit target-state operations: **Favorite selected** and **Unfavorite selected**. Mixed starting states are valid; every successful item ends in the requested state. Repeated target-state requests are idempotent.
+4. Batch Collection actions choose one existing owner collection, then explicitly **Add selected** or **Remove selected**. Mixed starting membership is valid; every successful item ends in the requested membership state. Creating a collection from the batch panel is out of v0.1; the Library manager from 8A is the creation path.
+5. Add `POST /api/media/assets/batch-favorite` with `{ assetIds, favorite }` and `POST /api/media/collections/[collectionId]/items/batch` with `{ assetIds, containsAsset }`.
+6. Both batch APIs accept 1–24 UUID entries, reject an over-bound request before mutation, deduplicate valid IDs before processing and return per-item results plus a summary. The `requested` summary count follows the deduplicated result set, matching UI-034 batch Delete semantics.
+7. Batch behavior is best-effort per asset. Successful mutations are not rolled back because another asset is missing/unavailable. Missing, foreign or tombstoned assets collapse to per-item `asset_not_found` without disclosing another owner. Service failures use bounded product-level `media_unavailable` feedback.
+8. For collection batch membership, resolve the collection once under the verified owner before processing assets. Invalid/missing/foreign collection identity fails the whole request as `collection_not_found`; an unauthorized collection is never used to probe asset ownership.
+9. Non-destructive organization actions do not require destructive confirmation. Keep selection on still-visible items after completion so users can chain organization tasks. If the active Favorites or Collection filter means successful items no longer belong in the current server view, the existing refresh/item reconciliation naturally removes those items and prunes their selection.
+10. Uploaded and generated assets use the same organization APIs and UI. Phase 8 introduces no origin-specific path.
+
+#### Explicitly out of Phase 8
+- Cross-page or durable selection; Select All Across Results; a global media client store.
+- A dedicated Collections route/page, nested collections, collection covers, manual collection-item ordering, smart collections, tags or sharing/collaboration.
+- Batch Rename, batch Download, batch Delete contract changes, card-level action clutter or a generic bulk-action framework.
+- Trash/restore, tombstone reversal, retention policy or changes to the permanent UI-033/UI-034 media deletion contract.
+- R2 moves/copies/renames for collection operations or any change to durable `media-asset` identity.
+- Create, Activity, generation, worker/provider/model, billing, account lifecycle or Admin changes.
+- A new Supabase migration unless implementation reveals a concrete contract gap; if that occurs, stop and amend this contract before applying schema.
+- Deployment or Vercel/Cloudflare configuration changes.
+
+#### Accepted API / architecture boundary
+- Existing: `GET|POST /api/media/collections`, single-asset collection membership PUT/DELETE, single-asset Favorite PUT/DELETE and `POST /api/media/assets/batch-delete` remain authoritative.
+- 8A adds owner-scoped `PATCH|DELETE /api/media/collections/[collectionId]` plus matching typed contract/service functions.
+- 8B adds owner-scoped `POST /api/media/assets/batch-favorite` and `POST /api/media/collections/[collectionId]/items/batch` with explicit target-state booleans and per-item results.
+- Keep Library data/filter resolution server-owned. Client components own only the collection-manager interaction state and the existing current-page selection/action state, followed by `router.refresh()`/URL navigation.
+- Do not call Supabase service-role APIs or R2 directly from the browser. Product routes resolve the verified account and call server media services.
+- Reuse existing owner-scoped services and same-owner database guarantees rather than duplicating authorization in client state.
+
+#### Data / security / ownership implications
+- Planning evidence shows no schema migration is required. `media_collections`, `media_collection_items`, `media_assets.favorited_at`, owner immutability, same-owner membership triggers and current indexes are sufficient.
+- Collection rename changes only `name` + `updated_at`. Collection deletion deletes only the owner collection and cascade membership rows.
+- Favorite and collection membership changes never alter media content, display identity, generation provenance, upload provenance or R2 storage.
+- Tombstoned media remains ineligible for new organization membership/mutations through ordinary active-media resolution.
+- Foreign collection/media UUIDs preserve the existing not-found boundary. No response may reveal which foreign object exists.
+- Raw organization tables remain RLS-enabled, server-only and without browser grants. Exact configured tests use run-owned owners/assets/collections and exact cleanup only.
+
+#### UI / responsive / accessibility requirements
+- Preserve the current compact media-first Library toolbar; collection management is progressive disclosure, not an always-open management console.
+- The management surface must be usable when no collections exist and must keep Create/Upload/search/filter controls visually primary.
+- Collection rename uses labelled Field/Input state with Save/Cancel; only deliberate permanent collection deletion uses AlertDialog confirmation.
+- The current selection toolbar remains readable at narrow width. `Organize`, Select/Clear Page, Cancel and Delete must wrap without clipping or shrinking below practical touch targets.
+- Organization actions must be keyboard/touch operable with visible focus and status/error feedback. Do not make hover the only way to manage a collection or selected media.
+- Phase 8 requires no decorative motion. If an inline disclosure uses existing transition mechanics, reduced motion must remain a complete static equivalent.
+
+#### Validation matrix
+| Area | Required evidence before Phase 8 closes |
+| --- | --- |
+| Collection rename | Own rename, normalization, 120-char bound, normalized duplicate rejection, signed-out denial, foreign/not-found denial, list/order refresh |
+| Collection delete | Own delete, signed-out/foreign denial, membership cascade, media row/content/Favorite/history preserved, active collection URL canonicalized without `collection` and stale offset |
+| Empty collections | Signed-in Library can reach management with zero collections and create the first collection through the existing create contract |
+| Batch Favorite | Mixed favorite state -> explicit all-favorite/all-unfavorite, 1/24 bounds, 25 rejection, UUID validation, dedupe, own/foreign/deleted per-item behavior, idempotence |
+| Batch Collection | Mixed membership -> explicit add/remove target state, owner collection prevalidation, 1/24 bounds, dedupe, foreign/deleted asset behavior, idempotence |
+| Selection/filter continuity | Selection stays page-scoped and resets on Library view navigation; successful Unfavorite/Remove items disappear and are pruned when the active filter requires it |
+| Media identity | At least one uploaded-origin and one generated-origin run-owned asset organize identically; no R2 object/media identity/provenance mutation |
+| Responsive/accessibility | Desktop + narrow collection manager/delete confirmation and batch Organize states reviewed; keyboard/focus/touch/status behavior passes |
+| Security/cleanup | Two-account isolation, RLS/browser-grant invariants and exact Auth/Supabase/R2 fixture cleanup; `0009` remains latest if no contract amendment occurs |
+
+#### Remote verification plan
+- Extend the existing configured **Library Collections Visual** verifier for 8A instead of creating a redundant collection-management workflow.
+- Extend the existing page-selection/batch configured verifier for 8B so Delete regression and new organization behavior share one browser/fixture lifecycle rather than creating another full shared-resource workflow. Keep independent Library Favorites and Collections workflows as regressions.
+- Exact implementation head must pass every path-triggered workflow. Minimum acceptance set: UI Shell, Account Ownership, Library Collections, Library Favorites, Library Batch Delete/Actions, Library Lifecycle, Library Search, Library History, Library Drag Drop, Persistent Media Upload, Media Download, Media Rename and Media Delete, plus every additionally triggered workflow.
+- Phase 8-specific acceptance requires no live image/video generation spend. If Generation/Video workflows trigger from shared paths, they must still pass unchanged.
+- Human review is required for the configured desktop/narrow collection-management and batch-organization artifacts; build/DOM assertions alone are insufficient.
+
+#### Documentation outputs after verified implementation
+- `PROJECT.md` — Phase 8 slice/status evidence and Phase 9 handoff.
+- `docs/ui/UI_MIGRATION.md` — 8A/8B exact-head runs, artifact review and exit status.
+- `docs/ui/UI_DECISIONS.md` — UI-049 implementation evidence or any separately approved amendment.
+- `docs/ui/COMPONENT_CATALOG.md` — actual LibraryCollectionMenu/management and LibraryBatchSelection composition after implementation.
+- `docs/ui/SCREEN_REGISTRY.md` — verified Library/Viewer behavior after implementation.
+- `docs/architecture/FRONTEND_ARCHITECTURE.md` — actual new API/client/server boundaries after implementation.
+- `docs/architecture/INFRASTRUCTURE.md` only if shared-resource/workflow cancellation/fixture reality truly changes.
+
+#### Phase 8 exit criteria
+- [ ] 8A Collection Management is implemented and exact-head verified without a new top-level route or duplicate Viewer management surface.
+- [ ] Collection Delete demonstrably removes only the collection/memberships and preserves media, Favorite state, R2 content and generation history.
+- [ ] 8B reuses the current-page UI-034 selection model for explicit Favorite/Unfavorite and Add/Remove Collection target-state actions with bounded best-effort APIs.
+- [ ] Uploaded and generated media follow the same organization path; no parallel Uploads identity/surface is introduced.
+- [ ] Cross-page selection and Trash/restore remain deferred rather than being smuggled into the phase.
+- [ ] No schema migration is introduced unless this contract is explicitly amended from new evidence.
+- [ ] Exact-head affected CI, responsive/accessibility artifact review and exact shared-fixture cleanup all pass.
+- [ ] Authoritative documentation matches implementation reality, then Phase 9 is expanded before Activity v2 implementation begins.
 
 ### Phase 9 — Activity v2 / Recovery & Job Control
 - [ ] **Generation Retry v0.1** creates a new owner-scoped job from persisted normalized product intent after revalidating current capability, parameters and referenced media; never replay raw historical worker/ComfyUI payloads.
@@ -829,9 +940,9 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 is complete under Closed Beta and the roadmap has been revised from the first production-feedback pass.
-**Current phase contract:** Phase 7 — Create v2 / Creative Direction is `EXPANDED/EXECUTED`; execution is `COMPLETE / VERIFIED`.
-**Current product slice:** Phase 7A premium interaction/motion is `COMPLETE / VERIFIED` at exact code/test head `51c293dad114c98754933ab192b13427a90d9570`, closing the remaining Phase 7 exit item. Phase 7D remains independently complete/verified under UI-048.
-**Current gate:** Expand Phase 8 Library v2 into an execution-ready contract from current repository reality before any Phase 8 implementation. Do not reopen completed Phase 7 contracts without new evidence or an explicit decision. No deployment is authorized.
+**Current phase contract:** Phase 8 — Library v2 / Media Workflow Productivity is `EXPANDED/PLANNED` under UI-049; execution is `NOT STARTED`.
+**Current product slice:** Phase 8A Collection Management v0.1 is next, followed by Phase 8B Page-scoped Batch Organization v0.1 only after 8A is verified/merged.
+**Current gate:** Implement the accepted 8A contract against the existing owner-scoped Collections schema and Library composition. Do not start 8B early, add a schema migration, reopen completed Phase 7 contracts or deploy without the applicable evidence/authorization.
 **Phase 7 ordered slices:** 7A Create Foundation → 7B Multi-reference Image Editing → 7C Director Video → 7D Video Resolution — all complete/evaluated within their accepted boundaries.
 **Later Cycle 2:** Phase 8 Library v2 → Phase 9 Activity v2 → Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
