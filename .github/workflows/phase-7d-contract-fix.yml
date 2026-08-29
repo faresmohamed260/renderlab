@@ -1,0 +1,58 @@
+name: Phase 7D Contract Fix
+
+on:
+  push:
+    branches:
+      - plan/phase-7d-video-resolution-contract
+
+permissions:
+  contents: write
+
+jobs:
+  patch-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reuse guarded contract patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk '
+            /^[[:space:]]+python - <<'\''PY'\''$/ { capture=1; next }
+            capture && /^[[:space:]]+PY$/ { exit }
+            capture { sub(/^          /, ""); print }
+          ' .github/workflows/phase-7d-contract-patch.yml > /tmp/phase7d_patch.py
+          test -s /tmp/phase7d_patch.py
+          python /tmp/phase7d_patch.py
+
+          python - <<'PY'
+          from pathlib import Path
+
+          migration = Path("docs/ui/UI_MIGRATION.md")
+          text = migration.read_text()
+          text = text.replace("**Contract status:** `EXPANDED/PLANNED`  \n", "**Contract status:** `EXPANDED/PLANNED`\n")
+          migration.write_text(text)
+
+          decisions = Path("docs/ui/UI_DECISIONS.md")
+          text = decisions.read_text()
+          text = text.replace("**Status:** Accepted  \n", "**Status:** Accepted\n")
+          text = text.replace("remain unchanged.  \n", "remain unchanged.\n")
+          text = text.replace("product cannot currently support.  \n", "product cannot currently support.\n")
+          decisions.write_text(text)
+          PY
+
+      - name: Commit clean contract docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "renderlab-doc-bot"
+          git config user.email "renderlab-doc-bot@users.noreply.github.com"
+          git rm .github/workflows/phase-7d-contract-patch.yml .github/workflows/phase-7d-contract-fix.yml
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/architecture/PRODUCT_CAPABILITIES.md
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "Plan Phase 7D video resolution contract"
+          git push origin HEAD:plan/phase-7d-video-resolution-contract
