@@ -18,6 +18,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: work/phase-7a-create-foundation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
       - name: Apply durable Create upload patch
         run: python .github/scripts/apply-phase-7a-durable-upload.py
       - name: Validate and commit
@@ -25,7 +30,7 @@ jobs:
         run: |
           set -euo pipefail
           git diff --check
-          npm ci
+          npm install --no-audit --no-fund
           npm run verify:ui-purity
           npx tsc --noEmit
           npm run build
