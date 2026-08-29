@@ -685,7 +685,10 @@ try {
   await invalidRow.getByText("This generation can’t be retried with the current inputs and settings.", { exact: true }).waitFor({ state: "visible" });
   await page.screenshot({ path: `${artifactDir}/activity-retry-error-desktop.png`, fullPage: true });
 
-  const retryRow = page.locator("li").filter({ hasText: "Retry image study" }).first();
+  const retryRow = page.locator("li")
+  .filter({ hasText: "Retry image study" })
+  .filter({ hasText: "Generation could not be started. Retry when you’re ready." })
+  .first();
   const acceptedJobsBeforeUi = capturedBackendRequests.filter((entry) => entry.request?.prompt === "Retry image study" && entry.acceptedJobId).map((entry) => entry.acceptedJobId);
   await retryRow.getByRole("button", { name: "Retry", exact: true }).click();
   const retryingButton = retryRow.getByRole("button", { name: "Retrying…", exact: true });
@@ -711,7 +714,10 @@ try {
   ).waitFor({ state: "visible" });
   await page.screenshot({ path: `${artifactDir}/activity-retry-error-mobile.png`, fullPage: true });
 
-  const readyRow = page.locator("li").filter({ hasText: "Ready temporary source retry study" }).first();
+  const readyRow = page.locator("li")
+  .filter({ hasText: "Ready temporary source retry study" })
+  .filter({ hasText: "Generation did not complete. Retry when you’re ready." })
+  .first();
   await readyRow.getByRole("button", { name: "Retry", exact: true }).click();
   const mobileRetrying = readyRow.getByRole("button", { name: "Retrying…", exact: true });
   await mobileRetrying.waitFor({ state: "visible" });
