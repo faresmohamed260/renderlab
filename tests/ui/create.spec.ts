@@ -148,6 +148,42 @@ test("generation API validates requests and reports backend availability truthfu
   expect(originalBody.ok).toBe(false);
   expect(originalBody.error.message).toContain("requires a source image");
 
+  const unresolvedReference = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "Put @image2 in softer light",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [
+        { alias: "image1", source: { type: "temporary-source", id: "fixture-source" }, role: "primary-image" },
+      ],
+    },
+  });
+  expect(unresolvedReference.status()).toBe(400);
+  const unresolvedBody = await unresolvedReference.json();
+  expect(unresolvedBody.error.message).toContain("@image2");
+
+  const duplicateAliases = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "A valid prompt",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [
+        { alias: "image1", source: { type: "temporary-source", id: "fixture-a" }, role: "primary-image" },
+        { alias: "image1", source: { type: "temporary-source", id: "fixture-b" }, role: "reference" },
+      ],
+    },
+  });
+  expect(duplicateAliases.status()).toBe(400);
+
+  const legacyPositionalAlias = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "Use @image1 as the source",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [
+        { source: { type: "temporary-source", id: "fixture-source" }, role: "primary-image" },
+      ],
+    },
+  });
+  expect(legacyPositionalAlias.status()).toBe(401);
+
   const invalidAdvanced = await request.post("/api/generation/jobs", {
     data: {
       prompt: "A valid prompt",

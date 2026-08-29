@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDown, ImageIcon, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -27,6 +27,7 @@ import {
   createAdvancedDraft,
   type AdvancedDraft,
 } from "@/features/create/create-advanced-panel";
+import { CreateReferenceMentionMenu } from "@/features/create/create-reference-mention-menu";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import {
   maxMediaUploadBytes,
@@ -37,6 +38,7 @@ import { uploadPersistentImageFile } from "@/lib/browser/media-upload-client";
 import type {
   AspectRatio,
   ContinuationAction,
+  GenerationInputAlias,
   GenerationJob,
   GenerationInputRole,
   OutputKind,
@@ -45,7 +47,9 @@ import type {
 import {
   continuationActionsForMedia,
   defaultVideoAudioEnabled,
+  generationInputAlias,
   imageAspectRatios,
+  unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
   videoDurations,
 } from "@/lib/capabilities/generation";
@@ -197,6 +201,8 @@ export function CreateWorkspace({
   initialContinuationError?: string | null;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const promptInputRef = useRef<HTMLTextAreaElement>(null);
+  const promptSelectionRef = useRef({ start: 0, end: 0 });
   const [prompt, setPrompt] = useState("");
   const [outputKind, setOutputKind] = useState<OutputKind>(() => initialContinuation?.action.outputKind ?? "image");
   const [imageAspect, setImageAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "1:1");
@@ -212,6 +218,12 @@ export function CreateWorkspace({
   const [referencePreviewUrl, setReferencePreviewUrl] = useState<string | null>(() =>
     initialContinuation?.asset.contentUrl ?? null,
   );
+  const [referenceAlias, setReferenceAlias] = useState<GenerationInputAlias | null>(() =>
+    initialContinuation ? generationInputAlias(1) : null,
+  );
+  const [nextReferenceNumber, setNextReferenceNumber] = useState(initialContinuation ? 2 : 1);
+  const [referenceMentionOpen, setReferenceMentionOpen] = useState(false);
+  const [mentionRange, setMentionRange] = useState<{ start: number; end: number } | null>(null);
   const [referenceUploading, setReferenceUploading] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("image"));
@@ -350,9 +362,23 @@ export function CreateWorkspace({
       ? "Start with an idea. Add a reference only when you need one."
       : "Only the essentials stay visible. More control is available when you ask for it.";
 
+  const unresolvedReferenceAliases = useMemo(
+    () => unresolvedGenerationPromptReferenceAliases(
+      prompt,
+      hasReference && referenceAlias ? [referenceAlias] : [],
+    ),
+    [hasReference, prompt, referenceAlias],
+  );
   const jobActive = Boolean(job && !isTerminalJob(job));
   const canSubmit =
-    accountAvailable && generationAvailable && Boolean(prompt.trim()) && !submitting && !referenceUploading && !jobActive;
+    accountAvailable
+    && generationAvailable
+    && Boolean(prompt.trim())
+    && (!hasReference || Boolean(referenceAlias))
+    && unresolvedReferenceAliases.length === 0
+    && !submitting
+    && !referenceUploading
+    && !jobActive;
   const continuationActions = resultAsset ? continuationActionsForMedia(resultAsset.kind) : [];
   const continuationSourceLabel = continuationSource
     ? continuationSource.id === initialContinuation?.asset.id
@@ -363,6 +389,9 @@ export function CreateWorkspace({
         : "Generated result"
       : "Generated result"
     : null;
+  const referenceLabel = continuationSource
+    ? continuationSourceLabel ?? "Generated result"
+    : reference?.displayName ?? reference?.originalFilename ?? "Reference image";
 
   const statusText = useMemo(() => {
     if (!job) return null;
@@ -375,11 +404,64 @@ export function CreateWorkspace({
     return job.error?.message ?? "Generation failed.";
   }, [job]);
 
+  function rememberPromptSelection(target: HTMLTextAreaElement) {
+    promptSelectionRef.current = {
+      start: target.selectionStart ?? prompt.length,
+      end: target.selectionEnd ?? target.selectionStart ?? prompt.length,
+    };
+  }
+
+  function handlePromptChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    const nextPrompt = event.currentTarget.value;
+    const start = event.currentTarget.selectionStart ?? nextPrompt.length;
+    const end = event.currentTarget.selectionEnd ?? start;
+    promptSelectionRef.current = { start, end };
+    setPrompt(nextPrompt);
+    setError(null);
+
+    const beforeCaret = nextPrompt.slice(0, start);
+    const match = beforeCaret.match(/(?:^|\s)(@[A-Za-z0-9]*)$/);
+    if (referenceAlias && match) {
+      setMentionRange({ start: start - match[1].length, end: start });
+      setReferenceMentionOpen(true);
+      return;
+    }
+
+    setMentionRange(null);
+    setReferenceMentionOpen(false);
+  }
+
+  function insertReferenceMention() {
+    if (!referenceAlias) return;
+    const range = mentionRange ?? promptSelectionRef.current;
+    const before = prompt.slice(0, range.start);
+    const after = prompt.slice(range.end);
+    const leadingSpace = before && !/\s$/.test(before) ? " " : "";
+    const trailingSpace = after && /^\s/.test(after) ? "" : " ";
+    const mention = `@${referenceAlias}`;
+    const insertion = `${leadingSpace}${mention}${trailingSpace}`;
+    const nextPrompt = `${before}${insertion}${after}`;
+    const cursor = before.length + insertion.length;
+
+    setPrompt(nextPrompt);
+    setReferenceMentionOpen(false);
+    setMentionRange(null);
+    setError(null);
+    promptSelectionRef.current = { start: cursor, end: cursor };
+    window.requestAnimationFrame(() => {
+      promptInputRef.current?.focus();
+      promptInputRef.current?.setSelectionRange(cursor, cursor);
+    });
+  }
+
   function clearReference() {
     revokePreviewUrl(referencePreviewUrl);
     setReferencePreviewUrl(null);
     setReference(null);
     setContinuationSource(null);
+    setReferenceAlias(null);
+    setReferenceMentionOpen(false);
+    setMentionRange(null);
     setImageAspect((current) => current === "original" ? "1:1" : current);
     setVideoAspect((current) => current === "original" ? "16:9" : current);
     setError(null);
@@ -389,6 +471,10 @@ export function CreateWorkspace({
   function startContinuation(action: ContinuationAction) {
     if (!resultAsset) return;
     revokePreviewUrl(referencePreviewUrl);
+    if (!referenceAlias) {
+      setReferenceAlias(generationInputAlias(nextReferenceNumber));
+      setNextReferenceNumber((current) => current + 1);
+    }
     setReference(null);
     setContinuationSource({ id: resultAsset.id, inputRole: action.inputRole });
     setReferencePreviewUrl(resultAsset.contentUrl);
@@ -423,6 +509,8 @@ export function CreateWorkspace({
     setReferenceUploading(true);
     setError(null);
 
+    const existingAlias = referenceAlias;
+    const uploadAlias = existingAlias ?? generationInputAlias(nextReferenceNumber);
     const previewUrl = URL.createObjectURL(file);
     revokePreviewUrl(referencePreviewUrl);
     setReferencePreviewUrl(previewUrl);
@@ -432,6 +520,8 @@ export function CreateWorkspace({
     try {
       const asset = await uploadPersistentImageFile(file, mimeType as MediaUploadMimeType);
       setReference(asset);
+      setReferenceAlias(uploadAlias);
+      if (!existingAlias) setNextReferenceNumber((current) => current + 1);
       setImageAspect("original");
       setVideoAspect("original");
     } catch (uploadError) {
@@ -445,6 +535,10 @@ export function CreateWorkspace({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
+    if (hasReference && !referenceAlias) {
+      setError("The attached reference is missing its product identity. Reattach it before generating.");
+      return;
+    }
 
     const advanced = advancedParametersFromDraft(advancedDraft, outputKind);
     if (!advanced) {
@@ -462,6 +556,7 @@ export function CreateWorkspace({
     const inputs = continuationSource
       ? [
           {
+            alias: referenceAlias!,
             source: { type: "media-asset" as const, id: continuationSource.id },
             role: continuationSource.inputRole,
           },
@@ -469,6 +564,7 @@ export function CreateWorkspace({
       : reference
         ? [
             {
+              alias: referenceAlias!,
               source: { type: "media-asset" as const, id: reference.id },
               role: outputKind === "image" ? ("primary-image" as const) : ("first-frame" as const),
             },
@@ -516,10 +612,12 @@ export function CreateWorkspace({
         <form onSubmit={submit} noValidate className="rounded-xl border border-border bg-surface-1 p-3 sm:p-4">
           <Label htmlFor="create-prompt" className="sr-only">Prompt</Label>
           <Textarea
+            ref={promptInputRef}
             id="create-prompt"
             variant="bare"
             value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
+            onChange={handlePromptChange}
+            onSelect={(event) => rememberPromptSelection(event.currentTarget)}
             placeholder={
               hasReference
                 ? "Describe the change or result you want…"
@@ -539,12 +637,21 @@ export function CreateWorkspace({
                 <p className="truncate text-sm font-semibold text-text">
                   {referenceUploading ? "Uploading reference…" : outputKind === "image" ? "Editing this image" : "Animating this image"}
                 </p>
-                <p className="truncate text-xs text-text-muted">
-                  {continuationSource
-                    ? continuationSourceLabel
-                    : reference?.displayName ?? reference?.originalFilename ?? "Reference image"}
-                </p>
+                <p className="truncate text-xs text-text-muted">{referenceLabel}</p>
               </div>
+              {referenceAlias ? (
+                <CreateReferenceMentionMenu
+                  alias={referenceAlias}
+                  previewUrl={referencePreviewUrl}
+                  label={referenceLabel}
+                  open={referenceMentionOpen}
+                  onOpenChange={(open) => {
+                    setReferenceMentionOpen(open);
+                    if (!open) setMentionRange(null);
+                  }}
+                  onSelect={insertReferenceMention}
+                />
+              ) : null}
               <Button
                 type="button"
                 variant="ghost"
@@ -678,6 +785,14 @@ export function CreateWorkspace({
             />
           </Collapsible>
         </form>
+
+        {unresolvedReferenceAliases.length ? (
+          <Alert className="mt-3" variant="destructive" role="alert">
+            <AlertDescription>
+              {unresolvedReferenceAliases.map((alias) => `@${alias}`).join(", ")} no longer has an attached image. Remove the unresolved reference from the prompt before generating.
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
         {!accountAvailable ? (
           <Alert className="mt-3" role="status">

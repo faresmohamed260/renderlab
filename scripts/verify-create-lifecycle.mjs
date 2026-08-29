@@ -221,7 +221,24 @@ try {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-edit-continuation.png`, fullPage: true });
 
-  console.log("Configured Create generation -> owned persisted result -> Edit continuation rendered successfully at desktop and mobile widths.");
+  const mentionReference = page.getByRole("button", { name: "Mention @image1" });
+  assert(await mentionReference.isVisible(), "Edit continuation did not expose the stable @image1 mention picker.");
+  await mentionReference.click();
+  const mentionItem = page.getByRole("menuitem", { name: /@image1/ });
+  await mentionItem.waitFor({ state: "visible", timeout: 30_000 });
+  const mentionThumbnail = mentionItem.locator("img");
+  assert(await mentionThumbnail.count() === 1, "Reference mention picker did not render the image thumbnail.");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-reference-mention-picker.png`, fullPage: true });
+  await mentionItem.click();
+  assert((await prompt.inputValue()).includes("@image1"), "Reference mention picker did not insert @image1 into the prompt.");
+
+  await page.getByRole("button", { name: "Remove reference" }).click();
+  assert(!(await generate.isEnabled()), "Generate remained enabled after an @image1 prompt mention lost its attached reference.");
+  await page.getByText(/@image1 no longer has an attached image/).waitFor({ state: "visible", timeout: 30_000 });
+  await prompt.fill((await prompt.inputValue()).replace("@image1", "").replace(/\s+/g, " ").trim());
+  assert(await generate.isEnabled(), "Generate did not recover after the unresolved @image1 mention was removed.");
+
+  console.log("Configured Create generation -> owned persisted result -> Edit continuation -> @image1 mention picker/unresolved guard verified successfully.");
 } catch (error) {
   primaryError = error;
 } finally {

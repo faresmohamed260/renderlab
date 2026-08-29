@@ -174,6 +174,7 @@ try {
   await page.waitForTimeout(200);
   assert(submittedBody, "Create did not submit a generation request after durable upload.");
   assert(submittedBody.inputs?.length === 1, "Create did not submit exactly one uploaded reference.");
+  assert(submittedBody.inputs[0]?.alias === "image1", "Create generation request did not bind the stable image1 alias.");
   assert(submittedBody.inputs[0]?.source?.type === "media-asset", "Create generation request did not bind the durable media-asset identity.");
   assert(submittedBody.inputs[0]?.source?.id === asset.id, "Create generation request referenced the wrong durable media asset.");
   assert(submittedBody.inputs[0]?.role === "primary-image", "Create generation request did not preserve the Edit input role.");

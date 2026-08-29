@@ -54,7 +54,7 @@ async function durableMediaInputsAvailable(ownerId: string, request: GenerationR
   if (!assetIds.length) return true;
 
   const assets = await Promise.all(assetIds.map((assetId) => getMediaAsset(ownerId, assetId)));
-  return assets.every(Boolean);
+  return assets.every((asset) => asset?.kind === "image");
 }
 
 async function submitToRenderLabBackend(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
@@ -100,7 +100,7 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
       ok: false,
       error: {
         code: "generation_submission_failed",
-        message: "One or more media inputs are no longer available.",
+        message: "One or more media inputs are unavailable or are not images.",
       },
     };
   }
