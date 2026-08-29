@@ -55,6 +55,7 @@ export function LibraryView({
   uploadAvailable,
   items,
   collections,
+  collectionsAvailable,
   selectedCollectionId,
   collectionMissing,
   kind,
@@ -70,6 +71,7 @@ export function LibraryView({
   uploadAvailable: boolean;
   items: PublicMediaAsset[];
   collections: PublicMediaCollection[];
+  collectionsAvailable: boolean;
   selectedCollectionId: string | null;
   collectionMissing: boolean;
   kind: MediaAssetListKind;
@@ -203,14 +205,14 @@ export function LibraryView({
                   );
                 })}
               </nav>
-              <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="flex flex-wrap items-start justify-end gap-2">
                 <Button asChild variant={favoriteOnly ? "secondary" : "outline"} size="sm">
                   <Link href={libraryHref(kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
                     <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
                     Favorites
                   </Link>
                 </Button>
-                {(collections.length > 0 || selectedCollectionId) ? (
+                {collectionsAvailable ? (
                   <LibraryCollectionMenu
                     collections={collections}
                     selectedCollectionId={selectedCollectionId}

@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { chromium } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
@@ -122,6 +122,28 @@ async function createCollection(account, name) {
   return { response, payload };
 }
 
+async function renameCollection(account, collectionId, name) {
+  const response = await fetch(
+    `${baseUrl}/api/media/collections/${encodeURIComponent(collectionId)}`,
+    withAccountAuthorization(account, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    }),
+  );
+  const payload = await response.json().catch(() => null);
+  return { response, payload };
+}
+
+async function deleteCollection(account, collectionId) {
+  const response = await fetch(
+    `${baseUrl}/api/media/collections/${encodeURIComponent(collectionId)}`,
+    withAccountAuthorization(account, { method: "DELETE" }),
+  );
+  const payload = await response.json().catch(() => null);
+  return { response, payload };
+}
+
 async function setMembership(account, collectionId, assetId, include) {
   const response = await fetch(
     `${baseUrl}/api/media/collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(assetId)}`,
@@ -230,6 +252,49 @@ try {
   );
   assert(!immutableOwner.ok, "Database allowed collection owner reassignment.");
 
+  result = await createCollection(owner, "Archive Board");
+  assert(result.response.status === 201 && result.payload?.ok, "Owner management collection creation failed.");
+  const managedCollection = result.payload.collection;
+  result = await setMembership(owner, managedCollection.id, collectionAsset.id, true);
+  assert(result.response.ok && result.payload?.ok, "Could not seed management collection membership.");
+
+  const signedOutRename = await fetch(`${baseUrl}/api/media/collections/${encodeURIComponent(managedCollection.id)}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: "Signed out rename" }),
+  });
+  assert(signedOutRename.status === 401, `Signed-out collection rename returned ${signedOutRename.status}, expected 401.`);
+  const signedOutDelete = await fetch(`${baseUrl}/api/media/collections/${encodeURIComponent(managedCollection.id)}`, { method: "DELETE" });
+  assert(signedOutDelete.status === 401, `Signed-out collection delete returned ${signedOutDelete.status}, expected 401.`);
+
+  result = await renameCollection(foreign, managedCollection.id, "Foreign rename");
+  assert(result.response.status === 404 && result.payload?.error?.code === "collection_not_found", "Foreign account could rename owner's collection.");
+  result = await deleteCollection(foreign, managedCollection.id);
+  assert(result.response.status === 404 && result.payload?.error?.code === "collection_not_found", "Foreign account could delete owner's collection.");
+
+  result = await renameCollection(owner, managedCollection.id, "Mood Board");
+  assert(result.response.status === 400 && result.payload?.error?.code === "invalid_request", "Rename accepted an owner-normalized duplicate name.");
+  result = await renameCollection(owner, managedCollection.id, "x".repeat(121));
+  assert(result.response.status === 400 && result.payload?.error?.code === "invalid_request", "Rename accepted a collection name over 120 characters.");
+  result = await renameCollection(owner, managedCollection.id, "  Archive   Selects  ");
+  assert(result.response.ok && result.payload?.ok && result.payload.collection.name === "Archive Selects", "Collection rename did not normalize and persist the new name.");
+  const afterRename = await listCollections(owner);
+  assert(afterRename[0]?.id === managedCollection.id && afterRename[0]?.name === "Archive Selects", "Renamed collection did not refresh to the top of owner list order.");
+
+  result = await deleteCollection(owner, managedCollection.id);
+  assert(result.response.ok && result.payload?.ok && result.payload.collectionId === managedCollection.id, "Owner collection deletion failed.");
+  assert((await membershipRows(managedCollection.id, collectionAsset.id)).length === 0, "Collection deletion did not cascade its membership rows.");
+  assert((await membershipRows(ownerCollection.id, collectionAsset.id)).length === 1, "Collection deletion damaged membership in another collection.");
+  const preservedAssetResponse = await supabase(
+    `media_assets?id=eq.${encodeURIComponent(collectionAsset.id)}&owner_id=eq.${encodeURIComponent(owner.id)}&select=id,favorited_at,deleted_at,generation_job_id`,
+  );
+  assert(preservedAssetResponse.ok, "Could not inspect media after collection deletion.");
+  const preservedAssets = await preservedAssetResponse.json();
+  assert(preservedAssets.length === 1 && preservedAssets[0].favorited_at && preservedAssets[0].deleted_at === null, "Collection deletion changed durable media/Favorite state.");
+  await r2Client.send(new HeadObjectCommand({ Bucket: r2Bucket, Key: collectionAsset.storageKey }));
+  const afterDeleteCollections = await listCollections(owner);
+  assert(afterDeleteCollections.length === 1 && afterDeleteCollections[0].id === ownerCollection.id, "Deleted collection remained in owner list or another collection was removed.");
+
   const collectionList = await mediaApi(owner, `collection=${encodeURIComponent(ownerCollection.id)}`);
   assert(collectionList.items.length === 1 && collectionList.items[0].id === collectionAsset.id, "Collection media list did not return exactly its member.");
   const composed = await mediaApi(
@@ -246,7 +311,28 @@ try {
   const memberships = await listCollections(owner, collectionAsset.id);
   assert(memberships.length === 1 && memberships[0].containsAsset === true, "Collection list did not expose current-asset membership.");
 
+  result = await deleteCollection(foreign, foreignCollection.id);
+  assert(result.response.ok && result.payload?.ok, "Foreign fixture could not delete its own collection for empty-state verification.");
+
   browser = await chromium.launch({ headless: true });
+  const emptyContext = await browser.newContext({ viewport: { width: 1440, height: 1024 }, colorScheme: "dark" });
+  const emptyPage = await emptyContext.newPage();
+  await routeLocalAppRequestsWithAccount(emptyPage, baseUrl, foreign);
+  await emptyPage.goto(`${baseUrl}/library`, { waitUntil: "networkidle", timeout: 60_000 });
+  const emptyCollectionsButton = emptyPage.getByRole("button", { name: "Collections", exact: true });
+  await emptyCollectionsButton.waitFor({ state: "visible", timeout: 30_000 });
+  await emptyCollectionsButton.click();
+  await emptyPage.getByRole("menuitem", { name: "Manage collections", exact: true }).click();
+  await emptyPage.getByRole("heading", { name: "Manage collections", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await emptyPage.getByText("No collections yet. Create your first one above.", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await emptyPage.getByLabel("New collection").fill("First Board");
+  await emptyPage.getByRole("button", { name: "Create", exact: true }).click();
+  await emptyPage.getByText("First Board", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await emptyPage.screenshot({ path: `${artifactDir}/library-collections-empty-manager-desktop.png`, fullPage: true });
+  const firstForeignCollection = (await listCollections(foreign)).find((collection) => collection.name === "First Board");
+  assert(Boolean(firstForeignCollection), "Zero-collection Library manager did not create the first collection.");
+  await emptyContext.close();
+
   const context = await browser.newContext({ viewport: { width: 1440, height: 1024 }, colorScheme: "dark" });
   const page = await context.newPage();
   await routeLocalAppRequestsWithAccount(page, baseUrl, owner);
@@ -304,7 +390,40 @@ try {
   assert(await collectionCard.isVisible(), "Collection Library card is not visible on mobile.");
   await page.screenshot({ path: `${artifactDir}/library-collections-mobile.png`, fullPage: true });
 
-  console.log(`Configured Library Collections rendered successfully. owner=${owner.id} asset=${collectionAsset.id} collection=${clientCollection.id}`);
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await page.getByRole("button", { name: "Client Selects", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Manage collections", exact: true }).click();
+  const managerHeading = page.getByRole("heading", { name: "Manage collections", exact: true });
+  await managerHeading.waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByLabel("New collection").fill("Library Managed");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByText("Library Managed", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("button", { name: "Rename collection Library Managed", exact: true }).click();
+  await page.getByLabel("Collection name").fill("Library Managed Renamed");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByText("Library Managed Renamed", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.screenshot({ path: `${artifactDir}/library-collections-manager-desktop.png`, fullPage: true });
+
+  await page.getByRole("button", { name: "Delete collection Library Managed Renamed", exact: true }).click();
+  await page.getByRole("heading", { name: "Delete “Library Managed Renamed”?", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.screenshot({ path: `${artifactDir}/library-collections-manager-delete-desktop.png`, fullPage: true });
+  await page.getByRole("button", { name: "Delete collection", exact: true }).click();
+  await page.getByText("Library Managed Renamed", { exact: true }).waitFor({ state: "detached", timeout: 30_000 });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${artifactDir}/library-collections-manager-mobile.png`, fullPage: true });
+
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await page.getByRole("button", { name: "Delete collection Client Selects", exact: true }).click();
+  await page.getByRole("button", { name: "Delete collection", exact: true }).click();
+  await page.waitForURL((url) => !url.searchParams.has("collection") && !url.searchParams.has("offset"), { timeout: 30_000 });
+  await page.locator(`a[href="/library/${encodeURIComponent(collectionAsset.id)}"]`).waitFor({ state: "visible", timeout: 30_000 });
+  await page.locator(`a[href="/library/${encodeURIComponent(ordinaryAsset.id)}"]`).waitFor({ state: "visible", timeout: 30_000 });
+  assert(!(await listCollections(owner)).some((collection) => collection.id === clientCollection.id), "Active collection remained after manager deletion.");
+  await page.screenshot({ path: `${artifactDir}/library-collections-active-delete-desktop.png`, fullPage: true });
+
+  console.log(`Configured Library Collections + Phase 8A management rendered successfully. owner=${owner.id} asset=${collectionAsset.id}`);
 } catch (error) {
   primaryError = error;
 } finally {

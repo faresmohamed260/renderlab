@@ -163,13 +163,13 @@ Before copying/installing an external component:
 ### LibraryView
 **Status:** APPROVED
 **Source:** `src/features/library/library-view.tsx`
-**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop/Favorites/Collections behavior and approved UI-034 batch selection.
-**Purpose:** Durable-media Library with URL-owned literal search, kind/Favorites/collection filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry, page-scoped batch selection and Viewer deep links.
-**Variants:** All/Images/Videos; Favorites on/off; optional selected collection; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; transient desktop drag-active upload state; UI-034 selection/confirmation state; desktop/mobile.
-**Dependencies:** Next.js Link, maintained Button/Checkbox/Input/DropdownMenu/Alert/AlertDialog/Empty primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort/favorite/collection/batch-delete contracts, feature-owned `LibraryBatchSelection`, `LibraryUploadButton`, `LibraryDropUploadSurface`, `LibrarySortMenu` and `LibraryCollectionMenu`.
+**Origin:** RenderLab composition from `design/penpot/library-v0.1.svg`, extended by approved Upload/search/history/drag-drop/Favorites/Collections behavior, approved UI-034 batch selection and UI-049 Phase 8A collection management.
+**Purpose:** Durable-media Library with URL-owned literal search, kind/Favorites/collection filtering, chronological ordering, responsive browsing, metadata, pagination, upload entry, page-scoped batch selection, Library-owned collection lifecycle management and Viewer deep links.
+**Variants:** All/Images/Videos; Favorites on/off; optional selected collection; Newest/Oldest; active/clear search; configured/unavailable/empty/no-match/paginated states; zero/existing collections; transient collection-manager/create/rename/delete-confirmation state; transient desktop drag-active upload state; UI-034 selection/confirmation state; desktop/mobile.
+**Dependencies:** Next.js Link, maintained Button/Checkbox/Input/DropdownMenu/Field/Alert/AlertDialog/Empty/Spinner primitives, native hidden form plumbing, Lucide, `PublicMediaAsset`, media-list/search/sort/favorite/collection/batch-delete contracts, feature-owned `LibraryBatchSelection`, `LibraryUploadButton`, `LibraryDropUploadSurface`, `LibrarySortMenu`, `LibraryCollectionMenu` and `LibraryCollectionManager`.
 **Reuse rules:** Extend this authoritative Library composition against approved durable contracts. Keep search/history/Favorites/Collections URL/server-owned; keep UI-034 selection transient/page-scoped; keep persistent upload paths on the shared feature-owned transaction.
 **Do not:** Couple to legacy `studio_*`, expose storage identity, move organization/search/history into page-only client filtering, persist selection across Library views, or infer other batch management actions from Delete.
-**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search PR #10; history UI-027; drag/drop UI-028; Favorites UI-031. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` plus all 13 affected regressions; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and desktop/mobile collection-filtered Library artifacts were reviewed clean.
+**Notes:** Base Library `33034606323`/`33034606396`; persistent Upload merged PR #9; search PR #10; history UI-027; drag/drop UI-028; Favorites UI-031. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` plus all 13 affected regressions; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d`. UI-049 Phase 8A exact head `34f9573eaabff6a91c780266ff03fedc9058df56` passed all 16 required/affected regressions; Library Collections `33275469972` plus artifact `9721370669` verified zero-collection creation, rename/delete/privacy/preservation, active-filter canonicalization and responsive manager composition.
 
 ### LibraryBatchSelection
 **Status:** APPROVED
@@ -241,12 +241,23 @@ Before copying/installing an external component:
 **Status:** APPROVED
 **Source:** `src/features/library/library-collection-menu.tsx`
 **Origin:** RenderLab feature composition using maintained Button/DropdownMenu primitives and URL navigation.
-**Purpose:** Compact Library-owned collection selector that keeps durable collection filtering server-owned through `collection=<uuid>`.
+**Purpose:** Compact Library-owned collection selector that keeps durable collection filtering server-owned through `collection=<uuid>` and exposes the progressive `Manage collections` disclosure, including when zero collections exist.
 **Used by:** `LibraryView` only.
-**Dependencies:** `MediaCollectionSummary`, current Library URL state, maintained DropdownMenu + Button, Next.js navigation.
-**Reuse rules:** Keep the selector feature-owned; generic dropdown mechanics remain in `src/components/ui`. Preserve kind/search/Favorites/sort while changing the selected collection and clear stale pagination.
-**Do not:** Turn it into a collection management console, client media filter, top-level Collections destination or card/batch membership UI.
-**Notes:** UI-032. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed the configured Collections lifecycle and responsive Library review before PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d`.
+**Dependencies:** `MediaCollectionSummary`, current Library URL state, maintained DropdownMenu/Collapsible/Button, Next.js navigation, feature-owned `LibraryCollectionManager`.
+**Reuse rules:** Keep collection navigation URL/server-owned and management interaction feature-owned. Preserve kind/search/Favorites/sort while changing the selected collection, clear stale pagination, and delegate create/rename/delete state to `LibraryCollectionManager`.
+**Do not:** Turn Collections into a top-level destination, client media filter/store or card/batch membership system; do not duplicate management in Viewer.
+**Notes:** UI-032 established the selector. UI-049 Phase 8A exact head `34f9573eaabff6a91c780266ff03fedc9058df56` makes the control reachable at zero collections and adds the maintained management disclosure; configured Collections `33275469972` and artifact `9721370669` passed responsive review.
+
+### LibraryCollectionManager
+**Status:** APPROVED
+**Source:** `src/features/library/library-collection-manager.tsx`
+**Origin:** UI-049 Phase 8A feature composition using existing owner-scoped collection product routes and maintained Button/Field/Input/AlertDialog/Spinner mechanics.
+**Purpose:** Compact Library-owned create/rename/delete lifecycle for the verified account's collections without moving durable Library state into the browser.
+**Used by:** `LibraryCollectionMenu` only.
+**Dependencies:** existing `POST /api/media/collections`, new owner-scoped `PATCH|DELETE /api/media/collections/[collectionId]`, `PublicMediaCollection`, maintained Button/Field/Input/AlertDialog/Spinner, Next.js router refresh/navigation.
+**Reuse rules:** Keep local state limited to disclosure/form/busy/error/confirmation mechanics. Server routes remain authoritative for normalization, ownership, privacy and deletion semantics. Deleting the active collection navigates to the already-computed canonical all-collections URL.
+**Do not:** Delete media/Favorites/R2/history with a collection, expose storage identity, create a generic collection-management framework, persist collection data client-side, or duplicate rename/delete controls in Viewer.
+**Notes:** Exact head `34f9573eaabff6a91c780266ff03fedc9058df56` passed the 16-workflow Phase 8A minimum/affected suite. Library Collections `33275469972` verified zero-collection creation, rename/duplicate/privacy, collection-only deletion/preservation, active-filter canonicalization and exact cleanup; artifact `9721370669` was reviewed clean on desktop/narrow layouts.
 
 ### MediaViewer
 **Status:** APPROVED

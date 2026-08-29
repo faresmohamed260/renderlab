@@ -45,5 +45,17 @@ export type CreateMediaCollectionRequest = {
   name: string;
 };
 
+export type UpdateMediaCollectionRequest = {
+  name: string;
+};
+
+export type DeleteMediaCollectionSuccess = {
+  ok: true;
+  collectionId: string;
+  deleted: true;
+};
+
 export type CreateMediaCollectionResponse = MediaCollectionResponse;
+export type UpdateMediaCollectionResponse = MediaCollectionResponse;
+export type DeleteMediaCollectionResponse = DeleteMediaCollectionSuccess | MediaCollectionError;
 export type MediaCollectionMembershipResponse = MediaCollectionResponse;

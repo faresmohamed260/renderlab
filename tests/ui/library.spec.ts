@@ -99,6 +99,31 @@ test("media list API validates malformed requests before enforcing the signed-ou
   expect(searchBody.error.code).toBe("invalid_request");
 });
 
+test("collection management API validates IDs and preserves the signed-out boundary", async ({ request }) => {
+  const invalidRename = await request.patch("/api/media/collections/not-a-uuid", {
+    data: { name: "Renamed" },
+  });
+  expect(invalidRename.status()).toBe(400);
+  const invalidBody = await invalidRename.json();
+  expect(invalidBody.ok).toBe(false);
+  expect(invalidBody.error.code).toBe("invalid_request");
+
+  const collectionId = "00000000-0000-4000-8000-000000000000";
+  const signedOutRename = await request.patch(`/api/media/collections/${collectionId}`, {
+    data: { name: "Renamed" },
+  });
+  expect(signedOutRename.status()).toBe(401);
+  const renameBody = await signedOutRename.json();
+  expect(renameBody.ok).toBe(false);
+  expect(renameBody.error.code).toBe("authentication_required");
+
+  const signedOutDelete = await request.delete(`/api/media/collections/${collectionId}`);
+  expect(signedOutDelete.status()).toBe(401);
+  const deleteBody = await signedOutDelete.json();
+  expect(deleteBody.ok).toBe(false);
+  expect(deleteBody.error.code).toBe("authentication_required");
+});
+
 test("persistent media upload API validates malformed requests before enforcing sign-in", async ({ request }) => {
   const availability = await request.get("/api/media/uploads/upload-tickets");
   expect(availability.ok()).toBeTruthy();
