@@ -116,9 +116,9 @@ async function verifyMediaAsset(account, assetId, expectedKind) {
   }
   const bytes = Buffer.from(await content.arrayBuffer());
   if (expectedKind !== "image") return null;
-  const metadata = await sharp(bytes).metadata();
-  if (!metadata.width || !metadata.height) throw new Error("Generated image dimensions could not be read.");
-  return { width: metadata.width, height: metadata.height };
+  const imageMetadata = await sharp(bytes).metadata();
+  if (!imageMetadata.width || !imageMetadata.height) throw new Error("Generated image dimensions could not be read.");
+  return { width: imageMetadata.width, height: imageMetadata.height };
 }
 
 function assertAspectRatio(dimensions, expected, label) {
