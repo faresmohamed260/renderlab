@@ -21,7 +21,20 @@ jobs:
           fetch-depth: 0
 
       - name: Apply product patch
-        run: python .github/scripts/apply-phase-7b-multi-reference.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path = Path(".github/scripts/apply-phase-7b-multi-reference.py")
+          text = path.read_text()
+          old = "updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)"
+          new = "updated, count = re.subn(pattern, lambda _match: replacement, text, count=1, flags=re.S)"
+          if text.count(old) != 1:
+              raise SystemExit("Could not locate regex helper replacement call.")
+          path.write_text(text.replace(old, new, 1))
+          PY
+          python .github/scripts/apply-phase-7b-multi-reference.py
 
       - name: Set up Node
         uses: actions/setup-node@v4
