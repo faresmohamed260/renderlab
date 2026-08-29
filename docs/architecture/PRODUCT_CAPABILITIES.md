@@ -194,13 +194,17 @@ UI-048 is implemented and exact-head/live verified. Video and Animate now expose
 - Contextual review accepted the matched 480p/1080p outputs as usable; the portrait city-scene result was coherent with its prompt; and the 2K Animate output preserved visible influence and 2:1 geometry from its run-owned solid-blue source. Model obedience is probabilistic; RenderLab guarantees correct mapping/validation rather than deterministic creative output.
 - Configured fixtures were exactly cleaned, including the earlier diagnostic run. No route, model/provider selector, Director UI, schema or deployment change was introduced.
 
-### Phase 9 Retry contract — Accepted / not yet implemented
+### Phase 9 Retry — Verified in RenderLab
 - Retry is a product-level recovery operation for `failed` jobs only in v0.1. It creates a new job from current-revalidated persisted product intent; it is not a provider-job replay or mutation of the historical job.
 - Authoritative reconstruction fields are `prompt`, `output_kind`, `inputs`, `parameters.output` and `parameters.advanced`. Historical workflow/model/ecosystem/worker/provider/failover/error/output metadata is ignored for new routing.
 - Current `parseGenerationRequest` remains authoritative. Missing input aliases may receive positional aliases for compatibility. Legacy Video retries discard inactive `steps`/`guidance`; missing Video resolution normalizes to current default `480p`. No other invalid historical value is silently migrated.
 - Current input ownership/readiness/activity is revalidated. Tombstoned/missing/foreign durable media and missing/not-ready temporary sources cannot be retried.
 - A retry may route through current internal workflow/model implementation and does not promise bit-identical reproduction even when persisted seed/prompt remain valid.
 - Current cancellation capability is **not** a product capability: although configured gateways report cancellation support, RenderLab's native reassignment/persistence path lacks cancellation-aware atomic guards, so Cancel remains deferred.
+- UI-050 is implemented at exact code/test head `ab33e146ccaa7770f3dd66146708f01933cc0173`. `POST /api/generation/jobs/[jobId]/retry` accepts only historical job identity plus verified owner context; the browser never resends the stored generation payload.
+- Configured Activity `33279062575` verified failed-only status gating, two-account privacy, immutable historical rows, distinct attempts, current request/input validation, positional alias compatibility, legacy Video missing resolution -> `480p`, discarded legacy Video Steps/Guidance, source readiness, provider/execution metadata isolation and sanitized backend failures against an authenticated run-local mock backend with no generation spend.
+- The exact head also passed Account Ownership `33279062570`, Media Delete `33279062563`, Create Lifecycle `33279062581`, Generation Integration `33279062568`, and Video Generation Integration `33279062569`. Final Activity artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) was visually reviewed clean after fixing narrow success-feedback wrapping. Exact fixtures and cleanup-only verification passed.
+- Retry introduces no schema migration, new workflow/model selector, provider/admin surface, shell-global polling or deployment. It does not promise bit-identical reproduction; it guarantees current validation/routing of supported persisted product intent.
 - No schema migration or retry lineage relation is planned for v0.1.
 
 ### Advanced product controls
