@@ -50,7 +50,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Phase 4 — Media & Continuation.**
+**Phase 5 — Operational & Secondary Experiences.**
 
 ### Approved product state
 - Application shell: `APPROVED`.
@@ -69,7 +69,10 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Viewer/Create continuation is capability-derived and server-validates durable asset identity/action compatibility.
 
 ### Active product slice
-- None. UI-034 is complete; no next Phase 4 product slice has been selected.
+- Activity v0.1 / UI-035 is **IN FINAL VALIDATION** on PR #34.
+- Activity is an owner-scoped recent-generation surface backed by RenderLab `generation_jobs`; it shows real persisted lifecycle state, sanitized actionable failures, bounded newest-first history and active owner-media result links without worker/provider/workflow/failover details.
+- Implementation head `153e2a10daebea7c0a8fdfa0dfb786533b9c1c4c` passed Activity `33222845134`, Account Ownership `33222845130`, UI Shell `33222845124`, Create Lifecycle `33222845174`, Generation Integration `33222845170`, and Video Generation `33222845127`; desktop/mobile Activity artifacts were visually reviewed clean and the shared-resource audit returned to zero.
+- The Phase 5 Models/Workflows evaluation found no dedicated user-facing surface justified by the current verified capability set; the current capability audit likewise found no additional approved capability-specific experience beyond Create/Viewer/Activity. Future new user goals become explicit new slices rather than speculative empty screens.
 
 ### Latest completed product slice
 - Library Batch Delete v0.1 / UI-034 is **APPROVED**. PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8` after final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed all 16 affected gates: Library Batch Delete `33220710307`, Account Ownership `33220710301`, UI Shell `33220710365`, Create Lifecycle `33220710378`, Library Search `33220710297`, Library History `33220710393`, Library Lifecycle `33220710305`, Library Drag Drop `33220710389`, Persistent Media Upload `33220710300`, Media Download `33220710329`, Media Rename `33220710371`, Library Favorites `33220710303`, Library Collections `33220710404`, Media Delete `33220710375`, Generation Integration `33220710351`, and Video Generation `33220710347`.

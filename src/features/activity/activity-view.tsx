@@ -62,7 +62,7 @@ function statusIcon(item: PublicGenerationActivity) {
   if (item.status === "succeeded") return <CheckCircle2 aria-hidden="true" className="size-4" />;
   if (item.status === "failed") return <AlertCircle aria-hidden="true" className="size-4" />;
   if (item.status === "cancelled") return <XCircle aria-hidden="true" className="size-4" />;
-  if (isActiveGenerationStatus(item.status)) return <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />;
+  if (isActiveGenerationStatus(item.status)) return <LoaderCircle aria-hidden="true" className="size-4 motion-safe:animate-spin" />;
   return <Clock3 aria-hidden="true" className="size-4" />;
 }
 
@@ -146,7 +146,7 @@ export function ActivityView({
         <>
           {hasActive ? (
             <p className="mt-8 flex items-center gap-2 text-sm text-text-muted" role="status">
-              <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+              <LoaderCircle aria-hidden="true" className="size-4 motion-safe:animate-spin" />
               Updates automatically while generation work is active.
             </p>
           ) : null}

@@ -67,7 +67,7 @@ This is foundation maintenance, not a product redesign or new Phase 4 media capa
 - [x] Implement conservative poll-time reassignment and bounded client polling recovery.
 - [x] Implement compact Advanced disclosure from verified capability definitions.
 - [x] Complete configured browser lifecycle review in `33031817744` with responsive screenshots and cleanup.
-- [x] Remove the transitional Studio compatibility adapter after verifying current product generation no longer depends on it; PR #33 deletes `src/server/generation/studio-compat.ts` and keeps generation routed only through the authenticated external RenderLab backend or RenderLab-native orchestration.
+- [x] Remove the transitional Studio compatibility adapter after verifying current product generation no longer depends on it; PR #33 merged as `4d224f949bd1d74edd1d51783930b914dbc34da5` after exact head `47d19eb1d1fb04dd560843c21c4552b672ca6580` passed Account Ownership `33222242161`, UI Shell `33222242167`, Create Lifecycle `33222242155`, Generation Integration `33222242169`, and Video Generation `33222242163`. Merged `main` UI Shell `33222444188`, Generation Integration `33222444204`, and Video Generation `33222444221` passed; Vercel created zero deployments.
 
 **Create status: `APPROVED`.**
 
@@ -353,10 +353,29 @@ UI-034 extends approved single-asset Delete with the smallest coherent Library b
 **Library Batch Delete v0.1 status: `APPROVED`. PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8` after final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed all 16 affected gates. Cross-page selection, Trash/restore, batch Favorites/Collections and other bulk-management actions remain separate future contracts.**
 
 ## Phase 5 — Operational & Secondary Experiences
-- [ ] Activity/jobs surface backed by RenderLab `generation_jobs`.
-- [ ] Models/workflows only if dedicated user-facing surfaces are justified.
+
+### Activity v0.1 — PR #34 / UI-035
+UI-035 replaces the Activity placeholder with the smallest useful account-private generation-history surface. Job state stays product-level; worker/provider/workflow routing remains internal.
+
+- [x] Select Activity/jobs as the first Phase 5 operational slice.
+- [x] Read recent `generation_jobs` by verified owner only, newest-first, 20 per page with bounded offset pagination.
+- [x] Show real queued/preparing/running/persisting/succeeded/failed/cancelled state without fabricated percentages.
+- [x] Lightly refresh only while active jobs exist and reuse the existing owner-aware poll path; preserve stored state if live polling is unavailable.
+- [x] Sanitize failure copy so provider/worker/gateway detail is not rendered as product UI.
+- [x] Link completed results only when the referenced owner `media_assets` row is still active; preserved UI-033 historical output IDs do not create dead Viewer actions after deletion.
+- [x] Add explicit signed-out/unavailable/empty states and keep Activity private to the verified account.
+- [x] Add configured two-account Activity verification covering privacy, pagination, active status, error redaction, active/deleted result-link behavior, responsive desktop/mobile rendering and exact cleanup.
+- [x] Implementation head `153e2a10daebea7c0a8fdfa0dfb786533b9c1c4c` passed Activity `33222845134`, Account Ownership `33222845130`, UI Shell `33222845124`, Create Lifecycle `33222845174`, Generation Integration `33222845170`, and Video Generation `33222845127`.
+- [x] Visually review the passing Activity desktop/mobile artifacts; status hierarchy, secondary result action, failure treatment and existing shell behavior remain coherent.
+- [x] Pre-finalization shared-resource audit returned all six RenderLab tables and configured fixture users to zero with six RLS tables, six non-null owners, zero browser grants and `20260828221611 renderlab_media_asset_deletion` still latest.
+- [ ] Pass the complete six-gate suite on the documentation-finalized exact PR head.
+- [ ] Merge PR #34 and verify merged-`main` checks, post-merge cleanup and zero unintended Vercel deployment.
+
+**Activity v0.1 status: `IN FINAL VALIDATION`. Cancellation/retry controls, global job state, worker management and workflow/model inspection are not part of UI-035.**
+
+- [x] Evaluate Models/Workflows as dedicated user-facing surfaces. The current verified capability set does not justify them: Create already exposes the approved user goals while model/workflow/ecosystem identity remains replaceable execution metadata under UI-008/UI-011 and `PRODUCT_CAPABILITIES.md`.
 - [x] Settings account identity foundation backed by Supabase Auth / UI-029; broader settings remain requirement-driven.
-- [ ] Additional capability-specific experiences approved during product design.
+- [x] Audit additional capability-specific experiences against the current verified capability set. No additional experience is approved today; extensibility categories remain architecture pressure-tests, and any future approved user goal becomes a new explicit slice instead of an indefinite open checkbox.
 
 ## Feature/Surface Procedure
 1. Establish the user goal and required behavior.
@@ -372,12 +391,12 @@ UI-034 extends approved single-asset Delete with the smallest coherent Library b
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current phase:** Phase 4 — Media & Continuation.  
-**Current product slice:** None. UI-034 is complete; no next Phase 4 product slice has been selected.
+**Current phase:** Phase 5 — Operational & Secondary Experiences.
+**Current product slice:** Activity v0.1 / UI-035 is IN FINAL VALIDATION on PR #34.
 **Completed product slices:** Persistent Upload PR #9, Library Search PR #10, Download PR #11, Rename PR #12, History Ordering PR #14, Drag/drop Upload PR #15, Core Account Ownership PR #17 / UI-030, Library Favorites PR #23 / UI-031, Library Collections PR #24 / UI-032, Durable Media Delete PR #25 / UI-033, and Library Batch Delete PR #29 / UI-034 are merged and approved.
-**Completed foundation prerequisites:** PR #13 / UI-026 maintained primitive purity refactor merged as `5953934d5f67c16304be7493eda27c88e24c02cc`; Account Identity PR #16 / UI-029 merged as `bcb20365db102252db51263968de96fc795be518`.  
-**Current gate:** No active Phase 4 implementation gate. Select the next slice explicitly before implementation.
-**Next product slice:** None selected after UI-034. Do not expand batch Delete into Trash/restore, cross-page selection, batch Favorites/Collections or a generic bulk-management framework without a separate contract.
+**Completed foundation/maintenance:** PR #13 / UI-026 maintained primitive purity refactor; PR #16 / UI-029 Account Identity; PR #33 removed the unused Studio compatibility adapter and verified external/native generation routing.
+**Current gate:** rerun the six affected workflows on the exact documentation-finalized UI-035 head, then merge only after a clean shared-resource audit.
+**Next product slice:** None selected after UI-035. Models/Workflows and additional capability-specific experiences were evaluated against the current verified capability set and are not justified as separate surfaces today; future approved user goals require new explicit contracts.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
