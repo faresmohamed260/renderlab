@@ -563,15 +563,6 @@ export function CreateWorkspace({
 
                 {outputKind === "video" ? (
                   <>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
-                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
-                      className="shrink-0"
-                    >
-                      {durationSeconds} s
-                    </Button>
                     <Toggle
                       pressed={audioEnabled}
                       onPressedChange={setAudioEnabled}
@@ -581,8 +572,17 @@ export function CreateWorkspace({
                       className="shrink-0 gap-1.5 bg-surface-2"
                     >
                       {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}
-                      Audio
+                      <span className="hidden sm:inline">Audio</span>
                     </Toggle>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
+                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
+                      className="shrink-0"
+                    >
+                      {durationSeconds} s
+                    </Button>
                   </>
                 ) : null}
 

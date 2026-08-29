@@ -52,6 +52,10 @@ test("mobile Video keeps audio available in the essentials row", async ({ page }
   const audio = page.getByRole("button", { name: "Audio on" });
   await expect(audio).toBeVisible();
   await expect(audio).toHaveAttribute("aria-pressed", "true");
+  const audioBox = await audio.boundingBox();
+  expect(audioBox).not.toBeNull();
+  expect(audioBox!.x).toBeGreaterThanOrEqual(0);
+  expect(audioBox!.x + audioBox!.width).toBeLessThanOrEqual(mobileViewport.width);
   await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();
 
