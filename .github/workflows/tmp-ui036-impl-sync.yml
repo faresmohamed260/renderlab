@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Wrap mobile video essentials
+      - name: Centralize video audio default
         shell: bash
         run: |
           git fetch origin work/video-audio-control
@@ -26,24 +26,56 @@ jobs:
               p = Path(path)
               text = p.read_text()
               if old not in text:
-                  raise SystemExit(f"Expected block not found in {path}")
+                  raise SystemExit(f"Expected block not found in {path}: {old[:80]!r}")
               p.write_text(text.replace(old, new, 1))
 
           replace(
-              "src/features/create/create-workspace.tsx",
-              'className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0"',
-              'className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:flex-nowrap sm:overflow-visible sm:pb-0"',
+              "src/lib/capabilities/generation.ts",
+              'export type GenerationInput = {\n  source: GenerationInputSource;\n  role: GenerationInputRole;\n};\n\n',
+              'export type GenerationInput = {\n  source: GenerationInputSource;\n  role: GenerationInputRole;\n};\n\nexport const defaultVideoAudioEnabled = true;\n\n',
+          )
+          replace(
+              "src/lib/capabilities/generation.ts",
+              '      frameRate: 24 as const,\n      audioEnabled: true,\n',
+              '      frameRate: 24 as const,\n',
           )
 
           replace(
-              "tests/ui/create.spec.ts",
-              '''  const audioBox = await audio.boundingBox();\n  expect(audioBox).not.toBeNull();\n  expect(audioBox!.x).toBeGreaterThanOrEqual(0);\n  expect(audioBox!.x + audioBox!.width).toBeLessThanOrEqual(mobileViewport.width);\n  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();\n  await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();\n''',
-              '''  const audioBox = await audio.boundingBox();\n  expect(audioBox).not.toBeNull();\n  expect(audioBox!.x).toBeGreaterThanOrEqual(0);\n  expect(audioBox!.x + audioBox!.width).toBeLessThanOrEqual(mobileViewport.width);\n  const duration = page.getByRole("button", { name: /Duration 5 seconds/ });\n  await expect(duration).toBeVisible();\n  const durationBox = await duration.boundingBox();\n  expect(durationBox).not.toBeNull();\n  expect(durationBox!.x).toBeGreaterThanOrEqual(0);\n  expect(durationBox!.x + durationBox!.width).toBeLessThanOrEqual(mobileViewport.width);\n  await expect(page.getByRole("button", { name: "Open Advanced controls" })).toBeVisible();\n  await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();\n''',
+              "src/features/create/create-workspace.tsx",
+              '  continuationActionsForMedia,\n  imageAspectRatios,\n',
+              '  continuationActionsForMedia,\n  defaultVideoAudioEnabled,\n  imageAspectRatios,\n',
+          )
+          replace(
+              "src/features/create/create-workspace.tsx",
+              '  const [audioEnabled, setAudioEnabled] = useState(true);\n',
+              '  const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);\n',
+          )
+
+          replace(
+              "src/lib/api/generation-contract.ts",
+              'import { generationAdvancedCapabilities } from "@/lib/capabilities/generation";\n',
+              'import { defaultVideoAudioEnabled, generationAdvancedCapabilities } from "@/lib/capabilities/generation";\n',
+          )
+          replace(
+              "src/lib/api/generation-contract.ts",
+              '          ? { durationSeconds: durationSeconds as number, audioEnabled: audioEnabled === undefined ? true : audioEnabled }\n',
+              '          ? { durationSeconds: durationSeconds as number, audioEnabled: audioEnabled === undefined ? defaultVideoAudioEnabled : audioEnabled }\n',
+          )
+
+          replace(
+              "src/server/generation/native-generation.ts",
+              'import { resolveCreativeOperation } from "@/lib/capabilities/generation";\n',
+              'import { defaultVideoAudioEnabled, resolveCreativeOperation } from "@/lib/capabilities/generation";\n',
+          )
+          replace(
+              "src/server/generation/native-generation.ts",
+              '      audioEnabled: true,\n',
+              '      audioEnabled: defaultVideoAudioEnabled,\n',
           )
           PY
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/features/create/create-workspace.tsx tests/ui/create.spec.ts
-          git commit -m "Wrap mobile video essentials"
+          git add src/lib/capabilities/generation.ts src/features/create/create-workspace.tsx src/lib/api/generation-contract.ts src/server/generation/native-generation.ts
+          git commit -m "Centralize video audio default"
           git push origin HEAD:work/video-audio-control
