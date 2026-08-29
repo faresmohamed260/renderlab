@@ -6,6 +6,7 @@ on:
       - "package.json"
       - "proxy.ts"
       - "src/lib/supabase/**"
+      - "src/server/account/**"
       - "src/app/page.tsx"
       - "src/app/library/**"
       - "src/app/api/assets/reference/**"
@@ -19,6 +20,8 @@ on:
       - "src/server/storage/**"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - "supabase/migrations/0010_renderlab_account_admission.sql"
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-account-ownership.mjs"
       - ".github/workflows/account-ownership.yml"
   workflow_dispatch:
@@ -44,6 +47,7 @@ jobs:
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
 
     steps:
       - name: Checkout
