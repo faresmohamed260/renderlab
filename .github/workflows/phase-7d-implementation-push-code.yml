@@ -1,0 +1,76 @@
+name: Phase 7D Implementation Push Code
+
+on:
+  push:
+    branches:
+      - work/phase-7d-video-resolution-v0-2
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Apply guarded Phase 7D implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk '
+            /^[[:space:]]+python - <<'\''PY'\''$/ { capture=1; next }
+            capture && /^[[:space:]]+PY$/ { exit }
+            capture { sub(/^          /, ""); print }
+          ' .github/workflows/phase-7d-implementation-stager.yml > /tmp/phase7d_impl.py
+          test -s /tmp/phase7d_impl.py
+          python /tmp/phase7d_impl.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/verify-video-contract.ts")
+          text = path.read_text()
+          text = text.replace('import { readFile } from "node:fs/promises";', 'import { readFileSync } from "node:fs";')
+          text = text.replace('const nativeSource = await readFile(new URL("../src/server/generation/native-generation.ts", import.meta.url), "utf8");', 'const nativeSource = readFileSync(new URL("../src/server/generation/native-generation.ts", import.meta.url), "utf8");')
+          path.write_text(text)
+          PY
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify pure Phase 7D contract
+        run: npx --yes tsx@4.20.6 scripts/verify-video-contract.ts
+
+      - name: Verify UI primitive policy
+        run: npm run verify:ui-purity
+
+      - name: Type-check staged implementation
+        run: npx tsc --noEmit
+
+      - name: Commit source and verifier implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "renderlab-phase7d-bot"
+          git config user.email "renderlab-phase7d-bot@users.noreply.github.com"
+          git add \
+            src/lib/capabilities/generation.ts \
+            src/lib/api/generation-contract.ts \
+            src/features/create/create-advanced-panel.tsx \
+            src/features/create/create-workspace.tsx \
+            src/server/generation/native-generation.ts \
+            scripts/verify-video-contract.ts \
+            scripts/verify-video-generation.mjs \
+            scripts/verify-create-lifecycle.mjs
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "Implement Phase 7D video resolution"
+          git push origin HEAD:work/phase-7d-video-resolution-v0-2
