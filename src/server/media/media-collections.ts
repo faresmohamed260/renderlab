@@ -145,6 +145,47 @@ async function touchMediaCollection(ownerId: string, collectionId: string, fallb
   return rows?.[0] ?? fallback;
 }
 
+export type SetResolvedMediaCollectionMembershipResult =
+  | { ok: true; collection: MediaCollectionRecord; containsAsset: boolean }
+  | { ok: false; reason: "asset_not_found" };
+
+export async function setResolvedMediaCollectionMembership(
+  ownerId: string,
+  collection: MediaCollectionRecord,
+  assetId: string,
+  containsAsset: boolean,
+): Promise<SetResolvedMediaCollectionMembershipResult> {
+  if (collection.owner_id !== ownerId) return { ok: false, reason: "asset_not_found" };
+
+  const asset = await getMediaAsset(ownerId, assetId);
+  if (!asset) return { ok: false, reason: "asset_not_found" };
+
+  const membership = await getMediaCollectionMembership(ownerId, collection.id, assetId);
+  if (Boolean(membership) === containsAsset) {
+    return { ok: true, collection, containsAsset };
+  }
+
+  if (containsAsset) {
+    await supabaseRest<null>("media_collection_items?on_conflict=collection_id,media_asset_id", {
+      method: "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({
+        collection_id: collection.id,
+        media_asset_id: assetId,
+        owner_id: ownerId,
+      }),
+    });
+  } else {
+    await supabaseRest<null>(
+      `media_collection_items?owner_id=eq.${encodeURIComponent(ownerId)}&collection_id=eq.${encodeURIComponent(collection.id)}&media_asset_id=eq.${encodeURIComponent(assetId)}`,
+      { method: "DELETE" },
+    );
+  }
+
+  const updatedCollection = await touchMediaCollection(ownerId, collection.id, collection);
+  return { ok: true, collection: updatedCollection, containsAsset };
+}
+
 export type SetMediaCollectionMembershipResult =
   | { ok: true; collection: MediaCollectionRecord; containsAsset: boolean }
   | { ok: false; reason: "collection_not_found" | "asset_not_found" };
@@ -155,35 +196,7 @@ export async function setMediaCollectionMembership(
   assetId: string,
   containsAsset: boolean,
 ): Promise<SetMediaCollectionMembershipResult> {
-  const [collection, asset] = await Promise.all([
-    getMediaCollection(ownerId, collectionId),
-    getMediaAsset(ownerId, assetId),
-  ]);
+  const collection = await getMediaCollection(ownerId, collectionId);
   if (!collection) return { ok: false, reason: "collection_not_found" };
-  if (!asset) return { ok: false, reason: "asset_not_found" };
-
-  const membership = await getMediaCollectionMembership(ownerId, collectionId, assetId);
-  if (Boolean(membership) === containsAsset) {
-    return { ok: true, collection, containsAsset };
-  }
-
-  if (containsAsset) {
-    await supabaseRest<null>("media_collection_items?on_conflict=collection_id,media_asset_id", {
-      method: "POST",
-      headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
-      body: JSON.stringify({
-        collection_id: collectionId,
-        media_asset_id: assetId,
-        owner_id: ownerId,
-      }),
-    });
-  } else {
-    await supabaseRest<null>(
-      `media_collection_items?owner_id=eq.${encodeURIComponent(ownerId)}&collection_id=eq.${encodeURIComponent(collectionId)}&media_asset_id=eq.${encodeURIComponent(assetId)}`,
-      { method: "DELETE" },
-    );
-  }
-
-  const updatedCollection = await touchMediaCollection(ownerId, collectionId, collection);
-  return { ok: true, collection: updatedCollection, containsAsset };
+  return setResolvedMediaCollectionMembership(ownerId, collection, assetId, containsAsset);
 }

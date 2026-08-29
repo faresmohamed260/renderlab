@@ -6,7 +6,8 @@ export type MediaAssetSortOrder = "newest" | "oldest";
 
 export const MEDIA_ASSET_SEARCH_MAX_LENGTH = 120;
 export const MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH = 240;
-export const MEDIA_ASSET_BATCH_DELETE_MAX_ITEMS = 24;
+export const MEDIA_ASSET_BATCH_MAX_ITEMS = 24;
+export const MEDIA_ASSET_BATCH_DELETE_MAX_ITEMS = MEDIA_ASSET_BATCH_MAX_ITEMS;
 
 export function normalizeMediaAssetSearchQuery(value: string | null | undefined) {
   const normalized = value?.trim().replace(/\s+/g, " ") ?? "";
@@ -83,6 +84,37 @@ export type BatchDeleteMediaAssetsRequest = {
   assetIds: string[];
 };
 
+export type BatchFavoriteMediaAssetsRequest = {
+  assetIds: string[];
+  favorite: boolean;
+};
+
+export type BatchFavoriteMediaAssetResult =
+  | {
+      assetId: string;
+      ok: true;
+      favorite: boolean;
+    }
+  | {
+      assetId: string;
+      ok: false;
+      error: {
+        code: "asset_not_found" | "media_unavailable";
+        message: string;
+      };
+    };
+
+export type BatchFavoriteMediaAssetsSuccess = {
+  ok: true;
+  favorite: boolean;
+  results: BatchFavoriteMediaAssetResult[];
+  summary: {
+    requested: number;
+    succeeded: number;
+    failed: number;
+  };
+};
+
 export type BatchDeleteMediaAssetResult =
   | {
       assetId: string;
@@ -114,3 +146,4 @@ export type RenameMediaAssetResponse = MediaAssetResponse;
 export type FavoriteMediaAssetResponse = MediaAssetResponse;
 export type DeleteMediaAssetResponse = DeleteMediaAssetSuccess | MediaAssetError;
 export type BatchDeleteMediaAssetsResponse = BatchDeleteMediaAssetsSuccess | MediaAssetError;
+export type BatchFavoriteMediaAssetsResponse = BatchFavoriteMediaAssetsSuccess | MediaAssetError;

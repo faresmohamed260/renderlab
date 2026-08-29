@@ -124,6 +124,36 @@ test("collection management API validates IDs and preserves the signed-out bound
   expect(deleteBody.error.code).toBe("authentication_required");
 });
 
+test("batch organization APIs preserve path validation and signed-out privacy", async ({ request }) => {
+  const assetId = "00000000-0000-4000-8000-000000000000";
+  const collectionId = "00000000-0000-4000-8000-000000000001";
+
+  const favorite = await request.post("/api/media/assets/batch-favorite", {
+    data: { assetIds: [assetId], favorite: true },
+  });
+  expect(favorite.status()).toBe(401);
+  const favoriteBody = await favorite.json();
+  expect(favoriteBody.ok).toBe(false);
+  expect(favoriteBody.error.code).toBe("authentication_required");
+
+  const invalidCollection = await request.post("/api/media/collections/not-a-uuid/items/batch", {
+    data: { assetIds: [assetId], containsAsset: true },
+  });
+  expect(invalidCollection.status()).toBe(400);
+  const invalidCollectionBody = await invalidCollection.json();
+  expect(invalidCollectionBody.ok).toBe(false);
+  expect(invalidCollectionBody.error.code).toBe("invalid_request");
+
+  const membership = await request.post(`/api/media/collections/${collectionId}/items/batch`, {
+    data: { assetIds: [assetId], containsAsset: true },
+  });
+  expect(membership.status()).toBe(401);
+  const membershipBody = await membership.json();
+  expect(membershipBody.ok).toBe(false);
+  expect(membershipBody.error.code).toBe("authentication_required");
+});
+
+
 test("persistent media upload API validates malformed requests before enforcing sign-in", async ({ request }) => {
   const availability = await request.get("/api/media/uploads/upload-tickets");
   expect(availability.ok()).toBeTruthy();

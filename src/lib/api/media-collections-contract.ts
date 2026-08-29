@@ -45,6 +45,38 @@ export type CreateMediaCollectionRequest = {
   name: string;
 };
 
+export type BatchMediaCollectionMembershipRequest = {
+  assetIds: string[];
+  containsAsset: boolean;
+};
+
+export type BatchMediaCollectionMembershipResult =
+  | {
+      assetId: string;
+      ok: true;
+      containsAsset: boolean;
+    }
+  | {
+      assetId: string;
+      ok: false;
+      error: {
+        code: "asset_not_found" | "media_unavailable";
+        message: string;
+      };
+    };
+
+export type BatchMediaCollectionMembershipSuccess = {
+  ok: true;
+  collectionId: string;
+  containsAsset: boolean;
+  results: BatchMediaCollectionMembershipResult[];
+  summary: {
+    requested: number;
+    succeeded: number;
+    failed: number;
+  };
+};
+
 export type UpdateMediaCollectionRequest = {
   name: string;
 };
@@ -59,3 +91,4 @@ export type CreateMediaCollectionResponse = MediaCollectionResponse;
 export type UpdateMediaCollectionResponse = MediaCollectionResponse;
 export type DeleteMediaCollectionResponse = DeleteMediaCollectionSuccess | MediaCollectionError;
 export type MediaCollectionMembershipResponse = MediaCollectionResponse;
+export type BatchMediaCollectionMembershipResponse = BatchMediaCollectionMembershipSuccess | MediaCollectionError;

@@ -292,7 +292,7 @@ export function LibraryView({
               </Empty>
             ) : (
               <>
-                <LibraryBatchSelection key={batchSelectionKey} items={items} />
+                <LibraryBatchSelection key={batchSelectionKey} items={items} collections={collections} />
 
                 {(offset > 0 || hasMore) ? (
                   <nav className="mt-8 flex items-center justify-between gap-3" aria-label="Library pages">
