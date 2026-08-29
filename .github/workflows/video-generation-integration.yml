@@ -6,6 +6,9 @@ on:
     paths:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-video-generation.mjs"
+      - "src/features/create/**"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/api/generation-contract.ts"
       - "src/lib/supabase/**"
       - "src/server/generation/**"
       - "src/server/media/**"
@@ -20,6 +23,9 @@ on:
     paths:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-video-generation.mjs"
+      - "src/features/create/**"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/api/generation-contract.ts"
       - "src/lib/supabase/**"
       - "src/server/generation/**"
       - "src/server/media/**"

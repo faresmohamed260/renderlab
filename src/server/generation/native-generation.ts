@@ -4,7 +4,7 @@ import type {
   GenerationJob,
   GenerationRequest,
 } from "@/lib/capabilities/generation";
-import { resolveCreativeOperation } from "@/lib/capabilities/generation";
+import { defaultVideoAudioEnabled, resolveCreativeOperation } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
@@ -119,7 +119,7 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
       megapixels: 1,
       resolution: "480p",
       durationSeconds: 5,
-      audioEnabled: true,
+      audioEnabled: defaultVideoAudioEnabled,
       frameRate: 24,
     },
   };
@@ -238,7 +238,7 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, sources
   form.append("cfg", String(request.advanced?.guidance ?? workflow.defaults.guidance));
   form.append("resolution", workflow.defaults.resolution!);
   form.append("duration_seconds", String(request.output.durationSeconds ?? workflow.defaults.durationSeconds));
-  form.append("audio_enabled", String(workflow.defaults.audioEnabled));
+  form.append("audio_enabled", String(request.output.audioEnabled ?? workflow.defaults.audioEnabled));
   form.append("aspect_ratio", request.output.aspectRatio);
   form.append("frame_rate", String(request.advanced?.frameRate ?? workflow.defaults.frameRate));
   return form;

@@ -19,6 +19,8 @@ export type GenerationInput = {
   role: GenerationInputRole;
 };
 
+export const defaultVideoAudioEnabled = true;
+
 export const generationAdvancedCapabilities = {
   seed: {
     label: "Seed",
@@ -77,6 +79,7 @@ export type GenerationRequest = {
     kind: OutputKind;
     aspectRatio: AspectRatio;
     durationSeconds?: number;
+    audioEnabled?: boolean;
   };
   inputs: GenerationInput[];
   advanced?: GenerationAdvancedParameters;

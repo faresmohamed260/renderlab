@@ -211,7 +211,7 @@ async function generate(account, request, operation, label) {
     if (job.status === "succeeded") {
       if (job.outputAssetIds?.length !== 1) throw new Error(`${label} missing persisted output`);
       const jobRows = await rows(
-        `generation_jobs?id=eq.${encodeURIComponent(id)}&select=id,status,operation,owner_id&limit=1`,
+        `generation_jobs?id=eq.${encodeURIComponent(id)}&select=id,status,operation,owner_id,parameters&limit=1`,
       );
       const persistedJob = jobRows[0];
       const list = await assets(id);
@@ -219,6 +219,7 @@ async function generate(account, request, operation, label) {
         persistedJob?.owner_id !== account.id
         || persistedJob.status !== "succeeded"
         || persistedJob.operation !== operation
+        || persistedJob.parameters?.output?.audioEnabled !== request.output.audioEnabled
         || list.length !== 1
         || list[0].owner_id !== account.id
         || !list[0].mime_type.startsWith("video/")
@@ -254,7 +255,7 @@ try {
     account,
     {
       prompt: "RenderLab video integration verification: a blue sphere slowly rotating on a neutral studio background",
-      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },
+      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: false },
       inputs: [],
     },
     "create-video",
@@ -266,7 +267,7 @@ try {
     account,
     {
       prompt: "Slowly rotate the sphere with a subtle camera push-in",
-      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },
+      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: true },
       inputs: [{ source: { type: "temporary-source", id: sourceId }, role: "first-frame" }],
     },
     "animate-image",

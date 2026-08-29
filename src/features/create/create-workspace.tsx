@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ImageIcon, MoreHorizontal, Plus, X } from "lucide-react";
+import { ImageIcon, MoreHorizontal, Plus, Volume2, VolumeX, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   advancedParametersFromDraft,
@@ -26,6 +27,7 @@ import type {
 } from "@/lib/capabilities/generation";
 import {
   continuationActionsForMedia,
+  defaultVideoAudioEnabled,
   imageAspectRatios,
   videoAspectRatios,
   videoDurations,
@@ -101,6 +103,7 @@ export function CreateWorkspace({
   const [imageAspect, setImageAspect] = useState<AspectRatio>("1:1");
   const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
+  const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);
   const [reference, setReference] = useState<ReferenceSource | null>(null);
   const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(() =>
     initialContinuation
@@ -405,7 +408,7 @@ export function CreateWorkspace({
           output: {
             kind: outputKind,
             aspectRatio,
-            ...(outputKind === "video" ? { durationSeconds } : {}),
+            ...(outputKind === "video" ? { durationSeconds, audioEnabled } : {}),
           },
           inputs,
           advanced,
@@ -486,7 +489,7 @@ export function CreateWorkspace({
             />
 
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:flex-nowrap sm:overflow-visible sm:pb-0">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -560,15 +563,28 @@ export function CreateWorkspace({
                 </Button>
 
                 {outputKind === "video" ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
-                    aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
-                    className="shrink-0"
-                  >
-                    {durationSeconds} s
-                  </Button>
+                  <>
+                    <Toggle
+                      pressed={audioEnabled}
+                      onPressedChange={setAudioEnabled}
+                      size="sm"
+                      aria-label={`Audio ${audioEnabled ? "on" : "off"}`}
+                      title={audioEnabled ? "Generate video with audio" : "Generate video without audio"}
+                      className="shrink-0 gap-1.5 bg-surface-2"
+                    >
+                      {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}
+                      <span className="hidden sm:inline">Audio</span>
+                    </Toggle>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
+                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
+                      className="shrink-0"
+                    >
+                      {durationSeconds} s
+                    </Button>
+                  </>
                 ) : null}
 
                 <CollapsibleTrigger asChild>
