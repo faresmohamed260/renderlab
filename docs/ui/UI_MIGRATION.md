@@ -1035,14 +1035,114 @@ The Phase 9 planning audit found a concrete app-level race blocker, so no genera
 - Cancel remains deliberately deferred; no shell-global polling/job store, successful-job Run Again, provider/admin UI, schema migration or deployment was added.
 
 ### Phase 10 — Account, Admin & Closed-Beta Operations
-- [ ] Add account recovery/password reset and improve requirement-backed verification/session failure handling through the maintained Supabase Auth/session boundary.
-- [ ] Address the Phase 6 leaked-password-protection warning before broader access if supported by the chosen Auth plan/configuration.
-- [ ] Define an explicit server-authoritative admin authorization role/claim before exposing any privileged route or mutation.
-- [ ] Build a privileged Admin surface for closed-beta user/access management, generation concurrency/rate limits, feature flags and useful job/service-health/failure visibility. Keep it separate from ordinary user Settings.
-- [ ] Admin may expose more operational context than ordinary Activity, but raw secrets and unsafe arbitrary cloud/provider mutation are not implied.
-- [ ] Establish server-enforced generation concurrency/rate/abuse limits before any deliberate move beyond controlled Closed Beta.
-- [ ] Evaluate account/data deletion separately from UI-033 media deletion.
-- [ ] Billing/credits remain a separate product decision.
+**Phase contract status:** `EXPANDED / READY FOR EXECUTION` under UI-051.
+**Execution status:** `NOT STARTED` until this contract is merged. No deployment is included or authorized.
+
+#### Goal
+Turn the current authenticated Closed Beta into an operable, recoverable and abuse-bounded product without coupling RenderLab to other applications sharing the Supabase project or exposing provider infrastructure to ordinary users.
+
+#### Verified starting state — 2026-08-30
+- Merged starting `main`: `ced9632e343a89ac9a815175835b6f3899eac10d` (Phase 9 complete).
+- `/settings` currently exposes email/password Sign in, public `Create account`, and Sign out only. There is no Forgot password, recovery callback, password-change flow or RenderLab access-status concept.
+- `getCurrentRenderLabAccount()` validates a non-anonymous authenticated JWT with `getClaims()` and returns only `{id,email}`; there is no RenderLab role/admin authorization boundary.
+- There is no `/admin` route, no admin API, no account/access/limit/flag table and no generic client/server feature-flag framework.
+- All current RenderLab durable product tables remain server-owned: RLS enabled, browser grants revoked, owner-scoped product routes backed by the service role.
+- Generation submission validates product intent/inputs and routes to native or configured external execution, but there is no app-level generation admission/rate/concurrency guard before backend/provider work.
+- The live shared Supabase project is healthy. Security Advisor continues to report only the expected server-owned `rls_enabled_no_policy` informational notices plus `auth_leaked_password_protection` WARN. Leaked-password protection is plan-gated in current Supabase Auth documentation.
+- `@supabase/supabase-js` is `2.112.4`; current Supabase docs support SSR PKCE recovery/token-hash verification, `resetPasswordForEmail`, password update with current-password/reauth options, and server-only Auth Admin invite/user APIs.
+- The shared Auth namespace is not a RenderLab user directory. Phase 10 must never auto-import/list every `auth.users` account merely because it exists in the same Supabase project.
+
+#### Locked product/architecture decisions
+1. **RenderLab access is separate from Supabase identity.** Authentication proves who the user is; a server-only RenderLab access record determines whether that identity may use private RenderLab product surfaces and whether it is `member` or `admin`.
+2. **No authorization from browser-editable metadata.** `user_metadata` is never trusted for role/access. v0.1 also avoids JWT/app-metadata role claims so privilege changes are immediate and do not depend on token refresh.
+3. **Privileged operations re-confirm Auth identity.** Ordinary product identity may continue using verified `getClaims()` plus the RenderLab access lookup. `/admin` pages and admin mutations must use current server-confirmed Auth user/session identity (`getUser()` or equivalent authoritative Auth lookup) and then require an active `admin` access record.
+4. **Closed Beta becomes admission-gated, not public-signup-gated by convention.** The visible self-service `Create account` action is removed. Admin creates a RenderLab invitation by normalized email; best-effort Supabase `inviteUserByEmail` may deliver the invite. If that Auth email already exists, the RenderLab invitation remains claimable when the verified user signs in. Uninvited authenticated Supabase identities do not gain RenderLab product access.
+5. **No shared-Auth namespace backfill.** Production rollout requires an explicit operator-supplied bootstrap/import list of known RenderLab user UUIDs. CI uses run-owned synthetic accounts. No migration scans all `auth.users` and no Admin screen lists users who are not in RenderLab access/invitation records.
+6. **Admin is a separate privileged route.** `/admin` is approved. It is not added to ordinary global shell navigation in v0.1; active admins get a contextual link from Settings. Non-admin/suspended users must not learn privileged data from page/API differences.
+7. **Admin controls are typed and bounded.** v0.1 may manage RenderLab invitations, member/admin role, active/suspended access, per-account generation enablement/limit overrides, global generation enablement/default limits, and sanitized RenderLab job-health aggregates. It does not expose provider credentials, raw worker/workflow routing, arbitrary cloud mutation, other applications' users, account deletion or password administration.
+8. **Generation guardrails are admission reservations, not a racy read-before-submit counter.** Every ordinary submission path, including Retry, must obtain a server-only transactional admission reservation after product/input validation and before any native/external backend/provider request. The same-owner check is serialized in Postgres so concurrent requests cannot both pass stale counts.
+9. **Closed-beta defaults are exact but not pricing/SLA claims.** Effective defaults are `maxActiveJobs=1` and `maxJobsPerRollingHour=12`; admin overrides are bounded to active jobs `1–4` and hourly jobs `1–120`. `generationEnabled` is a typed global/account kill switch. Retry counts as a new admitted submission. Active jobs are `queued|preparing|running|persisting`. All admitted dispatch attempts count toward the rolling-hour abuse guard even if execution subsequently fails.
+10. **Account/data deletion remains separate.** Phase 10 does not delete Auth users or durable RenderLab data. UI-033 media deletion stays media-only. Billing/credits remain a separate decision.
+
+#### Planned server-owned schema
+One migration may introduce the following RenderLab-owned, RLS-enabled, browser-revoked records. Exact names may be adjusted only if implementation evidence requires it; semantics may not drift without updating UI-051.
+- `renderlab_account_access`: `user_id` primary identity, `role` exactly `member|admin`, `status` exactly `active|suspended`, nullable per-account `generation_enabled`, `max_active_jobs`, `max_jobs_per_hour`, timestamps. No user-controlled writes.
+- `renderlab_beta_invitations`: normalized email, state `pending|claimed|revoked`, requested role (v0.1 default member), inviter, optional claimed user ID, timestamps/expiry. Email normalization/claim must be deterministic and owner/operator controlled.
+- `renderlab_beta_settings`: singleton typed operational settings with global `generation_enabled`, default active-job limit `1`, default rolling-hour limit `12`, updater and timestamp. No arbitrary JSON feature-flag bag in v0.1.
+- `generation_admission_reservations`: server-only admission identity, owner, creation/expiry, optional resulting job ID and release/finalization state sufficient to make same-owner rate/concurrency checks transactional before backend dispatch. Old rows may be pruned by bounded retention; they are operational metadata, not billing credits.
+
+All new tables must follow the existing server-owned pattern: RLS enabled, no anon/authenticated grants, service-role/server access only. Any SQL function used for transactional admission or invitation claiming must set an explicit safe `search_path`, have execution revoked from public/anon/authenticated and expose no service-role secret.
+
+#### Slice 10A — Account Recovery & Closed-Beta Admission
+- Keep Settings as the ordinary account surface; do not create a second general account destination.
+- Signed-out Settings: Sign in + `Forgot password?`; remove public `Create account` from the ordinary UI once admission support exists.
+- Recovery request uses Supabase Auth `resetPasswordForEmail` with a fixed RenderLab redirect. Product copy is enumeration-safe: success does not reveal whether an email exists.
+- Add server `GET /auth/confirm` token-hash exchange for only allowlisted Auth email types needed by RenderLab (`recovery` and `invite` in v0.1). Sanitize/allowlist `next`; no open redirect.
+- Recovery/invite completion lands on `/settings/password`; password update uses the maintained Supabase Auth session and generic product error copy. CI may use server-only Auth Admin link generation so tests do not depend on email delivery.
+- Signed-in Settings adds Change password. Require current password for the ordinary signed-in change path when supported by the configured Auth policy/client; recovery-session reset does not ask for the old password.
+- Add server-only access lookup/claim logic. A verified email with a matching pending invitation may transactionally claim it into `renderlab_account_access`; otherwise an authenticated but unadmitted identity remains outside private RenderLab product access.
+- Settings remains reachable for signed-in suspended users so they can understand access state, change password and sign out. Create may remain visually draftable, but generation/uploads/private media/history require active RenderLab access.
+- Production enablement requires an explicit bootstrap/import of known RenderLab account UUIDs supplied by the operator; no shared-project Auth scan/backfill.
+
+#### Slice 10B — Privileged Admin & Access Control
+- Add `/admin` as a server-authorized privileged surface with three bounded sections: **Access**, **Generation controls**, **Health**.
+- Settings may show an Admin link only for an active admin; global desktop/mobile shell navigation remains Create/Library/Activity/Settings for ordinary users.
+- Access list is sourced from `renderlab_account_access` and pending RenderLab invitations only. Auth Admin user lookup is by already-known RenderLab user ID; do not render a paginated directory of the shared Supabase Auth project.
+- Admin mutations: create/revoke pending invitation; activate/suspend RenderLab access; set `member|admin`; change per-account generation enabled/limit overrides. The last active admin cannot be demoted or suspended; self-lockout is rejected transactionally.
+- Invitation delivery uses server-only Supabase Auth Admin. A duplicate/existing Auth identity must not cause cross-application user disclosure; keep the RenderLab invitation claimable by exact verified email and return sanitized operator feedback.
+- Health is aggregate RenderLab product state only: recent counts by operation/status, active-job count and sanitized product error codes over bounded windows. No prompts/media contents/provider IDs/worker IDs/workflow IDs/raw provider messages/secrets.
+- Unauthorized `/admin` page/API requests fail closed without privileged payload. Admin writes require fresh server-confirmed Auth identity plus active RenderLab admin role.
+
+#### Slice 10C — Atomic Generation Admission Guardrails
+- Centralize admission inside the shared generation submission boundary so Create and Activity Retry cannot bypass it.
+- Order: parse/current capability validation → owner/input preflight → transactional admission reservation → native/external submit → bind/release reservation based on submission result.
+- Effective settings resolve global defaults plus nullable account overrides. `status=suspended`, missing access, global/account generation disabled, active-limit reached and rolling-hour-limit reached all stop before backend/provider network work.
+- Product responses are stable/sanitized: access denial `403`, generation disabled `503`, and rate/concurrency limits `429` with user-understandable messages and no provider detail.
+- Same-owner reservation creation is serialized transactionally in Postgres. A non-bound reservation expires conservatively if the process dies; immediate submission failure releases concurrency while the admitted dispatch still counts against the rolling-hour abuse window.
+- Bound reservations use current `generation_jobs` state for active-slot release; a missing/unreadable job stays conservative until bounded lease expiry rather than allowing unbounded parallel spend.
+- The configured external backend path may remain enabled only if RenderLab obtains the reservation before making the external network request. Provider/backend code cannot be the only place enforcing the limit.
+- No billing/credit ledger is inferred from these counters. Admin labels must say limits/guardrails, not credits or plan allowance.
+
+#### Slice 10D — Auth / Operational Hardening
+- Re-run Supabase Security Advisor after schema work. Existing server-owned RLS/no-policy INFO notices remain acceptable only while browser grants are still revoked and documented.
+- Resolve leaked-password protection if the current Supabase plan supports it. If plan/config does not support it, record the external blocker explicitly and keep broader-beta release blocked; do not fake an app-level equivalent claim.
+- Verify recovery/invite redirect URL and email-template posture for SSR PKCE. Current Supabase production guidance prefers custom SMTP; Phase 10 records actual delivery configuration and any blocker rather than assuming built-in mail is launch-ready.
+- Re-audit all new grants/functions/tables, exact fixture cleanup, shared-resource separation, provider-spend posture and admin error sanitization.
+- No automatic Vercel deployment, no public-beta switch and no broader access merely because Phase 10 code merges.
+
+#### UI composition
+- Reuse maintained Field/Input/Button/Alert/NativeSelect/Checkbox/AlertDialog/Spinner and existing layout tokens where appropriate. Search the maintained component layer before adding any generic primitive.
+- Settings recovery/password controls remain compact account/security cards, not a marketing onboarding redesign.
+- Admin is information-dense but conventional: bounded sections, clear effective/global vs override values, explicit destructive/suspension confirmations, responsive stacked records on narrow screens and no provider-themed operational console aesthetic.
+- Busy/success/error state must be visible locally, keyboard reachable, touch friendly and static under reduced motion.
+
+#### Verification contract
+No live generation spend is required for the admission/limit matrix; use a run-local authenticated mock generation backend plus run-owned Auth/Supabase fixtures. Existing native Generation/Video regression gates remain authoritative for ordinary generation when affected.
+
+Minimum configured Phase 10 verifier must cover:
+- run-owned admin, member, suspended/unadmitted/foreign identities; exact RenderLab access/invitation isolation; non-admin `/admin` denial; last-admin protection;
+- password change and recovery-token flow using run-owned users/admin-generated link; generic recovery copy; invalid/expired token handling; no open redirect;
+- invitation creation/claim/revoke semantics without exposing unrelated shared Auth users;
+- active/suspended access enforcement across generation, reference/persistent upload, Library/media and Activity surfaces while Settings remains usable;
+- global kill switch, per-account enable override, default/override effective limit display;
+- two simultaneous same-owner valid submissions at `maxActiveJobs=1` yield exactly one reservation/backend attempt and one `429`; terminal/released state restores capacity;
+- rolling-hour default accepts exactly 12 admitted attempts and rejects the 13th before backend work; Retry consumes the same admission path; account overrides are bounded and verified;
+- sanitized admin health aggregates, no prompt/media/provider/workflow/worker/raw-error leakage;
+- server-only new tables/functions retain zero browser grants; admin/access decisions do not use `user_metadata` or client-supplied role claims;
+- exact cleanup of all run-owned access/invitation/reservation/job/media/source/Auth fixtures.
+
+Required exact-head affected gates after the final implementation slice: UI Shell Validation, Account Ownership, Reference Upload Integration, Create Durable Upload, Create Lifecycle Visual, Library Lifecycle Visual, Media Delete Visual, Activity Visual, Generation Integration, Video Generation Integration, plus a new configured **Account/Admin Operations** workflow. Run any additional path-triggered Library/media gates. Human review is required for Settings recovery/password and Admin desktop/narrow artifacts; DOM/build assertions alone are insufficient.
+
+#### Phase 10 exit criteria
+- [ ] 10A recovery/change-password and invitation-gated Closed-Beta admission are implemented/verified without public product self-admission.
+- [ ] Active/suspended RenderLab access is server authoritative across all private product operations; Settings remains a safe recovery/sign-out surface.
+- [ ] `/admin` is restricted to active RenderLab admins, lists only RenderLab-owned access/invitation records and prevents last-admin/self-lockout hazards.
+- [ ] Typed global/account generation controls and sanitized health visibility work without provider/worker/workflow leakage.
+- [ ] Transactional pre-backend admission enforces effective concurrency/rate defaults and overrides for Create and Retry without a concurrent race bypass.
+- [ ] New server-owned schema/functions have RLS, zero browser grants, safe function privileges/search paths and exact fixture cleanup.
+- [ ] Supabase recovery/email/leaked-password posture is verified; unsupported leaked-password protection remains an explicit broader-beta blocker rather than a false completion claim.
+- [ ] Exact-head affected CI and required desktop/narrow human artifact review pass.
+- [ ] Authoritative docs match verified implementation reality; Phase 11 remains blocked until Phase 10 is closed.
 
 ### Phase 11 — Brand & Launch Experience
 - [ ] Establish RenderLab logo/brand identity and production-ready brand assets/banners.
@@ -1077,9 +1177,9 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–9 are complete and verified under the Closed Beta boundary.
-**Current completed phase contract:** Phase 9 — Activity v2 / Recovery & Job Control is `COMPLETE / VERIFIED` under UI-050.
-**Completed product slice:** Phase 9A Generation Retry v0.1 — failed-job-only Retry from stored product intent with current capability/input revalidation and a distinct new job identity.
-**Current gate:** Expand and merge the Phase 10 Account/Admin/Closed-Beta Operations contract before implementation. Do not add Phase 10 features or deploy merely because Phase 9 is complete.
+**Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `EXPANDED / READY FOR EXECUTION` under UI-051; implementation is blocked until the contract PR merges.
+**Next implementation sequence after contract merge:** 10A Recovery/Admission → 10B Admin/Access → 10C Generation Guardrails → 10D Auth/Operational Hardening.
+**Current gate:** Merge the UI-051 Phase 10 contract. Do not implement Phase 10 or deploy before that merge.
 **Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
 **Later Cycle 2:** Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.

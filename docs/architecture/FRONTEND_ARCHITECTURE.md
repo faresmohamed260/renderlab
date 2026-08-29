@@ -100,6 +100,29 @@ UI-050 keeps Activity data server-owned and adds one small failed-row client mut
 
 Exact code/test head `ab33e146ccaa7770f3dd66146708f01933cc0173` passed the seven Phase 9 minimum/affected workflows. Configured Activity `33279062575` verified the request/ownership/legacy/input/provider-isolation matrix without generation spend and exact cleanup; final artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) was human-reviewed after fixing a narrow feedback-wrap issue. No Cancel endpoint exists in v0.1; the existing cancellation race audit remains authoritative. `AppShell` stays free of account/job polling and there is no global client job store.
 
+
+### Accepted Phase 10 account/admin/admission boundary — planned, not implemented
+UI-051 adds a server-owned RenderLab access layer above verified Supabase identity. `getCurrentRenderLabAccount()` remains the identity primitive; Phase 10 adds access helpers that resolve a protected RenderLab `member|admin` + `active|suspended` record and may transactionally claim a pending invitation for the same verified email. Ordinary private product routes require active access. Settings remains available to signed-in suspended users for password recovery/change and sign-out. Admin authorization is stricter: re-confirm the current Auth user server-side and then require an active RenderLab `admin` record. Never use `user_metadata` or browser-supplied role data for authorization.
+
+The shared Supabase Auth directory is not a RenderLab directory. Admin account listing starts from RenderLab-owned access rows and resolves already-known Auth IDs server-side as needed; invitation claim starts from a RenderLab normalized-email invitation. There is no automatic `auth.users` backfill. Production rollout must receive explicit known RenderLab user IDs from the operator before access enforcement is enabled.
+
+Planned account flow keeps Supabase Auth rather than creating parallel credential APIs: enumeration-safe `resetPasswordForEmail`, allowlisted SSR token-hash `GET /auth/confirm` for recovery/invite, `/settings/password`, signed-in current-password change and existing cookie refresh. CI may use server-only Auth Admin link generation. The visible ordinary self-service Create-account affordance is removed once invitations/access are implemented.
+
+Planned privileged APIs are narrow and server-authorized:
+```text
+POST          /api/admin/invitations
+DELETE        /api/admin/invitations/[invitationId]
+GET           /api/admin/accounts
+PATCH         /api/admin/accounts/[userId]
+GET|PATCH     /api/admin/settings
+GET           /api/admin/health
+```
+They expose only RenderLab access/invitation/settings and sanitized aggregate product health. No raw `auth.users` directory, passwords, provider credentials/routing or account deletion.
+
+Generation admission becomes part of the shared `submitGeneration` server boundary. After current request/input validation but before native/external network work, a service-role-only transactional reservation resolves effective global/account `generationEnabled`, one-active-job default and 12-admitted-jobs/rolling-hour default (bounded account overrides: active 1–4, hourly 1–120). Same-owner reservation checks serialize in Postgres. Create and Retry therefore cannot bypass one another. Immediate dispatch failure releases concurrency while preserving the rolling-hour admission count; unbound/crashed reservations expire conservatively. These are abuse/spend guardrails, not billing credits.
+
+Planned server-owned records are `renderlab_account_access`, `renderlab_beta_invitations`, `renderlab_beta_settings`, and `generation_admission_reservations`. RLS stays enabled with browser grants revoked. Any admission/claim SQL function must use an explicit safe search path and have execute revoked from public/anon/authenticated. No generic client global account/admin store is introduced.
+
 ## Product API Boundaries
 ```text
 POST     /api/generation/jobs
