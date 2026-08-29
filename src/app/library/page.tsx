@@ -65,6 +65,7 @@ export default async function LibraryPage({
   const selectedCollectionId = parseCollection(params.collection);
   const offset = parseOffset(params.offset);
   let available = isSupabaseConfigured() && isR2Configured();
+  let collectionsAvailable = Boolean(account) && isSupabaseConfigured();
   let items: PublicMediaAsset[] = [];
   let collections: PublicMediaCollection[] = [];
   let hasMore = false;
@@ -77,6 +78,7 @@ export default async function LibraryPage({
         selectedCollectionId && !collections.some((collection) => collection.id === selectedCollectionId),
       );
     } catch {
+      collectionsAvailable = false;
       available = false;
     }
   }
@@ -107,6 +109,7 @@ export default async function LibraryPage({
       uploadAvailable={Boolean(account) && isMediaUploadConfigured()}
       items={items}
       collections={collections}
+      collectionsAvailable={collectionsAvailable}
       selectedCollectionId={selectedCollectionId}
       collectionMissing={collectionMissing}
       kind={kind}

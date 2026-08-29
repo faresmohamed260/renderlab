@@ -90,6 +90,49 @@ export async function createMediaCollection(ownerId: string, requestedName: stri
   }
 }
 
+export async function renameMediaCollection(ownerId: string, collectionId: string, requestedName: string) {
+  const collection = await getMediaCollection(ownerId, collectionId);
+  if (!collection) return null;
+
+  const name = normalizeMediaCollectionName(requestedName);
+  if (!name) throw new RangeError("A collection name is required.");
+  if (name.length > MEDIA_COLLECTION_NAME_MAX_LENGTH) {
+    throw new RangeError(`Collection names may not exceed ${MEDIA_COLLECTION_NAME_MAX_LENGTH} characters.`);
+  }
+  if (name === collection.name) return collection;
+
+  try {
+    const rows = await supabaseRest<MediaCollectionRecord[]>(
+      `media_collections?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(collectionId)}&select=*`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({ name, updated_at: new Date().toISOString() }),
+      },
+    );
+    return rows?.[0] ?? null;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('"23505"')) {
+      throw new RangeError("A collection with that name already exists.");
+    }
+    throw error;
+  }
+}
+
+export async function deleteMediaCollection(ownerId: string, collectionId: string) {
+  const collection = await getMediaCollection(ownerId, collectionId);
+  if (!collection) return null;
+
+  const rows = await supabaseRest<MediaCollectionRecord[]>(
+    `media_collections?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(collectionId)}&select=*`,
+    {
+      method: "DELETE",
+      headers: { Prefer: "return=representation" },
+    },
+  );
+  return rows?.[0] ?? null;
+}
+
 async function touchMediaCollection(ownerId: string, collectionId: string, fallback: MediaCollectionRecord) {
   const rows = await supabaseRest<MediaCollectionRecord[]>(
     `media_collections?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(collectionId)}&select=*`,
