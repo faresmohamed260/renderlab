@@ -1,0 +1,103 @@
+name: Qwen Semantic Output Audit
+
+on:
+  push:
+    branches:
+      - audit/phase-7b-semantic-output
+    paths:
+      - .github/workflows/audit-qwen-semantic-output.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  qwen-semantic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download synthetic FLUX source fixtures
+        uses: actions/download-artifact@v4
+        with:
+          name: renderlab-phase-7b-semantic-output
+          path: /tmp/semantic-sources
+          github-token: ${{ github.token }}
+          repository: faresmohamed260/renderlab
+          run-id: 33263044354
+
+      - name: Run bounded Qwen semantic cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://voidtrek--saga-qwen-image-edit-2511-gateway-web.modal.run'
+          mkdir -p artifacts/qwen-semantic /tmp/qwen-poll
+          cp /tmp/semantic-sources/01-source-a.png artifacts/qwen-semantic/01-source-a.png
+          cp /tmp/semantic-sources/02-source-b.png artifacts/qwen-semantic/02-source-b.png
+
+          poll_result() {
+            local call_id="$1"
+            local output="$2"
+            for attempt in $(seq 1 120); do
+              local code
+              code=$(curl --silent --show-error --max-time 40 -D /tmp/qwen-poll/headers -o /tmp/qwen-poll/body -w '%{http_code}' "$base/jobs/$call_id")
+              if [ "$code" = '202' ]; then
+                sleep 3
+                continue
+              fi
+              if [ "$code" = '200' ]; then
+                local content_type
+                content_type=$(awk 'BEGIN{IGNORECASE=1} /^content-type:/{print $2}' /tmp/qwen-poll/headers | tr -d '\r' | tail -1)
+                case "$content_type" in
+                  image/*) cp /tmp/qwen-poll/body "$output"; return 0 ;;
+                  *) echo "Qwen completed with unexpected content type: $content_type"; cat /tmp/qwen-poll/body; return 1 ;;
+                esac
+              fi
+              echo "Qwen poll failed HTTP $code"
+              cat /tmp/qwen-poll/body
+              return 1
+            done
+            echo 'Qwen semantic generation timed out.'
+            return 1
+          }
+
+          outfit_prompt='Use image 1 as the same fictional person. Preserve the recognizable facial appearance, facial features, short black bob haircut, round black eyeglasses, beauty mark, age, pose, and camera framing. Change only the clothing to a tailored emerald-green suit jacket over a crisp white shirt. Keep a photorealistic studio portrait and do not add another person.'
+          outfit_response=$(curl --fail --silent --show-error --max-time 60 -X POST "$base/jobs/edit" \
+            -F 'image_files=@/tmp/semantic-sources/01-source-a.png;type=image/png' \
+            -F "prompt=$outfit_prompt" \
+            -F 'negative_prompt=' -F 'seed=42' -F 'steps=4' -F 'cfg=1' -F 'megapixels=1')
+          echo "Qwen outfit submit: $outfit_response"
+          outfit_call=$(printf '%s' "$outfit_response" | python -c 'import json,sys; print(json.load(sys.stdin)["call_id"])')
+          poll_result "$outfit_call" artifacts/qwen-semantic/03-qwen-outfit-edit.png
+
+          # Physical input order is B then A. This is the positional prompt RenderLab's
+          # stable alias mapping would produce for product intent @image1=A, @image2=B.
+          pair_prompt='Create one photorealistic studio photograph containing both source people. Put the person from image 2 on the LEFT, preserving the short black bob, round black eyeglasses, recognizable facial appearance, and mustard-yellow jacket. Put the person from image 1 on the RIGHT, preserving the curly copper hair, freckles, recognizable facial appearance, and cobalt-blue sweater. Both people must be visible waist-up as two distinct people standing side by side on a neutral gray studio background. No extra people and no text.'
+          pair_response=$(curl --fail --silent --show-error --max-time 60 -X POST "$base/jobs/edit" \
+            -F 'image_files=@/tmp/semantic-sources/02-source-b.png;type=image/png' \
+            -F 'image_files=@/tmp/semantic-sources/01-source-a.png;type=image/png' \
+            -F "prompt=$pair_prompt" \
+            -F 'negative_prompt=' -F 'seed=42' -F 'steps=4' -F 'cfg=1' -F 'megapixels=1')
+          echo "Qwen pair submit: $pair_response"
+          pair_call=$(printf '%s' "$pair_response" | python -c 'import json,sys; print(json.load(sys.stdin)["call_id"])')
+          poll_result "$pair_call" artifacts/qwen-semantic/04-qwen-two-person-reordered-inputs.png
+
+          cat > artifacts/qwen-semantic/manifest.json <<EOF
+          {
+            "auditedGateway": "qwen-primary-01",
+            "outfitCallId": "$outfit_call",
+            "pairCallId": "$pair_call",
+            "physicalPairInputOrder": ["sourceB/image2", "sourceA/image1"],
+            "translatedPairIntent": "image 2/source A left; image 1/source B right",
+            "reviewRequired": true
+          }
+          EOF
+
+      - name: Upload Qwen semantic artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-qwen-semantic-output
+          path: artifacts/qwen-semantic/**
+          if-no-files-found: warn
+          retention-days: 14
