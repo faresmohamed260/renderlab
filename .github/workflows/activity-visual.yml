@@ -12,16 +12,23 @@ on:
       - "src/lib/utils.ts"
       - "src/lib/supabase/**"
       - "src/lib/capabilities/generation.ts"
+      - "src/lib/api/generation-contract.ts"
       - "src/lib/api/generation-activity-contract.ts"
+      - "src/lib/api/generation-retry-contract.ts"
       - "src/app/activity/**"
+      - "src/app/api/generation/jobs/**"
       - "src/features/activity/**"
       - "src/server/data/**"
+      - "src/server/media/media-assets.ts"
       - "src/server/generation/generation-activity.ts"
+      - "src/server/generation/retry-generation.ts"
+      - "src/server/generation/submit-generation.ts"
       - "src/server/generation/poll-generation.ts"
       - "src/server/generation/native-generation.ts"
       - "supabase/migrations/0002_generation_jobs_media_assets.sql"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - "supabase/migrations/0009_media_asset_deletion.sql"
   workflow_dispatch:
 
 permissions:
@@ -41,6 +48,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_GENERATION_BACKEND_URL: http://127.0.0.1:3010
+      RENDERLAB_GENERATION_BACKEND_TOKEN: renderlab-activity-retry-ci-token
 
     steps:
       - name: Checkout
