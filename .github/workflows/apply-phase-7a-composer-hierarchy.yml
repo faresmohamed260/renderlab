@@ -1,0 +1,58 @@
+name: Apply Phase 7A composer hierarchy
+
+on:
+  push:
+    branches: [work/phase-7a-composer-hierarchy]
+    paths:
+      - "scripts/apply-phase-7a-composer-hierarchy.py"
+      - ".github/workflows/apply-phase-7a-composer-hierarchy.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-7a-composer-hierarchy
+          fetch-depth: 0
+
+      - name: Apply composer hierarchy patch
+        run: python scripts/apply-phase-7a-composer-hierarchy.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify UI purity
+        run: npm run verify:ui-purity
+
+      - name: Remove migration helpers
+        run: rm scripts/apply-phase-7a-composer-hierarchy.py .github/workflows/apply-phase-7a-composer-hierarchy.yml
+
+      - name: Validate diff
+        run: |
+          git add -A
+          git diff --cached --check
+          git diff --cached --stat
+          git status --short
+
+      - name: Commit composer hierarchy slice
+        run: |
+          git config user.name "RenderLab Phase 7A Bot"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git commit -m "De-crowd Create composer controls"
+          git push origin HEAD:work/phase-7a-composer-hierarchy
