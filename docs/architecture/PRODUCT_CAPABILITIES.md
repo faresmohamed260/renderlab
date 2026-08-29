@@ -209,4 +209,6 @@ Provider routing, worker selection, ecosystem IDs, R2 keys, ComfyUI node/graph i
 8. Unsurfaced capabilities may exist in architecture without being advertised prematurely.
 
 ## Current Capability Work
-The initial Create capability slice is implemented. The remaining Create approval task is not a missing capability definition; it is the final responsive visual review of the complete **configured real generation → persisted result → continuation** lifecycle. Future capability work should grow from verified user needs/workflows rather than pre-populating the UI with theoretical ComfyUI options.
+The initial Create capability set is implemented and approved: Create Image, Edit Image, Create Video and Animate Image all have live configured coverage, durable continuation is established, and UI-035 now adds account-private Activity over persisted `generation_jobs`.
+
+The Phase 5 capability-surface audit found no current user goal that justifies dedicated Models or Workflows screens. Qwen and registered workflow/model/ecosystem identities remain execution choices behind the capability boundary, while all currently approved creative operations are already reachable through Create/Viewer. Likewise, none of the extensibility categories above is a current product commitment, so there is no additional capability-specific screen to implement now. Future capability work must start from a verified user need and an explicit product slice rather than pre-populating navigation or controls from backend possibilities.

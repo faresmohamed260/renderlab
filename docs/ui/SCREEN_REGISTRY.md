@@ -171,8 +171,14 @@ Approved behavior:
 
 ### Activity
 **Route:** `/activity`  
-**Status:** PLANNED; temporary route placeholder  
-**Purpose:** Show current/recent RenderLab `generation_jobs`, real execution state and actionable failures without exposing worker infrastructure as user responsibility.
+**Status:** UI-035 IN FINAL VALIDATION on PR #34
+**Implementation:** `src/app/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`
+**Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/server/generation/generation-activity.ts`, existing owner-aware generation polling
+**Purpose:** Show current/recent account-owned RenderLab `generation_jobs`, real execution state and actionable product failures without exposing worker infrastructure as user responsibility.
+
+**UI-035 behavior:** newest-first 20-job pages; queued/preparing/running/persisting/succeeded/failed/cancelled product state; lightweight refresh only while jobs are active; sanitized failure copy; result links only for currently active owner media; signed-out/unavailable/empty states; no cancel/retry/worker/workflow/model controls.
+
+**Implementation evidence:** exact head `153e2a10daebea7c0a8fdfa0dfb786533b9c1c4c` passed Activity `33222845134`, Account Ownership `33222845130`, UI Shell `33222845124`, Create Lifecycle `33222845174`, Generation Integration `33222845170`, and Video Generation `33222845127`. Desktop/mobile Activity artifacts were reviewed clean and the shared-resource audit returned to zero.
 
 ### Settings
 **Route:** `/settings`  

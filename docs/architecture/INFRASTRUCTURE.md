@@ -428,6 +428,7 @@ Actions budget discipline:
 
 Key workflows:
 - `verify-create-lifecycle.mjs` + `create-lifecycle-visual.yml`
+- `verify-activity.mjs` + `activity-visual.yml` — two-account generation-history privacy, lifecycle/status rendering, internal-error redaction, active-result filtering, bounded pagination, responsive screenshots and exact cleanup
 - `verify-media-upload.mjs` + `media-upload-integration.yml`
 - `verify-library-lifecycle.mjs` + `library-lifecycle-visual.yml` — shared-resource lifecycle is serialized and exact durable fixture identity is used for browser targeting
 - `verify-library-batch-delete.mjs` + `library-batch-delete-visual.yml` — page-scoped selection, per-item partial success, R2/database cleanup, ownership isolation, idempotence and responsive confirmation
