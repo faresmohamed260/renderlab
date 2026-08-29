@@ -1,0 +1,212 @@
+name: Temporary UI-036 Implementation Sync
+
+on:
+  push:
+    branches: [tmp/ui036-implementation-sync]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/create-upload-audio-v0-1
+          fetch-depth: 0
+      - name: Apply UI-036 product changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"anchor not found in {path}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          upload_helper = Path('src/lib/uploads/browser-upload-origin.ts')
+          upload_helper.parent.mkdir(parents=True, exist_ok=True)
+          upload_helper.write_text('''export const canonicalRenderLabUploadOrigin = "https://renderlab-lake.vercel.app";\n\nconst approvedVercelBrowserUploadOrigins = new Set([\n  canonicalRenderLabUploadOrigin,\n  "https://renderlab-faresmohamed260-6733s-projects.vercel.app",\n  "https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app",\n]);\n\nexport function unsupportedVercelBrowserUploadOrigin(\n  origin = typeof window === "undefined" ? "" : window.location.origin,\n) {\n  if (!origin) return null;\n  try {\n    const url = new URL(origin);\n    if (url.protocol !== "https:" || !url.hostname.endsWith(".vercel.app")) return null;\n    return approvedVercelBrowserUploadOrigins.has(url.origin) ? null : url.origin;\n  } catch {\n    return null;\n  }\n}\n\nexport function assertBrowserUploadOriginSupported() {\n  const unsupportedOrigin = unsupportedVercelBrowserUploadOrigin();\n  if (!unsupportedOrigin) return;\n  throw new Error(\n    `Uploads are not available from this Vercel deployment URL. Open ${canonicalRenderLabUploadOrigin} and try again.`,\n  );\n}\n\nexport function browserUploadFetchErrorMessage(error: unknown, fallback: string) {\n  if (error instanceof TypeError) {\n    return `${fallback} Check your connection and try again.`;\n  }\n  return error instanceof Error ? error.message : fallback;\n}\n''')
+
+          replace_once(
+              'src/lib/capabilities/generation.ts',
+              '    durationSeconds?: number;\n',
+              '    durationSeconds?: number;\n    audioEnabled?: boolean;\n',
+          )
+          replace_once(
+              'src/lib/capabilities/generation.ts',
+              'export const videoDurations = [5, 10, 15, 20, 30] as const;\n',
+              'export const videoDurations = [5, 10, 15, 20, 30] as const;\nexport const videoAudioDefault = true;\n',
+          )
+
+          replace_once(
+              'src/lib/api/generation-contract.ts',
+              'import { generationAdvancedCapabilities } from "@/lib/capabilities/generation";\n',
+              'import { generationAdvancedCapabilities, videoAudioDefault } from "@/lib/capabilities/generation";\n',
+          )
+          replace_once(
+              'src/lib/api/generation-contract.ts',
+              '  const durationSeconds = value.output.durationSeconds;\n',
+              '  const durationSeconds = value.output.durationSeconds;\n  const audioEnabled = value.output.audioEnabled;\n',
+          )
+          replace_once(
+              'src/lib/api/generation-contract.ts',
+              '''  if (kind === "video") {\n    if (!Number.isInteger(durationSeconds) || (durationSeconds as number) < 5 || (durationSeconds as number) > 30) {\n      return { ok: false, error: { code: "invalid_request", message: "Video duration must be between 5 and 30 seconds." } };\n    }\n  } else if (durationSeconds !== undefined) {\n    return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include a video duration." } };\n  }\n''',
+              '''  if (kind === "video") {\n    if (!Number.isInteger(durationSeconds) || (durationSeconds as number) < 5 || (durationSeconds as number) > 30) {\n      return { ok: false, error: { code: "invalid_request", message: "Video duration must be between 5 and 30 seconds." } };\n    }\n    if (audioEnabled !== undefined && typeof audioEnabled !== "boolean") {\n      return { ok: false, error: { code: "invalid_request", message: "Video audio must be on or off." } };\n    }\n  } else {\n    if (durationSeconds !== undefined) {\n      return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include a video duration." } };\n    }\n    if (audioEnabled !== undefined) {\n      return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include video audio settings." } };\n    }\n  }\n''',
+          )
+          replace_once(
+              'src/lib/api/generation-contract.ts',
+              '        ...(kind === "video" ? { durationSeconds: durationSeconds as number } : {}),\n',
+              '        ...(kind === "video" ? { durationSeconds: durationSeconds as number, audioEnabled: audioEnabled ?? videoAudioDefault } : {}),\n',
+          )
+
+          replace_once(
+              'src/server/generation/native-generation.ts',
+              '  form.append("audio_enabled", String(workflow.defaults.audioEnabled));\n',
+              '  form.append("audio_enabled", String(request.output.audioEnabled ?? workflow.defaults.audioEnabled));\n',
+          )
+
+          replace_once(
+              'src/features/library/library-upload-client.ts',
+              'import {\n  maxMediaUploadBytes,\n  supportedMediaUploadMimeTypes,\n} from "@/lib/api/media-upload-contract";\n',
+              'import {\n  maxMediaUploadBytes,\n  supportedMediaUploadMimeTypes,\n} from "@/lib/api/media-upload-contract";\nimport { assertBrowserUploadOriginSupported, browserUploadFetchErrorMessage } from "@/lib/uploads/browser-upload-origin";\n',
+          )
+          replace_once(
+              'src/features/library/library-upload-client.ts',
+              'export async function uploadLibraryFile(file: File) {\n  const mimeType = validateLibraryUploadFile(file);\n\n',
+              'export async function uploadLibraryFile(file: File) {\n  const mimeType = validateLibraryUploadFile(file);\n  assertBrowserUploadOriginSupported();\n\n',
+          )
+          replace_once(
+              'src/features/library/library-upload-client.ts',
+              '''  const uploadResponse = await fetch(ticketPayload.ticket.uploadUrl, {\n    method: ticketPayload.ticket.method,\n    headers: ticketPayload.ticket.headers,\n    body: file,\n  });\n  if (!uploadResponse.ok) throw new Error("The image could not be uploaded.");\n''',
+              '''  let uploadResponse: Response;\n  try {\n    uploadResponse = await fetch(ticketPayload.ticket.uploadUrl, {\n      method: ticketPayload.ticket.method,\n      headers: ticketPayload.ticket.headers,\n      body: file,\n    });\n  } catch (error) {\n    throw new Error(browserUploadFetchErrorMessage(error, "Library upload could not reach storage."));\n  }\n  if (!uploadResponse.ok) throw new Error("The image could not be uploaded.");\n''',
+          )
+
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              'import { ImageIcon, MoreHorizontal, Plus, X } from "lucide-react";\n',
+              'import { ImageIcon, MoreHorizontal, Plus, Volume2, VolumeX, X } from "lucide-react";\n',
+          )
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              'import { Textarea } from "@/components/ui/textarea";\nimport { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";\n',
+              'import { Textarea } from "@/components/ui/textarea";\nimport { Toggle } from "@/components/ui/toggle";\nimport { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";\n',
+          )
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              '  videoAspectRatios,\n  videoDurations,\n} from "@/lib/capabilities/generation";\n',
+              '  videoAspectRatios,\n  videoAudioDefault,\n  videoDurations,\n} from "@/lib/capabilities/generation";\n',
+          )
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              'import { maxReferenceUploadBytes, supportedReferenceMimeTypes } from "@/lib/api/reference-upload-contract";\n',
+              'import { maxReferenceUploadBytes, supportedReferenceMimeTypes } from "@/lib/api/reference-upload-contract";\nimport { assertBrowserUploadOriginSupported, browserUploadFetchErrorMessage } from "@/lib/uploads/browser-upload-origin";\n',
+          )
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              '  const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);\n',
+              '  const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);\n  const [audioEnabled, setAudioEnabled] = useState(videoAudioDefault);\n',
+          )
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              '''    if (file.size < 1 || file.size > maxReferenceUploadBytes) {\n      setError("Reference images must be no larger than 25 MB.");\n      return;\n    }\n\n    setReferenceUploading(true);\n''',
+              '''    if (file.size < 1 || file.size > maxReferenceUploadBytes) {\n      setError("Reference images must be no larger than 25 MB.");\n      return;\n    }\n\n    try {\n      assertBrowserUploadOriginSupported();\n    } catch (originError) {\n      setError(originError instanceof Error ? originError.message : "Reference upload is not available from this URL.");\n      if (fileInputRef.current) fileInputRef.current.value = "";\n      return;\n    }\n\n    setReferenceUploading(true);\n''',
+          )
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              '''    } catch (uploadError) {\n      setReference(null);\n      setError(uploadError instanceof Error ? uploadError.message : "Reference upload failed.");\n    } finally {\n''',
+              '''    } catch (uploadError) {\n      revokePreviewUrl(previewUrl);\n      setReferencePreviewUrl(null);\n      setReference(null);\n      setContinuationSource(null);\n      if (fileInputRef.current) fileInputRef.current.value = "";\n      setError(browserUploadFetchErrorMessage(uploadError, "Reference upload could not reach storage."));\n    } finally {\n''',
+          )
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              '            ...(outputKind === "video" ? { durationSeconds } : {}),\n',
+              '            ...(outputKind === "video" ? { durationSeconds, audioEnabled } : {}),\n',
+          )
+          replace_once(
+              'src/features/create/create-workspace.tsx',
+              '''                {outputKind === "video" ? (\n                  <Button\n                    type="button"\n                    variant="secondary"\n                    onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}\n                    aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}\n                    className="shrink-0"\n                  >\n                    {durationSeconds} s\n                  </Button>\n                ) : null}\n\n                <CollapsibleTrigger asChild>\n''',
+              '''                {outputKind === "video" ? (\n                  <>\n                    <Button\n                      type="button"\n                      variant="secondary"\n                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}\n                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}\n                      className="shrink-0"\n                    >\n                      {durationSeconds} s\n                    </Button>\n                    <Toggle\n                      pressed={audioEnabled}\n                      onPressedChange={setAudioEnabled}\n                      variant="outline"\n                      aria-label={`Audio generation ${audioEnabled ? "on" : "off"}`}\n                      title={audioEnabled ? "Generate video with audio" : "Generate video without audio"}\n                      className="shrink-0 gap-2"\n                    >\n                      {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}\n                      {audioEnabled ? "Audio on" : "Audio off"}\n                    </Toggle>\n                  </>\n                ) : null}\n\n                <CollapsibleTrigger asChild>\n''',
+          )
+
+          replace_once(
+              'scripts/verify-video-generation.mjs',
+              '''async function verifyAsset(account, assetId) {\n  const meta = await req(`${baseUrl}/api/media/assets/${encodeURIComponent(assetId)}`, account, {\n    headers: { accept: "application/json" },\n  });\n  if (!meta.response.ok || !meta.payload?.ok || meta.payload.asset?.kind !== "video") {\n    throw new Error(`Video metadata invalid (${meta.response.status}): ${JSON.stringify(meta.payload)}`);\n  }\n  const content = await fetch(\n    `${baseUrl}${meta.payload.asset.contentUrl}`,\n    withAccountAuthorization(account, { redirect: "follow" }),\n  );\n  if (!content.ok || !String(content.headers.get("content-type") || "").startsWith("video/")) {\n    throw new Error(`Video content invalid (${content.status}, ${content.headers.get("content-type")})`);\n  }\n}\n\nasync function generate(account, request, operation, label) {\n''',
+              '''async function verifyAsset(account, assetId, expectedAudioEnabled) {\n  const meta = await req(`${baseUrl}/api/media/assets/${encodeURIComponent(assetId)}`, account, {\n    headers: { accept: "application/json" },\n  });\n  if (!meta.response.ok || !meta.payload?.ok || meta.payload.asset?.kind !== "video") {\n    throw new Error(`Video metadata invalid (${meta.response.status}): ${JSON.stringify(meta.payload)}`);\n  }\n  const content = await fetch(\n    `${baseUrl}${meta.payload.asset.contentUrl}`,\n    withAccountAuthorization(account, { redirect: "follow" }),\n  );\n  if (!content.ok || !String(content.headers.get("content-type") || "").startsWith("video/")) {\n    throw new Error(`Video content invalid (${content.status}, ${content.headers.get("content-type")})`);\n  }\n  const bytes = Buffer.from(await content.arrayBuffer());\n  const hasAudioTrack = bytes.includes(Buffer.from("soun"));\n  if (hasAudioTrack !== expectedAudioEnabled) {\n    throw new Error(`Video audio track mismatch: expected audio=${expectedAudioEnabled}, detected audio=${hasAudioTrack}.`);\n  }\n}\n\nasync function generate(account, request, operation, label, expectedAudioEnabled) {\n''',
+          )
+          replace_once(
+              'scripts/verify-video-generation.mjs',
+              '`generation_jobs?id=eq.${encodeURIComponent(id)}&select=id,status,operation,owner_id&limit=1`,\n',
+              '`generation_jobs?id=eq.${encodeURIComponent(id)}&select=id,status,operation,owner_id,parameters&limit=1`,\n',
+          )
+          replace_once(
+              'scripts/verify-video-generation.mjs',
+              '''        || persistedJob.operation !== operation\n        || list.length !== 1\n''',
+              '''        || persistedJob.operation !== operation\n        || persistedJob.parameters?.output?.audioEnabled !== expectedAudioEnabled\n        || list.length !== 1\n''',
+          )
+          replace_once(
+              'scripts/verify-video-generation.mjs',
+              '      await verifyAsset(account, list[0].id);\n',
+              '      await verifyAsset(account, list[0].id, expectedAudioEnabled);\n',
+          )
+          replace_once(
+              'scripts/verify-video-generation.mjs',
+              '      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },\n      inputs: [],\n    },\n    "create-video",\n    "Create Video",\n',
+              '      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: false },\n      inputs: [],\n    },\n    "create-video",\n    "Create Video",\n    false,\n',
+          )
+          replace_once(
+              'scripts/verify-video-generation.mjs',
+              '      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5 },\n      inputs: [{ source: { type: "temporary-source", id: sourceId }, role: "first-frame" }],\n    },\n    "animate-image",\n    "Animate Image",\n',
+              '      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: true },\n      inputs: [{ source: { type: "temporary-source", id: sourceId }, role: "first-frame" }],\n    },\n    "animate-image",\n    "Animate Image",\n    true,\n',
+          )
+
+          replace_once(
+              'scripts/verify-create-lifecycle.mjs',
+              '''  await page.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });\n\n  const prompt = page.getByRole("textbox", { name: "Prompt" });\n''',
+              '''  await page.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });\n\n  const videoIntent = page.getByRole("radio", { name: "Video", exact: true });\n  await videoIntent.click();\n  const audioOn = page.getByRole("button", { name: "Audio generation on", exact: true });\n  await audioOn.waitFor({ state: "visible", timeout: 30_000 });\n  assert(await audioOn.getAttribute("aria-pressed") === "true", "Video audio did not default to enabled.");\n  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-controls.png`, fullPage: true });\n  await page.setViewportSize(mobileViewport);\n  await page.waitForTimeout(250);\n  await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-video-controls.png`, fullPage: true });\n  await audioOn.click();\n  const audioOff = page.getByRole("button", { name: "Audio generation off", exact: true });\n  await audioOff.waitFor({ state: "visible", timeout: 30_000 });\n  assert(await audioOff.getAttribute("aria-pressed") === "false", "Video audio toggle did not turn off.");\n  await page.setViewportSize(desktopViewport);\n  await page.getByRole("radio", { name: "Image", exact: true }).click();\n\n  const prompt = page.getByRole("textbox", { name: "Prompt" });\n''',
+          )
+
+          # Record the active slice before validation so repository intent does not live only in chat.
+          replace_once(
+              'PROJECT.md',
+              '### Active product slice\n- None. Activity v0.1 / UI-035 is complete and approved; no next product slice has been selected.\n- The Phase 5 Models/Workflows evaluation found no dedicated user-facing surface justified by the current verified capability set, and the capability audit found no additional approved capability-specific experience beyond Create/Viewer/Activity. Future new user goals require explicit new slices rather than speculative empty screens.\n',
+              '### Active product slice\n- Create Upload Reliability + Video Audio v0.1 / UI-036 is **IN IMPLEMENTATION**.\n- User-reported production evidence showed reference upload tickets succeed while the browser signed-R2 PUT fails on immutable Vercel deployment URLs that are outside the exact-origin CORS allowlist. UI-036 keeps strict CORS, treats the stable production aliases as the supported browser-upload entry points, prevents ticket creation on unsupported Vercel deployment origins, and replaces raw browser `Failed to fetch` copy with product-level upload feedback. The same guard covers Create references and Library persistent uploads.\n- UI-036 also exposes REDGraft video audio generation as a contextual Video on/off control, defaulting on, and threads the boolean through the normalized generation request to native/external orchestration without adding schema or worker identity to the UI.\n',
+          )
+
+          migration = Path('docs/ui/UI_MIGRATION.md')
+          text = migration.read_text()
+          marker = '## Feature/Surface Procedure\n'
+          if marker not in text:
+              raise SystemExit('UI_MIGRATION insertion marker not found')
+          section = '''### Create Upload Reliability + Video Audio v0.1 — UI-036\n- [x] Reproduce/trace the production reference-upload failure: ticket creation succeeds, completion is never reached, and exact-origin R2 CORS rejects the immutable manual-deployment hostname while approved stable RenderLab aliases pass.\n- [x] Keep exact-origin R2 CORS; do not add wildcard deployment-host access. Treat stable production aliases as the supported direct-browser-upload entry points.\n- [x] Add a shared browser-upload origin guard for the existing Create reference and Library persistent upload paths so unsupported Vercel deployment URLs fail before creating storage tickets and return actionable product copy instead of raw `Failed to fetch`.\n- [x] On failed Create reference upload, remove the unverified local preview so Create cannot silently fall back from Edit/Animate to a no-reference operation.\n- [x] Add a contextual Video audio on/off Toggle using the maintained primitive; default audio on.\n- [x] Thread `audioEnabled` through the typed generation request/API validation and native worker form while preserving default-on compatibility for callers that omit the field.\n- [ ] Pass production build, UI purity, reference/upload, Create, ownership, generation and video regressions on the implementation head.\n- [ ] Review desktop/mobile Video audio-control artifacts.\n- [ ] Finalize authoritative architecture/screen/component documentation from verified implementation evidence.\n- [ ] Pass the complete affected suite on the exact documentation-finalized head.\n- [ ] Merge, verify merged `main`, shared-resource cleanup and Vercel no-automatic-deployment boundary.\n\n**UI-036 status: `IN IMPLEMENTATION`. No schema migration or worker-fleet change is part of this slice.**\n\n'''
+          migration.write_text(text.replace(marker, section + marker, 1))
+
+          replace_once(
+              'docs/architecture/PRODUCT_CAPABILITIES.md',
+              '- Video durations: 5, 10, 15, 20, 30 seconds.\n',
+              '- Video durations: 5, 10, 15, 20, 30 seconds.\n- Video audio generation: contextual on/off, default on (UI-036).\n',
+          )
+
+          infra = Path('docs/architecture/INFRASTRUCTURE.md')
+          text = infra.read_text()
+          anchor = 'If a future public RenderLab origin changes, add that exact origin before direct browser uploads there. Do not use broad wildcard CORS merely for convenience.\n'
+          addition = anchor + '\nUI-036 production diagnosis confirmed the stable aliases above pass the managed CORS preflight while Vercel immutable deployment hostnames such as `renderlab-<deployment>-...vercel.app` are intentionally outside the allowlist. Product browser uploads therefore fail early with canonical-origin guidance on unsupported Vercel deployment hosts rather than creating a ticket and surfacing raw browser network failure. This preserves exact-origin CORS without accumulating one-off deployment URLs.\n'
+          if anchor not in text:
+              raise SystemExit('INFRASTRUCTURE CORS anchor not found')
+          infra.write_text(text.replace(anchor, addition, 1))
+          PY
+
+          git diff --check
+          git status --short
+      - name: Commit implementation
+        shell: bash
+        run: |
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/PRODUCT_CAPABILITIES.md docs/architecture/INFRASTRUCTURE.md src scripts
+          git commit -m "Implement UI-036 upload reliability and video audio"
+          git push origin HEAD:work/create-upload-audio-v0-1
