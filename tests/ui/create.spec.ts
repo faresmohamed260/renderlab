@@ -62,6 +62,12 @@ test("mobile Video keeps the essential row compact and contextual settings reach
   expect(settingsBox!.x).toBeGreaterThanOrEqual(0);
   expect(settingsBox!.x + settingsBox!.width).toBeLessThanOrEqual(mobileViewport.width);
   await settings.click();
+  const menu = page.locator('[data-slot="dropdown-menu-content"]');
+  await expect(menu).toBeVisible();
+  const menuBox = await menu.boundingBox();
+  expect(menuBox).not.toBeNull();
+  expect(menuBox!.y).toBeGreaterThanOrEqual(0);
+  expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(mobileViewport.height);
   await expect(page.getByRole("menuitemradio", { name: "480p", exact: true })).toHaveAttribute("data-state", "checked");
   await expect(page.getByRole("menuitemradio", { name: "2K", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitemradio", { name: "5 seconds", exact: true })).toBeVisible();
