@@ -172,6 +172,11 @@ try {
   await page.getByRole("radio", { name: "Image", exact: true }).click();
   await page.getByRole("radio", { name: "Video", exact: true }).click();
   const reducedModeControl = page.locator('[data-create-motion="mode-control"]');
+  await page.waitForFunction(
+    () => document.querySelectorAll('[data-create-motion="mode-control"]').length === 1,
+    undefined,
+    { timeout: 10_000 },
+  );
   await reducedModeControl.waitFor({ state: "visible", timeout: 10_000 });
   const reducedModeTransform = await reducedModeControl.evaluate((element) => getComputedStyle(element).transform);
   assert(reducedModeTransform === "none", `Reduced-motion mode transition still applied a transform: ${reducedModeTransform}`);
