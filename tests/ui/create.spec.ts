@@ -56,7 +56,13 @@ test("mobile Video keeps audio available in the essentials row", async ({ page }
   expect(audioBox).not.toBeNull();
   expect(audioBox!.x).toBeGreaterThanOrEqual(0);
   expect(audioBox!.x + audioBox!.width).toBeLessThanOrEqual(mobileViewport.width);
-  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();
+  const duration = page.getByRole("button", { name: /Duration 5 seconds/ });
+  await expect(duration).toBeVisible();
+  const durationBox = await duration.boundingBox();
+  expect(durationBox).not.toBeNull();
+  expect(durationBox!.x).toBeGreaterThanOrEqual(0);
+  expect(durationBox!.x + durationBox!.width).toBeLessThanOrEqual(mobileViewport.width);
+  await expect(page.getByRole("button", { name: "Open Advanced controls" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();
 
   await page.screenshot({ path: "artifacts/create-mobile-video.png", fullPage: true });
