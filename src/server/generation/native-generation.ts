@@ -4,7 +4,7 @@ import type {
   GenerationJob,
   GenerationRequest,
 } from "@/lib/capabilities/generation";
-import { defaultVideoAudioEnabled, resolveCreativeOperation } from "@/lib/capabilities/generation";
+import { defaultVideoAudioEnabled, generationInputAlias, resolveCreativeOperation } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
@@ -260,13 +260,24 @@ async function prepareWorkerPayload(
   return { sources, aspectRatio: await sourceVideoAspectRatio(primary.bytes) };
 }
 
+function executionPromptForRequest(request: GenerationRequest) {
+  const workerPositions = new Map<string, number>(
+    request.inputs.map((input, index) => [input.alias, index + 1]),
+  );
+  return request.prompt.replace(/@image\d+\b/g, (mention) => {
+    const position = workerPositions.get(mention.slice(1));
+    return position ? `image ${position}` : mention;
+  });
+}
+
 function buildForm(request: GenerationRequest, workflow: WorkflowConfig, prepared: PreparedWorkerPayload) {
   const form = new FormData();
+  const executionPrompt = executionPromptForRequest(request);
   if (workflow.kind === "image") {
     for (const source of prepared.sources) {
       form.append("image_files", new Blob([Uint8Array.from(source.bytes).buffer], { type: source.contentType }), source.filename);
     }
-    form.append("prompt", request.prompt);
+    form.append("prompt", executionPrompt);
     form.append("negative_prompt", request.advanced?.negativePrompt ?? "");
     form.append("seed", String(request.advanced?.seed ?? workflow.defaults.seed));
     form.append("steps", String(request.advanced?.steps ?? workflow.defaults.steps));
@@ -277,7 +288,7 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, prepare
 
   const source = prepared.sources[0];
   if (source) form.append("image_file", new Blob([Uint8Array.from(source.bytes).buffer], { type: source.contentType }), source.filename);
-  form.append("prompt", request.prompt);
+  form.append("prompt", executionPrompt);
   form.append("negative_prompt", request.advanced?.negativePrompt ?? "");
   form.append("seed", String(request.advanced?.seed ?? workflow.defaults.seed));
   form.append("steps", String(request.advanced?.steps ?? workflow.defaults.steps));
@@ -478,7 +489,12 @@ function requestFromJobRow(row: JobRow): GenerationRequest {
   return {
     prompt: row.prompt,
     output: { ...output, kind: row.output_kind },
-    inputs: Array.isArray(row.inputs) ? row.inputs : [],
+    inputs: Array.isArray(row.inputs)
+      ? row.inputs.map((input, index) => ({
+          ...input,
+          alias: input.alias || generationInputAlias(index + 1),
+        }))
+      : [],
     ...(advanced ? { advanced } : {}),
   };
 }

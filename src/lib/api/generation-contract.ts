@@ -10,7 +10,10 @@ import type {
 import {
   defaultVideoAudioEnabled,
   generationAdvancedCapabilities,
+  generationInputAlias,
+  generationInputAliasPattern,
   imageAspectRatios,
+  unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
 } from "@/lib/capabilities/generation";
 
@@ -48,9 +51,15 @@ function parseInputs(value: unknown): GenerationInput[] | null {
   if (!Array.isArray(value)) return null;
 
   const inputs: GenerationInput[] = [];
-  for (const item of value) {
+  const aliases = new Set<string>();
+  for (const [index, item] of value.entries()) {
     if (!isRecord(item) || !isRecord(item.source)) return null;
     if (typeof item.role !== "string" || !inputRoles.has(item.role as GenerationInput["role"])) return null;
+
+    const rawAlias = item.alias;
+    const alias = rawAlias === undefined ? generationInputAlias(index + 1) : rawAlias;
+    if (typeof alias !== "string" || !generationInputAliasPattern.test(alias) || aliases.has(alias)) return null;
+    aliases.add(alias);
 
     const sourceType = item.source.type;
     const sourceId = item.source.id;
@@ -58,6 +67,7 @@ function parseInputs(value: unknown): GenerationInput[] | null {
     if (typeof sourceId !== "string" || !sourceId.trim()) return null;
 
     inputs.push({
+      alias: alias as GenerationInput["alias"],
       role: item.role as GenerationInput["role"],
       source: {
         type: sourceType as GenerationInput["source"]["type"],
@@ -117,6 +127,7 @@ export function parseGenerationRequest(value: unknown):
   if (typeof value.prompt !== "string" || !value.prompt.trim()) {
     return { ok: false, error: { code: "invalid_request", message: "A prompt is required." } };
   }
+  const prompt = value.prompt.trim();
 
   if (!isRecord(value.output)) {
     return { ok: false, error: { code: "invalid_request", message: "Output settings are required." } };
@@ -134,6 +145,20 @@ export function parseGenerationRequest(value: unknown):
   const inputs = parseInputs(value.inputs);
   if (!inputs) {
     return { ok: false, error: { code: "invalid_request", message: "Generation inputs are invalid." } };
+  }
+
+  const unresolvedReferences = unresolvedGenerationPromptReferenceAliases(
+    prompt,
+    inputs.map((input) => input.alias),
+  );
+  if (unresolvedReferences.length) {
+    return {
+      ok: false,
+      error: {
+        code: "invalid_request",
+        message: `Prompt references ${unresolvedReferences.map((alias) => `@${alias}`).join(", ")} without an attached image.`,
+      },
+    };
   }
 
   const supportedAspectRatios = kind === "video" ? videoAspectRatioSet : imageAspectRatioSet;
@@ -169,7 +194,7 @@ export function parseGenerationRequest(value: unknown):
   return {
     ok: true,
     request: {
-      prompt: value.prompt.trim(),
+      prompt,
       output: {
         kind: kind as OutputKind,
         aspectRatio: aspectRatio as AspectRatio,

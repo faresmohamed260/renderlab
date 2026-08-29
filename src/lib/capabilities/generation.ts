@@ -23,11 +23,34 @@ export type AspectRatio = "original" | PresetAspectRatio;
 
 export type GenerationInputRole = "reference" | "primary-image" | "first-frame";
 
+export type GenerationInputAlias = `image${number}`;
+
+export const generationInputAliasPattern = /^image[1-9]\d*$/;
+
+export function generationInputAlias(position: number): GenerationInputAlias {
+  if (!Number.isInteger(position) || position < 1) throw new RangeError("Reference positions begin at 1.");
+  return `image${position}` as GenerationInputAlias;
+}
+
+export function generationPromptReferenceAliases(prompt: string): GenerationInputAlias[] {
+  const aliases = prompt.match(/@image\d+\b/g)?.map((mention) => mention.slice(1) as GenerationInputAlias) ?? [];
+  return [...new Set(aliases)];
+}
+
+export function unresolvedGenerationPromptReferenceAliases(
+  prompt: string,
+  attachedAliases: readonly string[],
+): GenerationInputAlias[] {
+  const attached = new Set(attachedAliases);
+  return generationPromptReferenceAliases(prompt).filter((alias) => !attached.has(alias));
+}
+
 export type GenerationInputSource =
   | { type: "temporary-source"; id: string }
   | { type: "media-asset"; id: string };
 
 export type GenerationInput = {
+  alias: GenerationInputAlias;
   source: GenerationInputSource;
   role: GenerationInputRole;
 };
