@@ -19,142 +19,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reconcile Phase 7C audit outcome
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path, old, new):
-              p = Path(path)
-              text = p.read_text()
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{path}: expected one match, found {count}: {old[:120]!r}')
-              p.write_text(text.replace(old, new, 1))
-
-          # PROJECT.md
-          replace_once(
-              'PROJECT.md',
-              '**Cycle 2 — Creative Productivity & Beta Maturity. Phase 6 is complete under the Closed Beta boundary. Phase 7 is in progress: Phase 7B Multi-reference Image Editing v0.1 is verified and merged, the Phase 7A premium-interaction pass remains an open Phase 7 exit item, and Phase 7C Director Video is the next planned slice but has not started.**',
-              '**Cycle 2 — Creative Productivity & Beta Maturity. Phase 6 is complete under the Closed Beta boundary. Phase 7 is in progress: Phase 7B Multi-reference Image Editing v0.1 is verified and merged; the Phase 7C live REDGraft audit is complete and Director productization is deferred under UI-047 because the deployed gateway has no structured Director contract; Phase 7D Video Quality/Resolution is the next planned slice. The Phase 7A premium-interaction pass remains an open Phase 7 exit item.**',
-          )
-          replace_once(
-              'PROJECT.md',
-              '- Current product slice: **None — Phase 7B Multi-reference Image Editing v0.1 is complete.** The next planned slice is Phase 7C Director Video, which has not started. The remaining Phase 7A premium-interaction pass stays an open Phase 7 exit item and should compose with the approved reference UI rather than reopen its product contract.',
-              '- Current product slice: **None — Phase 7C Director Video audit is complete/deferred under UI-047.** The next planned implementation slice is Phase 7D Video Quality/Resolution; it has not started. The remaining Phase 7A premium-interaction pass stays an open Phase 7 exit item and should compose with the approved reference UI rather than reopen its product contract.',
-          )
-          replace_once(
-              'PROJECT.md',
-              '- Next planned slice: **Phase 7C Director Video capability audit/productization**. Before adding Director controls, re-audit the actual configured LTX/REDGraft workflow/gateway for frame/story/action/dialogue/sound semantics and current constraints; expose only verified task-oriented controls and do not surface ComfyUI/provider internals. This handoff does not start Phase 7C implementation. The Phase 7A premium-interaction pass remains an open Phase 7 exit item.',
-              '- Phase 7C live audit `33266905978` probed both configured REDGraft gateways plus primary runtime health without spawning generation. Primary/standby expose the same `/jobs/video` contract: one shared `prompt`, optional `negative_prompt`, `seed`, `resolution`, `duration_seconds`, `audio_enabled`, `aspect_ratio`, `frame_rate`, and at most one optional `image_file`; there are no structured storyboard/frame/scene/action/dialogue/speech/sound/audio-prompt/camera/shot fields. Runtime health remains ready on NVIDIA A10 with 480p/720p/1080p/2K and 24/25/30 fps. UI-047 therefore defers Director product UI rather than fabricating controls over an unstructured prompt.\n- The same audit found live/source drift: deployed OpenAPI does not expose `steps` or `cfg`. A non-generating invalid-duration probe deliberately sent `steps=999` and `cfg=999`; the live endpoint ignored those extras and returned the duration validation error, proving they are not active deployed Video controls. The next Video slice must reconcile that product/UI contract before treating steps/guidance as effective Video tuning.\n- Next planned slice: **Phase 7D Video Quality/Resolution**. Start from the verified live resolution set and the Phase 7C tuning-control drift; expose a curated Video quality/resolution choice only after the slice contract is reconciled. This handoff does not authorize deployment. The Phase 7A premium-interaction pass remains an open Phase 7 exit item.',
-          )
-
-          # UI_MIGRATION.md
-          replace_once(
-              'docs/ui/UI_MIGRATION.md',
-              '''#### Phase 7C — Director Video
-- [ ] Audit the actual current deployed LTX/REDGraft workflow/gateway/runtime for Director-like inputs: supported frame count/order, image/frame semantics, scene/action text, character dialogue/speech intent, ambient/background sound intent, audio interactions, duration/resolution/fps constraints and failure behavior.
-- [ ] If the audited capability is stable and useful, expose it as a curated **Director** creative mode inside Create: storyboard/frame inputs plus understandable action/dialogue/sound controls. Do not expose ComfyUI node names or raw graph parameters.
-- [ ] Director frame uploads use the durable Create-upload foundation from Phase 7A and the same reference identity/order rules rather than creating another upload identity.
-- [ ] If a reported workflow capability is not present/reliable in the current configured worker, record the blocker truthfully instead of creating fake UI.''',
-              '''#### Phase 7C — Director Video
-- [x] Audit the actual configured LTX/REDGraft gateway/runtime. Live audit `33266905978` verified both configured gateways share the same `/jobs/video` contract and primary runtime is ready; the deployed API accepts one shared prompt plus ordinary Video settings and at most one optional `image_file`, with no structured storyboard/frame/scene/action/dialogue/speech/sound/audio-prompt/camera/shot fields.
-- [x] Evaluate whether the audited capability justifies a curated Director mode. It does **not** under the current deployed contract: UI-047 defers Director productization rather than presenting text-prompt decomposition as worker-backed structured control.
-- [x] Preserve the future input rule without inventing unused UI: if a later verified Director contract adds frames/storyboards, those uploads must reuse the durable Create-upload foundation and the existing opaque reference identity/order rules rather than creating a parallel media system.
-- [x] Record the blocker truthfully. Current Video/Animate remains the supported product surface: one prompt, optional first frame, audio on/off and verified ordinary Video settings. Upstream LTX capabilities or Saga source fields do not become RenderLab capabilities until the deployed worker contract supports them.
-- [x] Record the Phase 7C live-contract drift: deployed `/jobs/video` does not expose `steps` or `cfg`; a non-generating invalid-duration probe with `steps=999` and `cfg=999` still reached duration validation, confirming those extras are inactive live controls. Reconcile Video steps/guidance before Phase 7D is accepted.''',
-          )
-          replace_once(
-              'docs/ui/UI_MIGRATION.md',
-              '- [ ] Director-video capability is either implemented from verified current worker behavior or explicitly documented as blocked/deferred; no speculative node UI ships.',
-              '- [x] Director-video capability is explicitly documented as blocked/deferred under UI-047 from live audit `33266905978`; no speculative Director/node UI ships.',
-          )
-          replace_once(
-              'docs/ui/UI_MIGRATION.md',
-              '**Current product slice:** None — Phase 7B Multi-reference Image Editing v0.1 is complete through PR #53 / merge `0286b18802fc3d766d9d09e2ba8ed9a494eabd08`. The next planned slice is Phase 7C Director Video; it has not started. The Phase 7A premium-interaction pass remains an open Phase 7 exit item.',
-              '**Current product slice:** None — Phase 7C Director Video audit is complete/deferred under UI-047 from live run `33266905978`. The next planned slice is Phase 7D Video Quality/Resolution; it has not started. The Phase 7A premium-interaction pass remains an open Phase 7 exit item.',
-          )
-          replace_once(
-              'docs/ui/UI_MIGRATION.md',
-              '**Current gate:** Before Phase 7C product UI is implemented, re-audit the actual configured LTX/REDGraft Director-like frame/story/action/dialogue/sound contract and current constraints. Implement only verified task-oriented controls, reuse the durable/reference foundations, keep provider/ComfyUI identity internal, and retain the existing deployment authorization boundary.',
-              '**Current gate:** Expand/reconcile Phase 7D from the live worker contract before implementation: expose only verified 480p/720p/1080p/2K choices, keep disabled 4K hidden, choose a deliberate default from evidence, and remove or otherwise reconcile Video steps/guidance because the deployed gateway does not expose `steps`/`cfg`. Keep provider/ComfyUI identity internal and retain the existing deployment authorization boundary.',
-          )
-
-          # PRODUCT_CAPABILITIES.md
-          replace_once(
-              'docs/architecture/PRODUCT_CAPABILITIES.md',
-              '''### Verified Advanced product controls
-Create v0.3 intentionally exposes only currently justified Advanced controls:
-- negative prompt;
-- seed;
-- steps;
-- guidance;
-- frame rate for Video only (24/25/30 fps).
-
-Current UI/API capability metadata is centralized in `src/lib/capabilities/generation.ts`. Advanced is collapsed by default. A worker supporting more parameters is not sufficient reason to expose them. Video audio is contextual output intent rather than an Advanced control; `defaultVideoAudioEnabled = true` is centralized beside the other capability defaults.''',
-              '''### Phase 7C live REDGraft contract audit
-Live audit `33266905978` is authoritative for the currently deployed REDGraft boundary. Both configured gateways expose the same `/jobs/video` multipart fields: required `prompt`; optional `negative_prompt`, `seed`, `resolution`, `duration_seconds`, `audio_enabled`, `aspect_ratio`, `frame_rate`, and one optional `image_file`. No structured storyboard/frame/scene/action/dialogue/speech/sound/audio-prompt/camera/shot fields are deployed. Primary runtime health is ready on NVIDIA A10 with enabled 480p/720p/1080p/2K and 24/25/30 fps.
-
-UI-047 therefore closes Phase 7C as **audit-complete / Director deferred**. The current Video/Animate surface remains one shared prompt plus at most one first-frame image and ordinary Video settings. RenderLab must not present separate Director fields as if they map to distinct worker semantics. A future Director slice requires fresh deployed-worker evidence; upstream LTX capabilities and Saga reference code alone are insufficient.
-
-The same audit found a product-contract drift: live `/jobs/video` does not expose `steps` or `cfg`, even though current RenderLab still serializes Video `steps`/`guidance`. A no-generation probe sent deliberately invalid `steps=999` / `cfg=999` alongside invalid duration and the live endpoint proceeded to duration validation, confirming the extra tuning fields are not active live controls. Phase 7D must reconcile this before claiming Video steps/guidance are effective.
-
-### Advanced product controls
-Current capability metadata is centralized in `src/lib/capabilities/generation.ts`, but verified worker effect is output-specific:
-- Image: negative prompt, seed, steps and guidance remain the verified FLUX tuning surface.
-- Video: the deployed gateway exposes negative prompt, seed and frame rate; audio remains a contextual output setting. `steps`/`guidance` are still present in the current RenderLab draft/request shape but are **not verified active REDGraft controls** and must not remain represented as effective Video tuning after the next Video contract reconciliation.
-
-Advanced remains collapsed by default. A worker/source parameter is not sufficient reason to expose a control; the deployed contract and verified behavior govern product truth.''',
-          )
-          replace_once(
-              'docs/architecture/PRODUCT_CAPABILITIES.md',
-              'Phase 6 verified the capability handoff and is complete under Closed Beta. The first production-feedback pass has now expanded Phase 7 around the prerequisites that evidence exposed: source-aware geometry, durable Create uploads, composer de-crowding, explicit reference identity/prompt mapping, FLUX/Qwen multi-input verification, an audit-first Director-video slice and curated Video resolution. Phase 7 execution has not started; verified current behavior above remains authoritative until each new contract is implemented and validated.',
-              'Phase 6 verified the capability handoff and is complete under Closed Beta. Phase 7 execution is in progress: 7A foundations and 7B bounded multi-reference Image Edit are merged; Phase 7C live audit `33266905978` found no structured Director contract and UI-047 defers that productization; Phase 7D Video Quality/Resolution is next planned and has not started. Verified current behavior above remains authoritative until each new contract is implemented and validated.',
-          )
-
-          # INFRASTRUCTURE.md
-          replace_once(
-              'docs/architecture/INFRASTRUCTURE.md',
-              '''- RenderLab currently has no app-level per-user generation rate/concurrency/abuse limiter. Broader beta access therefore requires a separate server-enforced capacity/abuse contract in Phase 10; Phase 6 does not add one.
-
-### Shared Supabase and cleanup baseline''',
-              '''- RenderLab currently has no app-level per-user generation rate/concurrency/abuse limiter. Broader beta access therefore requires a separate server-enforced capacity/abuse contract in Phase 10; Phase 6 does not add one.
-
-### Phase 7C live REDGraft gateway contract — 2026-08-29
-- Audit `33266905978` queried both configured REDGraft gateway `/health` and `/openapi.json` endpoints plus primary `/runtime-health`; no generation job was spawned. Primary/standby both report gateway build `a10-normalvram-poster-v2`, runtime `saga-ltx25-video` / `LTX25Worker`, async jobs and cancellation capability.
-- Both deployed gateways expose the same `/jobs/video` fields: `prompt`, `negative_prompt`, `seed`, `resolution`, `duration_seconds`, `audio_enabled`, `aspect_ratio`, `frame_rate`, and optional single `image_file`. No structured Director/storyboard/multi-frame/dialogue/speech/sound/audio-prompt/camera/shot fields are present.
-- Primary runtime health remained ready on NVIDIA A10 with enabled `480p`, `720p`, `1080p`, `2K` and frame rates 24/25/30. This confirms the Phase 7D resolution basis while UI-047 defers Director UI under the current worker contract.
-- Live/source drift exists: current Saga reference source contains gateway `steps`/`cfg`, but deployed OpenAPI does not. A deliberately invalid, non-generating request sent `steps=999`, `cfg=999`, and `duration_seconds=1`; the deployed gateway returned only the duration validation error, confirming `steps`/`cfg` are not active live inputs. RenderLab currently serializes those extras for Video, so product capability documentation/UI must be reconciled before the next Video slice is accepted.
-
-### Shared Supabase and cleanup baseline''',
-          )
-
-          # UI_DECISIONS.md — append durable decision after UI-046.
-          decisions = Path('docs/ui/UI_DECISIONS.md')
-          text = decisions.read_text()
-          if '### UI-047 — Director Video is deferred until a structured deployed worker contract exists' in text:
-              raise SystemExit('UI-047 already exists')
-          addition = '''
-
-### UI-047 — Director Video is deferred until a structured deployed worker contract exists
-**Status:** Accepted
-**Decision:** Phase 7C does not add a Director mode or dedicated storyboard/frame/action/dialogue/speech/sound/camera controls under the current deployed REDGraft contract. Live audit `33266905978` verified both configured `/jobs/video` gateways expose one shared prompt, ordinary Video settings and at most one optional image input, with no structured Director-specific fields. Current Video/Animate remains the supported product surface. A future Director slice may be reopened only from fresh deployed-worker evidence for stable structured or multi-frame semantics; upstream LTX documentation or Saga reference code does not itself authorize RenderLab UI.
-**Reason:** RenderLab exposes user goals backed by real product contracts, not speculative structure around a text prompt. Splitting one free-form prompt into labeled storyboard/dialogue/sound fields would imply deterministic backend semantics that the current deployed worker does not provide. The existing prompt can carry creative intent, but that alone is not evidence for a distinct Director capability model.
-**Consequences:** Phase 7C closes as audit-complete / Director deferred with no route, schema, media-identity, worker or UI implementation change. If a future prompt-composition helper is desired without a structured worker contract, it requires its own product decision because it would be an authoring aid rather than a backend Director capability. Any future frame uploads must reuse the Phase 7A durable Create-upload and opaque reference identity/order foundations. The Phase 7C audit also found that deployed `/jobs/video` omits `steps` and `cfg`; a non-generating probe confirmed those extra multipart values are inactive. Video steps/guidance must therefore be reconciled before the next Video contract is accepted. Phase 7D Video Quality/Resolution is the next planned slice; this decision does not authorize deployment.
-'''
-          decisions.write_text(text.rstrip() + addition)
-          PY
+      - name: Apply documentation reconciliation
+        run: python scripts/apply-phase-7c-audit-docs.py
 
       - name: Finalize documentation commit
         run: |
           set -euo pipefail
           rm -f .github/workflows/phase-7c-director-audit.yml
           rm -f .github/workflows/apply-phase-7c-audit-docs.yml
+          rm -f scripts/apply-phase-7c-audit-docs.py
           git diff --check
           git status --short
           git config user.name 'RenderLab Phase 7C Docs Bot'
           git config user.email '121525183+faresmohamed260@users.noreply.github.com'
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/architecture/PRODUCT_CAPABILITIES.md docs/architecture/INFRASTRUCTURE.md .github/workflows
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/architecture/PRODUCT_CAPABILITIES.md docs/architecture/INFRASTRUCTURE.md .github/workflows scripts
           git diff --cached --check
           git commit -m 'Record Phase 7C Director audit'
           git push origin HEAD:audit/phase-7c-director
