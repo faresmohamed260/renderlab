@@ -1,0 +1,230 @@
+name: Apply Phase 6 baseline documentation results
+
+on:
+  push:
+    branches: [docs/phase-6-baseline-results]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Record verified Phase 6 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected exactly one match, found {count}")
+              return text.replace(old, new, 1)
+
+          # PROJECT.md
+          path = Path('PROJECT.md')
+          text = path.read_text()
+          text = replace_once(
+              text,
+              '**Cycle 2 — Creative Productivity & Beta Maturity. Roadmap accepted; implementation has not started.**',
+              '**Cycle 2 — Creative Productivity & Beta Maturity. Phase 6 baseline audit is in progress; verified evidence is complete pending the beta operating-boundary decision.**',
+              'PROJECT priority',
+          )
+          old_gate = '''### Cycle 2 execution gate
+          - Roadmap status: `ACCEPTED`.
+          - Implementation status: `NOT STARTED`.
+          - Current product slice: `None`.
+          - Next gate: wait for explicit user authorization to start **Phase 6 — Cycle 2 Baseline & Production Hardening**.
+          - Phase 6 must verify current repository/production/capability reality before Multi-reference Image Edit or any other Cycle 2 feature begins.
+          '''
+          new_gate = '''### Cycle 2 execution gate
+          - Roadmap status: `ACCEPTED`.
+          - Cycle execution status: `IN PROGRESS`.
+          - Current phase: **Phase 6 — Cycle 2 Baseline & Production Hardening**, execution `IN PROGRESS`.
+          - Current product slice: `None`; no Phase 7 feature implementation has started.
+          - Phase 6 production/custom-domain/account/upload/generation/capability evidence passed in remote audit run `33250031468` and exact fixtures were cleaned.
+          - Remaining Phase 6 gate: obtain and record the user's operating-boundary choice for private use vs closed beta vs broader beta.
+          - Do not expand Phase 7 into its execution-ready contract until that Phase 6 gate is resolved and Phase 6 is formally closed.
+          '''
+          text = replace_once(text, old_gate, new_gate, 'PROJECT execution gate')
+          marker = '### Approved product state\n'
+          evidence = '''### Phase 6 verified baseline — 2026-08-29
+          - Audit starting `main`: `5072fe96495ea53d06f4891c6073b16203c819d2`. Vercel production remains READY on deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` from application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; the repository delta from that production SHA through the audit-starting `main` is documentation-only, so there is no executable application drift.
+          - The latest production build passed the canonical Vercel environment preflight without exposing secret values. Fresh custom-domain verification returned the exact CNAME `736ea4abfec91fb9.vercel-dns-017.com`, HTTPS `200` from Vercel and a valid TLS certificate for `renderlab.faresuniform.uk`.
+          - Remote production audit run `33250031468` passed account session, two-account privacy/ownership, custom-domain persistent upload → Library → Viewer → Edit handoff, Create Image → durable Edit continuation, Create Video and Animate Image on the real production domain. Vercel reported no runtime errors during/after the audit and no deployment was created by the audit branch.
+          - Deployed FLUX primary live-accepted and completed a two-reference edit (`reference_count=2`) in a bounded probe. The worker/runtime code has no explicit reference-count ceiling, but RenderLab's current UI still submits at most one reference and the current request parser does not yet enforce media-kind compatibility, role multiplicity or a product maximum. Phase 7 must define those server-side input-slot rules before exposing multi-reference UI.
+          - REDGraft live runtime health enables `480p`, `720p`, `1080p` and `2K`; `4K` is represented internally but disabled and is not a product capability. RenderLab currently submits Video at fixed `480p`. A bounded live `720p`, `16:9`, 5-second, 24-fps, audio-off probe produced a verified `1280×720` MP4.
+          - One bounded sample observed: account identity 7s, ownership 15s, custom-domain upload/media 16s, Create Image + durable Edit 91s, Create Video + Animate 155s, direct two-reference FLUX 12.6s and direct 720p Video 62.7s. These are audit samples, not SLAs. Provider per-generation cost and exact deployment-wide worker capacity are not reliably observable from current contracts and remain unresolved rather than estimated.
+          - RenderLab still has no app-level per-user generation rate/concurrency/abuse limit. Supabase security advisors remain the expected server-owned RLS-with-no-policy INFO notices plus a beta-readiness warning that leaked-password protection is disabled. This audit makes no Auth/config mutation.
+          - Final cleanup verified zero Phase 6 fixture rows and zero Phase 6 Auth users while preserving RLS, `owner_id NOT NULL`, zero browser grants, ownership/integrity triggers and latest migration `20260828221611 renderlab_media_asset_deletion`. Pre-existing non-fixture product data was left untouched.
+          - Evidence supports **closed beta** as the recommended operating boundary until Phase 10 addresses rate/concurrency/abuse controls and the Auth warning, but this remains a recommendation until the user explicitly selects the Cycle 2 operating boundary.
+
+          '''
+          if marker not in text:
+              raise SystemExit('PROJECT approved-state marker missing')
+          text = text.replace(marker, evidence + marker, 1)
+          path.write_text(text)
+
+          # docs/ui/UI_MIGRATION.md
+          path = Path('docs/ui/UI_MIGRATION.md')
+          text = path.read_text()
+          text = replace_once(
+              text,
+              '**Roadmap status: `ACCEPTED`. Implementation status: `NOT STARTED`.**',
+              '**Roadmap status: `ACCEPTED`. Cycle execution status: `IN PROGRESS`.**',
+              'UI_MIGRATION cycle status',
+          )
+          text = replace_once(
+              text,
+              '**Phase contract status: `EXPANDED/PLANNED`. Execution status: `NOT STARTED`.**',
+              '**Phase contract status: `EXPANDED/PLANNED`. Execution status: `IN PROGRESS`; verified audit evidence is complete pending the beta operating-boundary decision.**',
+              'UI_MIGRATION Phase 6 status',
+          )
+          results_marker = '#### Exit criteria\n'
+          results = '''#### Verified audit evidence — run `33250031468`
+          - [x] Reconciled audit-starting `main` `5072fe96495ea53d06f4891c6073b16203c819d2` with READY Vercel production deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` / application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; every repository change between those SHAs is documentation-only. The latest production build passed `verify-vercel-env.mjs`, proving required canonical environment-variable presence without reading secret values.
+          - [x] Fresh DNS/TLS/HTTPS verification on `renderlab.faresuniform.uk`: exact DNS-only CNAME target `736ea4abfec91fb9.vercel-dns-017.com`, HTTPS `200`, Vercel edge headers, TLS 1.3 and certificate verification OK for the custom hostname.
+          - [x] Production Account Identity completed in 7s and configured two-account Ownership completed in 15s; signed-out/private/foreign isolation behavior passed and exact Auth/data fixtures were removed.
+          - [x] Custom-domain persistent upload → Library → Media Viewer → Edit handoff completed in 16s using real direct-R2 upload and durable media; the exact upload/media fixture was removed.
+          - [x] Production Create Image → durable Edit continuation completed in 91s total. Create Image and Edit both persisted successfully through native FLUX primary routing with no observed failover; exact output/R2/job fixtures were removed.
+          - [x] Production Create Video + Animate Image completed in 155s total through REDGraft primary routing with no observed failover; the 5-second Create Video job took about 101s created→completed in this sample. Exact jobs/media/reference/R2 fixtures were removed.
+          - [x] Deployed FLUX health advertises `multiple_references=true`; a bounded two-reference live edit was accepted with `reference_count=2` and returned PNG in 12.6s total. The runtime dynamically conditions every reference after the first and has no explicit worker-side count ceiling. Phase 7 must still choose a deliberate product maximum and add server media-kind/role/count validation because current RenderLab parsing is more permissive than the future multi-reference product contract should be.
+          - [x] Deployed REDGraft runtime enables `480p`, `720p`, `1080p` and `2K`, with 24/25/30 fps; `4K` is present in internal resolution metadata but disabled. RenderLab currently hardwires native Video submission to `480p`. A bounded live `720p`, `16:9`, 5-second, 24-fps, audio-off probe returned a `1280×720` MP4 in 62.7s total / about 59.0s worker time.
+          - [x] Operational evidence is intentionally bounded: no app-level generation rate/concurrency/abuse gate exists; worker source serializes each container invocation, while exact deployment-wide autoscaling/capacity and provider per-generation billing are not reliably exposed by current health/contracts. Treat both as unresolved rather than guessed. Observed timings are samples, not SLAs.
+          - [x] Final shared-resource audit found zero Phase 6 fixture rows and zero Phase 6 Auth users. All six RenderLab tables retain RLS, `owner_id NOT NULL`, zero `anon`/`authenticated` grants and the expected ownership/integrity triggers; latest migration remains `20260828221611 renderlab_media_asset_deletion`. Pre-existing non-fixture data was not modified.
+          - [x] Supabase security advisors show the expected server-owned `rls_enabled_no_policy` INFO notices plus `auth_leaked_password_protection` WARN. Performance advisors show unused-index INFO only. No Phase 6 schema/Auth/config mutation is justified from those notices.
+          - [x] Vercel reported no production runtime error cluster during/after the audit and no deployment was created by the temporary audit branch. The temporary audit branch was reset to `main` after evidence collection.
+          - [ ] Operating boundary remains a user decision. Current evidence supports **closed beta** as the recommendation until Phase 10 adds broader-access rate/concurrency/abuse hardening and addresses the Auth warning.
+
+          '''
+          if results_marker not in text:
+              raise SystemExit('UI_MIGRATION exit criteria marker missing')
+          text = text.replace(results_marker, results + results_marker, 1)
+          checkbox_replacements = {
+              '- [ ] Current `main` and actual Vercel production deployment/custom-domain/env contract are reconciled and documented.': '- [x] Current `main` and actual Vercel production deployment/custom-domain/env contract are reconciled and documented.',
+              '- [ ] Critical custom-domain account/privacy, upload/media, image-generation and video-generation baselines are verified, or a truthful blocker is recorded and handled as a separate slice.': '- [x] Critical custom-domain account/privacy, upload/media, image-generation and video-generation baselines are verified, or a truthful blocker is recorded and handled as a separate slice.',
+              '- [ ] Multi-reference image-edit support is documented with exact input semantics/limits from current RenderLab + configured worker evidence.': '- [x] Multi-reference image-edit support is documented with exact input semantics/limits from current RenderLab + configured worker evidence.',
+              '- [ ] Video resolution support is documented with accepted/produced resolutions, defaults/interactions and operational constraints.': '- [x] Video resolution support is documented with accepted/produced resolutions, defaults/interactions and operational constraints.',
+              '- [ ] Reliably observable latency/resource/cost/quota evidence is recorded and unobservable items are marked unresolved rather than guessed.': '- [x] Reliably observable latency/resource/cost/quota evidence is recorded and unobservable items are marked unresolved rather than guessed.',
+              '- [ ] All Phase 6 fixtures are cleaned and Supabase/R2/Auth security invariants remain intact.': '- [x] All Phase 6 fixtures are cleaned and Supabase/R2/Auth security invariants remain intact.',
+              '- [ ] Authoritative docs are updated from verified reality and no Phase 7 feature has been implemented.': '- [x] Authoritative docs are updated from verified reality and no Phase 7 feature has been implemented.',
+          }
+          for old, new in checkbox_replacements.items():
+              text = replace_once(text, old, new, f'UI_MIGRATION checkbox {old[:35]}')
+          text = replace_once(
+              text,
+              '**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity roadmap is accepted; implementation has not started.',
+              '**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phase 6 baseline evidence is complete pending the operating-boundary decision.',
+              'UI_MIGRATION current cycle',
+          )
+          text = replace_once(
+              text,
+              '**Current phase:** Phase 6 — Cycle 2 Baseline & Production Hardening has an expanded execution-ready planning contract; execution is not started.',
+              '**Current phase:** Phase 6 — Cycle 2 Baseline & Production Hardening is `IN PROGRESS`; remote production/capability audit `33250031468` passed and only the user-approved operating boundary remains before formal close.',
+              'UI_MIGRATION current phase',
+          )
+          text = replace_once(
+              text,
+              '**Current product slice:** None. Do not create an implementation branch or begin the Phase 6 audit until the user explicitly authorizes starting the cycle.',
+              '**Current product slice:** None. Phase 6 is an audit/documentation phase; do not begin Phase 7 feature implementation while the operating-boundary gate remains open.',
+              'UI_MIGRATION current slice',
+          )
+          text = replace_once(
+              text,
+              '**Current gate:** Phase 6 planning is expanded; await explicit user authorization before executing the audit. Planning acceptance is not implementation approval and does not authorize deployment.',
+              '**Current gate:** Record the user-approved Cycle 2 operating boundary (private use, closed beta or broader beta). Closed beta is the evidence-backed recommendation; no deployment is authorized by Phase 6.',
+              'UI_MIGRATION current gate',
+          )
+          path.write_text(text)
+
+          # docs/architecture/PRODUCT_CAPABILITIES.md
+          path = Path('docs/architecture/PRODUCT_CAPABILITIES.md')
+          text = path.read_text()
+          marker = '## Extensibility Categories\n'
+          section = '''## Cycle 2 Phase 6 Capability Audit — 2026-08-29
+
+          Phase 6 re-audited current RenderLab code plus the configured deployed worker paths. Audit run `33250031468` is the live evidence source; Saga worker source remains implementation-reference evidence only.
+
+          ### Multi-reference image edit
+          - RenderLab's normalized request already models `inputs` as an array, and native image submission forwards every resolved source as repeated `image_files` in request order. Temporary `generation_sources` and durable `media_assets` can both be resolved to server-side bytes without exposing R2 keys.
+          - The approved Create UI still submits at most one reference. The current request parser validates input object shape but does **not** yet enforce media-kind compatibility, per-role multiplicity or a maximum input count. Multi-reference v0.1 must add those server-side input-slot constraints before exposing additional reference controls.
+          - The current deployed FLUX gateway reports `multiple_references=true`; a bounded two-reference live probe was accepted with `reference_count=2` and returned PNG successfully in about 12.6 seconds total.
+          - Audited worker runtime dynamically creates additional reference-conditioning nodes for every image after the first and has no explicit reference-count ceiling. The first image controls normalized output dimensions; later images are auxiliary conditioning references. Worker permissiveness is **not** a product maximum: Phase 7 must choose and document a deliberate bounded user-facing count.
+          - Existing per-file reference limits remain image MIME types and at most 25 MB per input at the worker boundary. Phase 7 must preserve the simpler one-reference path and validate both temporary/durable input media compatibility server-side.
+
+          ### Video resolution
+          - RenderLab's current normalized product request has no resolution field. Native REDGraft submission is currently fixed to `480p`; that is the actual current product behavior even though the deployed runtime supports more.
+          - Live REDGraft runtime health reports enabled resolutions `480p`, `720p`, `1080p` and `2K`, with frame rates 24/25/30. `4K` appears in internal resolution metadata but is **not enabled** and must not be surfaced as supported product capability.
+          - A bounded live `720p`, `16:9`, 5-second, 24-fps, audio-off request completed successfully and produced a verified `1280×720` MP4. Higher enabled modes were not exhaustively generated because Phase 6 intentionally avoids an expensive benchmark when live runtime capability evidence is sufficient.
+          - Resolution interacts with aspect ratio through final delivery dimensions rather than exposing the runtime's internal base preset geometry directly. Duration remains 5–30 seconds, audio remains on/off and frame rate remains 24/25/30 under the existing worker contract.
+
+          ### Operational evidence for product defaults
+          - Production-domain samples from the same run: Create Image + durable Edit 91s total; Create Video + Animate 155s total; direct two-reference FLUX 12.6s; direct 720p 5-second Video 62.7s. These are bounded audit samples and are not latency SLAs or percentile measurements.
+          - The current product has no per-user generation rate/concurrency/abuse limiter at the generation route. Worker source serializes each container invocation; exact deployment-wide autoscaling/capacity is not exposed by current health APIs.
+          - Provider per-generation cost/credit consumption is not reliably observable through the current product/worker health contracts. Phase 7 must not invent cost labels or promises from unavailable data; Phase 10 must account for capacity/abuse controls if access broadens.
+
+          '''
+          if marker not in text:
+              raise SystemExit('PRODUCT_CAPABILITIES marker missing')
+          text = text.replace(marker, section + marker, 1)
+          path.write_text(text)
+
+          # docs/architecture/INFRASTRUCTURE.md
+          path = Path('docs/architecture/INFRASTRUCTURE.md')
+          text = path.read_text()
+          marker = '## Security Rules\n'
+          section = '''## Cycle 2 Phase 6 Production Baseline — 2026-08-29
+
+          Phase 6 performed a fresh, non-deploying production/custom-domain/shared-resource audit through GitHub Actions run `33250031468` plus read-only Vercel/Supabase inspection.
+
+          ### Repository and Vercel reconciliation
+          - Audit-starting repository `main` was `5072fe96495ea53d06f4891c6073b16203c819d2`.
+          - Actual READY production deployment remains `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` from application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`. The complete repository delta from that production SHA to the audit-starting `main` is documentation-only (`AGENTS.md`, `PROJECT.md`, `UI_DECISIONS.md`, `UI_MIGRATION.md`), so production has no executable application/package/schema drift relative to current source.
+          - The latest production build ran `scripts/verify-vercel-env.mjs` successfully and reported the canonical production environment contract complete. Phase 6 verified environment names/presence through that preflight and did not read or expose secret values. Current Vercel connector capability does not enumerate optional secret values, so optional external-backend configuration is not inferred from absence/presence guesses.
+          - No Vercel deployment was created by the Phase 6 audit branch; automatic Git deployment remains disabled. Vercel reported no runtime error cluster in the audit window.
+
+          ### Custom domain
+          - Fresh public DNS verification returned `renderlab.faresuniform.uk` CNAME → `736ea4abfec91fb9.vercel-dns-017.com`.
+          - Fresh HTTPS returned `200` with Vercel edge headers. TLS 1.3 verification succeeded with a certificate whose CN/SAN includes `renderlab.faresuniform.uk`, issued by Let's Encrypt and valid through 2026-11-27.
+          - The real production custom-domain persistent browser upload → Library → Viewer → Edit continuation lifecycle passed in 16s and exact fixture cleanup succeeded; the approved signed-R2/exact-origin CORS/storage identity contract remains unchanged.
+
+          ### Production application and worker baseline
+          - Account session lifecycle passed in 7s; two-account ownership/privacy verification passed in 15s.
+          - Create Image → durable Edit continuation passed in 91s total on native FLUX primary routing with no observed failover. Create Video + Animate passed in 155s total on native REDGraft primary routing with no observed failover. One sampled 5-second Create Video job was about 101s from product-job creation through durable completion.
+          - Deployed FLUX gateway health reported async jobs, cancel capability and `multiple_references=true`; a two-reference live probe completed successfully in about 12.6s.
+          - Deployed REDGraft runtime health reported NVIDIA A10, enabled `480p`/`720p`/`1080p`/`2K`, 24/25/30 fps and disabled `4K`. A bounded 720p 16:9 5-second 24-fps probe produced 1280×720 MP4 in 62.7s total, about 59.0s reported worker time.
+          - These timings are one bounded audit sample, not SLAs. Worker source serializes each container invocation; exact deployment-wide autoscaling/capacity and provider per-generation billing/cost are not reliably exposed by current health/product contracts and remain unresolved rather than estimated.
+          - RenderLab currently has no app-level per-user generation rate/concurrency/abuse limiter. Broader beta access therefore requires a separate server-enforced capacity/abuse contract in Phase 10; Phase 6 does not add one.
+
+          ### Shared Supabase and cleanup baseline
+          - Final post-run audit found **zero Phase 6 fixture rows** across all six RenderLab tables and **zero Phase 6 Auth users**. Pre-existing non-fixture product data was deliberately left untouched.
+          - All six RenderLab tables retain RLS, `owner_id NOT NULL`, zero `anon`/`authenticated` table grants and their expected ownership/integrity triggers. Latest migration remains `20260828221611 renderlab_media_asset_deletion`.
+          - Security advisors continue to report informational `rls_enabled_no_policy` notices for the deliberately server-owned tables; this matches the zero-browser-grant architecture. They additionally report `auth_leaked_password_protection` WARN because leaked-password protection is disabled. Treat that as a beta-readiness item; Phase 6 makes no Auth configuration mutation.
+          - Performance advisors report unused-index INFO only; no Phase 6 schema change is justified by those notices.
+
+          ### Cycle 2 operating-boundary implication
+          The verified technical baseline is healthy for continued controlled use. Because app-level generation rate/concurrency/abuse controls are absent, provider cost is not product-observable and leaked-password protection is disabled, **closed beta** is the recommended Cycle 2 operating boundary until Phase 10 hardens broader-access requirements. This is a recommendation only until the user explicitly selects the operating boundary.
+
+          '''
+          if marker not in text:
+              raise SystemExit('INFRASTRUCTURE security marker missing')
+          text = text.replace(marker, section + marker, 1)
+          path.write_text(text)
+          PY
+
+          git diff --check
+          git status --short
+          git config user.name 'RenderLab Docs Bot'
+          git config user.email '121525183+faresmohamed260@users.noreply.github.com'
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/PRODUCT_CAPABILITIES.md docs/architecture/INFRASTRUCTURE.md
+          git commit -m 'Record Phase 6 verified baseline'
+          git rm .github/workflows/apply-phase-6-baseline-results.yml
+          git commit -m 'Remove Phase 6 docs helper'
+          git push origin HEAD:docs/phase-6-baseline-results
