@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Keep video audio visible on mobile
+      - name: Wrap mobile video essentials
         shell: bash
         run: |
           git fetch origin work/video-audio-control
@@ -31,19 +31,19 @@ jobs:
 
           replace(
               "src/features/create/create-workspace.tsx",
-              '''                  <>\n                    <Button\n                      type="button"\n                      variant="secondary"\n                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}\n                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}\n                      className="shrink-0"\n                    >\n                      {durationSeconds} s\n                    </Button>\n                    <Toggle\n                      pressed={audioEnabled}\n                      onPressedChange={setAudioEnabled}\n                      size="sm"\n                      aria-label={`Audio ${audioEnabled ? "on" : "off"}`}\n                      title={audioEnabled ? "Generate video with audio" : "Generate video without audio"}\n                      className="shrink-0 gap-1.5 bg-surface-2"\n                    >\n                      {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}\n                      Audio\n                    </Toggle>\n                  </>\n''',
-              '''                  <>\n                    <Toggle\n                      pressed={audioEnabled}\n                      onPressedChange={setAudioEnabled}\n                      size="sm"\n                      aria-label={`Audio ${audioEnabled ? "on" : "off"}`}\n                      title={audioEnabled ? "Generate video with audio" : "Generate video without audio"}\n                      className="shrink-0 gap-1.5 bg-surface-2"\n                    >\n                      {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}\n                      <span className="hidden sm:inline">Audio</span>\n                    </Toggle>\n                    <Button\n                      type="button"\n                      variant="secondary"\n                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}\n                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}\n                      className="shrink-0"\n                    >\n                      {durationSeconds} s\n                    </Button>\n                  </>\n''',
+              'className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0"',
+              'className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:flex-nowrap sm:overflow-visible sm:pb-0"',
           )
 
           replace(
               "tests/ui/create.spec.ts",
-              '''  const audio = page.getByRole("button", { name: "Audio on" });\n  await expect(audio).toBeVisible();\n  await expect(audio).toHaveAttribute("aria-pressed", "true");\n  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();\n  await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();\n\n  await page.screenshot({ path: "artifacts/create-mobile-video.png", fullPage: true });\n''',
-              '''  const audio = page.getByRole("button", { name: "Audio on" });\n  await expect(audio).toBeVisible();\n  await expect(audio).toHaveAttribute("aria-pressed", "true");\n  const audioBox = await audio.boundingBox();\n  expect(audioBox).not.toBeNull();\n  expect(audioBox!.x).toBeGreaterThanOrEqual(0);\n  expect(audioBox!.x + audioBox!.width).toBeLessThanOrEqual(mobileViewport.width);\n  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();\n  await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();\n\n  await page.screenshot({ path: "artifacts/create-mobile-video.png", fullPage: true });\n''',
+              '''  const audioBox = await audio.boundingBox();\n  expect(audioBox).not.toBeNull();\n  expect(audioBox!.x).toBeGreaterThanOrEqual(0);\n  expect(audioBox!.x + audioBox!.width).toBeLessThanOrEqual(mobileViewport.width);\n  await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();\n  await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();\n''',
+              '''  const audioBox = await audio.boundingBox();\n  expect(audioBox).not.toBeNull();\n  expect(audioBox!.x).toBeGreaterThanOrEqual(0);\n  expect(audioBox!.x + audioBox!.width).toBeLessThanOrEqual(mobileViewport.width);\n  const duration = page.getByRole("button", { name: /Duration 5 seconds/ });\n  await expect(duration).toBeVisible();\n  const durationBox = await duration.boundingBox();\n  expect(durationBox).not.toBeNull();\n  expect(durationBox!.x).toBeGreaterThanOrEqual(0);\n  expect(durationBox!.x + durationBox!.width).toBeLessThanOrEqual(mobileViewport.width);\n  await expect(page.getByRole("button", { name: "Open Advanced controls" })).toBeVisible();\n  await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();\n''',
           )
           PY
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/features/create/create-workspace.tsx tests/ui/create.spec.ts
-          git commit -m "Keep video audio visible on mobile"
+          git commit -m "Wrap mobile video essentials"
           git push origin HEAD:work/video-audio-control
