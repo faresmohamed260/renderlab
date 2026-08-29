@@ -191,7 +191,7 @@ try {
   await routeLocalAppRequestsWithAccount(page, baseUrl, owner);
   await page.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });
 
-  await page.getByRole("heading", { name: "Activity", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.locator("h2").filter({ hasText: /^Activity$/ }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Nebula active study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Golden result study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Failure prompt study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
