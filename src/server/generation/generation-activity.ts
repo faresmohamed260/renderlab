@@ -21,6 +21,17 @@ type GenerationActivityRow = {
   completed_at: string | null;
 };
 
+function activityError(row: Pick<GenerationActivityRow, "status" | "error_code" | "error_message">) {
+  if (row.status !== "failed" || !row.error_message) return null;
+  const code = row.error_code || "generation_failed";
+  return {
+    code,
+    message: code === "generation_submission_failed"
+      ? "Generation could not be started. Review your inputs and try again from Create."
+      : "Generation did not complete. Try again from Create.",
+  };
+}
+
 function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationActivity {
   return {
     id: row.id,
@@ -29,14 +40,22 @@ function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationA
     outputKind: row.output_kind,
     prompt: row.prompt,
     outputAssetIds: row.output_asset_ids ?? [],
-    error: row.error_message
-      ? { code: row.error_code || "generation_failed", message: row.error_message }
-      : null,
+    error: activityError(row),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     startedAt: row.started_at,
     completedAt: row.completed_at,
   };
+}
+
+async function activeOutputIds(ownerId: string, items: PublicGenerationActivity[]) {
+  const ids = [...new Set(items.flatMap((item) => item.outputAssetIds))];
+  if (!ids.length) return new Set<string>();
+  const rows = await supabaseRest<Array<{ id: string }>>(
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&deleted_at=is.null&id=in.(${ids.join(",")})&select=id`,
+    { method: "GET" },
+  );
+  return new Set(rows.map((row) => row.id));
 }
 
 export async function listGenerationActivity({
@@ -62,21 +81,34 @@ export async function listGenerationActivity({
   const rows = await supabaseRest<GenerationActivityRow[]>(`generation_jobs?${params.toString()}`, { method: "GET" });
   const pageRows = rows.slice(0, safeLimit);
 
-  const items = await Promise.all(pageRows.map(async (row) => {
-    if (!refreshActive || !isActiveGenerationStatus(row.status)) return publicGenerationActivity(row);
+  const refreshedItems = await Promise.all(pageRows.map(async (row) => {
+    const fallback = publicGenerationActivity(row);
+    if (!refreshActive || !isActiveGenerationStatus(row.status)) return fallback;
     try {
       const refreshed = await pollGenerationJob(ownerId, row.id);
-      if (!refreshed) return publicGenerationActivity(row);
+      if (!refreshed) return fallback;
       return {
-        ...publicGenerationActivity(row),
+        ...fallback,
         status: refreshed.status,
         updatedAt: refreshed.updatedAt,
         outputAssetIds: refreshed.outputAssetIds,
-        error: refreshed.error ?? null,
+        error: refreshed.status === "failed"
+          ? activityError({
+              status: "failed",
+              error_code: refreshed.error?.code ?? null,
+              error_message: refreshed.error?.message ?? null,
+            })
+          : null,
       } satisfies PublicGenerationActivity;
     } catch {
-      return publicGenerationActivity(row);
+      return fallback;
     }
+  }));
+
+  const availableIds = await activeOutputIds(ownerId, refreshedItems);
+  const items = refreshedItems.map((item) => ({
+    ...item,
+    outputAssetIds: item.outputAssetIds.filter((id) => availableIds.has(id)),
   }));
 
   return {

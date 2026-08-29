@@ -1,0 +1,105 @@
+name: Activity Visual
+
+on:
+  pull_request:
+    paths:
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/verify-activity.mjs"
+      - ".github/workflows/activity-visual.yml"
+      - "components.json"
+      - "package.json"
+      - "src/components/ui/**"
+      - "src/lib/utils.ts"
+      - "src/lib/supabase/**"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/api/generation-activity-contract.ts"
+      - "src/app/activity/**"
+      - "src/features/activity/**"
+      - "src/server/data/**"
+      - "src/server/generation/generation-activity.ts"
+      - "src/server/generation/poll-generation.ts"
+      - "src/server/generation/native-generation.ts"
+      - "supabase/migrations/0002_generation_jobs_media_assets.sql"
+      - "supabase/migrations/0004_core_account_ownership_prepare.sql"
+      - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-activity-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  activity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required shared-resource secrets
+        shell: bash
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is not configured for RenderLab."
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start configured application
+        shell: bash
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
+          echo $! > /tmp/renderlab-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/activity > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-next.log || true
+          exit 1
+
+      - name: Render configured Activity lifecycle
+        run: node scripts/verify-activity.mjs
+
+      - name: Cleanup Activity fixtures
+        if: always()
+        run: node scripts/verify-activity.mjs --cleanup-only
+
+      - name: Print server log on failure
+        if: failure()
+        run: cat /tmp/renderlab-next.log || true
+
+      - name: Upload Activity screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-activity-screenshots
+          path: artifacts/activity-*.png
+          if-no-files-found: warn
+          retention-days: 14
