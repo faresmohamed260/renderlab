@@ -11,7 +11,7 @@ source = source.replace(
 )
 source = source.replace(
     '    if count != 1:\n        raise RuntimeError(f"{label}: expected exactly one match, found {count}")\n    return text.replace(old, new, 1)\n',
-    '    if label == "create ratio request" and count >= 1:\n        return text.replace(old, new, 1)\n    if count != 1:\n        raise RuntimeError(f"{label}: expected exactly one match, found {count}")\n    return text.replace(old, new, 1)\n',
+    '    if label in {"create ratio request", "generation PR paths"} and count >= 1:\n        return text.replace(old, new, 1)\n    if count != 1:\n        raise RuntimeError(f"{label}: expected exactly one match, found {count}")\n    return text.replace(old, new, 1)\n',
     1,
 )
 exec(compile(source, "scripts/apply-phase-7a-geometry.py", "exec"), {"__name__": "__main__", "Path": Path})
