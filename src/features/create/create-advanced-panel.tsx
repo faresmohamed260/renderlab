@@ -29,8 +29,8 @@ export function createAdvancedDraft(kind: OutputKind): AdvancedDraft {
   return {
     negativePrompt: "",
     seed: String(defaults.seed),
-    steps: String(defaults.steps),
-    guidance: String(defaults.guidance),
+    steps: kind === "image" ? String(generationAdvancedCapabilities.image.defaults.steps) : "",
+    guidance: kind === "image" ? String(generationAdvancedCapabilities.image.defaults.guidance) : "",
     frameRate: generationAdvancedCapabilities.video.defaults.frameRate,
   };
 }
@@ -39,13 +39,23 @@ export function advancedParametersFromDraft(
   draft: AdvancedDraft,
   kind: OutputKind,
 ): GenerationAdvancedParameters | null {
-  if (!draft.seed.trim() || !draft.steps.trim() || !draft.guidance.trim()) return null;
+  if (!draft.seed.trim()) return null;
 
   const seed = Number(draft.seed);
+  if (!Number.isSafeInteger(seed)) return null;
+
+  const common = {
+    ...(draft.negativePrompt.trim() ? { negativePrompt: draft.negativePrompt.trim() } : {}),
+    seed,
+  };
+
+  if (kind === "video") {
+    return { ...common, frameRate: draft.frameRate };
+  }
+
+  if (!draft.steps.trim() || !draft.guidance.trim()) return null;
   const steps = Number(draft.steps);
   const guidance = Number(draft.guidance);
-
-  if (!Number.isSafeInteger(seed)) return null;
   if (
     !Number.isInteger(steps)
     || steps < generationAdvancedCapabilities.steps.min
@@ -57,13 +67,7 @@ export function advancedParametersFromDraft(
     || guidance > generationAdvancedCapabilities.guidance.max
   ) return null;
 
-  return {
-    ...(draft.negativePrompt.trim() ? { negativePrompt: draft.negativePrompt.trim() } : {}),
-    seed,
-    steps,
-    guidance,
-    ...(kind === "video" ? { frameRate: draft.frameRate } : {}),
-  };
+  return { ...common, steps, guidance };
 }
 
 export function CreateAdvancedPanel({
@@ -83,7 +87,7 @@ export function CreateAdvancedPanel({
         <div className="min-w-0">
           <p className="text-sm font-semibold text-text">Advanced</p>
           <p className="mt-1 text-xs leading-5 text-text-muted">
-            Reproducibility and tuning. Defaults stay safe unless you change them.
+            Reproducibility and contextual output controls. Defaults stay safe unless you change them.
           </p>
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onReset} className="shrink-0">
@@ -119,31 +123,35 @@ export function CreateAdvancedPanel({
             />
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="advanced-steps">{generationAdvancedCapabilities.steps.label}</FieldLabel>
-            <Input
-              id="advanced-steps"
-              type="number"
-              min={generationAdvancedCapabilities.steps.min}
-              max={generationAdvancedCapabilities.steps.max}
-              step="1"
-              value={draft.steps}
-              onChange={(event) => onDraftChange({ ...draft, steps: event.target.value })}
-            />
-          </Field>
+          {outputKind === "image" ? (
+            <>
+              <Field>
+                <FieldLabel htmlFor="advanced-steps">{generationAdvancedCapabilities.steps.label}</FieldLabel>
+                <Input
+                  id="advanced-steps"
+                  type="number"
+                  min={generationAdvancedCapabilities.steps.min}
+                  max={generationAdvancedCapabilities.steps.max}
+                  step="1"
+                  value={draft.steps}
+                  onChange={(event) => onDraftChange({ ...draft, steps: event.target.value })}
+                />
+              </Field>
 
-          <Field>
-            <FieldLabel htmlFor="advanced-guidance">{generationAdvancedCapabilities.guidance.label}</FieldLabel>
-            <Input
-              id="advanced-guidance"
-              type="number"
-              min={generationAdvancedCapabilities.guidance.min}
-              max={generationAdvancedCapabilities.guidance.max}
-              step={generationAdvancedCapabilities.guidance.step}
-              value={draft.guidance}
-              onChange={(event) => onDraftChange({ ...draft, guidance: event.target.value })}
-            />
-          </Field>
+              <Field>
+                <FieldLabel htmlFor="advanced-guidance">{generationAdvancedCapabilities.guidance.label}</FieldLabel>
+                <Input
+                  id="advanced-guidance"
+                  type="number"
+                  min={generationAdvancedCapabilities.guidance.min}
+                  max={generationAdvancedCapabilities.guidance.max}
+                  step={generationAdvancedCapabilities.guidance.step}
+                  value={draft.guidance}
+                  onChange={(event) => onDraftChange({ ...draft, guidance: event.target.value })}
+                />
+              </Field>
+            </>
+          ) : null}
 
           {outputKind === "video" ? (
             <Field>

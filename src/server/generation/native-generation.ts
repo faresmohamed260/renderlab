@@ -4,7 +4,13 @@ import type {
   GenerationJob,
   GenerationRequest,
 } from "@/lib/capabilities/generation";
-import { defaultVideoAudioEnabled, generationInputAlias, resolveCreativeOperation } from "@/lib/capabilities/generation";
+import {
+  defaultVideoAudioEnabled,
+  defaultVideoResolution,
+  generationInputAlias,
+  resolveCreativeOperation,
+  type VideoResolution,
+} from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
@@ -20,10 +26,10 @@ type WorkflowConfig = {
   outputMimeType: string;
   defaults: {
     seed: number;
-    steps: number;
-    guidance: number;
+    steps?: number;
+    guidance?: number;
     megapixels: number;
-    resolution?: string;
+    resolution?: VideoResolution;
     durationSeconds?: number;
     audioEnabled?: boolean;
     frameRate?: number;
@@ -110,10 +116,8 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
     outputMimeType: "video/mp4",
     defaults: {
       seed: 42,
-      steps: 11,
-      guidance: 1,
       megapixels: 1,
-      resolution: "480p",
+      resolution: defaultVideoResolution,
       durationSeconds: 5,
       audioEnabled: defaultVideoAudioEnabled,
       frameRate: 24,
@@ -280,8 +284,8 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, prepare
     form.append("prompt", executionPrompt);
     form.append("negative_prompt", request.advanced?.negativePrompt ?? "");
     form.append("seed", String(request.advanced?.seed ?? workflow.defaults.seed));
-    form.append("steps", String(request.advanced?.steps ?? workflow.defaults.steps));
-    form.append("cfg", String(request.advanced?.guidance ?? workflow.defaults.guidance));
+    form.append("steps", String(request.advanced?.steps ?? workflow.defaults.steps!));
+    form.append("cfg", String(request.advanced?.guidance ?? workflow.defaults.guidance!));
     form.append("megapixels", String(workflow.defaults.megapixels));
     return form;
   }
@@ -291,9 +295,7 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, prepare
   form.append("prompt", executionPrompt);
   form.append("negative_prompt", request.advanced?.negativePrompt ?? "");
   form.append("seed", String(request.advanced?.seed ?? workflow.defaults.seed));
-  form.append("steps", String(request.advanced?.steps ?? workflow.defaults.steps));
-  form.append("cfg", String(request.advanced?.guidance ?? workflow.defaults.guidance));
-  form.append("resolution", workflow.defaults.resolution!);
+  form.append("resolution", request.output.resolution ?? workflow.defaults.resolution ?? defaultVideoResolution);
   form.append("duration_seconds", String(request.output.durationSeconds ?? workflow.defaults.durationSeconds));
   form.append("audio_enabled", String(request.output.audioEnabled ?? workflow.defaults.audioEnabled));
   form.append("aspect_ratio", prepared.aspectRatio);
