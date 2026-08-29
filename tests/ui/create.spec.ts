@@ -34,6 +34,11 @@ test("Create switches to video essentials without exposing backend workflow deta
   await expect(page.getByRole("heading", { name: "Create a video" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Aspect ratio 16:9/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Duration 5 seconds/ })).toBeVisible();
+  const audio = page.getByRole("button", { name: "Audio on" });
+  await expect(audio).toBeVisible();
+  await expect(audio).toHaveAttribute("aria-pressed", "true");
+  await audio.click();
+  await expect(page.getByRole("button", { name: "Audio off" })).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByText("workflow", { exact: false })).toHaveCount(0);
 
   await page.screenshot({ path: "artifacts/create-desktop-video.png", fullPage: true });
@@ -114,6 +119,18 @@ test("generation API validates requests and reports backend availability truthfu
   const advancedBody = await invalidAdvanced.json();
   expect(advancedBody.ok).toBe(false);
   expect(advancedBody.error.code).toBe("invalid_request");
+
+  const invalidAudio = await request.post("/api/generation/jobs", {
+    data: {
+      prompt: "A valid video prompt",
+      output: { kind: "video", aspectRatio: "16:9", durationSeconds: 5, audioEnabled: "yes" },
+      inputs: [],
+    },
+  });
+  expect(invalidAudio.status()).toBe(400);
+  const audioBody = await invalidAudio.json();
+  expect(audioBody.ok).toBe(false);
+  expect(audioBody.error.code).toBe("invalid_request");
 });
 
 test("reference upload API validates tickets and reports storage availability truthfully", async ({ request }) => {

@@ -50,6 +50,7 @@ export const generationAdvancedCapabilities = {
       steps: 11,
       guidance: 1,
       frameRate: 24 as const,
+      audioEnabled: true,
     },
     frameRates: [24, 25, 30] as const,
   },
@@ -77,6 +78,7 @@ export type GenerationRequest = {
     kind: OutputKind;
     aspectRatio: AspectRatio;
     durationSeconds?: number;
+    audioEnabled?: boolean;
   };
   inputs: GenerationInput[];
   advanced?: GenerationAdvancedParameters;

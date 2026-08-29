@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ImageIcon, MoreHorizontal, Plus, X } from "lucide-react";
+import { ImageIcon, MoreHorizontal, Plus, Volume2, VolumeX, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   advancedParametersFromDraft,
@@ -101,6 +102,7 @@ export function CreateWorkspace({
   const [imageAspect, setImageAspect] = useState<AspectRatio>("1:1");
   const [videoAspect, setVideoAspect] = useState<AspectRatio>("16:9");
   const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
+  const [audioEnabled, setAudioEnabled] = useState(true);
   const [reference, setReference] = useState<ReferenceSource | null>(null);
   const [continuationSource, setContinuationSource] = useState<ContinuationSource | null>(() =>
     initialContinuation
@@ -405,7 +407,7 @@ export function CreateWorkspace({
           output: {
             kind: outputKind,
             aspectRatio,
-            ...(outputKind === "video" ? { durationSeconds } : {}),
+            ...(outputKind === "video" ? { durationSeconds, audioEnabled } : {}),
           },
           inputs,
           advanced,
@@ -560,15 +562,28 @@ export function CreateWorkspace({
                 </Button>
 
                 {outputKind === "video" ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
-                    aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
-                    className="shrink-0"
-                  >
-                    {durationSeconds} s
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setDurationSeconds(nextValue(videoDurations, durationSeconds))}
+                      aria-label={`Duration ${durationSeconds} seconds. Activate to choose the next duration.`}
+                      className="shrink-0"
+                    >
+                      {durationSeconds} s
+                    </Button>
+                    <Toggle
+                      pressed={audioEnabled}
+                      onPressedChange={setAudioEnabled}
+                      size="sm"
+                      aria-label={`Audio ${audioEnabled ? "on" : "off"}`}
+                      title={audioEnabled ? "Generate video with audio" : "Generate video without audio"}
+                      className="shrink-0 gap-1.5 bg-surface-2"
+                    >
+                      {audioEnabled ? <Volume2 aria-hidden="true" className="size-4" /> : <VolumeX aria-hidden="true" className="size-4" />}
+                      Audio
+                    </Toggle>
+                  </>
                 ) : null}
 
                 <CollapsibleTrigger asChild>
