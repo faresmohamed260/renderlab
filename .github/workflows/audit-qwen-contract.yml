@@ -1,0 +1,49 @@
+name: Qwen Gateway Contract Audit
+
+on:
+  push:
+    branches:
+      - audit/phase-7b-semantic-output
+    paths:
+      - .github/workflows/audit-qwen-contract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qwen-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe primary Qwen gateway
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://voidtrek--saga-qwen-image-edit-2511-gateway-web.modal.run'
+          echo '=== health ==='
+          curl --fail --silent --show-error --max-time 30 "$base/health" | python -m json.tool
+          echo '=== OpenAPI image/job routes ==='
+          curl --fail --silent --show-error --max-time 30 "$base/openapi.json" > /tmp/qwen-openapi.json
+          python - <<'PY'
+          import json
+          data=json.load(open('/tmp/qwen-openapi.json'))
+          for path, methods in data.get('paths', {}).items():
+              if any(term in path.lower() for term in ('job','edit','image','health')):
+                  print(path, sorted(methods.keys()))
+                  for method, spec in methods.items():
+                      if not isinstance(spec, dict):
+                          continue
+                      body=spec.get('requestBody', {})
+                      content=body.get('content', {}) if isinstance(body, dict) else {}
+                      if content:
+                          print(' ', method, 'content-types=', sorted(content.keys()))
+                          for ctype, definition in content.items():
+                              schema=definition.get('schema', {}) if isinstance(definition, dict) else {}
+                              print('   ', ctype, json.dumps(schema, sort_keys=True))
+          print('=== relevant schemas ===')
+          for name, schema in data.get('components', {}).get('schemas', {}).items():
+              low=name.lower()
+              if any(term in low for term in ('edit','job','image')):
+                  print(name, json.dumps(schema, sort_keys=True)[:5000])
+          PY
