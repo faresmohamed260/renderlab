@@ -12,7 +12,7 @@ Tracks approved product surfaces and actual route/status/component composition.
 ## Initial Information Architecture
 Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextual: **Media Viewer**.
 
-Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default. Cycle 2 now plans a **privileged Admin** surface in Phase 10 and a **Brand/Landing** surface in Phase 11; both remain route-TBD planning items until their phase contracts lock information architecture.
+Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default. Cycle 2 approves a **privileged Admin** surface at `/admin` under UI-051 and still plans a **Brand/Landing** surface in Phase 11. Admin stays out of ordinary shell navigation in v0.1 and is reachable contextually from Settings only for an active admin.
 
 ## Application Shell
 **Status:** APPROVED  
@@ -223,11 +223,24 @@ Approved behavior:
 
 **Still intentionally open:** UI-030 strict database enforcement is complete. Personal Library organization remains owned by Library/Viewer rather than Settings; other Settings sections remain requirement-driven.
 
-### Admin — planned Cycle 2 privileged surface
-**Route:** TBD
-**Status:** PLANNED — Phase 10
-**Purpose:** Closed-beta administration for explicitly authorized operators: access/user management, generation limit/feature-flag controls and useful operational health/failure visibility behind a server-authoritative admin boundary.
-**Boundary:** This is not ordinary Settings and does not make worker/provider/secret mutation an ordinary-user capability. Exact route, role/claim model and mutations are decided in the Phase 10 contract.
+
+**Phase 10 planned extension — UI-051:** Settings remains the ordinary account/security surface. Signed-out state becomes Sign in + Forgot password rather than public Create account; signed-in state adds Change password and RenderLab access status; recovery/invite completion uses `/settings/password`. Suspended users retain Settings for recovery/sign-out. Active admins get a contextual `/admin` link. Raw Supabase errors, role editing and other users never belong in ordinary Settings.
+
+### Admin
+**Route:** `/admin`
+**Status:** PLANNED — Phase 10 / UI-051
+**Implementation:** none until the UI-051 contract is merged
+
+**Purpose:** Operate the controlled RenderLab beta without exposing provider infrastructure or the shared Supabase Auth namespace.
+
+**Planned v0.1 composition:**
+- **Access:** RenderLab invitations and admitted accounts only; invite/revoke, active/suspended status, member/admin role, bounded per-account generation overrides; no Auth-account deletion or password administration.
+- **Generation controls:** typed global generation enabled switch plus default one-active/12-per-hour limits and effective override visibility. Labels say limits/guardrails, never credits or plan allowance.
+- **Health:** bounded aggregate RenderLab job counts/status/sanitized error codes; no prompt/media/provider/worker/workflow/raw-error data.
+- server-authorized page; non-admins fail closed; no ordinary global shell navigation item; Settings exposes the link only to active admins.
+- desktop may use dense rows/tables from maintained primitives; narrow layout must stack records/actions without horizontal clipping or hidden destructive context.
+
+**Do not change:** Do not turn Admin into a shared-Supabase user browser, cloud/provider console, arbitrary feature-flag framework or generic internal dashboard. Do not expose provider identity/credentials, raw errors, other applications' users or destructive account/data deletion in Phase 10.
 
 ### Brand / Landing — planned Cycle 2 launch surface
 **Route:** TBD; current `/` remains Create until Phase 11 explicitly changes information architecture.

@@ -508,3 +508,24 @@ No infrastructure rollout is currently queued by the repository. Cycle 2 Phase 6
 2. Add any future public upload origin explicitly to R2 CORS before deployment/use.
 3. Keep Library/Activity against RenderLab-owned `media_assets`/`generation_jobs`, never legacy `studio_*`.
 4. Preserve conservative duplicate-avoidance if worker routing evolves.
+
+## Phase 10 Contract Audit — Account/Admin/Admission
+**Audited:** 2026-08-30 against merged `main` `ced9632e343a89ac9a815175835b6f3899eac10d` and the live shared Supabase project.
+
+### Current facts
+- Supabase project `rashyleshocuvpgcooxy` is `ACTIVE_HEALTHY` in `eu-west-1` on Postgres 17.
+- Security Advisor still reports `auth_leaked_password_protection` WARN. The remaining RLS/no-policy notices are INFO for RenderLab server-owned tables whose anon/authenticated privileges are intentionally revoked.
+- There is no RenderLab account/admin/limit schema yet. Existing migrations stop at `0009_media_asset_deletion.sql`.
+- App-level generation rate/concurrency/abuse controls remain absent. Supabase Auth endpoint rate limits do not protect RenderLab generation/provider spend.
+- Current Settings exposes self-service Auth sign-up despite the chosen Closed Beta operating boundary. Current verified account identity has no RenderLab role/admission state.
+- The project is shared infrastructure. `auth.users` can contain identities unrelated to RenderLab, so Phase 10 must not auto-backfill or expose the full Auth namespace.
+
+### Accepted Phase 10 infrastructure boundary
+- Introduce RenderLab-prefixed server-owned access/invitation/settings/admission records with RLS enabled and zero browser grants. No legacy application table is reused.
+- Production access enforcement is a deliberate rollout step: an operator must supply exact known RenderLab user UUIDs for bootstrap/import. No migration infers membership by scanning shared Auth users, email domain, existing provider data or unrelated application records.
+- Supabase Auth Admin invite/user/link operations remain server-only. The service-role key stays server/CI-only and must never reach browser code or Admin payloads.
+- Generation admission is reserved transactionally before any native/external backend request so the RenderLab application, not the worker/provider, owns spend/abuse limits. The default one-active/12-hourly values are operational guardrails only.
+- New SQL functions must revoke execute from public/anon/authenticated, use explicit search paths and be included in Security Advisor/browser-grant verification.
+- Password recovery/invite email URLs/templates must match the RenderLab SSR PKCE callback. Current Supabase guidance recommends custom SMTP for production reliability; record actual hosted-project SMTP/template/redirect configuration before broader beta rather than assuming built-in delivery is sufficient.
+- Leaked-password protection should be enabled and advisor-cleared when the project plan supports it. If not supported, the warning remains a documented broader-beta blocker; do not compensate by claiming an equivalent RenderLab implementation.
+- No infrastructure action in the contract PR applies migrations, changes hosted Auth configuration, changes Vercel deployment settings or deploys the application.
