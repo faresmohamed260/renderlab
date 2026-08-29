@@ -20,7 +20,19 @@ jobs:
           fetch-depth: 0
 
       - name: Apply documentation reconciliation
-        run: python .github/scripts/apply-phase-7b-v0-1-docs.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .github/scripts/apply-phase-7b-v0-1-docs.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("docs/ui/COMPONENT_CATALOG.md")
+          text = path.read_text()
+          start = text.index("### CreateReferenceMentionMenu")
+          end = text.index("### CreateAdvancedPanel", start)
+          block = "\n".join(line.rstrip() for line in text[start:end].splitlines()) + "\n\n"
+          path.write_text(text[:start] + block + text[end:])
+          PY
 
       - name: Validate and commit final tree
         shell: bash
