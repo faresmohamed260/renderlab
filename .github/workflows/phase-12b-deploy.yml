@@ -1,0 +1,183 @@
+name: Phase 12B Exact Production Deploy
+
+on:
+  push:
+    branches: [work/phase-12b-rollout-execution]
+    paths:
+      - ".github/workflows/phase-12b-deploy.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CANDIDATE_SHA: d6b8f386db3893e583c99b23fc3397b0eb377d42
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TEAM_ID: team_r09C6RLmb2acHapENECQIn9T
+      VERCEL_PROJECT_ID: prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU
+      VERCEL_PROJECT_NAME: renderlab
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout exact verified candidate
+        uses: actions/checkout@v4
+        with:
+          ref: d6b8f386db3893e583c99b23fc3397b0eb377d42
+
+      - name: Verify exact candidate and closed-beta bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test -n "$VERCEL_TOKEN"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          python <<'PY'
+          import json, os, urllib.parse, urllib.request
+          base = os.environ['SUPABASE_URL'].rstrip('/')
+          key = os.environ['SUPABASE_SERVICE_ROLE_KEY']
+          req = urllib.request.Request(
+              base + '/rest/v1/renderlab_account_access?select=role,status,generation_enabled,max_active_jobs,max_jobs_per_hour',
+              headers={'apikey': key, 'Authorization': f'Bearer {key}'},
+          )
+          with urllib.request.urlopen(req, timeout=30) as response:
+              rows = json.load(response)
+          active = [row for row in rows if row.get('status') == 'active']
+          admins = [row for row in active if row.get('role') == 'admin']
+          overrides = [row for row in rows if any(row.get(k) is not None for k in ('generation_enabled','max_active_jobs','max_jobs_per_hour'))]
+          print(f'BOOTSTRAP_ACCESS_ROWS={len(rows)}')
+          print(f'BOOTSTRAP_ACTIVE_ADMINS={len(admins)}')
+          print(f'BOOTSTRAP_OVERRIDE_ROWS={len(overrides)}')
+          if len(rows) != 1 or len(active) != 1 or len(admins) != 1 or overrides:
+              raise SystemExit('Closed-beta bootstrap no longer matches the verified rollout contract')
+          PY
+
+      - name: Enable production closed-beta enforcement
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/env?teamId=${VERCEL_TEAM_ID}&upsert=true"
+          payload='{"key":"RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED","value":"true","type":"encrypted","target":["production"],"comment":"Cycle 2 Phase 12B closed-beta enforcement"}'
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer ${VERCEL_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "$payload" \
+            "$api" > /tmp/vercel-env.json
+          python <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/vercel-env.json').read_text())
+          failed = payload.get('failed') or []
+          if failed:
+              raise SystemExit(f'Vercel env upsert failed: {failed}')
+          print('VERCEL_CLOSED_BETA_ENV_UPSERTED=true')
+          PY
+
+      - name: Verify production environment key metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${VERCEL_TOKEN}" \
+            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env?teamId=${VERCEL_TEAM_ID}" > /tmp/vercel-env-list.json
+          python <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/vercel-env-list.json').read_text())
+          envs = payload.get('envs') or payload.get('env') or []
+          matches = [item for item in envs if item.get('key') == 'RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED' and 'production' in (item.get('target') or [])]
+          print(f'VERCEL_CLOSED_BETA_ENV_MATCHES={len(matches)}')
+          if not matches:
+              raise SystemExit('Closed-beta production environment key is not visible after upsert')
+          PY
+
+      - name: Create production deployment from exact GitHub commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          import json, os
+          from pathlib import Path
+          body = {
+              'name': os.environ['VERCEL_PROJECT_NAME'],
+              'project': os.environ['VERCEL_PROJECT_ID'],
+              'target': 'production',
+              'gitSource': {
+                  'type': 'github',
+                  'org': 'faresmohamed260',
+                  'repo': 'renderlab',
+                  'ref': os.environ['CANDIDATE_SHA'],
+              },
+              'gitMetadata': {
+                  'remoteUrl': 'https://github.com/faresmohamed260/renderlab',
+                  'commitRef': os.environ['CANDIDATE_SHA'],
+                  'commitSha': os.environ['CANDIDATE_SHA'],
+                  'ci': 'true',
+                  'ciType': 'github-actions',
+              },
+          }
+          Path('/tmp/vercel-deploy.json').write_text(json.dumps(body))
+          PY
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer ${VERCEL_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data-binary @/tmp/vercel-deploy.json \
+            "https://api.vercel.com/v13/deployments?teamId=${VERCEL_TEAM_ID}&forceNew=1" > /tmp/vercel-deployment.json
+          python <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/vercel-deployment.json').read_text())
+          deployment_id = payload.get('id')
+          url = payload.get('url')
+          if not deployment_id or not url:
+              raise SystemExit(f'Vercel did not return deployment identity: {payload}')
+          Path('/tmp/vercel-deployment-id').write_text(deployment_id)
+          print(f'VERCEL_DEPLOYMENT_ID={deployment_id}')
+          print(f'VERCEL_DEPLOYMENT_URL=https://{url}')
+          print(f'VERCEL_INITIAL_STATUS={payload.get("readyState") or payload.get("status") or payload.get("state")}')
+          PY
+
+      - name: Require READY exact-candidate deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_id="$(cat /tmp/vercel-deployment-id)"
+          for attempt in $(seq 1 90); do
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${VERCEL_TOKEN}" \
+              "https://api.vercel.com/v13/deployments/${deployment_id}?teamId=${VERCEL_TEAM_ID}" > /tmp/vercel-deployment-status.json
+            state="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('/tmp/vercel-deployment-status.json').read_text())
+          print(p.get('readyState') or p.get('status') or p.get('state') or '')
+          PY
+          )"
+            echo "VERCEL_POLL_ATTEMPT=${attempt} state=${state}"
+            case "$state" in
+              READY) break ;;
+              ERROR|CANCELED) cat /tmp/vercel-deployment-status.json; exit 1 ;;
+            esac
+            sleep 10
+          done
+          python <<'PY'
+          import json, os
+          from pathlib import Path
+          p=json.loads(Path('/tmp/vercel-deployment-status.json').read_text())
+          state=p.get('readyState') or p.get('status') or p.get('state')
+          if state != 'READY':
+              raise SystemExit(f'Deployment did not reach READY: {state}')
+          meta=p.get('meta') or {}
+          sha=meta.get('githubCommitSha') or meta.get('gitCommitSha') or (p.get('gitMetadata') or {}).get('commitSha')
+          print(f'VERCEL_FINAL_STATUS={state}')
+          print(f'VERCEL_DEPLOYMENT_ID={p.get("id")}')
+          print(f'VERCEL_DEPLOYMENT_URL=https://{p.get("url")}')
+          print(f'VERCEL_REPORTED_GIT_SHA={sha}')
+          if sha and sha != os.environ['CANDIDATE_SHA']:
+              raise SystemExit(f'Vercel reported unexpected Git SHA: {sha}')
+          PY
