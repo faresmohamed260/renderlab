@@ -29,6 +29,10 @@ jobs:
         working-directory: target
         run: python ../bootstrap/.github/scripts/phase11_contract_apply.py
 
+      - name: Normalize contract whitespace
+        working-directory: target
+        run: python ../bootstrap/.github/scripts/phase11_contract_cleanup.py
+
       - name: Validate exact docs-only scope
         working-directory: target
         shell: bash
