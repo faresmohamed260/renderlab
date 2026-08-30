@@ -1275,7 +1275,7 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Authoritative docs match verified Phase 10A–10D engineering reality. Phase 11 is the next roadmap slice and requires its own merged execution-ready contract; broader-beta Auth blockers remain separately open.
 
 ### Phase 11 — Brand & Launch Experience
-**Contract status:** `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052. Starting `main`: `20f91dace0386c6c4f0b4305af2bef1bbc6ea572`.
+**Contract status:** `EXECUTION IN PROGRESS` under UI-052. Contract merged as `37c0ee922792244ffdf2e3887db08cecc3eab97d`; reviewed design checkpoint is recorded below.
 
 #### Locked product / IA boundary
 - [x] Public Brand / Landing target is `/`; Create target is `/create` after implementation. Current repository behavior remains Create `/` until Phase 11 implementation merges.
@@ -1284,8 +1284,8 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Shell Create + shell wordmark point to `/create`; marketing wordmark points `/`. Landing primary CTA is `Open Create`; account CTA is `Sign in` → `/settings`. No new public credential/sign-up/waitlist surface is approved.
 
 #### Brand / launch design boundary
-- [ ] Produce and review a Phase 11 desktop + narrow visual candidate in Penpot or repository open-SVG handoff before coding final landing composition.
-- [ ] Select one original RenderLab mark + wordmark system that works at favicon/small-shell scale and in monochrome. Retain dark-first palette/violet accent; marketing may be more expressive without redefining application controls/tokens.
+- [x] Produce and review a Phase 11 desktop + narrow visual candidate in Penpot or repository open-SVG handoff before coding final landing composition. `design/penpot/brand-launch-v0.1-desktop.svg` (1440×1100) and `brand-launch-v0.1-mobile.svg` (390×844) are the reviewed implementation candidates.
+- [x] Select one original RenderLab mark + wordmark system that works at favicon/small-shell scale and in monochrome. The reviewed candidate uses a geometric monochrome-capable `R` mark, retained dark-first palette and semantic violet accent without sparkle/glow/gradient dependence.
 - [ ] Implementation asset set includes reusable mark/wordmark treatment, app/favicon icon and project-owned Open Graph/social banner.
 - [ ] Landing stays concise: hero/value; four verified creative operations; durable reference/Library/reuse; Activity/recovery continuity; closed-beta CTA/footer. Preview media/UI must be truthful.
 - [ ] No pricing, testimonials, fake metrics/customer logos, public signup/waitlist, blog/CMS, analytics pixels, third-party marketing cookies, provider/model superiority, render-time/cost guarantees or unverified feature claims.
@@ -1321,10 +1321,10 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete/verified and Phase 11 has an expanded execution-ready contract under UI-052 but implementation has not started.
-**Current phase contract:** Phase 11 — Brand & Launch Experience is `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052.
-**Next implementation sequence:** complete the Phase 11 visual-design checkpoint, then implement the locked landing `/` → Create `/create` route/layout/brand slice and validate it exactly as UI-052 requires.
-**Current gate:** merge the Phase 11 UI-052 execution contract before any Phase 11 visual-design or implementation change. After merge, the first implementation gate is the desktop+narrow visual-design checkpoint; no deployment unless explicitly authorized.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete/verified and Phase 11 execution is in progress under UI-052 after its reviewed desktop+narrow design checkpoint.
+**Current phase contract:** Phase 11 — Brand & Launch Experience is `EXECUTION IN PROGRESS` under UI-052.
+**Next implementation sequence:** implement the locked landing `/` → Create `/create` route/layout/brand slice from the reviewed v0.1 design candidate, then run configured Brand / Launch Visual plus all path-triggered regressions and human rendered review.
+**Current gate:** UI-052 contract and visual-design checkpoint are complete. Route/layout/brand implementation and exact configured browser validation are now authorized; no deployment unless explicitly authorized.
 **Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
 **Later Cycle 2:** Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.

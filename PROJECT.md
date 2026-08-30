@@ -51,7 +51,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Cycle 2 — Creative Productivity & Beta Maturity. Phases 6–10 are complete and verified. Phase 11 Brand & Launch Experience is expanded into an execution-ready contract under UI-052; implementation has not started. Broader-beta Auth email/leaked-password blockers remain explicitly open. No deployment is authorized.**
+**Cycle 2 — Creative Productivity & Beta Maturity. Phases 6–10 are complete and verified. Phase 11 Brand & Launch Experience is in execution under UI-052: the required desktop+narrow visual-design checkpoint is reviewed, and route/layout/brand implementation is next. Broader-beta Auth email/leaked-password blockers remain explicitly open. No deployment is authorized.**
 
 ### Cycle 2 objective
 Move RenderLab from a solid functional MVP into a product that supports repeated serious creative work: richer reference-driven creation, durable reusable inputs, clearer task-oriented controls, useful job recovery, closed-beta operations, and a premium modern creative experience without exposing ComfyUI/provider complexity to ordinary users.
@@ -75,7 +75,7 @@ Cycle 2 now explicitly includes Create v2 reference/geometry/composer work, veri
 
 
 ### Phase 11 execution contract — expanded 2026-08-30
-**Status: `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052. This contract must merge before any Phase 11 visual-design or implementation change.**
+**Status: `EXECUTION IN PROGRESS` under UI-052. The contract is merged and the required desktop+narrow open-SVG design checkpoint is reviewed; route/layout/brand implementation is the next gate.**
 
 **Goal / user value**
 - Give RenderLab a credible public identity and launch surface that explains the product before a visitor enters the creative workspace.
