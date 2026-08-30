@@ -82,6 +82,14 @@ export async function retryGeneration(
 
   const submitted = await submitGeneration(ownerId, request);
   if (!submitted.ok) {
+    if (
+      submitted.error.code === "generation_access_denied"
+      || submitted.error.code === "generation_disabled"
+      || submitted.error.code === "generation_active_limit_reached"
+      || submitted.error.code === "generation_rate_limit_reached"
+    ) {
+      return { ok: false, error: submitted.error };
+    }
     if (submitted.error.code === "generation_backend_unavailable") {
       return {
         ok: false,
