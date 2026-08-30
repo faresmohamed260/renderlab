@@ -31,6 +31,7 @@ jobs:
           exact_lines = {
               "docs/ui/SCREEN_REGISTRY.md": {
                   "**Route:** `/`  ",
+                  "**Route:** `/create`  ",
                   "**Status:** APPROVED on validated PR #73 implementation; pending merge to `main`  ",
                   "**Implementation:** `src/app/page.tsx`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`  ",
                   "**Design artifacts:** `design/penpot/brand-launch-v0.1-desktop.svg`, `design/penpot/brand-launch-v0.1-mobile.svg`  ",
