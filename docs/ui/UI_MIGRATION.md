@@ -1193,7 +1193,7 @@ Give the closed beta a race-safe server-owned spend/abuse boundary without turni
 - [x] PR #68 merged to `main` as `26508e77975ee4dd26f60860f999e4bc55c99eca`. Merged-main UI Shell `33310860293`, Reference Upload `33310860327`, Generation Integration `33310860295`, and Video Generation Integration `33310860292` all passed. A final exact audit of the three deterministic shared-resource accounts from those push runs found 0 access/job/source/media/upload/reservation/Auth rows, and `renderlab_beta_settings` remained `generation_enabled=true`, `max_active_jobs=1`, `max_jobs_per_hour=12`, `updated_by=null`.
 
 #### Slice 10D — Auth / Operational Hardening — execution contract
-**Status: `EXPANDED / IMPLEMENTATION NOT STARTED`; merge this contract before implementation.**
+**Status: `COMPLETE / VERIFIED` at exact code/test head `585a606666eae5b8813f54ba19ea253fcccaaf4f`.**
 
 ##### Goal and verified audit evidence
 - Close the stale-session gap between cryptographically valid JWT claims and current Supabase session state for private RenderLab product access.
@@ -1230,6 +1230,15 @@ Give the closed beta a race-safe server-owned spend/abuse boundary without turni
 - Engineering exit: fresh private account boundary + session/recovery validation are exact-head green and repository docs match reality. 10D may be engineering-complete while external broader-beta blockers remain explicitly open.
 - Broader-beta exit remains separately blocked until leaked-password protection and production Auth email/redirect/template evidence are resolved. Production closed-beta enforcement stays off unless separately authorized after the known-user UUID bootstrap.
 
+##### Phase 10D implementation evidence — verified 2026-08-30
+- [x] Exact code/test head `585a606666eae5b8813f54ba19ea253fcccaaf4f` passed all 21 affected workflows: Account Identity Visual `33313458456`, Account Ownership `33313458433`, UI Shell Validation `33313458451`, Reference Upload Integration `33313458387`, Persistent Media Upload Integration `33313458429`, Create Lifecycle Visual `33313458372`, Generation Integration `33313458400`, Video Generation Integration `33313458436`, Activity Visual `33313458444`, Library Lifecycle Visual `33313458464`, Library Search Visual `33313458447`, Library History Visual `33313458381`, Library Drag Drop Visual `33313458434`, Library Favorites Visual `33313458457`, Library Collections Visual `33313458392`, Library Batch Delete Visual `33313458435`, Media Download Visual `33313458386`, Media Rename Visual `33313458374`, Media Delete Visual `33313458396`, Account/Admin Operations `33313458427`, and Generation Admission `33313458380`.
+- [x] The shared private identity boundary now uses fresh Supabase `auth.getUser()`; the root proxy alone retains `getClaims()` for SSR cookie refresh/signature validation. Revoked/unknown sessions therefore fail before private RenderLab owner/access/data resolution.
+- [x] Account Identity `33313458456` proved acting-session continuity plus still-unexpired stale-bearer rejection after ordinary password change, recovery/password replacement and default-global sign-out across Supabase current-user state, private media, pre-backend generation identity and refresh. Invalid/consumed hashes and hostile `next` stayed fail-closed/same-origin.
+- [x] Exact Account Identity cleanup returned Auth/access/invitation/reservation/job/source/media/upload fixtures to zero. The generation singleton remained enabled / 1 active / 12 hourly / no updater.
+- [x] Phase 10 RLS/browser-grant and SECURITY DEFINER ACL/search-path audits remain clean for the server-owned model. Security Advisor adds no 10D regression; the leaked-password WARN remains an explicit broader-beta blocker.
+- [x] No visible Settings/password UI code changed. Artifact `9732716345` (`sha256:4818217e835ebe3ff3b580b2543e59243374816c83bb60209a7144fed1290019`) retained the existing five visual states; no new human visual approval was required by the 10D contract.
+- [x] No schema migration, SMTP/DNS/plan/Management-API configuration, deployment, production UUID bootstrap or production access-enforcement change occurred. Built-in Auth mail/rate limits plus unverified production redirect/template/sender posture and Free-plan leaked-password support remain broader-beta blockers.
+
 #### UI composition
 - Reuse maintained Field/Input/Button/Alert/NativeSelect/Checkbox/AlertDialog/Spinner and existing layout tokens where appropriate. Search the maintained component layer before adding any generic primitive.
 - Settings recovery/password controls remain compact account/security cards, not a marketing onboarding redesign.
@@ -1260,9 +1269,9 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Admin per-account generation override management, fresh-admin global defaults and sanitized health visibility work without provider/worker/workflow leakage; Phase 10C makes the typed global/account values effective through shared Create/Retry admission.
 - [x] Transactional pre-backend admission enforces effective concurrency/rate defaults and overrides for Create and Retry without a concurrent race bypass.
 - [x] Phase 10A–10C server-owned schema/functions retain RLS, zero browser grants, safe function privileges/search paths and exact fixture cleanup; `0012` admission/settings state is applied and audited.
-- [ ] Supabase recovery/email/leaked-password posture is verified; unsupported leaked-password protection remains an explicit broader-beta blocker rather than a false completion claim.
+- [x] Supabase recovery/email/leaked-password posture is verified truthfully: built-in mail/rate limits, production redirect/template/sender evidence and unsupported Free-plan leaked-password protection remain explicit broader-beta blockers rather than false completion claims.
 - [x] Phase 10C exact-head 22-workflow affected CI and required Admin/Create/Activity desktop/narrow human artifact review pass.
-- [x] Authoritative docs match verified Phase 10C implementation reality; Phase 11 remains blocked until 10D closes all of Phase 10.
+- [x] Authoritative docs match verified Phase 10A–10D engineering reality. Phase 11 is the next roadmap slice and requires its own merged execution-ready contract; broader-beta Auth blockers remain separately open.
 
 ### Phase 11 — Brand & Launch Experience
 - [ ] Establish RenderLab logo/brand identity and production-ready brand assets/banners.

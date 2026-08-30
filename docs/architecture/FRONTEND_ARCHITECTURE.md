@@ -164,6 +164,8 @@ Configured verification extends the existing Account Identity workflow with a se
 
 Hosted email configuration is a separate operational dependency. Current Auth logs show `mail_from=noreply@mail.app.supabase.io`, and a subsequent recovery request hit `over_email_send_rate_limit`; GitHub Actions also lacks a Supabase Management API token. Before broader beta, an operator must verify production Site URL/redirect allowlist and invite/recovery token-hash templates and configure production-capable custom SMTP or an equivalent Auth email hook with suitable limits and sender-domain authentication. The engineering implementation must not pretend those hosted settings are solved in code.
 
+**Phase 10D verified implementation:** exact code/test head `585a606666eae5b8813f54ba19ea253fcccaaf4f` makes `getCurrentRenderLabIdentity()` reuse the fresh `auth.getUser()` path, so Settings/password, generation identity and `getCurrentRenderLabAccount()` reject revoked sessions immediately even while their signed JWT has not expired. Root proxy `getClaims()` is intentionally unchanged for SSR cookie refresh/signature validation; no direct `auth.sessions` query or second session store exists. Account Identity `33313458456` verified acting-session continuity and stale-session denial after password change, recovery and global sign-out plus invalid/consumed token-hash and hostile-redirect handling. All 21 affected regressions passed; no schema/UI/deployment change was required.
+
 ## Product API Boundaries
 ```text
 POST     /api/generation/jobs
@@ -270,7 +272,7 @@ Ownership rules:
 - `features/admin` — privileged Admin interaction composition with local pending/success/error state only; no global admin store;
 - `server/admin` — fresh active-admin authorization plus RenderLab-only access/invitation/health services; service-role/Auth Admin capability never reaches browser code;
 - `features/<feature>` — product-specific composition/behavior composed from approved primitives;
-- `lib/supabase` — public/server Supabase Auth client/session boundary; browser code never receives service-role credentials; `getCurrentRenderLabAccount()` derives the product owner only from verified claims and rejects anonymous principals;
+- `lib/supabase` — public/server Supabase Auth client/session boundary; browser code never receives service-role credentials; root proxy `getClaims()` maintains SSR cookies/signature validation while private product identity is re-confirmed against current Auth server state with `getUser()`; `getCurrentRenderLabAccount()` rejects revoked/unknown/anonymous principals before owner/access resolution;
 - `lib/capabilities` — user-facing capability definitions/resolution;
 - `lib/api` — typed product API/query contracts;
 - `server/generation` — owner-scoped orchestration/worker boundaries. Native jobs and outputs persist the account owner. Server-only `sharp` preprocessing may derive execution geometry without mutating durable media or exposing worker-specific geometry mechanics to the browser. The optional external backend is active only with URL + server-only bearer token and must authenticate RenderLab before trusting `x-renderlab-owner-id`;
@@ -297,7 +299,7 @@ Library picker/drop interactions share feature-owned `library-upload-client.ts`;
 
 ### Auth/session state
 - Supabase Auth cookie session;
-- verified server account principal from Auth claims (`sub` / `auth.users.id`).
+- fresh server-confirmed account principal from Supabase Auth (`auth.getUser()` / `auth.users.id`) for private product authorization; signed JWT claims alone are not the final revocation-sensitive boundary.
 
 ### Server state
 - owner-scoped `generation_jobs`;
