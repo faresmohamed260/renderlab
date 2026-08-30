@@ -1277,8 +1277,18 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 ### Phase 11 — Brand & Launch Experience
 **Contract status:** `EXECUTION IN PROGRESS` under UI-052. Contract merged as `37c0ee922792244ffdf2e3887db08cecc3eab97d`; reviewed design checkpoint is recorded below.
 
+#### Current verified implementation handoff — 2026-08-30
+- [x] Authoritative `main` is `37c0ee922792244ffdf2e3887db08cecc3eab97d`; open PR #73 targets that unchanged base. Reviewed-design ancestor is `9d50244a63ecacda9b37bebf023706948817fd96`.
+- [x] Desktop/narrow open-SVG checkpoint is reviewed and recorded under `design/penpot/`; route audit `33318762853` passed before implementation and bounded the exact deep-link/test migration surface without an API rename.
+- [x] Phase 11 application implementation is present on the PR branch: `/` landing, `/create` Create, `(app)` AppShell route group, legacy root-query redirect, updated shell/Viewer links, brand/favicon/Open Graph assets, launch verifier/workflow and affected route-test/workflow updates.
+- [x] Guarded implementation staging `33319652665` passed transformer/whitespace/UI-purity/TypeScript/verifier-syntax/build checks; clean static gate `33320451225` passed exact-delta/stale-filter/UI-purity/TypeScript/verifier-syntax/build checks.
+- [x] Exact code/test candidate `00013710cf7533d7392900a7231734b7d22398de` produced 17 successful affected workflows. Brand / Launch Visual `33320628708` passed and artifact `9734792911` (`sha256:cf007eb8da0362379b5c01292f5352f883dc1ad4f1668561ee6137b866b48716`) is available for human review.
+- [ ] Account/Admin Operations `33320628695` and Library Lifecycle Visual `33320628691` were concurrency-cancelled on the code candidate and still require clean exact-final-head coverage; do not treat cancellation as acceptance.
+- [ ] Human-review the final Brand / Launch desktop/narrow, `/create` AppShell, small-scale mark and legacy-continuation artifact states; then record final implementation evidence and merge PR #73 only after all exact-final-head affected gates are green.
+- [x] Deployment, schema, Supabase/Auth policy, admission defaults, R2/provider contracts and Phase 10 broader-beta blockers remain unchanged.
+
 #### Locked product / IA boundary
-- [x] Public Brand / Landing target is `/`; Create target is `/create` after implementation. Current repository behavior remains Create `/` until Phase 11 implementation merges.
+- [x] PR #73 implements public Brand / Landing at `/` and Create at `/create`; authoritative `main` still serves Create `/` until that PR merges.
 - [x] Root layout will become global-only; landing will render without `AppShell`; application routes will share an app route-group layout with the existing shell. Library/Viewer/Activity/Settings/Admin public URLs remain unchanged.
 - [x] Legacy root continuation URLs carrying `source`/`action` must same-origin redirect to `/create` with query preserved; Create remains the validator/owner boundary. Bare `/` becomes landing.
 - [x] Shell Create + shell wordmark point to `/create`; marketing wordmark points `/`. Landing primary CTA is `Open Create`; account CTA is `Sign in` → `/settings`. No new public credential/sign-up/waitlist surface is approved.
@@ -1286,14 +1296,14 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 #### Brand / launch design boundary
 - [x] Produce and review a Phase 11 desktop + narrow visual candidate in Penpot or repository open-SVG handoff before coding final landing composition. `design/penpot/brand-launch-v0.1-desktop.svg` (1440×1100) and `brand-launch-v0.1-mobile.svg` (390×844) are the reviewed implementation candidates.
 - [x] Select one original RenderLab mark + wordmark system that works at favicon/small-shell scale and in monochrome. The reviewed candidate uses a geometric monochrome-capable `R` mark, retained dark-first palette and semantic violet accent without sparkle/glow/gradient dependence.
-- [ ] Implementation asset set includes reusable mark/wordmark treatment, app/favicon icon and project-owned Open Graph/social banner.
-- [ ] Landing stays concise: hero/value; four verified creative operations; durable reference/Library/reuse; Activity/recovery continuity; closed-beta CTA/footer. Preview media/UI must be truthful.
-- [ ] No pricing, testimonials, fake metrics/customer logos, public signup/waitlist, blog/CMS, analytics pixels, third-party marketing cookies, provider/model superiority, render-time/cost guarantees or unverified feature claims.
+- [x] PR #73 includes reusable mark/wordmark treatment, app/favicon icon and project-owned generated Open Graph launch image.
+- [x] Landing implementation stays concise: hero/value; four verified creative operations; durable reference/Library/reuse; Activity/recovery continuity; closed-beta CTA/footer; verifier rejects forbidden launch claims.
+- [x] No pricing, testimonials, fake metrics/customer logos, public signup/waitlist, blog/CMS, analytics pixels, third-party marketing cookies, provider/model superiority, render-time/cost guarantees or unverified feature claims were added.
 
 #### Implementation / verification boundary
-- [ ] Prefer Server Components/static project assets and minimal client motion. Honor reduced motion; no autoplay background video, cursor gimmicks, heavy WebGL or decorative motion that competes with content.
-- [ ] Add configured Brand / Launch Visual validation with production build, `/` + `/create` route checks, desktop `1440x1100` and narrow `390x844` screenshots, overflow/keyboard/focus/reduced-motion checks, truthful closed-beta copy and metadata/asset verification.
-- [ ] Update UI Shell/Create/deep-link tests for `/create` and legacy root-query compatibility; run UI purity, TypeScript/build and every path-triggered affected regression. Human-review landing desktop/narrow, small-scale brand mark, post-move app shell and representative continuation redirect.
+- [x] Landing uses Server Components/static project assets with no autoplay background video, cursor gimmicks or heavy WebGL; configured narrow verification asserts zero running animation under reduced motion.
+- [x] Configured Brand / Launch Visual `33320628708` production-built the candidate and verified `/` + `/create`, desktop `1440x1100`, narrow `390x844`, overflow, keyboard/focus, reduced motion, truthful closed-beta copy, metadata/assets and legacy query preservation.
+- [ ] UI Shell/Create/deep-link tests are updated and 17 affected workflows pass at `00013710cf7533d7392900a7231734b7d22398de`; close the two concurrency-cancelled gates and complete required human review before marking this acceptance item complete.
 - [ ] No schema/R2/provider/Auth/admission/deployment change is expected or authorized. Phase 10 broader-beta email/template/leaked-password blockers remain open. Phase 12 owns integrated release validation and any separately authorized rollout.
 
 ### Phase 12 — Cycle 2 Release Validation
@@ -1323,8 +1333,8 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete/verified and Phase 11 execution is in progress under UI-052 after its reviewed desktop+narrow design checkpoint.
 **Current phase contract:** Phase 11 — Brand & Launch Experience is `EXECUTION IN PROGRESS` under UI-052.
-**Next implementation sequence:** implement the locked landing `/` → Create `/create` route/layout/brand slice from the reviewed v0.1 design candidate, then run configured Brand / Launch Visual plus all path-triggered regressions and human rendered review.
-**Current gate:** UI-052 contract and visual-design checkpoint are complete. Route/layout/brand implementation and exact configured browser validation are now authorized; no deployment unless explicitly authorized.
+**Next implementation sequence:** close PR #73 validation: obtain clean exact-final-head Account/Admin Operations and Library Lifecycle runs, human-review Brand / Launch artifact `9734792911`, confirm all affected gates green, then record final evidence and merge without deployment.
+**Current gate:** UI-052 implementation is in PR #73. Exact code/test candidate `00013710cf7533d7392900a7231734b7d22398de` is green except two concurrency-cancelled gates; human launch-artifact review and exact-final-head closure remain before merge. No deployment unless explicitly authorized.
 **Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
 **Later Cycle 2:** Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
