@@ -7,6 +7,7 @@ on:
     paths:
       - "scripts/verify-release-integrated.mjs"
       - "scripts/verify-library-collections.mjs"
+      - "scripts/ensure-r2-browser-cors.mjs"
       - ".github/workflows/release-validation.yml"
   workflow_dispatch:
 
