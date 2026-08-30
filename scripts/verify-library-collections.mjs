@@ -331,6 +331,7 @@ try {
   await emptyPage.screenshot({ path: `${artifactDir}/library-collections-empty-manager-desktop.png`, fullPage: true });
   const firstForeignCollection = (await listCollections(foreign)).find((collection) => collection.name === "First Board");
   assert(Boolean(firstForeignCollection), "Zero-collection Library manager did not create the first collection.");
+  await emptyPage.unrouteAll({ behavior: "ignoreErrors" });
   await emptyContext.close();
 
   const context = await browser.newContext({ viewport: { width: 1440, height: 1024 }, colorScheme: "dark" });
@@ -422,6 +423,8 @@ try {
   await page.locator(`a[href="/library/${encodeURIComponent(ordinaryAsset.id)}"]`).waitFor({ state: "visible", timeout: 30_000 });
   assert(!(await listCollections(owner)).some((collection) => collection.id === clientCollection.id), "Active collection remained after manager deletion.");
   await page.screenshot({ path: `${artifactDir}/library-collections-active-delete-desktop.png`, fullPage: true });
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await context.close();
 
   console.log(`Configured Library Collections + Phase 8A management rendered successfully. owner=${owner.id} asset=${collectionAsset.id}`);
 } catch (error) {
