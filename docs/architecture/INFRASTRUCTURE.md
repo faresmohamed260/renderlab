@@ -637,11 +637,21 @@ Closed-Beta Cycle 2 acceptance does not resolve broader-beta Auth hardening. Sup
 
 
 ### Phase 13 Email & Invite Production Hardening infrastructure contract — 2026-08-31
-**Status: `CONTRACTED / NOT STARTED`.** This section defines the infrastructure acceptance boundary only; it does not authorize production mutation.
+**Status: `IN PROGRESS`; 13A `COMPLETE / VERIFIED`, 13B awaiting operator provider/sender/credential decision.** 13A was read-only and did not mutate production.
 
 Current Closed-Beta production already has the application-side admission and security contract needed for external invites: admin-only invitation creation/revocation, server-owned `renderlab_beta_invitations`, active account enforcement, fresh Auth-backed private authorization, token-hash invite/recovery confirmation and no public sign-up. Phase 12B corrected hosted Auth Site URL to `https://renderlab.faresuniform.uk` and verified exact invite/recovery redirects. The remaining weakness is mail delivery infrastructure, not account ownership architecture.
 
 Phase 10D live evidence showed Supabase built-in Auth delivery from `noreply@mail.app.supabase.io` and an `over_email_send_rate_limit` response. That built-in posture remains acceptable for deterministic technical verification only; Phase 13 must replace it for production invite/recovery delivery before broader external-beta reliance.
+
+
+#### Phase 13A read-only production audit — verified 2026-08-31
+Runs `33341207071` and `33341263450` passed using only read operations. The existing GitHub `SUPABASE_ACCESS_TOKEN` successfully read hosted Auth configuration; the existing Cloudflare zone-DNS token read the mail-related DNS inventory. No email was sent and no Supabase Auth, Cloudflare DNS, Vercel or application state changed.
+
+Hosted Auth facts: Site URL is `https://renderlab.faresuniform.uk`; the exact `/settings` and recovery-confirm destinations remain allowlisted; custom SMTP is absent; `hook_send_email_enabled=false`; sender/from SMTP fields are unset; `rate_limit_email_sent=2`; invite/recovery subjects and bodies remain Supabase defaults using `{{ .ConfirmationURL }}`. These facts establish the exact 13B/13C work rather than relying on the earlier Phase 10D inference.
+
+Sender-DNS facts: the apex has Brevo verification TXT plus `brevo1._domainkey` and `brevo2._domainkey` CNAMEs to Brevo, and `_dmarc.faresuniform.uk` is `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Cloudflare Email Routing owns the apex MX records and the single apex SPF record is `v=spf1 include:_spf.mx.cloudflare.net ~all`. `auth.faresuniform.uk` already points through a proxied Cloudflare Tunnel and is reserved by that existing infrastructure; do not repurpose it for mail.
+
+Current Brevo documentation confirms transactional SMTP relay (`smtp-relay.brevo.com`, port 587 recommended) and a Free plan including 300 email sends/day. Because domain verification/DKIM/DMARC infrastructure already exists, Brevo custom SMTP is the lowest-drift recommendation for Phase 13B. Provider/account/plan, exact sender address and SMTP credentials remain an explicit operator decision; the repository does not infer that credentials exist from DNS alone.
 
 Accepted Phase 13 infrastructure sequence:
 1. Read actual hosted Auth mail/template/rate-limit state and current `faresuniform.uk` sender DNS before mutation. Reuse the approved shared Supabase project; do not create another Auth project.

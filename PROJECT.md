@@ -54,7 +54,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Cycle 2 — Creative Productivity & Beta Maturity remains `COMPLETE / VERIFIED`. Cycle 3 — Beta Operations & Access Reliability is now planned, with Phase 13 — Email & Invite Production Hardening `CONTRACTED / NOT STARTED`. Production remains the accepted Closed-Beta application `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; this planning contract authorizes no SMTP, DNS, hosted Auth, Vercel or application mutation.**
+**Cycle 2 — Creative Productivity & Beta Maturity remains `COMPLETE / VERIFIED`. Cycle 3 — Beta Operations & Access Reliability is now `IN PROGRESS`: Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`, with 13A read-only audit `COMPLETE / VERIFIED` and 13B awaiting the explicit provider/sender/credential decision. Production remains the accepted Closed-Beta application `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; 13A performed no SMTP, DNS, hosted Auth, Vercel or application mutation.**
 
 ### Cycle 2 objective
 Move RenderLab from a solid functional MVP into a product that supports repeated serious creative work: richer reference-driven creation, durable reusable inputs, clearer task-oriented controls, useful job recovery, closed-beta operations, and a premium modern creative experience without exposing ComfyUI/provider complexity to ordinary users.
@@ -139,6 +139,19 @@ Cycle 2 now explicitly includes Create v2 reference/geometry/composer work, veri
 - Bounce/delivery inspection is operational, test fixtures are removed, privileged credentials are stored/narrowed appropriately, and authoritative docs record provider, sender/domain posture, exact configuration evidence and any deferred broader-beta work.
 - Only after all exit criteria are verified may Phase 13 be marked `COMPLETE / VERIFIED`. The planning PR itself does not satisfy or authorize these criteria.
 
+
+
+### Phase 13A audit evidence — verified 2026-08-31
+Phase 13 implementation is now `IN PROGRESS`. 13A completed as a read-only production audit; it sent no email and changed no Supabase Auth, Cloudflare DNS, Vercel or application state.
+
+- Read-only GitHub Actions runs `33341207071` and `33341263450` used the existing `SUPABASE_ACCESS_TOKEN` and Cloudflare zone-DNS credential only for GET/read operations. Both passed; the temporary audit workflow was removed after evidence capture and is not intended for `main`.
+- Hosted Supabase Auth is correctly anchored to `https://renderlab.faresuniform.uk`; the allowlist still contains exact `/settings` invite and `/auth/confirm?type=recovery&next=/settings/password` recovery destinations. Email auth is enabled, autoconfirm remains off and Closed-Beta admission behavior is unchanged.
+- Production mail is still the built-in Supabase path: custom SMTP is not configured, Send Email Auth Hook is disabled, sender/from fields are unset and `rate_limit_email_sent=2` per hour.
+- Invite and recovery remain the Supabase default subjects/templates and still use `{{ .ConfirmationURL }}`. They have not yet been replaced with the accepted RenderLab SSR token-hash `/auth/confirm` links.
+- `faresuniform.uk` already has an existing Brevo footprint: Brevo verification TXT, `brevo1` + `brevo2` DKIM CNAME selectors and DMARC aggregate reporting to Brevo. Apex mail receiving remains Cloudflare Email Routing with one SPF record `v=spf1 include:_spf.mx.cloudflare.net ~all`. `auth.faresuniform.uk` is already a proxied Cloudflare Tunnel hostname and must not be repurposed as the mail-sending subdomain.
+- Current official Brevo material confirms SMTP relay support for transactional mail and a Free tier with 300 sends/day. Reusing the existing Brevo domain footprint through Supabase custom SMTP is therefore the recommended lowest-drift 13B path for the small Closed Beta, but the repository does not claim a Brevo account/SMTP credential is available until the operator explicitly confirms/provisions it.
+
+**13A result:** `COMPLETE / VERIFIED`. **13B gate:** operator approval of Brevo custom SMTP (or an explicitly chosen alternative), exact sender identity under `faresuniform.uk`, and secure SMTP credential provisioning. No production mail mutation is authorized by the audit evidence alone.
 
 ### Phase 11 execution contract — expanded 2026-08-30
 **Status: `COMPLETE / VERIFIED` under UI-052. PR #73 merged to `main`; exact-head PR validation, required human rendered review, merged-main regression, and live fixture-residue audit are complete. No deployment occurred.**
