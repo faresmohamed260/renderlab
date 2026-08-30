@@ -107,7 +107,7 @@ Before copying/installing an external component:
 **Used by:** `src/app/(app)/layout.tsx` for `/create`, Library/Viewer, Activity, Settings and Admin application routes
 **Reuse rules:** Extend this authoritative shell rather than creating page-specific shells.  
 **Do not:** Put Create composer, Library cards, workflows or feature-owned layout into persistent chrome.  
-**Notes:** Production build + Playwright desktop/mobile rendering approved; not locked. UI-052 / PR #73 moves shell ownership from the global root layout to `src/app/(app)/layout.tsx`; validated head `8975b7b42b518eea0a462b28528ddd41d90ad986` preserves the established application composition while public `/` renders without `AppShell`.
+**Notes:** Production build + Playwright desktop/mobile rendering approved; not locked. UI-052 / PR #73 moved shell ownership from the global root layout to `src/app/(app)/layout.tsx`; merge `46c5daa2866c6758907ee9be219bcb3cb274ca83` preserves the established application composition while public `/` renders without `AppShell`. Final PR head `773251734dbd5c5f32770699a57b1ade653604b5` passed 19/19 affected workflows and merged-main UI Shell `33323421285` passed.
 
 ### RenderLabBrand
 **Status:** APPROVED
@@ -117,7 +117,7 @@ Before copying/installing an external component:
 **Used by:** public Brand / Landing and application `AppShell`; matching vector asset at `public/renderlab-mark.svg`, app icon at `src/app/icon.svg`.
 **Reuse rules:** Reuse the component/mark geometry; marketing destination is `/`, application-shell destination is `/create`; preserve accessible labeling and monochrome legibility.
 **Do not:** Fork unrelated RenderLab logos, substitute generic AI sparkle/glow identity, or couple branding to provider/model/runtime claims.
-**Notes:** UI-052 validated head `8975b7b42b518eea0a462b28528ddd41d90ad986` passed Brand / Launch Visual `33321365147` and all 19 affected workflows. Artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean.
+**Notes:** UI-052 validated implementation head `8975b7b42b518eea0a462b28528ddd41d90ad986` and final PR head `773251734dbd5c5f32770699a57b1ade653604b5` closed the 19-workflow affected gate. Artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean. PR #73 merged as `46c5daa2866c6758907ee9be219bcb3cb274ca83` and merged-main UI Shell `33323421285` passed.
 
 ### Collapsible
 **Status:** APPROVED

@@ -1275,18 +1275,17 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Authoritative docs match verified Phase 10A–10D engineering reality. Phase 11 is the next roadmap slice and requires its own merged execution-ready contract; broader-beta Auth blockers remain separately open.
 
 ### Phase 11 — Brand & Launch Experience
-**Contract status:** `IMPLEMENTATION VERIFIED / READY FOR MERGE` under UI-052. Contract merged as `37c0ee922792244ffdf2e3887db08cecc3eab97d`; PR #73 implementation and required human review are complete, with final documentation-only exact-head CI still required before merge.
+**Contract status:** `COMPLETE / VERIFIED` under UI-052. Contract merged as `37c0ee922792244ffdf2e3887db08cecc3eab97d`; implementation PR #73 merged as `46c5daa2866c6758907ee9be219bcb3cb274ca83` after final exact head `773251734dbd5c5f32770699a57b1ade653604b5` passed 19/19 affected workflows and required human review. Merged-main UI Shell `33323421285` and zero-residue Supabase audit passed. No deployment occurred.
 
-#### Current verified implementation handoff — 2026-08-30
-- [x] Authoritative `main` is `37c0ee922792244ffdf2e3887db08cecc3eab97d`; PR #73 targets that unchanged base. Reviewed-design ancestor is `9d50244a63ecacda9b37bebf023706948817fd96`.
-- [x] Desktop/narrow open-SVG checkpoint is reviewed; route audit `33318762853` passed before implementation without an API rename.
-- [x] PR #73 implements `/` landing, `/create` Create, `(app)` AppShell route ownership, legacy root-query redirect, updated shell/Viewer links, brand/favicon/Open Graph assets, launch verifier/workflow and affected route-test/workflow updates.
-- [x] Guarded staging `33319652665` and clean static gate `33320451225` passed scoped static/build checks.
-- [x] Validated implementation head `8975b7b42b518eea0a462b28528ddd41d90ad986` passed **19/19 affected PR workflows**. Account/Admin Operations `33321365154` and Library Lifecycle Visual `33321365125` close the older concurrency-cancelled gaps; Create Lifecycle `33321365191`, Library Drag Drop `33321365146` and Generation Admission `33321365155` also passed.
-- [x] Brand / Launch Visual `33321365147` artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean for landing desktop/narrow, `/create` AppShell, small-scale brand treatment and legacy continuation. No Phase 11 visual correction is required.
-- [x] No horizontal clipping, misleading public-access implication or generic AI-marketing drift was found; `/create` remains recognizably the established application and legacy continuation reaches the correct signed-out/private-media state.
-- [x] Deployment, schema, Supabase/Auth policy, admission defaults, R2/provider contracts and Phase 10 broader-beta blockers remain unchanged.
-- [ ] Merge PR #73 only after this documentation-only final head reaches terminal success on every affected workflow. Merge and deployment remain separate operations.
+#### Verified merged-main handoff — 2026-08-30
+- [x] PR #73 merged to `main` as `46c5daa2866c6758907ee9be219bcb3cb274ca83` from exact final head `773251734dbd5c5f32770699a57b1ade653604b5`.
+- [x] Final exact head `773251734dbd5c5f32770699a57b1ade653604b5` passed all **19/19 affected PR workflows**, including Library Lifecycle `33323168930`, Generation Admission `33323168949` and Account/Admin Operations `33323168964`.
+- [x] Brand / Launch artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean for desktop/narrow landing, `/create` AppShell, small-scale brand treatment and legacy continuation.
+- [x] Merged-main UI Shell `33323421285` passed on merge SHA `46c5daa2866c6758907ee9be219bcb3cb274ca83`; no other push workflow was scheduled for that merge SHA.
+- [x] Live Supabase post-merge residue audit returned zero fixture Auth users, account-access rows, generation jobs/sources/admission reservations, media assets/collections/items/upload sessions and invitations.
+- [x] `/` is now the authoritative public Brand / Landing route on `main`; `/create` is the authoritative Create workspace under `AppShell`; other application public URLs remain unchanged.
+- [x] No schema/Auth policy/admission-default/R2/provider/billing/deployment change occurred in Phase 11.
+- [x] Phase 11 is complete/verified. Phase 12 remains unstarted and requires its own execution-ready contract/validation sequence before implementation or any separately authorized production rollout.
 
 #### Locked product / IA boundary
 - [x] PR #73 implements public Brand / Landing at `/` and Create at `/create`; authoritative `main` still serves Create `/` until that PR merges.
@@ -1332,12 +1331,12 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete/verified and Phase 11 implementation is verified under UI-052 pending merge of PR #73.
-**Current phase contract:** Phase 11 — Brand & Launch Experience is `IMPLEMENTATION VERIFIED / READY FOR MERGE` under UI-052.
-**Next implementation sequence:** require terminal success on every affected workflow for this documentation-only final head, merge PR #73 with an unchanged verified head, then verify expected merged-main regressions and exact fixture cleanup. Record the merged-main Phase 11 handoff in existing authoritative docs. Do not start Phase 12 before that verification is complete.
-**Current gate:** validated application head `8975b7b42b518eea0a462b28528ddd41d90ad986` passed 19/19 affected workflows; Brand / Launch Visual `33321365147` artifact `9734984885` was human-reviewed clean. Only final docs-head CI, guarded merge and merged-main verification remain. No deployment unless explicitly authorized.
-**Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1 → Phase 10 Account/Admin/Closed-Beta Operations.
-**Later Cycle 2:** Phase 12 integrated release validation after Phase 11 is merged and verified on `main`.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 are complete/verified.
+**Current phase status:** Phase 11 — Brand & Launch Experience is `COMPLETE / VERIFIED` under UI-052 and merged to `main` as `46c5daa2866c6758907ee9be219bcb3cb274ca83`.
+**Next sequence:** Phase 12 — Cycle 2 Release Validation is the next roadmap slice, but implementation has not started. Before substantial Phase 12 work, expand/verify its execution-ready contract from current `main` and current production/infrastructure evidence.
+**Verified Phase 11 gate:** exact PR head `773251734dbd5c5f32770699a57b1ade653604b5` passed 19/19 affected workflows; Brand / Launch artifact `9734984885` was human-reviewed clean; merged-main UI Shell `33323421285` passed; live Supabase fixture residue audit returned zero.
+**Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1 → Phase 10 Account/Admin/Closed-Beta Operations → Phase 11 Brand & Launch Experience.
+**Deployment boundary:** no deployment occurred or is authorized by Phase 11 completion. Any production rollout remains a separate explicit user-authorized operation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
 **Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation productization, billing and cross-page selection still require their own evidence/decisions.
 
