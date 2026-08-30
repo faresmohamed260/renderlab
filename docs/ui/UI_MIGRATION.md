@@ -1342,11 +1342,11 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Do not mutate Vercel production, Supabase Auth hosted settings, closed-beta enforcement/bootstrap, R2 CORS or provider infrastructure during 12A.
 - [x] Do not convert informational advisors or broader-beta Auth limitations into invented Phase 12 fixes without evidence.
 
-#### 12B — Authorized Production Rollout — blocked until explicit authorization
+#### 12B — Authorized Production Rollout — authorized; blocked on hosted Supabase Auth URL configuration
 - [x] Receive explicit user authorization for deployment/production mutation of the exact 12A-verified candidate. Authorization received 2026-08-31 for `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
-- [ ] Resolve/verify known RenderLab UUID bootstrap + production closed-beta enforcement before treating invitation-only launch posture as production-consistent.
-- [ ] Verify production Auth Site URL/redirect behavior and truthfully retain built-in-mail/custom-SMTP/leaked-password limitations that still block broader beta.
-- [ ] Reconfirm required Vercel environment contract and R2 exact-origin CORS; perform only explicitly authorized mutations.
+- [ ] Known RenderLab account bootstrap is complete: exactly one active admin/access row with no generation override. Production closed-beta enforcement remains intentionally off until the hosted Auth URL blocker below is corrected and reverified.
+- [ ] BLOCKER: run `33336966309` proved hosted Auth replaces the requested custom-domain recovery redirect with `http://localhost:3000`. Correct Site URL + exact production redirect allowlist, then rerun the no-email recovery/invite redirect probe. GitHub currently has no `SUPABASE_ACCESS_TOKEN` (`33337036024`).
+- [ ] Vercel env presence and R2 exact-origin CORS are reverified (`33336831850`, `33336966309`); all required production keys exist, R2 is clean, and only the not-yet-created closed-beta enforcement key remains pending after the Auth blocker clears.
 - [ ] Deploy exactly the verified candidate; require READY state, aliases/custom-domain HTTPS, landing/routes/metadata, authenticated/private-media, durable upload/reuse, bounded Image+Video, Activity/Retry/Admin smoke and exact cleanup.
 - [ ] Keep `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` available as the pre-rollout rollback candidate until the new release is accepted.
 - [ ] Record actual production deployment SHA/ID, smoke/cleanup evidence and final infrastructure state before marking Phase 12 `COMPLETE / VERIFIED`.
@@ -1370,10 +1370,10 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 and Phase 12A are complete/verified.
-**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `ROLLOUT AUTHORIZED / IN PROGRESS`; explicit user authorization was received 2026-08-31 for exact verified candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
-**Next sequence:** execute Phase 12B prerequisites and rollout for exact verified candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`: known-account UUID bootstrap + Closed-Beta enforcement, production Auth/env/R2 checks, exact-candidate deployment, production smoke, exact cleanup, rollback acceptance and authoritative evidence.
+**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `ROLLOUT AUTHORIZED / BLOCKED ON SUPABASE AUTH CONFIG`; exact verified candidate remains `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
+**Next sequence:** correct hosted Supabase Auth URL Configuration first: Site URL `https://renderlab.faresuniform.uk`; exact redirect URLs `https://renderlab.faresuniform.uk/settings` and `https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password`. Reverify generated links preserve those redirects; only then add closed-beta enforcement, deploy exact candidate, smoke/cleanup and record acceptance.
 **Release reality:** exact merged release candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` is fully 12A-verified, while current READY production remains the older application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`. Automatic Git deployment is still disabled and 12A created no deployment.
-**Deployment boundary:** Phase 12B production mutation is explicitly authorized for the exact verified candidate only. Keep the existing READY deployment as rollback until acceptance; do not drift to newer code or unrelated infrastructure changes.
+**Deployment boundary:** rollout remains authorized for the exact verified candidate, but deployment/enforcement are blocked until the hosted Auth URL gate passes. Existing READY production remains rollback; do not drift to newer code or unrelated infrastructure changes.
 **Broader-beta boundary:** built-in mail/rate-limit posture, unverified production Auth Site URL/redirect/template/sender/custom-SMTP posture and Free-plan leaked-password protection remain open until separately evidenced.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library remains out of Phase 12.
 
