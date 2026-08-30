@@ -6,6 +6,7 @@ on:
     branches: [work/phase-12-release-validation]
     paths:
       - "scripts/verify-release-integrated.mjs"
+      - "scripts/verify-library-collections.mjs"
       - ".github/workflows/release-validation.yml"
   workflow_dispatch:
 
