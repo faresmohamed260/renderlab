@@ -32,13 +32,15 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TARGET_REF: ${{ github.head_ref || github.ref_name }}
       TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
 
-      - name: Verify candidate identity
+      - name: Verify candidate identity and whitespace
         shell: bash
         run: |
           set -euo pipefail
@@ -46,6 +48,38 @@ jobs:
           test "$actual" = "$TARGET_SHA"
           echo "Release candidate SHA: $TARGET_SHA"
           echo "Release candidate ref: $TARGET_REF"
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git diff --check "$BASE_SHA...$TARGET_SHA"
+          else
+            git diff --check
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify configured verifier syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for verifier in scripts/verify-*.mjs; do
+            node --check "$verifier"
+          done
+
+      - name: Verify UI purity
+        run: npm run verify:ui-purity
+
+      - name: Verify TypeScript
+        run: npx tsc --noEmit
+
+      - name: Build production application
+        run: npm run build
 
       - name: Dispatch configured release matrix
         id: dispatch
