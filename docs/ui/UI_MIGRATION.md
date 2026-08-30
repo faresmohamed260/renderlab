@@ -1192,12 +1192,43 @@ Give the closed beta a race-safe server-owned spend/abuse boundary without turni
 
 - [x] PR #68 merged to `main` as `26508e77975ee4dd26f60860f999e4bc55c99eca`. Merged-main UI Shell `33310860293`, Reference Upload `33310860327`, Generation Integration `33310860295`, and Video Generation Integration `33310860292` all passed. A final exact audit of the three deterministic shared-resource accounts from those push runs found 0 access/job/source/media/upload/reservation/Auth rows, and `renderlab_beta_settings` remained `generation_enabled=true`, `max_active_jobs=1`, `max_jobs_per_hour=12`, `updated_by=null`.
 
-#### Slice 10D — Auth / Operational Hardening
-- Re-run Supabase Security Advisor after schema work. Existing server-owned RLS/no-policy INFO notices remain acceptable only while browser grants are still revoked and documented.
-- Resolve leaked-password protection if the current Supabase plan supports it. If plan/config does not support it, record the external blocker explicitly and keep broader-beta release blocked; do not fake an app-level equivalent claim.
-- Verify recovery/invite redirect URL and email-template posture for SSR PKCE. Current Supabase production guidance prefers custom SMTP; Phase 10 records actual delivery configuration and any blocker rather than assuming built-in mail is launch-ready.
-- Re-audit all new grants/functions/tables, exact fixture cleanup, shared-resource separation, provider-spend posture and admin error sanitization.
-- No automatic Vercel deployment, no public-beta switch and no broader access merely because Phase 10 code merges.
+#### Slice 10D — Auth / Operational Hardening — execution contract
+**Status: `EXPANDED / IMPLEMENTATION NOT STARTED`; merge this contract before implementation.**
+
+##### Goal and verified audit evidence
+- Close the stale-session gap between cryptographically valid JWT claims and current Supabase session state for private RenderLab product access.
+- Preserve Phase 10A recovery/admission UX and Phase 10B fresh-admin semantics; do not redesign account/admin surfaces.
+- Audit runs `33311990845` / `33312153080` were one-time temporary-branch probes with exact fixture cleanup. `33312153080` proved password change keeps the acting session current while immediately revoking a second session (`getUser 403 session_not_found`, refresh `400 refresh_token_not_found`).
+- Auth logs prove the project is using Supabase built-in email (`noreply@mail.app.supabase.io`); a later recovery request hit `429 over_email_send_rate_limit`. Broader-beta email readiness is therefore blocked pending production mail configuration/evidence.
+- GitHub Actions has no Supabase Management API access token. Hosted Site URL, redirect allowlist and invite/recovery template bodies cannot be truthfully audited or changed from current CI.
+- The Supabase Free plan does not provide leaked-password protection; retain that Security Advisor WARN as an explicit broader-beta blocker.
+
+##### Required implementation boundary
+- Root proxy may continue `auth.getClaims()` for SSR cookie refresh/signature validation only.
+- `getCurrentRenderLabAccount()` must use a fresh server `auth.getUser()` identity before returning a private product principal; then apply RenderLab active-access enforcement exactly as today. Revoked/unknown/anonymous session = no account.
+- Security-sensitive Settings/password state must use the fresh identity path. `/admin` remains on its already-fresh active-admin check.
+- Do not read `auth.sessions` directly, add a RenderLab session table, move service-role/Auth Admin capability to the browser, authorize from metadata/JWT role claims, or loosen RLS/browser grants.
+- Preserve hosted verified password semantics: the acting session may continue after a password change, while other sessions must become unusable at RenderLab immediately because the product boundary now re-confirms with Auth.
+- Keep `/auth/confirm` token-hash/PKCE, the short-lived HMAC recovery marker, same-origin redirects, invitation claim-by-verified-email and enumeration-safe public copy.
+
+##### Hosted Auth/email readiness gate
+- Regular CI continues using Auth Admin generated token hashes and must not send real recovery/invite email.
+- Before broader beta, an operator must verify/configure: production Site URL; exact redirect allowlist for the RenderLab custom domain; invite and recovery templates that send `TokenHash` into RenderLab `/auth/confirm` with correct `type`; custom SMTP or equivalent Send Email Auth Hook; appropriate email rate limits; disabled link tracking; and SPF/DKIM/DMARC for the sending domain.
+- Do not infer template/redirect readiness from a `200` recover response, and do not infer custom SMTP from application behavior. The 2026-08-30 Auth log explicitly identifies the current built-in Supabase sender.
+- Leaked-password protection remains unresolved until the Supabase plan supports it and an operator enables/verifies it. No app-side imitation satisfies this exit criterion.
+
+##### Validation
+- Extend `scripts/verify-account-identity.mjs` / `Account Identity Visual` as the owner of configured auth lifecycle validation.
+- Use exact run-owned Auth/access fixtures and two independent sessions. Capture the second session bearer before a real browser password change; after change, assert a representative private API rejects that stale bearer immediately while the acting session remains usable. Repeat the revoked-session assertion across recovery/password replacement and global sign-out semantics without relying on real mail delivery.
+- Assert invalid/consumed recovery hashes and hostile `next` values remain fail-closed/same-origin.
+- Preserve suspended-user denial, invitation claim, no public Create-account control, Admin fresh-auth behavior and exact cleanup.
+- Run exact affected workflow matrix after the shared account helper changes; do not add a test-only runtime bypass. Human review only if visible Settings/password UI changes.
+- Re-run Security Advisor, privilege/function ACL/search-path audit, singleton baseline, Admin sanitization and exact fixtures. Do not touch unrelated shared data.
+
+##### Out of scope / exit
+- No schema migration expected; no plan purchase, SMTP/DNS/provider setup, Management API secret addition, MFA/CAPTCHA productization, public beta, account deletion, billing, provider controls, product-route redesign or deployment.
+- Engineering exit: fresh private account boundary + session/recovery validation are exact-head green and repository docs match reality. 10D may be engineering-complete while external broader-beta blockers remain explicitly open.
+- Broader-beta exit remains separately blocked until leaked-password protection and production Auth email/redirect/template evidence are resolved. Production closed-beta enforcement stays off unless separately authorized after the known-user UUID bootstrap.
 
 #### UI composition
 - Reuse maintained Field/Input/Button/Alert/NativeSelect/Checkbox/AlertDialog/Spinner and existing layout tokens where appropriate. Search the maintained component layer before adding any generic primitive.
