@@ -32,68 +32,79 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "d6b8f386db3893e583c99b23fc3397b0eb377d42"
 
       - name: Update hosted Auth URL configuration
-        shell: python
+        shell: bash
         run: |
-          import json
-          import os
-          import urllib.error
-          import urllib.request
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
 
-          token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
-          if not token:
-              raise SystemExit("SUPABASE_ACCESS_TOKEN is not configured")
+          curl --fail-with-body --silent --show-error \
+            --user-agent "RenderLab-Phase12B/1.0" \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header "Accept: application/json" \
+            "$endpoint" > /tmp/auth-before.json
 
-          ref = os.environ["SUPABASE_PROJECT_REF"]
-          site_url = os.environ["SITE_URL"]
-          required = [os.environ["INVITE_REDIRECT"], os.environ["RECOVERY_REDIRECT"]]
-          endpoint = f"https://api.supabase.com/v1/projects/{ref}/config/auth"
+          python <<'PY'
+          import json, os
+          from pathlib import Path
 
-          def request(method="GET", body=None):
-              data = None if body is None else json.dumps(body).encode()
-              req = urllib.request.Request(
-                  endpoint,
-                  data=data,
-                  method=method,
-                  headers={
-                      "Authorization": f"Bearer {token}",
-                      "Content-Type": "application/json",
-                  },
-              )
-              try:
-                  with urllib.request.urlopen(req, timeout=30) as response:
-                      return json.load(response)
-              except urllib.error.HTTPError as error:
-                  detail = error.read().decode("utf-8", errors="replace")
-                  print(f"SUPABASE_MANAGEMENT_HTTP_STATUS={error.code}")
-                  print(f"SUPABASE_MANAGEMENT_ERROR={detail[:2000]}")
-                  raise
+          before = json.loads(Path('/tmp/auth-before.json').read_text())
+          value = before.get('uri_allow_list')
+          if isinstance(value, list):
+              existing = [str(x).strip() for x in value if str(x).strip()]
+          elif isinstance(value, str):
+              existing = [x.strip() for x in value.split(',') if x.strip()]
+          else:
+              existing = []
 
-          def parse_allow_list(value):
-              if isinstance(value, list):
-                  return [str(item).strip() for item in value if str(item).strip()]
-              if isinstance(value, str):
-                  return [item.strip() for item in value.split(",") if item.strip()]
-              return []
-
-          before = request()
-          existing = parse_allow_list(before.get("uri_allow_list"))
+          required = [os.environ['INVITE_REDIRECT'], os.environ['RECOVERY_REDIRECT']]
           merged = list(dict.fromkeys([*existing, *required]))
+          patch = {
+              'site_url': os.environ['SITE_URL'],
+              'uri_allow_list': ','.join(merged),
+          }
+          Path('/tmp/auth-patch.json').write_text(json.dumps(patch))
           print(f"AUTH_BEFORE_SITE_URL={before.get('site_url')}")
           print(f"AUTH_BEFORE_REDIRECT_COUNT={len(existing)}")
+          PY
 
-          request("PATCH", {"site_url": site_url, "uri_allow_list": ",".join(merged)})
-          after = request()
-          after_list = parse_allow_list(after.get("uri_allow_list"))
+          curl --fail-with-body --silent --show-error \
+            --user-agent "RenderLab-Phase12B/1.0" \
+            --request PATCH \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data-binary @/tmp/auth-patch.json \
+            "$endpoint" > /tmp/auth-patch-response.json
 
-          if after.get("site_url") != site_url:
+          curl --fail-with-body --silent --show-error \
+            --user-agent "RenderLab-Phase12B/1.0" \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header "Accept: application/json" \
+            "$endpoint" > /tmp/auth-after.json
+
+          python <<'PY'
+          import json, os
+          from pathlib import Path
+
+          after = json.loads(Path('/tmp/auth-after.json').read_text())
+          value = after.get('uri_allow_list')
+          if isinstance(value, list):
+              allow = [str(x).strip() for x in value if str(x).strip()]
+          elif isinstance(value, str):
+              allow = [x.strip() for x in value.split(',') if x.strip()]
+          else:
+              allow = []
+
+          if after.get('site_url') != os.environ['SITE_URL']:
               raise SystemExit(f"Site URL mismatch after update: {after.get('site_url')}")
-          missing = [item for item in required if item not in after_list]
+          required = [os.environ['INVITE_REDIRECT'], os.environ['RECOVERY_REDIRECT']]
+          missing = [item for item in required if item not in allow]
           if missing:
               raise SystemExit(f"Required redirect URL(s) missing after update: {missing}")
-
           print(f"AUTH_AFTER_SITE_URL={after.get('site_url')}")
-          print(f"AUTH_AFTER_REDIRECT_COUNT={len(after_list)}")
+          print(f"AUTH_AFTER_REDIRECT_COUNT={len(allow)}")
           print("AUTH_REQUIRED_REDIRECTS_CONFIGURED=true")
+          PY
 
       - name: Set up Node
         uses: actions/setup-node@v4
