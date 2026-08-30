@@ -225,7 +225,7 @@ try {
   await routeLocalAppRequestsWithAccount(page, baseUrl, owner);
 
   await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await page.getByRole("link", { name: "Open Create", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.locator("header").getByRole("link", { name: "Open Create", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.screenshot({ path: `${artifactDir}/release-integrated-landing-desktop.png`, fullPage: true });
 
   await page.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
