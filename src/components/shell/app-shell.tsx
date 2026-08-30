@@ -39,6 +39,7 @@ function routeTitle(pathname: string) {
   if (pathname.startsWith("/library")) return "Library";
   if (pathname.startsWith("/activity")) return "Activity";
   if (pathname.startsWith("/settings")) return "Settings";
+  if (pathname.startsWith("/admin")) return "Admin";
   return "Create";
 }
 

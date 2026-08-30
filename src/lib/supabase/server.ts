@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 import { cookies, headers } from "next/headers";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
 import {
@@ -40,6 +41,14 @@ function bearerToken(value: string | null) {
   return match?.[1]?.trim() || null;
 }
 
+function verifiedUserIdentity(user: User | null): RenderLabIdentity | null {
+  if (!user || user.is_anonymous === true || typeof user.id !== "string") return null;
+  return {
+    id: user.id,
+    email: typeof user.email === "string" ? user.email : null,
+  };
+}
+
 export async function getCurrentRenderLabIdentity(): Promise<RenderLabIdentity | null> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
@@ -62,6 +71,17 @@ export async function getCurrentRenderLabIdentity(): Promise<RenderLabIdentity |
     id: claims.sub,
     email: typeof claims.email === "string" ? claims.email : null,
   };
+}
+
+export async function getFreshCurrentRenderLabIdentity(): Promise<RenderLabIdentity | null> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return null;
+
+  const requestHeaders = await headers();
+  const token = bearerToken(requestHeaders.get("authorization"));
+  const { data, error } = await supabase.auth.getUser(token ?? undefined);
+  if (error) return null;
+  return verifiedUserIdentity(data.user);
 }
 
 export async function getCurrentRenderLabAccount(): Promise<RenderLabAccount | null> {

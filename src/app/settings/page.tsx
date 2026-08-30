@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { AccountSettings } from "@/features/account/account-settings";
 import { isSupabaseAuthConfigured } from "@/lib/supabase/config";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
@@ -7,6 +9,7 @@ import {
   resolveRenderLabAccountAccess,
   type RenderLabAccountAccess,
 } from "@/server/account/account-access";
+import { getCurrentRenderLabAdmin } from "@/server/admin/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +55,11 @@ export default async function SettingsPage({
     }
   }
 
+  const admin = access?.status === "active" && access.role === "admin"
+    ? await getCurrentRenderLabAdmin()
+    : null;
+  const showAdminLink = admin?.identity.id === identity?.id;
+
   return (
     <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mb-7">
@@ -71,6 +79,23 @@ export default async function SettingsPage({
           initialFeedback={initialFeedback(params)}
         />
       </SettingsSection>
+
+      {showAdminLink ? (
+        <SettingsSection
+          title="Admin"
+          description="Privileged RenderLab access, generation override and product-health operations."
+        >
+          <div className="rounded-xl border border-border bg-surface-1 p-5 sm:p-6">
+            <p className="text-sm font-semibold text-text">Admin operations</p>
+            <p className="mt-1 text-sm leading-6 text-text-muted">
+              Your active RenderLab admin role can open the separate operations surface.
+            </p>
+            <Button asChild variant="secondary" className="mt-4">
+              <Link href="/admin">Open Admin</Link>
+            </Button>
+          </div>
+        </SettingsSection>
+      ) : null}
     </section>
   );
 }

@@ -12,6 +12,7 @@ on:
       - "src/app/auth/**"
       - "src/app/settings/**"
       - "supabase/migrations/0010_renderlab_account_admission.sql"
+      - "supabase/migrations/0011_renderlab_admin_access_control.sql"
       - "scripts/verify-account-identity.mjs"
       - ".github/workflows/account-identity-visual.yml"
   workflow_dispatch:
