@@ -8,6 +8,7 @@ const description =
   "Create images and videos, shape them with owned references, and keep reusable media and generation history in one focused workspace.";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://renderlab-lake.vercel.app"),
   title,
   description,
   openGraph: {
