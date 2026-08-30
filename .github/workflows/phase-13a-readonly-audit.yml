@@ -58,13 +58,6 @@ jobs:
 
           hook_keys = sorted(k for k in cfg if 'hook' in k.lower() and 'secret' not in k.lower() and 'token' not in k.lower())
           print('HOOK_KEYS=' + json.dumps({k: cfg[k] for k in hook_keys}, ensure_ascii=False))
-
-          safe_mail_keys = sorted(
-              k for k in cfg
-              if (k.startswith('smtp_') or k.startswith('mailer_') or k.startswith('rate_limit_email'))
-              and not any(x in k.lower() for x in ('pass', 'secret', 'token', 'user'))
-          )
-          print('SAFE_MAIL_KEYS=' + json.dumps({k: cfg[k] for k in safe_mail_keys}, ensure_ascii=False))
           PY
 
       - name: Audit public sender DNS
@@ -85,3 +78,47 @@ jobs:
             echo "--- ${type} ${name}"
             dig +short "${type}" "${name}" || true
           done
+
+      - name: Audit Cloudflare mail-related DNS inventory
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "CLOUDFLARE_API_TOKEN_PRESENT=false"
+            exit 0
+          fi
+          echo "CLOUDFLARE_API_TOKEN_PRESENT=true"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/zones?name=faresuniform.uk" \
+            -o /tmp/cf-zones.json
+          python - <<'PY' >/tmp/zone-id
+          import json
+          data = json.load(open('/tmp/cf-zones.json'))
+          results = data.get('result') or []
+          if len(results) != 1:
+              raise SystemExit(f'expected one Cloudflare zone, got {len(results)}')
+          print(results[0]['id'])
+          PY
+          ZONE_ID="$(cat /tmp/zone-id)"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?per_page=100" \
+            -o /tmp/cf-records.json
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/cf-records.json'))
+          rows = []
+          for r in data.get('result') or []:
+              name = r.get('name','').lower()
+              content = r.get('content','')
+              typ = r.get('type','')
+              lc = content.lower()
+              if typ in ('MX','TXT') or '_domainkey' in name or 'dmarc' in name or 'brevo' in name or 'send' in name or 'mail' in name or name.startswith('auth.'):
+                  rows.append({'type': typ, 'name': r.get('name'), 'content': content, 'proxied': r.get('proxied')})
+          rows.sort(key=lambda x: (x['name'] or '', x['type'] or '', x['content'] or ''))
+          print('MAIL_RELATED_DNS=' + json.dumps(rows, ensure_ascii=False))
+          PY
