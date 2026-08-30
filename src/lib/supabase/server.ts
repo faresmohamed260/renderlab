@@ -49,30 +49,6 @@ function verifiedUserIdentity(user: User | null): RenderLabIdentity | null {
   };
 }
 
-export async function getCurrentRenderLabIdentity(): Promise<RenderLabIdentity | null> {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return null;
-
-  const requestHeaders = await headers();
-  const token = bearerToken(requestHeaders.get("authorization"));
-  const { data, error } = await supabase.auth.getClaims(token ?? undefined);
-  const claims = data?.claims;
-  if (
-    error
-    || !claims
-    || typeof claims.sub !== "string"
-    || claims.role !== "authenticated"
-    || claims.is_anonymous === true
-  ) {
-    return null;
-  }
-
-  return {
-    id: claims.sub,
-    email: typeof claims.email === "string" ? claims.email : null,
-  };
-}
-
 export async function getFreshCurrentRenderLabIdentity(): Promise<RenderLabIdentity | null> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
@@ -82,6 +58,10 @@ export async function getFreshCurrentRenderLabIdentity(): Promise<RenderLabIdent
   const { data, error } = await supabase.auth.getUser(token ?? undefined);
   if (error) return null;
   return verifiedUserIdentity(data.user);
+}
+
+export async function getCurrentRenderLabIdentity(): Promise<RenderLabIdentity | null> {
+  return getFreshCurrentRenderLabIdentity();
 }
 
 export async function getCurrentRenderLabAccount(): Promise<RenderLabAccount | null> {

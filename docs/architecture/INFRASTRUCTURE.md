@@ -66,6 +66,11 @@ PR #68 merged Phase 10C to `main` as `26508e77975ee4dd26f60860f999e4bc55c99eca`.
 - Phase 10D expects no database migration. Hosted Site URL/redirect allowlist, token-hash invite/recovery templates, production custom SMTP/Auth email hook, suitable mail limits, link-tracking posture and SPF/DKIM/DMARC are operator/configuration gates before broader beta; regular CI continues to avoid real email delivery.
 
 
+### Phase 10D Auth/session freshness boundary — verified
+Exact code/test head `585a606666eae5b8813f54ba19ea253fcccaaf4f` passed all 21 path-triggered workflows, led by Account Identity `33313458456`. Private RenderLab server identity now uses current Supabase Auth `getUser()` state, while the root SSR proxy retains `getClaims()` solely for cookie refresh/signature validation. The configured verifier proved still-unexpired revoked bearers fail private media and generation authorization immediately after ordinary password change, token-hash recovery/password replacement and global sign-out, while the intended current session remains usable. No schema migration or Auth-hosted configuration change was required.
+
+Exact run-owned cleanup for Account Identity found zero matching Auth/access/invitation/reservation/job/source/media/upload state. The singleton remained enabled / 1 / 12 / no updater. Phase 10 tables remain RLS-enabled/browser-revoked; every RenderLab SECURITY DEFINER routine remains empty-search-path and service-role-only. Security Advisor remains limited to expected server-owned RLS/no-policy INFO plus leaked-password protection disabled. Built-in Supabase mail (`noreply@mail.app.supabase.io`) and observed email rate limiting, unverified production Site URL/redirect/template/sender posture, and Free-plan leaked-password support remain explicit broader-beta blockers. No Vercel deployment, UUID bootstrap or production enforcement change occurred.
+
 ### Account identity boundary — UI-029
 Supabase Auth `auth.users.id` is the canonical RenderLab account principal.
 
@@ -75,14 +80,14 @@ Settings browser
   -> Supabase Auth email/password sign-in or account creation
   -> Supabase SSR cookie session
   -> root Next.js proxy refreshes/rotates cookies
-  -> Server Components/services read verified claims
-  -> RenderLab account identity = claims.sub / auth.users.id
+  -> Server Components/services re-confirm current Auth user for private product authorization
+  -> RenderLab account identity = fresh auth.users.id
 ```
 
 Rules:
 - Vercel/runtime configuration uses `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`; `next.config.ts` maps those public-safe values into the existing browser-facing `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` bundle keys. The publishable key is not a service credential;
 - `SUPABASE_SERVICE_ROLE_KEY` remains server/CI-only and is never used by product browser code;
-- server account identity uses verified Supabase claims rather than trusting an unverified browser-supplied user ID;
+- private server account identity uses fresh Supabase `auth.getUser()` state rather than trusting an unverified browser-supplied user ID or a revoked-but-unexpired JWT;
 - UI-029 itself added no owner columns or account-scoped media/job persistence;
 - UI-030 satisfies the ownership-isolation prerequisite for personal organization; UI-031 Favorites and UI-032 Collections are approved separate organization slices. UI-033 owns the approved single-asset tombstone/R2/history semantics; UI-034 composes that contract for page-scoped best-effort batch Delete without a new schema migration.
 
