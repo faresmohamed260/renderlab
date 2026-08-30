@@ -1307,12 +1307,39 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] No schema/R2/provider/Auth/admission/deployment change occurred or is authorized. Phase 10 broader-beta email/template/leaked-password blockers remain open. Phase 12 owns integrated release validation and any separately authorized rollout.
 
 ### Phase 12 — Cycle 2 Release Validation
-- [ ] Run exact-head GitHub validation for every affected slice and a final integrated Account → Create → generation → durable input reuse → Library → Viewer → organization → Activity/recovery path plus Admin authorization boundary and launch surfaces.
-- [ ] Review required desktop/narrow artifacts, normal/reduced motion, accessibility and performance; a passing build alone is insufficient.
-- [ ] Audit RenderLab Supabase schema/owners/RLS/browser grants/fixtures, Auth/admin boundary, R2 fixtures/CORS, generation configuration and custom-domain production routing.
-- [ ] Record the final approved application SHA and release evidence in the authoritative docs.
-- [ ] Deploy to Vercel only with explicit user authorization; merge remains distinct from deployment.
-- [ ] Reverify the live custom-domain product after the deliberate rollout and clean all configured verification fixtures.
+**Contract status:** `CONTRACT EXPANDED / IMPLEMENTATION NOT STARTED`. Starting authoritative `main` is `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95`. 12A is non-deploying validation; 12B remains separately authorization-gated.
+
+#### Verified preflight — 2026-08-30
+- [x] Phase 11 is complete/verified and merged; Phase 12 prerequisite is satisfied.
+- [x] Current READY Vercel production deployment is `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` from application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; current `main` is 216 commits ahead with executable drift, so production health cannot stand in for release-candidate validation.
+- [x] Vercel project remains Next.js with production domains `renderlab-lake.vercel.app` / `renderlab.faresuniform.uk`; repository automatic Git deployment remains disabled. No runtime error clusters were reported in the inspected 7-day window.
+- [x] Supabase migrations through `0012` are applied; Phase 11 post-merge fixture audit is zero. Security Advisor remains expected server-owned RLS INFO + leaked-password WARN; performance findings remain the documented one-row settings FK INFO + unused-index INFO.
+- [x] Production Closed-Beta enforcement/known-account UUID bootstrap is still unresolved and must not be mutated during 12A. Hosted Auth Site URL/redirect/template/sender/custom-SMTP evidence and Free-plan leaked-password support remain separately documented operational/broader-beta gaps.
+
+#### 12A — Release Candidate Validation
+- [ ] Freeze one exact candidate SHA after this contract merges; any release-blocking fix creates a new candidate and invalidates stale-head evidence.
+- [ ] Run static/build/deployment-readiness gates and require terminal success for the complete configured feature/integration matrix; cancelled/action-required/queued runs are not success.
+- [ ] Prove integrated Account → Create → persisted generation/reference reuse → Library → Viewer → organization → Activity/recovery continuity plus signed-out/foreign denial, fresh Admin authorization and public Landing/Create routing in one dedicated release run if existing workflows do not already cover it as one path.
+- [ ] Keep integrated continuity provider-cheap by using a run-owned mock backend where appropriate; retain existing configured Image/Edit and Video/Animate integration as the authoritative live-provider mapping checks.
+- [ ] Capture/review bounded desktop+narrow release artifacts for Landing, Create, Library, Viewer, Activity, Settings and Admin; include overflow/focus/reduced-motion/accessibility checks.
+- [ ] Run read-only Supabase migration/RLS/grant/function/singleton/integrity/advisor/fixture audit and exact cleanup after configured validation.
+- [ ] Run read-only Vercel project/domain/current-deployment/runtime/env-contract audit plus current-production SHA drift; re-confirm custom-domain HTTPS and R2 exact-origin browser-upload contract without production mutation.
+- [ ] Record one exact candidate manifest in authoritative docs. If all 12A gates pass and deployment is still unauthorized, mark `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED` and stop.
+
+#### 12A scope guardrails
+- [ ] No feature expansion, redesign, architecture refactor, provider tuning or migration unless required by a verified release-blocking defect; make only the smallest fix and fully revalidate its new exact head.
+- [ ] Do not mutate Vercel production, Supabase Auth hosted settings, closed-beta enforcement/bootstrap, R2 CORS or provider infrastructure during 12A.
+- [ ] Do not convert informational advisors or broader-beta Auth limitations into invented Phase 12 fixes without evidence.
+
+#### 12B — Authorized Production Rollout — blocked until explicit authorization
+- [ ] Receive explicit user authorization for deployment/production mutation of the exact 12A-verified candidate. Without it, do not deploy.
+- [ ] Resolve/verify known RenderLab UUID bootstrap + production closed-beta enforcement before treating invitation-only launch posture as production-consistent.
+- [ ] Verify production Auth Site URL/redirect behavior and truthfully retain built-in-mail/custom-SMTP/leaked-password limitations that still block broader beta.
+- [ ] Reconfirm required Vercel environment contract and R2 exact-origin CORS; perform only explicitly authorized mutations.
+- [ ] Deploy exactly the verified candidate; require READY state, aliases/custom-domain HTTPS, landing/routes/metadata, authenticated/private-media, durable upload/reuse, bounded Image+Video, Activity/Retry/Admin smoke and exact cleanup.
+- [ ] Keep `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` available as the pre-rollout rollback candidate until the new release is accepted.
+- [ ] Record actual production deployment SHA/ID, smoke/cleanup evidence and final infrastructure state before marking Phase 12 `COMPLETE / VERIFIED`.
+
 
 ### Cycle 2 explicit non-commitments
 Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter system, generic Models/Workflows screens, ComfyUI graph editing, ordinary-user provider/worker management, arbitrary workflow-parameter generation, inpainting/outpainting, pose/depth/edge guidance, workflow chaining, full billing, a global media client store or cross-page selection. LoRA/model-adapter support is now an accepted post-Cycle-2 direction rather than an ignored idea. Safe cancellation and Trash/restore remain contingent on their own evidence/decisions.
@@ -1332,13 +1359,12 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 are complete/verified.
-**Current phase status:** Phase 11 — Brand & Launch Experience is `COMPLETE / VERIFIED` under UI-052 and merged to `main` as `46c5daa2866c6758907ee9be219bcb3cb274ca83`.
-**Next sequence:** Phase 12 — Cycle 2 Release Validation is the next roadmap slice, but implementation has not started. Before substantial Phase 12 work, expand/verify its execution-ready contract from current `main` and current production/infrastructure evidence.
-**Verified Phase 11 gate:** exact PR head `773251734dbd5c5f32770699a57b1ade653604b5` passed 19/19 affected workflows; Brand / Launch artifact `9734984885` was human-reviewed clean; merged-main UI Shell `33323421285` passed; live Supabase fixture residue audit returned zero.
-**Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1 → Phase 10 Account/Admin/Closed-Beta Operations → Phase 11 Brand & Launch Experience.
-**Deployment boundary:** no deployment occurred or is authorized by Phase 11 completion. Any production rollout remains a separate explicit user-authorized operation.
-**Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
-**Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation productization, billing and cross-page selection still require their own evidence/decisions.
+**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `CONTRACT EXPANDED / IMPLEMENTATION NOT STARTED` on top of authoritative starting `main` `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95`.
+**Next sequence:** merge this docs-only Phase 12 execution contract first. Then 12A may freeze one current-main release candidate and run the non-deploying integrated validation/audit sequence. 12B remains blocked unless the user explicitly authorizes deployment and production mutations.
+**Release reality:** current READY production is `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` / `c8e9943dd90cba5971f4dcfcd591445608ce46ca`, while contract-start `main` is 216 commits ahead with executable changes. Production health is useful baseline evidence, not candidate evidence.
+**Deployment boundary:** no deployment or production configuration mutation is authorized by contract expansion or 12A validation. The invitation-only production enforcement/bootstrap gate must be explicitly resolved before an authorized rollout is accepted as production-consistent.
+**Broader-beta boundary:** Supabase built-in mail/rate-limit posture, unverified production Auth Site URL/redirect/template/sender/custom-SMTP posture and Free-plan leaked-password protection remain open until separately evidenced; do not hide them inside release-validation success.
+**Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face remains post-Cycle-2 and out of Phase 12.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
