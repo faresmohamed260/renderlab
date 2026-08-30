@@ -1356,11 +1356,11 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter system, generic Models/Workflows screens, ComfyUI graph editing, ordinary-user provider/worker management, arbitrary workflow-parameter generation, inpainting/outpainting, pose/depth/edge guidance, workflow chaining, full billing, a global media client store or cross-page selection. LoRA/model-adapter support is now an accepted post-Cycle-2 direction rather than an ignored idea. Safe cancellation and Trash/restore remain contingent on their own evidence/decisions.
 
 
-## Phase 13 — Email & Invite Production Hardening — CONTRACTED / NOT STARTED
-Phase 13 is the first contracted phase of Cycle 3 — Beta Operations & Access Reliability. It is primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin and UI-052 Brand/Launch contracts remain authoritative unless live delivery evidence proves a concrete product defect.
+## Phase 13 — Email & Invite Production Hardening — IN PROGRESS
+Phase 13 is the first active phase of Cycle 3 — Beta Operations & Access Reliability. 13A read-only audit is `COMPLETE / VERIFIED`; 13B sender/delivery configuration is awaiting the explicit provider/sender/credential decision. It remains primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin and UI-052 Brand/Launch contracts remain authoritative unless live delivery evidence proves a concrete product defect.
 
 ### Required execution evidence
-- [ ] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation.
+- [x] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation. Runs `33341207071` + `33341263450` passed with no production mutation.
 - [ ] Choose one operator-approved production transactional delivery path (custom SMTP or equivalent Send Email Auth Hook), provider account/plan and RenderLab sender identity under `faresuniform.uk`.
 - [ ] Add/verify only provider-required sender-domain DNS: one valid SPF posture, provider DKIM and explicit DMARC policy/reporting; preserve unrelated Cloudflare DNS records.
 - [ ] Configure Supabase/provider sender/from/reply posture and bounded invitation-only Auth email limits; record actual values without exposing credentials.
@@ -1374,6 +1374,14 @@ Phase 13 is the first contracted phase of Cycle 3 — Beta Operations & Access R
 - [ ] Verify final cleanup/defaults: zero run-owned Auth/access/invitation/admission/media/generation residue, sole persistent admin unchanged, generation defaults enabled / 1 / 12 / no updater.
 - [ ] Review provider/API/Management credentials after acceptance; keep them only in approved secret stores and narrow/rotate/remove temporary privileged credentials when no longer required.
 - [ ] Record exact provider/sender/DNS/template/rate-limit/live-delivery evidence in `PROJECT.md` and `docs/architecture/INFRASTRUCTURE.md` before marking Phase 13 `COMPLETE / VERIFIED`.
+
+
+### 13A read-only audit — COMPLETE / VERIFIED 2026-08-31
+- Hosted Auth read-back: correct production Site URL + exact invite/recovery allowlist; custom SMTP absent; Send Email Auth Hook disabled; email send rate limit `2/hour`; default invite/recovery subjects/templates still use `{{ .ConfirmationURL }}`.
+- Public + Cloudflare DNS read-back: Brevo verification TXT, Brevo DKIM selectors `brevo1`/`brevo2`, DMARC `p=none` with aggregate reporting to Brevo, Cloudflare Email Routing MX, and a single apex SPF record for Cloudflare mail routing. No DNS was changed.
+- `auth.faresuniform.uk` is already a proxied Cloudflare Tunnel hostname, so Phase 13 must not reuse that host as a sending subdomain.
+- Lowest-drift recommendation for 13B is existing-domain Brevo SMTP via Supabase custom SMTP. This is a recommendation, not an inferred credential/account state; provider/sender/credential selection remains an explicit operator gate.
+- The temporary 13A audit workflow was removed after successful evidence capture. Regular CI still does not send real email.
 
 ### Scope guardrails
 - Planning does not authorize SMTP/provider signup or purchase, DNS mutation, hosted Auth mutation, email sending, Vercel deployment or application changes.
@@ -1396,13 +1404,12 @@ Phase 13 is the first contracted phase of Cycle 3 — Beta Operations & Access R
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `PLANNED`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase contract:** Phase 13 — Email & Invite Production Hardening is `CONTRACTED / NOT STARTED`.
-**Next sequence:** implementation is authorization-gated. Start with read-only 13A Auth/mail/DNS audit and provider/sender/DMARC/live-inbox decisions before any production email configuration change.
+**Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
+**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A is `COMPLETE / VERIFIED`, 13B is awaiting the explicit provider/sender/credential decision.
+**Next sequence:** approve Brevo custom SMTP as the recommended lowest-drift provider path (or explicitly select an alternative), choose the sender identity under `faresuniform.uk`, provision SMTP credentials in an approved secret store, then execute 13B DNS/Supabase configuration with read-back verification before 13C templates.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
-**Deployment boundary:** the Phase 13 contract itself changes no production configuration. Prefer configuration-only execution; if a verified application defect requires code, revalidate one exact candidate before any Vercel rollout.
-**Broader-beta boundary:** Phase 13 is specifically responsible for production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Leaked-password protection remains separate.
+**Deployment boundary:** 13A changed no production configuration. Phase 13 remains configuration-first; any necessary application code fix must create/revalidate an exact candidate before any Vercel rollout.
+**Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter work is outside Phase 13.
-
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
