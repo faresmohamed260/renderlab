@@ -1,0 +1,123 @@
+from pathlib import Path
+
+
+def replace_once(path: str, old: str, new: str) -> None:
+    target = Path(path)
+    text = target.read_text()
+    if old not in text:
+        raise SystemExit(f"missing expected text in {path}: {old[:120]!r}")
+    target.write_text(text.replace(old, new, 1))
+
+
+project = "PROJECT.md"
+replace_once(
+    project,
+    "**Cycle 2 — Creative Productivity & Beta Maturity. Phases 6–11 are complete and verified. Phase 12 Cycle 2 Release Validation contract merged through PR #74 as `c03e26c683c9c7c430c0e55cc306f5889f004844`. Phase 12A non-deploying Release Candidate Validation is now authorized by the repository contract but has not yet frozen/executed its candidate. Phase 12B production rollout remains separately authorization-gated. Current production remains the older READY deployment at application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`, so 12A must validate current `main` directly. No deployment is authorized.**",
+    "**Cycle 2 — Creative Productivity & Beta Maturity. Phases 6–11 are complete/verified and Phase 12A Release Candidate Validation is `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`. PR #75 merged the permanent release-verification machinery to `main` as `d6b8f386db3893e583c99b23fc3397b0eb377d42`; that exact merged SHA passed Deployment Readiness, Integrated Release and the complete 23-workflow configured matrix with required human artifact review and final read-only infrastructure/security cleanup. Phase 12B production rollout remains separately authorization-gated. Current production is still the older READY deployment at application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; no deployment is authorized.**",
+)
+replace_once(
+    project,
+    "- **Phase 12 — Cycle 2 Release Validation: CONTRACT MERGED / 12A NOT STARTED.** PR #74 merged the execution contract as `c03e26c683c9c7c430c0e55cc306f5889f004844`. 12A may now freeze one exact current-main release candidate and run the non-deploying validation/audit sequence. 12B remains blocked until explicit deployment/production-mutation authorization.",
+    "- **Phase 12 — Cycle 2 Release Validation: 12A RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED.** PR #75 merged the release-verification machinery as `d6b8f386db3893e583c99b23fc3397b0eb377d42`; the exact merged SHA passed the complete configured matrix, integrated continuity, responsive/reduced-motion human review, and read-only Supabase/Vercel/R2/custom-domain audits with exact run-owned cleanup. 12B remains blocked until explicit deployment/production-mutation authorization.",
+)
+replace_once(
+    project,
+    "**Status: `CONTRACT MERGED / 12A NOT STARTED`. PR #74 merged this execution contract to `main` as `c03e26c683c9c7c430c0e55cc306f5889f004844`. 12A validation work is authorized; 12B deployment/production mutation is not.**",
+    "**Status: `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`. PR #74 merged the execution contract as `c03e26c683c9c7c430c0e55cc306f5889f004844`; PR #75 merged the non-deploying release-verification machinery as `d6b8f386db3893e583c99b23fc3397b0eb377d42`. 12A is complete/verified; 12B deployment/production mutation is not authorized.**",
+)
+
+project_marker = "- Authoritative docs record the exact evidence. At this point Phase 12 may be marked **`RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`** and must stop if no rollout authorization exists.\n"
+project_evidence = project_marker + """
+
+**12A implementation / verification evidence — 2026-08-30**
+- PR #75 merged to authoritative `main` as exact release-candidate SHA `d6b8f386db3893e583c99b23fc3397b0eb377d42`. The merge tree is the already-reviewed PR-head tree; no product/runtime/schema/deployment change followed the merge before validation.
+- Exact-main Deployment Readiness `33335278699`, Integrated Release `33335278694`, and Release Candidate Matrix `33335278667` passed. The matrix manifest artifact is `9739024806` (`sha256:8185cadab7ab1d20468c476b42486285d084bc56b4aa3dddaed035f77f8d5ab1`) and records **23/23** terminal-success child runs on the same SHA: Account Identity `33335314098`, Account Ownership `33335315029`, Account/Admin `33335316128`, Generation Admission `33335317378`, Reference Upload `33335318397`, Persistent Media Upload `33335319584`, Create Durable Upload `33335320636`, Generation Integration `33335321717`, Video Generation `33335322801`, Create Lifecycle `33335323788`, Library Lifecycle `33335324883`, Library Search `33335325896`, Library History `33335326894`, Library Drag Drop `33335327959`, Library Favorites `33335329164`, Library Collections `33335330446`, Library Batch Delete `33335331517`, Media Rename `33335332593`, Media Download `33335333738`, Media Delete `33335335098`, Activity `33335336197`, UI Shell `33335337206`, and Brand / Launch `33335338275`.
+- The automatic push UI Shell run `33335278679` was cancelled when the matrix intentionally dispatched its same-SHA replacement; cancellation was not counted as success. Exact matrix-owned UI Shell `33335337206` completed successfully.
+- Exact-main Integrated Release artifact `9738853882` (`sha256:b8b9d48d1f97a93595ff6691708b4a2c5f13d33c0c01c785c7b6f5e35afdd8a6`) was human-reviewed clean across Landing, Create, Library, Viewer, Activity, Settings and Admin desktop/narrow surfaces. Exact-main Create Lifecycle artifact `9738873955` (`sha256:78eb279abb14492cd63550f2c4363bd37c6f6ea4add29e7dd572959d2327137e`) completed the narrow Create/multi-reference/reduced-motion review without clipping or horizontal-overflow defects.
+- Integrated Release used the run-owned authenticated mock provider only for the cross-surface continuity path, while configured Generation Integration and Video Generation remained the authoritative live-provider Image/Edit and Video/Animate mapping checks. Video Generation `33335322801` completed all live Create Video + Animate Image cases and exact cleanup.
+- The release-owned R2 audit is read-only: `scripts/verify-r2-browser-cors.mjs` signs a probe URL and sends OPTIONS requests only. Exact-main Integrated Release verified all six canonical browser-upload origins, including `https://renderlab-lake.vercel.app` and `https://renderlab.faresuniform.uk`, without CORS/object/config mutation.
+- Final Supabase read-only audit found migrations applied through `0012`, RLS enabled on every audited RenderLab table, zero `anon`/`authenticated` table grants, service-role-only privileged SECURITY DEFINER routines with empty search paths, zero orphan/owner-integrity mismatches, and the singleton restored to generation enabled / 1 active / 12 hourly / `updated_by=null`. After the exact-main suite there were **0** release-created Auth users/jobs/sources/assets/uploads/collections/items and **0** total RenderLab access/invitation/admission-reservation fixtures. Pre-existing legitimate project media/history predating 12A was deliberately preserved rather than misclassified as test residue.
+- Supabase advisors remain unchanged and non-release-blocking for the Closed Beta: expected server-owned RLS/no-policy INFO, the known Free-plan leaked-password WARN, the one-row settings-FK INFO and unused-index INFO.
+- Vercel remains unchanged: production deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` at application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca` is READY; automatic Git deployment remains disabled; no deployment was created by PR #75/12A; the inspected seven-day runtime window contained no error cluster. Production aliases/custom-domain HTTPS remained healthy during the read-only audit.
+- **12A exit:** `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`. Do not deploy, bootstrap production UUIDs, enable Closed-Beta enforcement, mutate hosted Auth/Vercel/R2/provider settings, or begin 12B until explicit user authorization is received.
+"""
+replace_once(project, project_marker, project_evidence)
+
+migration = "docs/ui/UI_MIGRATION.md"
+checklist_lines = [
+    "- [ ] Freeze one exact candidate SHA after this contract merges; any release-blocking fix creates a new candidate and invalidates stale-head evidence.",
+    "- [ ] Run static/build/deployment-readiness gates and require terminal success for the complete configured feature/integration matrix; cancelled/action-required/queued runs are not success.",
+    "- [ ] Prove integrated Account → Create → persisted generation/reference reuse → Library → Viewer → organization → Activity/recovery continuity plus signed-out/foreign denial, fresh Admin authorization and public Landing/Create routing in one dedicated release run if existing workflows do not already cover it as one path.",
+    "- [ ] Keep integrated continuity provider-cheap by using a run-owned mock backend where appropriate; retain existing configured Image/Edit and Video/Animate integration as the authoritative live-provider mapping checks.",
+    "- [ ] Capture/review bounded desktop+narrow release artifacts for Landing, Create, Library, Viewer, Activity, Settings and Admin; include overflow/focus/reduced-motion/accessibility checks.",
+    "- [ ] Run read-only Supabase migration/RLS/grant/function/singleton/integrity/advisor/fixture audit and exact cleanup after configured validation.",
+    "- [ ] Run read-only Vercel project/domain/current-deployment/runtime/env-contract audit plus current-production SHA drift; re-confirm custom-domain HTTPS and R2 exact-origin browser-upload contract without production mutation.",
+    "- [ ] Record one exact candidate manifest in authoritative docs. If all 12A gates pass and deployment is still unauthorized, mark `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED` and stop.",
+    "- [ ] No feature expansion, redesign, architecture refactor, provider tuning or migration unless required by a verified release-blocking defect; make only the smallest fix and fully revalidate its new exact head.",
+    "- [ ] Do not mutate Vercel production, Supabase Auth hosted settings, closed-beta enforcement/bootstrap, R2 CORS or provider infrastructure during 12A.",
+    "- [ ] Do not convert informational advisors or broader-beta Auth limitations into invented Phase 12 fixes without evidence.",
+]
+for line in checklist_lines:
+    replace_once(migration, line, line.replace("- [ ]", "- [x]", 1))
+
+migration_marker = "- [x] Record one exact candidate manifest in authoritative docs. If all 12A gates pass and deployment is still unauthorized, mark `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED` and stop.\n"
+migration_evidence = migration_marker + """
+
+#### 12A verified release-candidate evidence — 2026-08-30
+- [x] PR #75 merged as exact authoritative candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
+- [x] Deployment Readiness `33335278699`, Integrated Release `33335278694`, and Release Candidate Matrix `33335278667` passed on that exact merged SHA.
+- [x] Matrix manifest artifact `9739024806` (`sha256:8185cadab7ab1d20468c476b42486285d084bc56b4aa3dddaed035f77f8d5ab1`) records 23/23 terminal-success configured child runs. The push UI Shell cancellation `33335278679` was superseded rather than accepted; exact matrix UI Shell `33335337206` succeeded.
+- [x] Exact-main Integrated Release artifact `9738853882` (`sha256:b8b9d48d1f97a93595ff6691708b4a2c5f13d33c0c01c785c7b6f5e35afdd8a6`) and Create Lifecycle artifact `9738873955` (`sha256:78eb279abb14492cd63550f2c4363bd37c6f6ea4add29e7dd572959d2327137e`) were human-reviewed clean for the required desktop/narrow/reduced-motion release surfaces.
+- [x] Read-only R2 exact-origin preflight, Vercel project/deployment/domain/runtime/env-contract audit and Supabase migration/RLS/grant/function/singleton/integrity/advisor audits passed without production mutation.
+- [x] Final exact-main cleanup found zero release-created Auth/job/source/asset/upload/collection/item rows plus zero RenderLab access/invitation/admission-reservation fixtures; singleton defaults are enabled / 1 / 12 / no updater. Legitimate project media/history predating 12A remains intact and is not test residue.
+- [x] No Vercel deployment was created. Current production remains READY at application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca` / deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL`.
+- [x] 12A status is **`RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`**. Phase 12B remains blocked pending explicit user authorization.
+"""
+replace_once(migration, migration_marker, migration_evidence)
+
+replace_once(
+    migration,
+    "**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 are complete/verified.",
+    "**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 and Phase 12A are complete/verified.",
+)
+replace_once(
+    migration,
+    "**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `CONTRACT MERGED / 12A NOT STARTED`; PR #74 merged as `c03e26c683c9c7c430c0e55cc306f5889f004844`.",
+    "**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`; PR #75 merged the verified release machinery/candidate to `main` as `d6b8f386db3893e583c99b23fc3397b0eb377d42`.",
+)
+replace_once(
+    migration,
+    "**Next sequence:** freeze one exact current `main` SHA as the first 12A release candidate, run non-deploying static/build/full configured + integrated validation, perform read-only infrastructure/security audits and exact cleanup, then record a candidate manifest. Any code/config fix creates a new candidate and invalidates stale-head evidence.",
+    "**Next sequence:** stop until explicit Phase 12B rollout authorization. If authorized, re-confirm UUID bootstrap/Closed-Beta enforcement, production Auth redirect posture, Vercel env contract and R2 exact-origin CORS; then deploy exactly verified candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`, smoke-test production, clean exact fixtures and record the rollout evidence.",
+)
+replace_once(
+    migration,
+    "**Release reality:** current READY production remains application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; contract-start `main` `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95` was 216 commits ahead with executable changes. Production health is baseline evidence only.",
+    "**Release reality:** exact merged release candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` is fully 12A-verified, while current READY production remains the older application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`. Automatic Git deployment is still disabled and 12A created no deployment.",
+)
+replace_once(
+    migration,
+    "**Deployment boundary:** Phase 12B remains blocked without explicit user authorization. No Vercel deployment, production access-enforcement/bootstrap, Auth hosted-config or R2 mutation is authorized during 12A.",
+    "**Deployment boundary:** Phase 12B remains blocked without explicit user authorization. 12A completed without Vercel deployment, production access-enforcement/bootstrap, hosted Auth, R2 or provider mutation.",
+)
+
+infra = Path("docs/architecture/INFRASTRUCTURE.md")
+infra_text = infra.read_text()
+infra_heading = "### Phase 12A release-candidate infrastructure verification — 2026-08-30"
+if infra_heading not in infra_text:
+    infra_text += """
+
+### Phase 12A release-candidate infrastructure verification — 2026-08-30
+PR #75 merged the non-deploying release machinery to `main` as `d6b8f386db3893e583c99b23fc3397b0eb377d42`. Exact-main Deployment Readiness `33335278699`, Integrated Release `33335278694`, and Release Candidate Matrix `33335278667` passed; manifest artifact `9739024806` (`sha256:8185cadab7ab1d20468c476b42486285d084bc56b4aa3dddaed035f77f8d5ab1`) records 23/23 configured child workflows at terminal success on that SHA.
+
+The permanent release matrix first requires exact-SHA whitespace/verifier-syntax/UI-purity/TypeScript/production-build preflight, then dispatches the existing configured feature/integration workflows at the same candidate ref and waits for terminal success. On pull-request branches it quiesces stale branch-owned workflow-dispatch runs and retries bounded concurrency cancellations; on `main` it never cancels existing runs. A cancelled run is never accepted as success.
+
+`Integrated Release` is a provider-cheap cross-surface continuity verifier: it uses a run-owned authenticated mock generation backend for Account → Create → durable R2-backed result → Library → Viewer/organization → Edit reuse → Activity Retry while preserving the existing live Generation Integration and Video Generation workflows as the authoritative provider-mapping checks. It performs exact cleanup and uploads bounded release screenshots. Exact-main artifact `9738853882` (`sha256:b8b9d48d1f97a93595ff6691708b4a2c5f13d33c0c01c785c7b6f5e35afdd8a6`) was human-reviewed clean; exact-main Create Lifecycle artifact `9738873955` (`sha256:78eb279abb14492cd63550f2c4363bd37c6f6ea4add29e7dd572959d2327137e`) completed narrow/reduced-motion Create review.
+
+Release R2 CORS verification is now explicitly read-only through `scripts/verify-r2-browser-cors.mjs`: it uses existing object credentials only to construct a signed PUT URL and sends OPTIONS preflights for the canonical browser origins. It does **not** call Cloudflare/S3 CORS mutation APIs and does not upload an object. `scripts/ensure-r2-browser-cors.mjs` remains the separate reconciliation tool and must not be used as a read-only audit substitute.
+
+Final post-matrix shared-resource audit found zero release-created Auth users/jobs/sources/assets/uploads/collections/items, zero RenderLab access/invitation/admission-reservation fixtures, restored generation defaults enabled / 1 active / 12 hourly / no updater, and zero audited owner/orphan integrity mismatches. Existing legitimate project media/history predating 12A remains intentionally preserved. RLS/browser-grant/function-privilege and advisor posture remain unchanged from the verified Phase 10 boundary.
+
+Vercel production remains unchanged at READY deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` / application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; automatic Git deployment remains disabled and PR #75/12A created no deployment. Phase 12A therefore closes as `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`. Any production rollout, UUID bootstrap/access enforcement, hosted Auth configuration or infrastructure mutation belongs to separately authorized Phase 12B.
+"""
+    infra.write_text(infra_text)
