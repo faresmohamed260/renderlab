@@ -1,0 +1,67 @@
+name: Phase 12B Vercel Preflight
+
+on:
+  push:
+    branches: [work/phase-12b-rollout-ops]
+    paths:
+      - ".github/workflows/phase-12b-vercel-preflight.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TEAM_ID: team_r09C6RLmb2acHapENECQIn9T
+      VERCEL_PROJECT_ID: prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU
+    steps:
+      - name: Verify Vercel credential and production env keys
+        shell: python
+        run: |
+          import json
+          import os
+          import sys
+          import urllib.parse
+          import urllib.request
+
+          token = os.environ.get("VERCEL_TOKEN", "").strip()
+          if not token:
+              print("VERCEL_TOKEN_PRESENT=false")
+              raise SystemExit(2)
+          print("VERCEL_TOKEN_PRESENT=true")
+
+          team = os.environ["VERCEL_TEAM_ID"]
+          project = os.environ["VERCEL_PROJECT_ID"]
+          url = f"https://api.vercel.com/v9/projects/{project}/env?teamId={urllib.parse.quote(team)}"
+          req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+          with urllib.request.urlopen(req, timeout=30) as response:
+              payload = json.load(response)
+
+          envs = payload.get("envs", payload if isinstance(payload, list) else [])
+          safe = []
+          production_keys = set()
+          for item in envs:
+              key = item.get("key")
+              target = item.get("target") or []
+              if key and "production" in target:
+                  production_keys.add(key)
+              safe.append({"key": key, "target": target, "type": item.get("type")})
+          safe.sort(key=lambda item: str(item.get("key")))
+          print("PRODUCTION_ENV_METADATA=" + json.dumps(safe, sort_keys=True))
+
+          required = {
+              "SUPABASE_URL",
+              "SUPABASE_PUBLISHABLE_KEY",
+              "SUPABASE_SERVICE_ROLE_KEY",
+              "CLOUDFLARE_R2_ACCOUNT_ID",
+              "CLOUDFLARE_R2_ACCESS_KEY_ID",
+              "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+              "CLOUDFLARE_R2_BUCKET",
+          }
+          missing = sorted(required - production_keys)
+          print("REQUIRED_PRODUCTION_ENV_MISSING=" + json.dumps(missing))
+          print("CLOSED_BETA_ENFORCEMENT_KEY_PRESENT=" + str("RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED" in production_keys).lower())
+          if missing:
+              raise SystemExit(3)
