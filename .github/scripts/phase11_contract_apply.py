@@ -1,0 +1,195 @@
+from pathlib import Path
+
+START_SHA = "20f91dace0386c6c4f0b4305af2bef1bbc6ea572"
+
+
+def replace_once(path, old, new):
+    p = Path(path)
+    text = p.read_text()
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{path}: expected one match, found {count}: {old[:120]!r}")
+    p.write_text(text.replace(old, new, 1))
+
+
+def insert_before_once(path, anchor, insertion):
+    p = Path(path)
+    text = p.read_text()
+    marker = insertion.strip().splitlines()[0]
+    if marker in text:
+        raise SystemExit(f"{path}: insertion already present: {marker}")
+    if text.count(anchor) != 1:
+        raise SystemExit(f"{path}: expected one anchor: {anchor}")
+    p.write_text(text.replace(anchor, insertion.strip() + "\n\n" + anchor, 1))
+
+
+def append_once(path, marker, addition):
+    p = Path(path)
+    text = p.read_text()
+    if marker in text:
+        raise SystemExit(f"{path}: marker already present: {marker}")
+    p.write_text(text.rstrip() + "\n\n" + addition.strip() + "\n")
+
+
+replace_once(
+    "PROJECT.md",
+    "**Cycle 2 — Creative Productivity & Beta Maturity. Phases 6–9 and all Phase 10 slices are complete and exact-head verified under UI-051. Phase 11 Brand & Launch Experience is the next roadmap slice and must be expanded into an execution-ready contract before implementation. Broader-beta Auth email/leaked-password blockers remain explicitly open. No deployment is authorized.**",
+    "**Cycle 2 — Creative Productivity & Beta Maturity. Phases 6–10 are complete and verified. Phase 11 Brand & Launch Experience is expanded into an execution-ready contract under UI-052; implementation has not started. Broader-beta Auth email/leaked-password blockers remain explicitly open. No deployment is authorized.**",
+)
+replace_once(
+    "PROJECT.md",
+    "- **Phase 11 — Brand & Launch Experience:** establish RenderLab visual identity (logo/brand assets/banners), landing/onboarding presentation and the route/information-architecture decision for a marketing landing page. The current `/` Create route remains authoritative until this phase explicitly decides whether landing owns `/` and Create moves to another route.",
+    "- **Phase 11 — Brand & Launch Experience: CONTRACT EXPANDED / IMPLEMENTATION NOT STARTED under UI-052.** The approved target is a public Brand/Landing surface at `/`, with Create moving to `/create` when the Phase 11 implementation lands. The route-group/shell split, legacy continuation compatibility, closed-beta CTA/auth posture, brand asset set, truthful launch messaging and responsive/accessibility/performance validation are locked by the execution contract. Until implementation merges, the repository still serves Create at `/`.",
+)
+
+project_contract = f'''### Phase 11 execution contract — expanded 2026-08-30
+**Status: `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052. This contract must merge before any Phase 11 visual-design or implementation change.**
+
+**Goal / user value**
+- Give RenderLab a credible public identity and launch surface that explains the product before a visitor enters the creative workspace.
+- Separate marketing/navigation chrome from the dense application shell so each surface can optimize for its job without contaminating the other.
+- Preserve closed-beta honesty: invited users can sign in and active users can work, while the public surface does not imply public self-service access or solved broader-beta Auth operations.
+
+**Verified starting state**
+- Authoritative starting `main` is `{START_SHA}`. Phase 10A–10D is complete/verified; Phase 11 planning authorizes no deployment or production access-enforcement change.
+- Current routes are Create `/`, Library `/library`, Viewer `/library/[assetId]`, Activity `/activity`, Settings `/settings`, Admin `/admin`. Root `src/app/layout.tsx` wraps every page in `AppShell`; shell Create links and the shell wordmark point to `/`.
+- Current Create is intentionally draftable while signed out, but durable upload/generation/private operations require verified account state. Sign-in/recovery remains in `/settings`; there is no public product sign-up affordance.
+- Viewer continuation links use root Create query intent (`source` + `action`) and Create server-side reloads/validates owner media. Those links must not silently break when Create moves.
+- No production brand asset set or `public/` directory exists. Root metadata is only `RenderLab` / `AI image and video creation workspace`; the shell uses a text-only RenderLab wordmark.
+- Marketing-safe verified capability is limited to Create Image, Edit Image, Create Video, Animate Image, durable reference/media reuse, Library organization, Activity history/failed-job Retry and closed-beta account/admin controls. Provider/model/worker details remain internal.
+- `UI_SYSTEM.md` already defines the dark-first palette, Inter/system typography, violet accent, accessibility baseline and premium-quality bar. `DESIGN_WORKFLOW.md` makes Penpot/open-SVG handoff plus remote GitHub rendered review the approved design loop.
+
+**Locked route / information-architecture decision — UI-052**
+1. **Landing owns `/`.** Phase 11 implementation makes `/` the public Brand / Launch surface.
+2. **Create moves to `/create`.** `/create` becomes the application Create destination; `/library`, `/library/[assetId]`, `/activity`, `/settings` and `/admin` keep their URLs.
+3. **Split marketing from application layout.** Root layout becomes global document/theme/metadata plumbing only. A marketing route group owns the landing surface without `AppShell`; an application route group owns Create/Library/Viewer/Activity/Settings/Admin under the existing `AppShell`. Route groups do not change public URLs except the deliberate Create move.
+4. **Preserve continuation compatibility.** A legacy request to `/` containing `source` or `action` redirects same-origin to `/create` with the full query string preserved; the existing Create server boundary remains responsible for UUID/action/owner/media validation. Bare `/` becomes landing.
+5. **Application navigation remains task-first.** Shell Create navigation and shell wordmark/mobile brand affordance point to `/create`, preserving their workspace behavior. Marketing wordmark points to `/`.
+6. **Authentication stays where it is.** Landing `Sign in` points to `/settings`. Do not create a second credential form, public registration route, waitlist database or automatic admission path. `Open Create` points to `/create`; signed-out Create remains draftable and persistent actions continue enforcing account/admission rules.
+
+**Brand / visual design contract**
+- Begin with a visual-design checkpoint before coding the landing composition: Penpot when available, otherwise versioned open SVG handoff in `design/penpot/`. Review desktop and narrow/mobile states before treating the design as implementation-ready.
+- Establish one project-owned RenderLab mark and wordmark system, not unrelated logos. The mark must remain recognizable at favicon/small-navigation scale, work in one-color treatment, and avoid relying on glow, gradients or a generic AI-sparkle glyph for identity.
+- Keep the established dark canvas/surface/text foundation and semantic violet accent so marketing and application feel related. Marketing may use more expressive display scale, composition and motion but must not redefine application control density/tokens or push decorative marketing mechanics into `AppShell`, Create or Library.
+- Required implementation assets: reusable mark/wordmark treatment, app/favicon icon, social/Open Graph launch image/banner, and repository-owned vector/raster exports required by Next metadata or external launch use.
+- Motion may support hierarchy and product-story continuity, but no autoplay background video, cursor gimmicks, constant glow/parallax, heavy WebGL or essential information hidden behind motion. Reduced motion gets a static equivalent.
+
+**Landing content / messaging contract**
+- Keep the page concise and product-led: hero/value proposition; proof of the four verified creative operations; durable references/Library/reuse; Activity/recovery continuity; closed-beta access CTA/footer. Product-workspace previews may represent only real RenderLab UI/capability.
+- Primary CTA: **Open Create** → `/create`. Secondary account CTA: **Sign in** → `/settings`. Closed-beta language must be clear without exposing internal admission mechanics.
+- Do not claim public availability, guaranteed quality, deterministic prompt obedience, render-time SLAs, pricing/cost savings, customer/user counts, provider/model superiority, collaboration, mobile apps, Director controls, cancellation, billing/credits or other unverified capability.
+- Do not add pricing, testimonials, fake customer logos/metrics, newsletter/waitlist capture, public registration, blog/CMS, analytics/tracking pixels or third-party marketing cookies in this slice.
+
+**Implementation / architecture boundary**
+- Prefer Server Components and static/project-owned assets. Add Client Components only for interactions/motion that materially benefit the page; do not create a marketing client store.
+- Reuse maintained RenderLab primitives for conventional interactive controls. Marketing-specific composition may be custom, but generic mechanics still follow the approved component-source order and accessibility requirements.
+- Metadata becomes launch-ready with descriptive title/description and project-owned Open Graph/Twitter visuals, without hard-coding an unverified production hostname or implying deployment.
+- No Supabase schema/migration, R2 contract, generation/provider contract, Auth policy, admission default, service-role exposure or production environment mutation is expected.
+
+**Validation / review**
+- Add a dedicated configured **Brand / Launch Visual** workflow/verifier that production-builds the app, verifies `/` landing and `/create` application semantics, captures at least desktop `1440x1100` and narrow `390x844` landing screenshots, checks horizontal overflow, keyboard-reachable CTAs, focus visibility, reduced-motion behavior, truthful closed-beta copy, metadata and brand asset availability.
+- Update UI Shell validation for `/create` active navigation and shell brand behavior. Update Create lifecycle/deep-link verification so `/create` is authoritative and legacy `/?source=...&action=...` redirects to `/create` without losing query intent or weakening server continuation validation.
+- Run UI purity, TypeScript, production build and every path-triggered affected workflow. Route/layout movement is shared composition work, so broad regressions must not be suppressed merely to make the launch slice look isolated.
+- Human-review final desktop/narrow landing, brand mark at small scale, application shell after route migration and a representative legacy continuation redirect result.
+
+**Documentation outputs / exit criteria**
+- Update `PROJECT.md`, `UI_MIGRATION.md`, `UI_DECISIONS.md`, `UI_SYSTEM.md` if brand-system rules actually change, `COMPONENT_CATALOG.md` for adopted reusable brand/marketing components, `SCREEN_REGISTRY.md`, `FRONTEND_ARCHITECTURE.md`, and `design/penpot/README.md` for accepted handoff artifacts.
+- Phase 11 completes only when route migration, brand assets, landing page, truthful CTA/auth posture, legacy continuation compatibility, responsive/accessibility/reduced-motion checks, exact-head CI and human visual review all pass and authoritative docs match verified implementation.
+- Broader-beta Auth email/template/leaked-password blockers from Phase 10 remain open unless separately resolved with operator evidence. Phase 11 completion does not authorize public self-admission, production enforcement or deployment.
+- No Vercel deployment is authorized by this contract. Phase 12 owns final integrated release validation and any later explicitly authorized production rollout.'''
+insert_before_once("PROJECT.md", "### Phase 10D execution contract — expanded 2026-08-30", project_contract)
+
+old_phase11 = '''### Phase 11 — Brand & Launch Experience
+- [ ] Establish RenderLab logo/brand identity and production-ready brand assets/banners.
+- [ ] Design and implement a launch/landing/onboarding experience appropriate to the selected access posture.
+- [ ] Make an explicit information-architecture decision before changing `/`: either keep Create at `/` with a separate landing route or deliberately move Create (for example to `/create`) and update shell/deep-link/auth behavior consistently. Until that decision is implemented, `/` remains Create.
+- [ ] Keep marketing motion/visual richness consistent with the premium RenderLab quality bar without contaminating the dense application workspace with decorative marketing patterns.
+- [ ] Verify responsive/accessibility/performance and update brand/design/screen docs from the actual implementation.'''
+new_phase11 = f'''### Phase 11 — Brand & Launch Experience
+**Contract status:** `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052. Starting `main`: `{START_SHA}`.
+
+#### Locked product / IA boundary
+- [x] Public Brand / Landing target is `/`; Create target is `/create` after implementation. Current repository behavior remains Create `/` until Phase 11 implementation merges.
+- [x] Root layout will become global-only; landing will render without `AppShell`; application routes will share an app route-group layout with the existing shell. Library/Viewer/Activity/Settings/Admin public URLs remain unchanged.
+- [x] Legacy root continuation URLs carrying `source`/`action` must same-origin redirect to `/create` with query preserved; Create remains the validator/owner boundary. Bare `/` becomes landing.
+- [x] Shell Create + shell wordmark point to `/create`; marketing wordmark points `/`. Landing primary CTA is `Open Create`; account CTA is `Sign in` → `/settings`. No new public credential/sign-up/waitlist surface is approved.
+
+#### Brand / launch design boundary
+- [ ] Produce and review a Phase 11 desktop + narrow visual candidate in Penpot or repository open-SVG handoff before coding final landing composition.
+- [ ] Select one original RenderLab mark + wordmark system that works at favicon/small-shell scale and in monochrome. Retain dark-first palette/violet accent; marketing may be more expressive without redefining application controls/tokens.
+- [ ] Implementation asset set includes reusable mark/wordmark treatment, app/favicon icon and project-owned Open Graph/social banner.
+- [ ] Landing stays concise: hero/value; four verified creative operations; durable reference/Library/reuse; Activity/recovery continuity; closed-beta CTA/footer. Preview media/UI must be truthful.
+- [ ] No pricing, testimonials, fake metrics/customer logos, public signup/waitlist, blog/CMS, analytics pixels, third-party marketing cookies, provider/model superiority, render-time/cost guarantees or unverified feature claims.
+
+#### Implementation / verification boundary
+- [ ] Prefer Server Components/static project assets and minimal client motion. Honor reduced motion; no autoplay background video, cursor gimmicks, heavy WebGL or decorative motion that competes with content.
+- [ ] Add configured Brand / Launch Visual validation with production build, `/` + `/create` route checks, desktop `1440x1100` and narrow `390x844` screenshots, overflow/keyboard/focus/reduced-motion checks, truthful closed-beta copy and metadata/asset verification.
+- [ ] Update UI Shell/Create/deep-link tests for `/create` and legacy root-query compatibility; run UI purity, TypeScript/build and every path-triggered affected regression. Human-review landing desktop/narrow, small-scale brand mark, post-move app shell and representative continuation redirect.
+- [ ] No schema/R2/provider/Auth/admission/deployment change is expected or authorized. Phase 10 broader-beta email/template/leaked-password blockers remain open. Phase 12 owns integrated release validation and any separately authorized rollout.'''
+replace_once("docs/ui/UI_MIGRATION.md", old_phase11, new_phase11)
+replace_once(
+    "docs/ui/UI_MIGRATION.md",
+    "**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete and verified under the Closed Beta boundary.",
+    "**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete/verified and Phase 11 has an expanded execution-ready contract under UI-052 but implementation has not started.",
+)
+replace_once(
+    "docs/ui/UI_MIGRATION.md",
+    "**Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `COMPLETE / VERIFIED` under UI-051.",
+    "**Current phase contract:** Phase 11 — Brand & Launch Experience is `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052.",
+)
+replace_once(
+    "docs/ui/UI_MIGRATION.md",
+    "**Next implementation sequence:** expand Phase 11 Brand & Launch Experience into an execution-ready contract before implementation.",
+    "**Next implementation sequence:** complete the Phase 11 visual-design checkpoint, then implement the locked landing `/` → Create `/create` route/layout/brand slice and validate it exactly as UI-052 requires.",
+)
+replace_once(
+    "docs/ui/UI_MIGRATION.md",
+    "**Current gate:** Phase 10D is merged and merged-main verified on `5950958dc58143b099bc2877a942829c045f700e`. Expand and merge the Phase 11 Brand & Launch Experience execution contract before any Phase 11 implementation; no deployment unless explicitly authorized.",
+    "**Current gate:** merge the Phase 11 UI-052 execution contract before any Phase 11 visual-design or implementation change. After merge, the first implementation gate is the desktop+narrow visual-design checkpoint; no deployment unless explicitly authorized.",
+)
+
+decision = '''### UI-052 — Public landing owns `/`; Create moves to `/create`
+**Status:** Accepted  
+**Date:** 2026-08-30  
+**Decision:** Phase 11 makes `/` the public RenderLab Brand / Launch surface and moves the application Create workspace to `/create`. Marketing and application chrome use separate App Router route-group layouts: landing renders without `AppShell`; Create, Library, Viewer, Activity, Settings and Admin share the existing application shell. Existing public URLs stay unchanged except Create. Legacy root requests carrying `source` or `action` redirect same-origin to `/create` with the query preserved so the existing Create server boundary continues to validate continuation UUID/action/ownership/media state. Shell Create navigation and shell wordmark point to `/create`; the marketing wordmark points to `/`. Landing `Open Create` points to `/create`, and `Sign in` points to the existing `/settings` account surface. No public signup, waitlist or second auth system is introduced.
+**Reason:** RenderLab needs a normal public product home without forcing marketing chrome into the dense application workspace or making the existing root Create route serve two incompatible jobs. Moving Create deliberately is cleaner than adding a secondary marketing URL, while explicit legacy-query compatibility prevents existing Viewer/deep links from silently breaking. Reusing `/settings` keeps closed-beta authentication/admission truthful and avoids parallel account UI.
+**Consequences:** Phase 11 implementation must update root/app layouts, shell navigation, Create route/tests/deep links and metadata together; bare `/` becomes public landing only when that implementation merges. The landing may use richer brand composition/motion than the workspace but keeps the established dark/violet family, accessibility/reduced-motion requirements and truthful verified-capability claims. No schema, provider, Auth policy, public admission or deployment follows from this decision. Before implementation, a Penpot/open-SVG desktop+narrow brand/landing checkpoint is required; final approval requires exact-head browser validation and human review.'''
+append_once("docs/ui/UI_DECISIONS.md", "### UI-052 — Public landing owns `/`; Create moves to `/create`", decision)
+
+replace_once(
+    "docs/ui/SCREEN_REGISTRY.md",
+    "Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default. Cycle 2 approves a **privileged Admin** surface at `/admin` under UI-051 and still plans a **Brand/Landing** surface in Phase 11. Admin stays out of ordinary shell navigation in v0.1 and is reachable contextually from Settings only for an active admin.",
+    "Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051 and Phase 11 locks a public **Brand/Landing** target at `/` under UI-052, with Create moving to `/create` only when the Phase 11 implementation merges. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.",
+)
+brand_screen = '''### Brand / Landing — Phase 11 target
+**Target route:** `/`  
+**Status:** PLANNED — UI-052 contract accepted; implementation not started  
+**Current repository reality:** `/` still serves the approved Create workspace until Phase 11 implementation merges.  
+
+**Purpose:** Public product home for RenderLab identity, verified creative capability and closed-beta entry into the application.
+
+**Locked target behavior:**
+- marketing surface renders outside `AppShell` while sharing RenderLab global tokens/theme;
+- primary `Open Create` → `/create`; account `Sign in` → `/settings`;
+- concise truthful product proof for Create/Edit Image, Create/Animate Video, durable reference/Library reuse and Activity/recovery continuity;
+- no public signup/waitlist, pricing, testimonials, fabricated metrics, provider/model claims or unverified capability;
+- desktop+narrow design checkpoint precedes implementation; final surface requires responsive/accessibility/reduced-motion browser review.
+
+**Related route migration:** Create remains `APPROVED` at current `/` until implementation. Phase 11 will move that same authoritative Create surface to `/create`, update the application shell accordingly and preserve legacy `/?source=...&action=...` continuation intent through a same-origin redirect to `/create` before existing server validation.'''
+append_once("docs/ui/SCREEN_REGISTRY.md", "### Brand / Landing — Phase 11 target", brand_screen)
+
+routing_contract = '''### Phase 11 planned landing / application routing boundary — UI-052
+The verified current routing block above remains authoritative until Phase 11 implementation merges. UI-052 locks the target migration:
+
+```text
+/                  Brand / Landing (public, no AppShell)
+/create            Create (application AppShell)
+/library           Library (application AppShell)
+/library/[assetId] Media Viewer (application AppShell)
+/activity          Activity (application AppShell)
+/settings          Settings / Account (application AppShell)
+/admin             Admin (application AppShell, fresh active-admin authorization)
+```
+
+Implementation uses route groups so marketing and application layouts can diverge without changing public URLs beyond the deliberate Create move. Root layout becomes global document/theme/metadata plumbing only; an application route-group layout owns `AppShell`. Bare `/` becomes landing. Legacy root requests with `source` or `action` must redirect same-origin to `/create` with the full query preserved, after which the existing Create server boundary continues UUID/action/owner/media validation. Shell Create links/wordmark move to `/create`; marketing wordmark points `/`. Landing account CTA reuses `/settings`; no second auth UI or public signup is introduced. Until implementation merges, `/` remains Create and this section is a planned contract, not a claim about current runtime behavior.'''
+insert_before_once("docs/architecture/FRONTEND_ARCHITECTURE.md", "### Phase 9 Retry boundary — implemented / verified", routing_contract)
