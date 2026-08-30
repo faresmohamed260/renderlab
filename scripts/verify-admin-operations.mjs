@@ -160,6 +160,11 @@ async function seedHealthJobs(ownerId) {
         ecosystem: "private-ecosystem",
         inputs: [],
         parameters: {},
+        worker_id: null,
+        provider_job_id: null,
+        error_code: null,
+        error_message: null,
+        completed_at: null,
       },
     ]),
   });
