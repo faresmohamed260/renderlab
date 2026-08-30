@@ -28,13 +28,19 @@ export type SubmitGenerationSuccess = {
   job: GenerationJob;
 };
 
+export type SubmitGenerationErrorCode =
+  | "invalid_request"
+  | "generation_access_denied"
+  | "generation_disabled"
+  | "generation_active_limit_reached"
+  | "generation_rate_limit_reached"
+  | "generation_backend_unavailable"
+  | "generation_submission_failed";
+
 export type SubmitGenerationError = {
   ok: false;
   error: {
-    code:
-      | "invalid_request"
-      | "generation_backend_unavailable"
-      | "generation_submission_failed";
+    code: SubmitGenerationErrorCode;
     message: string;
     details?: Record<string, string>;
   };
@@ -79,103 +85,75 @@ function parseInputs(value: unknown): GenerationInput[] | null {
       role: item.role as GenerationInput["role"],
       source: {
         type: sourceType as GenerationInput["source"]["type"],
-        id: sourceId.trim(),
+        id: sourceId,
       },
     });
   }
   return inputs;
 }
 
-function parseAdvanced(
-  value: unknown,
-  kind: OutputKind,
-): GenerationAdvancedParameters | null | undefined {
+function parseAdvanced(value: unknown, outputKind: OutputKind): GenerationAdvancedParameters | undefined | null {
   if (value === undefined) return undefined;
   if (!isRecord(value)) return null;
 
-  const advanced: GenerationAdvancedParameters = {};
+  const allowedKeys = outputKind === "video"
+    ? new Set(["negativePrompt", "seed", "frameRate"])
+    : new Set(["negativePrompt", "seed", "steps", "guidance"]);
+  if (Object.keys(value).some((key) => !allowedKeys.has(key))) return null;
 
+  const advanced: GenerationAdvancedParameters = {};
   if (value.negativePrompt !== undefined) {
-    if (typeof value.negativePrompt !== "string") return null;
+    if (typeof value.negativePrompt !== "string" || value.negativePrompt.length > 4000) return null;
     advanced.negativePrompt = value.negativePrompt;
   }
   if (value.seed !== undefined) {
-    if (!Number.isSafeInteger(value.seed)) return null;
-    advanced.seed = value.seed as number;
+    if (!Number.isInteger(value.seed) || Number(value.seed) < 0 || Number(value.seed) > 2147483647) return null;
+    advanced.seed = Number(value.seed);
   }
-  if (value.steps !== undefined) {
-    if (kind !== "image") return null;
-    if (
-      !Number.isInteger(value.steps)
-      || (value.steps as number) < generationAdvancedCapabilities.steps.min
-      || (value.steps as number) > generationAdvancedCapabilities.steps.max
-    ) return null;
-    advanced.steps = value.steps as number;
+  if (outputKind === "image" && value.steps !== undefined) {
+    if (!Number.isInteger(value.steps) || Number(value.steps) < generationAdvancedCapabilities.image.steps.min || Number(value.steps) > generationAdvancedCapabilities.image.steps.max) return null;
+    advanced.steps = Number(value.steps);
   }
-  if (value.guidance !== undefined) {
-    if (kind !== "image") return null;
-    if (
-      typeof value.guidance !== "number"
-      || !Number.isFinite(value.guidance)
-      || value.guidance < generationAdvancedCapabilities.guidance.min
-      || value.guidance > generationAdvancedCapabilities.guidance.max
-    ) return null;
+  if (outputKind === "image" && value.guidance !== undefined) {
+    if (typeof value.guidance !== "number" || !Number.isFinite(value.guidance) || value.guidance < generationAdvancedCapabilities.image.guidance.min || value.guidance > generationAdvancedCapabilities.image.guidance.max) return null;
     advanced.guidance = value.guidance;
   }
-  if (value.frameRate !== undefined) {
-    if (kind !== "video") return null;
-    if (typeof value.frameRate !== "number" || !frameRates.has(value.frameRate)) return null;
-    advanced.frameRate = value.frameRate as GenerationFrameRate;
+  if (outputKind === "video" && value.frameRate !== undefined) {
+    if (!Number.isInteger(value.frameRate) || !frameRates.has(Number(value.frameRate))) return null;
+    advanced.frameRate = Number(value.frameRate) as GenerationFrameRate;
   }
-
   return advanced;
 }
 
 export function parseGenerationRequest(value: unknown):
   | { ok: true; request: GenerationRequest }
-  | { ok: false; error: SubmitGenerationError["error"] } {
-  if (!isRecord(value)) {
-    return { ok: false, error: { code: "invalid_request", message: "Generation request must be an object." } };
+  | SubmitGenerationError {
+  if (!isRecord(value) || !isRecord(value.output)) {
+    return { ok: false, error: { code: "invalid_request", message: "Invalid generation request." } };
   }
 
-  if (typeof value.prompt !== "string" || !value.prompt.trim()) {
-    return { ok: false, error: { code: "invalid_request", message: "A prompt is required." } };
-  }
-  const prompt = value.prompt.trim();
-
-  if (!isRecord(value.output)) {
-    return { ok: false, error: { code: "invalid_request", message: "Output settings are required." } };
+  const prompt = value.prompt;
+  if (typeof prompt !== "string" || !prompt.trim() || prompt.length > 10000) {
+    return { ok: false, error: { code: "invalid_request", message: "Prompt is required and must be under 10,000 characters." } };
   }
 
   const kind = value.output.kind;
-  const aspectRatio = value.output.aspectRatio;
-  const durationSeconds = value.output.durationSeconds;
-  const audioEnabled = value.output.audioEnabled;
-  const resolution = value.output.resolution;
-
   if (typeof kind !== "string" || !outputKinds.has(kind as OutputKind)) {
-    return { ok: false, error: { code: "invalid_request", message: "Output kind must be image or video." } };
+    return { ok: false, error: { code: "invalid_request", message: "Unsupported output kind." } };
   }
+  const outputKind = kind as OutputKind;
 
-  const inputs = parseInputs(value.inputs);
+  const inputs = parseInputs(value.inputs ?? []);
   if (!inputs) {
     return { ok: false, error: { code: "invalid_request", message: "Generation inputs are invalid." } };
   }
-
-  const outputKind = kind as OutputKind;
-  const maxInputs = maxGenerationInputsForOutput(outputKind);
-  if (inputs.length > maxInputs) {
-    return {
-      ok: false,
-      error: {
-        code: "invalid_request",
-        message: `${outputKind === "image" ? "Image" : "Video"} accepts at most ${maxInputs} image ${maxInputs === 1 ? "input" : "inputs"}.`,
-      },
-    };
+  if (inputs.length > maxGenerationInputsForOutput(outputKind)) {
+    return { ok: false, error: { code: "invalid_request", message: "Too many generation inputs." } };
   }
+
   for (const [index, input] of inputs.entries()) {
     const expectedRole = generationInputRoleForIndex(outputKind, index);
-    if (!expectedRole || input.role !== expectedRole) {
+    if (input.role !== expectedRole) {
       return {
         ok: false,
         error: {
@@ -200,7 +178,11 @@ export function parseGenerationRequest(value: unknown):
     };
   }
 
-  const supportedAspectRatios = kind === "video" ? videoAspectRatioSet : imageAspectRatioSet;
+  const aspectRatio = value.output.aspectRatio;
+  const durationSeconds = value.output.durationSeconds;
+  const audioEnabled = value.output.audioEnabled;
+  const resolution = value.output.resolution;
+  const supportedAspectRatios = outputKind === "video" ? videoAspectRatioSet : imageAspectRatioSet;
   if (
     typeof aspectRatio !== "string"
     || (aspectRatio !== "original" && !supportedAspectRatios.has(aspectRatio as AspectRatio))
@@ -215,7 +197,7 @@ export function parseGenerationRequest(value: unknown):
   }
 
   let normalizedVideoResolution: VideoResolution | undefined;
-  if (kind === "video") {
+  if (outputKind === "video") {
     if (resolution === undefined) {
       normalizedVideoResolution = defaultVideoResolution;
     } else if (typeof resolution === "string" && videoResolutionSet.has(resolution)) {
@@ -243,9 +225,9 @@ export function parseGenerationRequest(value: unknown):
     request: {
       prompt,
       output: {
-        kind: kind as OutputKind,
+        kind: outputKind,
         aspectRatio: aspectRatio as AspectRatio,
-        ...(kind === "video"
+        ...(outputKind === "video"
           ? {
               durationSeconds: durationSeconds as number,
               audioEnabled: audioEnabled === undefined ? defaultVideoAudioEnabled : audioEnabled,
