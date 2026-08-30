@@ -7,8 +7,11 @@ on:
       - "next.config.ts"
       - "proxy.ts"
       - "src/lib/supabase/**"
+      - "src/server/account/**"
       - "src/features/account/**"
+      - "src/app/auth/**"
       - "src/app/settings/**"
+      - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "scripts/verify-account-identity.mjs"
       - ".github/workflows/account-identity-visual.yml"
   workflow_dispatch:
@@ -25,6 +28,7 @@ jobs:
       SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
 
     steps:
       - name: Checkout

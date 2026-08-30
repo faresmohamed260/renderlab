@@ -75,6 +75,24 @@ async function deleteOwnerRows(table, ownerId) {
   if (!response.ok) throw new Error(`Could not clean ${table} for ${ownerId} (${response.status}): ${await response.text()}`);
 }
 
+async function deleteAccountAccess(userId) {
+  const response = await serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(userId)}`, { method: "DELETE" });
+  if (!response.ok) {
+    throw new Error(`Could not clean account access for ${userId} (${response.status}): ${await response.text()}`);
+  }
+}
+
+async function seedAccountAccess(userId) {
+  const response = await serviceRest("renderlab_account_access?on_conflict=user_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ user_id: userId, role: "member", status: "active" }),
+  });
+  if (!response.ok) {
+    throw new Error(`Could not seed account access for ${userId} (${response.status}): ${await response.text()}`);
+  }
+}
+
 async function deleteUser(userId) {
   const response = await authAdmin(`users/${encodeURIComponent(userId)}`, { method: "DELETE" });
   if (!response.ok && response.status !== 404) {
@@ -89,6 +107,8 @@ async function cleanupFixtures() {
     await deleteOwnerRows("generation_jobs", ownerId);
     await deleteOwnerRows("generation_sources", ownerId);
   }
+  await deleteAccountAccess(ownerA);
+  await deleteAccountAccess(ownerB);
   await deleteUser(ownerA);
   await deleteUser(ownerB);
   console.log(`Account ownership fixtures clean owners=${ownerA},${ownerB}.`);
@@ -190,6 +210,8 @@ try {
   await cleanupFixtures();
   await createUser({ id: ownerA, email: emailA, password: passwordA });
   await createUser({ id: ownerB, email: emailB, password: passwordB });
+  await seedAccountAccess(ownerA);
+  await seedAccountAccess(ownerB);
   const tokenA = await signIn(emailA, passwordA);
   const tokenB = await signIn(emailB, passwordB);
   await insertFixtureRows();

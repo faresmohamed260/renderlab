@@ -200,9 +200,9 @@ Approved behavior:
 
 ### Settings
 **Route:** `/settings`  
-**Status:** APPROVED — Account Identity Foundation v0.1 / UI-029  
+**Status:** APPROVED — Account Identity Foundation / UI-029 + Phase 10A Recovery & Closed-Beta Admission / UI-051
 **Implementation:** `src/app/settings/page.tsx`  
-**Account surface:** `src/features/account/account-settings.tsx`  
+**Account surface:** `src/features/account/account-settings.tsx`; password security: `src/features/account/account-password-form.tsx`
 **Session boundary:** `src/lib/supabase/config.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/proxy.ts`, root `proxy.ts`
 
 **Purpose:** Own persistent account/application settings only when backed by real requirements. UI-029 uses Settings for the first real RenderLab account identity surface; it is not a workflow/model parameter dumping ground.
@@ -260,3 +260,5 @@ Current durable product decisions are in `docs/ui/UI_DECISIONS.md`; UI-038–UI-
 
 ## Growth Rule
 Future operations such as upscale, restore, inpaint, outpaint or structural guidance should first be evaluated as additions to Create or continuation actions. They receive a new top-level surface only when the user workflow genuinely requires a distinct workspace.
+
+**Phase 10A verified extension:** Settings remains the ordinary account/security destination. Signed-out state exposes Sign in + Forgot password and no public Create account. Verified identities see server-owned Closed Beta access status; Active users retain private product access, while Suspended users keep password/sign-out recovery but are denied private product operations when admission enforcement is enabled. `/settings/password` requires current-password reauthentication for ordinary changes and accepts old-password-free replacement only after the server verifies a signed short-lived recovery marker created by `/auth/confirm`. `e36140911c63527927ef404d1befa7670d590f8a` passed Account Identity `33282141315`, Account Ownership `33282141349`, UI Shell `33282141382` and the full 20-workflow affected suite. Artifact `9723305472` was reviewed clean across active/suspended/signed-out/recovery desktop+narrow states. Production admission enforcement remains off pending explicit known-user UUID bootstrap.
