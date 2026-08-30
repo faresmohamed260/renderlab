@@ -1,0 +1,46 @@
+name: Phase 12B Supabase Management Preflight
+
+on:
+  push:
+    branches: [work/phase-12b-rollout-ops]
+    paths:
+      - ".github/workflows/phase-12b-supabase-management-preflight.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+    steps:
+      - name: Verify management credential and inspect Auth redirect posture safely
+        shell: python
+        run: |
+          import json
+          import os
+          import urllib.request
+
+          token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
+          print("SUPABASE_ACCESS_TOKEN_PRESENT=" + str(bool(token)).lower())
+          if not token:
+              raise SystemExit(2)
+
+          ref = os.environ["SUPABASE_PROJECT_REF"]
+          req = urllib.request.Request(
+              f"https://api.supabase.com/v1/projects/{ref}/config/auth",
+              headers={"Authorization": f"Bearer {token}"},
+          )
+          with urllib.request.urlopen(req, timeout=30) as response:
+              payload = json.load(response)
+
+          safe = {
+              "site_url": payload.get("site_url"),
+              "uri_allow_list": payload.get("uri_allow_list"),
+              "mailer_autoconfirm": payload.get("mailer_autoconfirm"),
+              "smtp_admin_email": bool(payload.get("smtp_admin_email")),
+              "smtp_host_configured": bool(payload.get("smtp_host")),
+          }
+          print("AUTH_CONFIG_SAFE=" + json.dumps(safe, sort_keys=True))
