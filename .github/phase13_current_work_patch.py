@@ -2,16 +2,20 @@ from pathlib import Path
 import re
 
 
-def replace_current_work(path: str, replacement: str) -> None:
+def replace_current_work(path: str, replacement: str, required: bool = True) -> None:
     p = Path(path)
     text = p.read_text()
     pattern = r"## Current Work\n.*?(?=\n## Session Handoff Rule)"
     updated, count = re.subn(pattern, replacement.rstrip() + "\n", text, count=1, flags=re.S)
-    if count != 1:
+    if required and count != 1:
         raise SystemExit(f"expected one Current Work section in {path}, got {count}")
-    p.write_text(updated)
+    if count == 1:
+        p.write_text(updated)
 
 
+# PROJECT.md currently has no dedicated Current Work section; Current Priority + the
+# Phase 13 contract are its authoritative forward-looking state. Keep this optional
+# so a future reintroduction of the section can be updated without making the patch brittle.
 replace_current_work(
     "PROJECT.md",
     """## Current Work
@@ -23,6 +27,7 @@ replace_current_work(
 **Broader-beta boundary:** Phase 13 targets the built-in Auth mailer/rate-limit/sender-domain/template-deliverability gap. Free-plan leaked-password protection remains a separate security hardening item and must not be relabeled complete by this phase.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library remains outside Phase 13 and is not silently included in Cycle 3 planning.
 """,
+    required=False,
 )
 
 replace_current_work(
