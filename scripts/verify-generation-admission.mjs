@@ -761,7 +761,7 @@ try {
   const page = await context.newPage();
   await routeLocalAppRequestsWithAccount(page, baseUrl, ui);
 
-  await page.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
   const prompt = page.getByRole("textbox", { name: "Prompt" });
   await prompt.waitFor({ state: "visible", timeout: 30_000 });
   await prompt.fill("Admission UI Create study");

@@ -5,7 +5,7 @@ const mobileViewport = { width: 390, height: 844 };
 
 test("Create exposes the reviewed minimal image composer", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
-  await page.goto("/");
+  await page.goto("/create");
 
   await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
@@ -27,7 +27,7 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
 
 test("Create keeps Video resolution, duration, audio, and Advanced contextual without exposing backend workflow details", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
-  await page.goto("/");
+  await page.goto("/create");
 
   await page.getByRole("radio", { name: "Video", exact: true }).click();
 
@@ -52,7 +52,7 @@ test("Create keeps Video resolution, duration, audio, and Advanced contextual wi
 
 test("mobile Video keeps the essential row compact and contextual settings reachable", async ({ page }) => {
   await page.setViewportSize(mobileViewport);
-  await page.goto("/");
+  await page.goto("/create");
 
   await page.getByRole("radio", { name: "Video", exact: true }).click();
   const settings = page.getByRole("button", { name: /Video settings\. Resolution 480p\. Duration 5 seconds\. Audio on/ });
@@ -82,7 +82,7 @@ test("mobile Video keeps the essential row compact and contextual settings reach
 test("Create honors reduced motion for contextual mode transitions", async ({ page }) => {
   await page.setViewportSize(mobileViewport);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
+  await page.goto("/create");
 
   await page.getByRole("radio", { name: "Video", exact: true }).click();
   const modeControl = page.locator('[data-create-motion="mode-control"]');
@@ -98,7 +98,7 @@ test("Create honors reduced motion for contextual mode transitions", async ({ pa
 
 test("Advanced controls use progressive disclosure and preserve per-output drafts", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
-  await page.goto("/");
+  await page.goto("/create");
 
   await page.getByRole("button", { name: "Open Advanced controls" }).click();
   await expect(page.getByRole("button", { name: "Close Advanced controls" })).toBeVisible();
@@ -135,7 +135,7 @@ test("Advanced controls use progressive disclosure and preserve per-output draft
 
 test("mobile Create keeps Generate on its own row and Advanced remains usable", async ({ page }) => {
   await page.setViewportSize(mobileViewport);
-  await page.goto("/");
+  await page.goto("/create");
 
   const generate = page.getByRole("button", { name: "Generate", exact: true });
   const box = await generate.boundingBox();

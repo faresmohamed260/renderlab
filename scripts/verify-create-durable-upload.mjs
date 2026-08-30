@@ -113,7 +113,7 @@ try {
   const page = await context.newPage();
   await routeLocalAppRequestsWithAccount(page, baseUrl, account);
 
-  await page.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
   const addReference = page.getByRole("button", { name: "Add reference", exact: true });
   await addReference.waitFor({ state: "visible", timeout: 30_000 });
   assert(await addReference.isEnabled(), "Authenticated Create did not enable durable reference upload.");
