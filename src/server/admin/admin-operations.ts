@@ -9,6 +9,7 @@ import type {
 } from "@/lib/api/admin-contract";
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
+import { getAdminGenerationSettings } from "@/server/admin/admin-settings";
 
 const pendingInvitationLimit = 100;
 const accountListLimit = 100;
@@ -321,10 +322,11 @@ export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSn
 }
 
 export async function getAdminDashboard(actorUserId: string): Promise<AdminDashboardSnapshot> {
-  const [accounts, invitations, health] = await Promise.all([
+  const [accounts, invitations, settings, health] = await Promise.all([
     listAdminAccounts(),
     listPendingAdminInvitations(),
+    getAdminGenerationSettings(),
     getAdminHealth(actorUserId),
   ]);
-  return { accounts, invitations, health };
+  return { accounts, invitations, settings, health };
 }

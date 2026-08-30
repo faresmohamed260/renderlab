@@ -18,7 +18,7 @@ export default async function AdminPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Operations</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text sm:text-3xl">Admin</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-text-muted">
-            Manage RenderLab beta access, bounded per-account generation overrides, and sanitized product health.
+            Manage RenderLab beta access, global generation limits, bounded per-account overrides, and sanitized product health.
           </p>
         </div>
         <AdminOperations snapshot={snapshot} actorUserId={admin.identity.id} />

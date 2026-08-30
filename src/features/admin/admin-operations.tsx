@@ -13,6 +13,7 @@ import type {
   AdminAccessStatus,
   AdminAccountRecord,
   AdminDashboardSnapshot,
+  AdminGenerationSettings,
 } from "@/lib/api/admin-contract";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
@@ -209,17 +210,30 @@ export function AdminOperations({
 
       <AdminSection
         title="Generation controls"
-        description="Store bounded per-account generation overrides without changing global defaults or generation admission behavior."
+        description="Set typed global generation guardrails, then apply nullable per-account overrides only where a known RenderLab account needs different limits."
       >
-        <div className="flex flex-col gap-3">
-          {snapshot.accounts.map((account) => (
-            <GenerationOverrideEditor
-              key={`${account.userId}:${account.updatedAt}:generation`}
-              account={account}
-              busyKey={busyKey}
-              runMutation={runMutation}
-            />
-          ))}
+        <div className="flex flex-col gap-5">
+          <GlobalGenerationSettingsEditor
+            settings={snapshot.settings}
+            busyKey={busyKey}
+            runMutation={runMutation}
+          />
+          <div>
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-sm font-semibold text-text">Account overrides</h3>
+              <p className="text-xs text-text-muted">Blank limits inherit the global defaults.</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              {snapshot.accounts.map((account) => (
+                <GenerationOverrideEditor
+                  key={`${account.userId}:${account.updatedAt}:generation`}
+                  account={account}
+                  busyKey={busyKey}
+                  runMutation={runMutation}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </AdminSection>
 
@@ -346,6 +360,113 @@ function AccountAccessEditor({
           Your own active admin role and status cannot be removed from this account.
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function GlobalGenerationSettingsEditor({
+  settings,
+  busyKey,
+  runMutation,
+}: {
+  settings: AdminGenerationSettings;
+  busyKey: string | null;
+  runMutation: MutationRunner;
+}) {
+  const [enabled, setEnabled] = useState(settings.generationEnabled ? "enabled" : "disabled");
+  const [maxActiveJobs, setMaxActiveJobs] = useState(String(settings.maxActiveJobs));
+  const [maxJobsPerHour, setMaxJobsPerHour] = useState(String(settings.maxJobsPerHour));
+  const desiredMaxActiveJobs = Number(maxActiveJobs);
+  const desiredMaxJobsPerHour = Number(maxJobsPerHour);
+  const desiredEnabled = enabled === "enabled";
+  const valid = Number.isInteger(desiredMaxActiveJobs)
+    && desiredMaxActiveJobs >= 1
+    && desiredMaxActiveJobs <= 4
+    && Number.isInteger(desiredMaxJobsPerHour)
+    && desiredMaxJobsPerHour >= 1
+    && desiredMaxJobsPerHour <= 120;
+  const unchanged = desiredEnabled === settings.generationEnabled
+    && desiredMaxActiveJobs === settings.maxActiveJobs
+    && desiredMaxJobsPerHour === settings.maxJobsPerHour;
+  const key = "generation:global";
+
+  return (
+    <div className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
+      <div className="mb-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-sm font-semibold text-text">Global defaults</h3>
+          <p className="text-xs text-text-muted">Updated {displayDate(settings.updatedAt)}</p>
+        </div>
+        <p className="mt-1 text-xs leading-5 text-text-muted">
+          These guardrails apply to active RenderLab accounts unless an account override is set below.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.1fr_1fr_1fr_auto]">
+        <Field>
+          <FieldLabel htmlFor="global-generation-enabled">Generation</FieldLabel>
+          <NativeSelect
+            id="global-generation-enabled"
+            size="sm"
+            value={enabled}
+            disabled={busyKey !== null}
+            onChange={(event) => setEnabled(event.target.value)}
+          >
+            <NativeSelectOption value="enabled">Enabled</NativeSelectOption>
+            <NativeSelectOption value="disabled">Paused</NativeSelectOption>
+          </NativeSelect>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="global-max-active">Active-job limit</FieldLabel>
+          <Input
+            id="global-max-active"
+            type="number"
+            min={1}
+            max={4}
+            inputMode="numeric"
+            value={maxActiveJobs}
+            disabled={busyKey !== null}
+            onChange={(event) => setMaxActiveJobs(event.target.value)}
+          />
+          <FieldDescription>1–4 concurrent admissions</FieldDescription>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="global-max-hourly">Hourly limit</FieldLabel>
+          <Input
+            id="global-max-hourly"
+            type="number"
+            min={1}
+            max={120}
+            inputMode="numeric"
+            value={maxJobsPerHour}
+            disabled={busyKey !== null}
+            onChange={(event) => setMaxJobsPerHour(event.target.value)}
+          />
+          <FieldDescription>1–120 admitted jobs</FieldDescription>
+        </Field>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="sm:self-end"
+          disabled={busyKey !== null || !valid || unchanged}
+          onClick={() => void runMutation(
+            key,
+            "/api/admin/settings",
+            {
+              method: "PATCH",
+              body: JSON.stringify({
+                generationEnabled: desiredEnabled,
+                maxActiveJobs: desiredMaxActiveJobs,
+                maxJobsPerHour: desiredMaxJobsPerHour,
+              }),
+            },
+            "Global generation limits updated.",
+          )}
+        >
+          {busyKey === key ? <Spinner aria-hidden="true" /> : null}
+          Save global limits
+        </Button>
+      </div>
     </div>
   );
 }
