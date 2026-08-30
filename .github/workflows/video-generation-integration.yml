@@ -18,6 +18,7 @@ on:
       - "src/app/api/assets/reference/**"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - "supabase/migrations/0012_renderlab_generation_admission.sql"
       - ".github/workflows/video-generation-integration.yml"
   push:
     branches: [main]
@@ -39,6 +40,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: renderlab-generation-admission-shared
+  cancel-in-progress: false
 
 jobs:
   video-generation:
