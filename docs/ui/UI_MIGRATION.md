@@ -1343,7 +1343,7 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Do not convert informational advisors or broader-beta Auth limitations into invented Phase 12 fixes without evidence.
 
 #### 12B — Authorized Production Rollout — blocked until explicit authorization
-- [ ] Receive explicit user authorization for deployment/production mutation of the exact 12A-verified candidate. Without it, do not deploy.
+- [x] Receive explicit user authorization for deployment/production mutation of the exact 12A-verified candidate. Authorization received 2026-08-31 for `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
 - [ ] Resolve/verify known RenderLab UUID bootstrap + production closed-beta enforcement before treating invitation-only launch posture as production-consistent.
 - [ ] Verify production Auth Site URL/redirect behavior and truthfully retain built-in-mail/custom-SMTP/leaked-password limitations that still block broader beta.
 - [ ] Reconfirm required Vercel environment contract and R2 exact-origin CORS; perform only explicitly authorized mutations.
@@ -1370,10 +1370,10 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 and Phase 12A are complete/verified.
-**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`; PR #75 merged the verified release machinery/candidate to `main` as `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
-**Next sequence:** stop until explicit Phase 12B rollout authorization. If authorized, re-confirm UUID bootstrap/Closed-Beta enforcement, production Auth redirect posture, Vercel env contract and R2 exact-origin CORS; then deploy exactly verified candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`, smoke-test production, clean exact fixtures and record the rollout evidence.
+**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `ROLLOUT AUTHORIZED / IN PROGRESS`; explicit user authorization was received 2026-08-31 for exact verified candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
+**Next sequence:** execute Phase 12B prerequisites and rollout for exact verified candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`: known-account UUID bootstrap + Closed-Beta enforcement, production Auth/env/R2 checks, exact-candidate deployment, production smoke, exact cleanup, rollback acceptance and authoritative evidence.
 **Release reality:** exact merged release candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` is fully 12A-verified, while current READY production remains the older application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`. Automatic Git deployment is still disabled and 12A created no deployment.
-**Deployment boundary:** Phase 12B remains blocked without explicit user authorization. 12A completed without Vercel deployment, production access-enforcement/bootstrap, hosted Auth, R2 or provider mutation.
+**Deployment boundary:** Phase 12B production mutation is explicitly authorized for the exact verified candidate only. Keep the existing READY deployment as rollback until acceptance; do not drift to newer code or unrelated infrastructure changes.
 **Broader-beta boundary:** built-in mail/rate-limit posture, unverified production Auth Site URL/redirect/template/sender/custom-SMTP posture and Free-plan leaked-password protection remain open until separately evidenced.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library remains out of Phase 12.
 
