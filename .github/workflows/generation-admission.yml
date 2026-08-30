@@ -1,25 +1,25 @@
-name: Account/Admin Operations
+name: Generation Admission
 
 on:
   pull_request:
     paths:
       - "package.json"
       - "tsconfig.json"
-      - "src/app/admin/**"
-      - "src/app/api/admin/**"
-      - "src/app/settings/**"
-      - "src/components/shell/**"
-      - "src/features/admin/**"
-      - "src/lib/api/admin-contract.ts"
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/verify-generation-admission.mjs"
+      - "src/app/api/generation/**"
+      - "src/features/create/**"
+      - "src/features/activity/**"
+      - "src/lib/api/generation-contract.ts"
+      - "src/lib/api/generation-retry-contract.ts"
       - "src/lib/supabase/**"
       - "src/server/account/**"
-      - "src/server/admin/**"
+      - "src/server/data/**"
+      - "src/server/generation/**"
       - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "supabase/migrations/0011_renderlab_admin_access_control.sql"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"
-      - "scripts/lib/configured-test-account.mjs"
-      - "scripts/verify-admin-operations.mjs"
-      - ".github/workflows/admin-operations.yml"
+      - ".github/workflows/generation-admission.yml"
   workflow_dispatch:
 
 permissions:
@@ -30,15 +30,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  admin:
+  admission:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_GENERATION_BACKEND_URL: http://127.0.0.1:3020
+      RENDERLAB_GENERATION_BACKEND_TOKEN: renderlab-generation-admission-ci-token
       RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
 
     steps:
@@ -47,7 +49,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate required Admin fixture secret
+      - name: Validate required admission fixture secret
         shell: bash
         run: |
           if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
@@ -71,14 +73,18 @@ jobs:
         run: |
           base="${{ github.event.pull_request.base.sha }}"
           git diff --check "$base"...HEAD
-          git diff --name-only "$base"...HEAD | tee /tmp/renderlab-admin-changed-files.txt
+          git diff --name-only "$base"...HEAD | tee /tmp/renderlab-generation-admission-changed-files.txt
 
-      - name: Enforce Admin directory security boundary
+      - name: Enforce Phase 10C scope boundary
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          if grep -RInE 'auth\.admin\.listUsers|from[[:space:]]+auth\.users|join[[:space:]]+auth\.users' src/server/admin supabase/migrations/0011_renderlab_admin_access_control.sql supabase/migrations/0012_renderlab_generation_admission.sql; then
-            echo "::error::Admin operations must not enumerate the shared Supabase Auth directory."
+          if grep -Eq '^(vercel\.json|proxy\.ts|src/app/auth/|src/app/settings/password/|src/server/account/recovery-flow\.ts|\.github/workflows/deployment-readiness\.yml)$' /tmp/renderlab-generation-admission-changed-files.txt; then
+            echo "::error::Phase 10C must not include deployment or Phase 10D auth/session hardening paths."
+            exit 1
+          fi
+          if grep -Eqi 'billing|payment|stripe|credit[_ -]?ledger|password|session[_ -]?hardening' supabase/migrations/0012_renderlab_generation_admission.sql; then
+            echo "::error::Phase 10C migration contains billing or Phase 10D scope."
             exit 1
           fi
 
@@ -87,6 +93,9 @@ jobs:
 
       - name: Type-check
         run: npx tsc --noEmit
+
+      - name: Verify admission verifier syntax
+        run: node --check scripts/verify-generation-admission.mjs
 
       - name: Verify Admin verifier syntax
         run: node --check scripts/verify-admin-operations.mjs
@@ -103,7 +112,7 @@ jobs:
           npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
           echo $! > /tmp/renderlab-next.pid
           for i in {1..60}; do
-            if curl --fail --silent http://127.0.0.1:3000/settings > /dev/null; then
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
               exit 0
             fi
             sleep 1
@@ -111,22 +120,22 @@ jobs:
           cat /tmp/renderlab-next.log || true
           exit 1
 
-      - name: Verify configured Admin Operations
-        run: node scripts/verify-admin-operations.mjs
+      - name: Verify configured Generation Admission
+        run: node scripts/verify-generation-admission.mjs
 
-      - name: Cleanup Admin Operations fixtures
+      - name: Cleanup Generation Admission fixtures
         if: always()
-        run: node scripts/verify-admin-operations.mjs --cleanup-only
+        run: node scripts/verify-generation-admission.mjs --cleanup-only
 
       - name: Print server log on failure
         if: failure()
         run: cat /tmp/renderlab-next.log || true
 
-      - name: Upload Admin Operations screenshots
+      - name: Upload Generation Admission screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: renderlab-admin-operations-screenshots
-          path: artifacts/admin-operations-*.png
+          name: renderlab-generation-admission-screenshots
+          path: artifacts/generation-admission-*.png
           if-no-files-found: warn
           retention-days: 14

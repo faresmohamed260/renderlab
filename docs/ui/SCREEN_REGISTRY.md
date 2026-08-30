@@ -58,7 +58,8 @@ Approved behavior:
 - complete configured browser lifecycle `33031817744`;
 - uploaded-media continuation preserves uploaded display identity;
 - UI-030 keeps prompt/settings draftable while signed out, but generation/reference upload and other persistent actions require a verified non-anonymous account;
-- signed-in generation jobs, reference/media inputs and persisted outputs remain within the verified account owner boundary.
+- signed-in generation jobs, reference/media inputs and persisted outputs remain within the verified account owner boundary;
+- UI-051 Phase 10C applies the shared transactional generation-admission boundary after request/input preflight and before backend/provider dispatch; Create preserves the draft and shows sanitized product-level disabled/limit feedback without exposing infrastructure detail.
 
 **Phase 7 Create v2 extension:** the durable Create-upload foundation is implemented/verified through PR #46; source-aware `Original` geometry and curated fixed ratios through PR #47 (`de50efe6ba462ec604ea2cace741e11904a62425`); composer hierarchy/de-crowding through PR #49 (`d324d7c8a520052d3c4bdc81f5f6c11edbdf50ee`); stable `@imageN` addressing through PR #51 (`7afe257b069e74d322d8f83c1a0868a30acd3686`); and bounded two-image reference exposure/reorder/count/role enforcement through UI-046 / PR #53 (`0286b18802fc3d766d9d09e2ba8ed9a494eabd08`). Phase 7C live audit `33266905978` is complete and UI-047 deliberately defers Director productization because the deployed worker has no structured Director fields. Phase 7D Video Resolution is implemented/verified under UI-048 at exact code/test head `594ad7eb39a9d5eec1d2f0283ac6e327f86129b3`: exact 480p/720p/1080p/2K choices with 480p default, canonical persisted resolution, Video Steps/Guidance removal/rejection, responsive/reduced-motion menu review and the four-case live Video matrix all passed; Video Generation `33270777081` produced `854×480`, `1920×1080`, `720×1280` and `2304×1152` outputs for the accepted cases. The deliberate premium interaction/motion pass under UI-043 is verified at exact head `51c293dad114c98754933ab192b13427a90d9570`: UI Shell `33273370797`, configured Create Lifecycle `33273370720` and the complete 19-workflow affected suite passed; reference reorder motion and static reduced-motion behavior were exercised and responsive artifacts reviewed clean. Phase 7 Create v2 exit criteria are complete, while existing approved Create/reference/Resolution behavior remains authoritative.
 
@@ -197,10 +198,12 @@ Approved behavior:
 
 **Phase 9 verified extension:** UI-050 is implemented at exact code/test head `ab33e146ccaa7770f3dd66146708f01933cc0173`. The browser posts only the historical failed job ID; the server reconstructs product intent, applies bounded legacy compatibility, runs current parser and owner/source preflight, then creates a distinct ordinary job through current submission while the historical row remains immutable. Activity `33279062575` verified status/privacy/input/legacy/provider-isolation semantics and exact cleanup against a run-local authenticated mock backend without generation spend. Final artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) was visually reviewed clean after fixing a prior narrow success-feedback flex defect. Active/succeeded/cancelled rows still do not expose Retry; Cancel and shell-global status polling remain absent/deferred.
 
+**Phase 10C verified extension:** Retry continues through the ordinary shared `submitGeneration` path and now consumes the same transactional admission policy as Create. Admission-specific `403`/`503`/`429` errors survive Retry mapping as sanitized row-local feedback and the historical failed row remains immutable. Exact-head Activity `33309162322` passed after its verifier was updated to terminalize only accepted mock-success jobs before a later UI Retry, preserving the deliberately active seeded job while respecting the new active-slot guard. Final Admission Activity desktop/narrow states in artifact `9731487718` were reviewed clean.
+
 
 ### Settings
 **Route:** `/settings`  
-**Status:** APPROVED — Account Identity Foundation / UI-029 + Phase 10A Recovery & Closed-Beta Admission / UI-051
+**Status:** APPROVED — Account Identity Foundation / UI-029 + Phase 10A/10B account/admin integration / UI-051
 **Implementation:** `src/app/settings/page.tsx`  
 **Account surface:** `src/features/account/account-settings.tsx`; password security: `src/features/account/account-password-form.tsx`
 **Session boundary:** `src/lib/supabase/config.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/proxy.ts`, root `proxy.ts`
@@ -208,7 +211,7 @@ Approved behavior:
 **Purpose:** Own persistent account/application settings only when backed by real requirements. UI-029 uses Settings for the first real RenderLab account identity surface; it is not a workflow/model parameter dumping ground.
 
 **Approved behavior:**
-- compact email/password sign-in, account creation and sign-out states;
+- compact email/password Sign in + Forgot password when signed out, and access-status / Change password / Sign out when signed in; public self-service Create account is absent under the Closed-Beta admission contract;
 - Supabase Auth `auth.users.id` is the canonical account identity;
 - maintained Supabase SSR cookie sessions are refreshed through the root Next.js proxy and server identity uses verified claims;
 - public Supabase URL/publishable key may reach browser code; service-role credentials remain server-only;
@@ -224,27 +227,27 @@ Approved behavior:
 **Still intentionally open:** UI-030 strict database enforcement is complete. Personal Library organization remains owned by Library/Viewer rather than Settings; other Settings sections remain requirement-driven.
 
 
-**Phase 10 planned extension — UI-051:** Settings remains the ordinary account/security surface. Signed-out state becomes Sign in + Forgot password rather than public Create account; signed-in state adds Change password and RenderLab access status; recovery/invite completion uses `/settings/password`. Suspended users retain Settings for recovery/sign-out. Active admins get a contextual `/admin` link. Raw Supabase errors, role editing and other users never belong in ordinary Settings.
+**Phase 10A/10B verified extension — UI-051:** Settings remains the ordinary account/security surface. Signed-out state is Sign in + Forgot password with no public Create account; signed-in state includes Change password and server-owned RenderLab access status; recovery/invite completion uses `/settings/password`. Suspended users retain Settings for recovery/sign-out. Active admins get a contextual `/admin` link after fresh privilege confirmation. Raw Supabase errors, role editing and other users never belong in ordinary Settings.
 
 ### Admin
 **Route:** `/admin`
-**Status:** APPROVED / VERIFIED — Phase 10B / UI-051
+**Status:** APPROVED / VERIFIED — Phase 10B + 10C / UI-051
 **Implementation:** `src/app/admin/page.tsx`, `src/features/admin/admin-operations.tsx`, `src/server/admin/*`, `src/app/api/admin/**`
 
 **Purpose:** Operate the controlled RenderLab beta without exposing provider infrastructure or the shared Supabase Auth namespace.
 
 **Verified v0.1 composition:**
 - **Access:** RenderLab invitations and admitted accounts only; invite/revoke, active/suspended status and member/admin role. Account discovery starts from `renderlab_account_access`; Auth Admin lookup is only by already-known RenderLab UUID.
-- **Generation controls:** nullable per-account `generationEnabled`, `maxActiveJobs` (1–4) and `maxJobsPerHour` (1–120) overrides. Phase 10B stores/manages these values but does not enforce generation admission; global defaults/kill switch and effective admission behavior remain Phase 10C.
+- **Generation controls:** fresh-admin typed global `generationEnabled`, `maxActiveJobs` (1–4) and `maxJobsPerHour` (1–120) defaults above nullable per-account overrides. Account override wins when present; otherwise the global value is effective. These controls now feed the shared Create/Retry transactional admission boundary.
 - **Health:** bounded aggregate RenderLab operation/status counts, active-job count and sanitized product error-code counts; no prompt/media/provider/worker/workflow/raw-error data.
 - `/admin` and `/api/admin/**` require a freshly server-confirmed Supabase identity plus active RenderLab `admin` access. Unauthorized page/API paths fail closed without privileged payload.
 - ordinary global shell navigation remains Create/Library/Activity/Settings; Settings exposes `Open Admin` only to a fresh active admin.
 - member/admin and active/suspended changes are transactionally protected against self-lockout and removal of the last active admin.
 - desktop uses dense maintained-primitive rows/cards; narrow layout stacks records/actions without horizontal clipping.
 
-**Approval evidence:** exact code/test head `56d5a2c26fc14f6fcad8c7093024bcc9632eb7c8` passed all 20 affected workflows including Account/Admin Operations `33287455993`, Account Identity `33287456000`, Account Ownership `33287455999`, UI Shell `33287456001`, Generation `33287455998` and Video Generation `33287455985`. Admin artifact `9724888784` (`renderlab-admin-operations-screenshots`, `sha256:02eab0838958d8da7c9b966159c05acc72ec0f8cf1181b7d0603a12cf56acd38`) was human-reviewed clean on desktop/narrow layouts. Migration `20260830015449 renderlab_admin_access_control` is applied/audited, and exact final Admin fixture cleanup returned access/invitation/job/Auth rows to zero.
+**Approval evidence:** Phase 10B exact head `56d5a2c26fc14f6fcad8c7093024bcc9632eb7c8` established the privileged Admin boundary. Phase 10C exact head `ca8e426066385934b296b6d4f88324e9c12861f7` then passed the complete 22-workflow matrix including Account/Admin Operations `33309162310`, Generation Admission `33309162313`, Activity `33309162322`, Generation `33309162306` and Video Generation `33309162305`. Final Admin artifact `9731449736` (`sha256:66188b46f4249a7be6e7efba6f613331de07525f76b8a931f5ffbf85e3f56e81`) was human-reviewed clean on desktop/narrow layouts with global defaults above account overrides; Admission artifact `9731487718` (`sha256:e6e94bfabbd125c20c65aa959900a0081d6ca94bbd5b6d6a5b28fd817a09c3e7`) was reviewed clean for Create/Activity denial states. Migrations `20260830015449 renderlab_admin_access_control` and `20260830101734 renderlab_generation_admission` are applied/audited; exact final fixture cleanup and singleton restoration passed.
 
-**Do not change:** Do not turn Admin into a shared-Supabase user browser, cloud/provider console, arbitrary feature-flag framework or generic internal dashboard. Do not expose provider identity/credentials, raw errors, other applications' users or destructive account/data deletion. Global admission defaults/reservations and Create/Retry 429 enforcement remain Phase 10C.
+**Do not change:** Do not turn Admin into a shared-Supabase user browser, cloud/provider console, arbitrary feature-flag framework or generic internal dashboard. Do not expose provider identity/credentials, raw errors, other applications' users or destructive account/data deletion. Keep global/account controls typed and bounded; generation reservations remain server-only operational state rather than a browser/admin reservation console.
 
 ### Brand / Landing — planned Cycle 2 launch surface
 **Route:** TBD; current `/` remains Create until Phase 11 explicitly changes information architecture.

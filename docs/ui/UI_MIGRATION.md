@@ -1036,7 +1036,7 @@ The Phase 9 planning audit found a concrete app-level race blocker, so no genera
 
 ### Phase 10 — Account, Admin & Closed-Beta Operations
 **Phase contract status:** `EXPANDED / IN PROGRESS` under UI-051.
-**Execution status:** `10A COMPLETE / VERIFIED`; `10B COMPLETE / VERIFIED`; 10C is next but unstarted. No deployment is included or authorized.
+**Execution status:** `10A COMPLETE / VERIFIED`; `10B COMPLETE / VERIFIED`; `10C COMPLETE / VERIFIED`; 10D is next and unimplemented. No deployment is included or authorized.
 
 #### Goal
 Turn the current authenticated Closed Beta into an operable, recoverable and abuse-bounded product without coupling RenderLab to other applications sharing the Supabase project or exposing provider infrastructure to ordinary users.
@@ -1115,7 +1115,7 @@ All new tables must follow the existing server-owned pattern: RLS enabled, no an
 - [x] Independent exact cleanup found 0 run-owned access rows, invitation rows, generation jobs and Auth users. Production access enforcement remains off and no deployment occurred.
 - [x] 10B stores nullable account overrides only. Global beta settings, generation reservations, Create/Retry admission and 429 behavior remain explicitly Phase 10C.
 
-#### Slice 10C — Atomic Generation Admission Guardrails — EXECUTION CONTRACT
+#### Slice 10C — Atomic Generation Admission Guardrails — COMPLETE / VERIFIED
 
 ##### Goal and user value
 Give the closed beta a race-safe server-owned spend/abuse boundary without turning generation into a billing system. Create and Activity Retry must obey the same clear availability rules, admins must be able to pause generation or tune typed defaults/known-account overrides, and denied requests must stop before any provider/worker request can spend money or leak backend detail.
@@ -1163,7 +1163,7 @@ Give the closed beta a race-safe server-owned spend/abuse boundary without turni
 - Verify signed-out `401`; missing/suspended access `403`; global disabled and per-account disabled `503`; default one-active limit and account active-limit override; default 12-admitted rolling-hour limit and account hourly override; expiry/release behavior; immediate-failure release with hourly count preserved; successful bind; terminal-job state releasing the slot without poll-timing dependence; missing/unreadable bound jobs remaining conservative until expiry; and malformed/unavailable-input attempts not consuming admission.
 - Prove same-owner race safety with concurrent reserve/Create attempts: at default active limit exactly one may cross the backend boundary and the competing request must receive `429`. Also prove Create and Activity Retry cannot bypass one another by occupying the slot/hour window through one surface and denying the other before mock-backend dispatch.
 - Extend Account/Admin Operations coverage for fresh-admin global settings GET/PATCH, invalid bounds, global controls rendering and exact restoration of the singleton settings baseline. The verifier must never enumerate shared Auth users.
-- Workflows that can exercise real shared generation admission while the global singleton is temporarily changed must share one GitHub concurrency group with the Generation Admission verifier. Audit the actual affected workflows during implementation; do not allow a global-disabled test window to race live Generation/Video verification.
+- Workflows that mutate the global singleton must serialize with the Generation Admission verifier. Ordinary generation regressions may instead use exact run-owned account overrides that win over global defaults; if so, keep their independent concurrency groups and prove exact override/fixture cleanup rather than globally serializing unrelated workflows.
 - Static/scope gate precedes any shared-project migration: `git diff --check`, `npm run verify:ui-purity`, TypeScript, production build, verifier syntax, exact changed-file audit and an explicit guard rejecting 10D/deployment scope.
 - Only after that gate may the exact reviewed `0012` be applied. Immediately audit migration history, defaults/checks/indexes, RLS, grants, function ACL/search paths, advisors and exact fixture/baseline restoration.
 - Exact implementation head must pass every path-triggered workflow, with special attention to Generation Admission, Account/Admin Operations, Activity, Create Lifecycle, Account Identity, Account Ownership, UI Shell, Generation Integration and Video Generation Integration.
@@ -1178,6 +1178,17 @@ Give the closed beta a race-safe server-owned spend/abuse boundary without turni
 
 ##### Exit criteria and handoff
 10C is complete only after the contract above is implemented, the reviewed `0012` is applied/audited, all exact-head affected workflows pass, Admin/Create/Activity screenshots are human-reviewed, global settings and run-owned account/job/reservation/Auth fixtures are exactly restored/cleaned, repository docs record real evidence, and the PR merges with merged-`main` regressions green. Only then may 10D Auth/Operational Hardening be expanded/executed; no deployment is implied.
+
+##### Phase 10C implementation evidence — verified 2026-08-30
+- [x] Exact accepted code/test head `ca8e426066385934b296b6d4f88324e9c12861f7` passed all 22 affected workflows: Reference Upload Integration `33309162337`, Persistent Media Upload Integration `33309162319`, Account Ownership `33309162346`, UI Shell Validation `33309162321`, Library Lifecycle `33309162309`, Media Rename `33309162308`, Account Identity `33309162338`, Create Durable Upload `33309162312`, Library History `33309162326`, Media Download `33309162330`, Library Search `33309162311`, Media Delete `33309162359`, Library Collections `33309162340`, Library Favorites `33309162339`, Account/Admin Operations `33309162310`, Activity `33309162322`, Create Lifecycle `33309162323`, Video Generation Integration `33309162305`, Generation Integration `33309162306`, Library Drag Drop `33309162344`, Library Batch Delete `33309162320`, and Generation Admission `33309162313`.
+- [x] Generation Admission `33309162313` verified the complete zero-provider-spend policy matrix: signed-out/missing/suspended/global-disabled/account-disabled boundaries; same-owner race safety; default/override active + rolling-hour limits; immediate-failure release with hourly history retained; successful bind; terminal release; conservative lease/expiry recovery; malformed/unavailable-input preflight; and Create ↔ Retry cross-surface enforcement before backend dispatch.
+- [x] `0012_renderlab_generation_admission.sql` is applied as `20260830101734 renderlab_generation_admission`. Migration/default/check/index/RLS/grant/function-ACL/search-path audits passed; both new tables remain browser-revoked and privileged routines are service-role-only.
+- [x] Account/Admin Operations `33309162310` verified fresh-admin global settings GET/PATCH, invalid bounds, exact singleton restoration, global controls rendering, and all existing 10B access/invitation/health protections.
+- [x] Admission artifact `9731487718` (`sha256:e6e94bfabbd125c20c65aa959900a0081d6ca94bbd5b6d6a5b28fd817a09c3e7`) and Admin artifact `9731449736` (`sha256:66188b46f4249a7be6e7efba6f613331de07525f76b8a931f5ffbf85e3f56e81`) were human-reviewed on desktop/narrow layouts. Create and Activity admission feedback remains contained/readable with no clipping; Admin global defaults fit the existing Generation controls hierarchy without provider/worker/workflow/raw-error detail.
+- [x] CI isolation was corrected without weakening product policy: only Admin + Generation Admission serialize singleton mutation; ordinary Activity/Create Lifecycle/Generation/Video fixtures opt into exact run-owned account overrides; Admission closes Chromium; Activity terminalizes only captured mock-success jobs before its later mobile Retry so it respects the new active-slot contract while preserving its seeded active job.
+- [x] Final exact cleanup returned all audited run-owned access/job/source/media/upload/reservation/Auth rows and the exact Admin invitation to zero. The singleton is restored to `generation_enabled=true`, `max_active_jobs=1`, `max_jobs_per_hour=12`, `updated_by=null`.
+- [x] Security Advisor reports only expected server-owned `rls_enabled_no_policy` INFO plus the pre-existing leaked-password WARN reserved for 10D. Performance Advisor reports a singleton `updated_by` unindexed-FK INFO plus unused-index INFO; adding an index to an exactly one-row settings table is not justified by 10C evidence.
+- [x] Production closed-beta enforcement remains off and no deployment was performed or authorized. 10D remains a separate next slice.
 
 #### Slice 10D — Auth / Operational Hardening
 - Re-run Supabase Security Advisor after schema work. Existing server-owned RLS/no-policy INFO notices remain acceptable only while browser grants are still revoked and documented.
@@ -1207,18 +1218,18 @@ Minimum configured Phase 10 verifier must cover:
 - server-only new tables/functions retain zero browser grants; admin/access decisions do not use `user_metadata` or client-supplied role claims;
 - exact cleanup of all run-owned access/invitation/reservation/job/media/source/Auth fixtures.
 
-Required exact-head affected gates after the final implementation slice: UI Shell Validation, Account Ownership, Reference Upload Integration, Create Durable Upload, Create Lifecycle Visual, Library Lifecycle Visual, Media Delete Visual, Activity Visual, Generation Integration, Video Generation Integration, plus a new configured **Account/Admin Operations** workflow. Run any additional path-triggered Library/media gates. Human review is required for Settings recovery/password and Admin desktop/narrow artifacts; DOM/build assertions alone are insufficient.
+Required exact-head affected gates after the final implementation slice: UI Shell Validation, Account Ownership, Reference Upload Integration, Create Durable Upload, Create Lifecycle Visual, Library Lifecycle Visual, Media Delete Visual, Activity Visual, Generation Integration, Video Generation Integration, configured **Account/Admin Operations**, and configured **Generation Admission**. Run any additional path-triggered Library/media gates. Human review is required for Settings recovery/password, Admin global controls, and representative Create/Activity admission states; DOM/build assertions alone are insufficient.
 
 #### Phase 10 exit criteria
 - [x] 10A recovery/change-password and invitation-gated Closed-Beta admission are implemented/verified without public product self-admission.
 - [x] Active/suspended RenderLab access is server authoritative across all private product operations when the admission gate is enabled; Settings remains a safe recovery/sign-out surface. Production enforcement stays off until explicit UUID bootstrap.
 - [x] `/admin` is restricted to fresh active RenderLab admins, lists only RenderLab-owned access/invitation records and prevents last-admin/self-lockout hazards.
-- [x] Phase 10B per-account generation override management and sanitized health visibility work without provider/worker/workflow leakage; global/default effective admission controls remain Phase 10C.
-- [ ] Transactional pre-backend admission enforces effective concurrency/rate defaults and overrides for Create and Retry without a concurrent race bypass.
-- [x] Phase 10B server-owned schema/functions retain RLS, zero browser grants, safe function privileges/search paths and exact fixture cleanup; future 10C schema remains unimplemented.
+- [x] Admin per-account generation override management, fresh-admin global defaults and sanitized health visibility work without provider/worker/workflow leakage; Phase 10C makes the typed global/account values effective through shared Create/Retry admission.
+- [x] Transactional pre-backend admission enforces effective concurrency/rate defaults and overrides for Create and Retry without a concurrent race bypass.
+- [x] Phase 10A–10C server-owned schema/functions retain RLS, zero browser grants, safe function privileges/search paths and exact fixture cleanup; `0012` admission/settings state is applied and audited.
 - [ ] Supabase recovery/email/leaked-password posture is verified; unsupported leaked-password protection remains an explicit broader-beta blocker rather than a false completion claim.
-- [x] Phase 10B exact-head affected CI and required Admin desktop/narrow human artifact review pass.
-- [x] Authoritative docs match verified Phase 10B implementation reality; Phase 11 remains blocked until all of Phase 10 is closed.
+- [x] Phase 10C exact-head 22-workflow affected CI and required Admin/Create/Activity desktop/narrow human artifact review pass.
+- [x] Authoritative docs match verified Phase 10C implementation reality; Phase 11 remains blocked until 10D closes all of Phase 10.
 
 ### Phase 11 — Brand & Launch Experience
 - [ ] Establish RenderLab logo/brand identity and production-ready brand assets/banners.
@@ -1252,10 +1263,10 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–9 and Phase 10A/10B are complete and verified under the Closed Beta boundary.
-**Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `EXPANDED / IN PROGRESS` under UI-051; 10A and 10B are complete/verified.
-**Next implementation sequence:** 10C Generation Guardrails → 10D Auth/Operational Hardening.
-**Current gate:** Merge verified Phase 10B, re-establish merged-main state, then expand/implement 10C without deployment unless explicitly authorized.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–9 and Phase 10A/10B/10C are complete and verified under the Closed Beta boundary.
+**Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `EXPANDED / IN PROGRESS` under UI-051; 10A, 10B and 10C are complete/verified.
+**Next implementation sequence:** 10D Auth/Operational Hardening.
+**Current gate:** Merge verified Phase 10C, re-establish merged-main state, then expand/execute 10D without deployment unless explicitly authorized.
 **Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
 **Later Cycle 2:** Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.

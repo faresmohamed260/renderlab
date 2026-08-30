@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { parseGenerationRequest } from "@/lib/api/generation-contract";
-import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
+import { parseGenerationRequest, type SubmitGenerationErrorCode } from "@/lib/api/generation-contract";
+import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
 import { isGenerationBackendConfigured, submitGeneration } from "@/server/generation/submit-generation";
+
+function submissionStatus(code: SubmitGenerationErrorCode) {
+  if (code === "generation_access_denied") return 403;
+  if (code === "generation_disabled" || code === "generation_backend_unavailable") return 503;
+  if (code === "generation_active_limit_reached" || code === "generation_rate_limit_reached") return 429;
+  return 502;
+}
 
 export async function GET() {
   return NextResponse.json({
@@ -17,19 +24,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
   }
 
-  const account = await getCurrentRenderLabAccount();
-  if (!account) {
+  const identity = await getCurrentRenderLabIdentity();
+  if (!identity) {
     return NextResponse.json(
       { ok: false, error: { code: "authentication_required", message: "Sign in to generate and save private media." } },
       { status: 401 },
     );
   }
 
-  const result = await submitGeneration(account.id, parsed.request);
+  const result = await submitGeneration(identity.id, parsed.request);
 
   if (!result.ok) {
-    const status = result.error.code === "generation_backend_unavailable" ? 503 : 502;
-    return NextResponse.json(result, { status });
+    return NextResponse.json(result, { status: submissionStatus(result.error.code) });
   }
 
   return NextResponse.json(result, { status: 202 });

@@ -3,6 +3,11 @@ import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
 import { getMediaAsset } from "@/server/media/media-assets";
 import { supabaseRest } from "@/server/data/supabase-rest";
+import {
+  bindGenerationAdmission,
+  releaseGenerationAdmission,
+  reserveGenerationAdmission,
+} from "@/server/generation/generation-admission";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
 const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
@@ -101,6 +106,13 @@ async function submitToRenderLabBackend(ownerId: string, request: GenerationRequ
 }
 
 export async function submitGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
+  if (!isGenerationBackendConfigured()) {
+    return {
+      ok: false,
+      error: { code: "generation_backend_unavailable", message: "Generation is not connected to an owner-aware backend yet." },
+    };
+  }
+
   if (!(await generationImageInputsAvailable(ownerId, request))) {
     return {
       ok: false,
@@ -111,11 +123,21 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
     };
   }
 
-  if (isExternalGenerationBackendConfigured()) return submitToRenderLabBackend(ownerId, request);
-  if (isNativeGenerationConfigured()) return submitNativeGeneration(ownerId, request);
+  const admission = await reserveGenerationAdmission(ownerId);
+  if (!admission.ok) return admission;
 
-  return {
-    ok: false,
-    error: { code: "generation_backend_unavailable", message: "Generation is not connected to an owner-aware backend yet." },
-  };
+  const reservationId = admission.reservation.id;
+  const submitted = isExternalGenerationBackendConfigured()
+    ? await submitToRenderLabBackend(ownerId, request)
+    : await submitNativeGeneration(ownerId, request);
+
+  if (!submitted.ok) {
+    await releaseGenerationAdmission(ownerId, reservationId);
+    return submitted;
+  }
+
+  // A successful backend dispatch must never be repeated merely because binding could not
+  // be confirmed. The original unbound reservation remains conservative until its lease expires.
+  await bindGenerationAdmission(ownerId, reservationId, submitted.job.id);
+  return submitted;
 }

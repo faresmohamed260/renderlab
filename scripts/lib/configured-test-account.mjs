@@ -7,11 +7,8 @@ const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const runToken = process.env.GITHUB_RUN_ID || "local";
 const accountScope = process.env.RENDERLAB_TEST_ACCOUNT_SCOPE || runToken;
 const accountScopeToken = createHash("sha256").update(accountScope).digest("hex").slice(0, 12);
+const bypassGenerationAdmission = process.env.RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS === "true";
 
-function accessEnforcementEnabled() {
-  const value = process.env.RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED?.trim().toLowerCase();
-  return value === "1" || value === "true" || value === "yes" || value === "on";
-}
 
 function fixtureUuid(namespace) {
   const hex = createHash("sha256").update(`renderlab-ci-account-${accountScope}-${namespace}`).digest("hex").slice(0, 32).split("");
@@ -129,11 +126,19 @@ export function configuredTestAccountIdentity(namespace) {
 export async function deleteConfiguredTestAccount(accountOrId) {
   const id = typeof accountOrId === "string" ? accountOrId : accountOrId.id;
   await cleanupOwnedRenderLabRows(id);
-  if (accessEnforcementEnabled()) {
-    const accessResponse = await serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (!accessResponse.ok) {
-      throw new Error(`Could not clean configured account access (${accessResponse.status}): ${await accessResponse.text()}`);
+
+  const admissionResponse = await serviceRest(`generation_admission_reservations?owner_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!admissionResponse.ok) {
+    const detail = await admissionResponse.text();
+    const relationMissing = admissionResponse.status === 404 && detail.includes("generation_admission_reservations");
+    if (!relationMissing) {
+      throw new Error(`Could not clean configured account admission reservations (${admissionResponse.status}): ${detail}`);
     }
+  }
+
+  const accessResponse = await serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!accessResponse.ok) {
+    throw new Error(`Could not clean configured account access (${accessResponse.status}): ${await accessResponse.text()}`);
   }
   const response = await authAdmin(`users/${encodeURIComponent(id)}`, { method: "DELETE" });
   if (!response.ok && response.status !== 404) {
@@ -159,15 +164,24 @@ export async function createConfiguredTestAccount(namespace) {
     throw new Error(`Could not create configured account fixture (${createResponse.status}): ${await createResponse.text()}`);
   }
 
-  if (accessEnforcementEnabled()) {
-    const accessResponse = await serviceRest("renderlab_account_access?on_conflict=user_id", {
-      method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-      body: JSON.stringify({ user_id: account.id, role: "member", status: "active" }),
-    });
-    if (!accessResponse.ok) {
-      throw new Error(`Could not seed configured account access (${accessResponse.status}): ${await accessResponse.text()}`);
-    }
+  const accessResponse = await serviceRest("renderlab_account_access?on_conflict=user_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      user_id: account.id,
+      role: "member",
+      status: "active",
+      ...(bypassGenerationAdmission
+        ? {
+            generation_enabled: true,
+            max_active_jobs: 4,
+            max_jobs_per_hour: 120,
+          }
+        : {}),
+    }),
+  });
+  if (!accessResponse.ok) {
+    throw new Error(`Could not seed configured account access (${accessResponse.status}): ${await accessResponse.text()}`);
   }
 
   const signInResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {

@@ -12,6 +12,7 @@ on:
       - "src/server/media/**"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - "supabase/migrations/0012_renderlab_generation_admission.sql"
       - "components.json"
       - "package.json"
       - "scripts/lib/configured-test-account.mjs"
@@ -35,6 +36,7 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
 
     steps:
       - name: Checkout

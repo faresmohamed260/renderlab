@@ -23,12 +23,14 @@ on:
       - "src/server/generation/generation-activity.ts"
       - "src/server/generation/retry-generation.ts"
       - "src/server/generation/submit-generation.ts"
+      - "src/server/generation/generation-admission.ts"
       - "src/server/generation/poll-generation.ts"
       - "src/server/generation/native-generation.ts"
       - "supabase/migrations/0002_generation_jobs_media_assets.sql"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "supabase/migrations/0009_media_asset_deletion.sql"
+      - "supabase/migrations/0012_renderlab_generation_admission.sql"
   workflow_dispatch:
 
 permissions:
@@ -50,6 +52,7 @@ jobs:
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
       RENDERLAB_GENERATION_BACKEND_URL: http://127.0.0.1:3010
       RENDERLAB_GENERATION_BACKEND_TOKEN: renderlab-activity-retry-ci-token
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
 
     steps:
       - name: Checkout
