@@ -67,6 +67,55 @@ async function rows(path) {
   return response.json();
 }
 
+async function setAccessRole(userId, role) {
+  const response = await service(`renderlab_account_access?user_id=eq.${encodeURIComponent(userId)}`, {
+    method: "PATCH",
+    headers: { prefer: "return=representation" },
+    body: JSON.stringify({ role }),
+  });
+  if (!response.ok) throw new Error(`Could not update Phase 12 fixture role (${response.status}): ${await response.text()}`);
+  const updated = await response.json();
+  assert(updated[0]?.role === role, `Phase 12 fixture role did not update to ${role}.`);
+}
+
+async function seedFailedRetryJob(ownerId, prompt) {
+  const id = randomUUID();
+  const now = new Date().toISOString();
+  const response = await service("generation_jobs", {
+    method: "POST",
+    headers: { prefer: "return=representation" },
+    body: JSON.stringify({
+      id,
+      owner_id: ownerId,
+      status: "failed",
+      operation: "create-image",
+      output_kind: "image",
+      prompt,
+      workflow_id: "phase12-release-retry-history",
+      model: "phase12-release-retry-history",
+      ecosystem: "phase12-release-retry-history",
+      inputs: [],
+      parameters: {
+        output: { kind: "image", aspectRatio: "1:1" },
+        advanced: { seed: 42, steps: 4, guidance: 1 },
+      },
+      worker_id: null,
+      provider_job_id: null,
+      worker_state: null,
+      failover_history: [],
+      output_asset_ids: [],
+      error_code: "generation_submission_failed",
+      error_message: "Intentional Phase 12 recovery fixture.",
+      created_at: now,
+      updated_at: now,
+      started_at: now,
+      completed_at: now,
+    }),
+  });
+  if (!response.ok) throw new Error(`Could not seed Phase 12 failed job (${response.status}): ${await response.text()}`);
+  return (await response.json())[0];
+}
+
 async function persistCompletedJob(ownerId, request) {
   const jobId = randomUUID();
   const assetId = randomUUID();
@@ -219,6 +268,7 @@ try {
   await startMockBackend();
   const owner = await createConfiguredTestAccount("release-integrated-owner");
   const foreign = await createConfiguredTestAccount("release-integrated-foreign");
+  await setAccessRole(owner.id, "admin");
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1024 }, colorScheme: "dark" });
   const page = await context.newPage();
@@ -227,6 +277,11 @@ try {
   await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.locator("header").getByRole("link", { name: "Open Create", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.screenshot({ path: `${artifactDir}/release-integrated-landing-desktop.png`, fullPage: true });
+
+  await page.goto(`${baseUrl}/admin`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("Global defaults", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.screenshot({ path: `${artifactDir}/release-integrated-admin-desktop.png` });
 
   await page.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
   const promptText = "Phase 12 integrated cobalt sphere continuity check";
@@ -263,8 +318,22 @@ try {
   const foreignResult = await fetch(`${baseUrl}/api/media/assets/${assetId}/favorite`, withAccountAuthorization(foreign, { method: "PUT" }));
   assert(foreignResult.status === 404, `Foreign ownership rejection returned ${foreignResult.status}.`);
 
+  const retryPrompt = "Phase 12 integrated retry recovery check";
+  const failedJob = await seedFailedRetryJob(owner.id, retryPrompt);
+  const retryResponse = await fetch(
+    `${baseUrl}/api/generation/jobs/${encodeURIComponent(failedJob.id)}/retry`,
+    withAccountAuthorization(owner, { method: "POST", headers: { accept: "application/json" } }),
+  );
+  const retryPayload = await retryResponse.json().catch(() => null);
+  assert(retryResponse.ok && retryPayload?.ok === true, `Integrated Retry failed: ${JSON.stringify(retryPayload)}`);
+  const retryRows = await rows(
+    `generation_jobs?id=eq.${encodeURIComponent(retryPayload.job.id)}&owner_id=eq.${encodeURIComponent(owner.id)}&select=id,status,prompt`,
+  );
+  assert(retryRows[0]?.status === "succeeded" && retryRows[0]?.prompt === retryPrompt, "Integrated Retry did not persist a succeeded recovery job.");
+
   await page.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByText(promptText, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText(retryPrompt, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.screenshot({ path: `${artifactDir}/release-integrated-activity-desktop.png`, fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });
