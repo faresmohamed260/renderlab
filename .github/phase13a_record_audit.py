@@ -1,0 +1,112 @@
+from pathlib import Path
+import re
+
+# PROJECT.md
+p = Path('PROJECT.md')
+s = p.read_text()
+s, n = re.subn(
+    r'(## Current Priority\n)\*\*.*?\*\*\n',
+    r'\1**Cycle 2 — Creative Productivity & Beta Maturity remains `COMPLETE / VERIFIED`. Cycle 3 — Beta Operations & Access Reliability is now `IN PROGRESS`: Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`, with 13A read-only audit `COMPLETE / VERIFIED` and 13B awaiting the explicit provider/sender/credential decision. Production remains the accepted Closed-Beta application `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; 13A performed no SMTP, DNS, hosted Auth, Vercel or application mutation.**\n',
+    s,
+    count=1,
+    flags=re.S,
+)
+if n != 1:
+    raise SystemExit(f'PROJECT current priority replacement count={n}')
+
+evidence = '''
+### Phase 13A audit evidence — verified 2026-08-31
+Phase 13 implementation is now `IN PROGRESS`. 13A completed as a read-only production audit; it sent no email and changed no Supabase Auth, Cloudflare DNS, Vercel or application state.
+
+- Read-only GitHub Actions runs `33341207071` and `33341263450` used the existing `SUPABASE_ACCESS_TOKEN` and Cloudflare zone-DNS credential only for GET/read operations. Both passed; the temporary audit workflow was removed after evidence capture and is not intended for `main`.
+- Hosted Supabase Auth is correctly anchored to `https://renderlab.faresuniform.uk`; the allowlist still contains exact `/settings` invite and `/auth/confirm?type=recovery&next=/settings/password` recovery destinations. Email auth is enabled, autoconfirm remains off and Closed-Beta admission behavior is unchanged.
+- Production mail is still the built-in Supabase path: custom SMTP is not configured, Send Email Auth Hook is disabled, sender/from fields are unset and `rate_limit_email_sent=2` per hour.
+- Invite and recovery remain the Supabase default subjects/templates and still use `{{ .ConfirmationURL }}`. They have not yet been replaced with the accepted RenderLab SSR token-hash `/auth/confirm` links.
+- `faresuniform.uk` already has an existing Brevo footprint: Brevo verification TXT, `brevo1` + `brevo2` DKIM CNAME selectors and DMARC aggregate reporting to Brevo. Apex mail receiving remains Cloudflare Email Routing with one SPF record `v=spf1 include:_spf.mx.cloudflare.net ~all`. `auth.faresuniform.uk` is already a proxied Cloudflare Tunnel hostname and must not be repurposed as the mail-sending subdomain.
+- Current official Brevo material confirms SMTP relay support for transactional mail and a Free tier with 300 sends/day. Reusing the existing Brevo domain footprint through Supabase custom SMTP is therefore the recommended lowest-drift 13B path for the small Closed Beta, but the repository does not claim a Brevo account/SMTP credential is available until the operator explicitly confirms/provisions it.
+
+**13A result:** `COMPLETE / VERIFIED`. **13B gate:** operator approval of Brevo custom SMTP (or an explicitly chosen alternative), exact sender identity under `faresuniform.uk`, and secure SMTP credential provisioning. No production mail mutation is authorized by the audit evidence alone.
+
+'''
+anchor = '### Phase 11 execution contract — expanded 2026-08-30'
+if evidence.strip() not in s:
+    if anchor not in s:
+        raise SystemExit('PROJECT Phase 11 anchor missing')
+    s = s.replace(anchor, evidence + anchor, 1)
+p.write_text(s)
+
+# UI_MIGRATION.md
+p = Path('docs/ui/UI_MIGRATION.md')
+s = p.read_text()
+s = s.replace(
+    '## Phase 13 — Email & Invite Production Hardening — CONTRACTED / NOT STARTED',
+    '## Phase 13 — Email & Invite Production Hardening — IN PROGRESS',
+    1,
+)
+s = s.replace(
+    'Phase 13 is the first contracted phase of Cycle 3 — Beta Operations & Access Reliability. It is primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin and UI-052 Brand/Launch contracts remain authoritative unless live delivery evidence proves a concrete product defect.',
+    'Phase 13 is the first active phase of Cycle 3 — Beta Operations & Access Reliability. 13A read-only audit is `COMPLETE / VERIFIED`; 13B sender/delivery configuration is awaiting the explicit provider/sender/credential decision. It remains primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin and UI-052 Brand/Launch contracts remain authoritative unless live delivery evidence proves a concrete product defect.',
+    1,
+)
+s = s.replace(
+    '- [ ] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation.',
+    '- [x] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation. Runs `33341207071` + `33341263450` passed with no production mutation.',
+    1,
+)
+
+ui_evidence = '''
+### 13A read-only audit — COMPLETE / VERIFIED 2026-08-31
+- Hosted Auth read-back: correct production Site URL + exact invite/recovery allowlist; custom SMTP absent; Send Email Auth Hook disabled; email send rate limit `2/hour`; default invite/recovery subjects/templates still use `{{ .ConfirmationURL }}`.
+- Public + Cloudflare DNS read-back: Brevo verification TXT, Brevo DKIM selectors `brevo1`/`brevo2`, DMARC `p=none` with aggregate reporting to Brevo, Cloudflare Email Routing MX, and a single apex SPF record for Cloudflare mail routing. No DNS was changed.
+- `auth.faresuniform.uk` is already a proxied Cloudflare Tunnel hostname, so Phase 13 must not reuse that host as a sending subdomain.
+- Lowest-drift recommendation for 13B is existing-domain Brevo SMTP via Supabase custom SMTP. This is a recommendation, not an inferred credential/account state; provider/sender/credential selection remains an explicit operator gate.
+- The temporary 13A audit workflow was removed after successful evidence capture. Regular CI still does not send real email.
+
+'''
+scope_anchor = '### Scope guardrails\n'
+if ui_evidence.strip() not in s:
+    if scope_anchor not in s:
+        raise SystemExit('UI_MIGRATION scope anchor missing')
+    s = s.replace(scope_anchor, ui_evidence + scope_anchor, 1)
+
+pattern = r'## Current Work\n.*?(?=\n## Session Handoff Rule)'
+replacement = '''## Current Work
+**Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
+**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A is `COMPLETE / VERIFIED`, 13B is awaiting the explicit provider/sender/credential decision.
+**Next sequence:** approve Brevo custom SMTP as the recommended lowest-drift provider path (or explicitly select an alternative), choose the sender identity under `faresuniform.uk`, provision SMTP credentials in an approved secret store, then execute 13B DNS/Supabase configuration with read-back verification before 13C templates.
+**Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
+**Deployment boundary:** 13A changed no production configuration. Phase 13 remains configuration-first; any necessary application code fix must create/revalidate an exact candidate before any Vercel rollout.
+**Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
+**Post-Cycle-2 accepted direction:** LoRA/model-adapter work is outside Phase 13.
+'''
+s, n = re.subn(pattern, replacement.rstrip(), s, count=1, flags=re.S)
+if n != 1:
+    raise SystemExit(f'UI_MIGRATION current work replacement count={n}')
+p.write_text(s)
+
+# INFRASTRUCTURE.md
+p = Path('docs/architecture/INFRASTRUCTURE.md')
+s = p.read_text()
+s = s.replace(
+    '**Status: `CONTRACTED / NOT STARTED`.** This section defines the infrastructure acceptance boundary only; it does not authorize production mutation.',
+    '**Status: `IN PROGRESS`; 13A `COMPLETE / VERIFIED`, 13B awaiting operator provider/sender/credential decision.** 13A was read-only and did not mutate production.',
+    1,
+)
+
+infra_evidence = '''
+#### Phase 13A read-only production audit — verified 2026-08-31
+Runs `33341207071` and `33341263450` passed using only read operations. The existing GitHub `SUPABASE_ACCESS_TOKEN` successfully read hosted Auth configuration; the existing Cloudflare zone-DNS token read the mail-related DNS inventory. No email was sent and no Supabase Auth, Cloudflare DNS, Vercel or application state changed.
+
+Hosted Auth facts: Site URL is `https://renderlab.faresuniform.uk`; the exact `/settings` and recovery-confirm destinations remain allowlisted; custom SMTP is absent; `hook_send_email_enabled=false`; sender/from SMTP fields are unset; `rate_limit_email_sent=2`; invite/recovery subjects and bodies remain Supabase defaults using `{{ .ConfirmationURL }}`. These facts establish the exact 13B/13C work rather than relying on the earlier Phase 10D inference.
+
+Sender-DNS facts: the apex has Brevo verification TXT plus `brevo1._domainkey` and `brevo2._domainkey` CNAMEs to Brevo, and `_dmarc.faresuniform.uk` is `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Cloudflare Email Routing owns the apex MX records and the single apex SPF record is `v=spf1 include:_spf.mx.cloudflare.net ~all`. `auth.faresuniform.uk` already points through a proxied Cloudflare Tunnel and is reserved by that existing infrastructure; do not repurpose it for mail.
+
+Current Brevo documentation confirms transactional SMTP relay (`smtp-relay.brevo.com`, port 587 recommended) and a Free plan including 300 email sends/day. Because domain verification/DKIM/DMARC infrastructure already exists, Brevo custom SMTP is the lowest-drift recommendation for Phase 13B. Provider/account/plan, exact sender address and SMTP credentials remain an explicit operator decision; the repository does not infer that credentials exist from DNS alone.
+
+'''
+anchor = 'Accepted Phase 13 infrastructure sequence:'
+if infra_evidence.strip() not in s:
+    if anchor not in s:
+        raise SystemExit('INFRA Phase13 sequence anchor missing')
+    s = s.replace(anchor, infra_evidence + anchor, 1)
+p.write_text(s)
