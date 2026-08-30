@@ -101,25 +101,24 @@ UI-050 keeps Activity data server-owned and adds one small failed-row client mut
 Exact code/test head `ab33e146ccaa7770f3dd66146708f01933cc0173` passed the seven Phase 9 minimum/affected workflows. Configured Activity `33279062575` verified the request/ownership/legacy/input/provider-isolation matrix without generation spend and exact cleanup; final artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) was human-reviewed after fixing a narrow feedback-wrap issue. No Cancel endpoint exists in v0.1; the existing cancellation race audit remains authoritative. `AppShell` stays free of account/job polling and there is no global client job store.
 
 
-### Phase 10 account/admin/admission boundary — 10A implemented; 10B in progress; 10C–10D remain planned
-**Current 10B handoff state (2026-08-30):** `main` is the verified Phase 10A merge `15b348c2708dd08a66ecb8e57a50944885cbc89d`. `work/phase-10b-admin-access-control` currently starts from that same SHA. The 10B audit is complete enough to implement the bounded `/admin` surface, fresh active-admin authorization, invitation/access mutations, per-account generation override fields and sanitized aggregate health. No 10B implementation commit or `0011` migration is accepted yet. Global beta settings, transactional generation reservations, Create/Retry admission enforcement, 10D hardening and deployment remain out of this slice.
+### Phase 10 account/admin/admission boundary — 10A and 10B implemented; 10C–10D remain planned
+**Phase 10B verified state (2026-08-30):** exact code/test head `56d5a2c26fc14f6fcad8c7093024bcc9632eb7c8` passed all 20 affected workflows. `/admin` and `/api/admin/**` use a fresh Supabase `auth.getUser()` confirmation plus active RenderLab `admin` access. Account discovery starts from RenderLab-owned access rows and only then resolves already-known Auth UUIDs; invitations use server-only Auth Admin delivery with generic anti-enumeration feedback. Per-account generation overrides are stored/administered but not yet consumed by generation admission. `0011` is applied as `20260830015449 renderlab_admin_access_control`. Global beta settings, transactional generation reservations, Create/Retry admission enforcement, 10D hardening and deployment remain out of this slice.
 
-UI-051 adds a server-owned RenderLab access layer above verified Supabase identity. Phase 10A splits `getCurrentRenderLabIdentity()` (verified Supabase identity, still usable by Settings/security recovery) from `getCurrentRenderLabAccount()` (active RenderLab product identity when admission enforcement is enabled). `resolveRenderLabAccountAccess` reads/claims protected `member|admin` + `active|suspended` state; ordinary private product routes continue using the existing account boundary and therefore fail closed for pending/suspended identities when enforcement is enabled. Settings remains available to signed-in suspended users for password recovery/change and sign-out. Never use `user_metadata` or browser-supplied role data for authorization. 10B will add the stricter active-admin server-confirmed boundary for `/admin`.
+UI-051 adds a server-owned RenderLab access layer above verified Supabase identity. Phase 10A splits `getCurrentRenderLabIdentity()` (verified Supabase identity, still usable by Settings/security recovery) from `getCurrentRenderLabAccount()` (active RenderLab product identity when admission enforcement is enabled). `resolveRenderLabAccountAccess` reads/claims protected `member|admin` + `active|suspended` state; ordinary private product routes continue using the existing account boundary and therefore fail closed for pending/suspended identities when enforcement is enabled. Settings remains available to signed-in suspended users for password recovery/change and sign-out. Never use `user_metadata` or browser-supplied role data for authorization. Phase 10B adds `getFreshCurrentRenderLabIdentity()` using server `auth.getUser()` for privileged page/API authorization, followed by an active-admin access lookup; ordinary product ownership/admission continues through the existing account boundary.
 
 The shared Supabase Auth directory is not a RenderLab directory. Admin account listing starts from RenderLab-owned access rows and resolves already-known Auth IDs server-side as needed; invitation claim starts from a RenderLab normalized-email invitation. There is no automatic `auth.users` backfill. Production rollout must receive explicit known RenderLab user IDs from the operator before access enforcement is enabled.
 
 Phase 10A account flow keeps Supabase Auth rather than creating parallel credential APIs: enumeration-safe `resetPasswordForEmail`, allowlisted SSR token-hash `GET /auth/confirm` for recovery/invite, `/settings/password`, signed-in current-password change and existing cookie refresh. CI may use server-only Auth Admin link generation. The visible ordinary self-service Create-account affordance is removed once invitations/access are implemented.
 
-Planned privileged APIs are narrow and server-authorized:
+Implemented Phase 10B privileged APIs are narrow and server-authorized:
 ```text
 POST          /api/admin/invitations
 DELETE        /api/admin/invitations/[invitationId]
 GET           /api/admin/accounts
 PATCH         /api/admin/accounts/[userId]
-GET|PATCH     /api/admin/settings
 GET           /api/admin/health
 ```
-They expose only RenderLab access/invitation/settings and sanitized aggregate product health. No raw `auth.users` directory, passwords, provider credentials/routing or account deletion.
+They expose only RenderLab access/invitation/account-override state and sanitized aggregate product health. No raw `auth.users` directory, passwords, provider credentials/routing or account deletion. Global/default generation settings remain Phase 10C; there is no Phase 10B `/api/admin/settings` endpoint.
 
 Generation admission becomes part of the shared `submitGeneration` server boundary. After current request/input validation but before native/external network work, a service-role-only transactional reservation resolves effective global/account `generationEnabled`, one-active-job default and 12-admitted-jobs/rolling-hour default (bounded account overrides: active 1–4, hourly 1–120). Same-owner reservation checks serialize in Postgres. Create and Retry therefore cannot bypass one another. Immediate dispatch failure releases concurrency while preserving the rolling-hour admission count; unbound/crashed reservations expire conservatively. These are abuse/spend guardrails, not billing credits.
 
@@ -128,11 +127,19 @@ Planned server-owned records are `renderlab_account_access`, `renderlab_beta_inv
 
 **Phase 10A verified implementation:** `e36140911c63527927ef404d1befa7670d590f8a` adds `src/server/account/account-access.ts`, `src/server/account/recovery-flow.ts`, `/auth/confirm`, `/settings/password`, and the Settings account/password compositions without a global client account store. `renderlab_account_access` and `renderlab_beta_invitations` are implemented/applied; `renderlab_beta_settings` and `generation_admission_reservations` remain future 10C work. Recovery authorization is a signed HttpOnly, user-bound, short-lived server marker rather than a query parameter. Auth completion and password-completion redirects use relative same-origin `Location` headers to preserve SSR cookies behind proxy/origin differences. Exact code/test head `e36140911c63527927ef404d1befa7670d590f8a` passed all 20 path-triggered workflows: Account Identity `33282141315`, Account Ownership `33282141349`, UI Shell `33282141382`, Reference Upload `33282141379`, Persistent Media Upload `33282141310`, Create Durable Upload `33282141312`, Create Lifecycle `33282141327`, Generation Integration `33282141375`, Video Generation Integration `33282141367`, Activity `33282141358`, Library Lifecycle `33282141333`, Library Search `33282141308`, Library History `33282141378`, Library Drag Drop `33282141368`, Library Favorites `33282141323`, Library Collections `33282141334`, Library Batch Delete/Actions `33282141359`, Media Download `33282141305`, Media Rename `33282141360`, and Media Delete `33282141328`. Production `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED` remains default-off. Enabling it still requires an explicit operator-supplied bootstrap of known RenderLab Supabase Auth UUIDs; there is no shared `auth.users` scan/backfill. No Vercel deployment was created or authorized.
 
+**Phase 10B verified implementation:** `src/server/admin/admin-auth.ts` owns fresh active-admin authorization; `src/server/admin/admin-operations.ts` owns RenderLab-only account/invitation/health services; `src/features/admin/admin-operations.tsx` owns local interaction state only. `renderlab_admin_set_account_access` atomically merges account patches under a transaction lock and rejects self-lockout/last-active-admin removal. `renderlab_admin_health` returns bounded aggregate product state with allowlisted error codes. Admin artifact `9724888784` (`renderlab-admin-operations-screenshots`, `sha256:02eab0838958d8da7c9b966159c05acc72ec0f8cf1181b7d0603a12cf56acd38`) was reviewed clean; exact run-owned Admin fixtures were independently verified absent after cleanup. No global admin client store or 10C admission behavior was introduced.
+
 ## Product API Boundaries
 ```text
 POST     /api/generation/jobs
 GET      /api/generation/jobs/[jobId]
 POST     /api/generation/jobs/[jobId]/retry
+
+GET      /api/admin/accounts
+PATCH    /api/admin/accounts/[userId]
+POST     /api/admin/invitations
+DELETE   /api/admin/invitations/[invitationId]
+GET      /api/admin/health
 
 POST     /api/assets/reference/upload-tickets
 POST     /api/assets/reference/upload-completions
@@ -175,8 +182,10 @@ src/
 │   ├── page.tsx
 │   ├── library/
 │   ├── settings/
+│   ├── admin/
 │   └── api/
 │       ├── generation/jobs/
+│       ├── admin/
 │       ├── assets/reference/
 │       ├── media/assets/
 │       └── media/uploads/
@@ -186,6 +195,8 @@ src/
 ├── features/
 │   ├── account/
 │   │   └── account-settings.tsx
+│   ├── admin/
+│   │   └── admin-operations.tsx
 │   ├── create/
 │   └── library/
 │       ├── library-view.tsx
@@ -207,6 +218,7 @@ src/
 │       ├── server.ts
 │       └── proxy.ts
 └── server/
+    ├── admin/
     ├── data/
     ├── generation/
     ├── media/
@@ -218,6 +230,8 @@ Ownership rules:
 - `components/ui` — normalized generic maintained primitives without feature data contracts;
 - `components/shell` — persistent application chrome composed from approved primitives;
 - `features/account` — product-facing Settings account composition, not session infrastructure or media authorization;
+- `features/admin` — privileged Admin interaction composition with local pending/success/error state only; no global admin store;
+- `server/admin` — fresh active-admin authorization plus RenderLab-only access/invitation/health services; service-role/Auth Admin capability never reaches browser code;
 - `features/<feature>` — product-specific composition/behavior composed from approved primitives;
 - `lib/supabase` — public/server Supabase Auth client/session boundary; browser code never receives service-role credentials; `getCurrentRenderLabAccount()` derives the product owner only from verified claims and rejects anonymous principals;
 - `lib/capabilities` — user-facing capability definitions/resolution;
