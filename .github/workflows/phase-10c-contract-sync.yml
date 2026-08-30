@@ -18,13 +18,16 @@ jobs:
           ref: work/phase-10c-generation-admission-contract
           fetch-depth: 0
       - name: Expand authoritative Phase 10C contract
-        run: python .github/phase10c_contract_sync.py
+        run: |
+          python .github/fix_phase10c_sync.py
+          python .github/phase10c_contract_sync.py
       - name: Commit clean contract tree
         run: |
+          rm .github/fix_phase10c_sync.py
           rm .github/phase10c_contract_sync.py
           rm .github/workflows/phase-10c-contract-sync.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md .github/phase10c_contract_sync.py .github/workflows/phase-10c-contract-sync.yml
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md .github/fix_phase10c_sync.py .github/phase10c_contract_sync.py .github/workflows/phase-10c-contract-sync.yml
           git commit -m "docs: expand Phase 10C execution contract"
           git push origin HEAD:work/phase-10c-generation-admission-contract
