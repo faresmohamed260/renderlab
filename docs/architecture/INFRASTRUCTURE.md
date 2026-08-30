@@ -73,6 +73,19 @@ Exact run-owned cleanup for Account Identity found zero matching Auth/access/inv
 
 PR #70 merged to `main` as `5950958dc58143b099bc2877a942829c045f700e`. Merged-main Reference Upload `33314652092`, UI Shell `33314652107`, Generation Integration `33314652101`, and Video Generation Integration `33314652229` all passed. A separate exact audit of the three deterministic configured accounts used by the push runs found 0 matching rows across `auth.users`, `renderlab_account_access`, `generation_admission_reservations`, `generation_jobs`, `generation_sources`, `media_assets`, and `media_upload_sessions`; `renderlab_beta_settings` remained generation enabled / 1 active / 12 hourly / `updated_by=null`. No deployment, production UUID bootstrap, hosted Auth configuration change or production access-enforcement change occurred.
 
+
+### Phase 12 pre-release infrastructure audit — 2026-08-30
+This is read-only contract evidence, not rollout authorization.
+
+- Contract-start repository `main`: `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95`. Phase 11 merge: `46c5daa2866c6758907ee9be219bcb3cb274ca83`.
+- Connected Vercel project `renderlab` (`prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU`) reports framework `nextjs`; production domains include `renderlab-lake.vercel.app` and `renderlab.faresuniform.uk`. Repository `vercel.json` continues to disable automatic Git deployment.
+- Current READY production deployment is `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` from GitHub application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`. The compare from `c8e9943dd90cba5971f4dcfcd591445608ce46ca` to `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95` is 216 commits ahead and includes executable application/API/workflow/migration-contract changes from Phases 7–11. Phase 12 must validate a current exact release candidate before any authorized deployment rather than using old-production health as a proxy.
+- Vercel reported no grouped runtime errors in the inspected seven-day production window. This demonstrates current deployed-baseline health only; it says nothing about the undeployed current-main executable delta.
+- Supabase Phase 11 post-merge fixture audit returned zero RenderLab fixture Auth users, account-access rows, generation jobs/sources/admission reservations, media assets/collections/items/upload sessions and invitations. Migrations remain applied through `20260830101734 renderlab_generation_admission` (`0012`).
+- Fresh Security Advisor evidence remains expected INFO `rls_enabled_no_policy` on deliberately server-owned RenderLab tables plus WARN `auth_leaked_password_protection`; no new DDL finding was introduced. Fresh Performance Advisor evidence remains INFO for the one-row `renderlab_beta_settings.updated_by` FK plus unused indexes; Phase 12 does not create a schema migration solely to silence these informational notices.
+- Production closed-beta enforcement remains off pending the known-RenderLab UUID bootstrap. Production Auth Site URL/redirect/template/sender/custom-SMTP evidence is still incomplete and built-in mail/rate-limit plus Free-plan leaked-password limitations remain explicit. Phase 12A audits these without mutation; Phase 12B may address production rollout prerequisites only after explicit authorization.
+- R2/browser upload contract remains the existing owner-scoped signed-PUT flow and exact-origin CORS model. Phase 12A may verify its current state non-mutating; any CORS reconciliation is a production mutation and belongs only to an explicitly authorized rollout.
+
 ### Account identity boundary — UI-029
 Supabase Auth `auth.users.id` is the canonical RenderLab account principal.
 
