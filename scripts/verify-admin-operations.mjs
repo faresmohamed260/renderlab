@@ -268,7 +268,7 @@ try {
   await page.getByRole("link", { name: "Open Admin", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
   await page.goto(`${baseUrl}/admin`, { waitUntil: "networkidle", timeout: 60_000 });
-  await page.getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible" });
+  await page.getByRole("main").getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Access", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Generation controls", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Health", exact: true }).waitFor({ state: "visible" });
@@ -291,7 +291,7 @@ try {
   await page.screenshot({ path: `${artifactDir}/admin-operations-desktop.png`, fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible" });
+  await page.getByRole("main").getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible" });
   const mobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert(!mobileOverflow, "Narrow Admin layout has horizontal clipping.");
   await page.screenshot({ path: `${artifactDir}/admin-operations-mobile.png`, fullPage: true });
