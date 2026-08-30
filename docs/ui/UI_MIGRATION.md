@@ -1355,6 +1355,33 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 ### Cycle 2 explicit non-commitments
 Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter system, generic Models/Workflows screens, ComfyUI graph editing, ordinary-user provider/worker management, arbitrary workflow-parameter generation, inpainting/outpainting, pose/depth/edge guidance, workflow chaining, full billing, a global media client store or cross-page selection. LoRA/model-adapter support is now an accepted post-Cycle-2 direction rather than an ignored idea. Safe cancellation and Trash/restore remain contingent on their own evidence/decisions.
 
+
+## Phase 13 — Email & Invite Production Hardening — CONTRACTED / NOT STARTED
+Phase 13 is the first contracted phase of Cycle 3 — Beta Operations & Access Reliability. It is primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin and UI-052 Brand/Launch contracts remain authoritative unless live delivery evidence proves a concrete product defect.
+
+### Required execution evidence
+- [ ] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation.
+- [ ] Choose one operator-approved production transactional delivery path (custom SMTP or equivalent Send Email Auth Hook), provider account/plan and RenderLab sender identity under `faresuniform.uk`.
+- [ ] Add/verify only provider-required sender-domain DNS: one valid SPF posture, provider DKIM and explicit DMARC policy/reporting; preserve unrelated Cloudflare DNS records.
+- [ ] Configure Supabase/provider sender/from/reply posture and bounded invitation-only Auth email limits; record actual values without exposing credentials.
+- [ ] Install/review exact SSR token-hash invite template using `/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/settings` through `{{ .SiteURL }}`.
+- [ ] Install/review exact SSR token-hash recovery template using `/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/settings/password` through `{{ .SiteURL }}`.
+- [ ] Disable provider link/click tracking or any URL rewriting that could mutate Auth links; preserve existing hostile-`next`, invalid/consumed token and no-public-sign-up protections.
+- [ ] Keep regular CI independent of live mail. Re-run deterministic generate-link/security coverage after config changes with exact fixture cleanup.
+- [ ] Run a bounded operator-gated live invite lifecycle from Admin → delivered external email → `renderlab.faresuniform.uk` confirmation → intended active access; verify revoke/consumed failure behavior where practical.
+- [ ] Run a bounded operator-gated real recovery lifecycle → delivered external email → password replacement → current/stale-session behavior on the production domain.
+- [ ] Cover at least two independent mailbox providers where practical (prefer Gmail + Outlook or equivalent), inspect Inbox/Spam placement plus provider delivery/bounce events, and record any operator limitation rather than inventing coverage.
+- [ ] Verify final cleanup/defaults: zero run-owned Auth/access/invitation/admission/media/generation residue, sole persistent admin unchanged, generation defaults enabled / 1 / 12 / no updater.
+- [ ] Review provider/API/Management credentials after acceptance; keep them only in approved secret stores and narrow/rotate/remove temporary privileged credentials when no longer required.
+- [ ] Record exact provider/sender/DNS/template/rate-limit/live-delivery evidence in `PROJECT.md` and `docs/architecture/INFRASTRUCTURE.md` before marking Phase 13 `COMPLETE / VERIFIED`.
+
+### Scope guardrails
+- Planning does not authorize SMTP/provider signup or purchase, DNS mutation, hosted Auth mutation, email sending, Vercel deployment or application changes.
+- Do not add public sign-up, waitlist, newsletter/marketing mail, MFA/CAPTCHA, general notifications or a second invitation/admission model.
+- Do not redesign Landing, Settings or Admin for this phase. Make only evidence-driven copy/error-state fixes if live delivery exposes a real defect.
+- Do not treat Free-plan leaked-password protection as an email deliverability task; it remains separate broader-beta security work.
+- Configuration-only completion requires no Vercel deployment. Any necessary application code fix creates a new exact candidate and requires affected validation before rollout.
+
 ## Feature/Surface Procedure
 1. Establish the user goal and required behavior.
 2. Inspect applicable RenderLab decisions/components and architecture.
@@ -1369,13 +1396,13 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`; Phases 6–12 are complete.
-**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `COMPLETE / VERIFIED`; exact accepted production application remains `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`.
-**Next sequence:** Cycle 2 has no remaining release task. Start a separately scoped/contracted next cycle before broader-beta expansion or new feature work; do not silently fold post-Cycle-2 backlog into this completed release.
-**Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` is the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
-**Deployment boundary:** Cycle 2 production rollout is accepted for exact application SHA `d6b8f386db3893e583c99b23fc3397b0eb377d42`; Closed-Beta enforcement is active. Future deployment changes require a new explicit release scope and must not treat docs-only `main` as an implicitly verified application candidate.
-**Broader-beta boundary:** production Auth Site URL and exact invite/recovery redirects are now verified. Built-in mail/rate-limit posture, custom-SMTP/sender productionization and Free-plan leaked-password protection remain separate broader-beta hardening work rather than Cycle 2 blockers.
-**Post-Cycle-2 accepted direction:** LoRA/model-adapter library remains out of Phase 12.
+**Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `PLANNED`; Cycle 2 remains `COMPLETE / VERIFIED`.
+**Current phase contract:** Phase 13 — Email & Invite Production Hardening is `CONTRACTED / NOT STARTED`.
+**Next sequence:** implementation is authorization-gated. Start with read-only 13A Auth/mail/DNS audit and provider/sender/DMARC/live-inbox decisions before any production email configuration change.
+**Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
+**Deployment boundary:** the Phase 13 contract itself changes no production configuration. Prefer configuration-only execution; if a verified application defect requires code, revalidate one exact candidate before any Vercel rollout.
+**Broader-beta boundary:** Phase 13 is specifically responsible for production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Leaked-password protection remains separate.
+**Post-Cycle-2 accepted direction:** LoRA/model-adapter work is outside Phase 13.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.

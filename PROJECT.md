@@ -54,7 +54,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Cycle 2 — Creative Productivity & Beta Maturity: `COMPLETE / VERIFIED`. Phases 6–12 are complete. Exact 12A-verified candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` is the accepted Closed-Beta production application at READY Vercel deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Hosted Auth production redirects are corrected and verified, Closed-Beta enforcement is active, bounded custom-domain production smoke passed, and exact run-owned cleanup/default restoration is verified.**
+**Cycle 2 — Creative Productivity & Beta Maturity remains `COMPLETE / VERIFIED`. Cycle 3 — Beta Operations & Access Reliability is now planned, with Phase 13 — Email & Invite Production Hardening `CONTRACTED / NOT STARTED`. Production remains the accepted Closed-Beta application `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; this planning contract authorizes no SMTP, DNS, hosted Auth, Vercel or application mutation.**
 
 ### Cycle 2 objective
 Move RenderLab from a solid functional MVP into a product that supports repeated serious creative work: richer reference-driven creation, durable reusable inputs, clearer task-oriented controls, useful job recovery, closed-beta operations, and a premium modern creative experience without exposing ComfyUI/provider complexity to ordinary users.
@@ -75,6 +75,69 @@ Each phase contract covers goal, user value, verified starting state, in/out of 
 
 ### Cycle 2 scope boundary
 Cycle 2 now explicitly includes Create v2 reference/geometry/composer work, verified Director-video productization, curated Video resolution, Library/Activity productivity, privileged closed-beta admin operations, and brand/launch work. It still does **not** approve generic Models or Workflows screens, ComfyUI graph editing, ordinary-user provider/worker management, arbitrary workflow-parameter forms, inpainting/outpainting, structural guidance, workflow chaining, a full billing system, a global media client store or a cross-page selection framework without separate evidence/decisions.
+
+
+### Cycle 3 — Beta Operations & Access Reliability
+**Status: `PLANNED`.** Cycle 2 remains complete. Cycle 3 begins with one execution-ready phase only; later Cycle 3 work remains undefined until current evidence justifies it.
+
+- **Phase 13 — Email & Invite Production Hardening: `CONTRACTED / NOT STARTED`.** Make RenderLab's already-implemented admin-invite and password-recovery flows dependable for real external Closed-Beta users by replacing Supabase's built-in development-oriented mail posture with a production-capable transactional delivery path, authenticated sender domain, exact token-hash templates, bounded rate limits and live delivery evidence. This contract does not authorize implementation or production mutation by itself.
+
+### Phase 13 execution contract — Email & Invite Production Hardening
+**Status: `CONTRACTED / NOT STARTED`. Planning/documentation only until the user explicitly authorizes implementation and any required vendor/DNS/Auth production changes.**
+
+**Goal / user value**
+- Make an admin-issued RenderLab invite reliably reach a real recipient, complete on `renderlab.faresuniform.uk`, claim the intended invitation and yield only the access state the admin granted.
+- Make password recovery reliably reach an existing RenderLab user and complete through the verified SSR token-hash flow without localhost fallback, open redirects, link rewriting or stale-session bypass.
+- Give the operator a supportable email posture: known sender identity, authenticated DNS, documented rate limits, provider delivery/bounce visibility and bounded credentials instead of relying on Supabase's built-in Auth mailer.
+
+**Verified starting state**
+- Cycle 2 production is accepted at application SHA `d6b8f386db3893e583c99b23fc3397b0eb377d42` / READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; Closed-Beta enforcement is active and automatic Git → Vercel deployment remains disabled.
+- Admin invitation creation/revocation, RenderLab invitation records, member/admin access transitions, suspension/reactivation, no-public-sign-up behavior and password-recovery completion are already implemented and configured-test verified. Phase 13 must harden delivery rather than invent a second admission system.
+- Hosted Supabase Auth Site URL is `https://renderlab.faresuniform.uk`; exact production redirects for `/settings` and `/auth/confirm?type=recovery&next=/settings/password` were corrected and no-email generate-link verified during Phase 12B.
+- Phase 10D live evidence showed the project using Supabase's built-in Auth sender `noreply@mail.app.supabase.io` and then hitting `429 over_email_send_rate_limit`; that posture was explicitly accepted only for Closed-Beta technical validation, not external-user deliverability.
+- Regular CI intentionally does not depend on real email delivery. Deterministic Auth/link/security tests must remain provider-cheap and self-cleaning; live inbox tests belong to a bounded operator-gated acceptance run.
+- Free-plan leaked-password protection remains a separate broader-beta security limitation. Phase 13 must not claim to solve it through email work.
+
+**In scope**
+1. **Read-only production email/Auth baseline.** Audit current Supabase Auth mail configuration, Site URL/redirect allowlist, invite/recovery template bodies, SMTP or Send Email Auth Hook state, sender/from identity, Auth email rate limits and any retained Management API credential requirement before changing anything. Record facts, not assumptions.
+2. **Delivery architecture decision.** Choose one production transactional path: Supabase custom SMTP backed by a transactional provider, or an equivalent Supabase Send Email Auth Hook when an API-based provider integration is materially better. Provider selection, account creation/paid-plan acceptance and sender address remain explicit operator decisions; do not silently enroll or purchase a service.
+3. **Sender-domain authentication.** Use a dedicated RenderLab transactional sender identity under `faresuniform.uk` (exact local-part/subdomain chosen during implementation). Add only provider-required DNS records through the existing Cloudflare zone, preserving unrelated records. Maintain one valid SPF policy, install provider DKIM, and establish DMARC with an explicit policy/aggregate-reporting decision. Verify public DNS and provider authentication state before live acceptance.
+4. **Exact invite/recovery templates.** Keep the existing SSR token-hash contract and no-public-sign-up boundary. Production templates must resolve through `{{ .SiteURL }}` and `/auth/confirm`, with invite using `token_hash={{ .TokenHash }}&type=invite&next=/settings` and recovery using `token_hash={{ .TokenHash }}&type=recovery&next=/settings/password`. Do not substitute raw provider confirmation URLs or a client-only token flow.
+5. **Transactional message quality.** Give invite and recovery mail concise RenderLab-branded subjects/body copy, a visible reason the recipient is receiving the message, the intended action, expiry/security guidance where supported, and a plain fallback URL. Avoid marketing content, tracking pixels and unrelated product claims in authentication mail.
+6. **Link integrity.** Disable provider click/link tracking or any feature that rewrites authentication URLs. Preserve HTTPS custom-domain destinations, token integrity and existing same-origin/hostile-`next` protections.
+7. **Rate limits and abuse posture.** Set/document suitable Supabase Auth email limits for a small invitation-only beta and the chosen provider's sending constraints. Admin invites remain privileged; recovery remains enumeration-safe. Do not add public resend/sign-up mechanics merely to consume the new mail capacity.
+8. **Delivery observability.** Establish a bounded operator path to inspect accepted/delivered/bounced/complained events without exposing message bodies, tokens or provider credentials through RenderLab Admin responses or repository logs.
+9. **Live end-to-end acceptance.** Use run-owned/test recipients supplied or controlled by the operator. Prove at least two independent mailbox providers where practical (prefer Gmail + Outlook or equivalent): real invite receipt → RenderLab confirmation → intended active access; real recovery receipt → password replacement → intended current-session/stale-session behavior; consumed/revoked/invalid links fail closed. Check Inbox/Spam placement and provider delivery events rather than treating API acceptance as delivery.
+10. **Cleanup and credential hygiene.** Remove all run-owned Auth/access/invitation fixtures after acceptance, restore generation defaults, and verify no foreign-owner residue. Keep provider/SMTP/API credentials only in approved secret stores. Review whether the Supabase Management API token used for bounded configuration should remain, be narrowed/rotated, or be removed after the phase; never document secret values.
+
+**Out of scope**
+- Public sign-up, waitlist/product-led onboarding, marketing/newsletter mail, invitations to arbitrary shared-Supabase users, MFA/CAPTCHA, billing, account deletion, social login or a general notification system.
+- A redesign of Landing, Settings or Admin. Existing UI-051/UI-052 account/admin/launch contracts remain authoritative; only the smallest copy/error-state correction is allowed if live email evidence exposes a concrete product defect.
+- Fixing Free-plan leaked-password protection, purchasing a broader Supabase plan solely for that warning, or treating unrelated Security Advisor INFO as Phase 13 work.
+- Provider/worker/generation changes, R2 changes, schema migrations or a Vercel application deployment unless a verified email-flow product defect requires the smallest code fix. Any code fix creates a new exact candidate and must run its affected validation before deployment.
+
+**Implementation sequence**
+- **13A — Audit & operator decisions:** read-only configuration/DNS audit; choose provider/delivery mechanism, sender identity, DMARC posture and live-test inbox set; identify required credentials/costs before mutation.
+- **13B — Sender & delivery configuration:** authenticate DNS, configure provider + Supabase SMTP/Send Email Hook, set sender/from/reply posture, set bounded Auth email limits and verify management read-back.
+- **13C — Template & link hardening:** install/review exact invite/recovery token-hash templates, disable link rewriting/tracking and re-run deterministic generate-link/negative security verification without real sends.
+- **13D — Live delivery acceptance:** send bounded real invite/recovery messages, complete browser flows on `renderlab.faresuniform.uk`, inspect delivery/bounce events, clean fixtures, re-audit production state and record exact evidence.
+
+**Validation / acceptance evidence**
+- Read-back of the actual Supabase Auth mail/template/rate-limit configuration without exposing credentials.
+- Public DNS proof for the exact provider-required SPF/DKIM/DMARC records and provider-side sender/domain verification.
+- Deterministic CI or one-off remote verification that token-hash invite/recovery links preserve `renderlab.faresuniform.uk`, reject hostile redirects, reject consumed/invalid/revoked tokens and leave public sign-up unavailable; regular CI continues to avoid actual email delivery.
+- Bounded live mailbox evidence for invite and recovery, including delivered/received state and successful browser completion on the production custom domain. Do not commit recipient addresses, auth tokens or raw provider logs containing sensitive values.
+- Final Supabase audit: no run-owned Auth/access/invitation/admission/media/generation residue; sole persistent admin unchanged; generation defaults restored to enabled / 1 active / 12 hourly / no updater.
+- If application code changes, affected repository gates and responsive review must pass on one exact candidate before any Vercel deployment. If configuration-only, no Vercel deployment is required.
+
+**Exit criteria**
+- Production Auth no longer depends on the built-in `noreply@mail.app.supabase.io` delivery posture for RenderLab invite/recovery mail.
+- One documented production sender identity is authenticated and verified; SPF is valid, DKIM passes and DMARC posture is explicitly recorded.
+- Invite and recovery templates use the accepted RenderLab SSR token-hash confirmation paths, preserve exact custom-domain redirects and are not rewritten by click tracking.
+- Actual Supabase/provider mail limits are documented and suitable for the invitation-only beta; admin invite and recovery abuse boundaries remain intact.
+- At least one full real invite lifecycle and one full real recovery lifecycle complete from delivered external email on `renderlab.faresuniform.uk`; delivery evidence covers at least two mailbox providers where practical or records the exact operator limitation if not available.
+- Bounce/delivery inspection is operational, test fixtures are removed, privileged credentials are stored/narrowed appropriately, and authoritative docs record provider, sender/domain posture, exact configuration evidence and any deferred broader-beta work.
+- Only after all exit criteria are verified may Phase 13 be marked `COMPLETE / VERIFIED`. The planning PR itself does not satisfy or authorize these criteria.
 
 
 ### Phase 11 execution contract — expanded 2026-08-30
