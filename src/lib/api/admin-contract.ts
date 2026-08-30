@@ -21,6 +21,13 @@ export type AdminInvitationRecord = {
   createdAt: string;
 };
 
+export type AdminGenerationSettings = {
+  generationEnabled: boolean;
+  maxActiveJobs: number;
+  maxJobsPerHour: number;
+  updatedAt: string;
+};
+
 export type AdminHealthSnapshot = {
   windowHours: number;
   since: string;
@@ -33,6 +40,7 @@ export type AdminHealthSnapshot = {
 export type AdminDashboardSnapshot = {
   accounts: AdminAccountRecord[];
   invitations: AdminInvitationRecord[];
+  settings: AdminGenerationSettings;
   health: AdminHealthSnapshot;
 };
 
@@ -40,3 +48,8 @@ export type AdminAccountUpdate = Partial<Pick<
   AdminAccountRecord,
   "role" | "status" | "generationEnabled" | "maxActiveJobs" | "maxJobsPerHour"
 >>;
+
+export type AdminGenerationSettingsUpdate = Pick<
+  AdminGenerationSettings,
+  "generationEnabled" | "maxActiveJobs" | "maxJobsPerHour"
+>;
