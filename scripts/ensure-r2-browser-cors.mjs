@@ -149,6 +149,12 @@ async function probeCors() {
   return requiredOrigins.every((origin) => supported.has(origin));
 }
 
+const alreadyReady = await probeCors();
+if (alreadyReady) {
+  console.log(`RenderLab browser upload CORS preflight verified for ${requiredOrigins.join(", ")}; reconciliation not required.`);
+  process.exit(0);
+}
+
 let managed = false;
 if (cloudflareApiToken) {
   try {
