@@ -1,0 +1,51 @@
+name: Phase 10C Core Fix
+
+on:
+  push:
+    branches:
+      - tmp/phase10c-core-fix
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply Phase 10C core corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/lib/api/generation-contract.ts')
+          text = path.read_text()
+          marker = 'export type SubmitGenerationError = {\n'
+          alias = '''export type SubmitGenerationErrorCode =\n  | "invalid_request"\n  | "generation_access_denied"\n  | "generation_disabled"\n  | "generation_active_limit_reached"\n  | "generation_rate_limit_reached"\n  | "generation_backend_unavailable"\n  | "generation_submission_failed";\n\n'''
+          if alias not in text:
+              if marker not in text:
+                  raise SystemExit('generation error marker missing')
+              text = text.replace(marker, alias + marker, 1)
+          old = '''    code:\n      | "invalid_request"\n      | "generation_access_denied"\n      | "generation_disabled"\n      | "generation_active_limit_reached"\n      | "generation_rate_limit_reached"\n      | "generation_backend_unavailable"\n      | "generation_submission_failed";\n'''
+          if old not in text:
+              raise SystemExit('inline generation error union missing')
+          text = text.replace(old, '    code: SubmitGenerationErrorCode;\n', 1)
+          path.write_text(text)
+
+          path = Path('supabase/migrations/0012_renderlab_generation_admission.sql')
+          text = path.read_text()
+          old = '  job_id uuid references public.generation_jobs(id) on delete set null,\n'
+          if old not in text:
+              raise SystemExit('reservation job FK marker missing')
+          path.write_text(text.replace(old, '  job_id uuid,\n', 1))
+          PY
+          rm .github/workflows/phase10c-core-fix.yml
+          git diff --check
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix: align Phase 10C admission contracts"
+          git push
