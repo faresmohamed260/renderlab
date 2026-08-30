@@ -1,0 +1,52 @@
+name: Phase 11 Contract Apply v3
+
+on:
+  push:
+    branches:
+      - tmp/phase11-contract-apply-v3
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout bootstrap
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/phase11-contract-apply-v3
+          path: bootstrap
+
+      - name: Checkout target
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-11-brand-launch-contract
+          path: target
+          fetch-depth: 0
+
+      - name: Apply contract
+        working-directory: target
+        run: python ../bootstrap/.github/scripts/phase11_contract_apply.py
+
+      - name: Validate exact docs-only scope
+        working-directory: target
+        shell: bash
+        run: |
+          expected=$'PROJECT.md\ndocs/architecture/FRONTEND_ARCHITECTURE.md\ndocs/ui/SCREEN_REGISTRY.md\ndocs/ui/UI_DECISIONS.md\ndocs/ui/UI_MIGRATION.md'
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          git diff --check
+          grep -F 'UI-052 — Public landing owns `/`; Create moves to `/create`' docs/ui/UI_DECISIONS.md
+          grep -F 'Status: `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052' PROJECT.md
+          grep -F 'Brand / Landing — Phase 11 target' docs/ui/SCREEN_REGISTRY.md
+
+      - name: Commit contract
+        working-directory: target
+        shell: bash
+        run: |
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md docs/architecture/FRONTEND_ARCHITECTURE.md
+          git commit -m "docs: expand Phase 11 brand launch contract"
+          git push origin HEAD:work/phase-11-brand-launch-contract
