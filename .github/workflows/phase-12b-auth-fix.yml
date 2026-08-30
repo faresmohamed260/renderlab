@@ -1,0 +1,165 @@
+name: Phase 12B Auth Fix
+
+on:
+  push:
+    branches: [work/phase-12b-rollout-execution]
+    paths:
+      - ".github/workflows/phase-12b-auth-fix.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  auth-fix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SITE_URL: https://renderlab.faresuniform.uk
+      INVITE_REDIRECT: https://renderlab.faresuniform.uk/settings
+      RECOVERY_REDIRECT: https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password
+
+    steps:
+      - name: Checkout exact verified candidate
+        uses: actions/checkout@v4
+        with:
+          ref: d6b8f386db3893e583c99b23fc3397b0eb377d42
+
+      - name: Verify exact candidate identity
+        run: test "$(git rev-parse HEAD)" = "d6b8f386db3893e583c99b23fc3397b0eb377d42"
+
+      - name: Update hosted Auth URL configuration
+        shell: python
+        run: |
+          import json
+          import os
+          import urllib.request
+
+          token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
+          if not token:
+              raise SystemExit("SUPABASE_ACCESS_TOKEN is not configured")
+
+          ref = os.environ["SUPABASE_PROJECT_REF"]
+          site_url = os.environ["SITE_URL"]
+          required = [os.environ["INVITE_REDIRECT"], os.environ["RECOVERY_REDIRECT"]]
+          endpoint = f"https://api.supabase.com/v1/projects/{ref}/config/auth"
+
+          def request(method="GET", body=None):
+              data = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request(
+                  endpoint,
+                  data=data,
+                  method=method,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Content-Type": "application/json",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return json.load(response)
+
+          def parse_allow_list(value):
+              if isinstance(value, list):
+                  return [str(item).strip() for item in value if str(item).strip()]
+              if isinstance(value, str):
+                  return [item.strip() for item in value.split(",") if item.strip()]
+              return []
+
+          before = request()
+          existing = parse_allow_list(before.get("uri_allow_list"))
+          merged = list(dict.fromkeys([*existing, *required]))
+          print(f"AUTH_BEFORE_SITE_URL={before.get('site_url')}")
+          print(f"AUTH_BEFORE_REDIRECT_COUNT={len(existing)}")
+
+          request("PATCH", {"site_url": site_url, "uri_allow_list": ",".join(merged)})
+          after = request()
+          after_list = parse_allow_list(after.get("uri_allow_list"))
+
+          if after.get("site_url") != site_url:
+              raise SystemExit(f"Site URL mismatch after update: {after.get('site_url')}")
+          missing = [item for item in required if item not in after_list]
+          if missing:
+              raise SystemExit(f"Required redirect URL(s) missing after update: {missing}")
+
+          print(f"AUTH_AFTER_SITE_URL={after.get('site_url')}")
+          print(f"AUTH_AFTER_REDIRECT_COUNT={len(after_list)}")
+          print("AUTH_REQUIRED_REDIRECTS_CONFIGURED=true")
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify hosted recovery and invite redirects without sending email
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { randomUUID } from "node:crypto";
+          import { createClient } from "@supabase/supabase-js";
+
+          const url = process.env.SUPABASE_URL?.trim();
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+          if (!url || !key) throw new Error("Supabase service configuration is missing");
+
+          const supabase = createClient(url, key, {
+            auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+          });
+          const recoveryEmail = `renderlab-phase12b-recovery-${randomUUID()}@example.invalid`;
+          const inviteEmail = `renderlab-phase12b-invite-${randomUUID()}@example.invalid`;
+          const password = `RL-${randomUUID()}-aA9!`;
+          const recoveryRedirect = process.env.RECOVERY_REDIRECT;
+          const inviteRedirect = process.env.INVITE_REDIRECT;
+          const cleanupIds = new Set();
+
+          function resolvedRedirect(actionLink) {
+            const parsed = new URL(actionLink);
+            return parsed.searchParams.get("redirect_to") || parsed.searchParams.get("redirectTo") || "";
+          }
+
+          try {
+            const created = await supabase.auth.admin.createUser({
+              email: recoveryEmail,
+              password,
+              email_confirm: true,
+              app_metadata: { renderlab_fixture: "phase12b-auth-redirect" },
+            });
+            if (created.error || !created.data.user) throw created.error || new Error("Recovery fixture user was not created");
+            cleanupIds.add(created.data.user.id);
+
+            const recovery = await supabase.auth.admin.generateLink({
+              type: "recovery",
+              email: recoveryEmail,
+              options: { redirectTo: recoveryRedirect },
+            });
+            if (recovery.error || !recovery.data?.properties?.action_link) throw recovery.error || new Error("Recovery link was not generated");
+            const recoveryResolved = resolvedRedirect(recovery.data.properties.action_link);
+            if (recoveryResolved !== recoveryRedirect) throw new Error(`Recovery redirect mismatch: ${recoveryResolved || "<none>"}`);
+
+            const invite = await supabase.auth.admin.generateLink({
+              type: "invite",
+              email: inviteEmail,
+              options: { redirectTo: inviteRedirect },
+            });
+            if (invite.error || !invite.data?.properties?.action_link || !invite.data.user) throw invite.error || new Error("Invite link was not generated");
+            cleanupIds.add(invite.data.user.id);
+            const inviteResolved = resolvedRedirect(invite.data.properties.action_link);
+            if (inviteResolved !== inviteRedirect) throw new Error(`Invite redirect mismatch: ${inviteResolved || "<none>"}`);
+
+            console.log("AUTH_RECOVERY_REDIRECT_ACCEPTED=true");
+            console.log("AUTH_INVITE_REDIRECT_ACCEPTED=true");
+            console.log("AUTH_EMAIL_DELIVERY_USED=false");
+          } finally {
+            for (const id of cleanupIds) {
+              const deleted = await supabase.auth.admin.deleteUser(id);
+              if (deleted.error) throw deleted.error;
+            }
+          }
+          NODE
