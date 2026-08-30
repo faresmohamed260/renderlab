@@ -1190,6 +1190,8 @@ Give the closed beta a race-safe server-owned spend/abuse boundary without turni
 - [x] Security Advisor reports only expected server-owned `rls_enabled_no_policy` INFO plus the pre-existing leaked-password WARN reserved for 10D. Performance Advisor reports a singleton `updated_by` unindexed-FK INFO plus unused-index INFO; adding an index to an exactly one-row settings table is not justified by 10C evidence.
 - [x] Production closed-beta enforcement remains off and no deployment was performed or authorized. 10D remains a separate next slice.
 
+- [x] PR #68 merged to `main` as `26508e77975ee4dd26f60860f999e4bc55c99eca`. Merged-main UI Shell `33310860293`, Reference Upload `33310860327`, Generation Integration `33310860295`, and Video Generation Integration `33310860292` all passed. A final exact audit of the three deterministic shared-resource accounts from those push runs found 0 access/job/source/media/upload/reservation/Auth rows, and `renderlab_beta_settings` remained `generation_enabled=true`, `max_active_jobs=1`, `max_jobs_per_hour=12`, `updated_by=null`.
+
 #### Slice 10D — Auth / Operational Hardening
 - Re-run Supabase Security Advisor after schema work. Existing server-owned RLS/no-policy INFO notices remain acceptable only while browser grants are still revoked and documented.
 - Resolve leaked-password protection if the current Supabase plan supports it. If plan/config does not support it, record the external blocker explicitly and keep broader-beta release blocked; do not fake an app-level equivalent claim.
@@ -1266,7 +1268,7 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–9 and Phase 10A/10B/10C are complete and verified under the Closed Beta boundary.
 **Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `EXPANDED / IN PROGRESS` under UI-051; 10A, 10B and 10C are complete/verified.
 **Next implementation sequence:** 10D Auth/Operational Hardening.
-**Current gate:** Merge verified Phase 10C, re-establish merged-main state, then expand/execute 10D without deployment unless explicitly authorized.
+**Current gate:** Phase 10C is merged and verified on `main`. Expand/execute Phase 10D Auth/Operational Hardening from this merged-main state; no deployment unless explicitly authorized.
 **Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
 **Later Cycle 2:** Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
