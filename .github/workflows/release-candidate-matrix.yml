@@ -1,0 +1,292 @@
+name: Release Candidate Matrix
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/release-candidate"
+      - ".github/workflows/release-candidate-matrix.yml"
+      - ".github/workflows/integrated-release.yml"
+      - "scripts/verify-integrated-release.mjs"
+  push:
+    branches: [main]
+    paths:
+      - ".github/release-candidate"
+      - ".github/workflows/release-candidate-matrix.yml"
+      - ".github/workflows/integrated-release.yml"
+      - "scripts/verify-integrated-release.mjs"
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: renderlab-release-candidate-matrix-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_REF: ${{ github.head_ref || github.ref_name }}
+      TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Verify candidate identity and whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$TARGET_SHA"
+          echo "Release candidate SHA: $TARGET_SHA"
+          echo "Release candidate ref: $TARGET_REF"
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git diff --check "$BASE_SHA...$TARGET_SHA"
+          else
+            git diff --check
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify configured verifier syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for verifier in scripts/verify-*.mjs; do
+            node --check "$verifier"
+          done
+
+      - name: Verify UI purity
+        run: npm run verify:ui-purity
+
+      - name: Verify TypeScript
+        run: npx tsc --noEmit
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Quiesce stale branch dispatches
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflows=(
+            account-identity-visual.yml
+            account-ownership.yml
+            admin-operations.yml
+            generation-admission.yml
+            reference-upload-integration.yml
+            media-upload-integration.yml
+            create-durable-upload.yml
+            generation-bridge-integration.yml
+            video-generation-integration.yml
+            create-lifecycle-visual.yml
+            library-lifecycle-visual.yml
+            library-search-visual.yml
+            library-history-visual.yml
+            library-drag-drop-visual.yml
+            library-favorites-visual.yml
+            library-collections-visual.yml
+            library-batch-delete-visual.yml
+            media-rename-visual.yml
+            media-download-visual.yml
+            media-delete-visual.yml
+            activity-visual.yml
+            ui-shell.yml
+            brand-launch-visual.yml
+          )
+
+          for attempt in $(seq 1 30); do
+            active=0
+            for workflow in "${workflows[@]}"; do
+              response="$(gh api \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "/repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?event=workflow_dispatch&branch=$TARGET_REF&per_page=20")"
+              mapfile -t stale_ids < <(
+                jq -r --arg sha "$TARGET_SHA" '
+                  .workflow_runs[]
+                  | select(.head_sha != $sha)
+                  | select(.status == "queued" or .status == "in_progress" or .status == "waiting" or .status == "pending" or .status == "requested")
+                  | .id
+                ' <<<"$response"
+              )
+              for run_id in "${stale_ids[@]}"; do
+                echo "Cancelling stale $workflow run $run_id before exact-candidate dispatch."
+                gh api \
+                  --method POST \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "X-GitHub-Api-Version: 2022-11-28" \
+                  "/repos/$GITHUB_REPOSITORY/actions/runs/$run_id/cancel" >/dev/null || true
+                active=$((active + 1))
+              done
+            done
+
+            if [ "$active" -eq 0 ]; then
+              echo "No stale branch workflow_dispatch runs remain."
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "::error::Stale branch workflow_dispatch runs did not quiesce."
+          exit 1
+
+      - name: Dispatch configured release matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflows=(
+            account-identity-visual.yml
+            account-ownership.yml
+            admin-operations.yml
+            generation-admission.yml
+            reference-upload-integration.yml
+            media-upload-integration.yml
+            create-durable-upload.yml
+            generation-bridge-integration.yml
+            video-generation-integration.yml
+            create-lifecycle-visual.yml
+            library-lifecycle-visual.yml
+            library-search-visual.yml
+            library-history-visual.yml
+            library-drag-drop-visual.yml
+            library-favorites-visual.yml
+            library-collections-visual.yml
+            library-batch-delete-visual.yml
+            media-rename-visual.yml
+            media-download-visual.yml
+            media-delete-visual.yml
+            activity-visual.yml
+            ui-shell.yml
+            brand-launch-visual.yml
+          )
+
+          started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          printf '%s\n' "$started_at" > /tmp/renderlab-release-started-at
+          printf '%s\n' "${workflows[@]}" > /tmp/renderlab-release-workflows
+
+          for workflow in "${workflows[@]}"; do
+            echo "Dispatching $workflow at $TARGET_REF ($TARGET_SHA)"
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/dispatches" \
+              -f "ref=$TARGET_REF"
+          done
+
+      - name: Require exact-SHA child success
+        shell: bash
+        run: |
+          set -euo pipefail
+          started_at="$(cat /tmp/renderlab-release-started-at)"
+          mapfile -t workflows < /tmp/renderlab-release-workflows
+          declare -A cancel_retry_count=()
+          declare -A retried_cancelled_run=()
+
+          lookup_run() {
+            local workflow="$1"
+            gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?event=workflow_dispatch&branch=$TARGET_REF&per_page=20" \
+              --jq ".workflow_runs | map(select(.head_sha == \"$TARGET_SHA\" and .created_at >= \"$started_at\")) | sort_by(.created_at) | last // empty"
+          }
+
+          dispatch_retry() {
+            local workflow="$1"
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/dispatches" \
+              -f "ref=$TARGET_REF"
+          }
+
+          for attempt in $(seq 1 120); do
+            pending=0
+            failed=0
+            : > /tmp/renderlab-release-runs.tsv
+
+            for workflow in "${workflows[@]}"; do
+              run_json="$(lookup_run "$workflow")"
+              if [ -z "$run_json" ]; then
+                echo "$workflow: waiting for dispatched run"
+                pending=$((pending + 1))
+                continue
+              fi
+
+              run_id="$(jq -r '.id' <<<"$run_json")"
+              status="$(jq -r '.status' <<<"$run_json")"
+              conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
+              url="$(jq -r '.html_url' <<<"$run_json")"
+              printf '%s\t%s\t%s\t%s\t%s\n' "$workflow" "$run_id" "$status" "$conclusion" "$url" >> /tmp/renderlab-release-runs.tsv
+
+              if [ "$status" != "completed" ]; then
+                echo "$workflow: $status ($run_id)"
+                pending=$((pending + 1))
+              elif [ "$conclusion" = "success" ]; then
+                echo "$workflow: success ($run_id)"
+              elif [ "$conclusion" = "cancelled" ]; then
+                retries="${cancel_retry_count[$workflow]:-0}"
+                if [ -n "${retried_cancelled_run[$run_id]:-}" ]; then
+                  echo "$workflow: waiting for replacement after cancelled run $run_id"
+                  pending=$((pending + 1))
+                elif [ "$retries" -lt 2 ]; then
+                  echo "::warning::$workflow run $run_id was cancelled; dispatching bounded retry $((retries + 1))/2."
+                  dispatch_retry "$workflow"
+                  retried_cancelled_run[$run_id]=1
+                  cancel_retry_count[$workflow]=$((retries + 1))
+                  pending=$((pending + 1))
+                else
+                  echo "::error::$workflow remained cancelled after 2 retries ($url)"
+                  failed=$((failed + 1))
+                fi
+              else
+                echo "::error::$workflow concluded $conclusion ($url)"
+                failed=$((failed + 1))
+              fi
+            done
+
+            if [ "$failed" -gt 0 ]; then
+              cat /tmp/renderlab-release-runs.tsv
+              exit 1
+            fi
+            if [ "$pending" -eq 0 ]; then
+              echo "All configured child workflows succeeded on $TARGET_SHA."
+              cat /tmp/renderlab-release-runs.tsv
+              exit 0
+            fi
+
+            sleep 15
+          done
+
+          echo "::error::Timed out waiting for exact-SHA child workflows."
+          cat /tmp/renderlab-release-runs.tsv || true
+          exit 1
+
+      - name: Upload release run manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-release-candidate-run-manifest
+          path: /tmp/renderlab-release-runs.tsv
+          if-no-files-found: warn
+          retention-days: 14
