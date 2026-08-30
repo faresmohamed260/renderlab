@@ -1,0 +1,209 @@
+name: Phase 12B Production Admin Final
+
+on:
+  push:
+    branches: [work/phase-12b-rollout-execution]
+    paths:
+      - ".github/workflows/phase-12b-admin-final.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CANDIDATE_SHA: d6b8f386db3893e583c99b23fc3397b0eb377d42
+      RENDERLAB_TEST_BASE_URL: https://renderlab.faresuniform.uk
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+
+    steps:
+      - name: Checkout exact verified candidate
+        uses: actions/checkout@v4
+        with:
+          ref: d6b8f386db3893e583c99b23fc3397b0eb377d42
+          fetch-depth: 1
+
+      - name: Verify exact candidate
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify production-specific Admin contract
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import {
+            createConfiguredTestAccount,
+            configuredTestAccountIdentity,
+            deleteConfiguredTestAccount,
+            withAccountAuthorization,
+          } from "./scripts/lib/configured-test-account.mjs";
+
+          const base = process.env.RENDERLAB_TEST_BASE_URL.replace(/\/$/, "");
+          const sb = process.env.SUPABASE_URL.replace(/\/$/, "");
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          let admin = null;
+          let member = null;
+
+          function assert(value, message) { if (!value) throw new Error(message); }
+
+          async function service(path, init = {}) {
+            const headers = new Headers(init.headers);
+            headers.set("apikey", key);
+            headers.set("authorization", `Bearer ${key}`);
+            if (init.body != null && !headers.has("content-type")) headers.set("content-type", "application/json");
+            return fetch(`${sb}/rest/v1/${path}`, { ...init, headers });
+          }
+
+          async function app(path, account, init = {}) {
+            const response = await fetch(`${base}${path}`, withAccountAuthorization(account, init));
+            const text = await response.text();
+            let payload = null;
+            try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
+            return { response, payload };
+          }
+
+          async function setAccess(id, patch) {
+            const response = await service(`renderlab_account_access?user_id=eq.${encodeURIComponent(id)}`, {
+              method: "PATCH",
+              headers: { Prefer: "return=minimal" },
+              body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
+            });
+            assert(response.ok, `Could not update run-owned access (${response.status}): ${await response.text()}`);
+          }
+
+          try {
+            admin = await createConfiguredTestAccount("phase12b-production-admin-final");
+            member = await createConfiguredTestAccount("phase12b-production-member-final");
+            await setAccess(admin.id, { role: "admin", status: "active" });
+            await setAccess(member.id, { role: "member", status: "active" });
+
+            const signedOut = await fetch(`${base}/api/admin/settings`);
+            assert(signedOut.status === 403, `Signed-out Admin settings expected 403, got ${signedOut.status}`);
+
+            const denied = await app("/api/admin/settings", member);
+            assert(denied.response.status === 403, `Member Admin settings expected 403, got ${denied.response.status}`);
+
+            const settings = await app("/api/admin/settings", admin);
+            assert(settings.response.status === 200 && settings.payload?.ok, `Admin settings failed: ${settings.response.status}`);
+            assert(settings.payload.settings?.generationEnabled === true, "Production generation default is not enabled");
+            assert(settings.payload.settings?.maxActiveJobs === 1, "Production active-job default is not 1");
+            assert(settings.payload.settings?.maxJobsPerHour === 12, "Production hourly default is not 12");
+
+            const accounts = await app("/api/admin/accounts", admin);
+            assert(accounts.response.status === 200 && accounts.payload?.ok, `Admin accounts failed: ${accounts.response.status}`);
+            assert(Array.isArray(accounts.payload.accounts) && accounts.payload.accounts.length >= 3, "Admin account list did not include persistent + run-owned accounts");
+
+            const health = await app("/api/admin/health", admin);
+            assert(health.response.status === 200 && health.payload?.ok, `Admin health failed: ${health.response.status}`);
+
+            const page = await app("/admin", admin, { headers: { accept: "text/html" } });
+            assert(page.response.status === 200 && typeof page.payload === "string" && page.payload.includes("Admin"), `Authenticated Admin page failed: ${page.response.status}`);
+
+            const selfSuspend = await app(`/api/admin/accounts/${admin.id}`, admin, {
+              method: "PATCH",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ status: "suspended" }),
+            });
+            assert(selfSuspend.response.status === 409, `Admin self-suspension expected 409, got ${selfSuspend.response.status}`);
+            assert(selfSuspend.payload?.error?.code === "self_lockout", `Production self-lockout returned unexpected code: ${JSON.stringify(selfSuspend.payload)}`);
+
+            const suspendMember = await app(`/api/admin/accounts/${member.id}`, admin, {
+              method: "PATCH",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ status: "suspended" }),
+            });
+            assert(suspendMember.response.status === 200, `Member suspension expected 200, got ${suspendMember.response.status}`);
+            const reactivateMember = await app(`/api/admin/accounts/${member.id}`, admin, {
+              method: "PATCH",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ status: "active" }),
+            });
+            assert(reactivateMember.response.status === 200, `Member reactivation expected 200, got ${reactivateMember.response.status}`);
+
+            console.log("PRODUCTION_ADMIN_AUTHORIZATION_VERIFIED=true");
+            console.log("PRODUCTION_ADMIN_SELF_LOCKOUT_VERIFIED=true");
+            console.log("PRODUCTION_ADMIN_MEMBER_MUTATION_VERIFIED=true");
+          } finally {
+            if (member) await deleteConfiguredTestAccount(member);
+            if (admin) await deleteConfiguredTestAccount(admin);
+          }
+          NODE
+
+      - name: Cleanup production-specific Admin fixtures
+        if: always()
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { configuredTestAccountIdentity, deleteConfiguredTestAccount } from "./scripts/lib/configured-test-account.mjs";
+          for (const namespace of ["phase12b-production-admin-final", "phase12b-production-member-final"]) {
+            await deleteConfiguredTestAccount(configuredTestAccountIdentity(namespace));
+          }
+          console.log("Production-specific Admin fixtures clean.");
+          NODE
+
+      - name: Final exact Phase 12B residue and defaults audit
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { createClient } from "@supabase/supabase-js";
+
+          const base = process.env.SUPABASE_URL.replace(/\/$/, "");
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const client = createClient(base, key, { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } });
+
+          async function rows(path) {
+            const response = await fetch(`${base}/rest/v1/${path}`, { headers: { apikey: key, authorization: `Bearer ${key}` } });
+            if (!response.ok) throw new Error(`Final audit query failed (${response.status}): ${await response.text()}`);
+            return response.json();
+          }
+
+          const { data: users, error: usersError } = await client.auth.admin.listUsers({ page: 1, perPage: 1000 });
+          if (usersError) throw usersError;
+          const fixtureUsers = (users?.users || []).filter((user) => typeof user.app_metadata?.renderlab_fixture === "string");
+          if (fixtureUsers.length !== 0) throw new Error(`Run-owned Auth fixture users remain: ${fixtureUsers.length}`);
+
+          const access = await rows("renderlab_account_access?select=user_id,role,status,generation_enabled,max_active_jobs,max_jobs_per_hour");
+          if (access.length !== 1 || access[0].role !== "admin" || access[0].status !== "active") throw new Error(`Persistent access baseline mismatch: ${JSON.stringify(access)}`);
+          if ([access[0].generation_enabled, access[0].max_active_jobs, access[0].max_jobs_per_hour].some((value) => value !== null)) throw new Error("Persistent admin unexpectedly has per-account generation overrides");
+          const persistentOwner = access[0].user_id;
+
+          for (const table of ["generation_jobs", "generation_sources", "media_assets", "media_upload_sessions", "media_collections"]) {
+            const foreignOwners = await rows(`${table}?owner_id=neq.${encodeURIComponent(persistentOwner)}&select=owner_id&limit=1`);
+            if (foreignOwners.length !== 0) throw new Error(`Phase 12B owner residue remains in ${table}`);
+          }
+
+          const reservations = await rows("generation_admission_reservations?select=id&limit=1");
+          if (reservations.length !== 0) throw new Error("Generation admission reservation residue remains");
+
+          const invitations = await rows("renderlab_beta_invitations?claimed_at=is.null&revoked_at=is.null&select=id&limit=1");
+          if (invitations.length !== 0) throw new Error("Open beta invitation residue remains");
+
+          const settings = await rows("renderlab_beta_settings?singleton_id=eq.1&select=generation_enabled,max_active_jobs,max_jobs_per_hour,updated_by&limit=1");
+          const s = settings[0];
+          if (!s || s.generation_enabled !== true || s.max_active_jobs !== 1 || s.max_jobs_per_hour !== 12 || s.updated_by !== null) throw new Error(`Global defaults mismatch: ${JSON.stringify(s)}`);
+
+          console.log("PHASE12B_AUTH_FIXTURE_USERS=0");
+          console.log("PHASE12B_FOREIGN_OWNER_RESIDUE=0");
+          console.log("PHASE12B_ADMISSION_RESIDUE=0");
+          console.log("PHASE12B_OPEN_INVITATION_RESIDUE=0");
+          console.log("PHASE12B_ACCESS_BASELINE=ONE_ACTIVE_ADMIN_NO_OVERRIDES");
+          console.log("PHASE12B_GLOBAL_DEFAULTS=ENABLED_1_12_NO_UPDATER");
+          NODE
