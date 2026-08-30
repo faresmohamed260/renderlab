@@ -2,9 +2,11 @@ name: Deployment Readiness
 
 # Non-deploying guard for the explicit RenderLab production rollout and Vercel environment contract.
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
+      - ".github/release-candidate"
       - "vercel.json"
       - "next.config.ts"
       - "package.json"
@@ -14,6 +16,7 @@ on:
       - ".github/workflows/deployment-readiness.yml"
   pull_request:
     paths:
+      - ".github/release-candidate"
       - "vercel.json"
       - "next.config.ts"
       - "package.json"
