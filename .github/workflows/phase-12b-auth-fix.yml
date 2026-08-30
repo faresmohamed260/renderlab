@@ -36,6 +36,7 @@ jobs:
         run: |
           import json
           import os
+          import urllib.error
           import urllib.request
 
           token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
@@ -58,8 +59,14 @@ jobs:
                       "Content-Type": "application/json",
                   },
               )
-              with urllib.request.urlopen(req, timeout=30) as response:
-                  return json.load(response)
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as error:
+                  detail = error.read().decode("utf-8", errors="replace")
+                  print(f"SUPABASE_MANAGEMENT_HTTP_STATUS={error.code}")
+                  print(f"SUPABASE_MANAGEMENT_ERROR={detail[:2000]}")
+                  raise
 
           def parse_allow_list(value):
               if isinstance(value, list):
