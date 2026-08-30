@@ -39,7 +39,7 @@ function assetTitle(asset: PublicMediaAsset) {
 
 function continuationHref(assetId: string, actionId: string) {
   const params = new URLSearchParams({ source: assetId, action: actionId });
-  return `/?${params.toString()}`;
+  return `/create?${params.toString()}`;
 }
 
 export function MediaViewer({

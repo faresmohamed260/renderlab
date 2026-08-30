@@ -45,6 +45,9 @@ test("Library does not expose owner-scoped search or filters before sign-in", as
 test("Create rejects malformed Library continuation URLs without losing the default workspace", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/?source=not-a-media-id&action=edit-image");
+  expect(new URL(page.url()).pathname).toBe("/create");
+  expect(new URL(page.url()).searchParams.get("source")).toBe("not-a-media-id");
+  expect(new URL(page.url()).searchParams.get("action")).toBe("edit-image");
 
   await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "That continuation link is invalid." })).toBeVisible();
@@ -56,6 +59,9 @@ test("Create rejects malformed Library continuation URLs without losing the defa
 test("Create requires sign-in before resolving a valid-looking private continuation source", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/?source=00000000-0000-4000-8000-000000000000&action=edit-image");
+  expect(new URL(page.url()).pathname).toBe("/create");
+  expect(new URL(page.url()).searchParams.get("source")).toBe("00000000-0000-4000-8000-000000000000");
+  expect(new URL(page.url()).searchParams.get("action")).toBe("edit-image");
 
   await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "Sign in from Settings to continue from private RenderLab media." })).toBeVisible();

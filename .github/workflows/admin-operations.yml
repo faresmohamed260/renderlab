@@ -5,9 +5,9 @@ on:
     paths:
       - "package.json"
       - "tsconfig.json"
-      - "src/app/admin/**"
+      - "src/app/(app)/admin/**"
       - "src/app/api/admin/**"
-      - "src/app/settings/**"
+      - "src/app/(app)/settings/**"
       - "src/components/shell/**"
       - "src/features/admin/**"
       - "src/lib/api/admin-contract.ts"

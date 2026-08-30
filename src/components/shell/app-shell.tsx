@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ type NavItem = {
 };
 
 const primaryNav: NavItem[] = [
-  { href: "/", label: "Create", icon: Sparkles },
+  { href: "/create", label: "Create", icon: Sparkles },
   { href: "/library", label: "Library", icon: Images },
 ];
 
@@ -31,11 +32,11 @@ const utilityNav: NavItem[] = [
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function routeTitle(pathname: string) {
+  if (pathname.startsWith("/create")) return "Create";
   if (pathname.startsWith("/library")) return "Library";
   if (pathname.startsWith("/activity")) return "Activity";
   if (pathname.startsWith("/settings")) return "Settings";
@@ -88,8 +89,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="sticky top-0 hidden h-dvh w-52 shrink-0 border-r border-border bg-surface-1 px-5 py-5 lg:flex lg:flex-col"
         aria-label="Application navigation"
       >
-        <Link href="/" className="mb-7 inline-flex min-h-11 items-center text-lg font-semibold tracking-tight">
-          RenderLab
+        <Link href="/create" aria-label="Open Create workspace" className="mb-7 inline-flex min-h-11 items-center text-lg font-semibold tracking-tight">
+          <RenderLabBrand markClassName="size-7" textClassName="text-lg" />
         </Link>
 
         <nav className="flex flex-col gap-1" aria-label="Primary navigation">
@@ -107,8 +108,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-canvas/95 px-4 backdrop-blur sm:px-6">
-          <Link href="/" className="mr-4 inline-flex min-h-11 items-center font-semibold tracking-tight lg:hidden">
-            RenderLab
+          <Link href="/create" aria-label="Open Create workspace" className="mr-4 inline-flex min-h-11 items-center font-semibold tracking-tight lg:hidden">
+            <RenderLabBrand markClassName="size-6" textClassName="text-sm" />
           </Link>
           <h1 className="hidden text-base font-semibold lg:block">{title}</h1>
 

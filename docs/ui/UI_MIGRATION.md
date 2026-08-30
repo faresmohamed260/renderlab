@@ -1275,26 +1275,37 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Authoritative docs match verified Phase 10A–10D engineering reality. Phase 11 is the next roadmap slice and requires its own merged execution-ready contract; broader-beta Auth blockers remain separately open.
 
 ### Phase 11 — Brand & Launch Experience
-**Contract status:** `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052. Starting `main`: `20f91dace0386c6c4f0b4305af2bef1bbc6ea572`.
+**Contract status:** `IMPLEMENTATION VERIFIED / READY FOR MERGE` under UI-052. Contract merged as `37c0ee922792244ffdf2e3887db08cecc3eab97d`; PR #73 implementation and required human review are complete, with final documentation-only exact-head CI still required before merge.
+
+#### Current verified implementation handoff — 2026-08-30
+- [x] Authoritative `main` is `37c0ee922792244ffdf2e3887db08cecc3eab97d`; PR #73 targets that unchanged base. Reviewed-design ancestor is `9d50244a63ecacda9b37bebf023706948817fd96`.
+- [x] Desktop/narrow open-SVG checkpoint is reviewed; route audit `33318762853` passed before implementation without an API rename.
+- [x] PR #73 implements `/` landing, `/create` Create, `(app)` AppShell route ownership, legacy root-query redirect, updated shell/Viewer links, brand/favicon/Open Graph assets, launch verifier/workflow and affected route-test/workflow updates.
+- [x] Guarded staging `33319652665` and clean static gate `33320451225` passed scoped static/build checks.
+- [x] Validated implementation head `8975b7b42b518eea0a462b28528ddd41d90ad986` passed **19/19 affected PR workflows**. Account/Admin Operations `33321365154` and Library Lifecycle Visual `33321365125` close the older concurrency-cancelled gaps; Create Lifecycle `33321365191`, Library Drag Drop `33321365146` and Generation Admission `33321365155` also passed.
+- [x] Brand / Launch Visual `33321365147` artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean for landing desktop/narrow, `/create` AppShell, small-scale brand treatment and legacy continuation. No Phase 11 visual correction is required.
+- [x] No horizontal clipping, misleading public-access implication or generic AI-marketing drift was found; `/create` remains recognizably the established application and legacy continuation reaches the correct signed-out/private-media state.
+- [x] Deployment, schema, Supabase/Auth policy, admission defaults, R2/provider contracts and Phase 10 broader-beta blockers remain unchanged.
+- [ ] Merge PR #73 only after this documentation-only final head reaches terminal success on every affected workflow. Merge and deployment remain separate operations.
 
 #### Locked product / IA boundary
-- [x] Public Brand / Landing target is `/`; Create target is `/create` after implementation. Current repository behavior remains Create `/` until Phase 11 implementation merges.
+- [x] PR #73 implements public Brand / Landing at `/` and Create at `/create`; authoritative `main` still serves Create `/` until that PR merges.
 - [x] Root layout will become global-only; landing will render without `AppShell`; application routes will share an app route-group layout with the existing shell. Library/Viewer/Activity/Settings/Admin public URLs remain unchanged.
 - [x] Legacy root continuation URLs carrying `source`/`action` must same-origin redirect to `/create` with query preserved; Create remains the validator/owner boundary. Bare `/` becomes landing.
 - [x] Shell Create + shell wordmark point to `/create`; marketing wordmark points `/`. Landing primary CTA is `Open Create`; account CTA is `Sign in` → `/settings`. No new public credential/sign-up/waitlist surface is approved.
 
 #### Brand / launch design boundary
-- [ ] Produce and review a Phase 11 desktop + narrow visual candidate in Penpot or repository open-SVG handoff before coding final landing composition.
-- [ ] Select one original RenderLab mark + wordmark system that works at favicon/small-shell scale and in monochrome. Retain dark-first palette/violet accent; marketing may be more expressive without redefining application controls/tokens.
-- [ ] Implementation asset set includes reusable mark/wordmark treatment, app/favicon icon and project-owned Open Graph/social banner.
-- [ ] Landing stays concise: hero/value; four verified creative operations; durable reference/Library/reuse; Activity/recovery continuity; closed-beta CTA/footer. Preview media/UI must be truthful.
-- [ ] No pricing, testimonials, fake metrics/customer logos, public signup/waitlist, blog/CMS, analytics pixels, third-party marketing cookies, provider/model superiority, render-time/cost guarantees or unverified feature claims.
+- [x] Produce and review a Phase 11 desktop + narrow visual candidate in Penpot or repository open-SVG handoff before coding final landing composition. `design/penpot/brand-launch-v0.1-desktop.svg` (1440×1100) and `brand-launch-v0.1-mobile.svg` (390×844) are the reviewed implementation candidates.
+- [x] Select one original RenderLab mark + wordmark system that works at favicon/small-shell scale and in monochrome. The reviewed candidate uses a geometric monochrome-capable `R` mark, retained dark-first palette and semantic violet accent without sparkle/glow/gradient dependence.
+- [x] PR #73 includes reusable mark/wordmark treatment, app/favicon icon and project-owned generated Open Graph launch image.
+- [x] Landing implementation stays concise: hero/value; four verified creative operations; durable reference/Library/reuse; Activity/recovery continuity; closed-beta CTA/footer; verifier rejects forbidden launch claims.
+- [x] No pricing, testimonials, fake metrics/customer logos, public signup/waitlist, blog/CMS, analytics pixels, third-party marketing cookies, provider/model superiority, render-time/cost guarantees or unverified feature claims were added.
 
 #### Implementation / verification boundary
-- [ ] Prefer Server Components/static project assets and minimal client motion. Honor reduced motion; no autoplay background video, cursor gimmicks, heavy WebGL or decorative motion that competes with content.
-- [ ] Add configured Brand / Launch Visual validation with production build, `/` + `/create` route checks, desktop `1440x1100` and narrow `390x844` screenshots, overflow/keyboard/focus/reduced-motion checks, truthful closed-beta copy and metadata/asset verification.
-- [ ] Update UI Shell/Create/deep-link tests for `/create` and legacy root-query compatibility; run UI purity, TypeScript/build and every path-triggered affected regression. Human-review landing desktop/narrow, small-scale brand mark, post-move app shell and representative continuation redirect.
-- [ ] No schema/R2/provider/Auth/admission/deployment change is expected or authorized. Phase 10 broader-beta email/template/leaked-password blockers remain open. Phase 12 owns integrated release validation and any separately authorized rollout.
+- [x] Landing uses Server Components/static project assets with no autoplay background video, cursor gimmicks or heavy WebGL; configured narrow verification asserts zero running animation under reduced motion.
+- [x] Configured Brand / Launch Visual `33320628708` production-built the candidate and verified `/` + `/create`, desktop `1440x1100`, narrow `390x844`, overflow, keyboard/focus, reduced motion, truthful closed-beta copy, metadata/assets and legacy query preservation.
+- [x] UI Shell/Create/deep-link tests are updated; validated implementation head `8975b7b42b518eea0a462b28528ddd41d90ad986` passed all 19 affected workflows, including the previously cancelled Account/Admin and Library Lifecycle gates, and the required human review is complete.
+- [x] No schema/R2/provider/Auth/admission/deployment change occurred or is authorized. Phase 10 broader-beta email/template/leaked-password blockers remain open. Phase 12 owns integrated release validation and any separately authorized rollout.
 
 ### Phase 12 — Cycle 2 Release Validation
 - [ ] Run exact-head GitHub validation for every affected slice and a final integrated Account → Create → generation → durable input reuse → Library → Viewer → organization → Activity/recovery path plus Admin authorization boundary and launch surfaces.
@@ -1321,12 +1332,12 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete/verified and Phase 11 has an expanded execution-ready contract under UI-052 but implementation has not started.
-**Current phase contract:** Phase 11 — Brand & Launch Experience is `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052.
-**Next implementation sequence:** complete the Phase 11 visual-design checkpoint, then implement the locked landing `/` → Create `/create` route/layout/brand slice and validate it exactly as UI-052 requires.
-**Current gate:** merge the Phase 11 UI-052 execution contract before any Phase 11 visual-design or implementation change. After merge, the first implementation gate is the desktop+narrow visual-design checkpoint; no deployment unless explicitly authorized.
-**Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
-**Later Cycle 2:** Phase 11 Brand & Launch → Phase 12 integrated release validation.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete/verified and Phase 11 implementation is verified under UI-052 pending merge of PR #73.
+**Current phase contract:** Phase 11 — Brand & Launch Experience is `IMPLEMENTATION VERIFIED / READY FOR MERGE` under UI-052.
+**Next implementation sequence:** require terminal success on every affected workflow for this documentation-only final head, merge PR #73 with an unchanged verified head, then verify expected merged-main regressions and exact fixture cleanup. Record the merged-main Phase 11 handoff in existing authoritative docs. Do not start Phase 12 before that verification is complete.
+**Current gate:** validated application head `8975b7b42b518eea0a462b28528ddd41d90ad986` passed 19/19 affected workflows; Brand / Launch Visual `33321365147` artifact `9734984885` was human-reviewed clean. Only final docs-head CI, guarded merge and merged-main verification remain. No deployment unless explicitly authorized.
+**Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1 → Phase 10 Account/Admin/Closed-Beta Operations.
+**Later Cycle 2:** Phase 12 integrated release validation after Phase 11 is merged and verified on `main`.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
 **Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation productization, billing and cross-page selection still require their own evidence/decisions.
 

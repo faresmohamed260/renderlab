@@ -263,7 +263,7 @@ try {
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-mobile-viewer.png`, fullPage: true });
 
   await edit.click();
-  await page.waitForURL((url) => url.pathname === "/" && url.searchParams.get("source") === assetId && url.searchParams.get("action") === "edit-image", { timeout: 30_000 });
+  await page.waitForURL((url) => url.pathname === "/create" && url.searchParams.get("source") === assetId && url.searchParams.get("action") === "edit-image", { timeout: 30_000 });
   await page.getByRole("heading", { name: "Edit an image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Editing this image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByRole("radiogroup", { name: "Output type", exact: true }).waitFor({ state: "visible", timeout: 30_000 });

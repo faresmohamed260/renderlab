@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - "src/features/create/**"
+      - "src/app/(app)/create/**"
+      - "src/app/(app)/layout.tsx"
+      - "src/components/shell/**"
+      - "src/components/brand/**"
       - "src/components/ui/**"
       - "src/lib/utils.ts"
       - "src/lib/supabase/**"

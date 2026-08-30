@@ -11,7 +11,7 @@ on:
       - "src/components/ui/**"
       - "src/lib/utils.ts"
       - "src/lib/supabase/**"
-      - "src/app/library/**"
+      - "src/app/(app)/library/**"
       - "src/features/library/**"
       - "src/app/api/media/assets/**"
       - "src/app/api/generation/**"
