@@ -15,7 +15,7 @@ on:
       - "src/lib/api/generation-contract.ts"
       - "src/lib/api/generation-activity-contract.ts"
       - "src/lib/api/generation-retry-contract.ts"
-      - "src/app/activity/**"
+      - "src/app/(app)/activity/**"
       - "src/app/api/generation/jobs/**"
       - "src/features/activity/**"
       - "src/server/data/**"
