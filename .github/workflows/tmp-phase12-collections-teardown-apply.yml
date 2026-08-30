@@ -1,0 +1,32 @@
+name: Apply Phase 12 Collections teardown fix
+
+on:
+  push:
+    branches:
+      - work/phase-12-release-validation
+    paths:
+      - .github/workflows/tmp-phase12-collections-teardown-apply.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-12-release-validation
+          fetch-depth: 0
+      - name: Apply patch
+        run: node scripts/tmp-phase12-collections-teardown-fix.mjs
+      - name: Commit verifier-only fix
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-phase12-collections-teardown-apply.yml scripts/tmp-phase12-collections-teardown-fix.mjs
+          git add scripts/verify-library-collections.mjs
+          git diff --cached --check
+          git commit -m "test: harden Collections routed-page teardown"
+          git push origin HEAD:work/phase-12-release-validation
