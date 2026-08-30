@@ -1317,19 +1317,30 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Production Closed-Beta enforcement/known-account UUID bootstrap is still unresolved and must not be mutated during 12A. Hosted Auth Site URL/redirect/template/sender/custom-SMTP evidence and Free-plan leaked-password support remain separately documented operational/broader-beta gaps.
 
 #### 12A — Release Candidate Validation
-- [ ] Freeze one exact candidate SHA after this contract merges; any release-blocking fix creates a new candidate and invalidates stale-head evidence.
-- [ ] Run static/build/deployment-readiness gates and require terminal success for the complete configured feature/integration matrix; cancelled/action-required/queued runs are not success.
-- [ ] Prove integrated Account → Create → persisted generation/reference reuse → Library → Viewer → organization → Activity/recovery continuity plus signed-out/foreign denial, fresh Admin authorization and public Landing/Create routing in one dedicated release run if existing workflows do not already cover it as one path.
-- [ ] Keep integrated continuity provider-cheap by using a run-owned mock backend where appropriate; retain existing configured Image/Edit and Video/Animate integration as the authoritative live-provider mapping checks.
-- [ ] Capture/review bounded desktop+narrow release artifacts for Landing, Create, Library, Viewer, Activity, Settings and Admin; include overflow/focus/reduced-motion/accessibility checks.
-- [ ] Run read-only Supabase migration/RLS/grant/function/singleton/integrity/advisor/fixture audit and exact cleanup after configured validation.
-- [ ] Run read-only Vercel project/domain/current-deployment/runtime/env-contract audit plus current-production SHA drift; re-confirm custom-domain HTTPS and R2 exact-origin browser-upload contract without production mutation.
-- [ ] Record one exact candidate manifest in authoritative docs. If all 12A gates pass and deployment is still unauthorized, mark `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED` and stop.
+- [x] Freeze one exact candidate SHA after this contract merges; any release-blocking fix creates a new candidate and invalidates stale-head evidence.
+- [x] Run static/build/deployment-readiness gates and require terminal success for the complete configured feature/integration matrix; cancelled/action-required/queued runs are not success.
+- [x] Prove integrated Account → Create → persisted generation/reference reuse → Library → Viewer → organization → Activity/recovery continuity plus signed-out/foreign denial, fresh Admin authorization and public Landing/Create routing in one dedicated release run if existing workflows do not already cover it as one path.
+- [x] Keep integrated continuity provider-cheap by using a run-owned mock backend where appropriate; retain existing configured Image/Edit and Video/Animate integration as the authoritative live-provider mapping checks.
+- [x] Capture/review bounded desktop+narrow release artifacts for Landing, Create, Library, Viewer, Activity, Settings and Admin; include overflow/focus/reduced-motion/accessibility checks.
+- [x] Run read-only Supabase migration/RLS/grant/function/singleton/integrity/advisor/fixture audit and exact cleanup after configured validation.
+- [x] Run read-only Vercel project/domain/current-deployment/runtime/env-contract audit plus current-production SHA drift; re-confirm custom-domain HTTPS and R2 exact-origin browser-upload contract without production mutation.
+- [x] Record one exact candidate manifest in authoritative docs. If all 12A gates pass and deployment is still unauthorized, mark `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED` and stop.
+
+
+#### 12A verified release-candidate evidence — 2026-08-30
+- [x] PR #75 merged as exact authoritative candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
+- [x] Deployment Readiness `33335278699`, Integrated Release `33335278694`, and Release Candidate Matrix `33335278667` passed on that exact merged SHA.
+- [x] Matrix manifest artifact `9739024806` (`sha256:8185cadab7ab1d20468c476b42486285d084bc56b4aa3dddaed035f77f8d5ab1`) records 23/23 terminal-success configured child runs. The push UI Shell cancellation `33335278679` was superseded rather than accepted; exact matrix UI Shell `33335337206` succeeded.
+- [x] Exact-main Integrated Release artifact `9738853882` (`sha256:b8b9d48d1f97a93595ff6691708b4a2c5f13d33c0c01c785c7b6f5e35afdd8a6`) and Create Lifecycle artifact `9738873955` (`sha256:78eb279abb14492cd63550f2c4363bd37c6f6ea4add29e7dd572959d2327137e`) were human-reviewed clean for the required desktop/narrow/reduced-motion release surfaces.
+- [x] Read-only R2 exact-origin preflight, Vercel project/deployment/domain/runtime/env-contract audit and Supabase migration/RLS/grant/function/singleton/integrity/advisor audits passed without production mutation.
+- [x] Final exact-main cleanup found zero release-created Auth/job/source/asset/upload/collection/item rows plus zero RenderLab access/invitation/admission-reservation fixtures; singleton defaults are enabled / 1 / 12 / no updater. Legitimate project media/history predating 12A remains intact and is not test residue.
+- [x] No Vercel deployment was created. Current production remains READY at application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca` / deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL`.
+- [x] 12A status is **`RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`**. Phase 12B remains blocked pending explicit user authorization.
 
 #### 12A scope guardrails
-- [ ] No feature expansion, redesign, architecture refactor, provider tuning or migration unless required by a verified release-blocking defect; make only the smallest fix and fully revalidate its new exact head.
-- [ ] Do not mutate Vercel production, Supabase Auth hosted settings, closed-beta enforcement/bootstrap, R2 CORS or provider infrastructure during 12A.
-- [ ] Do not convert informational advisors or broader-beta Auth limitations into invented Phase 12 fixes without evidence.
+- [x] No feature expansion, redesign, architecture refactor, provider tuning or migration unless required by a verified release-blocking defect; make only the smallest fix and fully revalidate its new exact head.
+- [x] Do not mutate Vercel production, Supabase Auth hosted settings, closed-beta enforcement/bootstrap, R2 CORS or provider infrastructure during 12A.
+- [x] Do not convert informational advisors or broader-beta Auth limitations into invented Phase 12 fixes without evidence.
 
 #### 12B — Authorized Production Rollout — blocked until explicit authorization
 - [ ] Receive explicit user authorization for deployment/production mutation of the exact 12A-verified candidate. Without it, do not deploy.
@@ -1358,11 +1369,11 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 are complete/verified.
-**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `CONTRACT MERGED / 12A NOT STARTED`; PR #74 merged as `c03e26c683c9c7c430c0e55cc306f5889f004844`.
-**Next sequence:** freeze one exact current `main` SHA as the first 12A release candidate, run non-deploying static/build/full configured + integrated validation, perform read-only infrastructure/security audits and exact cleanup, then record a candidate manifest. Any code/config fix creates a new candidate and invalidates stale-head evidence.
-**Release reality:** current READY production remains application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; contract-start `main` `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95` was 216 commits ahead with executable changes. Production health is baseline evidence only.
-**Deployment boundary:** Phase 12B remains blocked without explicit user authorization. No Vercel deployment, production access-enforcement/bootstrap, Auth hosted-config or R2 mutation is authorized during 12A.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 and Phase 12A are complete/verified.
+**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `RELEASE CANDIDATE VERIFIED / DEPLOYMENT NOT AUTHORIZED`; PR #75 merged the verified release machinery/candidate to `main` as `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
+**Next sequence:** stop until explicit Phase 12B rollout authorization. If authorized, re-confirm UUID bootstrap/Closed-Beta enforcement, production Auth redirect posture, Vercel env contract and R2 exact-origin CORS; then deploy exactly verified candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42`, smoke-test production, clean exact fixtures and record the rollout evidence.
+**Release reality:** exact merged release candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` is fully 12A-verified, while current READY production remains the older application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`. Automatic Git deployment is still disabled and 12A created no deployment.
+**Deployment boundary:** Phase 12B remains blocked without explicit user authorization. 12A completed without Vercel deployment, production access-enforcement/bootstrap, hosted Auth, R2 or provider mutation.
 **Broader-beta boundary:** built-in mail/rate-limit posture, unverified production Auth Site URL/redirect/template/sender/custom-SMTP posture and Free-plan leaked-password protection remain open until separately evidenced.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library remains out of Phase 12.
 
