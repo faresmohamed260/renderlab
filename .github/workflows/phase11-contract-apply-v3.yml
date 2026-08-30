@@ -29,9 +29,9 @@ jobs:
         working-directory: target
         run: python ../bootstrap/.github/scripts/phase11_contract_apply.py
 
-      - name: Normalize contract whitespace
+      - name: Fix new contract whitespace only
         working-directory: target
-        run: python ../bootstrap/.github/scripts/phase11_contract_cleanup.py
+        run: python ../bootstrap/.github/scripts/phase11_contract_targeted_fix.py
 
       - name: Validate exact docs-only scope
         working-directory: target
