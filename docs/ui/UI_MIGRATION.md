@@ -1342,14 +1342,14 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] Do not mutate Vercel production, Supabase Auth hosted settings, closed-beta enforcement/bootstrap, R2 CORS or provider infrastructure during 12A.
 - [x] Do not convert informational advisors or broader-beta Auth limitations into invented Phase 12 fixes without evidence.
 
-#### 12B — Authorized Production Rollout — authorized; blocked on hosted Supabase Auth URL configuration
+#### 12B — Authorized Production Rollout — COMPLETE / VERIFIED
 - [x] Receive explicit user authorization for deployment/production mutation of the exact 12A-verified candidate. Authorization received 2026-08-31 for `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
-- [ ] Known RenderLab account bootstrap is complete: exactly one active admin/access row with no generation override. Production closed-beta enforcement remains intentionally off until the hosted Auth URL blocker below is corrected and reverified.
-- [ ] BLOCKER: run `33336966309` proved hosted Auth replaces the requested custom-domain recovery redirect with `http://localhost:3000`. Correct Site URL + exact production redirect allowlist, then rerun the no-email recovery/invite redirect probe. GitHub currently has no `SUPABASE_ACCESS_TOKEN` (`33337036024`).
-- [ ] Vercel env presence and R2 exact-origin CORS are reverified (`33336831850`, `33336966309`); all required production keys exist, R2 is clean, and only the not-yet-created closed-beta enforcement key remains pending after the Auth blocker clears.
-- [ ] Deploy exactly the verified candidate; require READY state, aliases/custom-domain HTTPS, landing/routes/metadata, authenticated/private-media, durable upload/reuse, bounded Image+Video, Activity/Retry/Admin smoke and exact cleanup.
-- [ ] Keep `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` available as the pre-rollout rollback candidate until the new release is accepted.
-- [ ] Record actual production deployment SHA/ID, smoke/cleanup evidence and final infrastructure state before marking Phase 12 `COMPLETE / VERIFIED`.
+- [x] Known RenderLab account bootstrap is complete: exactly one active admin/access row with no generation override; production Closed-Beta enforcement is now active after the Auth gate passed.
+- [x] Hosted Auth URL blocker resolved: `33337864235` set Site URL `https://renderlab.faresuniform.uk`, installed exact `/settings` and recovery-confirm redirects, and no-email generated recovery/invite links preserved both custom-domain destinations; temporary Auth fixtures were cleaned.
+- [x] Vercel env presence and R2 exact-origin CORS reverified (`33336831850`, `33336966309`); all required production keys exist and the production-only Closed-Beta enforcement key is enabled.
+- [x] Exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` deployed cleanly by `33338162385` as READY `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2` with `gitDirty=0`; custom-domain Landing/routes/privacy/durable upload+reuse/real Image+Retry+Video/Admin smoke passed across `33338323520` + production-specific follow-up `33338643898`.
+- [x] Pre-rollout deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` retained as the documented rollback baseline through rollout acceptance.
+- [x] Production SHA/deployment ID, Auth/enforcement state, smoke evidence, runtime-log result, human Admin artifact review and exact zero-residue/default-restoration audit recorded; Phase 12 and Cycle 2 are `COMPLETE / VERIFIED`.
 
 
 ### Cycle 2 explicit non-commitments
@@ -1369,12 +1369,12 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 and Phase 12A are complete/verified.
-**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `ROLLOUT AUTHORIZED / BLOCKED ON SUPABASE AUTH CONFIG`; exact verified candidate remains `d6b8f386db3893e583c99b23fc3397b0eb377d42`.
-**Next sequence:** correct hosted Supabase Auth URL Configuration first: Site URL `https://renderlab.faresuniform.uk`; exact redirect URLs `https://renderlab.faresuniform.uk/settings` and `https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password`. Reverify generated links preserve those redirects; only then add closed-beta enforcement, deploy exact candidate, smoke/cleanup and record acceptance.
-**Release reality:** exact merged release candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` is fully 12A-verified, while current READY production remains the older application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`. Automatic Git deployment is still disabled and 12A created no deployment.
-**Deployment boundary:** rollout remains authorized for the exact verified candidate, but deployment/enforcement are blocked until the hosted Auth URL gate passes. Existing READY production remains rollback; do not drift to newer code or unrelated infrastructure changes.
-**Broader-beta boundary:** built-in mail/rate-limit posture, unverified production Auth Site URL/redirect/template/sender/custom-SMTP posture and Free-plan leaked-password protection remain open until separately evidenced.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`; Phases 6–12 are complete.
+**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `COMPLETE / VERIFIED`; exact accepted production application remains `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`.
+**Next sequence:** Cycle 2 has no remaining release task. Start a separately scoped/contracted next cycle before broader-beta expansion or new feature work; do not silently fold post-Cycle-2 backlog into this completed release.
+**Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` is the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
+**Deployment boundary:** Cycle 2 production rollout is accepted for exact application SHA `d6b8f386db3893e583c99b23fc3397b0eb377d42`; Closed-Beta enforcement is active. Future deployment changes require a new explicit release scope and must not treat docs-only `main` as an implicitly verified application candidate.
+**Broader-beta boundary:** production Auth Site URL and exact invite/recovery redirects are now verified. Built-in mail/rate-limit posture, custom-SMTP/sender productionization and Free-plan leaked-password protection remain separate broader-beta hardening work rather than Cycle 2 blockers.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library remains out of Phase 12.
 
 ## Session Handoff Rule
