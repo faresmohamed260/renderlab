@@ -1,0 +1,34 @@
+name: Phase 12 contract merged sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/tmp-phase12-contract-merged.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - run: python scripts/tmp-phase12-contract-merged.py
+      - name: Validate and commit
+        shell: bash
+        run: |
+          rm scripts/tmp-phase12-contract-merged.py
+          rm .github/workflows/tmp-phase12-contract-merged.yml
+          git diff --check
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' .github/workflows/tmp-phase12-contract-merged.yml PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_MIGRATION.md scripts/tmp-phase12-contract-merged.py | sort)"
+          test "$changed" = "$expected"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: record merged Phase 12 contract"
+          git push origin HEAD:main
