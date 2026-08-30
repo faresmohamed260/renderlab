@@ -51,7 +51,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Cycle 2 — Creative Productivity & Beta Maturity. Phases 6–9 and all Phase 10 slices are complete and exact-head verified under UI-051. Phase 11 Brand & Launch Experience is the next roadmap slice and must be expanded into an execution-ready contract before implementation. Broader-beta Auth email/leaked-password blockers remain explicitly open. No deployment is authorized.**
+**Cycle 2 — Creative Productivity & Beta Maturity. Phases 6–10 are complete and verified. Phase 11 Brand & Launch Experience is expanded into an execution-ready contract under UI-052; implementation has not started. Broader-beta Auth email/leaked-password blockers remain explicitly open. No deployment is authorized.**
 
 ### Cycle 2 objective
 Move RenderLab from a solid functional MVP into a product that supports repeated serious creative work: richer reference-driven creation, durable reusable inputs, clearer task-oriented controls, useful job recovery, closed-beta operations, and a premium modern creative experience without exposing ComfyUI/provider complexity to ordinary users.
@@ -62,7 +62,7 @@ Cycle 2 continues the existing phase numbering, with the post-Phase-6 roadmap re
 - **Phase 8 — Library v2 / Media Workflow Productivity: COMPLETE / VERIFIED.** UI-049 completed both ordered slices. **8A Collection Management** remains verified at exact code/test head `34f9573eaabff6a91c780266ff03fedc9058df56`. **8B Page-scoped Batch Organization** is verified at exact implementation head `e460a7e9e805ac9eb214277eb495adddd3c50f38`: the existing UI-034 current-page selection model now exposes one non-destructive Organize disclosure with explicit Favorite/Unfavorite and Add/Remove Collection target-state actions, bounded owner-scoped 1–24-item APIs, best-effort per-item outcomes and active-filter selection reconciliation. Uploaded and generated media use the same organization path. Phase 8 introduced no schema migration, cross-page selection, Trash/restore, Collections destination, global media client store or deployment.
 - **Phase 9 — Activity v2 / Recovery & Job Control: COMPLETE / VERIFIED.** UI-050 failed-job **Retry v0.1** is implemented as owner-scoped `POST /api/generation/jobs/[jobId]/retry`. The server reconstructs only persisted product intent, applies bounded legacy compatibility, current-revalidates capability and inputs, then submits a distinct ordinary job while leaving the historical row immutable. Active/succeeded/cancelled jobs remain non-retryable; Cancel remains deferred because cancellation-safe atomic guards are still absent; no shell-global polling/badge was added. Exact code/test head `ab33e146ccaa7770f3dd66146708f01933cc0173` passed UI Shell `33279062584`, Activity `33279062575`, Account Ownership `33279062570`, Media Delete `33279062563`, Create Lifecycle `33279062581`, Generation Integration `33279062568`, and Video Generation Integration `33279062569`. Final Activity artifact `9722428767` (`sha256:65490c380fe35d5b6a186596cafa1d0706d181c6c827748aaaf8a9dc99e8dcbe`) was reviewed clean after a narrow success-feedback flex defect was found and fixed. Exact fixtures and cleanup-only verification passed; no schema migration or deployment occurred.
 - **Phase 10 — Account, Admin & Closed-Beta Operations: COMPLETE / VERIFIED under UI-051.** **10A Account Recovery & Closed-Beta Admission**, **10B Privileged Admin & Access Control**, and **10C Atomic Generation Admission Guardrails are COMPLETE / VERIFIED**. 10C exact code/test head `ca8e426066385934b296b6d4f88324e9c12861f7` passed the complete 22-workflow affected matrix; migration `20260830101734 renderlab_generation_admission` is applied/audited; Create and Activity Retry share one transactional pre-backend admission boundary with default one-active / 12-per-rolling-hour policy, bounded account overrides and fresh-admin global defaults. Production closed-beta enforcement remains off pending explicit known-RenderLab UUID bootstrap. **10D Auth/Operational Hardening is COMPLETE / VERIFIED**: private product authorization now re-confirms current Supabase Auth session state before trusting identity, while the root proxy retains `getClaims()` only for SSR cookie/signature maintenance. Hosted built-in email/rate-limit posture and Free-plan leaked-password protection remain explicit broader-beta blockers without changing the Closed-Beta operating boundary. No deployment was performed or authorized.
-- **Phase 11 — Brand & Launch Experience:** establish RenderLab visual identity (logo/brand assets/banners), landing/onboarding presentation and the route/information-architecture decision for a marketing landing page. The current `/` Create route remains authoritative until this phase explicitly decides whether landing owns `/` and Create moves to another route.
+- **Phase 11 — Brand & Launch Experience: CONTRACT EXPANDED / IMPLEMENTATION NOT STARTED under UI-052.** The approved target is a public Brand/Landing surface at `/`, with Create moving to `/create` when the Phase 11 implementation lands. The route-group/shell split, legacy continuation compatibility, closed-beta CTA/auth posture, brand asset set, truthful launch messaging and responsive/accessibility/performance validation are locked by the execution contract. Until implementation merges, the repository still serves Create at `/`.
 - **Phase 12 — Cycle 2 Release Validation:** run exact-head integrated validation across Account → Create → generation → durable reference/media reuse → Library → Viewer → organization → Activity/recovery → Admin boundary → launch surfaces, then perform one deliberate production rollout only when explicitly authorized.
 
 ### Phase planning protocol
@@ -73,6 +73,62 @@ Each phase contract covers goal, user value, verified starting state, in/out of 
 ### Cycle 2 scope boundary
 Cycle 2 now explicitly includes Create v2 reference/geometry/composer work, verified Director-video productization, curated Video resolution, Library/Activity productivity, privileged closed-beta admin operations, and brand/launch work. It still does **not** approve generic Models or Workflows screens, ComfyUI graph editing, ordinary-user provider/worker management, arbitrary workflow-parameter forms, inpainting/outpainting, structural guidance, workflow chaining, a full billing system, a global media client store or a cross-page selection framework without separate evidence/decisions.
 
+
+### Phase 11 execution contract — expanded 2026-08-30
+**Status: `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052. This contract must merge before any Phase 11 visual-design or implementation change.**
+
+**Goal / user value**
+- Give RenderLab a credible public identity and launch surface that explains the product before a visitor enters the creative workspace.
+- Separate marketing/navigation chrome from the dense application shell so each surface can optimize for its job without contaminating the other.
+- Preserve closed-beta honesty: invited users can sign in and active users can work, while the public surface does not imply public self-service access or solved broader-beta Auth operations.
+
+**Verified starting state**
+- Authoritative starting `main` is `20f91dace0386c6c4f0b4305af2bef1bbc6ea572`. Phase 10A–10D is complete/verified; Phase 11 planning authorizes no deployment or production access-enforcement change.
+- Current routes are Create `/`, Library `/library`, Viewer `/library/[assetId]`, Activity `/activity`, Settings `/settings`, Admin `/admin`. Root `src/app/layout.tsx` wraps every page in `AppShell`; shell Create links and the shell wordmark point to `/`.
+- Current Create is intentionally draftable while signed out, but durable upload/generation/private operations require verified account state. Sign-in/recovery remains in `/settings`; there is no public product sign-up affordance.
+- Viewer continuation links use root Create query intent (`source` + `action`) and Create server-side reloads/validates owner media. Those links must not silently break when Create moves.
+- No production brand asset set or `public/` directory exists. Root metadata is only `RenderLab` / `AI image and video creation workspace`; the shell uses a text-only RenderLab wordmark.
+- Marketing-safe verified capability is limited to Create Image, Edit Image, Create Video, Animate Image, durable reference/media reuse, Library organization, Activity history/failed-job Retry and closed-beta account/admin controls. Provider/model/worker details remain internal.
+- `UI_SYSTEM.md` already defines the dark-first palette, Inter/system typography, violet accent, accessibility baseline and premium-quality bar. `DESIGN_WORKFLOW.md` makes Penpot/open-SVG handoff plus remote GitHub rendered review the approved design loop.
+
+**Locked route / information-architecture decision — UI-052**
+1. **Landing owns `/`.** Phase 11 implementation makes `/` the public Brand / Launch surface.
+2. **Create moves to `/create`.** `/create` becomes the application Create destination; `/library`, `/library/[assetId]`, `/activity`, `/settings` and `/admin` keep their URLs.
+3. **Split marketing from application layout.** Root layout becomes global document/theme/metadata plumbing only. A marketing route group owns the landing surface without `AppShell`; an application route group owns Create/Library/Viewer/Activity/Settings/Admin under the existing `AppShell`. Route groups do not change public URLs except the deliberate Create move.
+4. **Preserve continuation compatibility.** A legacy request to `/` containing `source` or `action` redirects same-origin to `/create` with the full query string preserved; the existing Create server boundary remains responsible for UUID/action/owner/media validation. Bare `/` becomes landing.
+5. **Application navigation remains task-first.** Shell Create navigation and shell wordmark/mobile brand affordance point to `/create`, preserving their workspace behavior. Marketing wordmark points to `/`.
+6. **Authentication stays where it is.** Landing `Sign in` points to `/settings`. Do not create a second credential form, public registration route, waitlist database or automatic admission path. `Open Create` points to `/create`; signed-out Create remains draftable and persistent actions continue enforcing account/admission rules.
+
+**Brand / visual design contract**
+- Begin with a visual-design checkpoint before coding the landing composition: Penpot when available, otherwise versioned open SVG handoff in `design/penpot/`. Review desktop and narrow/mobile states before treating the design as implementation-ready.
+- Establish one project-owned RenderLab mark and wordmark system, not unrelated logos. The mark must remain recognizable at favicon/small-navigation scale, work in one-color treatment, and avoid relying on glow, gradients or a generic AI-sparkle glyph for identity.
+- Keep the established dark canvas/surface/text foundation and semantic violet accent so marketing and application feel related. Marketing may use more expressive display scale, composition and motion but must not redefine application control density/tokens or push decorative marketing mechanics into `AppShell`, Create or Library.
+- Required implementation assets: reusable mark/wordmark treatment, app/favicon icon, social/Open Graph launch image/banner, and repository-owned vector/raster exports required by Next metadata or external launch use.
+- Motion may support hierarchy and product-story continuity, but no autoplay background video, cursor gimmicks, constant glow/parallax, heavy WebGL or essential information hidden behind motion. Reduced motion gets a static equivalent.
+
+**Landing content / messaging contract**
+- Keep the page concise and product-led: hero/value proposition; proof of the four verified creative operations; durable references/Library/reuse; Activity/recovery continuity; closed-beta access CTA/footer. Product-workspace previews may represent only real RenderLab UI/capability.
+- Primary CTA: **Open Create** → `/create`. Secondary account CTA: **Sign in** → `/settings`. Closed-beta language must be clear without exposing internal admission mechanics.
+- Do not claim public availability, guaranteed quality, deterministic prompt obedience, render-time SLAs, pricing/cost savings, customer/user counts, provider/model superiority, collaboration, mobile apps, Director controls, cancellation, billing/credits or other unverified capability.
+- Do not add pricing, testimonials, fake customer logos/metrics, newsletter/waitlist capture, public registration, blog/CMS, analytics/tracking pixels or third-party marketing cookies in this slice.
+
+**Implementation / architecture boundary**
+- Prefer Server Components and static/project-owned assets. Add Client Components only for interactions/motion that materially benefit the page; do not create a marketing client store.
+- Reuse maintained RenderLab primitives for conventional interactive controls. Marketing-specific composition may be custom, but generic mechanics still follow the approved component-source order and accessibility requirements.
+- Metadata becomes launch-ready with descriptive title/description and project-owned Open Graph/Twitter visuals, without hard-coding an unverified production hostname or implying deployment.
+- No Supabase schema/migration, R2 contract, generation/provider contract, Auth policy, admission default, service-role exposure or production environment mutation is expected.
+
+**Validation / review**
+- Add a dedicated configured **Brand / Launch Visual** workflow/verifier that production-builds the app, verifies `/` landing and `/create` application semantics, captures at least desktop `1440x1100` and narrow `390x844` landing screenshots, checks horizontal overflow, keyboard-reachable CTAs, focus visibility, reduced-motion behavior, truthful closed-beta copy, metadata and brand asset availability.
+- Update UI Shell validation for `/create` active navigation and shell brand behavior. Update Create lifecycle/deep-link verification so `/create` is authoritative and legacy `/?source=...&action=...` redirects to `/create` without losing query intent or weakening server continuation validation.
+- Run UI purity, TypeScript, production build and every path-triggered affected workflow. Route/layout movement is shared composition work, so broad regressions must not be suppressed merely to make the launch slice look isolated.
+- Human-review final desktop/narrow landing, brand mark at small scale, application shell after route migration and a representative legacy continuation redirect result.
+
+**Documentation outputs / exit criteria**
+- Update `PROJECT.md`, `UI_MIGRATION.md`, `UI_DECISIONS.md`, `UI_SYSTEM.md` if brand-system rules actually change, `COMPONENT_CATALOG.md` for adopted reusable brand/marketing components, `SCREEN_REGISTRY.md`, `FRONTEND_ARCHITECTURE.md`, and `design/penpot/README.md` for accepted handoff artifacts.
+- Phase 11 completes only when route migration, brand assets, landing page, truthful CTA/auth posture, legacy continuation compatibility, responsive/accessibility/reduced-motion checks, exact-head CI and human visual review all pass and authoritative docs match verified implementation.
+- Broader-beta Auth email/template/leaked-password blockers from Phase 10 remain open unless separately resolved with operator evidence. Phase 11 completion does not authorize public self-admission, production enforcement or deployment.
+- No Vercel deployment is authorized by this contract. Phase 12 owns final integrated release validation and any later explicitly authorized production rollout.
 
 ### Phase 10D execution contract — expanded 2026-08-30
 **Status: `COMPLETE / VERIFIED`. The execution contract merged before implementation; PR #70 is merged to `main` as `5950958dc58143b099bc2877a942829c045f700e` and merged-main acceptance is recorded below.**

@@ -95,6 +95,21 @@ Rules:
 - Library drag/drop is transient browser interaction state only; it does not become URL or durable media-management state.
 - Settings owns requirement-backed account/application state. UI-029 uses it for Supabase Auth identity. UI-030 does not turn the entire application into a redirect-based login wall: signed-out Create remains draftable, while private Library/Viewer data and persistent generation/upload actions require a verified account.
 
+### Phase 11 planned landing / application routing boundary — UI-052
+The verified current routing block above remains authoritative until Phase 11 implementation merges. UI-052 locks the target migration:
+
+```text
+/                  Brand / Landing (public, no AppShell)
+/create            Create (application AppShell)
+/library           Library (application AppShell)
+/library/[assetId] Media Viewer (application AppShell)
+/activity          Activity (application AppShell)
+/settings          Settings / Account (application AppShell)
+/admin             Admin (application AppShell, fresh active-admin authorization)
+```
+
+Implementation uses route groups so marketing and application layouts can diverge without changing public URLs beyond the deliberate Create move. Root layout becomes global document/theme/metadata plumbing only; an application route-group layout owns `AppShell`. Bare `/` becomes landing. Legacy root requests with `source` or `action` must redirect same-origin to `/create` with the full query preserved, after which the existing Create server boundary continues UUID/action/owner/media validation. Shell Create links/wordmark move to `/create`; marketing wordmark points `/`. Landing account CTA reuses `/settings`; no second auth UI or public signup is introduced. Until implementation merges, `/` remains Create and this section is a planned contract, not a claim about current runtime behavior.
+
 ### Phase 9 Retry boundary — implemented / verified
 UI-050 keeps Activity data server-owned and adds one small failed-row client mutation. `POST /api/generation/jobs/[jobId]/retry` receives no generation payload from the browser: `retryGenerationJob` loads the historical job under the verified owner, reconstructs only persisted product intent, applies bounded legacy compatibility, runs the current `parseGenerationRequest` boundary and owner/source input preflight, then calls the ordinary exported `submitGeneration` path. An accepted attempt is a distinct new job and the original row is not mutated. Foreign jobs collapse to not-found; active/succeeded/cancelled jobs and current-invalid/unavailable-source intent fail closed. `ActivityRetryButton` owns only in-flight/success/error state and refreshes the server-owned Activity dataset after acceptance.
 

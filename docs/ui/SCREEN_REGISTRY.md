@@ -12,7 +12,7 @@ Tracks approved product surfaces and actual route/status/component composition.
 ## Initial Information Architecture
 Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextual: **Media Viewer**.
 
-Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not initial top-level destinations. Adding a backend workflow does not create a top-level screen by default. Cycle 2 approves a **privileged Admin** surface at `/admin` under UI-051 and still plans a **Brand/Landing** surface in Phase 11. Admin stays out of ordinary shell navigation in v0.1 and is reachable contextually from Settings only for an active admin.
+Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051 and Phase 11 locks a public **Brand/Landing** target at `/` under UI-052, with Create moving to `/create` only when the Phase 11 implementation merges. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.
 
 ## Application Shell
 **Status:** APPROVED  
@@ -249,11 +249,21 @@ Approved behavior:
 
 **Do not change:** Do not turn Admin into a shared-Supabase user browser, cloud/provider console, arbitrary feature-flag framework or generic internal dashboard. Do not expose provider identity/credentials, raw errors, other applications' users or destructive account/data deletion. Keep global/account controls typed and bounded; generation reservations remain server-only operational state rather than a browser/admin reservation console.
 
-### Brand / Landing — planned Cycle 2 launch surface
-**Route:** TBD; current `/` remains Create until Phase 11 explicitly changes information architecture.
-**Status:** PLANNED — Phase 11
-**Purpose:** RenderLab brand identity, logo/banners, landing/onboarding presentation and launch messaging appropriate to the access posture.
-**Boundary:** Phase 11 must explicitly decide whether a landing page takes `/` and Create moves elsewhere or whether landing uses another route. No route change is implied by planning alone.
+### Brand / Landing — Phase 11 target
+**Target route:** `/`
+**Status:** PLANNED — UI-052 contract accepted; implementation not started
+**Current repository reality:** `/` still serves the approved Create workspace until Phase 11 implementation merges.
+
+**Purpose:** Public product home for RenderLab identity, verified creative capability and closed-beta entry into the application.
+
+**Locked target behavior:**
+- marketing surface renders outside `AppShell` while sharing RenderLab global tokens/theme;
+- primary `Open Create` → `/create`; account `Sign in` → `/settings`;
+- concise truthful product proof for Create/Edit Image, Create/Animate Video, durable reference/Library reuse and Activity/recovery continuity;
+- no public signup/waitlist, pricing, testimonials, fabricated metrics, provider/model claims or unverified capability;
+- desktop+narrow design checkpoint precedes implementation; final surface requires responsive/accessibility/reduced-motion browser review.
+
+**Related route migration:** Create remains `APPROVED` at current `/` until implementation. Phase 11 will move that same authoritative Create surface to `/create`, update the application shell accordingly and preserve legacy `/?source=...&action=...` continuation intent through a same-origin redirect to `/create` before existing server validation.
 
 ## Creation Experience Resolution
 - Prompt + Image → Create Image.
