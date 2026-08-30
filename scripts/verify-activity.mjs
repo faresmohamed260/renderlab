@@ -193,6 +193,28 @@ async function jobSnapshot(ownerId, jobId) {
   return result[0] ?? null;
 }
 
+async function markCapturedMockJobsTerminal(ownerId) {
+  const jobIds = [...new Set(
+    capturedBackendRequests
+      .filter((entry) => entry.ownerId === ownerId && entry.acceptedJobId)
+      .map((entry) => entry.acceptedJobId),
+  )];
+  const now = new Date().toISOString();
+  for (const jobId of jobIds) {
+    const response = await supabase(
+      `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}`,
+      {
+        method: "PATCH",
+        headers: { prefer: "return=minimal" },
+        body: JSON.stringify({ status: "succeeded", updated_at: now, completed_at: now }),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Could not terminalize Activity mock retry ${jobId} (${response.status}): ${await response.text()}`);
+    }
+  }
+}
+
 function operationForRequest(request) {
   const hasInput = Array.isArray(request.inputs) && request.inputs.length > 0;
   if (request.output?.kind === "video") return hasInput ? "animate-image" : "create-video";
@@ -701,6 +723,11 @@ try {
   const acceptedJobsAfterUi = capturedBackendRequests.filter((entry) => entry.request?.prompt === "Retry image study" && entry.acceptedJobId).map((entry) => entry.acceptedJobId);
   assert(acceptedJobsAfterUi.length === acceptedJobsBeforeUi.length + 1, "UI Retry did not create one additional explicit attempt.");
   assert(new Set(acceptedJobsAfterUi).size === acceptedJobsAfterUi.length, "Separate explicit Retry requests reused a new job ID.");
+
+  // The mock backend leaves accepted attempts queued. Terminalize only those captured
+  // mock attempts so the later mobile Retry tests a fresh slot without altering the
+  // deliberately active seeded Activity job.
+  await markCapturedMockJobsTerminal(owner.id);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(250);
