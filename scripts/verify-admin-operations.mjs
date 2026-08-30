@@ -1,6 +1,6 @@
 import { chromium } from "@playwright/test";
 import { createHash } from "node:crypto";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import {
   createConfiguredTestAccount,
   configuredTestAccountIdentity,
@@ -15,6 +15,7 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const artifactDir = process.env.RENDERLAB_ADMIN_ARTIFACT_DIR || "artifacts";
 const cleanupOnly = process.argv.includes("--cleanup-only");
 const runToken = process.env.GITHUB_RUN_ID || "local";
+const settingsBaselinePath = `/tmp/renderlab-admin-settings-${runToken}.json`;
 
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
@@ -115,6 +116,63 @@ async function createOutsider() {
   }
 }
 
+function settingsShape(row) {
+  return {
+    singleton_id: row.singleton_id,
+    generation_enabled: row.generation_enabled,
+    max_active_jobs: row.max_active_jobs,
+    max_jobs_per_hour: row.max_jobs_per_hour,
+    updated_by: row.updated_by ?? null,
+    updated_at: row.updated_at,
+  };
+}
+
+async function readGenerationSettings() {
+  const response = await expectOk(
+    await serviceRest("renderlab_beta_settings?singleton_id=eq.1&select=singleton_id,generation_enabled,max_active_jobs,max_jobs_per_hour,updated_by,updated_at&limit=1"),
+    "Could not read Admin generation settings baseline",
+  );
+  const result = await response.json();
+  assert(result?.[0], "Admin generation settings singleton is missing.");
+  return settingsShape(result[0]);
+}
+
+async function captureGenerationSettingsBaseline() {
+  const baseline = await readGenerationSettings();
+  await writeFile(settingsBaselinePath, JSON.stringify(baseline), "utf8");
+  return baseline;
+}
+
+async function restoreGenerationSettingsBaseline(baseline) {
+  if (!baseline) return;
+  await expectOk(
+    await serviceRest("renderlab_beta_settings?singleton_id=eq.1", {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        generation_enabled: baseline.generation_enabled,
+        max_active_jobs: baseline.max_active_jobs,
+        max_jobs_per_hour: baseline.max_jobs_per_hour,
+        updated_by: baseline.updated_by,
+        updated_at: baseline.updated_at,
+      }),
+    }),
+    "Could not restore Admin generation settings baseline",
+  );
+  const restored = await readGenerationSettings();
+  assert(JSON.stringify(restored) === JSON.stringify(baseline), "Admin generation settings baseline was not restored exactly.");
+  await rm(settingsBaselinePath, { force: true });
+}
+
+async function restoreGenerationSettingsBaselineFromFile() {
+  try {
+    const baseline = JSON.parse(await readFile(settingsBaselinePath, "utf8"));
+    await restoreGenerationSettingsBaseline(baseline);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
 async function setAccountAccess(userId, patch) {
   await expectOk(
     await serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(userId)}`, {
@@ -173,6 +231,7 @@ async function seedHealthJobs(ownerId) {
 }
 
 if (cleanupOnly) {
+  await restoreGenerationSettingsBaselineFromFile();
   await deleteInvitationEmail(outsider.email).catch(() => {});
   await deleteOutsider().catch(() => {});
   await deleteConfiguredTestAccount(configuredTestAccountIdentity("admin-operations-member")).catch(() => {});
@@ -185,6 +244,7 @@ await mkdir(artifactDir, { recursive: true });
 let browser;
 let adminAccount;
 let memberAccount;
+let settingsBaseline = null;
 let primaryError = null;
 
 try {
@@ -196,6 +256,52 @@ try {
   await setAccountAccess(adminAccount.id, { role: "admin", status: "active" });
   await setAccountAccess(memberAccount.id, { role: "member", status: "active" });
   const secretMarker = await seedHealthJobs(memberAccount.id);
+  settingsBaseline = await captureGenerationSettingsBaseline();
+
+  const signedOutSettings = await fetch(`${baseUrl}/api/admin/settings`);
+  assert(signedOutSettings.status === 403, `Signed-out Admin settings expected 403, got ${signedOutSettings.status}.`);
+  const memberSettings = await appRequest("/api/admin/settings", memberAccount);
+  assert(memberSettings.status === 403, `Member Admin settings expected 403, got ${memberSettings.status}.`);
+
+  const adminSettings = await appRequest("/api/admin/settings", adminAccount);
+  assert(adminSettings.status === 200, `Active admin settings expected 200, got ${adminSettings.status}.`);
+  const adminSettingsPayload = await json(adminSettings);
+  assert(adminSettingsPayload?.ok === true, "Admin settings GET was not successful.");
+  assert(adminSettingsPayload.settings?.generationEnabled === settingsBaseline.generation_enabled, "Admin settings GET returned the wrong generation state.");
+  assert(adminSettingsPayload.settings?.maxActiveJobs === settingsBaseline.max_active_jobs, "Admin settings GET returned the wrong active-job limit.");
+  assert(adminSettingsPayload.settings?.maxJobsPerHour === settingsBaseline.max_jobs_per_hour, "Admin settings GET returned the wrong hourly limit.");
+
+  const nextSettings = {
+    generationEnabled: !settingsBaseline.generation_enabled,
+    maxActiveJobs: settingsBaseline.max_active_jobs === 2 ? 3 : 2,
+    maxJobsPerHour: settingsBaseline.max_jobs_per_hour === 24 ? 25 : 24,
+  };
+  const updateSettings = await appRequest("/api/admin/settings", adminAccount, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(nextSettings),
+  });
+  assert(updateSettings.status === 200, `Admin settings PATCH expected 200, got ${updateSettings.status}.`);
+  const updateSettingsPayload = await json(updateSettings);
+  assert(updateSettingsPayload?.settings?.generationEnabled === nextSettings.generationEnabled, "Admin settings PATCH did not store the generation state.");
+  assert(updateSettingsPayload?.settings?.maxActiveJobs === nextSettings.maxActiveJobs, "Admin settings PATCH did not store the active-job limit.");
+  assert(updateSettingsPayload?.settings?.maxJobsPerHour === nextSettings.maxJobsPerHour, "Admin settings PATCH did not store the hourly limit.");
+
+  const invalidSettings = await appRequest("/api/admin/settings", adminAccount, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ generationEnabled: true, maxActiveJobs: 5, maxJobsPerHour: 12 }),
+  });
+  assert(invalidSettings.status === 400, `Out-of-range global active limit expected 400, got ${invalidSettings.status}.`);
+  const extraSettings = await appRequest("/api/admin/settings", adminAccount, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ generationEnabled: true, maxActiveJobs: 1, maxJobsPerHour: 12, provider: "forbidden" }),
+  });
+  assert(extraSettings.status === 400, `Arbitrary Admin generation setting expected 400, got ${extraSettings.status}.`);
+
+  await restoreGenerationSettingsBaseline(settingsBaseline);
+  settingsBaseline = null;
 
   const signedOutAccounts = await fetch(`${baseUrl}/api/admin/accounts`);
   assert(signedOutAccounts.status === 403, `Signed-out Admin accounts expected 403, got ${signedOutAccounts.status}.`);
@@ -271,6 +377,10 @@ try {
   await page.getByRole("main").getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Access", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Generation controls", exact: true }).waitFor({ state: "visible" });
+  await page.getByRole("heading", { name: "Global defaults", exact: true }).waitFor({ state: "visible" });
+  await page.locator("#global-generation-enabled").waitFor({ state: "visible" });
+  await page.locator("#global-max-active").waitFor({ state: "visible" });
+  await page.locator("#global-max-hourly").waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Health", exact: true }).waitFor({ state: "visible" });
   assert(
     (await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Admin", exact: true }).count()) === 0,
@@ -401,6 +511,12 @@ try {
 } finally {
   if (browser) await browser.close().catch(() => {});
   try {
+    if (settingsBaseline) {
+      await restoreGenerationSettingsBaseline(settingsBaseline);
+      settingsBaseline = null;
+    } else {
+      await restoreGenerationSettingsBaselineFromFile();
+    }
     await deleteInvitationEmail(outsider.email);
     await deleteOutsider();
     if (memberAccount) await deleteConfiguredTestAccount(memberAccount);

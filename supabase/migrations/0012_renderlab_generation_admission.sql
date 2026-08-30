@@ -193,7 +193,7 @@ create or replace function public.renderlab_admin_set_beta_settings(
   p_max_active_jobs integer,
   p_max_jobs_per_hour integer
 )
-returns public.renderlab_beta_settings
+returns setof public.renderlab_beta_settings
 language plpgsql
 security definer
 set search_path = ''
@@ -237,7 +237,7 @@ begin
   where singleton_id = 1
   returning * into v_row;
 
-  return v_row;
+  return next v_row;
 end;
 $$;
 

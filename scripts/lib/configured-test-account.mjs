@@ -125,6 +125,16 @@ export function configuredTestAccountIdentity(namespace) {
 export async function deleteConfiguredTestAccount(accountOrId) {
   const id = typeof accountOrId === "string" ? accountOrId : accountOrId.id;
   await cleanupOwnedRenderLabRows(id);
+
+  const admissionResponse = await serviceRest(`generation_admission_reservations?owner_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!admissionResponse.ok) {
+    const detail = await admissionResponse.text();
+    const relationMissing = admissionResponse.status === 404 && detail.includes("generation_admission_reservations");
+    if (!relationMissing) {
+      throw new Error(`Could not clean configured account admission reservations (${admissionResponse.status}): ${detail}`);
+    }
+  }
+
   const accessResponse = await serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
   if (!accessResponse.ok) {
     throw new Error(`Could not clean configured account access (${accessResponse.status}): ${await accessResponse.text()}`);

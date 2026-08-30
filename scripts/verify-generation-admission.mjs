@@ -478,7 +478,8 @@ async function assertFixtureClean(identity) {
   const authResponse = await authAdmin(`users/${encodeURIComponent(identity.id)}`);
   if (authResponse.ok) {
     const payload = await authResponse.json().catch(() => null);
-    assert(payload?.id !== identity.id, `Generation Admission cleanup left Auth user ${identity.id}.`);
+    const returnedId = payload?.id ?? payload?.user?.id ?? null;
+    assert(returnedId !== identity.id, `Generation Admission cleanup left Auth user ${identity.id}.`);
   } else {
     assert(authResponse.status === 404, `Could not verify Auth cleanup for ${identity.id} (${authResponse.status}).`);
   }
@@ -494,7 +495,7 @@ async function cleanupFixtures() {
 }
 
 if (cleanupOnly) {
-  await restoreSettingsBaselineFromFile().catch((error) => console.error(error));
+  await restoreSettingsBaselineFromFile();
   await cleanupFixtures();
   console.log("Generation Admission exact fixture cleanup completed.");
   process.exit(0);
