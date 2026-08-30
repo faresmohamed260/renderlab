@@ -228,8 +228,8 @@ Approved behavior:
 
 ### Admin
 **Route:** `/admin`
-**Status:** PLANNED — Phase 10 / UI-051
-**Implementation:** none until the UI-051 contract is merged
+**Status:** IN PROGRESS — Phase 10B / UI-051; no implementation accepted yet
+**Implementation:** active work branch `work/phase-10b-admin-access-control`; currently based exactly on merged Phase 10A `15b348c2708dd08a66ecb8e57a50944885cbc89d` with no accepted `/admin` implementation commit yet
 
 **Purpose:** Operate the controlled RenderLab beta without exposing provider infrastructure or the shared Supabase Auth namespace.
 

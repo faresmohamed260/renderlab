@@ -1096,6 +1096,8 @@ All new tables must follow the existing server-owned pattern: RLS enabled, no an
 - [x] Production `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED` remains default-off. Enabling it still requires an explicit operator-supplied bootstrap of known RenderLab Supabase Auth UUIDs; there is no shared `auth.users` scan/backfill. No Vercel deployment was created or authorized.
 
 #### Slice 10B — Privileged Admin & Access Control
+**Current execution state (2026-08-30): `IN PROGRESS / NO CODE ACCEPTED YET`.** Phase 10A merged to `main` as `15b348c2708dd08a66ecb8e57a50944885cbc89d`. The active branch `work/phase-10b-admin-access-control` currently points to that exact merge. Repository/source audit has established the 10B boundary below, but no 10B implementation commit, migration `0011`, PR, exact-head CI result or rendered Admin artifact exists yet. Resume by implementing only this slice; do not advance 10C/10D or deploy.
+
 - Add `/admin` as a server-authorized privileged surface with three bounded sections: **Access**, **Generation controls**, **Health**.
 - Settings may show an Admin link only for an active admin; global desktop/mobile shell navigation remains Create/Library/Activity/Settings for ordinary users.
 - Access list is sourced from `renderlab_account_access` and pending RenderLab invitations only. Auth Admin user lookup is by already-known RenderLab user ID; do not render a paginated directory of the shared Supabase Auth project.
