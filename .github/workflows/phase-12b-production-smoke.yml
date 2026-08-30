@@ -1,0 +1,280 @@
+name: Phase 12B Production Smoke
+
+on:
+  push:
+    branches: [work/phase-12b-rollout-execution]
+    paths:
+      - ".github/workflows/phase-12b-production-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      CANDIDATE_SHA: d6b8f386db3893e583c99b23fc3397b0eb377d42
+      RENDERLAB_TEST_BASE_URL: https://renderlab.faresuniform.uk
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
+      RENDERLAB_CREATE_UPLOAD_FIXTURE_PATH: /tmp/renderlab-phase12b-create-upload.json
+      RENDERLAB_ADMIN_ARTIFACT_DIR: artifacts/phase12b-admin
+
+    steps:
+      - name: Checkout exact verified candidate
+        uses: actions/checkout@v4
+        with:
+          ref: d6b8f386db3893e583c99b23fc3397b0eb377d42
+          fetch-depth: 1
+
+      - name: Verify exact candidate and required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            test -n "${!name}"
+          done
+          echo "PRODUCTION_SMOKE_EXACT_CANDIDATE=true"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify public production routes and metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          landing="$(curl --fail --silent --show-error --location "$RENDERLAB_TEST_BASE_URL/")"
+          printf '%s' "$landing" | grep -Fq 'RenderLab — Image &amp; video creative workspace'
+          printf '%s' "$landing" | grep -Fq 'Invitation-only access'
+          printf '%s' "$landing" | grep -Fq 'Closed beta'
+          curl --fail --silent --show-error --location "$RENDERLAB_TEST_BASE_URL/create" >/tmp/create.html
+          curl --fail --silent --show-error --location "$RENDERLAB_TEST_BASE_URL/settings" >/tmp/settings.html
+          echo "PUBLIC_PRODUCTION_ROUTES_VERIFIED=true"
+
+      - name: Verify closed-beta ownership and private-media boundary
+        run: node scripts/verify-account-ownership.mjs
+
+      - name: Cleanup ownership fixtures
+        if: always()
+        run: node scripts/verify-account-ownership.mjs --cleanup-only
+
+      - name: Verify durable Create upload, Library, Viewer and reuse
+        run: node scripts/verify-create-durable-upload.mjs
+
+      - name: Cleanup durable-upload fixtures
+        if: always()
+        run: node scripts/verify-create-durable-upload.mjs --cleanup-only
+
+      - name: Verify bounded production Image, Retry and Video generation
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { randomUUID } from "node:crypto";
+          import {
+            createConfiguredTestAccount,
+            deleteConfiguredTestAccount,
+            withAccountAuthorization,
+          } from "./scripts/lib/configured-test-account.mjs";
+
+          const base = process.env.RENDERLAB_TEST_BASE_URL.replace(/\/$/, "");
+          const sb = process.env.SUPABASE_URL.replace(/\/$/, "");
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          let account = null;
+
+          function assert(value, message) {
+            if (!value) throw new Error(message);
+          }
+
+          async function serviceRest(path, init = {}) {
+            const headers = new Headers(init.headers);
+            headers.set("apikey", serviceKey);
+            headers.set("authorization", `Bearer ${serviceKey}`);
+            if (init.body != null && !headers.has("content-type")) headers.set("content-type", "application/json");
+            return fetch(`${sb}/rest/v1/${path}`, { ...init, headers });
+          }
+
+          async function request(path, init = {}) {
+            const response = await fetch(`${base}${path}`, withAccountAuthorization(account, init));
+            const text = await response.text();
+            let payload = null;
+            try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
+            return { response, payload };
+          }
+
+          async function poll(jobId, label, timeoutMs) {
+            const deadline = Date.now() + timeoutMs;
+            let last = "";
+            while (Date.now() < deadline) {
+              const { response, payload } = await request(`/api/generation/jobs/${encodeURIComponent(jobId)}`, {
+                headers: { accept: "application/json" },
+              });
+              assert(response.ok && payload?.ok && payload?.job, `${label} poll failed (${response.status}): ${JSON.stringify(payload)}`);
+              const job = payload.job;
+              if (job.status !== last) {
+                last = job.status;
+                console.log(`${label} status=${last}`);
+              }
+              if (job.status === "failed") throw new Error(`${label} failed: ${job.error?.message || "unknown"}`);
+              if (job.status === "succeeded") return job;
+              await new Promise((resolve) => setTimeout(resolve, 5000));
+            }
+            throw new Error(`${label} timed out`);
+          }
+
+          async function verifyAsset(assetId, expectedKind, label) {
+            const meta = await request(`/api/media/assets/${encodeURIComponent(assetId)}`, { headers: { accept: "application/json" } });
+            assert(meta.response.ok && meta.payload?.ok && meta.payload.asset?.kind === expectedKind, `${label} metadata invalid`);
+            const content = await fetch(`${base}${meta.payload.asset.contentUrl}`, withAccountAuthorization(account, { redirect: "follow" }));
+            assert(content.ok, `${label} content failed (${content.status})`);
+            const type = String(content.headers.get("content-type") || "").toLowerCase();
+            assert(type.startsWith(`${expectedKind}/`), `${label} content type invalid: ${type}`);
+            const bytes = await content.arrayBuffer();
+            assert(bytes.byteLength > 64, `${label} content is unexpectedly small`);
+            console.log(`${label} durable media verified asset=${assetId} type=${type} bytes=${bytes.byteLength}`);
+          }
+
+          try {
+            account = await createConfiguredTestAccount("phase12b-production-generation");
+
+            const imageSubmit = await request("/api/generation/jobs", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                prompt: "Phase 12B production smoke: a cobalt glass sphere on a neutral studio background",
+                output: { kind: "image", aspectRatio: "1:1" },
+                inputs: [],
+              }),
+            });
+            assert(imageSubmit.response.status === 202 && imageSubmit.payload?.ok && imageSubmit.payload?.job?.id, `Create Image submit failed: ${JSON.stringify(imageSubmit.payload)}`);
+            const imageJob = await poll(imageSubmit.payload.job.id, "Create Image", 12 * 60 * 1000);
+            assert(imageJob.outputAssetIds?.length === 1, "Create Image did not persist exactly one asset");
+            await verifyAsset(imageJob.outputAssetIds[0], "image", "Create Image");
+
+            const failedId = randomUUID();
+            const failedInsert = await serviceRest("generation_jobs", {
+              method: "POST",
+              headers: { Prefer: "return=minimal" },
+              body: JSON.stringify({
+                id: failedId,
+                owner_id: account.id,
+                status: "failed",
+                operation: "create-image",
+                output_kind: "image",
+                prompt: "Phase 12B production retry smoke: a small amber cube on a neutral background",
+                workflow_id: "phase12b-production-retry-smoke",
+                model: "phase12b-production-retry-smoke",
+                ecosystem: "flux2-klein-9b",
+                inputs: [],
+                parameters: {
+                  output: { kind: "image", aspectRatio: "1:1" },
+                  advanced: { seed: 42, steps: 4, guidance: 1 },
+                },
+                error_code: "generation_failed",
+                error_message: "Run-owned Phase 12B retry fixture",
+                completed_at: new Date().toISOString(),
+              }),
+            });
+            assert(failedInsert.ok, `Could not seed failed retry fixture (${failedInsert.status}): ${await failedInsert.text()}`);
+
+            const retry = await request(`/api/generation/jobs/${failedId}/retry`, { method: "POST" });
+            assert(retry.response.status === 202 && retry.payload?.ok && retry.payload?.job?.id, `Activity Retry submit failed (${retry.response.status}): ${JSON.stringify(retry.payload)}`);
+            assert(retry.payload.job.id !== failedId, "Activity Retry reused the historical job ID");
+            const retriedJob = await poll(retry.payload.job.id, "Activity Retry", 12 * 60 * 1000);
+            assert(retriedJob.outputAssetIds?.length === 1, "Activity Retry did not persist exactly one output asset");
+            await verifyAsset(retriedJob.outputAssetIds[0], "image", "Activity Retry");
+            const historical = await serviceRest(`generation_jobs?id=eq.${encodeURIComponent(failedId)}&select=id,status&limit=1`);
+            assert(historical.ok, "Could not inspect historical retry fixture");
+            const historicalRows = await historical.json();
+            assert(historicalRows?.[0]?.status === "failed", "Activity Retry mutated the historical failed job");
+            console.log("ACTIVITY_RETRY_HISTORY_IMMUTABLE=true");
+
+            const videoSubmit = await request("/api/generation/jobs", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                prompt: "Phase 12B production smoke: a cobalt glass sphere rotates slowly, steady camera, soft studio light",
+                output: { kind: "video", aspectRatio: "16:9", resolution: "480p", durationSeconds: 5, audioEnabled: false },
+                inputs: [],
+                advanced: { seed: 31415, frameRate: 24 },
+              }),
+            });
+            assert(videoSubmit.response.status === 202 && videoSubmit.payload?.ok && videoSubmit.payload?.job?.id, `Create Video submit failed (${videoSubmit.response.status}): ${JSON.stringify(videoSubmit.payload)}`);
+            const videoJob = await poll(videoSubmit.payload.job.id, "Create Video", 25 * 60 * 1000);
+            assert(videoJob.outputAssetIds?.length === 1, "Create Video did not persist exactly one asset");
+            await verifyAsset(videoJob.outputAssetIds[0], "video", "Create Video");
+            console.log("BOUNDED_PRODUCTION_GENERATION_SMOKE=true");
+          } finally {
+            if (account) await deleteConfiguredTestAccount(account);
+          }
+          NODE
+
+      - name: Cleanup bounded generation fixtures
+        if: always()
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { configuredTestAccountIdentity, deleteConfiguredTestAccount } from "./scripts/lib/configured-test-account.mjs";
+          await deleteConfiguredTestAccount(configuredTestAccountIdentity("phase12b-production-generation"));
+          console.log("Bounded Phase 12B production generation fixtures clean.");
+          NODE
+
+      - name: Verify Admin authorization, operations and responsive surface
+        run: node scripts/verify-admin-operations.mjs
+
+      - name: Cleanup Admin fixtures and restore global defaults
+        if: always()
+        run: node scripts/verify-admin-operations.mjs --cleanup-only
+
+      - name: Verify production smoke fixture residue is zero
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const base = process.env.SUPABASE_URL.replace(/\/$/, "");
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const headers = { apikey: key, authorization: `Bearer ${key}` };
+          async function rows(path) {
+            const response = await fetch(`${base}/rest/v1/${path}`, { headers });
+            if (!response.ok) throw new Error(`Residue query failed ${response.status}: ${await response.text()}`);
+            return response.json();
+          }
+          const access = await rows("renderlab_account_access?select=user_id,role,status,generation_enabled,max_active_jobs,max_jobs_per_hour");
+          const reservations = await rows("generation_admission_reservations?select=id&limit=100");
+          const settings = await rows("renderlab_beta_settings?singleton_id=eq.1&select=generation_enabled,max_active_jobs,max_jobs_per_hour,updated_by&limit=1");
+          const fixtureAccess = access.filter((row) => row.generation_enabled !== null || row.max_active_jobs !== null || row.max_jobs_per_hour !== null);
+          if (access.length !== 1 || access[0].role !== "admin" || access[0].status !== "active") throw new Error(`Persistent access baseline mismatch: ${JSON.stringify(access)}`);
+          if (fixtureAccess.length !== 0) throw new Error(`Per-account generation override residue remains: ${JSON.stringify(fixtureAccess)}`);
+          if (reservations.length !== 0) throw new Error(`Admission reservation residue remains: ${reservations.length}`);
+          const s = settings[0];
+          if (!s || s.generation_enabled !== true || s.max_active_jobs !== 1 || s.max_jobs_per_hour !== 12 || s.updated_by !== null) throw new Error(`Global defaults were not restored: ${JSON.stringify(s)}`);
+          console.log("PRODUCTION_SMOKE_ACCESS_BASELINE_RESTORED=true");
+          console.log("PRODUCTION_SMOKE_ADMISSION_RESIDUE=0");
+          console.log("PRODUCTION_SMOKE_DEFAULTS_RESTORED=true");
+          NODE
+
+      - name: Upload Admin smoke screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase12b-production-admin-screenshots
+          path: artifacts/phase12b-admin/*.png
+          if-no-files-found: warn
+          retention-days: 14
