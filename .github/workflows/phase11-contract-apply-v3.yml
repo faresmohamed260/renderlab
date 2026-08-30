@@ -25,18 +25,20 @@ jobs:
           path: target
           fetch-depth: 0
 
-      - name: Deduplicate Screen Registry
+      - name: Reposition Screen Registry target
         working-directory: target
-        run: python ../bootstrap/.github/scripts/phase11_contract_screen_registry_fix.py
+        run: python ../bootstrap/.github/scripts/phase11_contract_screen_registry_reposition.py
 
-      - name: Validate targeted fix
+      - name: Validate targeted placement
         working-directory: target
         shell: bash
         run: |
           test "$(git diff --name-only)" = "docs/ui/SCREEN_REGISTRY.md"
           git diff --check
           test "$(grep -F -c '### Brand / Landing — Phase 11 target' docs/ui/SCREEN_REGISTRY.md)" = "1"
-          test "$(grep -F -c '### Brand / Landing — planned Cycle 2 launch surface' docs/ui/SCREEN_REGISTRY.md)" = "0"
+          brand_line="$(grep -n -F '### Brand / Landing — Phase 11 target' docs/ui/SCREEN_REGISTRY.md | cut -d: -f1)"
+          resolution_line="$(grep -n -F '## Creation Experience Resolution' docs/ui/SCREEN_REGISTRY.md | cut -d: -f1)"
+          test "$brand_line" -lt "$resolution_line"
 
       - name: Amend contract commit
         working-directory: target
