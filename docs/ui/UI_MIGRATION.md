@@ -1035,8 +1035,8 @@ The Phase 9 planning audit found a concrete app-level race blocker, so no genera
 - Cancel remains deliberately deferred; no shell-global polling/job store, successful-job Run Again, provider/admin UI, schema migration or deployment was added.
 
 ### Phase 10 — Account, Admin & Closed-Beta Operations
-**Phase contract status:** `EXPANDED / READY FOR EXECUTION` under UI-051.
-**Execution status:** `NOT STARTED` until this contract is merged. No deployment is included or authorized.
+**Phase contract status:** `EXPANDED / IN PROGRESS` under UI-051.
+**Execution status:** `10A COMPLETE / VERIFIED`; 10B is next. No deployment is included or authorized.
 
 #### Goal
 Turn the current authenticated Closed Beta into an operable, recoverable and abuse-bounded product without coupling RenderLab to other applications sharing the Supabase project or exposing provider infrastructure to ordinary users.
@@ -1083,6 +1083,17 @@ All new tables must follow the existing server-owned pattern: RLS enabled, no an
 - Add server-only access lookup/claim logic. A verified email with a matching pending invitation may transactionally claim it into `renderlab_account_access`; otherwise an authenticated but unadmitted identity remains outside private RenderLab product access.
 - Settings remains reachable for signed-in suspended users so they can understand access state, change password and sign out. Create may remain visually draftable, but generation/uploads/private media/history require active RenderLab access.
 - Production enablement requires an explicit bootstrap/import of known RenderLab account UUIDs supplied by the operator; no shared-project Auth scan/backfill.
+
+
+#### Phase 10A implementation evidence — verified 2026-08-30
+- [x] Exact code/test head `e36140911c63527927ef404d1befa7670d590f8a` passed all 20 path-triggered workflows: Account Identity `33282141315`, Account Ownership `33282141349`, UI Shell `33282141382`, Reference Upload `33282141379`, Persistent Media Upload `33282141310`, Create Durable Upload `33282141312`, Create Lifecycle `33282141327`, Generation Integration `33282141375`, Video Generation Integration `33282141367`, Activity `33282141358`, Library Lifecycle `33282141333`, Library Search `33282141308`, Library History `33282141378`, Library Drag Drop `33282141368`, Library Favorites `33282141323`, Library Collections `33282141334`, Library Batch Delete/Actions `33282141359`, Media Download `33282141305`, Media Rename `33282141360`, and Media Delete `33282141328`.
+- [x] Account Identity artifact `9723305472` (`renderlab-account-identity-screenshots`, `sha256:161433ae6d549b63b147ca7215fe4e07bc06609d0db3beb8a5d9e188939dc834`) contains five final-head states: desktop active signed-in, mobile active signed-in, mobile suspended, mobile signed-out, and mobile recovery-complete. Human review found no clipping/overlap, clear Active/Suspended status, reachable password/sign-out actions, no public Create-account affordance, and clean narrow recovery completion.
+- [x] Repository migration `0010_renderlab_account_admission.sql` is applied to the approved shared Supabase project as `20260829234212 renderlab_account_admission`. `renderlab_account_access` and `renderlab_beta_invitations` are RLS-enabled and browser-revoked; `renderlab_claim_beta_invitation(uuid,text)` is SECURITY DEFINER with an empty search path and service-role-only execute. Post-suite audit returned both new tables to 0 rows.
+- [x] Settings uses verified Supabase identity for account/security recovery while `getCurrentRenderLabAccount()` becomes the active-product admission boundary when enforcement is enabled. Suspended identities retain password/sign-out access but receive authenticated-product denial.
+- [x] Forgot-password recovery uses Supabase recovery links plus `/auth/confirm`; a short-lived signed HttpOnly recovery marker distinguishes verified recovery from ordinary password changes. Ordinary change requires current-password reauthentication; recovery change does not ask for the old password.
+- [x] Public Create-account UI is removed. Existing verified identities can claim an unexpired same-email RenderLab invitation transactionally; no browser metadata authorizes role/access and no shared Auth namespace is enumerated/backfilled.
+- [x] Validation found and fixed two concrete defects before acceptance: the ownership verifier initially omitted access rows while enforcement was enabled, and recovery redirects reconstructed an internal `localhost` origin that dropped fresh session cookies when the browser used `127.0.0.1`. The ownership fixtures now seed/clean exact run-owned access rows, and auth/password-completion redirects use relative same-origin `Location` headers. A later Playwright strict-selector ambiguity was fixed with exact password labels. The independent final static gate `33282265302` passed exact 15-file scope, `git diff --check`, verifier syntax, UI purity, TypeScript and production build.
+- [x] Production `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED` remains default-off. Enabling it still requires an explicit operator-supplied bootstrap of known RenderLab Supabase Auth UUIDs; there is no shared `auth.users` scan/backfill. No Vercel deployment was created or authorized.
 
 #### Slice 10B — Privileged Admin & Access Control
 - Add `/admin` as a server-authorized privileged surface with three bounded sections: **Access**, **Generation controls**, **Health**.
@@ -1134,8 +1145,8 @@ Minimum configured Phase 10 verifier must cover:
 Required exact-head affected gates after the final implementation slice: UI Shell Validation, Account Ownership, Reference Upload Integration, Create Durable Upload, Create Lifecycle Visual, Library Lifecycle Visual, Media Delete Visual, Activity Visual, Generation Integration, Video Generation Integration, plus a new configured **Account/Admin Operations** workflow. Run any additional path-triggered Library/media gates. Human review is required for Settings recovery/password and Admin desktop/narrow artifacts; DOM/build assertions alone are insufficient.
 
 #### Phase 10 exit criteria
-- [ ] 10A recovery/change-password and invitation-gated Closed-Beta admission are implemented/verified without public product self-admission.
-- [ ] Active/suspended RenderLab access is server authoritative across all private product operations; Settings remains a safe recovery/sign-out surface.
+- [x] 10A recovery/change-password and invitation-gated Closed-Beta admission are implemented/verified without public product self-admission.
+- [x] Active/suspended RenderLab access is server authoritative across all private product operations when the admission gate is enabled; Settings remains a safe recovery/sign-out surface. Production enforcement stays off until explicit UUID bootstrap.
 - [ ] `/admin` is restricted to active RenderLab admins, lists only RenderLab-owned access/invitation records and prevents last-admin/self-lockout hazards.
 - [ ] Typed global/account generation controls and sanitized health visibility work without provider/worker/workflow leakage.
 - [ ] Transactional pre-backend admission enforces effective concurrency/rate defaults and overrides for Create and Retry without a concurrent race bypass.
@@ -1176,10 +1187,10 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–9 are complete and verified under the Closed Beta boundary.
-**Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `EXPANDED / READY FOR EXECUTION` under UI-051; implementation is blocked until the contract PR merges.
-**Next implementation sequence after contract merge:** 10A Recovery/Admission → 10B Admin/Access → 10C Generation Guardrails → 10D Auth/Operational Hardening.
-**Current gate:** Merge the UI-051 Phase 10 contract. Do not implement Phase 10 or deploy before that merge.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–9 and Phase 10A are complete and verified under the Closed Beta boundary.
+**Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `EXPANDED / IN PROGRESS` under UI-051; 10A is complete/verified and 10B is next.
+**Next implementation sequence:** 10B Admin/Access → 10C Generation Guardrails → 10D Auth/Operational Hardening.
+**Current gate:** Merge verified Phase 10A after this docs-only sync, then re-establish merged-main state before implementing 10B. Do not deploy unless explicitly authorized.
 **Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
 **Later Cycle 2:** Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.

@@ -313,3 +313,21 @@ Before copying/installing an external component:
 **Do not:** Promote into final feature UI or a generic empty-state pattern.
 
 Do not treat examples, registry listings, Saga components, or desired concepts as proof that a RenderLab component exists.
+
+### AccountSettings
+**Status:** APPROVED
+**Source:** `src/features/account/account-settings.tsx`
+**Purpose:** Settings-owned Supabase sign-in/sign-out, enumeration-safe Forgot password, closed-beta admission status and contextual Change password entry.
+**Dependencies:** maintained Alert/Button/Field/Input/Spinner primitives, browser Supabase Auth client, server-provided verified identity/access state.
+**Reuse rules:** Keep account/security composition in Settings; access/role authority remains server-owned and browser metadata is never authorization.
+**Do not:** Reintroduce public Create-account admission, expose raw Auth-admin/service-role operations, or create a client-global account/access store.
+**Notes:** Phase 10A / UI-051 exact head `e36140911c63527927ef404d1befa7670d590f8a`; Account Identity `33282141315` and UI Shell `33282141382` passed. Final five-state artifact `9723305472` was reviewed clean.
+
+### AccountPasswordForm
+**Status:** APPROVED
+**Source:** `src/features/account/account-password-form.tsx`
+**Purpose:** One Settings-owned password form with two explicit security modes: ordinary signed-in change requiring current-password reauthentication, and verified recovery change backed by the server-issued recovery marker.
+**Dependencies:** maintained Alert/Button/Field/Input/Spinner primitives and browser Supabase Auth client.
+**Reuse rules:** The server decides recovery mode; the browser never enables recovery by query string alone. Keep password values transient and Auth-owned.
+**Do not:** Persist passwords, bypass ordinary reauthentication, or use this form as a general Auth-admin credential surface.
+**Notes:** Recovery redirect origin handling uses same-origin relative redirects so SSR-issued session/recovery cookies survive proxy/host differences. Verified in Account Identity `33282141315`.

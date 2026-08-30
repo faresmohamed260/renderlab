@@ -529,3 +529,16 @@ No infrastructure rollout is currently queued by the repository. Cycle 2 Phase 6
 - Password recovery/invite email URLs/templates must match the RenderLab SSR PKCE callback. Current Supabase guidance recommends custom SMTP for production reliability; record actual hosted-project SMTP/template/redirect configuration before broader beta rather than assuming built-in delivery is sufficient.
 - Leaked-password protection should be enabled and advisor-cleared when the project plan supports it. If not supported, the warning remains a documented broader-beta blocker; do not compensate by claiming an equivalent RenderLab implementation.
 - No infrastructure action in the contract PR applies migrations, changes hosted Auth configuration, changes Vercel deployment settings or deploys the application.
+
+## Phase 10A Closed-Beta Admission Schema
+**Status:** APPLIED / VERIFIED, application enforcement not enabled in production.
+
+- Repository migration: `supabase/migrations/0010_renderlab_account_admission.sql`.
+- Hosted migration: `20260829234212 renderlab_account_admission` on the approved shared RenderLab Supabase project.
+- `renderlab_account_access`: server-owned RenderLab role/status keyed by canonical Auth UUID.
+- `renderlab_beta_invitations`: server-owned normalized-email invitation/claim state.
+- `renderlab_claim_beta_invitation(uuid,text)`: SECURITY DEFINER, empty `search_path`, public/anon/authenticated execute revoked, service-role-only execute.
+- Both tables: RLS enabled; anon/authenticated direct DML revoked; service role has required DML. Security Advisor therefore reports expected server-owned `rls_enabled_no_policy` INFO notices; the existing leaked-password-protection warning is unchanged and remains 10D operational work.
+- Final exact-head CI cleanup returned both new tables to 0 rows. No migration scans/backfills `auth.users`; the shared Auth namespace is not a RenderLab directory.
+- `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED` defaults off. Before enabling production enforcement, an operator must supply the exact known RenderLab Auth UUID bootstrap set. Enabling is a separate explicit operational step, not implied by migration/merge.
+- Phase 10A exact code/test head `e36140911c63527927ef404d1befa7670d590f8a` passed all 20 affected workflows; Account Identity artifact `9723305472` was visually reviewed. No Vercel deployment was created or authorized.
