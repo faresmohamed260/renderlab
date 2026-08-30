@@ -1,5 +1,6 @@
 name: Phase 12 Release Validation
 
+# Durable non-deploying gate for one exact Phase 12A candidate.
 on:
   push:
     branches: [work/phase-12-release-validation]
