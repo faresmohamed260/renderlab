@@ -1,0 +1,33 @@
+name: Phase 12B Closure Documentation
+
+on:
+  push:
+    branches: [work/phase-12b-release-closure]
+    paths:
+      - ".github/phase12b_closure_patch.py"
+      - ".github/workflows/phase-12b-closure-docs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout closure branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-12b-release-closure
+          fetch-depth: 0
+
+      - name: Apply verified Phase 12B closure
+        run: python .github/phase12b_closure_patch.py
+
+      - name: Commit authoritative closure state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/INFRASTRUCTURE.md
+          git diff --cached --check
+          git commit -m "docs: complete Cycle 2 production rollout"
+          git push origin HEAD:work/phase-12b-release-closure
