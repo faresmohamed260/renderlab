@@ -28,17 +28,19 @@ export type SubmitGenerationSuccess = {
   job: GenerationJob;
 };
 
+export type SubmitGenerationErrorCode =
+  | "invalid_request"
+  | "generation_access_denied"
+  | "generation_disabled"
+  | "generation_active_limit_reached"
+  | "generation_rate_limit_reached"
+  | "generation_backend_unavailable"
+  | "generation_submission_failed";
+
 export type SubmitGenerationError = {
   ok: false;
   error: {
-    code:
-      | "invalid_request"
-      | "generation_access_denied"
-      | "generation_disabled"
-      | "generation_active_limit_reached"
-      | "generation_rate_limit_reached"
-      | "generation_backend_unavailable"
-      | "generation_submission_failed";
+    code: SubmitGenerationErrorCode;
     message: string;
     details?: Record<string, string>;
   };

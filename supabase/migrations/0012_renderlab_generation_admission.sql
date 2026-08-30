@@ -18,7 +18,7 @@ create table if not exists public.generation_admission_reservations (
   owner_id uuid not null references auth.users(id) on delete restrict,
   admitted_at timestamptz not null default now(),
   expires_at timestamptz not null,
-  job_id uuid references public.generation_jobs(id) on delete set null,
+  job_id uuid,
   released_at timestamptz,
   constraint generation_admission_reservations_expiry_check check (expires_at > admitted_at),
   constraint generation_admission_reservations_release_check check (released_at is null or released_at >= admitted_at)
