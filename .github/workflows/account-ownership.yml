@@ -22,6 +22,7 @@ on:
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "supabase/migrations/0011_renderlab_admin_access_control.sql"
+      - "supabase/migrations/0012_renderlab_generation_admission.sql"
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-account-ownership.mjs"
       - ".github/workflows/account-ownership.yml"
