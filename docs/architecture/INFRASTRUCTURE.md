@@ -55,6 +55,17 @@ Final exact audit after the accepted suite found zero audited run-owned access/j
 
 PR #68 merged Phase 10C to `main` as `26508e77975ee4dd26f60860f999e4bc55c99eca`. Merged-main UI Shell `33310860293`, Reference Upload `33310860327`, Generation Integration `33310860295`, and Video Generation Integration `33310860292` all passed. The final exact post-merge audit found zero rows for those runs' deterministic accounts across `renderlab_account_access`, `generation_jobs`, `generation_sources`, `media_assets`, `media_upload_sessions`, `generation_admission_reservations`, and `auth.users`; the singleton remained generation enabled / 1 active / 12 hourly / `updated_by=null`. No deployment or production access-enforcement change occurred.
 
+### Phase 10D pre-implementation Auth / operational audit — 2026-08-30
+- Starting repository state is merged `main` `0bad0efa96fd4a74cd531f21c38641d6b31708ab`; the audit used temporary workflow commits only and those temporary files are not part of the work branch/main contract.
+- One-time audit runs `33311990845` and `33312153080` used deterministic run-owned Auth identities and exact cleanup. Independent SQL verification found no remaining matching Auth/access/job/source/media/upload/reservation state.
+- Hosted recovery evidence: run `33311990845` produced `mail.send` with `mail_from=noreply@mail.app.supabase.io`, proving the project currently uses Supabase's built-in Auth mailer. Run `33312153080` then returned `429 over_email_send_rate_limit`. This is not production/broader-beta mail capacity.
+- GitHub Actions does not currently have `SUPABASE_ACCESS_TOKEN`, so the hosted Management API cannot be used from CI to read Site URL, URI allowlist, SMTP booleans or template bodies. Do not add such a credential or mutate hosted Auth config without explicit operator authorization.
+- Two-session password audit `33312153080` verified Auth's current revocation semantics: update `200`; acting session `getUser 200` + refresh `200`; second session `getUser 403 session_not_found` + refresh `400 refresh_token_not_found`; new-password sign-in `200`. Phase 10D therefore hardens RenderLab's private account resolver to fresh `getUser()` rather than forcing the acting session to sign out.
+- Security Advisor remains unchanged: expected `rls_enabled_no_policy` INFO for deliberately server-owned RenderLab tables plus leaked-password-protection WARN. The shared organization is on Free plan, so leaked-password protection remains an explicit broader-beta blocker until plan capability is changed and verified.
+- Current Phase 10 table/function privilege audit remains clean: RLS enabled, no anon/authenticated DML, privileged SECURITY DEFINER functions use empty search paths and service-role/postgres-only execute. The singleton remains generation enabled / 1 active / 12 hourly / `updated_by=null`.
+- Phase 10D expects no database migration. Hosted Site URL/redirect allowlist, token-hash invite/recovery templates, production custom SMTP/Auth email hook, suitable mail limits, link-tracking posture and SPF/DKIM/DMARC are operator/configuration gates before broader beta; regular CI continues to avoid real email delivery.
+
+
 ### Account identity boundary — UI-029
 Supabase Auth `auth.users.id` is the canonical RenderLab account principal.
 

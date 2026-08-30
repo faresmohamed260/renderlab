@@ -137,6 +137,33 @@ Implemented server-owned Phase 10 records are `renderlab_account_access`, `rende
 
 **Phase 10C verified implementation:** `src/server/generation/generation-admission.ts` owns server-only reserve/bind/release policy; `submit-generation.ts` calls it only after current request/input preflight and before backend/provider dispatch; Retry reuses the same path and preserves admission-specific product codes. `src/server/admin/admin-settings.ts` + `GET|PATCH /api/admin/settings` own fresh-admin singleton mutation, while `admin-operations.tsx` adds the global editor inside the existing Generation controls section. Migration `20260830101734 renderlab_generation_admission` supplies typed singleton settings/reservations and privileged routines. Exact head `ca8e426066385934b296b6d4f88324e9c12861f7` passed all 22 affected workflows; Generation Admission `33309162313` proved race/active/hour/lease/release/Create↔Retry semantics with zero provider spend, and final Admission/Admin artifacts `9731487718` / `9731449736` were human-reviewed clean. CI-only legacy generation fixtures use explicit run-owned account overrides rather than mutating the global singleton; only Admin + Generation Admission serialize singleton mutation. Exact fixture cleanup and singleton restoration passed.
 
+## Phase 10D Auth / Session Hardening Contract
+
+Phase 10D changes the trust boundary, not the account model. Supabase Auth remains the identity/session authority and RenderLab account-access rows remain product authorization state.
+
+```text
+request/browser session
+  -> root SSR proxy: getClaims() for signature/cookie refresh only
+  -> private RenderLab route/account resolver: getUser() against Auth server
+  -> verified current non-anonymous auth.users.id
+  -> active RenderLab access lookup when closed-beta enforcement is enabled
+  -> owner-scoped service/query
+```
+
+The reason for the extra current-session check is verified, not theoretical. In hosted audit `33312153080`, two sessions were created for one exact run-owned account. Password update through session A kept A current, while Auth immediately returned `403 session_not_found` for session B and rejected B's refresh token. A locally valid JWT from B can still pass signature/expiry validation until expiration; therefore `getClaims()` alone is insufficient for the final private-product authorization decision when immediate revocation matters.
+
+Contract rules:
+- keep proxy `getClaims()` because it is appropriate for SSR token validation/refresh mechanics;
+- make `getCurrentRenderLabAccount()` fresh-Auth-backed via `getUser()` before account-access lookup; fail closed on Auth error, missing/anonymous user or access-store failure;
+- use the fresh path for Settings signed-in/security state and `/settings/password`; keep `/admin` on its existing fresh active-admin boundary;
+- do not query `auth.sessions` directly from Next.js, add another session datastore, trust browser user IDs, or move service-role capability client-side;
+- preserve the currently verified password-change semantics: acting session may remain current, other sessions are revoked; fresh private authorization makes those revocations immediately effective at RenderLab;
+- keep `/auth/confirm` server token-hash/PKCE exchange, relative same-origin redirects and user-bound HMAC recovery marker.
+
+Configured verification extends the existing Account Identity workflow with a second independent session and captured stale bearer. It must prove stale-session denial at representative private product APIs after password change/recovery/global sign-out while the intended current session remains usable where Supabase keeps it current. This is intentionally broad enough to cover the shared account resolver but does not create a new auth test framework or require live email delivery.
+
+Hosted email configuration is a separate operational dependency. Current Auth logs show `mail_from=noreply@mail.app.supabase.io`, and a subsequent recovery request hit `over_email_send_rate_limit`; GitHub Actions also lacks a Supabase Management API token. Before broader beta, an operator must verify production Site URL/redirect allowlist and invite/recovery token-hash templates and configure production-capable custom SMTP or an equivalent Auth email hook with suitable limits and sender-domain authentication. The engineering implementation must not pretend those hosted settings are solved in code.
+
 ## Product API Boundaries
 ```text
 POST     /api/generation/jobs
