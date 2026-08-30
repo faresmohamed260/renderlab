@@ -12,7 +12,7 @@ Tracks approved product surfaces and actual route/status/component composition.
 ## Initial Information Architecture
 Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextual: **Media Viewer**.
 
-Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051 and Phase 11 locks a public **Brand/Landing** target at `/` under UI-052, with Create moving to `/create` only when the Phase 11 implementation merges. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.
+Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051. PR #73 implements UI-052's public **Brand/Landing** at `/` and authoritative Create workspace at `/create`; `main` adopts that routing when the verified PR merges. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.
 
 ## Application Shell
 **Status:** APPROVED  
@@ -30,8 +30,22 @@ Approved behavior:
 
 ## Screens
 
+### Brand / Landing
+**Route:** `/`
+**Status:** APPROVED on validated PR #73 implementation; pending merge to `main`
+**Implementation:** `src/app/page.tsx`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`
+**Design artifacts:** `design/penpot/brand-launch-v0.1-desktop.svg`, `design/penpot/brand-launch-v0.1-mobile.svg`
+
+**Purpose:** Public product home for verified RenderLab capability and truthful invitation-only Closed Beta access without application-shell chrome or public self-admission.
+
+**Verified behavior:** `/` renders without `AppShell`; `/create` and application routes use the `(app)` shell; Open Create → `/create`; Sign in → `/settings`; legacy root continuation preserves the complete query into `/create`; only verified operations/reuse/recovery are claimed; forbidden public-signup/pricing/testimonial/fake-metric/provider/SLA claims remain absent.
+
+**Approval evidence:** validated head `8975b7b42b518eea0a462b28528ddd41d90ad986` passed 19/19 affected workflows. Brand / Launch Visual `33321365147` artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean at 1440×1100, 390×844, `/create` shell and legacy-continuation states.
+
+**Do not change:** Do not add public registration/waitlist, pricing/testimonials/fake metrics, provider/model claims, analytics marketing cookies, decorative heavy motion or application-shell marketing chrome without a new explicit decision.
+
 ### Create
-**Route:** `/`  
+**Route:** `/create`
 **Status:** APPROVED  
 **Implementation:** `src/features/create/create-workspace.tsx`  
 **Supporting:** `src/features/create/create-advanced-panel.tsx`  

@@ -75,15 +75,17 @@ Rules:
 
 ## Routing
 ```text
-/                  Create
+/                  Brand / Landing (public, no AppShell)
+/create            Create
 /library           Library
 /library/[assetId] Media Viewer
 /activity          Activity
 /settings          Settings / Account
+/admin             Admin (fresh active-admin authorization)
 ```
 
 Rules:
-- Create remains the default route.
+- Bare `/` is the public Brand / Landing route; Create is the authoritative `/create` application route under `AppShell`.
 - Image/Video/Edit/Animate/models/workflows are not separate top-level routes by default.
 - Library `kind`, `q`, `sort`, `favorite`, `collection`, `offset` are URL-owned shareable browsing/discovery/organization state after account context is resolved. `favorite=true` remains the UI-031 Favorites filter; UI-032 adds optional `collection=<uuid>` without changing route hierarchy. UI-049 Phase 8A keeps collection lifecycle management on the same `/library` surface; deleting the active collection removes only `collection` plus stale `offset` while preserving compatible filters.
 - `sort=newest|oldest`; Newest is canonical and omitted from clean links.
@@ -95,8 +97,8 @@ Rules:
 - Library drag/drop is transient browser interaction state only; it does not become URL or durable media-management state.
 - Settings owns requirement-backed account/application state. UI-029 uses it for Supabase Auth identity. UI-030 does not turn the entire application into a redirect-based login wall: signed-out Create remains draftable, while private Library/Viewer data and persistent generation/upload actions require a verified account.
 
-### Phase 11 planned landing / application routing boundary — UI-052
-The verified current routing block above remains authoritative until Phase 11 implementation merges. UI-052 locks the target migration:
+### Phase 11 landing / application routing boundary — UI-052 — implemented / verified
+PR #73 implements the UI-052 routing boundary shown above; the application branch is verified and `main` adopts it when the PR merges:
 
 ```text
 /                  Brand / Landing (public, no AppShell)
@@ -108,7 +110,7 @@ The verified current routing block above remains authoritative until Phase 11 im
 /admin             Admin (application AppShell, fresh active-admin authorization)
 ```
 
-Implementation uses route groups so marketing and application layouts can diverge without changing public URLs beyond the deliberate Create move. Root layout becomes global document/theme/metadata plumbing only; an application route-group layout owns `AppShell`. Bare `/` becomes landing. Legacy root requests with `source` or `action` must redirect same-origin to `/create` with the full query preserved, after which the existing Create server boundary continues UUID/action/owner/media validation. Shell Create links/wordmark move to `/create`; marketing wordmark points `/`. Landing account CTA reuses `/settings`; no second auth UI or public signup is introduced. Until implementation merges, `/` remains Create and this section is a planned contract, not a claim about current runtime behavior.
+Implementation uses route groups so marketing and application layouts can diverge without changing public URLs beyond the deliberate Create move. Root layout becomes global document/theme/metadata plumbing only; an application route-group layout owns `AppShell`. Bare `/` becomes landing. Legacy root requests with `source` or `action` must redirect same-origin to `/create` with the full query preserved, after which the existing Create server boundary continues UUID/action/owner/media validation. Shell Create links/wordmark move to `/create`; marketing wordmark points `/`. Landing account CTA reuses `/settings`; no second auth UI or public signup is introduced. On validated PR #73 head `8975b7b42b518eea0a462b28528ddd41d90ad986`, `/` is Landing and `/create` is Create; all 19 affected workflows and required rendered review passed. `main` retains its pre-merge route state only until the guarded PR merge. No deployment follows from that merge.
 
 ### Phase 9 Retry boundary — implemented / verified
 UI-050 keeps Activity data server-owned and adds one small failed-row client mutation. `POST /api/generation/jobs/[jobId]/retry` receives no generation payload from the browser: `retryGenerationJob` loads the historical job under the verified owner, reconstructs only persisted product intent, applies bounded legacy compatibility, runs the current `parseGenerationRequest` boundary and owner/source input preflight, then calls the ordinary exported `submitGeneration` path. An accepted attempt is a distinct new job and the original row is not mutated. Foreign jobs collapse to not-found; active/succeeded/cancelled jobs and current-invalid/unavailable-source intent fail closed. `ActivityRetryButton` owns only in-flight/success/error state and refreshes the server-owned Activity dataset after acceptance.

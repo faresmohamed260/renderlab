@@ -104,10 +104,20 @@ Before copying/installing an external component:
 **Source:** `src/components/shell/app-shell.tsx`  
 **Origin:** RenderLab composition using approved `Button`, Next.js navigation + Lucide React  
 **Purpose:** Persistent responsive application chrome: desktop sidebar, compact top bar, mobile bottom navigation, route context and utility navigation.  
-**Used by:** root layout  
+**Used by:** `src/app/(app)/layout.tsx` for `/create`, Library/Viewer, Activity, Settings and Admin application routes
 **Reuse rules:** Extend this authoritative shell rather than creating page-specific shells.  
 **Do not:** Put Create composer, Library cards, workflows or feature-owned layout into persistent chrome.  
-**Notes:** Production build + Playwright desktop/mobile rendering approved; not locked.
+**Notes:** Production build + Playwright desktop/mobile rendering approved; not locked. UI-052 / PR #73 moves shell ownership from the global root layout to `src/app/(app)/layout.tsx`; validated head `8975b7b42b518eea0a462b28528ddd41d90ad986` preserves the established application composition while public `/` renders without `AppShell`.
+
+### RenderLabBrand
+**Status:** APPROVED
+**Source:** `src/components/brand/renderlab-brand.tsx`
+**Origin:** RenderLab-owned geometric mark/wordmark from the reviewed UI-052 design checkpoint
+**Purpose:** Shared RenderLab identity for landing, shell and small navigation/favicon scales without glow/gradient dependence.
+**Used by:** public Brand / Landing and application `AppShell`; matching vector asset at `public/renderlab-mark.svg`, app icon at `src/app/icon.svg`.
+**Reuse rules:** Reuse the component/mark geometry; marketing destination is `/`, application-shell destination is `/create`; preserve accessible labeling and monochrome legibility.
+**Do not:** Fork unrelated RenderLab logos, substitute generic AI sparkle/glow identity, or couple branding to provider/model/runtime claims.
+**Notes:** UI-052 validated head `8975b7b42b518eea0a462b28528ddd41d90ad986` passed Brand / Launch Visual `33321365147` and all 19 affected workflows. Artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean.
 
 ### Collapsible
 **Status:** APPROVED
