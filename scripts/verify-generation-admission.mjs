@@ -786,6 +786,7 @@ try {
   assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), "Activity admission narrow state has horizontal clipping.");
   await page.screenshot({ path: `${artifactDir}/generation-admission-activity-error-mobile.png`, fullPage: true });
   await context.close();
+  await browser.close();
   browser = null;
 
   await setAccess(ui.id, { generation_enabled: null });

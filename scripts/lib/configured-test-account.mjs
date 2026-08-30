@@ -7,6 +7,7 @@ const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const runToken = process.env.GITHUB_RUN_ID || "local";
 const accountScope = process.env.RENDERLAB_TEST_ACCOUNT_SCOPE || runToken;
 const accountScopeToken = createHash("sha256").update(accountScope).digest("hex").slice(0, 12);
+const bypassGenerationAdmission = process.env.RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS === "true";
 
 
 function fixtureUuid(namespace) {
@@ -166,7 +167,18 @@ export async function createConfiguredTestAccount(namespace) {
   const accessResponse = await serviceRest("renderlab_account_access?on_conflict=user_id", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify({ user_id: account.id, role: "member", status: "active" }),
+    body: JSON.stringify({
+      user_id: account.id,
+      role: "member",
+      status: "active",
+      ...(bypassGenerationAdmission
+        ? {
+            generation_enabled: true,
+            max_active_jobs: 4,
+            max_jobs_per_hour: 120,
+          }
+        : {}),
+    }),
   });
   if (!accessResponse.ok) {
     throw new Error(`Could not seed configured account access (${accessResponse.status}): ${await accessResponse.text()}`);

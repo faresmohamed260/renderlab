@@ -37,7 +37,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: renderlab-generation-admission-shared
+  group: renderlab-activity-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -52,6 +52,7 @@ jobs:
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
       RENDERLAB_GENERATION_BACKEND_URL: http://127.0.0.1:3010
       RENDERLAB_GENERATION_BACKEND_TOKEN: renderlab-activity-retry-ci-token
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
 
     steps:
       - name: Checkout
