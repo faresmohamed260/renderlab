@@ -1,0 +1,41 @@
+name: Phase 10C Wire Stage
+
+on:
+  push:
+    branches:
+      - tmp/phase10c-wire-stage
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply staged Phase 10C wiring
+        shell: bash
+        run: |
+          python .github/phase10c_wire_admin_fixtures.py
+          git show 56aed6c57f50d36617c39486c4419222582ac906:src/lib/api/generation-contract.ts > /tmp/generation-contract.ts
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('/tmp/generation-contract.ts')
+          text = path.read_text()
+          old = '''      | "invalid_request"\n      | "generation_backend_unavailable"\n      | "generation_submission_failed";\n'''
+          new = '''      | "invalid_request"\n      | "generation_access_denied"\n      | "generation_disabled"\n      | "generation_active_limit_reached"\n      | "generation_rate_limit_reached"\n      | "generation_backend_unavailable"\n      | "generation_submission_failed";\n'''
+          if old not in text:
+              raise SystemExit('generation error union marker missing')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          mv /tmp/generation-contract.ts src/lib/api/generation-contract.ts
+          rm .github/phase10c_wire_admin_fixtures.py
+          rm .github/workflows/phase10c-wire-stage.yml
+          git diff --check
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "feat: wire Phase 10C admin and fixture support"
+          git push
