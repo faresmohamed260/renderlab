@@ -16,6 +16,7 @@ on:
       - "src/server/admin/**"
       - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "supabase/migrations/0011_renderlab_admin_access_control.sql"
+      - "supabase/migrations/0012_renderlab_generation_admission.sql"
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-admin-operations.mjs"
       - ".github/workflows/admin-operations.yml"
@@ -25,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: renderlab-admin-operations-shared
+  group: renderlab-generation-admission-shared
   cancel-in-progress: false
 
 jobs:
@@ -72,20 +73,12 @@ jobs:
           git diff --check "$base"...HEAD
           git diff --name-only "$base"...HEAD | tee /tmp/renderlab-admin-changed-files.txt
 
-      - name: Enforce Phase 10B scope boundary
+      - name: Enforce Admin directory security boundary
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          if grep -Eq '^src/(app/api/generation/|server/generation/(submit-generation|retry-generation)\.ts$)' /tmp/renderlab-admin-changed-files.txt; then
-            echo "::error::Phase 10B must not change Create/Retry generation admission paths."
-            exit 1
-          fi
-          if grep -Eq 'renderlab_beta_settings|generation_admission_reservations' supabase/migrations/0011_renderlab_admin_access_control.sql; then
-            echo "::error::Phase 10C schema is out of scope for Phase 10B."
-            exit 1
-          fi
-          if grep -RInE 'auth\.admin\.listUsers|from[[:space:]]+auth\.users|join[[:space:]]+auth\.users' src/server/admin supabase/migrations/0011_renderlab_admin_access_control.sql; then
-            echo "::error::Phase 10B must not enumerate the shared Supabase Auth directory."
+          if grep -RInE 'auth\.admin\.listUsers|from[[:space:]]+auth\.users|join[[:space:]]+auth\.users' src/server/admin supabase/migrations/0011_renderlab_admin_access_control.sql supabase/migrations/0012_renderlab_generation_admission.sql; then
+            echo "::error::Admin operations must not enumerate the shared Supabase Auth directory."
             exit 1
           fi
 
