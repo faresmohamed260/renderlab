@@ -23,19 +23,21 @@ on:
       - "src/server/generation/generation-activity.ts"
       - "src/server/generation/retry-generation.ts"
       - "src/server/generation/submit-generation.ts"
+      - "src/server/generation/generation-admission.ts"
       - "src/server/generation/poll-generation.ts"
       - "src/server/generation/native-generation.ts"
       - "supabase/migrations/0002_generation_jobs_media_assets.sql"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "supabase/migrations/0009_media_asset_deletion.sql"
+      - "supabase/migrations/0012_renderlab_generation_admission.sql"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: renderlab-activity-${{ github.ref }}
+  group: renderlab-generation-admission-shared
   cancel-in-progress: false
 
 jobs:
