@@ -25,32 +25,25 @@ jobs:
           path: target
           fetch-depth: 0
 
-      - name: Apply contract
+      - name: Deduplicate Screen Registry
         working-directory: target
-        run: python ../bootstrap/.github/scripts/phase11_contract_apply.py
+        run: python ../bootstrap/.github/scripts/phase11_contract_screen_registry_fix.py
 
-      - name: Fix new contract whitespace only
-        working-directory: target
-        run: python ../bootstrap/.github/scripts/phase11_contract_targeted_fix.py
-
-      - name: Validate exact docs-only scope
+      - name: Validate targeted fix
         working-directory: target
         shell: bash
         run: |
-          expected=$'PROJECT.md\ndocs/architecture/FRONTEND_ARCHITECTURE.md\ndocs/ui/SCREEN_REGISTRY.md\ndocs/ui/UI_DECISIONS.md\ndocs/ui/UI_MIGRATION.md'
-          actual="$(git diff --name-only | sort)"
-          test "$actual" = "$expected"
+          test "$(git diff --name-only)" = "docs/ui/SCREEN_REGISTRY.md"
           git diff --check
-          grep -F 'UI-052 — Public landing owns `/`; Create moves to `/create`' docs/ui/UI_DECISIONS.md
-          grep -F 'Status: `EXPANDED / IMPLEMENTATION NOT STARTED` under UI-052' PROJECT.md
-          grep -F 'Brand / Landing — Phase 11 target' docs/ui/SCREEN_REGISTRY.md
+          test "$(grep -F -c '### Brand / Landing — Phase 11 target' docs/ui/SCREEN_REGISTRY.md)" = "1"
+          test "$(grep -F -c '### Brand / Landing — planned Cycle 2 launch surface' docs/ui/SCREEN_REGISTRY.md)" = "0"
 
-      - name: Commit contract
+      - name: Amend contract commit
         working-directory: target
         shell: bash
         run: |
           git config user.name "Fares Mohamed"
           git config user.email "121525183+faresmohamed260@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md docs/architecture/FRONTEND_ARCHITECTURE.md
-          git commit -m "docs: expand Phase 11 brand launch contract"
-          git push origin HEAD:work/phase-11-brand-launch-contract
+          git add docs/ui/SCREEN_REGISTRY.md
+          git commit --amend --no-edit
+          git push --force-with-lease origin HEAD:work/phase-11-brand-launch-contract
