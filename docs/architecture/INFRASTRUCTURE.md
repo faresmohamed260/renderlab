@@ -550,7 +550,7 @@ The repository secret `CLOUDFLARE_API_TOKEN` is deliberately scoped for zone DNS
 This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
 
 ## Infrastructure Operating Rules
-No infrastructure rollout is currently queued by the repository. Cycle 2 Phase 6 baseline evidence is complete pending the user-approved operating boundary; no Phase 7 implementation or production rollout is authorized by that audit.
+Cycle 2 production is accepted and Phase 13 — Email & Invite Production Hardening is `CONTRACTED / NOT STARTED` as the first planned Cycle 3 phase. The Phase 13 planning contract authorizes no SMTP/provider signup or purchase, Cloudflare DNS mutation, hosted Supabase Auth mutation, live email send, Vercel deployment or application change until the user explicitly authorizes implementation.
 
 1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout; a repository merge is never implicit permission to deploy or apply a future schema change.
 2. Add any future public upload origin explicitly to R2 CORS before deployment/use.
@@ -634,3 +634,26 @@ Production Admin artifact `9739796661` (`sha256:b360b8674566d95d8ad34bb384fa97e3
 Pre-rollout deployment `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` remains the documented rollback baseline. Automatic Git → Vercel deployments remain disabled. Documentation-only commits may place repository `main` ahead of deployed application SHA; this does not make the docs head an application release candidate. A future production release requires a separately verified candidate/release scope.
 
 Closed-Beta Cycle 2 acceptance does not resolve broader-beta Auth hardening. Supabase built-in mail/rate-limit posture and Free-plan leaked-password protection remain documented limitations; custom SMTP/sender/template productionization belongs to a separately scoped broader-access cycle.
+
+
+### Phase 13 Email & Invite Production Hardening infrastructure contract — 2026-08-31
+**Status: `CONTRACTED / NOT STARTED`.** This section defines the infrastructure acceptance boundary only; it does not authorize production mutation.
+
+Current Closed-Beta production already has the application-side admission and security contract needed for external invites: admin-only invitation creation/revocation, server-owned `renderlab_beta_invitations`, active account enforcement, fresh Auth-backed private authorization, token-hash invite/recovery confirmation and no public sign-up. Phase 12B corrected hosted Auth Site URL to `https://renderlab.faresuniform.uk` and verified exact invite/recovery redirects. The remaining weakness is mail delivery infrastructure, not account ownership architecture.
+
+Phase 10D live evidence showed Supabase built-in Auth delivery from `noreply@mail.app.supabase.io` and an `over_email_send_rate_limit` response. That built-in posture remains acceptable for deterministic technical verification only; Phase 13 must replace it for production invite/recovery delivery before broader external-beta reliance.
+
+Accepted Phase 13 infrastructure sequence:
+1. Read actual hosted Auth mail/template/rate-limit state and current `faresuniform.uk` sender DNS before mutation. Reuse the approved shared Supabase project; do not create another Auth project.
+2. Operator selects and provisions one production transactional delivery mechanism: Supabase custom SMTP with a transactional provider, or an equivalent Supabase Send Email Auth Hook. Vendor/account/plan choice and costs require explicit operator acceptance.
+3. Establish one RenderLab transactional sender identity under `faresuniform.uk`. Provider-required DNS must be applied through the existing Cloudflare zone with preservation of unrelated records: avoid multiple SPF records, verify provider DKIM, and configure/document DMARC policy/reporting. DNS authentication must be publicly resolved and provider-verified before live acceptance.
+4. Configure Supabase/provider sender/from/reply posture, bounded invitation-only email limits and invite/recovery templates. Templates must use the existing SSR token-hash paths through `{{ .SiteURL }}`: invite `/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/settings`; recovery `/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/settings/password`.
+5. Disable click/link tracking or URL rewriting for Auth mail. Authentication tokens, raw confirmation URLs, provider keys and recipient addresses must not be emitted into repository logs or durable docs.
+6. Keep normal CI free of real email delivery. Use generate-link and browser/security tests for deterministic coverage; reserve actual sends for a bounded operator-gated acceptance run.
+7. Live acceptance must cover real external receipt and browser completion for an invite and recovery on `renderlab.faresuniform.uk`, with at least two independent mailbox providers where practical, provider delivery/bounce evidence, Inbox/Spam observation, consumed/revoked/invalid-link failure and exact fixture cleanup.
+8. Final audit preserves the sole persistent production admin, zero run-owned access/invitation/Auth/admission/media/generation residue and generation defaults enabled / 1 active / 12 hourly / no updater.
+9. Credential hygiene is part of acceptance. SMTP/API/management credentials remain secret-store-only. Any privileged Supabase Management API credential used for bounded configuration must be reviewed after the phase and narrowed, rotated or removed when continuing retention is not justified.
+
+Phase 13 requires no Supabase database migration, R2 change, worker/provider-generation change or Vercel deployment when completed purely as email/Auth/DNS configuration. If live testing exposes an application defect, make only the smallest code correction, validate a new exact application candidate through affected gates and obtain deployment authorization before replacing the accepted Cycle 2 production build.
+
+The Free-plan leaked-password-protection warning is intentionally separate from this email phase. Phase 13 may improve delivery reliability and sender trust, but it must not claim broader-beta security completion until leaked-password protection and any other separately contracted requirements are actually resolved.
