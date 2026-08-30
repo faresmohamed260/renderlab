@@ -334,11 +334,11 @@ try {
   await page.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByText(promptText, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   const retryActivityRows = page.getByText(retryPrompt, { exact: true });
-await retryActivityRows.first().waitFor({ state: "visible", timeout: 30_000 });
-assert(
-  await retryActivityRows.count() === 2,
-  "Activity did not preserve the failed history alongside the succeeded Retry.",
-);
+  await retryActivityRows.first().waitFor({ state: "visible", timeout: 30_000 });
+  assert(
+    await retryActivityRows.count() === 2,
+    "Activity did not preserve the failed history alongside the succeeded Retry.",
+  );
   await page.screenshot({ path: `${artifactDir}/release-integrated-activity-desktop.png`, fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });
