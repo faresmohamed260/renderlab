@@ -1,0 +1,73 @@
+name: Phase 12B Clean Exact Production Deploy
+
+on:
+  push:
+    branches: [work/phase-12b-rollout-execution]
+    paths:
+      - ".github/workflows/phase-12b-clean-deploy.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CANDIDATE_SHA: d6b8f386db3893e583c99b23fc3397b0eb377d42
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_r09C6RLmb2acHapENECQIn9T
+      VERCEL_PROJECT_ID: prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU
+
+    steps:
+      - name: Checkout exact verified candidate
+        uses: actions/checkout@v4
+        with:
+          ref: d6b8f386db3893e583c99b23fc3397b0eb377d42
+          fetch-depth: 1
+
+      - name: Verify pristine exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          test -n "$VERCEL_TOKEN"
+          echo "EXACT_PRISTINE_CANDIDATE=true"
+
+      - name: Deploy pristine exact checkout to production
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes vercel@latest deploy --prod --force --yes --token="$VERCEL_TOKEN" 2>&1 | tee /tmp/vercel-deploy.log
+          url="$(grep -Eo 'https://[^ ]+\.vercel\.app' /tmp/vercel-deploy.log | tail -1)"
+          test -n "$url"
+          echo "VERCEL_DEPLOYMENT_URL=$url"
+          printf '%s' "$url" > /tmp/vercel-deployment-url
+
+      - name: Require READY exact and pristine Git metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="$(cat /tmp/vercel-deployment-url)"
+          host="${url#https://}"
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${VERCEL_TOKEN}" \
+            "https://api.vercel.com/v13/deployments/${host}?teamId=${VERCEL_ORG_ID}" > /tmp/deployment.json
+          python <<'PY'
+          import json, os
+          from pathlib import Path
+          p=json.loads(Path('/tmp/deployment.json').read_text())
+          state=p.get('readyState') or p.get('status') or p.get('state')
+          meta=p.get('meta') or {}
+          sha=meta.get('githubCommitSha') or meta.get('gitCommitSha') or (p.get('gitMetadata') or {}).get('commitSha')
+          dirty=str(meta.get('gitDirty') or '0')
+          print(f'VERCEL_DEPLOYMENT_ID={p.get("id")}')
+          print(f'VERCEL_DEPLOYMENT_URL=https://{p.get("url")}')
+          print(f'VERCEL_FINAL_STATUS={state}')
+          print(f'VERCEL_REPORTED_GIT_SHA={sha}')
+          print(f'VERCEL_GIT_DIRTY={dirty}')
+          if state != 'READY': raise SystemExit(f'Deployment is not READY: {state}')
+          if sha != os.environ['CANDIDATE_SHA']: raise SystemExit(f'Unexpected deployment Git SHA: {sha}')
+          if dirty not in ('0','false','False',''): raise SystemExit(f'Deployment reports dirty Git source: {dirty}')
+          PY
