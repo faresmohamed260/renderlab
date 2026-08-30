@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820">
+  <rect width="1200" height="820" fill="#090A0C"/>
+  <style>
+    text { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    .muted { fill:#9CA3AF; }
+    .text { fill:#F4F5F7; }
+  </style>
+  <text x="72" y="82" class="text" font-size="34" font-weight="650">RenderLab brand system — v0.1</text>
+  <text x="72" y="116" class="muted" font-size="17">Geometric R-frame monogram · one-color capable · dark-first</text>
+  <rect x="72" y="166" width="1056" height="264" rx="24" fill="#111318" stroke="#2B303A"/>
+  <g transform="translate(128 220)" stroke="#7C6CF2" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M0 0V148"/>
+    <path d="M0 12H72C108 12 132 32 132 62S108 112 72 112H0"/>
+    <path d="M70 112L132 148"/>
+  </g>
+  <rect x="192" y="282" width="26" height="26" rx="7" fill="#F4F5F7"/>
+  <text x="342" y="328" class="text" font-size="74" font-weight="650" letter-spacing="-2.2">RenderLab</text>
+  <text x="346" y="368" class="muted" font-size="19" letter-spacing="1.8">CREATE · KEEP · CONTINUE</text>
+  <text x="72" y="492" class="text" font-size="18" font-weight="650">Small-scale / one-color proof</text>
+  <rect x="72" y="522" width="1056" height="214" rx="20" fill="#111318" stroke="#2B303A"/>
+  <g transform="translate(126 567)" stroke="#F4F5F7" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M0 0V82"/><path d="M0 7H39C59 7 72 18 72 34S59 61 39 61H0"/><path d="M38 61L72 82"/>
+  </g>
+  <rect x="160" y="600" width="14" height="14" rx="4" fill="#F4F5F7"/>
+  <text x="218" y="620" class="muted" font-size="15">96 px</text>
+  <g transform="translate(390 584)" stroke="#F4F5F7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M0 0V44"/><path d="M0 4H21C32 4 39 10 39 19S32 33 21 33H0"/><path d="M20 33L39 44"/>
+  </g>
+  <rect x="408" y="601" width="8" height="8" rx="2.5" fill="#F4F5F7"/>
+  <text x="452" y="612" class="muted" font-size="15">48 px</text>
+  <g transform="translate(622 590)" stroke="#F4F5F7" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M0 0V30"/><path d="M0 3H14C22 3 27 7 27 13S22 23 14 23H0"/><path d="M14 23L27 30"/>
+  </g>
+  <rect x="634.5" y="602" width="5.5" height="5.5" rx="1.6" fill="#F4F5F7"/>
+  <text x="670" y="610" class="muted" font-size="15">32 px</text>
+  <g transform="translate(844 595)" stroke="#F4F5F7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M0 0V19"/><path d="M0 2H9C14 2 17 5 17 9S14 15 9 15H0"/><path d="M9 15L17 19"/>
+  </g>
+  <rect x="852" y="603" width="3.5" height="3.5" rx="1" fill="#F4F5F7"/>
+  <text x="882" y="608" class="muted" font-size="15">20 px</text>
+  <text x="72" y="790" class="muted" font-size="14">The monogram remains legible without glow/gradient; the square is a “rendered pixel” accent, not required for silhouette recognition.</text>
+</svg>
