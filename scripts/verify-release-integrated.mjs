@@ -279,7 +279,7 @@ try {
   await page.screenshot({ path: `${artifactDir}/release-integrated-landing-desktop.png`, fullPage: true });
 
   await page.goto(`${baseUrl}/admin`, { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await page.getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("main").getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Global defaults", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.screenshot({ path: `${artifactDir}/release-integrated-admin-desktop.png` });
 
