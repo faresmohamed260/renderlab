@@ -22,6 +22,38 @@ jobs:
       - name: Apply Phase 11 documentation reconciliation
         run: python scripts/tmp-phase11-doc-finalize.py
 
+      - name: Normalize newly inserted Markdown lines
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          exact_lines = {
+              "docs/ui/SCREEN_REGISTRY.md": {
+                  "**Route:** `/`  ",
+                  "**Status:** APPROVED on validated PR #73 implementation; pending merge to `main`  ",
+                  "**Implementation:** `src/app/page.tsx`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`  ",
+                  "**Design artifacts:** `design/penpot/brand-launch-v0.1-desktop.svg`, `design/penpot/brand-launch-v0.1-mobile.svg`  ",
+              },
+              "docs/ui/COMPONENT_CATALOG.md": {
+                  "**Used by:** `src/app/(app)/layout.tsx` for `/create`, Library/Viewer, Activity, Settings and Admin application routes  ",
+                  "**Status:** APPROVED  ",
+                  "**Source:** `src/components/brand/renderlab-brand.tsx`  ",
+                  "**Origin:** RenderLab-owned geometric mark/wordmark from the reviewed UI-052 design checkpoint  ",
+                  "**Purpose:** Shared RenderLab identity for landing, shell and small navigation/favicon scales without glow/gradient dependence.  ",
+                  "**Used by:** public Brand / Landing and application `AppShell`; matching vector asset at `public/renderlab-mark.svg`, app icon at `src/app/icon.svg`.  ",
+                  "**Reuse rules:** Reuse the component/mark geometry; marketing destination is `/`, application-shell destination is `/create`; preserve accessible labeling and monochrome legibility.  ",
+                  "**Do not:** Fork unrelated RenderLab logos, substitute generic AI sparkle/glow identity, or couple branding to provider/model/runtime claims.  ",
+              },
+          }
+
+          for path, targets in exact_lines.items():
+              p = Path(path)
+              lines = p.read_text(encoding="utf-8").splitlines()
+              normalized = [line.rstrip() if line in targets else line for line in lines]
+              p.write_text("\n".join(normalized) + "\n", encoding="utf-8")
+          PY
+
       - name: Remove temporary helpers and validate diff
         run: |
           rm scripts/tmp-phase11-doc-finalize.py
