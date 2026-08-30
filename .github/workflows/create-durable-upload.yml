@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "src/app/page.tsx"
+      - "src/app/(app)/create/**"
+      - "src/app/(app)/layout.tsx"
       - "src/features/create/**"
       - "src/features/library/library-upload-client.ts"
       - "src/lib/api/media-upload-contract.ts"
