@@ -7,6 +7,9 @@ export type RenderLabAccountAccess = {
   userId: string;
   role: RenderLabAccessRole;
   status: RenderLabAccessStatus;
+  generationEnabled: boolean | null;
+  maxActiveJobs: number | null;
+  maxJobsPerHour: number | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -15,6 +18,9 @@ type RenderLabAccountAccessRow = {
   user_id: string;
   role: RenderLabAccessRole;
   status: RenderLabAccessStatus;
+  generation_enabled: boolean | null;
+  max_active_jobs: number | null;
+  max_jobs_per_hour: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -29,6 +35,9 @@ function publicAccess(row: RenderLabAccountAccessRow): RenderLabAccountAccess {
     userId: row.user_id,
     role: row.role,
     status: row.status,
+    generationEnabled: row.generation_enabled,
+    maxActiveJobs: row.max_active_jobs,
+    maxJobsPerHour: row.max_jobs_per_hour,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -43,7 +52,7 @@ export async function getRenderLabAccountAccess(userId: string): Promise<RenderL
   if (!isSupabaseConfigured()) return null;
 
   const rows = await supabaseRest<RenderLabAccountAccessRow[]>(
-    `renderlab_account_access?user_id=eq.${encodeURIComponent(userId)}&select=user_id,role,status,created_at,updated_at&limit=1`,
+    `renderlab_account_access?user_id=eq.${encodeURIComponent(userId)}&select=user_id,role,status,generation_enabled,max_active_jobs,max_jobs_per_hour,created_at,updated_at&limit=1`,
   );
   return rows[0] ? publicAccess(rows[0]) : null;
 }

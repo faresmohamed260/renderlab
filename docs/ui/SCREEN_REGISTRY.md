@@ -228,19 +228,23 @@ Approved behavior:
 
 ### Admin
 **Route:** `/admin`
-**Status:** PLANNED — Phase 10 / UI-051
-**Implementation:** none until the UI-051 contract is merged
+**Status:** APPROVED / VERIFIED — Phase 10B / UI-051
+**Implementation:** `src/app/admin/page.tsx`, `src/features/admin/admin-operations.tsx`, `src/server/admin/*`, `src/app/api/admin/**`
 
 **Purpose:** Operate the controlled RenderLab beta without exposing provider infrastructure or the shared Supabase Auth namespace.
 
-**Planned v0.1 composition:**
-- **Access:** RenderLab invitations and admitted accounts only; invite/revoke, active/suspended status, member/admin role, bounded per-account generation overrides; no Auth-account deletion or password administration.
-- **Generation controls:** typed global generation enabled switch plus default one-active/12-per-hour limits and effective override visibility. Labels say limits/guardrails, never credits or plan allowance.
-- **Health:** bounded aggregate RenderLab job counts/status/sanitized error codes; no prompt/media/provider/worker/workflow/raw-error data.
-- server-authorized page; non-admins fail closed; no ordinary global shell navigation item; Settings exposes the link only to active admins.
-- desktop may use dense rows/tables from maintained primitives; narrow layout must stack records/actions without horizontal clipping or hidden destructive context.
+**Verified v0.1 composition:**
+- **Access:** RenderLab invitations and admitted accounts only; invite/revoke, active/suspended status and member/admin role. Account discovery starts from `renderlab_account_access`; Auth Admin lookup is only by already-known RenderLab UUID.
+- **Generation controls:** nullable per-account `generationEnabled`, `maxActiveJobs` (1–4) and `maxJobsPerHour` (1–120) overrides. Phase 10B stores/manages these values but does not enforce generation admission; global defaults/kill switch and effective admission behavior remain Phase 10C.
+- **Health:** bounded aggregate RenderLab operation/status counts, active-job count and sanitized product error-code counts; no prompt/media/provider/worker/workflow/raw-error data.
+- `/admin` and `/api/admin/**` require a freshly server-confirmed Supabase identity plus active RenderLab `admin` access. Unauthorized page/API paths fail closed without privileged payload.
+- ordinary global shell navigation remains Create/Library/Activity/Settings; Settings exposes `Open Admin` only to a fresh active admin.
+- member/admin and active/suspended changes are transactionally protected against self-lockout and removal of the last active admin.
+- desktop uses dense maintained-primitive rows/cards; narrow layout stacks records/actions without horizontal clipping.
 
-**Do not change:** Do not turn Admin into a shared-Supabase user browser, cloud/provider console, arbitrary feature-flag framework or generic internal dashboard. Do not expose provider identity/credentials, raw errors, other applications' users or destructive account/data deletion in Phase 10.
+**Approval evidence:** exact code/test head `56d5a2c26fc14f6fcad8c7093024bcc9632eb7c8` passed all 20 affected workflows including Account/Admin Operations `33287455993`, Account Identity `33287456000`, Account Ownership `33287455999`, UI Shell `33287456001`, Generation `33287455998` and Video Generation `33287455985`. Admin artifact `9724888784` (`renderlab-admin-operations-screenshots`, `sha256:02eab0838958d8da7c9b966159c05acc72ec0f8cf1181b7d0603a12cf56acd38`) was human-reviewed clean on desktop/narrow layouts. Migration `20260830015449 renderlab_admin_access_control` is applied/audited, and exact final Admin fixture cleanup returned access/invitation/job/Auth rows to zero.
+
+**Do not change:** Do not turn Admin into a shared-Supabase user browser, cloud/provider console, arbitrary feature-flag framework or generic internal dashboard. Do not expose provider identity/credentials, raw errors, other applications' users or destructive account/data deletion. Global admission defaults/reservations and Create/Retry 429 enforcement remain Phase 10C.
 
 ### Brand / Landing — planned Cycle 2 launch surface
 **Route:** TBD; current `/` remains Create until Phase 11 explicitly changes information architecture.
