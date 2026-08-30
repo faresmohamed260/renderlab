@@ -1,0 +1,113 @@
+name: Phase 12B Release Preflight
+
+on:
+  push:
+    branches: [work/phase-12b-rollout-ops]
+    paths:
+      - ".github/workflows/phase-12b-release-preflight.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_BROWSER_UPLOAD_ORIGINS: https://renderlab-lake.vercel.app,https://renderlab.faresuniform.uk,https://renderlab-faresmohamed260-6733s-projects.vercel.app,https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app
+    steps:
+      - name: Checkout exact verified release candidate
+        uses: actions/checkout@v4
+        with:
+          ref: d6b8f386db3893e583c99b23fc3397b0eb377d42
+
+      - name: Verify exact candidate identity
+        run: |
+          test "$(git rev-parse HEAD)" = "d6b8f386db3893e583c99b23fc3397b0eb377d42"
+          echo "CANDIDATE_SHA=$(git rev-parse HEAD)"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Reconfirm production R2 browser upload origins without mutation
+        run: node scripts/verify-r2-browser-cors.mjs
+
+      - name: Verify hosted Auth invite and recovery redirect acceptance without sending email
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { randomUUID } from "node:crypto";
+          import { createClient } from "@supabase/supabase-js";
+
+          const url = process.env.SUPABASE_URL?.trim();
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+          if (!url || !key) throw new Error("Supabase service configuration is missing");
+
+          const supabase = createClient(url, key, {
+            auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+          });
+          const email = `renderlab-phase12b-${randomUUID()}@example.invalid`;
+          const password = `RL-${randomUUID()}-aA9!`;
+          const inviteRedirect = "https://renderlab.faresuniform.uk/settings";
+          const recoveryRedirect = "https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password";
+          let userId = null;
+
+          const normalizedRedirect = (actionLink) => {
+            const parsed = new URL(actionLink);
+            return parsed.searchParams.get("redirect_to") || parsed.searchParams.get("redirectTo") || "";
+          };
+
+          try {
+            const created = await supabase.auth.admin.createUser({ email, password, email_confirm: true });
+            if (created.error || !created.data.user) throw created.error || new Error("run-owned Auth user was not created");
+            userId = created.data.user.id;
+
+            const recovery = await supabase.auth.admin.generateLink({
+              type: "recovery",
+              email,
+              options: { redirectTo: recoveryRedirect },
+            });
+            if (recovery.error || !recovery.data?.properties?.action_link) throw recovery.error || new Error("recovery link not generated");
+            const recoveryResolved = normalizedRedirect(recovery.data.properties.action_link);
+            if (recoveryResolved !== recoveryRedirect) {
+              throw new Error(`recovery redirect mismatch: ${recoveryResolved || "<none>"}`);
+            }
+
+            const inviteEmail = `renderlab-phase12b-invite-${randomUUID()}@example.invalid`;
+            const invite = await supabase.auth.admin.generateLink({
+              type: "invite",
+              email: inviteEmail,
+              options: { redirectTo: inviteRedirect },
+            });
+            if (invite.error || !invite.data?.properties?.action_link || !invite.data.user) throw invite.error || new Error("invite link not generated");
+            const inviteResolved = normalizedRedirect(invite.data.properties.action_link);
+            if (inviteResolved !== inviteRedirect) {
+              throw new Error(`invite redirect mismatch: ${inviteResolved || "<none>"}`);
+            }
+            const inviteUserId = invite.data.user.id;
+            const deletedInvite = await supabase.auth.admin.deleteUser(inviteUserId);
+            if (deletedInvite.error) throw deletedInvite.error;
+
+            console.log("AUTH_RECOVERY_REDIRECT_ACCEPTED=true");
+            console.log("AUTH_INVITE_REDIRECT_ACCEPTED=true");
+            console.log("AUTH_EMAIL_DELIVERY_USED=false");
+          } finally {
+            if (userId) {
+              const deleted = await supabase.auth.admin.deleteUser(userId);
+              if (deleted.error) throw deleted.error;
+            }
+          }
+          NODE
