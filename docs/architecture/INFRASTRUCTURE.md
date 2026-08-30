@@ -75,6 +75,8 @@ PR #70 merged to `main` as `5950958dc58143b099bc2877a942829c045f700e`. Merged-ma
 
 
 ### Phase 12 pre-release infrastructure audit — 2026-08-30
+Phase 12 execution contract PR #74 merged as `c03e26c683c9c7c430c0e55cc306f5889f004844`. The following evidence remains the starting baseline for 12A; merge itself performed no deployment or production mutation.
+
 This is read-only contract evidence, not rollout authorization.
 
 - Contract-start repository `main`: `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95`. Phase 11 merge: `46c5daa2866c6758907ee9be219bcb3cb274ca83`.

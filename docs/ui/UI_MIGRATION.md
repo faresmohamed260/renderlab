@@ -1307,7 +1307,7 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 - [x] No schema/R2/provider/Auth/admission/deployment change occurred or is authorized. Phase 10 broader-beta email/template/leaked-password blockers remain open. Phase 12 owns integrated release validation and any separately authorized rollout.
 
 ### Phase 12 — Cycle 2 Release Validation
-**Contract status:** `CONTRACT EXPANDED / IMPLEMENTATION NOT STARTED`. Starting authoritative `main` is `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95`. 12A is non-deploying validation; 12B remains separately authorization-gated.
+**Contract status:** `CONTRACT MERGED / 12A NOT STARTED`. PR #74 merged the execution-ready Phase 12 contract as `c03e26c683c9c7c430c0e55cc306f5889f004844`. 12A is now authorized; 12B remains explicitly deployment-gated.
 
 #### Verified preflight — 2026-08-30
 - [x] Phase 11 is complete/verified and merged; Phase 12 prerequisite is satisfied.
@@ -1359,12 +1359,12 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 ## Current Work
 **Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–11 are complete/verified.
-**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `CONTRACT EXPANDED / IMPLEMENTATION NOT STARTED` on top of authoritative starting `main` `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95`.
-**Next sequence:** merge this docs-only Phase 12 execution contract first. Then 12A may freeze one current-main release candidate and run the non-deploying integrated validation/audit sequence. 12B remains blocked unless the user explicitly authorizes deployment and production mutations.
-**Release reality:** current READY production is `dpl_DeFYMv7DNHqXfPF2himBMsUK5hEL` / `c8e9943dd90cba5971f4dcfcd591445608ce46ca`, while contract-start `main` is 216 commits ahead with executable changes. Production health is useful baseline evidence, not candidate evidence.
-**Deployment boundary:** no deployment or production configuration mutation is authorized by contract expansion or 12A validation. The invitation-only production enforcement/bootstrap gate must be explicitly resolved before an authorized rollout is accepted as production-consistent.
-**Broader-beta boundary:** Supabase built-in mail/rate-limit posture, unverified production Auth Site URL/redirect/template/sender/custom-SMTP posture and Free-plan leaked-password protection remain open until separately evidenced; do not hide them inside release-validation success.
-**Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face remains post-Cycle-2 and out of Phase 12.
+**Current phase contract:** Phase 12 — Cycle 2 Release Validation is `CONTRACT MERGED / 12A NOT STARTED`; PR #74 merged as `c03e26c683c9c7c430c0e55cc306f5889f004844`.
+**Next sequence:** freeze one exact current `main` SHA as the first 12A release candidate, run non-deploying static/build/full configured + integrated validation, perform read-only infrastructure/security audits and exact cleanup, then record a candidate manifest. Any code/config fix creates a new candidate and invalidates stale-head evidence.
+**Release reality:** current READY production remains application SHA `c8e9943dd90cba5971f4dcfcd591445608ce46ca`; contract-start `main` `d8fa1fc754c4e5bdc3648177fb7f833218dc1d95` was 216 commits ahead with executable changes. Production health is baseline evidence only.
+**Deployment boundary:** Phase 12B remains blocked without explicit user authorization. No Vercel deployment, production access-enforcement/bootstrap, Auth hosted-config or R2 mutation is authorized during 12A.
+**Broader-beta boundary:** built-in mail/rate-limit posture, unverified production Auth Site URL/redirect/template/sender/custom-SMTP posture and Free-plan leaked-password protection remain open until separately evidenced.
+**Post-Cycle-2 accepted direction:** LoRA/model-adapter library remains out of Phase 12.
 
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
