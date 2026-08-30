@@ -12,6 +12,7 @@ on:
       - "src/server/media/**"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - "supabase/migrations/0012_renderlab_generation_admission.sql"
       - "components.json"
       - "package.json"
       - "scripts/lib/configured-test-account.mjs"
@@ -21,6 +22,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: renderlab-generation-admission-shared
+  cancel-in-progress: false
 
 jobs:
   lifecycle:
