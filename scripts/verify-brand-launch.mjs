@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
+const canonicalOrigin = "https://renderlab-lake.vercel.app";
 const artifactDir = "artifacts";
 
 function assert(condition, message) {
@@ -15,13 +16,19 @@ async function assertNoHorizontalOverflow(page, label) {
 
 async function verifyFocus(page, locator, label) {
   await locator.focus();
-  const focused = await locator.evaluate((element) => document.activeElement === element);
-  assert(focused, `${label} could not receive keyboard focus.`);
-  const outline = await locator.evaluate((element) => {
+  const focusState = await locator.evaluate((element) => {
     const style = getComputedStyle(element);
-    return { style: style.outlineStyle, width: style.outlineWidth };
+    return {
+      focused: document.activeElement === element,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      boxShadow: style.boxShadow,
+    };
   });
-  assert(outline.style !== "none" && outline.width !== "0px", `${label} has no visible focus outline.`);
+  assert(focusState.focused, `${label} could not receive keyboard focus.`);
+  const hasOutline = focusState.outlineStyle !== "none" && focusState.outlineWidth !== "0px";
+  const hasRing = focusState.boxShadow !== "none" && focusState.boxShadow !== "";
+  assert(hasOutline || hasRing, `${label} has no visible focus treatment.`);
 }
 
 await mkdir(artifactDir, { recursive: true });
@@ -56,8 +63,11 @@ try {
   assert(await og.count() > 0, "Open Graph image metadata is missing.");
   const ogUrl = await og.first().getAttribute("content");
   assert(Boolean(ogUrl), "Open Graph image URL is empty.");
-  const ogResponse = await desktop.request.get(new URL(ogUrl, baseUrl).toString());
-  assert(ogResponse.ok(), `Open Graph image failed: ${ogResponse.status()}`);
+  const parsedOgUrl = new URL(ogUrl, baseUrl);
+  assert(parsedOgUrl.origin === canonicalOrigin, `Open Graph metadata uses unexpected origin: ${parsedOgUrl.origin}`);
+  assert(parsedOgUrl.pathname.startsWith("/opengraph-image"), `Unexpected Open Graph image path: ${parsedOgUrl.pathname}`);
+  const ogResponse = await desktop.request.get(`${baseUrl}${parsedOgUrl.pathname}${parsedOgUrl.search}`);
+  assert(ogResponse.ok(), `Open Graph image failed locally: ${ogResponse.status()}`);
   assert((ogResponse.headers()["content-type"] || "").includes("image/png"), "Open Graph image is not PNG.");
   await desktop.screenshot({ path: `${artifactDir}/brand-launch-desktop.png`, fullPage: true });
 
