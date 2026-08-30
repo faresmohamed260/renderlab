@@ -1,0 +1,62 @@
+name: Phase 12 Collections teardown verifier fix
+
+on:
+  push:
+    branches: [work/phase-12-release-validation]
+    paths:
+      - ".github/workflows/tmp-phase12-collections-teardown-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-12-release-validation
+          fetch-depth: 0
+      - name: Patch routed-page teardown
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/verify-library-collections.mjs")
+          text = path.read_text()
+
+          old_empty = '''  assert(Boolean(firstForeignCollection), "Zero-collection Library manager did not create the first collection.");
+  await emptyContext.close();'''
+          new_empty = '''  assert(Boolean(firstForeignCollection), "Zero-collection Library manager did not create the first collection.");
+  await emptyPage.unrouteAll({ behavior: "ignoreErrors" });
+  await emptyContext.close();'''
+
+          old_main = '''  await page.screenshot({ path: `${artifactDir}/library-collections-active-delete-desktop.png`, fullPage: true });
+
+  console.log(`Configured Library Collections + Phase 8A management rendered successfully. owner=${owner.id} asset=${collectionAsset.id}`);'''
+          new_main = '''  await page.screenshot({ path: `${artifactDir}/library-collections-active-delete-desktop.png`, fullPage: true });
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await context.close();
+
+  console.log(`Configured Library Collections + Phase 8A management rendered successfully. owner=${owner.id} asset=${collectionAsset.id}`);'''
+
+          if text.count(old_empty) != 1:
+              raise SystemExit("empty-context teardown anchor not unique")
+          if text.count(old_main) != 1:
+              raise SystemExit("main-context teardown anchor not unique")
+
+          text = text.replace(old_empty, new_empty).replace(old_main, new_main)
+          path.write_text(text)
+          PY
+          git diff --check
+      - name: Commit verifier-only correction and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-phase12-collections-teardown-fix.yml
+          git add scripts/verify-library-collections.mjs
+          git diff --cached --check
+          git commit -m "test: harden Collections routed-page teardown"
+          git push origin HEAD:work/phase-12-release-validation
