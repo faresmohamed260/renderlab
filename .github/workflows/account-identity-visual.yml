@@ -10,7 +10,7 @@ on:
       - "src/server/account/**"
       - "src/features/account/**"
       - "src/app/auth/**"
-      - "src/app/settings/**"
+      - "src/app/(app)/settings/**"
       - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "supabase/migrations/0011_renderlab_admin_access_control.sql"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"
