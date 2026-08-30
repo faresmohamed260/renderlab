@@ -38,7 +38,7 @@ try {
   await desktop.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
   assert(new URL(desktop.url()).pathname === "/", "Bare root did not remain the landing route.");
   await desktop.getByRole("heading", { name: "Create images. Shape them. Put them in motion." }).waitFor();
-  assert(await desktop.getByRole("navigation", { name: "Application navigation" }).count() === 0, "Landing unexpectedly rendered AppShell navigation.");
+  assert(await desktop.getByRole("complementary", { name: "Application navigation" }).count() === 0, "Landing unexpectedly rendered AppShell navigation.");
   const openCreate = desktop.getByRole("link", { name: /Open Create/ }).first();
   const signIn = desktop.getByRole("link", { name: "Sign in", exact: true }).first();
   assert((await openCreate.getAttribute("href")) === "/create", "Landing Open Create CTA does not target /create.");
@@ -73,7 +73,7 @@ try {
 
   const create = await browser.newPage({ viewport: { width: 1440, height: 1024 } });
   await create.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
-  await create.getByRole("navigation", { name: "Application navigation" }).waitFor();
+  await create.getByRole("complementary", { name: "Application navigation" }).waitFor();
   await create.getByRole("textbox", { name: "Prompt" }).waitFor();
   const currentCreate = create.getByRole("link", { name: "Create", exact: true }).first();
   assert((await currentCreate.getAttribute("aria-current")) === "page", "Create nav is not active on /create.");
