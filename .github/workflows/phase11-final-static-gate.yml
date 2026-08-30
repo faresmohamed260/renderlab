@@ -1,0 +1,59 @@
+name: Phase 11 Final Static Gate
+
+on:
+  push:
+    branches:
+      - "tmp/phase11-final-static-gate"
+    paths:
+      - ".github/workflows/phase11-final-static-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact Phase 11 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 46eb920b59ca8e00fde9c675d79dd13c27e4f84c
+          fetch-depth: 0
+
+      - name: Audit exact delta and route filters
+        shell: bash
+        run: |
+          git diff --check 37c0ee922792244ffdf2e3887db08cecc3eab97d...HEAD
+          if grep -RInF 'src/app/library/**' .github/workflows; then exit 1; fi
+          if grep -RInF 'src/app/activity/**' .github/workflows; then exit 1; fi
+          if grep -RInF 'src/app/settings/**' .github/workflows; then exit 1; fi
+          if grep -RInF 'src/app/admin/**' .github/workflows; then exit 1; fi
+          test -f 'src/app/(app)/create/page.tsx'
+          test -f 'src/app/(app)/layout.tsx'
+          test -f .github/workflows/brand-launch-visual.yml
+          test -f scripts/verify-brand-launch.mjs
+          test ! -e package-lock.json
+          test ! -e tsconfig.tsbuildinfo
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --package-lock=false
+
+      - name: Verify maintained UI primitive usage
+        run: npm run verify:ui-purity
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Verify launch script syntax
+        run: node --check scripts/verify-brand-launch.mjs
+
+      - name: Production build
+        run: npm run build
