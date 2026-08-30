@@ -1,0 +1,48 @@
+name: Phase 12 Retry Activity verifier fix
+
+on:
+  push:
+    branches: [work/phase-12-release-validation]
+    paths:
+      - ".github/workflows/tmp-phase12-retry-activity-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-12-release-validation
+          fetch-depth: 0
+      - name: Patch Retry history assertion
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/verify-release-integrated.mjs')
+          text = path.read_text()
+          old = '  await page.getByText(retryPrompt, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });'
+          new = '''  const retryActivityRows = page.getByText(retryPrompt, { exact: true });
+          await retryActivityRows.first().waitFor({ state: "visible", timeout: 30_000 });
+          assert(
+            await retryActivityRows.count() === 2,
+            "Activity did not preserve the failed history alongside the succeeded Retry.",
+          );'''
+          if old not in text:
+              raise SystemExit('Expected Retry Activity assertion not found.')
+          path.write_text(text.replace(old, new, 1))
+          PY
+      - name: Commit verifier-only correction and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/tmp-phase12-retry-activity-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/verify-release-integrated.mjs .github/workflows/tmp-phase12-retry-activity-fix.yml
+          git diff --cached --check
+          git commit -m 'test: verify Phase 12 Retry history continuity'
+          git push origin HEAD:work/phase-12-release-validation
