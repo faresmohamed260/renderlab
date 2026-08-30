@@ -1035,8 +1035,8 @@ The Phase 9 planning audit found a concrete app-level race blocker, so no genera
 - Cancel remains deliberately deferred; no shell-global polling/job store, successful-job Run Again, provider/admin UI, schema migration or deployment was added.
 
 ### Phase 10 — Account, Admin & Closed-Beta Operations
-**Phase contract status:** `EXPANDED / IN PROGRESS` under UI-051.
-**Execution status:** `10A COMPLETE / VERIFIED`; `10B COMPLETE / VERIFIED`; `10C COMPLETE / VERIFIED`; 10D is next and unimplemented. No deployment is included or authorized.
+**Phase contract status:** `COMPLETE / VERIFIED` under UI-051.
+**Execution status:** `10A COMPLETE / VERIFIED`; `10B COMPLETE / VERIFIED`; `10C COMPLETE / VERIFIED`; `10D COMPLETE / VERIFIED`. No deployment is included or authorized.
 
 #### Goal
 Turn the current authenticated Closed Beta into an operable, recoverable and abuse-bounded product without coupling RenderLab to other applications sharing the Supabase project or exposing provider infrastructure to ordinary users.
@@ -1238,6 +1238,7 @@ Give the closed beta a race-safe server-owned spend/abuse boundary without turni
 - [x] Phase 10 RLS/browser-grant and SECURITY DEFINER ACL/search-path audits remain clean for the server-owned model. Security Advisor adds no 10D regression; the leaked-password WARN remains an explicit broader-beta blocker.
 - [x] No visible Settings/password UI code changed. Artifact `9732716345` (`sha256:4818217e835ebe3ff3b580b2543e59243374816c83bb60209a7144fed1290019`) retained the existing five visual states; no new human visual approval was required by the 10D contract.
 - [x] No schema migration, SMTP/DNS/plan/Management-API configuration, deployment, production UUID bootstrap or production access-enforcement change occurred. Built-in Auth mail/rate limits plus unverified production redirect/template/sender posture and Free-plan leaked-password support remain broader-beta blockers.
+- [x] PR #70 merged to `main` as `5950958dc58143b099bc2877a942829c045f700e`; merged-main Reference Upload `33314652092`, UI Shell `33314652107`, Generation Integration `33314652101`, and Video Generation Integration `33314652229` all passed. Independent exact cleanup found 0 rows for the three deterministic push-run fixture identities across Auth/access/reservations/jobs/sources/media/uploads, and the singleton remained enabled / 1 active / 12 hourly / no updater. Phase 11 is now the next contract-planning slice; no deployment or production enforcement change occurred.
 
 #### UI composition
 - Reuse maintained Field/Input/Button/Alert/NativeSelect/Checkbox/AlertDialog/Spinner and existing layout tokens where appropriate. Search the maintained component layer before adding any generic primitive.
@@ -1305,12 +1306,12 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 11. Update authoritative documentation from verified reality.
 
 ## Current Work
-**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–9 and Phase 10A/10B/10C are complete and verified under the Closed Beta boundary.
-**Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `EXPANDED / IN PROGRESS` under UI-051; 10A, 10B and 10C are complete/verified.
-**Next implementation sequence:** 10D Auth/Operational Hardening.
-**Current gate:** Phase 10C is merged and verified on `main`. Expand/execute Phase 10D Auth/Operational Hardening from this merged-main state; no deployment unless explicitly authorized.
+**Current cycle:** Cycle 2 — Creative Productivity & Beta Maturity is in progress; Phases 6–10 are complete and verified under the Closed Beta boundary.
+**Current phase contract:** Phase 10 — Account, Admin & Closed-Beta Operations is `COMPLETE / VERIFIED` under UI-051.
+**Next implementation sequence:** expand Phase 11 Brand & Launch Experience into an execution-ready contract before implementation.
+**Current gate:** Phase 10D is merged and merged-main verified on `5950958dc58143b099bc2877a942829c045f700e`. Expand and merge the Phase 11 Brand & Launch Experience execution contract before any Phase 11 implementation; no deployment unless explicitly authorized.
 **Completed Cycle 2:** Phase 6 baseline/hardening → Phase 7 Create v2 → Phase 8 Library v2 → Phase 9 Activity Retry v0.1.
-**Later Cycle 2:** Phase 10 Account/Admin/Closed-Beta Ops → Phase 11 Brand & Launch → Phase 12 integrated release validation.
+**Later Cycle 2:** Phase 11 Brand & Launch → Phase 12 integrated release validation.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter library and selection from external ecosystems such as Civitai/Hugging Face, with compatibility/source/license/cache/admin/safety/strength contracts defined before implementation.
 **Persistent scope boundary:** Models/Workflows remain non-destinations for ordinary users; ComfyUI nodes/provider routing stay internal. Trash/restore, safe cancellation productization, billing and cross-page selection still require their own evidence/decisions.
 

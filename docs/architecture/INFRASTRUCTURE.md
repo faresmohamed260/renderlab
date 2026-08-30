@@ -71,6 +71,8 @@ Exact code/test head `585a606666eae5b8813f54ba19ea253fcccaaf4f` passed all 21 pa
 
 Exact run-owned cleanup for Account Identity found zero matching Auth/access/invitation/reservation/job/source/media/upload state. The singleton remained enabled / 1 / 12 / no updater. Phase 10 tables remain RLS-enabled/browser-revoked; every RenderLab SECURITY DEFINER routine remains empty-search-path and service-role-only. Security Advisor remains limited to expected server-owned RLS/no-policy INFO plus leaked-password protection disabled. Built-in Supabase mail (`noreply@mail.app.supabase.io`) and observed email rate limiting, unverified production Site URL/redirect/template/sender posture, and Free-plan leaked-password support remain explicit broader-beta blockers. No Vercel deployment, UUID bootstrap or production enforcement change occurred.
 
+PR #70 merged to `main` as `5950958dc58143b099bc2877a942829c045f700e`. Merged-main Reference Upload `33314652092`, UI Shell `33314652107`, Generation Integration `33314652101`, and Video Generation Integration `33314652229` all passed. A separate exact audit of the three deterministic configured accounts used by the push runs found 0 matching rows across `auth.users`, `renderlab_account_access`, `generation_admission_reservations`, `generation_jobs`, `generation_sources`, `media_assets`, and `media_upload_sessions`; `renderlab_beta_settings` remained generation enabled / 1 active / 12 hourly / `updated_by=null`. No deployment, production UUID bootstrap, hosted Auth configuration change or production access-enforcement change occurred.
+
 ### Account identity boundary — UI-029
 Supabase Auth `auth.users.id` is the canonical RenderLab account principal.
 
