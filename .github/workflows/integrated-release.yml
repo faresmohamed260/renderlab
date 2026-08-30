@@ -12,6 +12,7 @@ on:
       - "src/**"
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-integrated-release.mjs"
+      - "scripts/verify-r2-browser-cors.mjs"
       - "supabase/migrations/**"
   push:
     branches: [main]
@@ -20,6 +21,7 @@ on:
       - ".github/workflows/integrated-release.yml"
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-integrated-release.mjs"
+      - "scripts/verify-r2-browser-cors.mjs"
 
 permissions:
   contents: read
@@ -41,6 +43,7 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_BROWSER_UPLOAD_ORIGINS: http://127.0.0.1:3000,http://localhost:3000,https://renderlab-lake.vercel.app,https://renderlab.faresuniform.uk,https://renderlab-faresmohamed260-6733s-projects.vercel.app,https://renderlab-git-main-faresmohamed260-6733s-projects.vercel.app
       RENDERLAB_GENERATION_BACKEND_URL: http://127.0.0.1:4312
       RENDERLAB_GENERATION_BACKEND_TOKEN: phase-12-integrated-release
       RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
@@ -71,8 +74,13 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Verify Integrated Release syntax
-        run: node --check scripts/verify-integrated-release.mjs
+      - name: Verify release verifier syntax
+        run: |
+          node --check scripts/verify-integrated-release.mjs
+          node --check scripts/verify-r2-browser-cors.mjs
+
+      - name: Audit R2 browser upload CORS without mutation
+        run: node scripts/verify-r2-browser-cors.mjs
 
       - name: Verify UI purity
         run: npm run verify:ui-purity
