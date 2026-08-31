@@ -1,0 +1,528 @@
+name: Phase 13B Email Configuration
+
+on:
+  push:
+    branches: [work/phase-13b-email-config]
+    paths:
+      - ".github/workflows/phase-13b-email-config.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  configure-email:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      BREVO_SMTP_LOGIN: ${{ secrets.BREVO_SMTP_LOGIN }}
+      BREVO_SMTP_KEY: ${{ secrets.BREVO_SMTP_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      BREVO_DOMAIN: mail.renderlab.faresuniform.uk
+      FROM_EMAIL: noreply@mail.renderlab.faresuniform.uk
+      FROM_NAME: RenderLab
+      SMTP_HOST: smtp-relay.brevo.com
+      SMTP_PORT: "587"
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SITE_URL: https://renderlab.faresuniform.uk
+      INVITE_REDIRECT: https://renderlab.faresuniform.uk/settings
+      RECOVERY_REDIRECT: https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password
+      AUTH_EMAIL_RATE_LIMIT: "30"
+
+    steps:
+      - name: Verify required secret presence
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in BREVO_API_KEY BREVO_SMTP_LOGIN BREVO_SMTP_KEY SUPABASE_ACCESS_TOKEN CLOUDFLARE_API_TOKEN; do
+            if [ -z "${!name:-}" ]; then
+              echo "${name}_PRESENT=false"
+              missing=1
+            else
+              echo "${name}_PRESENT=true"
+            fi
+          done
+          test "$missing" -eq 0
+
+      - name: Verify Brevo API and SMTP authentication without sending mail
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            --header "api-key: ${BREVO_API_KEY}" \
+            --header "accept: application/json" \
+            "https://api.brevo.com/v3/account" \
+            -o /tmp/brevo-account.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/brevo-account.json').read_text())
+          if not data.get('email') and not data.get('companyName') and not data.get('plan'):
+              raise SystemExit('Brevo account API response did not look valid')
+          print('BREVO_API_AUTH_OK=true')
+          PY
+
+          python - <<'PY'
+          import os, smtplib, ssl
+          host = os.environ['SMTP_HOST']
+          port = int(os.environ['SMTP_PORT'])
+          user = os.environ['BREVO_SMTP_LOGIN']
+          password = os.environ['BREVO_SMTP_KEY']
+          with smtplib.SMTP(host, port, timeout=20) as smtp:
+              smtp.ehlo()
+              smtp.starttls(context=ssl.create_default_context())
+              smtp.ehlo()
+              smtp.login(user, password)
+          print('BREVO_SMTP_AUTH_OK=true')
+          print('BREVO_SMTP_MESSAGE_SENT=false')
+          PY
+
+      - name: Create or read exact Brevo sender domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://api.brevo.com/v3/senders/domains/${BREVO_DOMAIN}"
+          code="$(curl --silent --show-error \
+            --output /tmp/brevo-domain-before.json \
+            --write-out '%{http_code}' \
+            --header "api-key: ${BREVO_API_KEY}" \
+            --header 'accept: application/json' \
+            "$endpoint")"
+
+          if [ "$code" = "404" ]; then
+            python - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path('/tmp/brevo-domain-create-body.json').write_text(json.dumps({'name': os.environ['BREVO_DOMAIN']}))
+          PY
+            create_code="$(curl --silent --show-error \
+              --output /tmp/brevo-domain-create.json \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "api-key: ${BREVO_API_KEY}" \
+              --header 'accept: application/json' \
+              --header 'content-type: application/json' \
+              --data-binary @/tmp/brevo-domain-create-body.json \
+              'https://api.brevo.com/v3/senders/domains')"
+            if [ "$create_code" != "200" ] && [ "$create_code" != "201" ]; then
+              echo "BREVO_DOMAIN_CREATE_HTTP=${create_code}"
+              python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/brevo-domain-create.json')
+          if p.exists():
+              try:
+                  d=json.loads(p.read_text())
+                  print('BREVO_DOMAIN_CREATE_ERROR=' + str(d.get('message') or d.get('code') or 'unknown'))
+              except Exception:
+                  print('BREVO_DOMAIN_CREATE_ERROR=unparseable')
+          PY
+              exit 1
+            fi
+            echo "BREVO_DOMAIN_CREATED=true"
+          elif [ "$code" = "200" ]; then
+            echo "BREVO_DOMAIN_CREATED=false"
+            echo "BREVO_DOMAIN_ALREADY_EXISTED=true"
+          else
+            echo "BREVO_DOMAIN_LOOKUP_HTTP=${code}"
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            --header "api-key: ${BREVO_API_KEY}" \
+            --header 'accept: application/json' \
+            "$endpoint" -o /tmp/brevo-domain.json
+
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          domain=os.environ['BREVO_DOMAIN'].lower().rstrip('.')
+          data=json.loads(Path('/tmp/brevo-domain.json').read_text())
+          got=(data.get('domain') or data.get('domain_name') or '').lower().rstrip('.')
+          if got != domain:
+              raise SystemExit(f'Unexpected Brevo domain response: {got!r}')
+          records=[]
+          for label, rec in (data.get('dns_records') or {}).items():
+              if not isinstance(rec, dict):
+                  continue
+              typ=str(rec.get('type') or '').upper().strip()
+              value=str(rec.get('value') or '').strip()
+              host=str(rec.get('host_name') or '').strip().rstrip('.')
+              if not typ or not value:
+                  continue
+              if host in ('', '@'):
+                  fqdn=domain
+              elif host.lower() == domain or host.lower().endswith('.'+domain):
+                  fqdn=host.lower()
+              else:
+                  fqdn=f'{host.lower()}.{domain}'
+              if typ not in ('TXT','CNAME'):
+                  raise SystemExit(f'Unexpected Brevo DNS record type {typ} for {fqdn}; refusing mutation')
+              if fqdn != domain and not fqdn.endswith('.'+domain):
+                  raise SystemExit(f'Brevo DNS record escaped sender-domain subtree: {fqdn}')
+              records.append({'label': label, 'type': typ, 'name': fqdn, 'content': value})
+          if len(records) < 2:
+              raise SystemExit(f'Brevo returned too few sender-domain DNS records: {len(records)}')
+          dedup=[]
+          seen=set()
+          for r in records:
+              key=(r['type'],r['name'],r['content'])
+              if key not in seen:
+                  seen.add(key); dedup.append(r)
+          Path('/tmp/brevo-required-dns.json').write_text(json.dumps(dedup))
+          print(f'BREVO_DOMAIN_DNS_RECORD_COUNT={len(dedup)}')
+          print('BREVO_DOMAIN_AUTHENTICATED_BEFORE=' + str(bool(data.get('authenticated'))).lower())
+          print('BREVO_DOMAIN_VERIFIED_BEFORE=' + str(bool(data.get('verified'))).lower())
+          for r in dedup:
+              print(f"BREVO_REQUIRED_DNS={r['type']} {r['name']}")
+          PY
+
+      - name: Apply only exact provider-required Cloudflare DNS
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            'https://api.cloudflare.com/client/v4/zones?name=faresuniform.uk' \
+            -o /tmp/cf-zones.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('/tmp/cf-zones.json').read_text())
+          rows=data.get('result') or []
+          if not data.get('success') or len(rows) != 1:
+              raise SystemExit(f'Expected exactly one Cloudflare zone; got {len(rows)}')
+          Path('/tmp/cf-zone-id').write_text(rows[0]['id'])
+          print('CLOUDFLARE_ZONE_RESOLVED=true')
+          PY
+
+          python - <<'PY'
+          import json, os, urllib.parse, urllib.request
+          from pathlib import Path
+
+          token=os.environ['CLOUDFLARE_API_TOKEN']
+          zone=Path('/tmp/cf-zone-id').read_text().strip()
+          domain=os.environ['BREVO_DOMAIN'].lower()
+          required=json.loads(Path('/tmp/brevo-required-dns.json').read_text())
+          base=f'https://api.cloudflare.com/client/v4/zones/{zone}/dns_records'
+          headers={'Authorization': f'Bearer {token}', 'Content-Type':'application/json'}
+
+          def call(url, method='GET', body=None):
+              data=None if body is None else json.dumps(body).encode()
+              req=urllib.request.Request(url, data=data, headers=headers, method=method)
+              with urllib.request.urlopen(req, timeout=30) as res:
+                  payload=json.loads(res.read().decode())
+              if not payload.get('success'):
+                  raise RuntimeError('Cloudflare API returned success=false')
+              return payload
+
+          created=0
+          existing_count=0
+          for rec in required:
+              name=rec['name'].lower().rstrip('.')
+              typ=rec['type'].upper()
+              content=rec['content'].strip().rstrip('.') if typ == 'CNAME' else rec['content'].strip()
+              if name != domain and not name.endswith('.'+domain):
+                  raise SystemExit(f'Refusing out-of-scope Cloudflare DNS name: {name}')
+
+              url=base+'?'+urllib.parse.urlencode({'name':name,'per_page':100})
+              rows=call(url).get('result') or []
+              exact=False
+              for row in rows:
+                  rtype=str(row.get('type') or '').upper()
+                  rcontent=str(row.get('content') or '').strip()
+                  if rtype == 'CNAME':
+                      rcontent=rcontent.rstrip('.')
+                  if rtype == typ and rcontent == content:
+                      exact=True
+                      break
+
+              if exact:
+                  existing_count += 1
+                  print(f'CLOUDFLARE_DNS_EXISTS={typ} {name}')
+                  continue
+
+              if typ == 'CNAME' and rows:
+                  raise SystemExit(f'Conflicting DNS already exists at {name}; refusing CNAME overwrite')
+              if any(str(row.get('type') or '').upper() == 'CNAME' for row in rows):
+                  raise SystemExit(f'CNAME conflict at {name}; refusing TXT write')
+              if name.startswith('_dmarc.') and rows:
+                  raise SystemExit(f'Conflicting DMARC record already exists at {name}; refusing multiple DMARC records')
+              if '_domainkey.' in name and rows:
+                  raise SystemExit(f'Conflicting DKIM record already exists at {name}; refusing overwrite')
+
+              body={'type':typ,'name':name,'content':content,'ttl':1}
+              if typ == 'CNAME':
+                  body['proxied']=False
+              call(base, 'POST', body)
+              created += 1
+              print(f'CLOUDFLARE_DNS_CREATED={typ} {name}')
+
+          print(f'CLOUDFLARE_DNS_CREATED_COUNT={created}')
+          print(f'CLOUDFLARE_DNS_EXISTING_COUNT={existing_count}')
+          PY
+
+      - name: Verify public DNS and authenticate Brevo domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils >/dev/null
+
+          python - <<'PY'
+          import json, subprocess, time
+          from pathlib import Path
+          required=json.loads(Path('/tmp/brevo-required-dns.json').read_text())
+
+          def norm_txt(s):
+              return s.strip().replace('" "','').strip('"')
+
+          pending=[]
+          for attempt in range(1, 13):
+              pending=[]
+              for rec in required:
+                  typ=rec['type']
+                  name=rec['name']
+                  want=rec['content'].rstrip('.') if typ == 'CNAME' else rec['content']
+                  p=subprocess.run(['dig','+short',typ,name,'@1.1.1.1'],text=True,capture_output=True,check=False)
+                  vals=[x.strip().rstrip('.') for x in p.stdout.splitlines() if x.strip()]
+                  if typ == 'TXT':
+                      vals=[norm_txt(x) for x in vals]
+                  if want.rstrip('.') not in vals:
+                      pending.append(f'{typ} {name}')
+              if not pending:
+                  print(f'PUBLIC_DNS_PROPAGATED_ATTEMPT={attempt}')
+                  break
+              if attempt < 12:
+                  time.sleep(10)
+          if pending:
+              raise SystemExit('Public DNS did not propagate for: '+', '.join(pending))
+          print('PUBLIC_DNS_REQUIRED_RECORDS_OK=true')
+          PY
+
+          auth_ok=false
+          for attempt in $(seq 1 12); do
+            code="$(curl --silent --show-error \
+              --output /tmp/brevo-authenticate.json \
+              --write-out '%{http_code}' \
+              --request PUT \
+              --header "api-key: ${BREVO_API_KEY}" \
+              --header 'accept: application/json' \
+              "https://api.brevo.com/v3/senders/domains/${BREVO_DOMAIN}/authenticate")"
+            if [ "$code" = "200" ]; then
+              echo "BREVO_DOMAIN_AUTHENTICATE_ATTEMPT=${attempt}"
+              auth_ok=true
+              break
+            fi
+            if [ "$code" != "400" ]; then
+              echo "BREVO_DOMAIN_AUTHENTICATE_HTTP=${code}"
+              exit 1
+            fi
+            sleep 10
+          done
+          test "$auth_ok" = true
+
+          curl --fail-with-body --silent --show-error \
+            --header "api-key: ${BREVO_API_KEY}" \
+            --header 'accept: application/json' \
+            "https://api.brevo.com/v3/senders/domains/${BREVO_DOMAIN}" \
+            -o /tmp/brevo-domain-after.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('/tmp/brevo-domain-after.json').read_text())
+          if not d.get('authenticated'):
+              raise SystemExit('Brevo domain is not authenticated after successful authenticate call')
+          statuses=[]
+          for label, rec in (d.get('dns_records') or {}).items():
+              if isinstance(rec,dict) and rec.get('type'):
+                  statuses.append((label, bool(rec.get('status'))))
+          print('BREVO_DOMAIN_AUTHENTICATED=true')
+          print('BREVO_DOMAIN_VERIFIED=' + str(bool(d.get('verified'))).lower())
+          for label,status in statuses:
+              print(f'BREVO_DNS_STATUS_{label.upper()}=' + str(status).lower())
+          PY
+
+      - name: Ensure RenderLab transactional sender is active
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            --header "api-key: ${BREVO_API_KEY}" \
+            --header 'accept: application/json' \
+            "https://api.brevo.com/v3/senders?domain=${BREVO_DOMAIN}" \
+            -o /tmp/brevo-senders-before.json
+
+          state="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data=json.loads(Path('/tmp/brevo-senders-before.json').read_text())
+          target=os.environ['FROM_EMAIL'].lower()
+          rows=[r for r in (data.get('senders') or []) if str(r.get('email') or '').lower()==target]
+          if not rows:
+              print('missing')
+          elif rows[0].get('active'):
+              print('active')
+          else:
+              print('inactive')
+          PY
+          )"
+
+          if [ "$state" = "missing" ]; then
+            python - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path('/tmp/brevo-sender-create.json').write_text(json.dumps({'name':os.environ['FROM_NAME'],'email':os.environ['FROM_EMAIL']}))
+          PY
+            code="$(curl --silent --show-error \
+              --output /tmp/brevo-sender-created.json \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "api-key: ${BREVO_API_KEY}" \
+              --header 'accept: application/json' \
+              --header 'content-type: application/json' \
+              --data-binary @/tmp/brevo-sender-create.json \
+              'https://api.brevo.com/v3/senders')"
+            if [ "$code" != "201" ] && [ "$code" != "200" ]; then
+              echo "BREVO_SENDER_CREATE_HTTP=${code}"
+              exit 1
+            fi
+            echo "BREVO_SENDER_CREATED=true"
+          elif [ "$state" = "active" ]; then
+            echo "BREVO_SENDER_CREATED=false"
+          else
+            echo "BREVO_SENDER_INACTIVE=true"
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            --header "api-key: ${BREVO_API_KEY}" \
+            --header 'accept: application/json' \
+            "https://api.brevo.com/v3/senders?domain=${BREVO_DOMAIN}" \
+            -o /tmp/brevo-senders-after.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data=json.loads(Path('/tmp/brevo-senders-after.json').read_text())
+          target=os.environ['FROM_EMAIL'].lower()
+          rows=[r for r in (data.get('senders') or []) if str(r.get('email') or '').lower()==target]
+          if len(rows) != 1 or not rows[0].get('active'):
+              raise SystemExit('RenderLab Brevo sender is not active')
+          print('BREVO_SENDER_ACTIVE=true')
+          PY
+
+          python - <<'PY'
+          import os, smtplib, ssl
+          with smtplib.SMTP(os.environ['SMTP_HOST'], int(os.environ['SMTP_PORT']), timeout=20) as smtp:
+              smtp.ehlo(); smtp.starttls(context=ssl.create_default_context()); smtp.ehlo()
+              smtp.login(os.environ['BREVO_SMTP_LOGIN'], os.environ['BREVO_SMTP_KEY'])
+              code, _ = smtp.mail(os.environ['FROM_EMAIL'])
+              if code >= 400:
+                  raise SystemExit(f'Brevo rejected configured MAIL FROM with SMTP status {code}')
+              smtp.rset()
+          print('BREVO_FROM_ACCEPTED_WITHOUT_RECIPIENT=true')
+          print('BREVO_SMTP_MESSAGE_SENT=false')
+          PY
+
+      - name: Configure Supabase Custom SMTP and bounded Auth mail rate
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
+          curl --fail-with-body --silent --show-error \
+            --user-agent 'RenderLab-Phase13B/1.0' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header 'accept: application/json' \
+            "$endpoint" -o /tmp/auth-before.json
+
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          before=json.loads(Path('/tmp/auth-before.json').read_text())
+          if before.get('site_url') != os.environ['SITE_URL']:
+              raise SystemExit('Refusing SMTP mutation because production Site URL is not the accepted RenderLab URL')
+          value=before.get('uri_allow_list')
+          if isinstance(value,str):
+              allow=[x.strip() for x in value.split(',') if x.strip()]
+          elif isinstance(value,list):
+              allow=[str(x).strip() for x in value if str(x).strip()]
+          else:
+              allow=[]
+          required=[os.environ['INVITE_REDIRECT'],os.environ['RECOVERY_REDIRECT']]
+          missing=[x for x in required if x not in allow]
+          if missing:
+              raise SystemExit('Refusing SMTP mutation because required Auth redirects are missing')
+          patch={
+              'smtp_admin_email': os.environ['FROM_EMAIL'],
+              'smtp_host': os.environ['SMTP_HOST'],
+              'smtp_port': int(os.environ['SMTP_PORT']),
+              'smtp_user': os.environ['BREVO_SMTP_LOGIN'],
+              'smtp_pass': os.environ['BREVO_SMTP_KEY'],
+              'smtp_sender_name': os.environ['FROM_NAME'],
+              'rate_limit_email_sent': int(os.environ['AUTH_EMAIL_RATE_LIMIT']),
+          }
+          Path('/tmp/auth-smtp-patch.json').write_text(json.dumps(patch))
+          print('SUPABASE_SMTP_CONFIGURED_BEFORE=' + str(bool(before.get('smtp_host'))).lower())
+          print('SUPABASE_EMAIL_RATE_LIMIT_BEFORE=' + str(before.get('rate_limit_email_sent')))
+          print('SUPABASE_SITE_URL_PRECHECK_OK=true')
+          print('SUPABASE_REDIRECT_PRECHECK_OK=true')
+          PY
+
+          curl --fail-with-body --silent --show-error \
+            --user-agent 'RenderLab-Phase13B/1.0' \
+            --request PATCH \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header 'content-type: application/json' \
+            --data-binary @/tmp/auth-smtp-patch.json \
+            "$endpoint" -o /tmp/auth-patch-response.json
+
+          curl --fail-with-body --silent --show-error \
+            --user-agent 'RenderLab-Phase13B/1.0' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            --header 'accept: application/json' \
+            "$endpoint" -o /tmp/auth-after.json
+
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          after=json.loads(Path('/tmp/auth-after.json').read_text())
+          checks={
+              'smtp_admin_email': os.environ['FROM_EMAIL'],
+              'smtp_host': os.environ['SMTP_HOST'],
+              'smtp_sender_name': os.environ['FROM_NAME'],
+          }
+          for key,want in checks.items():
+              if str(after.get(key) or '') != want:
+                  raise SystemExit(f'Supabase read-back mismatch for {key}')
+          if str(after.get('smtp_port')) != os.environ['SMTP_PORT']:
+              raise SystemExit('Supabase read-back mismatch for smtp_port')
+          if int(after.get('rate_limit_email_sent') or -1) != int(os.environ['AUTH_EMAIL_RATE_LIMIT']):
+              raise SystemExit('Supabase read-back mismatch for rate_limit_email_sent')
+          if after.get('site_url') != os.environ['SITE_URL']:
+              raise SystemExit('Supabase Site URL changed unexpectedly')
+          value=after.get('uri_allow_list')
+          if isinstance(value,str):
+              allow=[x.strip() for x in value.split(',') if x.strip()]
+          elif isinstance(value,list):
+              allow=[str(x).strip() for x in value if str(x).strip()]
+          else:
+              allow=[]
+          for required in (os.environ['INVITE_REDIRECT'],os.environ['RECOVERY_REDIRECT']):
+              if required not in allow:
+                  raise SystemExit('Required production Auth redirect disappeared')
+          print('SUPABASE_CUSTOM_SMTP_READBACK_OK=true')
+          print('SUPABASE_SMTP_HOST=' + str(after.get('smtp_host')))
+          print('SUPABASE_SMTP_PORT=' + str(after.get('smtp_port')))
+          print('SUPABASE_SMTP_ADMIN_EMAIL=' + str(after.get('smtp_admin_email')))
+          print('SUPABASE_SMTP_SENDER_NAME=' + str(after.get('smtp_sender_name')))
+          print('SUPABASE_EMAIL_RATE_LIMIT=' + str(after.get('rate_limit_email_sent')))
+          print('SUPABASE_SITE_URL=' + str(after.get('site_url')))
+          print('SUPABASE_REQUIRED_REDIRECTS_PRESERVED=true')
+          print('SUPABASE_INVITE_TEMPLATE_STILL_PHASE13C=' + str('{{ .ConfirmationURL }}' in str(after.get('mailer_templates_invite_content') or '')).lower())
+          print('SUPABASE_RECOVERY_TEMPLATE_STILL_PHASE13C=' + str('{{ .ConfirmationURL }}' in str(after.get('mailer_templates_recovery_content') or '')).lower())
+          print('PHASE13B_REAL_AUTH_EMAIL_SENT=false')
+          PY
