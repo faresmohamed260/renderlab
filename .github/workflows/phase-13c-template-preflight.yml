@@ -1,0 +1,124 @@
+name: Phase 13C Template Preflight
+
+on:
+  push:
+    branches: [work/phase-13c-template-preflight]
+    paths:
+      - ".github/workflows/phase-13c-template-preflight.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SITE_URL: https://renderlab.faresuniform.uk
+      INVITE_REDIRECT: https://renderlab.faresuniform.uk/settings
+      RECOVERY_REDIRECT: https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password
+      SMTP_HOST: smtp-relay.brevo.com
+      FROM_EMAIL: noreply@mail.renderlab.faresuniform.uk
+
+    steps:
+      - name: Verify secret presence
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in BREVO_API_KEY SUPABASE_ACCESS_TOKEN; do
+            test -n "${!name:-}" || { echo "${name}_PRESENT=false"; exit 1; }
+            echo "${name}_PRESENT=true"
+          done
+
+      - name: Read safe Brevo account capability summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            --header "api-key: ${BREVO_API_KEY}" \
+            --header 'accept: application/json' \
+            'https://api.brevo.com/v3/account' \
+            -o /tmp/brevo-account.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data=json.loads(Path('/tmp/brevo-account.json').read_text())
+          enterprise=bool(data.get('enterprise'))
+          plans=[]
+          for item in data.get('plan') or []:
+              if not isinstance(item,dict):
+                  continue
+              value=str(item.get('type') or '').strip()
+              if value:
+                  plans.append(value)
+          verticals=[]
+          for item in data.get('planVerticals') or []:
+              if not isinstance(item,dict):
+                  continue
+              value=str(item.get('type') or item.get('name') or '').strip()
+              if value:
+                  verticals.append(value)
+          relay=data.get('relay') if isinstance(data.get('relay'),dict) else {}
+          print('BREVO_ACCOUNT_READ_OK=true')
+          print('BREVO_ENTERPRISE=' + str(enterprise).lower())
+          print('BREVO_PLAN_TYPES=' + (','.join(sorted(set(plans))) or 'none'))
+          print('BREVO_PLAN_VERTICALS=' + (','.join(sorted(set(verticals))) or 'none'))
+          print('BREVO_RELAY_PRESENT=' + str(bool(relay)).lower())
+          print('BREVO_ACCOUNT_PII_LOGGED=false')
+          PY
+
+      - name: Read safe hosted Auth template summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
+          curl --fail-with-body --silent --show-error \
+            --user-agent 'RenderLab-Phase13C-Preflight/1.0' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            "$endpoint" -o /tmp/auth.json
+
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          d=json.loads(Path('/tmp/auth.json').read_text())
+          if d.get('site_url') != os.environ['SITE_URL']:
+              raise SystemExit('Unexpected production Site URL')
+          raw=d.get('uri_allow_list')
+          allow=[x.strip() for x in raw.split(',')] if isinstance(raw,str) else list(raw or [])
+          for required in (os.environ['INVITE_REDIRECT'], os.environ['RECOVERY_REDIRECT']):
+              if required not in allow:
+                  raise SystemExit('Required production redirect missing')
+          if d.get('smtp_host') != os.environ['SMTP_HOST']:
+              raise SystemExit('Unexpected SMTP host')
+          if d.get('smtp_admin_email') != os.environ['FROM_EMAIL']:
+              raise SystemExit('Unexpected SMTP From identity')
+
+          invite=str(d.get('mailer_templates_invite_content') or '')
+          recovery=str(d.get('mailer_templates_recovery_content') or '')
+          invite_subject=str(d.get('mailer_subjects_invite') or '')
+          recovery_subject=str(d.get('mailer_subjects_recovery') or '')
+
+          def markers(prefix, body):
+              print(prefix+'_USES_CONFIRMATION_URL=' + str('{{ .ConfirmationURL }}' in body).lower())
+              print(prefix+'_USES_TOKEN_HASH=' + str('{{ .TokenHash }}' in body).lower())
+              print(prefix+'_USES_SITE_URL=' + str('{{ .SiteURL }}' in body).lower())
+              print(prefix+'_HAS_RENDERLAB_BRAND=' + str('RenderLab' in body).lower())
+
+          print('SUPABASE_AUTH_READ_OK=true')
+          print('SUPABASE_SITE_URL_OK=true')
+          print('SUPABASE_REQUIRED_REDIRECTS_OK=true')
+          print('SUPABASE_SMTP_READBACK_OK=true')
+          print('SUPABASE_EMAIL_RATE_LIMIT=' + str(d.get('rate_limit_email_sent')))
+          print('INVITE_SUBJECT=' + invite_subject.replace('\n',' ')[:160])
+          print('RECOVERY_SUBJECT=' + recovery_subject.replace('\n',' ')[:160])
+          markers('INVITE_TEMPLATE', invite)
+          markers('RECOVERY_TEMPLATE', recovery)
+          print('PHASE13C_TEMPLATE_BODY_LOGGED=false')
+          print('PHASE13C_REAL_EMAIL_SENT=false')
+          PY
