@@ -54,7 +54,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Priority
-**Cycle 2 — Creative Productivity & Beta Maturity remains `COMPLETE / VERIFIED`. Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`: Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`, with 13A read-only audit and 13B sender/delivery configuration both `COMPLETE / VERIFIED`; 13C branded template/link hardening is next. Production application code remains the accepted Closed-Beta candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Phase 13B changed only Brevo/Cloudflare/Supabase Auth email configuration; it created no Vercel deployment and sent no real invite/recovery email.**
+**Cycle 2 — Creative Productivity & Beta Maturity remains `COMPLETE / VERIFIED`. Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`: Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`, with 13A read-only audit and 13B sender/delivery configuration both `COMPLETE / VERIFIED`; 13C branded template/link hardening is `BLOCKED` on the verified Brevo Free-plan link-rewriting constraint pending an operator provider/plan decision. Production application code remains the accepted Closed-Beta candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Phase 13B changed only Brevo/Cloudflare/Supabase Auth email configuration; it created no Vercel deployment and sent no real invite/recovery email.**
 
 ### Cycle 2 objective
 Move RenderLab from a solid functional MVP into a product that supports repeated serious creative work: richer reference-driven creation, durable reusable inputs, clearer task-oriented controls, useful job recovery, closed-beta operations, and a premium modern creative experience without exposing ComfyUI/provider complexity to ordinary users.
@@ -80,10 +80,10 @@ Cycle 2 now explicitly includes Create v2 reference/geometry/composer work, veri
 ### Cycle 3 — Beta Operations & Access Reliability
 **Status: `IN PROGRESS`.** Cycle 2 remains complete. Phase 13 is the active Cycle 3 phase; later Cycle 3 work remains undefined until Phase 13 evidence justifies it.
 
-- **Phase 13 — Email & Invite Production Hardening: `IN PROGRESS`.** 13A read-only audit and 13B sender/delivery configuration are `COMPLETE / VERIFIED`. Brevo custom SMTP is now authenticated on `mail.renderlab.faresuniform.uk`, Supabase Auth uses `RenderLab <noreply@mail.renderlab.faresuniform.uk>` at a bounded 30 emails/hour, and 13C exact branded invite/recovery template + link hardening is next. Real mailbox acceptance remains 13D.
+- **Phase 13 — Email & Invite Production Hardening: `IN PROGRESS`.** 13A read-only audit and 13B sender/delivery configuration are `COMPLETE / VERIFIED`. Brevo custom SMTP is now authenticated on `mail.renderlab.faresuniform.uk`, Supabase Auth uses `RenderLab <noreply@mail.renderlab.faresuniform.uk>` at a bounded 30 emails/hour, and 13C exact branded invite/recovery template + link hardening is `BLOCKED`: the current Brevo Free account cannot satisfy the accepted no-rewrite Auth-link contract. Real mailbox acceptance remains 13D and must not start until 13C clears.
 
 ### Phase 13 execution contract — Email & Invite Production Hardening
-**Status: `IN PROGRESS`. 13A and 13B are `COMPLETE / VERIFIED`; 13C is next. The provider/DNS/Auth production changes required by 13B were explicitly authorized and have been applied/verified. This does not authorize unrelated product changes, Vercel deployment or unbounded real-email sending.**
+**Status: `IN PROGRESS`. 13A and 13B are `COMPLETE / VERIFIED`; 13C preflight is `BLOCKED` on the verified Brevo Free-plan transactional link-rewriting constraint. The provider/DNS/Auth production changes required by 13B were explicitly authorized and have been applied/verified. Do not install token-bearing invite/recovery templates, send real Auth email, switch providers, purchase/upgrade a plan, change application code or deploy until the operator selects the smallest acceptable resolution.**
 
 **Goal / user value**
 - Make an admin-issued RenderLab invite reliably reach a real recipient, complete on `renderlab.faresuniform.uk`, claim the intended invitation and yield only the access state the admin granted.
@@ -162,6 +162,15 @@ Phase 13 implementation is now `IN PROGRESS`. 13A completed as a read-only produ
 - Invite/recovery templates remain intentionally unchanged at the end of 13B and are still Phase 13C work. No real Auth invite/recovery email, application-code change, Supabase database migration or Vercel deployment occurred.
 
 **13B result:** `COMPLETE / VERIFIED`. **Next:** 13C installs the accepted branded token-hash invite/recovery templates, verifies link integrity/tracking posture and re-runs deterministic Auth security coverage without live mailbox sends.
+
+### Phase 13C link-integrity preflight — BLOCKED 2026-08-31
+- Read-only run `33401336576` passed from `work/phase-13c-template-preflight`; it changed no Brevo, Supabase, DNS, application or deployment state and sent no email.
+- The live Brevo account reports `enterprise=false`, plan `free`, with transactional relay present. Hosted Supabase Auth still reads back the verified 13B custom SMTP/From/rate-limit/Site URL/redirect state; invite and recovery templates remain the default `{{ .ConfirmationURL }}` bodies with no RenderLab branding or token-hash custom link installed.
+- Current Brevo transactional behavior redirects links for click tracking by default. Brevo's anonymous-tracking setting still records aggregate clicks and therefore does not satisfy the UI-053 requirement that Auth URLs are not rewritten. Brevo staff guidance states full transactional tracking disablement is available only upon request for Enterprise accounts; this account is not Enterprise.
+- Supabase's current Auth email-template guidance explicitly warns that external email tracking can overwrite confirmation links and recommends disabling provider tracking. That warning aligns with UI-053 and the Phase 13 link-integrity contract.
+- Therefore 13C must not install token-bearing invite/recovery templates into the current Brevo Free SMTP path. Proceeding would knowingly violate the accepted no-rewrite security/UX boundary.
+- **Operator decision required to unblock 13C:** either move Brevo to a plan/support posture that can verify transactional click tracking is fully disabled, or approve a transactional provider change to one that can prove no URL rewriting. No provider switch, purchase or application-flow redesign is implied by this blocker record.
+
 
 ### Phase 11 execution contract — expanded 2026-08-30
 **Status: `COMPLETE / VERIFIED` under UI-052. PR #73 merged to `main`; exact-head PR validation, required human rendered review, merged-main regression, and live fixture-residue audit are complete. No deployment occurred.**

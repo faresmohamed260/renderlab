@@ -637,7 +637,7 @@ Closed-Beta Cycle 2 acceptance does not resolve broader-beta Auth hardening. Sup
 
 
 ### Phase 13 Email & Invite Production Hardening infrastructure contract — 2026-08-31
-**Status: `IN PROGRESS`; 13A and 13B `COMPLETE / VERIFIED`, 13C next.** 13A was read-only; 13B applied and verified only Brevo/Cloudflare/Supabase Auth mail configuration and sent no real email.
+**Status: `IN PROGRESS`; 13A and 13B `COMPLETE / VERIFIED`, 13C `BLOCKED`.** 13A was read-only; 13B applied and verified only Brevo/Cloudflare/Supabase Auth mail configuration and sent no real email. 13C preflight verified that the active Brevo Free account cannot currently satisfy the accepted no-rewrite Auth-link requirement.
 
 Current Closed-Beta production already has the application-side admission and security contract needed for external invites: admin-only invitation creation/revocation, server-owned `renderlab_beta_invitations`, active account enforcement, fresh Auth-backed private authorization, token-hash invite/recovery confirmation and no public sign-up. Phase 12B corrected hosted Auth Site URL to `https://renderlab.faresuniform.uk` and verified exact invite/recovery redirects. Phase 13B has now replaced the built-in mail-delivery posture with verified Brevo custom SMTP; remaining Phase 13 work is branded exact token-hash templates/link integrity plus bounded live mailbox acceptance, not account-ownership architecture.
 
@@ -660,6 +660,15 @@ Current Brevo documentation confirms transactional SMTP relay (`smtp-relay.brevo
 - Corrected run `33399495588` removed the two malformed duplicated TXT owner names created by the first normalization attempt before accepting the final DNS state; no malformed Phase 13B TXT residue remains.
 - Supabase Management API run `33399659584` returned HTTP 200 and exact read-back for custom SMTP host `smtp-relay.brevo.com`, port `587`, From `noreply@mail.renderlab.faresuniform.uk`, sender name `RenderLab`, and `rate_limit_email_sent=30`. The current API expects `smtp_port` in its string shape. Site URL remains `https://renderlab.faresuniform.uk`; exact invite/recovery redirects remain preserved.
 - 13B deliberately did not change invite/recovery template bodies, send a real Auth message, change application code/schema/R2/generation infrastructure or create a Vercel deployment. Template/link hardening is 13C; real external delivery acceptance is 13D.
+
+#### Phase 13C link-integrity preflight — blocked 2026-08-31
+- Read-only GitHub Actions run `33401336576` used the existing Brevo API and Supabase Management credentials only for GET/read operations. It logged no account PII, template bodies, recipient addresses or secret values and sent no message.
+- Brevo account capability read-back: `enterprise=false`, plan `free`, transactional relay present. Supabase read-back remained exact for the 13B custom SMTP host/From identity, `rate_limit_email_sent=30`, production Site URL and invite/recovery allowlist. Invite/recovery bodies remain the unmodified Supabase defaults using `{{ .ConfirmationURL }}`.
+- Brevo's current transactional-email behavior uses link redirection for click tracking. Anonymous tracking still measures aggregate clicks, so it does not remove URL rewriting. Brevo staff guidance limits complete transactional tracking disablement to Enterprise accounts upon request; the active RenderLab account is Free.
+- Supabase's current hosted Auth template documentation warns that external email tracking can overwrite confirmation links and recommends disabling tracking. RenderLab's accepted UI-053 contract independently requires provider click/link rewriting to stay disabled for Auth URLs.
+- This creates a verified provider-plan incompatibility before any token-bearing template is installed. 13C is blocked rather than weakened: do not PATCH invite/recovery templates or start 13D live delivery on the current unverified rewriting path.
+- Resolution requires explicit operator approval for either (a) a Brevo plan/support path that can prove transactional click tracking is fully disabled, or (b) a provider change whose SMTP/API path can prove no Auth-link rewriting. Neither purchase nor provider migration is authorized by this record alone.
+
 
 Accepted Phase 13 infrastructure sequence:
 1. Read actual hosted Auth mail/template/rate-limit state and current `faresuniform.uk` sender DNS before mutation. Reuse the approved shared Supabase project; do not create another Auth project.
