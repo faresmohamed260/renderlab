@@ -1,0 +1,104 @@
+name: Phase 13 Email Domain Documentation
+
+on:
+  push:
+    branches: [docs/phase-13-email-domain-design]
+    paths:
+      - ".github/workflows/phase-13-email-domain-docs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/phase-13-email-domain-design
+          fetch-depth: 0
+
+      - name: Apply Phase 13 sender-domain and email-design decision
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('PROJECT.md')
+          s = p.read_text()
+          old = "**13A result:** `COMPLETE / VERIFIED`. **13B gate:** operator approval of Brevo custom SMTP (or an explicitly chosen alternative), exact sender identity under `faresuniform.uk`, and secure SMTP credential provisioning. No production mail mutation is authorized by the audit evidence alone."
+          new = """**13A result:** `COMPLETE / VERIFIED`. **13B sender-domain decision — accepted 2026-08-31:** keep the web application at `renderlab.faresuniform.uk`, isolate RenderLab transactional mail on `mail.renderlab.faresuniform.uk`, and use `RenderLab <noreply@mail.renderlab.faresuniform.uk>` as the default production From identity. This avoids coupling RenderLab mail DNS/reputation to the Vercel web-host CNAME and leaves room for other project-scoped mail subdomains under `faresuniform.uk`. User-facing email design must be professional responsive RenderLab HTML: logo/wordmark, restrained branded header/banner treatment, prominent accessible CTA button, concise security/context copy and a fallback text link; essential content must remain usable when images or advanced CSS are blocked. `faresuniform.uk` does not need to appear as body/footer branding, although the actual sender address remains visible in mail-client sender details. **Remaining 13B gate:** explicit transactional-provider/account approval (Brevo remains the lowest-drift candidate from 13A), secure SMTP credential provisioning, and provider-specific DNS/read-back verification. No production mail mutation is authorized by this documentation decision alone."""
+          if old not in s:
+              raise SystemExit('PROJECT Phase13A gate anchor missing')
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('docs/ui/UI_MIGRATION.md')
+          s = p.read_text()
+          old = "- [ ] Choose one operator-approved production transactional delivery path (custom SMTP or equivalent Send Email Auth Hook), provider account/plan and RenderLab sender identity under `faresuniform.uk`."
+          new = """- [x] Choose the RenderLab sender-domain/From identity: web stays `renderlab.faresuniform.uk`; transactional mail uses project-scoped `mail.renderlab.faresuniform.uk`; default From is `RenderLab <noreply@mail.renderlab.faresuniform.uk>`. This sender domain must remain distinct from the existing Vercel web-host CNAME.
+- [ ] Choose/confirm one operator-approved transactional delivery path and provider account/plan (Brevo custom SMTP remains the current lowest-drift recommendation) and provision its SMTP/API credentials only in an approved secret store."""
+          if old not in s:
+              raise SystemExit('UI_MIGRATION provider/sender checklist anchor missing')
+          s = s.replace(old, new, 1)
+          old = "- [ ] Install/review exact SSR token-hash invite template using `/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/settings` through `{{ .SiteURL }}`."
+          new = "- [ ] Install/review a professional responsive RenderLab invite HTML template using the exact SSR token-hash path `/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/settings` through `{{ .SiteURL }}`. Include RenderLab logo/wordmark, restrained branded header/banner, accessible primary CTA button, concise invitation/security copy and a visible fallback text link; no essential information may exist only inside images."
+          if old not in s:
+              raise SystemExit('UI_MIGRATION invite template anchor missing')
+          s = s.replace(old, new, 1)
+          old = "- [ ] Install/review exact SSR token-hash recovery template using `/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/settings/password` through `{{ .SiteURL }}`."
+          new = "- [ ] Install/review a professional responsive RenderLab recovery HTML template using the exact SSR token-hash path `/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/settings/password` through `{{ .SiteURL }}`. Reuse the same branded email shell/CTA system while keeping recovery copy security-focused and free of marketing content."
+          if old not in s:
+              raise SystemExit('UI_MIGRATION recovery template anchor missing')
+          s = s.replace(old, new, 1)
+          old = "**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A is `COMPLETE / VERIFIED`, 13B is awaiting the explicit provider/sender/credential decision."
+          new = "**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A is `COMPLETE / VERIFIED`; the 13B sender-domain/From identity is accepted as `RenderLab <noreply@mail.renderlab.faresuniform.uk>`, while provider/account and SMTP credentials remain the explicit operator gate."
+          if old not in s:
+              raise SystemExit('UI_MIGRATION current phase anchor missing')
+          s = s.replace(old, new, 1)
+          old = "**Next sequence:** approve Brevo custom SMTP as the recommended lowest-drift provider path (or explicitly select an alternative), choose the sender identity under `faresuniform.uk`, provision SMTP credentials in an approved secret store, then execute 13B DNS/Supabase configuration with read-back verification before 13C templates."
+          new = "**Next sequence:** confirm Brevo custom SMTP as the provider path (or explicitly select an alternative), provision the provider SMTP credentials in an approved secret store, authenticate `mail.renderlab.faresuniform.uk` with only the provider-required DNS, configure Supabase custom SMTP + bounded Auth mail limits, then execute 13C branded invite/recovery templates and link-tracking-safe verification."
+          if old not in s:
+              raise SystemExit('UI_MIGRATION next sequence anchor missing')
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('docs/architecture/INFRASTRUCTURE.md')
+          s = p.read_text()
+          old = "Current Brevo documentation confirms transactional SMTP relay (`smtp-relay.brevo.com`, port 587 recommended) and a Free plan including 300 email sends/day. Because domain verification/DKIM/DMARC infrastructure already exists, Brevo custom SMTP is the lowest-drift recommendation for Phase 13B. Provider/account/plan, exact sender address and SMTP credentials remain an explicit operator decision; the repository does not infer that credentials exist from DNS alone."
+          new = """Current Brevo documentation confirms transactional SMTP relay (`smtp-relay.brevo.com`, port 587 recommended) and a Free plan including 300 email sends/day. Because domain verification/DKIM/DMARC infrastructure already exists, Brevo custom SMTP is the lowest-drift provider recommendation for Phase 13B. The sender-domain decision is now explicit: the application remains on `renderlab.faresuniform.uk`, while transactional mail is isolated on `mail.renderlab.faresuniform.uk` with default From identity `RenderLab <noreply@mail.renderlab.faresuniform.uk>`. Do not repurpose the existing Vercel-backed `renderlab.faresuniform.uk` CNAME or the Cloudflare-Tunnel-backed `auth.faresuniform.uk` hostname for mail DNS. Provider/account/plan and SMTP credentials remain an explicit operator gate; the repository does not infer that credentials exist from DNS alone."""
+          if old not in s:
+              raise SystemExit('INFRA Brevo paragraph anchor missing')
+          s = s.replace(old, new, 1)
+          old = "3. Establish one RenderLab transactional sender identity under `faresuniform.uk`. Provider-required DNS must be applied through the existing Cloudflare zone with preservation of unrelated records: avoid multiple SPF records, verify provider DKIM, and configure/document DMARC policy/reporting. DNS authentication must be publicly resolved and provider-verified before live acceptance."
+          new = "3. Use the accepted project-scoped sender domain `mail.renderlab.faresuniform.uk` and default From identity `RenderLab <noreply@mail.renderlab.faresuniform.uk>`. Apply only provider-required DNS to that sending subdomain through the existing Cloudflare zone, preserving the Vercel `renderlab.faresuniform.uk` CNAME, Cloudflare Tunnel `auth.faresuniform.uk`, apex mail-routing records and unrelated project DNS. Avoid multiple SPF records at the same owner name; verify provider DKIM and configure/document DMARC policy/reporting. DNS authentication must be publicly resolved and provider-verified before live acceptance."
+          if old not in s:
+              raise SystemExit('INFRA step3 anchor missing')
+          s = s.replace(old, new, 1)
+          old = "4. Configure Supabase/provider sender/from/reply posture, bounded invitation-only email limits and invite/recovery templates. Templates must use the existing SSR token-hash paths through `{{ .SiteURL }}`: invite `/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/settings`; recovery `/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/settings/password`."
+          new = "4. Configure Supabase/provider sender/from/reply posture, bounded invitation-only email limits and invite/recovery templates. Templates must use the existing SSR token-hash paths through `{{ .SiteURL }}`: invite `/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/settings`; recovery `/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/settings/password`. The visual shell is also contractual: responsive email-safe HTML, RenderLab logo/wordmark, restrained branded header/banner, accessible CTA button, concise security/context copy, fallback text link, system-font fallback, useful alt text and no essential information encoded only in remote images. Recovery remains transactional/security-focused rather than promotional."
+          if old not in s:
+              raise SystemExit('INFRA step4 anchor missing')
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('docs/ui/UI_DECISIONS.md')
+          s = p.read_text().rstrip() + '\n'
+          if '### UI-053 — Transactional email uses a project-scoped sender domain and branded email shell' not in s:
+              s += r'''
+
+### UI-053 — Transactional email uses a project-scoped sender domain and branded email shell
+**Status:** Accepted
+**Date:** 2026-08-31
+**Decision:** RenderLab keeps its web application on `renderlab.faresuniform.uk` but isolates Auth/transactional email identity on `mail.renderlab.faresuniform.uk`. The default production From identity is `RenderLab <noreply@mail.renderlab.faresuniform.uk>`. Transactional invite and recovery emails use a professional responsive RenderLab HTML shell with the RenderLab logo/wordmark, restrained branded header/banner treatment, clear hierarchy, one prominent accessible CTA button, concise context/security copy and a visible fallback text link. The email body/footer should present the RenderLab product brand rather than unnecessarily foregrounding the parent `faresuniform.uk` brand, while accepting that the real sender address remains inspectable by mail clients. Essential instructions, destination and security meaning must remain understandable when remote images are blocked or advanced CSS is stripped.
+**Reason:** The existing web hostname is already a Vercel CNAME, so using a dedicated mail subdomain avoids DNS collisions and isolates RenderLab's sender authentication/reputation from the web host and from future projects under the same parent domain. A polished branded transactional shell increases trust and product coherence, but Auth emails must remain robust across restrictive email clients and must not become marketing messages.
+**Consequences:** Phase 13 authenticates `mail.renderlab.faresuniform.uk` with only provider-required SPF/DKIM/DMARC-related records while preserving existing Vercel, Cloudflare Tunnel, apex mail-routing and unrelated DNS. The logo/banner is decorative/branding support, never the sole carrier of required text. Use email-safe markup/inline styles and system-font fallbacks; provide useful alt text and a text fallback for the CTA. Invite and recovery share the shell, but recovery copy remains security-focused. Provider link rewriting/click tracking stays disabled for Auth URLs. This decision selects the sender-domain and visual contract only; it does not itself approve a provider account/plan, create SMTP credentials, mutate DNS/Auth, send mail or deploy application code.
+'''
+          p.write_text(s)
+          PY
+
+          git diff --check
+          git rm .github/workflows/phase-13-email-domain-docs.yml
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/architecture/INFRASTRUCTURE.md
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: lock RenderLab transactional email identity"
+          git push origin HEAD:docs/phase-13-email-domain-design
