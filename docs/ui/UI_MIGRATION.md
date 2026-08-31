@@ -1357,7 +1357,7 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 
 ## Phase 13 — Email & Invite Production Hardening — IN PROGRESS
-Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability. 13A read-only audit and 13B sender/delivery configuration are `COMPLETE / VERIFIED`; 13C branded template/link hardening is next. It remains primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin, UI-052 Brand/Launch and UI-053 email-identity/design contracts remain authoritative unless verification exposes a concrete product defect.
+Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability. 13A read-only audit and 13B sender/delivery configuration are `COMPLETE / VERIFIED`; 13C branded template/link hardening is `BLOCKED` on the verified Brevo Free-plan link-rewriting constraint pending an operator provider/plan decision. It remains primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin, UI-052 Brand/Launch and UI-053 email-identity/design contracts remain authoritative unless verification exposes a concrete product defect.
 
 ### Required execution evidence
 - [x] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation. Runs `33341207071` + `33341263450` passed with no production mutation.
@@ -1389,7 +1389,14 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 - Corrected execution run `33399495588` left exactly the intended sender-domain records: two Brevo DKIM CNAMEs, Brevo verification TXT on `mail.renderlab.faresuniform.uk`, and DMARC TXT on `_dmarc.mail.renderlab.faresuniform.uk`. Brevo reports the domain verified/authenticated and all four DNS checks true. The two malformed duplicated TXT names created by the first normalization attempt were deleted before acceptance.
 - `RenderLab <noreply@mail.renderlab.faresuniform.uk>` is an active Brevo sender; authenticated SMTP accepted the envelope sender without any recipient/data send.
 - Supabase configuration run `33399659584` passed with exact read-back: custom SMTP `smtp-relay.brevo.com:587`, sender name `RenderLab`, From `noreply@mail.renderlab.faresuniform.uk`, email limit `30/hour`, production Site URL and exact redirects preserved. Templates were deliberately not changed in 13B.
-- 13B introduced no application code, database migration, R2/provider-generation change or Vercel deployment. 13C is now the next execution slice.
+- 13B introduced no application code, database migration, R2/provider-generation change or Vercel deployment. 13C preflight is the current execution slice and is blocked before template mutation.
+
+### 13C link-integrity preflight — BLOCKED 2026-08-31
+- Read-only run `33401336576` passed with no production mutation or email send. Brevo account read-back is Free / non-Enterprise; Supabase still has the verified 13B SMTP state and default `{{ .ConfirmationURL }}` invite/recovery templates.
+- Brevo transactional click tracking rewrites links by default. Anonymous tracking still retains aggregate click tracking, while full transactional tracking disablement is documented by Brevo staff as an Enterprise/support capability. The active account therefore cannot currently prove the UI-053 no-rewrite requirement.
+- Supabase warns that external provider tracking can overwrite Auth links. Do not install the token-hash templates or begin 13D live delivery while this constraint is unresolved.
+- Unblocking requires an explicit operator choice: verified Brevo tracking disablement through an eligible plan/support path, or an approved provider change with proven no-rewrite Auth links.
+
 
 ### Scope guardrails
 - Prior planning alone did not authorize production mutation; the user explicitly authorized the completed 13B Brevo/DNS/Supabase configuration. Further provider purchase/account changes, real email sending, Vercel deployment or application changes still require the applicable phase/operator gate.
@@ -1413,8 +1420,8 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 
 ## Current Work
 **Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A and 13B are `COMPLETE / VERIFIED`; 13C branded template/link hardening is next.
-**Next sequence:** install/review the professional RenderLab invite and recovery token-hash HTML templates, verify provider/link-tracking posture so Auth URLs are not rewritten, then run deterministic generate-link and negative security coverage without real email. 13D remains the later bounded live-mailbox acceptance slice.
+**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A and 13B are `COMPLETE / VERIFIED`; 13C branded template/link hardening is `BLOCKED` pending the no-rewrite provider/plan decision.
+**Next sequence:** resolve the 13C provider link-rewriting gate first. After a provider path can prove Auth links are not rewritten, install/review the professional RenderLab invite and recovery token-hash HTML templates and run deterministic generate-link/negative security coverage without real email. 13D remains the later bounded live-mailbox acceptance slice and must not start while 13C is blocked.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
 **Deployment boundary:** 13B changed Brevo/Cloudflare/Supabase Auth mail configuration only; no application code or Vercel deployment changed. Phase 13 remains configuration-first; any necessary application code fix must create/revalidate an exact candidate before any Vercel rollout.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
