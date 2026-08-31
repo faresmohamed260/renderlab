@@ -1,0 +1,122 @@
+name: Phase 13C Resend Preflight
+
+on:
+  push:
+    branches: [work/phase-13c-resend-switch]
+    paths:
+      - ".github/workflows/phase-13c-resend-preflight.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      ZONE_APEX: faresuniform.uk
+      SENDER_DOMAIN: mail.renderlab.faresuniform.uk
+      FROM_EMAIL: noreply@mail.renderlab.faresuniform.uk
+      SITE_URL: https://renderlab.faresuniform.uk
+      INVITE_REDIRECT: https://renderlab.faresuniform.uk/settings
+      RECOVERY_REDIRECT: https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password
+
+    steps:
+      - name: Check required secret presence safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in RESEND_API_KEY SUPABASE_ACCESS_TOKEN CLOUDFLARE_API_TOKEN; do
+            if [ -n "${!name:-}" ]; then
+              echo "${name}_PRESENT=true"
+            else
+              echo "${name}_PRESENT=false"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "PHASE13C_RESEND_PREFLIGHT_READY=false"
+            exit 2
+          fi
+
+      - name: Read Resend account/domain capability without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${RESEND_API_KEY}" \
+            --header 'Accept: application/json' \
+            'https://api.resend.com/domains' -o /tmp/resend-domains.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/resend-domains.json').read_text())
+          rows=d.get('data') if isinstance(d,dict) else None
+          if not isinstance(rows,list):
+              raise SystemExit('Unexpected Resend domains response')
+          target=os.environ['SENDER_DOMAIN'].lower()
+          matches=[r for r in rows if str(r.get('name') or '').lower()==target]
+          print('RESEND_API_AUTH_OK=true')
+          print('RESEND_SENDER_DOMAIN_EXISTS=' + str(bool(matches)).lower())
+          if matches:
+              row=matches[0]
+              print('RESEND_SENDER_DOMAIN_STATUS=' + str(row.get('status') or 'unknown'))
+              print('RESEND_SENDER_DOMAIN_REGION=' + str(row.get('region') or 'unknown'))
+          print('RESEND_SECRET_VALUE_LOGGED=false')
+          print('RESEND_EMAIL_SENT=false')
+          PY
+
+      - name: Read hosted Supabase Auth state without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
+          curl --fail-with-body --silent --show-error \
+            --user-agent 'RenderLab-Phase13C-Resend-Preflight/1.0' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            "$endpoint" -o /tmp/auth.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/auth.json').read_text())
+          if d.get('site_url') != os.environ['SITE_URL']:
+              raise SystemExit('Unexpected production Site URL')
+          raw=d.get('uri_allow_list')
+          allow=[x.strip() for x in raw.split(',')] if isinstance(raw,str) else list(raw or [])
+          for required in (os.environ['INVITE_REDIRECT'], os.environ['RECOVERY_REDIRECT']):
+              if required not in allow:
+                  raise SystemExit('Required production redirect missing')
+          print('SUPABASE_AUTH_READ_OK=true')
+          print('SUPABASE_SITE_URL_OK=true')
+          print('SUPABASE_REQUIRED_REDIRECTS_OK=true')
+          print('SUPABASE_CURRENT_SMTP_HOST=' + str(d.get('smtp_host') or 'none'))
+          print('SUPABASE_CURRENT_FROM_MATCH=' + str(d.get('smtp_admin_email') == os.environ['FROM_EMAIL']).lower())
+          print('SUPABASE_EMAIL_RATE_LIMIT=' + str(d.get('rate_limit_email_sent')))
+          print('SUPABASE_TEMPLATE_BODY_LOGGED=false')
+          PY
+
+      - name: Read Cloudflare zone access without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            "https://api.cloudflare.com/client/v4/zones?name=${ZONE_APEX}" \
+            -o /tmp/cf-zones.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('/tmp/cf-zones.json').read_text())
+          rows=d.get('result') or []
+          if not d.get('success') or len(rows)!=1:
+              raise SystemExit('Could not resolve exact Cloudflare zone')
+          print('CLOUDFLARE_ZONE_ACCESS_OK=true')
+          print('CLOUDFLARE_DNS_MUTATED=false')
+          print('PHASE13C_RESEND_PREFLIGHT_READY=true')
+          PY
