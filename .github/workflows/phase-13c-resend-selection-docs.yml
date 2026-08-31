@@ -1,0 +1,37 @@
+name: Phase 13C Resend Provider Selection Docs
+
+on:
+  push:
+    branches: [docs/phase-13c-resend-provider-selection]
+    paths:
+      - ".github/workflows/phase-13c-resend-selection-docs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/phase-13c-resend-provider-selection
+          fetch-depth: 0
+
+      - name: Apply provider selection documentation
+        run: python .github/phase13c_resend_selection_patch.py
+
+      - name: Remove temporary helpers and commit docs only
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/phase13c_resend_selection_patch.py .github/workflows/phase-13c-resend-selection-docs.yml
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          changed="$(git diff --cached --name-only | sort)"
+          printf '%s\n' "$changed"
+          test "$changed" = $'.github/phase13c_resend_selection_patch.py\n.github/workflows/phase-13c-resend-selection-docs.yml\nPROJECT.md\ndocs/architecture/INFRASTRUCTURE.md\ndocs/ui/UI_MIGRATION.md'
+          git commit -m 'docs: select Resend for Phase 13C'
+          git push origin HEAD:docs/phase-13c-resend-provider-selection
