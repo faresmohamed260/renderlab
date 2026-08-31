@@ -29,9 +29,10 @@ jobs:
           git diff --check
           changed="$(git status --short | awk '{print $2}' | sort)"
           printf '%s\n' "$changed"
-          test "$changed" = $'PROJECT.md\ndocs/architecture/INFRASTRUCTURE.md\ndocs/ui/UI_MIGRATION.md'
+          expected=$'.github/phase13c_blocker_patch.py\n.github/workflows/phase-13c-tracking-blocker-docs.yml\nPROJECT.md\ndocs/architecture/INFRASTRUCTURE.md\ndocs/ui/UI_MIGRATION.md'
+          test "$changed" = "$expected"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_MIGRATION.md .github/phase13c_blocker_patch.py .github/workflows/phase-13c-tracking-blocker-docs.yml
+          git add -A
           git commit -m 'docs: record Phase 13C tracking blocker'
           git push origin HEAD:docs/phase-13c-tracking-blocker
