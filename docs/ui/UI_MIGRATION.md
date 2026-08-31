@@ -1362,7 +1362,7 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 ### Required execution evidence
 - [x] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation. Runs `33341207071` + `33341263450` passed with no production mutation.
 - [x] Choose the RenderLab sender-domain/From identity: web stays `renderlab.faresuniform.uk`; transactional mail uses project-scoped `mail.renderlab.faresuniform.uk`; default From is `RenderLab <noreply@mail.renderlab.faresuniform.uk>`. This sender domain must remain distinct from the existing Vercel web-host CNAME.
-- [x] Production transactional delivery path/provider is approved as Brevo custom SMTP for the current Closed Beta. Provision a dedicated RenderLab SMTP key and Brevo API key/login only in approved GitHub secret storage; do not reuse a general/master SMTP password when a scoped RenderLab key can be created.
+- [x] Production transactional delivery path/provider is Brevo custom SMTP for the current Closed Beta. Dedicated RenderLab SMTP/API credentials are provisioned in approved GitHub secret storage; the general/master SMTP password was not reused.
 - [x] Add/verify only provider-required sender-domain DNS. `mail.renderlab.faresuniform.uk` is Brevo-verified/authenticated with two DKIM CNAMEs, Brevo verification TXT and DMARC TXT; Brevo reports all four checks passing. Brevo shared-IP authentication required no new sender-domain SPF/MX, so apex Cloudflare Email Routing SPF/MX and unrelated Vercel/Tunnel/DNS records were preserved.
 - [x] Configure Supabase/provider sender/from posture and bounded invitation-only Auth email limits. Hosted Auth reads back Brevo relay `smtp-relay.brevo.com:587`, `RenderLab <noreply@mail.renderlab.faresuniform.uk>`, and `rate_limit_email_sent=30`; production Site URL/redirect allowlist remains unchanged.
 - [ ] Install/review a professional responsive RenderLab invite HTML template using the exact SSR token-hash path `/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/settings` through `{{ .SiteURL }}`. Include RenderLab logo/wordmark, restrained branded header/banner, accessible primary CTA button, concise invitation/security copy and a visible fallback text link; no essential information may exist only inside images.
@@ -1392,7 +1392,7 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 - 13B introduced no application code, database migration, R2/provider-generation change or Vercel deployment. 13C is now the next execution slice.
 
 ### Scope guardrails
-- Planning does not authorize SMTP/provider signup or purchase, DNS mutation, hosted Auth mutation, email sending, Vercel deployment or application changes.
+- Prior planning alone did not authorize production mutation; the user explicitly authorized the completed 13B Brevo/DNS/Supabase configuration. Further provider purchase/account changes, real email sending, Vercel deployment or application changes still require the applicable phase/operator gate.
 - Do not add public sign-up, waitlist, newsletter/marketing mail, MFA/CAPTCHA, general notifications or a second invitation/admission model.
 - Do not redesign Landing, Settings or Admin for this phase. Make only evidence-driven copy/error-state fixes if live delivery exposes a real defect.
 - Do not treat Free-plan leaked-password protection as an email deliverability task; it remains separate broader-beta security work.
