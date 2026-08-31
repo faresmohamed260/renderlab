@@ -1,0 +1,136 @@
+name: Phase 13B Supabase SMTP
+
+on:
+  push:
+    branches: [work/phase-13b-email-config]
+    paths:
+      - ".github/workflows/phase-13b-supabase-smtp.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  configure-supabase-smtp:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      BREVO_SMTP_LOGIN: ${{ secrets.BREVO_SMTP_LOGIN }}
+      BREVO_SMTP_KEY: ${{ secrets.BREVO_SMTP_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      BREVO_DOMAIN: mail.renderlab.faresuniform.uk
+      FROM_EMAIL: noreply@mail.renderlab.faresuniform.uk
+      FROM_NAME: RenderLab
+      SMTP_HOST: smtp-relay.brevo.com
+      SMTP_PORT: "587"
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SITE_URL: https://renderlab.faresuniform.uk
+      INVITE_REDIRECT: https://renderlab.faresuniform.uk/settings
+      RECOVERY_REDIRECT: https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password
+      AUTH_EMAIL_RATE_LIMIT: "30"
+
+    steps:
+      - name: Reconfirm Brevo readiness without sending mail
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in BREVO_API_KEY BREVO_SMTP_LOGIN BREVO_SMTP_KEY SUPABASE_ACCESS_TOKEN; do
+            test -n "${!name:-}" || { echo "${name}_PRESENT=false"; exit 1; }
+          done
+          curl --fail-with-body --silent --show-error --header "api-key: ${BREVO_API_KEY}" \
+            "https://api.brevo.com/v3/senders/domains/${BREVO_DOMAIN}" -o /tmp/domain.json
+          curl --fail-with-body --silent --show-error --header "api-key: ${BREVO_API_KEY}" \
+            "https://api.brevo.com/v3/senders?domain=${BREVO_DOMAIN}" -o /tmp/senders.json
+          python - <<'PY'
+          import json,os,smtplib,ssl
+          domain=json.load(open('/tmp/domain.json'))
+          if not domain.get('authenticated') or not domain.get('verified'):
+              raise SystemExit('Brevo domain is not ready')
+          senders=json.load(open('/tmp/senders.json')).get('senders') or []
+          target=os.environ['FROM_EMAIL'].lower()
+          rows=[r for r in senders if str(r.get('email') or '').lower()==target]
+          if len(rows)!=1 or not rows[0].get('active'):
+              raise SystemExit('Brevo sender is not active')
+          with smtplib.SMTP(os.environ['SMTP_HOST'],int(os.environ['SMTP_PORT']),timeout=20) as s:
+              s.ehlo(); s.starttls(context=ssl.create_default_context()); s.ehlo(); s.login(os.environ['BREVO_SMTP_LOGIN'],os.environ['BREVO_SMTP_KEY'])
+              code,_=s.mail(os.environ['FROM_EMAIL'])
+              if code>=400: raise SystemExit(f'Brevo MAIL FROM rejected: {code}')
+              s.rset()
+          print('BREVO_DOMAIN_VERIFIED_AND_AUTHENTICATED=true')
+          print('BREVO_SENDER_ACTIVE=true')
+          print('BREVO_SMTP_MESSAGE_SENT=false')
+          PY
+
+      - name: Patch Supabase Custom SMTP with guarded readback
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
+          curl --fail-with-body --silent --show-error --user-agent 'RenderLab-Phase13B/1.2' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" "$endpoint" -o /tmp/before.json
+          python - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/before.json'))
+          if d.get('site_url')!=os.environ['SITE_URL']: raise SystemExit('Unexpected Site URL; refusing SMTP mutation')
+          v=d.get('uri_allow_list'); allow=[x.strip() for x in v.split(',')] if isinstance(v,str) else list(v or [])
+          for u in (os.environ['INVITE_REDIRECT'],os.environ['RECOVERY_REDIRECT']):
+              if u not in allow: raise SystemExit('Required production redirect missing; refusing SMTP mutation')
+          patch={
+            'smtp_admin_email':os.environ['FROM_EMAIL'],
+            'smtp_host':os.environ['SMTP_HOST'],
+            'smtp_port':os.environ['SMTP_PORT'],
+            'smtp_user':os.environ['BREVO_SMTP_LOGIN'],
+            'smtp_pass':os.environ['BREVO_SMTP_KEY'],
+            'smtp_sender_name':os.environ['FROM_NAME'],
+            'rate_limit_email_sent':int(os.environ['AUTH_EMAIL_RATE_LIMIT'])
+          }
+          json.dump(patch,open('/tmp/patch.json','w'))
+          print('SUPABASE_SMTP_CONFIGURED_BEFORE=' + str(bool(d.get('smtp_host'))).lower())
+          print('SUPABASE_EMAIL_RATE_LIMIT_BEFORE=' + str(d.get('rate_limit_email_sent')))
+          print('SUPABASE_SITE_URL_PRECHECK_OK=true')
+          print('SUPABASE_REDIRECT_PRECHECK_OK=true')
+          PY
+
+          code="$(curl --silent --show-error --user-agent 'RenderLab-Phase13B/1.2' \
+            --output /tmp/patch-response.json --write-out '%{http_code}' --request PATCH \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" --header 'content-type: application/json' \
+            --data-binary @/tmp/patch.json "$endpoint")"
+          echo "SUPABASE_SMTP_PATCH_HTTP=${code}"
+          if [ "$code" != "200" ]; then
+            python - <<'PY'
+          import json
+          try:
+              d=json.load(open('/tmp/patch-response.json'))
+          except Exception:
+              print('SUPABASE_SMTP_PATCH_ERROR=unparseable_response')
+              raise SystemExit(1)
+          safe=d.get('message') or d.get('error') or d.get('msg') or d.get('code') or 'unknown_error'
+          print('SUPABASE_SMTP_PATCH_ERROR=' + str(safe).replace('\n',' ')[:500])
+          raise SystemExit(1)
+          PY
+          fi
+
+          curl --fail-with-body --silent --show-error --user-agent 'RenderLab-Phase13B/1.2' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" "$endpoint" -o /tmp/after.json
+          python - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/after.json'))
+          expected={'smtp_admin_email':os.environ['FROM_EMAIL'],'smtp_host':os.environ['SMTP_HOST'],'smtp_sender_name':os.environ['FROM_NAME']}
+          for k,v in expected.items():
+              if str(d.get(k) or '')!=v: raise SystemExit(f'Supabase readback mismatch: {k}')
+          if str(d.get('smtp_port'))!=os.environ['SMTP_PORT']: raise SystemExit('Supabase smtp_port mismatch')
+          if int(d.get('rate_limit_email_sent') or -1)!=int(os.environ['AUTH_EMAIL_RATE_LIMIT']): raise SystemExit('Supabase email rate limit mismatch')
+          if d.get('site_url')!=os.environ['SITE_URL']: raise SystemExit('Supabase Site URL changed unexpectedly')
+          v=d.get('uri_allow_list'); allow=[x.strip() for x in v.split(',')] if isinstance(v,str) else list(v or [])
+          for u in (os.environ['INVITE_REDIRECT'],os.environ['RECOVERY_REDIRECT']):
+              if u not in allow: raise SystemExit('Required production redirect disappeared')
+          print('SUPABASE_CUSTOM_SMTP_READBACK_OK=true')
+          print('SUPABASE_SMTP_HOST=' + str(d.get('smtp_host')))
+          print('SUPABASE_SMTP_PORT=' + str(d.get('smtp_port')))
+          print('SUPABASE_SMTP_ADMIN_EMAIL=' + str(d.get('smtp_admin_email')))
+          print('SUPABASE_SMTP_SENDER_NAME=' + str(d.get('smtp_sender_name')))
+          print('SUPABASE_EMAIL_RATE_LIMIT=' + str(d.get('rate_limit_email_sent')))
+          print('SUPABASE_SITE_URL=' + str(d.get('site_url')))
+          print('SUPABASE_REQUIRED_REDIRECTS_PRESERVED=true')
+          print('PHASE13B_REAL_AUTH_EMAIL_SENT=false')
+          PY
