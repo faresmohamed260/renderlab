@@ -1,0 +1,33 @@
+name: Phase 13B Docs Consistency Cleanup
+
+on:
+  push:
+    branches:
+      - docs/phase-13b-completion
+    paths:
+      - .github/workflows/phase-13b-doc-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/phase-13b-completion
+          fetch-depth: 0
+      - name: Apply cleanup patch
+        run: python .github/phase13b_doc_cleanup.py
+      - name: Validate and commit
+        run: |
+          set -euo pipefail
+          git diff --check
+          git rm .github/workflows/phase-13b-doc-cleanup.yml .github/phase13b_doc_cleanup.py
+          git add PROJECT.md docs/ui/UI_MIGRATION.md
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: align Phase 13B current-state wording"
+          git push origin HEAD:docs/phase-13b-completion
