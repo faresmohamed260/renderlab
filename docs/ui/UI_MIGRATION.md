@@ -1357,7 +1357,7 @@ Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter sy
 
 
 ## Phase 13 — Email & Invite Production Hardening — IN PROGRESS
-Phase 13 is the first active phase of Cycle 3 — Beta Operations & Access Reliability. 13A read-only audit is `COMPLETE / VERIFIED`; 13B sender/delivery configuration is awaiting the explicit provider/sender/credential decision. It remains primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin and UI-052 Brand/Launch contracts remain authoritative unless live delivery evidence proves a concrete product defect.
+Phase 13 is the first active phase of Cycle 3 — Beta Operations & Access Reliability. 13A read-only audit is `COMPLETE / VERIFIED`; the 13B sender-domain/From identity decision is accepted, while transactional provider/account and SMTP credentials remain the explicit operator gate. It remains primarily an Auth/email/infrastructure hardening phase, not a screen redesign. Existing UI-051 Account/Admin and UI-052 Brand/Launch contracts remain authoritative unless live delivery evidence proves a concrete product defect.
 
 ### Required execution evidence
 - [x] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation. Runs `33341207071` + `33341263450` passed with no production mutation.
@@ -1381,7 +1381,7 @@ Phase 13 is the first active phase of Cycle 3 — Beta Operations & Access Relia
 - Hosted Auth read-back: correct production Site URL + exact invite/recovery allowlist; custom SMTP absent; Send Email Auth Hook disabled; email send rate limit `2/hour`; default invite/recovery subjects/templates still use `{{ .ConfirmationURL }}`.
 - Public + Cloudflare DNS read-back: Brevo verification TXT, Brevo DKIM selectors `brevo1`/`brevo2`, DMARC `p=none` with aggregate reporting to Brevo, Cloudflare Email Routing MX, and a single apex SPF record for Cloudflare mail routing. No DNS was changed.
 - `auth.faresuniform.uk` is already a proxied Cloudflare Tunnel hostname, so Phase 13 must not reuse that host as a sending subdomain.
-- Lowest-drift recommendation for 13B is existing-domain Brevo SMTP via Supabase custom SMTP. This is a recommendation, not an inferred credential/account state; provider/sender/credential selection remains an explicit operator gate.
+- Lowest-drift provider recommendation for 13B is Brevo SMTP via Supabase custom SMTP. The sender domain/From identity is now accepted as `mail.renderlab.faresuniform.uk` / `RenderLab <noreply@mail.renderlab.faresuniform.uk>`; provider account/plan and SMTP credential provisioning remain the explicit operator gate.
 - The temporary 13A audit workflow was removed after successful evidence capture. Regular CI still does not send real email.
 
 ### Scope guardrails
