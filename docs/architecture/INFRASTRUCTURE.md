@@ -491,6 +491,20 @@ Phase 6 performed a fresh, non-deploying production/custom-domain/shared-resourc
 ### Cycle 2 operating-boundary implication
 The verified technical baseline is healthy for continued controlled use. The user explicitly selected **Closed Beta** as the Cycle 2 operating boundary on 2026-08-29. Because app-level generation rate/concurrency/abuse controls are absent, provider cost is not product-observable and leaked-password protection is disabled, access remains controlled until Phase 10 hardens broader-access requirements. Any move to broader beta is a separate explicit decision.
 
+
+## Post-Phase-13 mailbox brand indicator follow-up — observed 2026-09-02
+The production Auth mail path is healthy, but external Gmail acceptance showed a generic inbox sender avatar rather than the RenderLab mark. This is separate from the hosted Auth HTML templates and requires mailbox-level authenticated brand identity.
+
+Current implementation direction to investigate is BIMI for Gmail. Resend's current BIMI guidance requires:
+- DMARC enforcement at `p=quarantine` or `p=reject` with `pct=100`;
+- for BIMI on the RenderLab sending subdomain, root/apex DMARC must also be at enforcement;
+- a publicly reachable HTTPS BIMI logo in SVG Tiny P/S format;
+- a supported mark certificate for Gmail brand-avatar use (VMC for a qualifying trademark or CMC where established logo-use requirements can be proven).
+
+Phase 13A recorded the existing apex DMARC posture as `p=none`, and Phase 13 did not authorize a parent-domain enforcement change. The next implementation session must re-read live DNS rather than relying on that historical value, inventory all `faresuniform.uk` senders/routes, and assess the effect of enforcement before any DMARC mutation. Do not assume the existing application SVG is BIMI-compliant and do not purchase a VMC/CMC until eligibility, cost and product value are reviewed. Provider acceptance does not guarantee that Gmail or another mailbox will render a logo; reputation/display policy remains mailbox-controlled.
+
+This follow-up currently authorizes documentation/research only. It changes no Resend SMTP state, Supabase Auth configuration, Cloudflare DNS, application code, schema, generation infrastructure or Vercel deployment.
+
 ## Security Rules
 - Never commit service-role/R2/provider/backend bearer credentials.
 - Only the Supabase project URL and publishable key are intentionally exposed to browser code. `next.config.ts` maps those public-safe values from `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`; service-role and R2 credentials must never be published.
