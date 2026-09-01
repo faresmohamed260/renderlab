@@ -23,6 +23,20 @@ jobs:
           ref: docs/phase-13c-resend-closure
           fetch-depth: 0
 
+      - name: Tighten Phase 13 insertion guard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/phase13c_docs_reconcile.py')
+          text = path.read_text()
+          old = '''if "**13C implementation / verification evidence — 2026-09-01**" not in p:\n    p = replace_once(p, marker, evidence + marker, "PROJECT 13C evidence insertion")'''
+          new = '''if "**13C implementation / verification evidence — 2026-09-01**" not in p:\n    phase13_start = p.index("### Phase 13 execution contract — Email & Invite Production Hardening")\n    marker_pos = p.index(marker, phase13_start)\n    p = p[:marker_pos] + evidence + p[marker_pos:]'''
+          if old not in text:
+              raise SystemExit('expected generic insertion guard not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
       - name: Reconcile authoritative Phase 13 docs
         run: python .github/phase13c_docs_reconcile.py
 
