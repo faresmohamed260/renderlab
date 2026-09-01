@@ -550,7 +550,7 @@ The repository secret `CLOUDFLARE_API_TOKEN` is deliberately scoped for zone DNS
 This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
 
 ## Infrastructure Operating Rules
-Cycle 2 production is accepted and Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`: 13A, 13B and 13C are `COMPLETE / VERIFIED`, while 13D bounded live-mailbox acceptance remains operator-gated. Phase 13C changed only transactional-email/DNS/hosted-Auth configuration; no application or Vercel deployment changed, and no real Phase 13 Auth email has been sent yet.
+Cycle 2 production is accepted and Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`: 13A–13D passed. Phase 13 changed only transactional-email/DNS/hosted-Auth configuration plus bounded external-mailbox verification; no application or Vercel deployment changed.
 
 1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout; a repository merge is never implicit permission to deploy or apply a future schema change.
 2. Add any future public upload origin explicitly to R2 CORS before deployment/use.
@@ -637,7 +637,7 @@ Closed-Beta Cycle 2 acceptance does not resolve broader-beta Auth hardening. Sup
 
 
 ### Phase 13 Email & Invite Production Hardening infrastructure state — 2026-09-01
-**Status: `IN PROGRESS`; 13A, 13B and 13C `COMPLETE / VERIFIED`; 13D live mailbox acceptance pending.** The active production Auth mail provider is now Resend custom SMTP. Brevo remains historical 13B evidence and rollback context, not the current Supabase SMTP route.
+**Status: `COMPLETE / VERIFIED`; 13A–13D complete.** The active production Auth mail provider is Resend custom SMTP. Brevo remains historical 13B evidence and rollback context, not the current Supabase SMTP route.
 
 Current accepted transactional identity:
 - web application: `renderlab.faresuniform.uk`;
@@ -674,20 +674,14 @@ Corrected execution run `33399495588` authenticated `mail.renderlab.faresuniform
 - Cleanup run `33545252403` deleted the one exact no-send invite fixture left by an earlier verifier cleanup assertion; direct Supabase audit then returned zero matching users.
 - Final verifier `33545491994` passed provider tracking/domain read-back, both exact templates, no-send invite/recovery Admin link generation, zero fixture residue, production invalid-link fail-closed behavior and hostile-`next` rejection. It explicitly recorded no real Auth email send.
 
-#### Phase 13D infrastructure boundary — pending live acceptance
-- External user-mailbox sends are intentionally excluded from normal CI and from 13C. 13D external acceptance must use bounded operator-controlled recipients and explicit send authorization. Controlled Resend official test-sink sends are allowed only as bounded provider/lifecycle evidence and do not count as mailbox acceptance.
-- Branch-only no-send preflight `33549168096` / job `99994060939` passed on `work/phase-13d-live-mail-acceptance`. The harness is command-restricted to `preflight` and currently contains no send-capable path.
-- Preflight re-verified Resend domain verification, open/click tracking disabled, Resend sent-email observability, Supabase `smtp.resend.com:587` plus the exact hosted templates, exactly one persistent active admin, zero pending invitations, generation defaults enabled / 1 / 12 / no updater, and production Auth fail-closed behavior. It explicitly recorded `PHASE13D_REAL_EMAIL_SENT=false`.
-- Prefer two independent providers such as Gmail and Outlook. Recipient addresses must live only in approved secret storage and must never be committed or printed in Actions logs. Required secrets: `RENDERLAB_13D_GMAIL_RECIPIENT` and `RENDERLAB_13D_OUTLOOK_RECIPIENT`.
-- Real-send execution has a separate secret interlock `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL`; current preflight reports both recipient secrets absent and the arm disabled. Even after these exist, a real send still requires explicit user authorization in chat.
-- Controlled provider-sink invite run `33554608805` / job `100012248325` passed actual Supabase→Resend delivery, stored From/HTML/token-hash integrity, production invitation claim, consumed-link fail-closed behavior and exact cleanup.
-- Controlled provider-sink recovery run `33554945434` / job `100013355135` passed actual recovery delivery, stored recovery-link integrity, production recovery-marker/redirect behavior, consumed-link fail-closed behavior and exact cleanup.
-- Independent post-run Supabase audit found zero matching sink-test Auth users/invitations/access rows; the sole active admin, zero pending invitations and enabled / 1 / 12 / no-updater generation defaults remain unchanged.
-- These runs used only Resend's official delivered test sink and did not exercise external Gmail/Outlook mailbox placement or rendering. Final 13D acceptance still requires those operator-controlled mailbox checks.
-- Acceptance must distinguish provider API acceptance from mailbox delivery: inspect delivered/bounced/complained events plus Inbox/Spam placement and actual email-client rendering/link behavior.
-- Live invite acceptance must verify delivered invite → production confirmation → intended RenderLab access, plus consumed/revoked/invalid behavior where practical. Live recovery must verify delivered reset → production confirmation → password replacement and current/stale-session behavior.
-- Final cleanup must leave zero run-owned Auth/access/invitation/admission/media/generation residue, preserve the sole persistent admin and restore generation defaults to enabled / 1 active / 12 hourly / no updater.
-- After acceptance, review retention of Resend/Supabase/Cloudflare management credentials and narrow, rotate or remove any temporary privilege that no longer has an operational justification.
+#### Phase 13D external mailbox acceptance — COMPLETE / VERIFIED 2026-09-01
+- No-send preflight `33549168096` plus Resend delivered-sink invite/recovery runs `33554608805` and `33554945434` established the deterministic/provider baseline before external-mailbox use.
+- Real external Gmail invite run `33556525753` sent exactly two operator-authorized invitations. Supabase accepted both; Resend reported both delivered and stored-message verification preserved the production From identity and unrewritten token-hash links. The operator confirmed both messages arrived and both links redirected successfully into signed-in RenderLab. Supabase then showed exactly two claimed invitations / two active member rows for the test accounts.
+- Real Gmail recovery run `33557320718` sent one production password-reset message to an accepted test account. Supabase accepted the request; Resend reported delivered; stored-message verification preserved the exact recovery token-hash path without tracking rewrite. The operator completed password replacement in the production browser flow. Auth read-back confirmed a confirmed/signed-in password-bearing account with cleared confirmation/recovery one-time tokens.
+- The operator-selected external mailbox set consisted of two Gmail inboxes. Outlook-specific rendering was not exercised and exact Gmail Inbox-vs-Spam folder placement was not separately captured. This is the recorded operator limitation under the exit criterion; provider API delivery plus successful human receipt/completion are verified, but cross-provider rendering is not claimed.
+- Pre-cleanup audit proved the two test accounts owned no generation sources/jobs/media/uploads/collections/collection items/admission reservations. Guarded cleanup then deleted exactly two test invitation rows and exactly two Auth users; `renderlab_account_access` cascaded via its verified FK. Independent final audit returned zero matching test Auth/invitation/access rows, exactly one active admin, zero pending invitations and `renderlab_beta_settings` restored/verified as generation enabled / 1 active / 12 hourly / `updated_by=null`.
+- Credential-retention review is complete. `RESEND_API_KEY`, `SUPABASE_ACCESS_TOKEN` and the existing Cloudflare DNS credential remain justified as ongoing operator-management credentials. Brevo credentials/DNS are historical rollback context only and are not the active Supabase SMTP route. No Gmail recipient Actions secrets were created for the final operator-authorized run.
+- Normal CI remains independent of external mailbox delivery; real mailbox sends remain bounded operator actions rather than a recurring gate.
 
 Phase 13 requires no Supabase database migration, R2 change, worker/provider-generation change or Vercel deployment when completed as email/Auth/DNS configuration. If 13D exposes an application defect, make only the smallest code correction, validate a new exact application candidate through affected gates and obtain deployment authorization before replacing the accepted Cycle 2 production build.
 
