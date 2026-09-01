@@ -1,0 +1,32 @@
+name: Phase 13C Auth Fixture Cleanup
+
+on:
+  push:
+    branches:
+      - work/phase-13c-email-templates
+    paths:
+      - .github/workflows/phase-13c-auth-fixture-cleanup.yml
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      FIXTURE_USER_ID: dde7f3c0-248d-48df-9358-c61927692c56
+    steps:
+      - name: Delete exact run-owned Auth fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          code="$(curl --silent --show-error --output /tmp/delete.json --write-out '%{http_code}' --request DELETE \
+            --header "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            "${SUPABASE_URL}/auth/v1/admin/users/${FIXTURE_USER_ID}")"
+          echo "PHASE13C_EXACT_AUTH_FIXTURE_DELETE_HTTP=${code}"
+          test "$code" = 200 || test "$code" = 204
+          echo 'PHASE13C_REAL_AUTH_EMAIL_SENT=false'
