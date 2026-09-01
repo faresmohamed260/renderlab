@@ -49,7 +49,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/architecture/INFRASTRUCTURE.md .github
           git diff --cached --check
-          changed="$(git diff --cached --name-only | sort)"
+          changed="$(git diff --cached origin/main --name-only | sort)"
           printf '%s\n' "$changed"
           expected="$(printf '%s\n' PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md | sort)"
           test "$changed" = "$expected"
