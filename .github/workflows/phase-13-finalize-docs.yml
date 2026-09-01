@@ -1,0 +1,51 @@
+name: Phase 13 Finalize Docs
+
+on:
+  push:
+    branches:
+      - docs/phase-13-final-closure
+    paths:
+      - scripts/phase13-finalize-docs.py
+      - .github/workflows/phase-13-finalize-docs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact docs branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/phase-13-final-closure
+          fetch-depth: 0
+
+      - name: Patch authoritative Phase 13 docs
+        run: python3 scripts/phase13-finalize-docs.py
+
+      - name: Remove temporary helpers and validate final scope
+        run: |
+          rm scripts/phase13-finalize-docs.py
+          rm .github/workflows/phase-13-finalize-docs.yml
+          git fetch origin main
+          changed="$(git diff --name-only origin/main...HEAD; git diff --name-only)"
+          final_changed="$(printf '%s\n' "$changed" | sort -u | grep -v '^$')"
+          expected="$(printf '%s\n' PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md | sort)"
+          docs_only="$(printf '%s\n' "$final_changed" | grep -v '^scripts/phase13-finalize-docs.py$' | grep -v '^.github/workflows/phase-13-finalize-docs.yml$' | sort)"
+          test "$docs_only" = "$expected"
+          ! grep -R -F 'playboy40k@gmail.com' PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md
+          ! grep -R -F 'bplay2086@gmail.com' PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md
+          grep -F 'Phase 13 — Email & Invite Production Hardening: `COMPLETE / VERIFIED`' PROJECT.md
+          grep -F '## Phase 13 — Email & Invite Production Hardening — COMPLETE / VERIFIED' docs/ui/UI_MIGRATION.md
+          grep -F '**Status: `COMPLETE / VERIFIED`; 13A–13D complete.**' docs/architecture/INFRASTRUCTURE.md
+          grep -F 'UI-053 is therefore implemented and accepted for the current Closed-Beta email boundary.' docs/ui/UI_DECISIONS.md
+
+      - name: Commit final documentation state
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: close Phase 13 email hardening'
+          git push origin HEAD:docs/phase-13-final-closure
