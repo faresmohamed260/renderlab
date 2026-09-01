@@ -1,0 +1,33 @@
+name: Phase 13D Real Gmail Send
+
+on:
+  push:
+    branches:
+      - work/phase-13d-real-gmail-acceptance
+    paths:
+      - scripts/phase13d-real-gmail-send.mjs
+      - .github/workflows/phase-13d-real-gmail-send.yml
+
+permissions:
+  contents: read
+
+jobs:
+  real-gmail-send:
+    runs-on: ubuntu-24.04
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      PHASE13D_REAL_SEND_ARMED: YES_PHASE13D_REAL_EMAIL
+    steps:
+      - name: Checkout exact Gmail acceptance branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify script syntax
+        run: node --check scripts/phase13d-real-gmail-send.mjs
+      - name: Send two bounded RenderLab Gmail invitations
+        run: node scripts/phase13d-real-gmail-send.mjs
