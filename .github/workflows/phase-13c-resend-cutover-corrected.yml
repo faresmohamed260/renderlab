@@ -1,0 +1,319 @@
+name: Phase 13C Resend Cutover Corrected
+
+on:
+  push:
+    branches: [work/phase-13c-resend-cutover]
+    paths:
+      - ".github/workflows/phase-13c-resend-cutover-corrected.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  cutover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SENDER_DOMAIN: mail.renderlab.faresuniform.uk
+      ZONE_APEX: faresuniform.uk
+      FROM_EMAIL: noreply@mail.renderlab.faresuniform.uk
+      FROM_NAME: RenderLab
+      SMTP_HOST: smtp.resend.com
+      SMTP_PORT: "587"
+      SMTP_USER: resend
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SITE_URL: https://renderlab.faresuniform.uk
+      INVITE_REDIRECT: https://renderlab.faresuniform.uk/settings
+      RECOVERY_REDIRECT: https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password
+      AUTH_EMAIL_RATE_LIMIT: "30"
+
+    steps:
+      - name: Read exact provider and Auth state
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in RESEND_API_KEY SUPABASE_ACCESS_TOKEN CLOUDFLARE_API_TOKEN; do
+            test -n "${!name:-}" || { echo "${name}_PRESENT=false"; exit 1; }
+            echo "${name}_PRESENT=true"
+          done
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${RESEND_API_KEY}" \
+            'https://api.resend.com/domains' -o /tmp/resend-domains.json
+          python - <<'PY'
+          import json, os
+          rows=json.load(open('/tmp/resend-domains.json')).get('data') or []
+          target=os.environ['SENDER_DOMAIN'].lower().rstrip('.')
+          exact=[r for r in rows if str(r.get('name') or '').lower().rstrip('.')==target]
+          if len(exact)!=1: raise SystemExit(f'Expected one exact Resend domain, got {len(exact)}')
+          open('/tmp/resend-domain-id','w').write(str(exact[0]['id']))
+          print('RESEND_EXACT_DOMAIN_FOUND=true')
+          PY
+          domain_id="$(cat /tmp/resend-domain-id)"
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${RESEND_API_KEY}" \
+            "https://api.resend.com/domains/${domain_id}" -o /tmp/resend-domain.json
+          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
+          curl --fail-with-body --silent --show-error --user-agent 'RenderLab-Phase13C/1.1' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" "$endpoint" -o /tmp/auth-before.json
+          python - <<'PY'
+          import json, os
+          r=json.load(open('/tmp/resend-domain.json'))
+          if r.get('open_tracking') is not False or r.get('click_tracking') is not False:
+              raise SystemExit('Resend tracking must remain explicitly disabled')
+          if (r.get('capabilities') or {}).get('sending')!='enabled':
+              raise SystemExit('Resend sending capability is not enabled')
+          a=json.load(open('/tmp/auth-before.json'))
+          if a.get('site_url')!=os.environ['SITE_URL']: raise SystemExit('Unexpected Site URL; refusing cutover')
+          v=a.get('uri_allow_list'); allow=[x.strip() for x in v.split(',')] if isinstance(v,str) else list(v or [])
+          for u in (os.environ['INVITE_REDIRECT'],os.environ['RECOVERY_REDIRECT']):
+              if u not in allow: raise SystemExit('Required production redirect missing; refusing cutover')
+          host=str(a.get('smtp_host') or '')
+          if host not in ('smtp-relay.brevo.com',os.environ['SMTP_HOST']):
+              raise SystemExit(f'Unexpected current SMTP host {host!r}; refusing cutover')
+          print('RESEND_OPEN_TRACKING=false')
+          print('RESEND_CLICK_TRACKING=false')
+          print('SUPABASE_SMTP_HOST_BEFORE=' + host)
+          print('SUPABASE_EMAIL_RATE_LIMIT_BEFORE=' + str(a.get('rate_limit_email_sent')))
+          PY
+
+      - name: Normalize provider DNS and remove only malformed run-owned records
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          d=json.load(open('/tmp/resend-domain.json'))
+          domain=os.environ['SENDER_DOMAIN'].lower().rstrip('.')
+          zone=os.environ['ZONE_APEX'].lower().rstrip('.')
+          relative=domain[:-(len(zone)+1)] if domain.endswith('.'+zone) else ''
+          correct=[]; malformed=[]
+          for rec in d.get('records') or []:
+              label=str(rec.get('record') or '')
+              if label.lower()=='tracking': continue
+              typ=str(rec.get('type') or '').upper().strip()
+              raw=str(rec.get('name') or '').strip().rstrip('.').lower()
+              value=str(rec.get('value') or '').strip()
+              if not typ or not raw or not value: continue
+              if typ not in ('TXT','CNAME','MX'): raise SystemExit(f'Unexpected Resend DNS type {typ}')
+              if raw in ('','@'):
+                  fqdn=domain
+              elif raw==zone or raw.endswith('.'+zone):
+                  fqdn=raw
+              elif relative and (raw==relative or raw.endswith('.'+relative)):
+                  fqdn=f'{raw}.{zone}'
+              else:
+                  fqdn=f'{raw}.{domain}'
+              if fqdn!=domain and not fqdn.endswith('.'+domain):
+                  raise SystemExit(f'Resend DNS escaped sender-domain subtree: {fqdn}')
+              old=domain if raw in ('','@') else (raw if raw==domain or raw.endswith('.'+domain) else f'{raw}.{domain}')
+              if typ=='TXT' and len(value)>=2 and value[0]==value[-1]=='"': value=value[1:-1]
+              if typ in ('CNAME','MX'): value=value.rstrip('.')
+              item={'label':label,'type':typ,'name':fqdn,'content':value}
+              if typ=='MX': item['priority']=int(rec.get('priority') or 10)
+              correct.append(item)
+              if old!=fqdn:
+                  bad=dict(item); bad['name']=old; malformed.append(bad)
+              print(f'RESEND_DNS_NORMALIZED={label}:{typ}:{raw}->{fqdn}')
+          if len(correct)<3: raise SystemExit('Resend returned too few sending DNS records')
+          json.dump(correct,open('/tmp/resend-required-dns.json','w'))
+          json.dump(malformed,open('/tmp/resend-malformed-dns.json','w'))
+          print('RESEND_REQUIRED_DNS_COUNT=' + str(len(correct)))
+          print('RESEND_MALFORMED_RUN_OWNED_COUNT=' + str(len(malformed)))
+          PY
+
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" --header 'Content-Type: application/json' \
+            "https://api.cloudflare.com/client/v4/zones?name=${ZONE_APEX}" -o /tmp/cf-zones.json
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/cf-zones.json')); rows=d.get('result') or []
+          if not d.get('success') or len(rows)!=1: raise SystemExit('Could not resolve exact Cloudflare zone')
+          open('/tmp/cf-zone-id','w').write(rows[0]['id'])
+          PY
+
+          python - <<'PY'
+          import json, os, urllib.parse, urllib.request
+          from collections import defaultdict
+          token=os.environ['CLOUDFLARE_API_TOKEN']; zone=open('/tmp/cf-zone-id').read().strip()
+          domain=os.environ['SENDER_DOMAIN'].lower(); base=f'https://api.cloudflare.com/client/v4/zones/{zone}/dns_records'
+          headers={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+          correct=json.load(open('/tmp/resend-required-dns.json')); malformed=json.load(open('/tmp/resend-malformed-dns.json'))
+          def norm(typ, content):
+              s=str(content or '').strip()
+              if typ in ('CNAME','MX'): s=s.rstrip('.')
+              if typ=='TXT' and len(s)>=2 and s[0]==s[-1]=='"': s=s[1:-1]
+              return s
+          def sig(r):
+              typ=str(r.get('type') or '').upper(); return (typ,norm(typ,r.get('content')),int(r.get('priority') or 0) if typ=='MX' else 0)
+          def call(url, method='GET', body=None):
+              req=urllib.request.Request(url,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
+              with urllib.request.urlopen(req,timeout=30) as res: payload=json.loads(res.read().decode())
+              if not payload.get('success'): raise RuntimeError('Cloudflare API success=false')
+              return payload
+          bad_by=defaultdict(list)
+          for r in malformed: bad_by[r['name']].append(r)
+          removed=0
+          for name,wants in bad_by.items():
+              rows=call(base+'?'+urllib.parse.urlencode({'name':name,'per_page':100})).get('result') or []
+              expected={sig(w) for w in wants}
+              unexpected=[r for r in rows if sig(r) not in expected]
+              if unexpected: raise SystemExit(f'Unexpected record exists at malformed run-owned name {name}; refusing cleanup')
+              for r in rows:
+                  call(f"{base}/{r['id']}",'DELETE'); removed+=1
+                  print(f'CLOUDFLARE_MALFORMED_RESEND_RECORD_REMOVED={r["type"]} {name}')
+          print('CLOUDFLARE_MALFORMED_RESEND_REMOVED_COUNT=' + str(removed))
+
+          good_by=defaultdict(list)
+          for r in correct: good_by[r['name']].append(r)
+          created=0; existing=0
+          for name,wants in good_by.items():
+              if name!=domain and not name.endswith('.'+domain): raise SystemExit(f'Refusing out-of-scope DNS {name}')
+              rows=call(base+'?'+urllib.parse.urlencode({'name':name,'per_page':100})).get('result') or []
+              expected={sig(w) for w in wants}; current={sig(r) for r in rows}
+              if current-expected: raise SystemExit(f'Conflicting DNS exists at {name}; refusing overwrite')
+              for w in wants:
+                  if sig(w) in current:
+                      existing+=1; print(f'CLOUDFLARE_RESEND_DNS_EXISTS={w["type"]} {name}'); continue
+                  body={'type':w['type'],'name':name,'content':w['content'],'ttl':1}
+                  if w['type']=='CNAME': body['proxied']=False
+                  if w['type']=='MX': body['priority']=int(w.get('priority') or 10)
+                  call(base,'POST',body); created+=1
+                  print(f'CLOUDFLARE_RESEND_DNS_CREATED={w["type"]} {name}')
+          print('CLOUDFLARE_RESEND_DNS_CREATED_COUNT=' + str(created))
+          print('CLOUDFLARE_RESEND_DNS_EXISTING_COUNT=' + str(existing))
+          PY
+
+      - name: Verify public DNS and Resend authentication
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils >/dev/null
+          python - <<'PY'
+          import json, subprocess, time
+          required=json.load(open('/tmp/resend-required-dns.json'))
+          def txt(v): return v.strip().replace('" "','').strip('"')
+          pending=[]
+          for attempt in range(1,13):
+              pending=[]
+              for rec in required:
+                  typ,name=rec['type'],rec['name']; p=subprocess.run(['dig','+short',typ,name,'@1.1.1.1'],text=True,capture_output=True)
+                  vals=[x.strip() for x in p.stdout.splitlines() if x.strip()]
+                  if typ=='TXT':
+                      vals=[txt(x) for x in vals]; want=rec['content']; ok=want in vals
+                  elif typ=='CNAME':
+                      vals=[x.rstrip('.') for x in vals]; want=rec['content'].rstrip('.'); ok=want in vals
+                  else:
+                      parsed=[]
+                      for x in vals:
+                          parts=x.split(None,1)
+                          if len(parts)==2: parsed.append((int(parts[0]),parts[1].rstrip('.')))
+                      want=(int(rec.get('priority') or 10),rec['content'].rstrip('.')); ok=want in parsed
+                  if not ok: pending.append(f'{typ} {name}')
+              if not pending:
+                  print(f'PUBLIC_RESEND_DNS_PROPAGATED_ATTEMPT={attempt}'); break
+              if attempt<12: time.sleep(10)
+          if pending: raise SystemExit('Public Resend DNS missing: '+', '.join(pending))
+          print('PUBLIC_RESEND_DNS_OK=true')
+          PY
+          domain_id="$(cat /tmp/resend-domain-id)"
+          curl --fail-with-body --silent --show-error --request POST \
+            --header "Authorization: Bearer ${RESEND_API_KEY}" --header 'Content-Type: application/json' \
+            "https://api.resend.com/domains/${domain_id}/verify" -o /tmp/resend-verify.json
+          verified=false
+          for attempt in $(seq 1 30); do
+            curl --fail-with-body --silent --show-error --header "Authorization: Bearer ${RESEND_API_KEY}" \
+              "https://api.resend.com/domains/${domain_id}" -o /tmp/resend-after.json
+            state="$(python - <<'PY'
+          import json
+          print(str(json.load(open('/tmp/resend-after.json')).get('status') or 'unknown'))
+          PY
+            )"
+            echo "RESEND_DOMAIN_VERIFY_ATTEMPT=${attempt}:${state}"
+            if [ "$state" = verified ]; then verified=true; break; fi
+            if [ "$state" = failed ]; then exit 1; fi
+            sleep 10
+          done
+          test "$verified" = true
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/resend-after.json'))
+          if d.get('open_tracking') is not False or d.get('click_tracking') is not False: raise SystemExit('Tracking changed during verification')
+          print('RESEND_DOMAIN_VERIFIED=true')
+          print('RESEND_OPEN_TRACKING=false')
+          print('RESEND_CLICK_TRACKING=false')
+          PY
+
+      - name: Authenticate Resend SMTP without sending mail
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os, smtplib, ssl
+          with smtplib.SMTP(os.environ['SMTP_HOST'],int(os.environ['SMTP_PORT']),timeout=20) as s:
+              s.ehlo(); s.starttls(context=ssl.create_default_context()); s.ehlo(); s.login(os.environ['SMTP_USER'],os.environ['RESEND_API_KEY'])
+              code,_=s.mail(os.environ['FROM_EMAIL'])
+              if code>=400: raise SystemExit(f'Resend MAIL FROM rejected: {code}')
+              s.rset()
+          print('RESEND_SMTP_AUTH_OK=true')
+          print('RESEND_MAIL_FROM_ACCEPTED=true')
+          print('RESEND_SMTP_MESSAGE_SENT=false')
+          PY
+
+      - name: Switch Supabase Custom SMTP with guarded readback
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
+          curl --fail-with-body --silent --show-error --user-agent 'RenderLab-Phase13C/1.1' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" "$endpoint" -o /tmp/auth-prepatch.json
+          python - <<'PY'
+          import json, os
+          d=json.load(open('/tmp/auth-prepatch.json'))
+          if d.get('site_url')!=os.environ['SITE_URL']: raise SystemExit('Site URL changed before SMTP patch')
+          v=d.get('uri_allow_list'); allow=[x.strip() for x in v.split(',')] if isinstance(v,str) else list(v or [])
+          for u in (os.environ['INVITE_REDIRECT'],os.environ['RECOVERY_REDIRECT']):
+              if u not in allow: raise SystemExit('Required redirect changed before SMTP patch')
+          patch={
+            'smtp_admin_email':os.environ['FROM_EMAIL'],
+            'smtp_host':os.environ['SMTP_HOST'],
+            'smtp_port':os.environ['SMTP_PORT'],
+            'smtp_user':os.environ['SMTP_USER'],
+            'smtp_pass':os.environ['RESEND_API_KEY'],
+            'smtp_sender_name':os.environ['FROM_NAME'],
+            'rate_limit_email_sent':int(os.environ['AUTH_EMAIL_RATE_LIMIT'])
+          }
+          json.dump(patch,open('/tmp/supabase-resend-patch.json','w'))
+          PY
+          code="$(curl --silent --show-error --user-agent 'RenderLab-Phase13C/1.1' --output /tmp/patch-response.json --write-out '%{http_code}' \
+            --request PATCH --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" --header 'content-type: application/json' \
+            --data-binary @/tmp/supabase-resend-patch.json "$endpoint")"
+          echo "SUPABASE_RESEND_SMTP_PATCH_HTTP=${code}"
+          test "$code" = 200
+          curl --fail-with-body --silent --show-error --user-agent 'RenderLab-Phase13C/1.1' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" "$endpoint" -o /tmp/auth-after.json
+          python - <<'PY'
+          import json, os
+          d=json.load(open('/tmp/auth-after.json'))
+          expected={'smtp_admin_email':os.environ['FROM_EMAIL'],'smtp_host':os.environ['SMTP_HOST'],'smtp_sender_name':os.environ['FROM_NAME']}
+          for k,v in expected.items():
+              if str(d.get(k) or '')!=v: raise SystemExit(f'Supabase readback mismatch: {k}')
+          if str(d.get('smtp_port'))!=os.environ['SMTP_PORT']: raise SystemExit('Supabase smtp_port mismatch')
+          if str(d.get('smtp_user') or '')!=os.environ['SMTP_USER']: raise SystemExit('Supabase smtp_user mismatch')
+          if int(d.get('rate_limit_email_sent') or -1)!=int(os.environ['AUTH_EMAIL_RATE_LIMIT']): raise SystemExit('Supabase email rate mismatch')
+          if d.get('site_url')!=os.environ['SITE_URL']: raise SystemExit('Supabase Site URL changed')
+          v=d.get('uri_allow_list'); allow=[x.strip() for x in v.split(',')] if isinstance(v,str) else list(v or [])
+          for u in (os.environ['INVITE_REDIRECT'],os.environ['RECOVERY_REDIRECT']):
+              if u not in allow: raise SystemExit('Production redirect disappeared')
+          print('SUPABASE_RESEND_SMTP_READBACK_OK=true')
+          print('SUPABASE_SMTP_HOST=' + str(d.get('smtp_host')))
+          print('SUPABASE_SMTP_PORT=' + str(d.get('smtp_port')))
+          print('SUPABASE_SMTP_ADMIN_EMAIL=' + str(d.get('smtp_admin_email')))
+          print('SUPABASE_SMTP_SENDER_NAME=' + str(d.get('smtp_sender_name')))
+          print('SUPABASE_EMAIL_RATE_LIMIT=' + str(d.get('rate_limit_email_sent')))
+          print('SUPABASE_REQUIRED_REDIRECTS_PRESERVED=true')
+          print('PHASE13C_REAL_AUTH_EMAIL_SENT=false')
+          PY
