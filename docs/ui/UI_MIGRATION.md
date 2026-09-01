@@ -1356,8 +1356,8 @@ Required exact-head affected gates after the final implementation slice: UI Shel
 Cycle 2 does not include the future LoRA/Civitai/Hugging Face library/adapter system, generic Models/Workflows screens, ComfyUI graph editing, ordinary-user provider/worker management, arbitrary workflow-parameter generation, inpainting/outpainting, pose/depth/edge guidance, workflow chaining, full billing, a global media client store or cross-page selection. LoRA/model-adapter support is now an accepted post-Cycle-2 direction rather than an ignored idea. Safe cancellation and Trash/restore remain contingent on their own evidence/decisions.
 
 
-## Phase 13 — Email & Invite Production Hardening — IN PROGRESS
-Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability. 13A read-only audit, 13B sender/delivery configuration and 13C Resend/template/link hardening are `COMPLETE / VERIFIED`. 13D bounded live-mailbox acceptance is the current remaining slice. Production application code remains the accepted Closed-Beta application; automatic Git → Vercel deployment remains disabled.
+## Phase 13 — Email & Invite Production Hardening — COMPLETE / VERIFIED
+Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A read-only audit, 13B sender/delivery configuration, 13C Resend/template/link hardening and 13D bounded live-mailbox acceptance are all `COMPLETE / VERIFIED`. Production application code remains the accepted Closed-Beta application; automatic Git → Vercel deployment remains disabled.
 
 ### Required execution evidence
 - [x] Audit actual production Supabase Auth Site URL/redirects, invite/recovery templates, built-in/custom mail state, sender identity, email rate limits and management-credential requirements read-only before mutation. Runs `33341207071` + `33341263450` passed with no production mutation.
@@ -1371,12 +1371,12 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 - [x] Install/review the professional responsive RenderLab recovery HTML template using `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/settings/password`, reusing the shell with security-focused recovery copy.
 - [x] Remove raw `{{ .ConfirmationURL }}` use and verify provider/raw Supabase verification links are absent from the production invite/recovery bodies.
 - [x] Keep normal CI independent of live mail. Final no-send run `33545491994` passed invite/recovery Admin generate-link coverage, invalid-link fail-closed behavior, hostile-`next` rejection and zero Auth fixture residue. Cleanup run `33545252403` removed the one earlier run-owned invite fixture before final acceptance.
-- [ ] Run a bounded operator-gated live invite lifecycle from Admin → delivered external email → `renderlab.faresuniform.uk` confirmation → intended active access; verify consumed/revoked/invalid behavior where practical.
-- [ ] Run a bounded operator-gated real recovery lifecycle → delivered external email → password replacement → intended current/stale-session behavior on the production domain.
-- [ ] Cover at least two independent mailbox providers where practical, preferably Gmail + Outlook or equivalent; record Inbox/Spam placement and provider delivery/bounce evidence.
-- [ ] Verify final 13D cleanup/defaults: zero run-owned Auth/access/invitation/admission/media/generation residue, sole persistent admin unchanged, generation defaults enabled / 1 / 12 / no updater.
-- [ ] Review provider/API/Management credential retention after live acceptance and narrow/rotate/remove temporary privileged credentials when continuing retention is not justified.
-- [ ] Record final 13D delivery/rendering/cleanup evidence in `PROJECT.md` and `docs/architecture/INFRASTRUCTURE.md` before marking Phase 13 `COMPLETE / VERIFIED`.
+- [x] Run a bounded operator-gated live invite lifecycle from Admin → delivered external email → `renderlab.faresuniform.uk` confirmation → intended active access. Real Gmail run `33556525753` delivered two invitations; the operator confirmed both arrived and redirected successfully into signed-in RenderLab, and Supabase confirmed two active members / two claimed invitations.
+- [x] Run a bounded operator-gated real recovery lifecycle → delivered external email → password replacement on the production domain. Real Gmail recovery run `33557320718` delivered the reset email with link integrity; the operator completed password replacement and Auth read-back confirmed cleared one-time tokens and a valid password-bearing confirmed account.
+- [x] Resolve mailbox-provider coverage explicitly. The operator supplied two independent Gmail test inboxes; both real invite messages and one recovery message were provider-delivered and human-completed. Outlook-specific rendering was not available in the selected test set and exact Inbox-vs-Spam folder placement was not separately recorded, so this limitation is retained rather than claiming cross-provider coverage.
+- [x] Verify final 13D cleanup/defaults. Guarded cleanup removed exactly the two external test invitations/Auth users; independent audit returned zero test Auth/access/invitation residue, exactly one active admin, zero pending invitations and generation defaults enabled / 1 / 12 / no updater.
+- [x] Review provider/API/Management credential retention after live acceptance. Resend, Supabase Management and Cloudflare DNS credentials remain justified as ongoing operator-management credentials; Brevo is historical rollback context and not the active route. No Phase-13 mailbox-recipient Actions secrets were created for the operator-authorized Gmail run.
+- [x] Record final 13D delivery/rendering/cleanup evidence in `PROJECT.md`, `docs/architecture/INFRASTRUCTURE.md`, `docs/ui/UI_DECISIONS.md` and this tracker before marking Phase 13 `COMPLETE / VERIFIED`.
 
 ### 13A read-only audit — COMPLETE / VERIFIED 2026-08-31
 - Hosted Auth had the correct production Site URL/redirect allowlist but no custom SMTP, a 2/hour built-in send rate, and default invite/recovery templates using `{{ .ConfirmationURL }}`.
@@ -1395,17 +1395,14 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 - Production subjects are `You're invited to RenderLab` and `Reset your RenderLab password`. Both templates use the approved responsive RenderLab shell, production brand mark plus text fallback, one prominent CTA, security context and a visible fallback link.
 - Final no-send verifier `33545491994` passed exact token-hash template read-back, `ConfirmationURL` removal, no-send invite/recovery generation, zero fixture residue, invalid-link fail-closed behavior and hostile-`next` rejection. No real Auth email was sent and no Vercel deployment occurred.
 
-### 13D live mailbox acceptance — PENDING OPERATOR-GATED SEND
-- Real external delivery is intentionally separate from 13C deterministic verification.
-- No-send preflight run `33549168096` / job `99994060939` passed: Resend domain/tracking state, sent-email observability, Supabase Resend SMTP/templates, the sole persistent admin, zero pending invitations, generation defaults and production Auth fail-closed behavior all remain correct; `PHASE13D_REAL_EMAIL_SENT=false`.
-- Temporary branch `work/phase-13d-live-mail-acceptance` currently carries only a `preflight`-restricted harness and no send-capable execution path.
-- Use only operator-controlled test recipients supplied through approved GitHub secret storage; do not commit or log recipient addresses. Required secret names are `RENDERLAB_13D_GMAIL_RECIPIENT` and `RENDERLAB_13D_OUTLOOK_RECIPIENT`.
-- The separate send interlock is `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL`. The preflight currently reads recipient presence false and send-arm false, so `PHASE13D_SEND_READY=false`.
-- Secret presence/arm state does not itself authorize an external-mailbox send. Actual Gmail/Outlook invite/recovery sends still require explicit user authorization in chat for the bounded 13D run.
-- Controlled Resend delivered-sink invite run `33554608805` passed actual SMTP delivery, exact From/subject/stored-HTML checks, unrewritten production token-hash link entry, invitation claim to active member, consumed-link failure and exact synthetic cleanup.
-- Controlled Resend delivered-sink recovery run `33554945434` passed actual recovery SMTP delivery, exact stored recovery token-hash link entry, production recovery marker/redirect behavior, consumed-link failure and exact cleanup.
-- Independent post-run Supabase audit returned zero matching synthetic Auth/invitation/access rows; exactly one active admin, zero pending invitations and generation defaults enabled / 1 / 12 / no updater remain intact.
-- These test-sink sends are provider/lifecycle evidence only. Do not infer Gmail/Outlook placement or rendering from them; external mailbox Inbox/Spam and client rendering remain required for final 13D acceptance.
+### 13D live mailbox acceptance — COMPLETE / VERIFIED 2026-09-01
+- No-send preflight `33549168096` and controlled Resend sink runs `33554608805` / `33554945434` remain the deterministic/provider lifecycle baseline.
+- External Gmail invite run `33556525753` sent exactly two operator-authorized invitations. Resend reported both delivered with production From/subject/token-hash link integrity. The operator confirmed both Gmail messages arrived and both links redirected successfully into signed-in RenderLab; Supabase then showed two claimed invitations / two active members.
+- External Gmail recovery run `33557320718` delivered the production reset message to one accepted test account with the recovery token-hash link intact. The operator completed password replacement in the browser; Auth read-back confirmed the account remained confirmed/signed-in, had a password present and had cleared confirmation/recovery one-time tokens.
+- The selected external set contained two Gmail inboxes. Outlook-specific client rendering was not exercised and exact Gmail Inbox-vs-Spam folder placement was not separately recorded. This is the exact operator limitation permitted by the exit criterion; do not claim independent-provider coverage.
+- Before cleanup, the two test accounts had zero generation sources/jobs/media/uploads/collections/collection items/admission reservations. Guarded cleanup deleted exactly two test invitation rows and two Auth users; account access cascaded. Independent final audit returned zero matching test Auth/invitation/access rows, exactly one active admin, zero pending invitations and generation defaults enabled / 1 / 12 / no updater.
+- Credential review retained Resend/Supabase Management/Cloudflare DNS credentials for ongoing operations; Brevo remains historical rollback context only and is not active. The real Gmail run used no repository recipient secrets.
+- Phase 13 required no application-code change, schema migration, R2/generation change or Vercel deployment.
 
 ### Scope guardrails
 - Do not add public sign-up, waitlist, newsletter/marketing mail, MFA/CAPTCHA, general notifications or a second invitation/admission model.
@@ -1428,10 +1425,10 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 
 ## Current Work
 **Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A, 13B and 13C are `COMPLETE / VERIFIED`; 13D bounded live-mailbox acceptance is the active remaining slice. No-send preflight `33549168096` is green; controlled Resend delivered-sink invite `33554608805` and recovery `33554945434` runs also pass. No external Gmail/Outlook user mailbox has been used yet.
-**Next sequence:** provision `RENDERLAB_13D_GMAIL_RECIPIENT`, `RENDERLAB_13D_OUTLOOK_RECIPIENT` and `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL` in GitHub Actions secret storage, then obtain explicit user authorization in chat before adding/executing the bounded external-mailbox path. Provider delivery/link entry is already proven by the controlled Resend sink runs; remaining acceptance must inspect Gmail/Outlook Inbox/Spam rendering and complete the operator-controlled invite/recovery lifecycles with exact cleanup.
+**Current phase:** Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`; no next Cycle 3 phase is currently contracted.
+**Next sequence:** Re-establish the post-Phase-13 repository/production baseline and expand the immediate next Cycle 3 phase contract before implementation; do not infer or start a new phase from older conversation history.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
-**Deployment boundary:** Phase 13A–13C changed email/DNS/hosted-Auth configuration only; no application code or Vercel deployment changed. Phase 13 remains configuration-first; any necessary application code fix must create/revalidate an exact candidate before any Vercel rollout.
+**Deployment boundary:** Phase 13 changed email/DNS/hosted-Auth configuration only; no application code or Vercel deployment changed. The accepted Closed-Beta production application/deployment remains unchanged; any future application code fix must create/revalidate an exact candidate before rollout.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter work is outside Phase 13.
 ## Session Handoff Rule
