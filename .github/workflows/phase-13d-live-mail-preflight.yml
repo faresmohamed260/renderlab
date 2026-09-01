@@ -1,0 +1,40 @@
+name: Phase 13D Live Mail Preflight
+
+on:
+  push:
+    branches:
+      - work/phase-13d-live-mail-acceptance
+    paths:
+      - .github/phase13d/command.txt
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SITE_URL: https://renderlab.faresuniform.uk
+      SENDER_DOMAIN: mail.renderlab.faresuniform.uk
+      FROM_EMAIL: noreply@mail.renderlab.faresuniform.uk
+      RENDERLAB_13D_GMAIL_RECIPIENT: ${{ secrets.RENDERLAB_13D_GMAIL_RECIPIENT }}
+      RENDERLAB_13D_OUTLOOK_RECIPIENT: ${{ secrets.RENDERLAB_13D_OUTLOOK_RECIPIENT }}
+      RENDERLAB_13D_SEND_ARMED: ${{ secrets.RENDERLAB_13D_SEND_ARMED }}
+
+    steps:
+      - name: Checkout exact 13D branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Verify no-send Phase 13D production baseline
+        run: node scripts/phase13d-live-mail-preflight.mjs
