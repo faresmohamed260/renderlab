@@ -1401,8 +1401,11 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 - Temporary branch `work/phase-13d-live-mail-acceptance` currently carries only a `preflight`-restricted harness and no send-capable execution path.
 - Use only operator-controlled test recipients supplied through approved GitHub secret storage; do not commit or log recipient addresses. Required secret names are `RENDERLAB_13D_GMAIL_RECIPIENT` and `RENDERLAB_13D_OUTLOOK_RECIPIENT`.
 - The separate send interlock is `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL`. The preflight currently reads recipient presence false and send-arm false, so `PHASE13D_SEND_READY=false`.
-- Secret presence/arm state does not itself authorize a real send. Actual invite/recovery sends still require explicit user authorization in chat for the bounded 13D run.
-- Do not infer mailbox placement or rendering from provider API acceptance alone; inspect recipient Inbox/Spam and provider delivery events.
+- Secret presence/arm state does not itself authorize an external-mailbox send. Actual Gmail/Outlook invite/recovery sends still require explicit user authorization in chat for the bounded 13D run.
+- Controlled Resend delivered-sink invite run `33554608805` passed actual SMTP delivery, exact From/subject/stored-HTML checks, unrewritten production token-hash link entry, invitation claim to active member, consumed-link failure and exact synthetic cleanup.
+- Controlled Resend delivered-sink recovery run `33554945434` passed actual recovery SMTP delivery, exact stored recovery token-hash link entry, production recovery marker/redirect behavior, consumed-link failure and exact cleanup.
+- Independent post-run Supabase audit returned zero matching synthetic Auth/invitation/access rows; exactly one active admin, zero pending invitations and generation defaults enabled / 1 / 12 / no updater remain intact.
+- These test-sink sends are provider/lifecycle evidence only. Do not infer Gmail/Outlook placement or rendering from them; external mailbox Inbox/Spam and client rendering remain required for final 13D acceptance.
 
 ### Scope guardrails
 - Do not add public sign-up, waitlist, newsletter/marketing mail, MFA/CAPTCHA, general notifications or a second invitation/admission model.
@@ -1425,8 +1428,8 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 
 ## Current Work
 **Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A, 13B and 13C are `COMPLETE / VERIFIED`; 13D bounded live-mailbox acceptance is the active remaining slice. No-send preflight `33549168096` is green and no real Phase 13 Auth email has been sent.
-**Next sequence:** provision `RENDERLAB_13D_GMAIL_RECIPIENT`, `RENDERLAB_13D_OUTLOOK_RECIPIENT` and `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL` in GitHub Actions secret storage, then obtain explicit user authorization in chat before adding/executing the bounded real-send path. Live acceptance must inspect provider delivery events plus Gmail/Outlook Inbox/Spam rendering and complete the real invite/recovery lifecycles with exact cleanup.
+**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A, 13B and 13C are `COMPLETE / VERIFIED`; 13D bounded live-mailbox acceptance is the active remaining slice. No-send preflight `33549168096` is green; controlled Resend delivered-sink invite `33554608805` and recovery `33554945434` runs also pass. No external Gmail/Outlook user mailbox has been used yet.
+**Next sequence:** provision `RENDERLAB_13D_GMAIL_RECIPIENT`, `RENDERLAB_13D_OUTLOOK_RECIPIENT` and `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL` in GitHub Actions secret storage, then obtain explicit user authorization in chat before adding/executing the bounded external-mailbox path. Provider delivery/link entry is already proven by the controlled Resend sink runs; remaining acceptance must inspect Gmail/Outlook Inbox/Spam rendering and complete the operator-controlled invite/recovery lifecycles with exact cleanup.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
 **Deployment boundary:** Phase 13A–13C changed email/DNS/hosted-Auth configuration only; no application code or Vercel deployment changed. Phase 13 remains configuration-first; any necessary application code fix must create/revalidate an exact candidate before any Vercel rollout.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
