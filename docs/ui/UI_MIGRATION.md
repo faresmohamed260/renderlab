@@ -1397,8 +1397,11 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 
 ### 13D live mailbox acceptance — PENDING OPERATOR-GATED SEND
 - Real external delivery is intentionally separate from 13C deterministic verification.
-- Use only operator-controlled test recipients supplied through approved secret storage; do not commit or log recipient addresses.
-- Actual invite/recovery sends require explicit operator authorization for the bounded 13D run.
+- No-send preflight run `33549168096` / job `99994060939` passed: Resend domain/tracking state, sent-email observability, Supabase Resend SMTP/templates, the sole persistent admin, zero pending invitations, generation defaults and production Auth fail-closed behavior all remain correct; `PHASE13D_REAL_EMAIL_SENT=false`.
+- Temporary branch `work/phase-13d-live-mail-acceptance` currently carries only a `preflight`-restricted harness and no send-capable execution path.
+- Use only operator-controlled test recipients supplied through approved GitHub secret storage; do not commit or log recipient addresses. Required secret names are `RENDERLAB_13D_GMAIL_RECIPIENT` and `RENDERLAB_13D_OUTLOOK_RECIPIENT`.
+- The separate send interlock is `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL`. The preflight currently reads recipient presence false and send-arm false, so `PHASE13D_SEND_READY=false`.
+- Secret presence/arm state does not itself authorize a real send. Actual invite/recovery sends still require explicit user authorization in chat for the bounded 13D run.
 - Do not infer mailbox placement or rendering from provider API acceptance alone; inspect recipient Inbox/Spam and provider delivery events.
 
 ### Scope guardrails
@@ -1422,10 +1425,10 @@ Phase 13 is the active phase of Cycle 3 — Beta Operations & Access Reliability
 
 ## Current Work
 **Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A and 13B are `COMPLETE / VERIFIED`; the 13C provider decision is resolved to Resend and execution is `BLOCKED` only on provisioning `RESEND_API_KEY` in approved GitHub Actions secret storage.
-**Next sequence:** provision the Resend API credential, then remotely create/verify `mail.renderlab.faresuniform.uk`, explicitly verify click/open tracking is off, cut Supabase custom SMTP to Resend and read it back. Only after that provider path proves Auth links are not rewritten should 13C install/review the professional RenderLab invite and recovery token-hash HTML templates and run deterministic generate-link/negative security coverage without real email. 13D remains the later bounded live-mailbox acceptance slice.
+**Current phase:** Phase 13 — Email & Invite Production Hardening is `IN PROGRESS`; 13A, 13B and 13C are `COMPLETE / VERIFIED`; 13D bounded live-mailbox acceptance is the active remaining slice. No-send preflight `33549168096` is green and no real Phase 13 Auth email has been sent.
+**Next sequence:** provision `RENDERLAB_13D_GMAIL_RECIPIENT`, `RENDERLAB_13D_OUTLOOK_RECIPIENT` and `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL` in GitHub Actions secret storage, then obtain explicit user authorization in chat before adding/executing the bounded real-send path. Live acceptance must inspect provider delivery events plus Gmail/Outlook Inbox/Spam rendering and complete the real invite/recovery lifecycles with exact cleanup.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
-**Deployment boundary:** 13B changed Brevo/Cloudflare/Supabase Auth mail configuration only; no application code or Vercel deployment changed. Phase 13 remains configuration-first; any necessary application code fix must create/revalidate an exact candidate before any Vercel rollout.
+**Deployment boundary:** Phase 13A–13C changed email/DNS/hosted-Auth configuration only; no application code or Vercel deployment changed. Phase 13 remains configuration-first; any necessary application code fix must create/revalidate an exact candidate before any Vercel rollout.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter work is outside Phase 13.
 ## Session Handoff Rule

@@ -676,7 +676,10 @@ Corrected execution run `33399495588` authenticated `mail.renderlab.faresuniform
 
 #### Phase 13D infrastructure boundary — pending live acceptance
 - Real sends are intentionally excluded from normal CI and from 13C. 13D must use bounded operator-controlled recipients and explicit send authorization.
-- Prefer two independent providers such as Gmail and Outlook. Recipient addresses must live only in approved secret storage or equivalent transient operator input and must never be committed or printed in Actions logs.
+- Branch-only no-send preflight `33549168096` / job `99994060939` passed on `work/phase-13d-live-mail-acceptance`. The harness is command-restricted to `preflight` and currently contains no send-capable path.
+- Preflight re-verified Resend domain verification, open/click tracking disabled, Resend sent-email observability, Supabase `smtp.resend.com:587` plus the exact hosted templates, exactly one persistent active admin, zero pending invitations, generation defaults enabled / 1 / 12 / no updater, and production Auth fail-closed behavior. It explicitly recorded `PHASE13D_REAL_EMAIL_SENT=false`.
+- Prefer two independent providers such as Gmail and Outlook. Recipient addresses must live only in approved secret storage and must never be committed or printed in Actions logs. Required secrets: `RENDERLAB_13D_GMAIL_RECIPIENT` and `RENDERLAB_13D_OUTLOOK_RECIPIENT`.
+- Real-send execution has a separate secret interlock `RENDERLAB_13D_SEND_ARMED=YES_PHASE13D_REAL_EMAIL`; current preflight reports both recipient secrets absent and the arm disabled. Even after these exist, a real send still requires explicit user authorization in chat.
 - Acceptance must distinguish provider API acceptance from mailbox delivery: inspect delivered/bounced/complained events plus Inbox/Spam placement and actual email-client rendering/link behavior.
 - Live invite acceptance must verify delivered invite → production confirmation → intended RenderLab access, plus consumed/revoked/invalid behavior where practical. Live recovery must verify delivered reset → production confirmation → password replacement and current/stale-session behavior.
 - Final cleanup must leave zero run-owned Auth/access/invitation/admission/media/generation residue, preserve the sole persistent admin and restore generation defaults to enabled / 1 active / 12 hourly / no updater.
