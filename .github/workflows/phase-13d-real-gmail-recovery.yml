@@ -1,0 +1,36 @@
+name: Phase 13D Real Gmail Recovery
+
+on:
+  push:
+    branches:
+      - work/phase-13d-real-gmail-acceptance
+    paths:
+      - scripts/phase13d-real-gmail-recovery-send.mjs
+      - .github/workflows/phase-13d-real-gmail-recovery.yml
+
+permissions:
+  contents: read
+
+jobs:
+  real-gmail-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      PHASE13D_REAL_RECOVERY_ARM: YES_PHASE13D_REAL_RECOVERY_EMAIL
+
+    steps:
+      - name: Checkout exact Gmail acceptance branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Verify script syntax
+        run: node --check scripts/phase13d-real-gmail-recovery-send.mjs
+
+      - name: Send one bounded RenderLab Gmail recovery email
+        run: node scripts/phase13d-real-gmail-recovery-send.mjs
