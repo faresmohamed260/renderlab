@@ -6,7 +6,7 @@ on:
       - work/phase-13c-email-templates
     paths:
       - .github/workflows/phase-13c-email-templates.yml
-      - .github/phase13c_email_templates.py
+      - .github/phase13c_email_templates_v2.py
 
 permissions:
   contents: read
@@ -34,4 +34,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install and verify templates without sending mail
-        run: python .github/phase13c_email_templates.py
+        run: python .github/phase13c_email_templates_v2.py
