@@ -1,0 +1,41 @@
+name: Phase 13D Resend Recovery Sink Smoke
+
+on:
+  push:
+    branches:
+      - work/phase-13d-resend-recovery-sink-smoke
+    paths:
+      - scripts/phase13d-resend-recovery-sink-smoke.mjs
+      - .github/workflows/phase-13d-resend-recovery-sink-smoke.yml
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-sink-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SITE_URL: https://renderlab.faresuniform.uk
+      PHASE13D_RESEND_RECOVERY_SINK_ARM: YES_RESEND_TEST_SINK_RECOVERY_ONLY
+
+    steps:
+      - name: Checkout exact recovery sink branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Verify script syntax
+        run: node --check scripts/phase13d-resend-recovery-sink-smoke.mjs
+
+      - name: Run bounded invite plus recovery Resend sink lifecycle
+        run: node scripts/phase13d-resend-recovery-sink-smoke.mjs
