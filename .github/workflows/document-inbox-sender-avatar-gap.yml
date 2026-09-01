@@ -21,7 +21,18 @@ jobs:
           fetch-depth: 0
 
       - name: Update authoritative documentation
-        run: python scripts/tmp-document-inbox-sender-avatar-gap.py
+        run: |
+          python scripts/tmp-document-inbox-sender-avatar-gap.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('docs/ui/UI_DECISIONS.md')
+          text = p.read_text()
+          marker = '### UI-054 — Inbox sender avatar uses authenticated RenderLab brand identity'
+          if marker in text:
+              before, after = text.split(marker, 1)
+              after = '\n'.join(line.rstrip() for line in (marker + after).splitlines()) + '\n'
+              p.write_text(before + after)
+          PY
 
       - name: Remove helpers and validate final scope
         shell: bash
