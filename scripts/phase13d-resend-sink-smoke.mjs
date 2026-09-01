@@ -81,6 +81,18 @@ function extractRenderLabConfirmUrls(html) {
   return [...new Set(matches)];
 }
 
+function parseFromIdentity(value) {
+  const raw = String(value || "").trim();
+  const bracketed = /^(.*?)\s*<([^<>]+)>$/.exec(raw);
+  if (bracketed) {
+    return {
+      displayName: bracketed[1].trim().replace(/^"|"$/g, ""),
+      address: bracketed[2].trim().toLowerCase(),
+    };
+  }
+  return { displayName: "", address: raw.toLowerCase() };
+}
+
 async function cleanup() {
   if (invitedUserId) {
     for (const [table, filter] of [
@@ -118,6 +130,7 @@ try {
   assert(authConfig.smtp_host === "smtp.resend.com", "Supabase Auth SMTP is not Resend.");
   assert(String(authConfig.smtp_port) === "587", "Unexpected Supabase SMTP port.");
   assert(authConfig.smtp_admin_email === "noreply@mail.renderlab.faresuniform.uk", "Unexpected Supabase From address.");
+  assert(authConfig.smtp_sender_name === "RenderLab", "Unexpected Supabase sender display name.");
   assert(authConfig.mailer_subjects_invite === "You're invited to RenderLab", "Unexpected invite subject.");
 
   const domains = await resend("/domains");
@@ -178,14 +191,17 @@ try {
     if (message.last_event === "delivered") break;
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
-  assert(message?.last_event === "delivered", `Synthetic Resend message did not reach delivered state.`);
-  assert(message.from === "RenderLab <noreply@mail.renderlab.faresuniform.uk>", "Synthetic invite has the wrong From identity.");
+  assert(message?.last_event === "delivered", "Synthetic Resend message did not reach delivered state.");
+  const fromIdentity = parseFromIdentity(message.from);
+  assert(fromIdentity.address === "noreply@mail.renderlab.faresuniform.uk", "Synthetic invite has the wrong From mailbox.");
+  assert(fromIdentity.displayName === "RenderLab", "Synthetic invite has the wrong From display name.");
   assert(Array.isArray(message.to) && message.to.length === 1 && message.to[0] === testEmail, "Synthetic invite recipient did not remain the Resend test sink.");
   assert(message.subject === "You're invited to RenderLab", "Synthetic invite subject drifted.");
   assert(typeof message.html === "string" && message.html.includes("RenderLab"), "Synthetic invite HTML was not retained for verification.");
   assert(!message.html.includes("{{ .ConfirmationURL }}"), "Synthetic invite contains raw ConfirmationURL template text.");
   assert(!/supabase\.co\/auth\/v1\/verify/i.test(message.html), "Synthetic invite exposed a raw Supabase verification URL.");
   assert(!/resend\.(com|dev)\/(?:click|track)/i.test(message.html), "Synthetic invite appears to contain a Resend tracking rewrite.");
+  console.log("PHASE13D_FROM_IDENTITY=true");
 
   const confirmUrls = extractRenderLabConfirmUrls(message.html);
   assert(confirmUrls.length >= 1, "Synthetic invite HTML did not contain the RenderLab confirmation URL.");
