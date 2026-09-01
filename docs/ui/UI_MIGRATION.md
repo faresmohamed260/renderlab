@@ -1423,6 +1423,15 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 10. Check responsive/accessibility behavior and inspect rendered output.
 11. Update authoritative documentation from verified reality.
 
+
+## Post-Phase-13 observed gap — Inbox sender avatar
+- [ ] Gmail currently shows a generic avatar for `RenderLab <noreply@mail.renderlab.faresuniform.uk>` even though the message body is correctly branded and Phase 13 delivery/link flows are verified.
+- [ ] Treat inbox sender imagery as a separate authenticated-brand surface, not an email-template image issue.
+- [ ] Investigate Gmail BIMI feasibility before implementation: live SPF/DKIM/DMARC, parent-domain DMARC blast radius, BIMI SVG Tiny P/S suitability, VMC/CMC eligibility/cost, and mailbox-provider display/reputation behavior.
+- [ ] Do not change the shared parent-domain DMARC policy, purchase a certificate, mutate DNS, or deploy application code merely to close this tracker item without an explicit implementation decision.
+
+**Desired outcome:** supported mailbox clients show the RenderLab mark beside the sender name, similar to established branded senders, while email authentication and unrelated `faresuniform.uk` mail remain safe.
+
 ## Current Work
 **Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
 **Current phase:** Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`; no next Cycle 3 phase is currently contracted.

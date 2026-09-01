@@ -738,3 +738,13 @@ See:
 - `docs/ui/SCREEN_REGISTRY.md`
 - `docs/architecture/FRONTEND_ARCHITECTURE.md`
 - `docs/architecture/INFRASTRUCTURE.md`
+
+
+## Post-Phase-13 follow-up — Inbox sender avatar
+**Status: `OPEN / OBSERVED`, not part of completed Phase 13.** Real Gmail acceptance after Phase 13 showed the RenderLab invite/recovery messages arriving and functioning correctly, but Gmail's inbox list still renders a generic sender avatar instead of the RenderLab mark. The desired product outcome is a verified RenderLab logo in the sender-avatar slot where the receiving mailbox supports authenticated brand indicators.
+
+This is not an HTML-template defect: the branded logo inside the message body is already implemented under UI-053. Inbox-list sender imagery is controlled by mailbox/provider identity mechanisms. The current follow-up should investigate standards-based BIMI for Gmail rather than fake the avatar through the From display name, emoji, or message-body images.
+
+Before any implementation, re-audit current public SPF/DKIM/DMARC and the shared `faresuniform.uk` mail-routing blast radius. Current Resend BIMI guidance requires DMARC enforcement (`p=quarantine` or `p=reject`, `pct=100`); when BIMI is used on a subdomain, the root/apex domain must also be at enforcement. It also requires a BIMI-compatible SVG Tiny P/S logo plus a supported mark certificate for broad Gmail display: VMC requires a qualifying trademark, while CMC requires verified established logo use and currently provides Gmail avatar display without the VMC checkmark. Mailbox providers still retain final display/reputation discretion. Phase 13A historically recorded apex DMARC at `p=none`; do not change that parent-domain policy from documentation assumptions—verify live DNS and the effect on unrelated `faresuniform.uk` mail first.
+
+No DNS, DMARC, certificate purchase, logo-format conversion, provider configuration, application code, or Vercel deployment is authorized by this follow-up record. The next session should first establish feasibility/cost/eligibility and propose the smallest safe implementation contract.
