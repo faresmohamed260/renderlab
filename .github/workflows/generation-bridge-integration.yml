@@ -12,10 +12,12 @@ on:
       - "src/server/generation/**"
       - "src/server/media/**"
       - "src/app/api/generation/**"
+      - "src/app/api/internal/generation/**"
       - "src/app/api/media/assets/**"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"
+      - "supabase/migrations/0013_generation_reconciliation.sql"
       - ".github/workflows/generation-bridge-integration.yml"
   push:
     branches: [main]
@@ -28,6 +30,7 @@ on:
       - "src/server/generation/**"
       - "src/server/media/**"
       - "src/app/api/generation/**"
+      - "src/app/api/internal/generation/**"
       - "src/app/api/media/assets/**"
       - "supabase/migrations/**"
       - ".github/workflows/generation-bridge-integration.yml"
