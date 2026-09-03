@@ -16,6 +16,7 @@ import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest"
 import { isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
 import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
+import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 
 type WorkflowConfig = {
   id: string;
@@ -475,12 +476,15 @@ async function persistResult(row: JobRow, bytes: Buffer, contentType: string, po
   const year = created.getUTCFullYear();
   const month = String(created.getUTCMonth() + 1).padStart(2, "0");
   const storageKey = `renderlab/generations/${year}/${month}/${assetId}.${extensionFor(contentType)}`;
+  injectGenerationFinalizationFault("before-primary-write");
   await writeR2Object({ key: storageKey, contentType, body: bytes });
+  injectGenerationFinalizationFault("after-primary-write");
 
   let thumbnailStorageKey: string | null = null;
   if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
     const posterKey = `renderlab/thumbnails/${year}/${month}/${assetId}.${extensionFor(poster.contentType)}`;
     try {
+      injectGenerationFinalizationFault("thumbnail-write");
       await writeR2Object({ key: posterKey, contentType: poster.contentType, body: poster.bytes });
       thumbnailStorageKey = posterKey;
     } catch {
@@ -515,6 +519,7 @@ async function persistResult(row: JobRow, bytes: Buffer, contentType: string, po
     return completeJobWithAsset(row, raced.id);
   }
 
+  injectGenerationFinalizationFault("after-media-insert");
   return completeJobWithAsset(row, assetId);
 }
 
