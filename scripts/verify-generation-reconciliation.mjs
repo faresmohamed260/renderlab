@@ -158,13 +158,13 @@ async function requireReconcile() {
   return result.payload.summary;
 }
 
-async function expireProviderResult(job) {
-  if (!job?.provider_job_id) throw new Error("Cannot expire provider result without a provider job ID.");
-  const response = await fetch(`${mockWorkerUrl}/jobs/${encodeURIComponent(job.provider_job_id)}/expire-result`, {
+async function setMockProviderState(job, state) {
+  if (!job?.provider_job_id) throw new Error(`Cannot set provider state ${state} without a provider job ID.`);
+  const response = await fetch(`${mockWorkerUrl}/jobs/${encodeURIComponent(job.provider_job_id)}/${state}`, {
     method: "POST",
   });
   if (!response.ok) {
-    throw new Error(`Could not expire Phase 14 mock provider result (${response.status}): ${await response.text()}`);
+    throw new Error(`Could not set Phase 14 mock provider state ${state} (${response.status}): ${await response.text()}`);
   }
 }
 
@@ -295,6 +295,16 @@ async function expireLease(jobId) {
   );
 }
 
+async function backdateJob(jobId, milliseconds) {
+  await serviceMutation(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&id=eq.${encodeURIComponent(jobId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ updated_at: new Date(Date.now() - milliseconds).toISOString() }),
+    },
+  );
+}
+
 async function cleanup() {
   for (const key of fixtureKeys) {
     await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: key })).catch(() => {});
@@ -345,7 +355,7 @@ try {
 
   // Remove the provider result now. Everything after this point must recover from durable
   // RenderLab state rather than assuming the worker can serve the result again.
-  await expireProviderResult(await loadJob(faultJob.id));
+  await setMockProviderState(await loadJob(faultJob.id), "expire-result");
 
   await requireReconcile(); // adopts deterministic R2 object, inserts media, then after-media-insert fault
   const afterMediaJob = await loadJob(faultJob.id);
@@ -434,6 +444,37 @@ try {
     throw new Error(`Invalid-worker job did not fail safely: ${JSON.stringify(invalidWorkerAfter)}`);
   }
 
+  // Retryable provider outages do not stay active forever. After two hours without a
+  // successful status update, reconciliation terminalizes with sanitized product copy while
+  // preserving the provider diagnostic only in server-owned failover history.
+  const staleProvider = await submit(
+    account,
+    {
+      prompt: "Phase 14 stale provider outage image",
+      output: { kind: "image", aspectRatio: "1:1" },
+      inputs: [],
+    },
+    "Stale-provider image",
+  );
+  await setMockProviderState(staleProvider, "unavailable");
+  await backdateJob(staleProvider.id, 3 * 60 * 60 * 1000);
+  await requireReconcile();
+  const staleProviderAfter = await loadJob(staleProvider.id);
+  const internalMarker = "phase14-internal-provider-detail-must-not-leak";
+  if (staleProviderAfter?.status !== "failed" || staleProviderAfter?.error_code !== "generation_provider_stalled") {
+    throw new Error(`Stale provider outage did not terminalize safely: ${JSON.stringify(staleProviderAfter)}`);
+  }
+  if (String(staleProviderAfter.error_message || "").includes(internalMarker)) {
+    throw new Error("Provider diagnostic leaked into the product error message.");
+  }
+  if (!JSON.stringify(staleProviderAfter.failover_history || []).includes(internalMarker)) {
+    throw new Error("Provider diagnostic was not retained in server-owned failover history.");
+  }
+  const staleProviderReservations = await loadReservations(staleProvider.id);
+  if (staleProviderReservations.length !== 1 || !staleProviderReservations[0].released_at) {
+    throw new Error(`Stale provider terminalization did not settle admission: ${JSON.stringify(staleProviderReservations)}`);
+  }
+
   const remainingActive = await rows(
     `generation_jobs?owner_id=eq.${encodeURIComponent(account.id)}&status=in.(queued,preparing,running,persisting)&select=id,status`,
   );
@@ -449,7 +490,7 @@ try {
     seenSlots.add(key);
   }
 
-  console.log("Phase 14 autonomous generation reconciliation verified: browser-independent completion, provider-independent durable fault recovery, lease races, admission settlement, product-media readability, optional thumbnail failure and stale-job terminalization all passed.");
+  console.log("Phase 14 autonomous generation reconciliation verified: browser-independent completion, provider-independent durable fault recovery, lease races, bounded stale-provider handling, sanitized product errors, admission settlement, product-media readability, optional thumbnail failure and stale-job terminalization all passed.");
 } finally {
   await cleanup();
 }
