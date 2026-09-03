@@ -7,6 +7,7 @@ on:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/mock-native-generation-worker.mjs"
       - "scripts/verify-generation-reconciliation.mjs"
+      - "scripts/verify-generation-terminal-bind.mjs"
       - "src/lib/supabase/**"
       - "src/lib/capabilities/generation.ts"
       - "src/lib/api/generation-contract.ts"
@@ -17,6 +18,7 @@ on:
       - "src/app/api/internal/generation/**"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"
       - "supabase/migrations/0013_generation_reconciliation.sql"
+      - "supabase/migrations/0014_generation_admission_terminal_bind.sql"
       - ".github/workflows/generation-reconciliation.yml"
   push:
     branches: [main]
@@ -24,6 +26,7 @@ on:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/mock-native-generation-worker.mjs"
       - "scripts/verify-generation-reconciliation.mjs"
+      - "scripts/verify-generation-terminal-bind.mjs"
       - "src/lib/supabase/**"
       - "src/lib/capabilities/generation.ts"
       - "src/lib/api/generation-contract.ts"
@@ -132,6 +135,9 @@ jobs:
 
       - name: Verify autonomous reconciliation and deterministic recovery
         run: node scripts/verify-generation-reconciliation.mjs
+
+      - name: Verify terminal-before-bind admission settlement
+        run: node scripts/verify-generation-terminal-bind.mjs
 
       - name: Print logs on failure
         if: failure()
