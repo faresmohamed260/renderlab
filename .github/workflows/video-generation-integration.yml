@@ -21,6 +21,8 @@ on:
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"
       - "supabase/migrations/0013_generation_reconciliation.sql"
+      - "supabase/migrations/0014_generation_admission_terminal_bind.sql"
+      - "supabase/migrations/0015_generation_admission_external_bind.sql"
       - ".github/workflows/video-generation-integration.yml"
   push:
     branches: [main]
