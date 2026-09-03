@@ -1,5 +1,6 @@
 import type { GenerationJob } from "@/lib/capabilities/generation";
-import { isNativeGenerationConfigured, pollNativeGeneration } from "@/server/generation/native-generation";
+import { isNativeGenerationConfigured } from "@/server/generation/native-generation";
+import { reconcileNativeGeneration } from "@/server/generation/reconcile-generation";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
 const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
@@ -35,6 +36,6 @@ export async function pollGenerationJob(ownerId: string, jobId: string): Promise
     const payload: unknown = await response.json().catch(() => null);
     return isRecord(payload) && "job" in payload ? parseBackendJob(payload.job) : null;
   }
-  if (isNativeGenerationConfigured()) return pollNativeGeneration(ownerId, jobId);
+  if (isNativeGenerationConfigured()) return reconcileNativeGeneration(ownerId, jobId);
   throw new Error("Generation backend is not configured.");
 }
