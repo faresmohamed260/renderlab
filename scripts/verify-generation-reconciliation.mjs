@@ -13,6 +13,7 @@ import {
 } from "./lib/configured-test-account.mjs";
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
+const mockWorkerUrl = (process.env.RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL || "http://127.0.0.1:4312").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -155,6 +156,16 @@ async function requireReconcile() {
     throw new Error(`Internal reconciliation failed (${result.response.status}): ${JSON.stringify(result.payload)}`);
   }
   return result.payload.summary;
+}
+
+async function expireProviderResult(job) {
+  if (!job?.provider_job_id) throw new Error("Cannot expire provider result without a provider job ID.");
+  const response = await fetch(`${mockWorkerUrl}/jobs/${encodeURIComponent(job.provider_job_id)}/expire-result`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(`Could not expire Phase 14 mock provider result (${response.status}): ${await response.text()}`);
+  }
 }
 
 async function submit(account, request, label) {
@@ -332,14 +343,18 @@ try {
   await assertNoAssets(faultJob.id);
   if ((await objectCountForDeterministicAsset(faultKey)) !== 1) throw new Error("Deterministic R2 retry path produced more than one primary object.");
 
-  await requireReconcile(); // after-media-insert fault
+  // Remove the provider result now. Everything after this point must recover from durable
+  // RenderLab state rather than assuming the worker can serve the result again.
+  await expireProviderResult(await loadJob(faultJob.id));
+
+  await requireReconcile(); // adopts deterministic R2 object, inserts media, then after-media-insert fault
   const afterMediaJob = await loadJob(faultJob.id);
   const afterMediaAssets = await loadAssets(faultJob.id);
   if (afterMediaJob?.status !== "persisting" || afterMediaAssets.length !== 1 || afterMediaAssets[0].generation_output_index !== 0) {
     throw new Error(`After-media fault did not preserve one recoverable canonical output: ${JSON.stringify({ afterMediaJob, afterMediaAssets })}`);
   }
 
-  await requireReconcile(); // adopts existing media and terminalizes without another asset
+  await requireReconcile(); // adopts existing media with provider result still unavailable
   await assertCanonicalSuccess(account, faultJob.id, "image");
 
   // Concurrent scheduler/browser-equivalent reconciliation must converge on one lease and
@@ -434,7 +449,7 @@ try {
     seenSlots.add(key);
   }
 
-  console.log("Phase 14 autonomous generation reconciliation verified: browser-independent completion, deterministic fault recovery, lease races, admission settlement, product-media readability, optional thumbnail failure and stale-job terminalization all passed.");
+  console.log("Phase 14 autonomous generation reconciliation verified: browser-independent completion, provider-independent durable fault recovery, lease races, admission settlement, product-media readability, optional thumbnail failure and stale-job terminalization all passed.");
 } finally {
   await cleanup();
 }
