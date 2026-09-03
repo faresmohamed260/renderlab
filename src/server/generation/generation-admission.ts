@@ -85,3 +85,20 @@ export async function releaseGenerationAdmission(ownerId: string, reservationId:
     return false;
   }
 }
+
+export async function releaseBoundGenerationAdmission(ownerId: string, jobId: string): Promise<boolean> {
+  try {
+    const releasedAt = new Date().toISOString();
+    const rows = await supabaseRest<Array<{ id: string }>>(
+      `generation_admission_reservations?owner_id=eq.${encodeURIComponent(ownerId)}&job_id=eq.${encodeURIComponent(jobId)}&released_at=is.null&select=id`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({ released_at: releasedAt }),
+      },
+    );
+    return Boolean(rows?.length);
+  } catch {
+    return false;
+  }
+}
