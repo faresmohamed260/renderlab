@@ -337,12 +337,12 @@ Each phase contract must cover goal, user value, verified starting state, in/out
 Accepting a contract does not mark implementation complete, does not waive exact-head validation and does not authorize deployment.
 
 ## Immediate Handoff
-The next substantial implementation session must:
+After Phase 14 merges, the next substantial planning/implementation session must:
 1. start from current `main`, not the historical archive or conversation memory;
 2. re-read `AGENTS.md`, this `PROJECT.md`, `docs/ui/UI_MIGRATION.md` and the relevant generation/infrastructure architecture docs;
-3. verify the current native job polling/finalization and admission implementation has not changed since this contract was locked;
-4. begin **Phase 14 only**;
-5. stop before Phase 15 implementation even if Phase 14 completes in the same session, unless the repository has first been updated with verified Phase 14 evidence and a separately expanded Phase 15 contract.
+3. verify the merged Phase 14 lifecycle/reconciliation state and shared-resource baseline still match the recorded evidence;
+4. expand **Phase 15 — Generation Control & Maintenance** into an execution-ready contract before implementing Cancel or broader maintenance work;
+5. keep Phase 16+ at roadmap level and do not activate the Phase 14 production scheduler or deploy a new application candidate without separate explicit authorization.
 
 ## Phase 14 Implementation Verification — 2026-09-03
 Phase 14 is `COMPLETE / VERIFIED` in the repository and shared validation infrastructure. This does **not** mean the Phase 14 application or scheduler is deployed to production.
