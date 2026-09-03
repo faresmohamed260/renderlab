@@ -85,6 +85,7 @@ type DurableOutputObject = {
 
 const maxPollReassignmentAttempts = 3;
 const invalidWorkerGraceMs = 15 * 60 * 1000;
+const retryableProviderStaleMs = 2 * 60 * 60 * 1000;
 const creditPatterns = [
   "credit",
   "credits",
@@ -742,13 +743,31 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
   });
 }
 
-async function failJob(row: JobRow, code: string, message: string) {
+async function failJob(row: JobRow, code: string, message: string, diagnostic?: Record<string, unknown>) {
   return patchJob(row.owner_id, row.id, {
     status: "failed",
     error_code: code,
     error_message: message,
     completed_at: new Date().toISOString(),
+    ...(diagnostic ? { failover_history: [...(row.failover_history || []), diagnostic] } : {}),
   });
+}
+
+function providerFailureDiagnostic(
+  row: JobRow,
+  responseStatus: number,
+  failure: WorkerFailureClassification,
+  providerMessage: string,
+) {
+  return {
+    phase: "poll-provider-failure",
+    workerId: row.worker_id,
+    status: responseStatus,
+    kind: failure.kind,
+    code: failure.code,
+    message: providerMessage.slice(0, 500),
+    at: new Date().toISOString(),
+  };
 }
 
 export async function pollNativeGeneration(ownerId: string, jobId: string): Promise<GenerationJob | null> {
@@ -770,6 +789,11 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
       row,
       "generation_worker_unavailable",
       "Generation could not resume because its assigned worker is no longer available.",
+      {
+        phase: "poll-worker-missing",
+        workerId: row.worker_id,
+        at: new Date().toISOString(),
+      },
     );
     return toGenerationJob(failed);
   }
@@ -792,7 +816,8 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   if (!response.ok) {
     const body = await errorBody(response);
     const failure = classifyWorkerFailure(response.status, body);
-    const message = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
+    const providerMessage = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
+    const diagnostic = providerFailureDiagnostic(row, response.status, failure, providerMessage);
 
     if (failure.safeToReassign) {
       try {
@@ -801,24 +826,44 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
         const failed = await failJob(
           row,
           failure.code.toLowerCase(),
-          `${message} No safe standby worker remains for this generation.`,
+          "Generation could not continue because no safe standby worker remained.",
+          diagnostic,
         );
         return toGenerationJob(failed);
       } catch (error) {
         const failed = await failJob(
           row,
           "generation_reassignment_failed",
-          error instanceof Error ? error.message : "Generation worker reassignment failed.",
+          "Generation could not be reassigned safely.",
+          {
+            ...diagnostic,
+            phase: "poll-reassignment-failed",
+            reassignmentMessage: error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500),
+          },
         );
         return toGenerationJob(failed);
       }
     }
 
     if (failure.retryable) {
-      throw new Error(message);
+      if (Date.now() - Date.parse(row.updated_at) >= retryableProviderStaleMs) {
+        const failed = await failJob(
+          row,
+          "generation_provider_stalled",
+          "Generation could not be confirmed after prolonged provider unavailability.",
+          diagnostic,
+        );
+        return toGenerationJob(failed);
+      }
+      throw new Error("Generation provider status is temporarily unavailable.");
     }
 
-    const failed = await failJob(row, "generation_failed", String(body.error || body.detail || "Generation failed."));
+    const failed = await failJob(
+      row,
+      "generation_failed",
+      "Generation failed while processing on the assigned worker.",
+      diagnostic,
+    );
     return toGenerationJob(failed);
   }
 
