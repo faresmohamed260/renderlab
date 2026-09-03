@@ -144,8 +144,12 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
 
 async function listActiveNativeCandidates(limit: number) {
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 8);
+  const testOwnerId = process.env.RENDERLAB_TEST_RECONCILER_OWNER_SCOPE === "true"
+    ? process.env.RENDERLAB_TEST_RECONCILER_OWNER_ID?.trim() || null
+    : null;
+  const ownerFilter = testOwnerId ? `&owner_id=eq.${encodeURIComponent(testOwnerId)}` : "";
   return supabaseRest<Array<{ id: string; owner_id: string }>>(
-    `generation_jobs?status=in.(${candidateStatuses})&select=id,owner_id&order=updated_at.asc,id.asc&limit=${safeLimit}`,
+    `generation_jobs?status=in.(${candidateStatuses})${ownerFilter}&select=id,owner_id&order=updated_at.asc,id.asc&limit=${safeLimit}`,
     { method: "GET" },
   );
 }
