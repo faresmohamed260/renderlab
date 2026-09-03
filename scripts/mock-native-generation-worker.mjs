@@ -36,7 +36,7 @@ const server = http.createServer(async (request, response) => {
     await drain(request);
     const id = randomUUID();
     const kind = url.pathname === "/jobs/video" ? "video" : "image";
-    jobs.set(id, { kind, polls: 0, resultExpired: false });
+    jobs.set(id, { kind, polls: 0, resultExpired: false, unavailable: false });
     return json(response, 200, { call_id: id, worker_state: "queued" });
   }
 
@@ -45,6 +45,14 @@ const server = http.createServer(async (request, response) => {
     const job = jobs.get(decodeURIComponent(expireMatch[1]));
     if (!job) return json(response, 404, { error: "not found" });
     job.resultExpired = true;
+    return json(response, 200, { ok: true });
+  }
+
+  const unavailableMatch = url.pathname.match(/^\/jobs\/([^/]+)\/unavailable$/);
+  if (request.method === "POST" && unavailableMatch) {
+    const job = jobs.get(decodeURIComponent(unavailableMatch[1]));
+    if (!job) return json(response, 404, { error: "not found" });
+    job.unavailable = true;
     return json(response, 200, { ok: true });
   }
 
@@ -63,6 +71,9 @@ const server = http.createServer(async (request, response) => {
   if (request.method === "GET" && jobMatch) {
     const job = jobs.get(decodeURIComponent(jobMatch[1]));
     if (!job) return json(response, 404, { error: "not found" });
+    if (job.unavailable) {
+      return json(response, 503, { error: "phase14-internal-provider-detail-must-not-leak" });
+    }
     if (job.resultExpired) return json(response, 410, { error: "provider result intentionally expired" });
 
     job.polls += 1;
