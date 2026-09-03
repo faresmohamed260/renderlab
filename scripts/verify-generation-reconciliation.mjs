@@ -96,7 +96,7 @@ function deterministicAssetId(jobId, outputIndex = 0) {
       .digest()
       .subarray(0, 16),
   );
-  bytes[6] = (bytes[6] & 0x0f) | 0x80;
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = bytes.toString("hex");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
@@ -179,7 +179,7 @@ async function submit(account, request, label) {
   return job;
 }
 
-async function assertCanonicalSuccess(jobId, kind, { thumbnailExpected = undefined } = {}) {
+async function assertCanonicalSuccess(account, jobId, kind, { thumbnailExpected = undefined } = {}) {
   const job = await loadJob(jobId);
   const assets = await loadAssets(jobId);
   if (!job || job.status !== "succeeded") {
@@ -208,6 +208,15 @@ async function assertCanonicalSuccess(jobId, kind, { thumbnailExpected = undefin
   }
   if (thumbnailExpected !== undefined && Boolean(asset.thumbnail_storage_key) !== thumbnailExpected) {
     throw new Error(`Thumbnail expectation mismatch for ${jobId}: ${JSON.stringify(asset)}`);
+  }
+
+  const mediaResponse = await fetch(
+    `${baseUrl}/api/media/assets/${encodeURIComponent(asset.id)}`,
+    withAccountAuthorization(account, { headers: { accept: "application/json" } }),
+  );
+  const mediaPayload = await mediaResponse.json().catch(() => null);
+  if (!mediaResponse.ok || !mediaPayload?.ok || mediaPayload.asset?.id !== asset.id) {
+    throw new Error(`Canonical output is not readable through the product media API (${mediaResponse.status}): ${JSON.stringify(mediaPayload)}`);
   }
 
   const reservations = await loadReservations(jobId);
@@ -331,7 +340,7 @@ try {
   }
 
   await requireReconcile(); // adopts existing media and terminalizes without another asset
-  await assertCanonicalSuccess(faultJob.id, "image");
+  await assertCanonicalSuccess(account, faultJob.id, "image");
 
   // Concurrent scheduler/browser-equivalent reconciliation must converge on one lease and
   // one output slot. No browser GET endpoint is used here either.
@@ -346,7 +355,7 @@ try {
   );
   await Promise.all([requireReconcile(), requireReconcile()]);
   await Promise.all([requireReconcile(), requireReconcile()]);
-  await assertCanonicalSuccess(raceJob.id, "image");
+  await assertCanonicalSuccess(account, raceJob.id, "image");
 
   // Simulate scheduler interruption after claiming a job. An active lease blocks work;
   // after forced expiry, a new reconciler safely reclaims and finishes the same job.
@@ -369,7 +378,7 @@ try {
   await expireLease(leaseJob.id);
   await requireReconcile();
   await requireReconcile();
-  await assertCanonicalSuccess(leaseJob.id, "image");
+  await assertCanonicalSuccess(account, leaseJob.id, "image");
 
   // The final configured fault occurs during optional video poster persistence. Primary
   // video success must not be converted into a failed generation because a thumbnail write
@@ -385,7 +394,7 @@ try {
   );
   await requireReconcile();
   await requireReconcile();
-  await assertCanonicalSuccess(videoJob.id, "video", { thumbnailExpected: false });
+  await assertCanonicalSuccess(account, videoJob.id, "video", { thumbnailExpected: false });
   if (await objectExists(expectedThumbnailKey(videoJob))) {
     throw new Error("Optional thumbnail fault unexpectedly left a thumbnail object.");
   }
@@ -425,7 +434,7 @@ try {
     seenSlots.add(key);
   }
 
-  console.log("Phase 14 autonomous generation reconciliation verified: browser-independent completion, deterministic fault recovery, lease races, admission settlement, optional thumbnail failure and stale-job terminalization all passed.");
+  console.log("Phase 14 autonomous generation reconciliation verified: browser-independent completion, deterministic fault recovery, lease races, admission settlement, product-media readability, optional thumbnail failure and stale-job terminalization all passed.");
 } finally {
   await cleanup();
 }
