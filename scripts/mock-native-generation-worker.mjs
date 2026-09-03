@@ -42,8 +42,13 @@ const server = http.createServer(async (request, response) => {
 
   const posterMatch = url.pathname.match(/^\/jobs\/([^/]+)\/poster$/);
   if (request.method === "GET" && posterMatch) {
-    response.writeHead(503, { "content-type": "application/json" });
-    return response.end(JSON.stringify({ error: "poster intentionally unavailable in Phase 14 mock" }));
+    const job = jobs.get(decodeURIComponent(posterMatch[1]));
+    if (!job || job.kind !== "video") return json(response, 404, { error: "poster not found" });
+    response.writeHead(200, {
+      "content-type": "image/png",
+      "content-length": String(imageBytes.length),
+    });
+    return response.end(imageBytes);
   }
 
   const jobMatch = url.pathname.match(/^\/jobs\/([^/]+)$/);
