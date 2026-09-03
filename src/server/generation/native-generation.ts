@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import type {
   CreativeOperation,
   GenerationJob,
@@ -70,7 +70,15 @@ type WorkerFailureClassification = {
   code: "WORKER_CREDIT_EXHAUSTED" | "WORKER_UNAVAILABLE" | "PROVIDER_FAILED";
 };
 
+type GeneratedMediaRow = {
+  id: string;
+  storage_key: string;
+  thumbnail_storage_key: string | null;
+  mime_type: string;
+};
+
 const maxPollReassignmentAttempts = 3;
+const invalidWorkerGraceMs = 15 * 60 * 1000;
 const creditPatterns = [
   "credit",
   "credits",
@@ -425,40 +433,28 @@ function extensionFor(contentType: string) {
   return "png";
 }
 
-async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
-  const assetId = randomUUID();
-  const created = new Date(row.created_at);
-  const year = created.getUTCFullYear();
-  const month = String(created.getUTCMonth() + 1).padStart(2, "0");
-  const storageKey = `renderlab/generations/${year}/${month}/${assetId}.${extensionFor(contentType)}`;
-  await writeR2Object({ key: storageKey, contentType, body: bytes });
+function deterministicGenerationAssetId(jobId: string, outputIndex: number) {
+  const bytes = Buffer.from(
+    createHash("sha256")
+      .update(`renderlab:generation-output:${jobId}:${outputIndex}`)
+      .digest()
+      .subarray(0, 16),
+  );
+  bytes[6] = (bytes[6] & 0x0f) | 0x80;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
-  let thumbnailStorageKey: string | null = null;
-  if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
-    thumbnailStorageKey = `renderlab/thumbnails/${year}/${month}/${assetId}.${extensionFor(poster.contentType)}`;
-    await writeR2Object({ key: thumbnailStorageKey, contentType: poster.contentType, body: poster.bytes });
-  }
+async function getGeneratedOutput(row: JobRow, outputIndex: number) {
+  const rows = await supabaseRest<GeneratedMediaRow[]>(
+    `media_assets?owner_id=eq.${encodeURIComponent(row.owner_id)}&generation_job_id=eq.${encodeURIComponent(row.id)}&generation_output_index=eq.${outputIndex}&select=id,storage_key,thumbnail_storage_key,mime_type&limit=1`,
+    { method: "GET" },
+  );
+  return rows?.[0] ?? null;
+}
 
-  await supabaseRest("media_assets", {
-    method: "POST",
-    body: JSON.stringify({
-      id: assetId,
-      owner_id: row.owner_id,
-      generation_job_id: row.id,
-      kind: row.output_kind,
-      mime_type: contentType,
-      storage_key: storageKey,
-      thumbnail_storage_key: thumbnailStorageKey,
-      provenance: {
-        operation: row.operation,
-        workflowId: row.workflow_id,
-        model: row.model,
-        prompt: row.prompt,
-      },
-      metadata: { ecosystem: row.ecosystem, workerId: row.worker_id },
-    }),
-  });
-
+async function completeJobWithAsset(row: JobRow, assetId: string) {
   return patchJob(row.owner_id, row.id, {
     status: "succeeded",
     worker_state: "ready",
@@ -467,6 +463,59 @@ async function persistResult(row: JobRow, bytes: Buffer, contentType: string, po
     error_code: null,
     error_message: null,
   });
+}
+
+async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
+  const outputIndex = 0;
+  const existing = await getGeneratedOutput(row, outputIndex);
+  if (existing) return completeJobWithAsset(row, existing.id);
+
+  const assetId = deterministicGenerationAssetId(row.id, outputIndex);
+  const created = new Date(row.created_at);
+  const year = created.getUTCFullYear();
+  const month = String(created.getUTCMonth() + 1).padStart(2, "0");
+  const storageKey = `renderlab/generations/${year}/${month}/${assetId}.${extensionFor(contentType)}`;
+  await writeR2Object({ key: storageKey, contentType, body: bytes });
+
+  let thumbnailStorageKey: string | null = null;
+  if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
+    const posterKey = `renderlab/thumbnails/${year}/${month}/${assetId}.${extensionFor(poster.contentType)}`;
+    try {
+      await writeR2Object({ key: posterKey, contentType: poster.contentType, body: poster.bytes });
+      thumbnailStorageKey = posterKey;
+    } catch {
+      thumbnailStorageKey = null;
+    }
+  }
+
+  try {
+    await supabaseRest("media_assets", {
+      method: "POST",
+      body: JSON.stringify({
+        id: assetId,
+        owner_id: row.owner_id,
+        generation_job_id: row.id,
+        generation_output_index: outputIndex,
+        kind: row.output_kind,
+        mime_type: contentType,
+        storage_key: storageKey,
+        thumbnail_storage_key: thumbnailStorageKey,
+        provenance: {
+          operation: row.operation,
+          workflowId: row.workflow_id,
+          model: row.model,
+          prompt: row.prompt,
+        },
+        metadata: { ecosystem: row.ecosystem, workerId: row.worker_id },
+      }),
+    });
+  } catch (error) {
+    const raced = await getGeneratedOutput(row, outputIndex).catch(() => null);
+    if (!raced) throw error;
+    return completeJobWithAsset(row, raced.id);
+  }
+
+  return completeJobWithAsset(row, assetId);
 }
 
 async function fetchPoster(worker: GenerationWorker, callId: string) {
@@ -601,7 +650,17 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   if (!row.worker_id || !row.provider_job_id) return toGenerationJob(row);
 
   const worker = findWorker(row.worker_id);
-  if (!worker) throw new Error("Assigned generation worker is no longer registered.");
+  if (!worker) {
+    if (Date.now() - Date.parse(row.updated_at) < invalidWorkerGraceMs) {
+      throw new Error("Assigned generation worker is temporarily unavailable.");
+    }
+    const failed = await failJob(
+      row,
+      "generation_worker_unavailable",
+      "Generation could not resume because its assigned worker is no longer available.",
+    );
+    return toGenerationJob(failed);
+  }
 
   const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
     method: "GET",
