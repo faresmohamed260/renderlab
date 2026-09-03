@@ -13,7 +13,7 @@ import {
 } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
-import { isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
+import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
 import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
@@ -76,6 +76,11 @@ type GeneratedMediaRow = {
   storage_key: string;
   thumbnail_storage_key: string | null;
   mime_type: string;
+};
+
+type DurableOutputObject = {
+  storageKey: string;
+  contentType: string;
 };
 
 const maxPollReassignmentAttempts = 3;
@@ -447,6 +452,47 @@ function deterministicGenerationAssetId(jobId: string, outputIndex: number) {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+function outputStoragePrefix(row: JobRow, assetId: string) {
+  const created = new Date(row.created_at);
+  const year = created.getUTCFullYear();
+  const month = String(created.getUTCMonth() + 1).padStart(2, "0");
+  return `renderlab/generations/${year}/${month}/${assetId}`;
+}
+
+function thumbnailStoragePrefix(row: JobRow, assetId: string) {
+  const created = new Date(row.created_at);
+  const year = created.getUTCFullYear();
+  const month = String(created.getUTCMonth() + 1).padStart(2, "0");
+  return `renderlab/thumbnails/${year}/${month}/${assetId}`;
+}
+
+function possibleOutputExtensions(row: JobRow) {
+  return row.output_kind === "image" ? ["png", "jpg", "webp"] : ["mp4", "webm", "mov"];
+}
+
+function possibleThumbnailExtensions() {
+  return ["png", "jpg", "webp"];
+}
+
+function contentTypeMatchesKind(kind: JobRow["output_kind"], contentType: string) {
+  return kind === "image" ? contentType.startsWith("image/") : contentType.startsWith("video/");
+}
+
+async function findDurableObject(prefix: string, extensions: string[], expectedKind: "image" | "video"): Promise<DurableOutputObject | null> {
+  for (const extension of extensions) {
+    const storageKey = `${prefix}.${extension}`;
+    try {
+      const object = await headR2Object(storageKey);
+      if (contentTypeMatchesKind(expectedKind, object.contentType)) {
+        return { storageKey, contentType: object.contentType };
+      }
+    } catch {
+      // A deterministic candidate that does not exist is expected during ordinary polling.
+    }
+  }
+  return null;
+}
+
 async function getGeneratedOutput(row: JobRow, outputIndex: number) {
   const rows = await supabaseRest<GeneratedMediaRow[]>(
     `media_assets?owner_id=eq.${encodeURIComponent(row.owner_id)}&generation_job_id=eq.${encodeURIComponent(row.id)}&generation_output_index=eq.${outputIndex}&select=id,storage_key,thumbnail_storage_key,mime_type&limit=1`,
@@ -466,32 +512,21 @@ async function completeJobWithAsset(row: JobRow, assetId: string) {
   });
 }
 
-async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
-  const outputIndex = 0;
-  const existing = await getGeneratedOutput(row, outputIndex);
-  if (existing) return completeJobWithAsset(row, existing.id);
-
-  const assetId = deterministicGenerationAssetId(row.id, outputIndex);
-  const created = new Date(row.created_at);
-  const year = created.getUTCFullYear();
-  const month = String(created.getUTCMonth() + 1).padStart(2, "0");
-  const storageKey = `renderlab/generations/${year}/${month}/${assetId}.${extensionFor(contentType)}`;
-  injectGenerationFinalizationFault("before-primary-write");
-  await writeR2Object({ key: storageKey, contentType, body: bytes });
-  injectGenerationFinalizationFault("after-primary-write");
-
-  let thumbnailStorageKey: string | null = null;
-  if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
-    const posterKey = `renderlab/thumbnails/${year}/${month}/${assetId}.${extensionFor(poster.contentType)}`;
-    try {
-      injectGenerationFinalizationFault("thumbnail-write");
-      await writeR2Object({ key: posterKey, contentType: poster.contentType, body: poster.bytes });
-      thumbnailStorageKey = posterKey;
-    } catch {
-      thumbnailStorageKey = null;
-    }
-  }
-
+async function persistGeneratedMedia({
+  row,
+  outputIndex,
+  assetId,
+  contentType,
+  storageKey,
+  thumbnailStorageKey,
+}: {
+  row: JobRow;
+  outputIndex: number;
+  assetId: string;
+  contentType: string;
+  storageKey: string;
+  thumbnailStorageKey: string | null;
+}) {
   try {
     await supabaseRest("media_assets", {
       method: "POST",
@@ -521,6 +556,74 @@ async function persistResult(row: JobRow, bytes: Buffer, contentType: string, po
 
   injectGenerationFinalizationFault("after-media-insert");
   return completeJobWithAsset(row, assetId);
+}
+
+async function recoverPersistingResult(row: JobRow) {
+  if (row.status !== "persisting") return null;
+
+  const outputIndex = 0;
+  const existing = await getGeneratedOutput(row, outputIndex);
+  if (existing) return completeJobWithAsset(row, existing.id);
+
+  const assetId = deterministicGenerationAssetId(row.id, outputIndex);
+  const primary = await findDurableObject(
+    outputStoragePrefix(row, assetId),
+    possibleOutputExtensions(row),
+    row.output_kind,
+  );
+  if (!primary) return null;
+
+  let thumbnailStorageKey: string | null = null;
+  if (row.output_kind === "video") {
+    const thumbnail = await findDurableObject(
+      thumbnailStoragePrefix(row, assetId),
+      possibleThumbnailExtensions(),
+      "image",
+    );
+    thumbnailStorageKey = thumbnail?.storageKey ?? null;
+  }
+
+  return persistGeneratedMedia({
+    row,
+    outputIndex,
+    assetId,
+    contentType: primary.contentType,
+    storageKey: primary.storageKey,
+    thumbnailStorageKey,
+  });
+}
+
+async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
+  const outputIndex = 0;
+  const existing = await getGeneratedOutput(row, outputIndex);
+  if (existing) return completeJobWithAsset(row, existing.id);
+
+  const assetId = deterministicGenerationAssetId(row.id, outputIndex);
+  const storageKey = `${outputStoragePrefix(row, assetId)}.${extensionFor(contentType)}`;
+  injectGenerationFinalizationFault("before-primary-write");
+  await writeR2Object({ key: storageKey, contentType, body: bytes });
+  injectGenerationFinalizationFault("after-primary-write");
+
+  let thumbnailStorageKey: string | null = null;
+  if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
+    const posterKey = `${thumbnailStoragePrefix(row, assetId)}.${extensionFor(poster.contentType)}`;
+    try {
+      injectGenerationFinalizationFault("thumbnail-write");
+      await writeR2Object({ key: posterKey, contentType: poster.contentType, body: poster.bytes });
+      thumbnailStorageKey = posterKey;
+    } catch {
+      thumbnailStorageKey = null;
+    }
+  }
+
+  return persistGeneratedMedia({
+    row,
+    outputIndex,
+    assetId,
+    contentType,
+    storageKey,
+    thumbnailStorageKey,
+  });
 }
 
 async function fetchPoster(worker: GenerationWorker, callId: string) {
@@ -652,6 +755,10 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   const row = await getJobRow(ownerId, jobId);
   if (!row) return null;
   if (["succeeded", "failed", "cancelled"].includes(row.status)) return toGenerationJob(row);
+
+  const recovered = await recoverPersistingResult(row);
+  if (recovered) return toGenerationJob(recovered);
+
   if (!row.worker_id || !row.provider_job_id) return toGenerationJob(row);
 
   const worker = findWorker(row.worker_id);
