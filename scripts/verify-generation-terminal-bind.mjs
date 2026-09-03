@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   configuredTestAccountIdentity,
   createConfiguredTestAccount,
@@ -31,17 +32,41 @@ async function jsonRequest(path, init = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-try {
-  await deleteConfiguredTestAccount(account);
-  await createConfiguredTestAccount("generation-terminal-bind");
-
+async function reserve() {
   const reservationRows = await jsonRequest("rpc/renderlab_reserve_generation_admission", {
     method: "POST",
     body: JSON.stringify({ p_owner_id: account.id }),
   });
   const reservationId = reservationRows?.[0]?.reservation_id;
   if (!reservationId) throw new Error(`Terminal-bind reservation was not created: ${JSON.stringify(reservationRows)}`);
+  return reservationId;
+}
 
+async function bind(reservationId, jobId) {
+  return jsonRequest("rpc/renderlab_bind_generation_admission", {
+    method: "POST",
+    body: JSON.stringify({
+      p_owner_id: account.id,
+      p_reservation_id: reservationId,
+      p_job_id: jobId,
+    }),
+  });
+}
+
+async function loadReservation(reservationId) {
+  const reservations = await jsonRequest(
+    `generation_admission_reservations?id=eq.${encodeURIComponent(reservationId)}&select=job_id,released_at,expires_at`,
+  );
+  return reservations?.[0] ?? null;
+}
+
+try {
+  await deleteConfiguredTestAccount(account);
+  await createConfiguredTestAccount("generation-terminal-bind");
+
+  // Native/local fast completion: binding a job that already terminalized must not leave
+  // active-capacity pressure behind.
+  const terminalReservationId = await reserve();
   const completedAt = new Date().toISOString();
   const jobs = await jsonRequest("generation_jobs?select=id", {
     method: "POST",
@@ -62,28 +87,37 @@ try {
       completed_at: completedAt,
     }),
   });
-  const jobId = jobs?.[0]?.id;
-  if (!jobId) throw new Error(`Terminal-bind job was not created: ${JSON.stringify(jobs)}`);
+  const terminalJobId = jobs?.[0]?.id;
+  if (!terminalJobId) throw new Error(`Terminal-bind job was not created: ${JSON.stringify(jobs)}`);
 
-  const bound = await jsonRequest("rpc/renderlab_bind_generation_admission", {
-    method: "POST",
-    body: JSON.stringify({
-      p_owner_id: account.id,
-      p_reservation_id: reservationId,
-      p_job_id: jobId,
-    }),
-  });
-  if (bound !== true) throw new Error(`Terminal job reservation did not bind: ${JSON.stringify(bound)}`);
+  const terminalBound = await bind(terminalReservationId, terminalJobId);
+  if (terminalBound !== true) throw new Error(`Terminal job reservation did not bind: ${JSON.stringify(terminalBound)}`);
 
-  const reservations = await jsonRequest(
-    `generation_admission_reservations?id=eq.${encodeURIComponent(reservationId)}&select=job_id,released_at`,
-  );
-  const reservation = reservations?.[0];
-  if (reservation?.job_id !== jobId || !reservation?.released_at) {
-    throw new Error(`Terminal-before-bind reservation was not atomically released: ${JSON.stringify(reservation)}`);
+  const terminalReservation = await loadReservation(terminalReservationId);
+  if (terminalReservation?.job_id !== terminalJobId || !terminalReservation?.released_at) {
+    throw new Error(`Terminal-before-bind reservation was not atomically released: ${JSON.stringify(terminalReservation)}`);
   }
 
-  console.log("Phase 14 terminal-before-bind admission race verified: binding an already-terminal owned job atomically releases its reservation.");
+  // External backend compatibility: accepted external job IDs may intentionally have no
+  // local generation_jobs row. They must still bind conservatively and remain active until
+  // their lease expires or another server-owned terminal signal releases them.
+  const externalReservationId = await reserve();
+  const externalJobId = randomUUID();
+  const externalRows = await jsonRequest(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(account.id)}&id=eq.${encodeURIComponent(externalJobId)}&select=id&limit=1`,
+  );
+  if (externalRows.length !== 0) throw new Error("External-bind fixture unexpectedly collided with a local generation job.");
+
+  const externalBound = await bind(externalReservationId, externalJobId);
+  if (externalBound !== true) {
+    throw new Error(`External backend job reservation did not bind conservatively: ${JSON.stringify(externalBound)}`);
+  }
+  const externalReservation = await loadReservation(externalReservationId);
+  if (externalReservation?.job_id !== externalJobId || externalReservation?.released_at !== null) {
+    throw new Error(`External backend reservation did not remain conservatively active: ${JSON.stringify(externalReservation)}`);
+  }
+
+  console.log("Phase 14 admission bind semantics verified: local terminal jobs release atomically and accepted external job IDs without local rows remain conservatively bound.");
 } finally {
   await deleteConfiguredTestAccount(account);
 }
