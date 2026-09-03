@@ -36,14 +36,22 @@ const server = http.createServer(async (request, response) => {
     await drain(request);
     const id = randomUUID();
     const kind = url.pathname === "/jobs/video" ? "video" : "image";
-    jobs.set(id, { kind, polls: 0 });
+    jobs.set(id, { kind, polls: 0, resultExpired: false });
     return json(response, 200, { call_id: id, worker_state: "queued" });
+  }
+
+  const expireMatch = url.pathname.match(/^\/jobs\/([^/]+)\/expire-result$/);
+  if (request.method === "POST" && expireMatch) {
+    const job = jobs.get(decodeURIComponent(expireMatch[1]));
+    if (!job) return json(response, 404, { error: "not found" });
+    job.resultExpired = true;
+    return json(response, 200, { ok: true });
   }
 
   const posterMatch = url.pathname.match(/^\/jobs\/([^/]+)\/poster$/);
   if (request.method === "GET" && posterMatch) {
     const job = jobs.get(decodeURIComponent(posterMatch[1]));
-    if (!job || job.kind !== "video") return json(response, 404, { error: "poster not found" });
+    if (!job || job.kind !== "video" || job.resultExpired) return json(response, 404, { error: "poster not found" });
     response.writeHead(200, {
       "content-type": "image/png",
       "content-length": String(imageBytes.length),
@@ -55,6 +63,7 @@ const server = http.createServer(async (request, response) => {
   if (request.method === "GET" && jobMatch) {
     const job = jobs.get(decodeURIComponent(jobMatch[1]));
     if (!job) return json(response, 404, { error: "not found" });
+    if (job.resultExpired) return json(response, 410, { error: "provider result intentionally expired" });
 
     job.polls += 1;
     if (job.polls === 1) {
