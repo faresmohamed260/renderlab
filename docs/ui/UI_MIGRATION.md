@@ -1461,3 +1461,29 @@ Phase 14 is intentionally a backend lifecycle foundation, not a Create/Activity 
 - [x] Keep production rollout separate: no `pg_cron`, no `pg_net`, no active production reconciler schedule/secret, zero Vercel deployments created during the implementation day, automatic Git → Vercel disabled.
 
 No visual approval state changed in this phase. User-facing Cancel and broader stale-artifact maintenance remain Phase 15 work; creative iteration remains Phase 16.
+
+
+## Cycle 3 Phase 15 — Generation Control & Maintenance
+**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**  
+**Decision:** UI-055.  
+**Execution contract:** `PROJECT.md` Phase 15.
+
+Verified planning baseline on `main` `aa633175d4f8ec278f3ad9181d0a0105d9328163` (tree-identical to Phase 14 closure `c26b1f3e6db092fc2244db812f391298bd468e93`):
+- [x] Phase 14 lifecycle claim/output-slot/admission foundation merged and post-merge verified.
+- [x] Current FLUX/REDGraft gateways expose provider cancellation, while RenderLab has no Cancel API/UI and no `cancelling` product state.
+- [x] Lock v0.1 Cancel to RenderLab-native jobs before `persisting`; optional external-backend cancellation remains unsupported unless separately verified.
+- [x] Audit maintenance residue: 4 non-fixture temporary sources older than 24h (3 unreferenced, 1 referenced/protected), 0 upload sessions, 0 pending media purges.
+- [x] Preserve no-deployment/no-scheduler boundary; `pg_cron`/`pg_net` remain disabled.
+
+Implementation checklist:
+- [ ] Add `cancelling` lifecycle state and owner-scoped Cancel contract with claim-token/CAS serialization.
+- [ ] Prevent failover/finalization after accepted cancellation intent; reject cancellation once `persisting` wins.
+- [ ] Add bounded cancellation reconciliation and exact admission settlement.
+- [ ] Add Activity Cancel confirmation/cancelling states using maintained primitives; preserve Retry/View Result behavior.
+- [ ] Add bounded stale source/upload/pending-purge maintenance with reference-aware deletion safety.
+- [ ] Verify exhaustive mock race/fault matrix plus bounded exact-head FLUX and REDGraft live cancellation cases.
+- [ ] Verify affected responsive/browser/regression matrix and exact shared-resource cleanup.
+- [ ] Update authoritative architecture/screen docs from implemented reality before Phase 15 completion.
+- [ ] Keep production deployment and any scheduler/secret activation separate and explicitly authorized.
+
+No Phase 15 implementation, production cleanup, deployment or scheduler activation is recorded by this planning change.

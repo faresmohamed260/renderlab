@@ -727,3 +727,13 @@ PR #93 merged to `main` as `abdadf36c52e37756dcb62dd696b97a72448f94b` after exac
 Post-merge shared-state audit returned generation defaults to enabled / 1 active / 12 hourly / no updater, with zero RenderLab fixture Auth users/jobs/assets/admission reservations, zero active reconciliation claims and zero duplicate indexed output slots. The two historical multi-linked succeeded jobs and their two null-index noncanonical extras remain unchanged by design.
 
 Scheduler/deployment boundary is unchanged: `pg_cron` and `pg_net` are still not enabled, no reconciliation schedule or production scheduler secret was activated, and Vercel reported zero RenderLab deployments created since the merge. Phase 14 therefore remains merged and verified but not deployed/production-scheduled; any scheduler activation or application rollout requires separate explicit authorization.
+
+
+### Phase 15 pre-implementation control/maintenance audit — 2026-09-04
+Authoritative starting `main` is `aa633175d4f8ec278f3ad9181d0a0105d9328163`, which is tree-identical to Phase 14 documentation closure `c26b1f3e6db092fc2244db812f391298bd468e93`. Phase 14 remains merged/verified but not production-deployed/scheduled. `pg_cron` and `pg_net` remain disabled and Vercel showed zero RenderLab deployments created since the Phase 14 implementation merge.
+
+Cancellation infrastructure evidence is sufficient to plan but not to claim a product capability: current FLUX and REDGraft gateways advertise `cancel_jobs=true` and implement `DELETE /jobs/{call_id}`; RenderLab itself has no Cancel API/UI and its database/type status set has terminal `cancelled` but no `cancelling`. Phase 15 accepts the existing reconciliation token/lease as the lifecycle synchronization primitive and expects the smallest status-constraint extension needed for `cancelling`; implementation must keep provider routing/IDs server-only and must not cancel `persisting` work.
+
+Read-only maintenance audit found exactly four non-fixture `generation_sources`, all older than 24 hours: two `pending` unreferenced, one `ready` unreferenced and one `ready` referenced by persisted `generation_jobs.inputs`. No rows were mutated. `media_upload_sessions` count is zero. `media_assets` has 12 tombstoned rows total and zero rows with `deleted_at IS NOT NULL AND purged_at IS NULL`, so there is no current media-purge backlog. The referenced temporary source is explicitly not disposable under the Phase 15 contract.
+
+No production maintenance endpoint/secret/schedule is active or approved by this audit. Any future internal maintenance invocation remains server-only and bounded; broad R2 prefix garbage collection or age-based deletion of durable/referenced user data is not approved.
