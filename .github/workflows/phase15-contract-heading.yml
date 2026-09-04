@@ -1,0 +1,36 @@
+name: Phase 15 Contract Heading
+
+on:
+  push:
+    branches:
+      - plan/phase15-control-maintenance-contract
+    paths:
+      - .github/workflows/phase15-contract-heading.yml
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: plan/phase15-control-maintenance-contract
+          fetch-depth: 0
+      - name: Align heading and validate
+        shell: bash
+        run: |
+          python -c "from pathlib import Path; p=Path('PROJECT.md'); s=p.read_text(); old='## Later Cycle 3 Direction — Roadmap Level Only'; new='## Cycle 3 Direction Beyond Phase 14'; assert old in s; p.write_text(s.replace(old,new,1))"
+          grep -Fq '## Cycle 3 Direction Beyond Phase 14' PROJECT.md
+          grep -Fq '# Phase 15 Execution Contract — Generation Control & Maintenance' PROJECT.md
+          ! grep -Fq '## Later Cycle 3 Direction — Roadmap Level Only' PROJECT.md
+      - name: Commit aligned heading
+        shell: bash
+        run: |
+          rm .github/workflows/phase15-contract-heading.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add PROJECT.md .github/workflows/phase15-contract-heading.yml
+          git commit -m 'Align Phase 15 contract section heading'
+          git push origin HEAD:plan/phase15-control-maintenance-contract
