@@ -371,7 +371,7 @@ Exact implementation-head validation:
 - UI Shell Validation: `33739813080`
 - Brand / Launch Visual: `33739813036`
 
-Phase 15 remains roadmap-only. Phase 14 does not add user-facing Cancel, a general maintenance sweeper, creative iteration features or a production rollout.
+Phase 15 now has an accepted execution contract but implementation has not started. Phase 14 itself did not add user-facing Cancel, a general maintenance sweeper, creative iteration features or a production rollout.
 
 ## Phase 14 Post-Merge Closure — 2026-09-04
 PR #93 merged Phase 14 to `main` as `abdadf36c52e37756dcb62dd696b97a72448f94b` from exact final PR head `3df73ff212abb6fbf8dd0cd7a85232804dc5e4dd`.
