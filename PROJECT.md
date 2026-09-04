@@ -281,7 +281,7 @@ Only after Phase 14 is `COMPLETE / VERIFIED` should Phase 15 be expanded into it
 
 ---
 
-## Later Cycle 3 Direction — Roadmap Level Only
+## Cycle 3 Direction Beyond Phase 14
 ### Phase 15 — Generation Control & Maintenance
 **Execution contract:** accepted below. Implementation has not started.
 
