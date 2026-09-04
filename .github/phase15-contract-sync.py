@@ -1,0 +1,323 @@
+from pathlib import Path
+import re
+
+project = Path("PROJECT.md")
+text = project.read_text()
+text = text.replace(
+    '**Status: `IN PROGRESS — PHASE 14 COMPLETE / VERIFIED; PHASE 15 ROADMAP`.**',
+    '**Status: `IN PROGRESS — PHASE 14 COMPLETE / VERIFIED; PHASE 15 CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**',
+)
+text = text.replace(
+    '- **Phase 15 — Generation Control & Maintenance: `ROADMAP`.** Build safe user cancellation only after Phase 14 establishes atomic lifecycle/reconciliation boundaries; add bounded maintenance for stale uploads/sources, pending media purges and other recoverable residue.',
+    '- **Phase 15 — Generation Control & Maintenance: `CONTRACT ACCEPTED / NOT STARTED`.** Add safe owner-scoped native-generation cancellation on top of Phase 14 lifecycle claims, plus narrowly bounded maintenance for proven stale staging and pending media purges. Production rollout/scheduling remains separate.',
+)
+text = re.sub(
+    r'### Phase 15 — Generation Control & Maintenance\nDirectional goals:\n.*?(?=\n### Phase 16 — Creative Iteration)',
+    '### Phase 15 — Generation Control & Maintenance\n**Execution contract:** accepted below. Implementation has not started.\n',
+    text,
+    flags=re.S,
+)
+text = re.sub(
+    r'## Immediate Handoff\n.*?(?=\n## Phase 14 Implementation Verification)',
+    '''## Immediate Handoff
+Phase 15 now has an accepted execution contract. The next implementation session must:
+1. start from current `main` and re-read the required governance/architecture documents;
+2. implement **Phase 15 — Generation Control & Maintenance** exactly within the accepted contract below;
+3. preserve Phase 14 reconciliation/output-slot/admission invariants and the existing no-deployment/no-production-scheduler boundary;
+4. keep Phase 16+ at roadmap level until Phase 15 is complete/verified;
+5. never infer that contract acceptance authorizes a Vercel production deployment, Supabase scheduler activation or destructive cleanup outside the explicit eligibility rules.
+''',
+    text,
+    flags=re.S,
+)
+text = text.replace(
+    'Production state did not change: `pg_cron` and `pg_net` remain disabled, Vercel recorded zero RenderLab deployments created since the Phase 14 merge, and no production reconciliation schedule/secret was activated. Phase 15 remains the next roadmap phase and must receive its own execution-ready contract before implementation.',
+    'Production state did not change: `pg_cron` and `pg_net` remain disabled, Vercel recorded zero RenderLab deployments created since the Phase 14 merge, and no production reconciliation schedule/secret was activated. Phase 15 is the next implementation phase; its execution contract is accepted below, but implementation has not started.',
+)
+if '# Phase 15 Execution Contract — Generation Control & Maintenance' not in text:
+    text += r'''
+
+---
+
+# Phase 15 Execution Contract — Generation Control & Maintenance
+**Status: `ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+
+## Goal / user value
+Give an account owner one safe way to stop an active RenderLab-native generation and add narrowly bounded server maintenance for proven stale staging/purge residue without risking durable history, reusable media or future Retry inputs.
+
+The cancellation promise is deliberately precise:
+
+> If RenderLab accepts Cancel before durable result persistence begins, that attempt will never later publish a durable result. If durable persistence has already begun, the result wins and Cancel is no longer available.
+
+`cancelled` is a RenderLab product terminal state. Provider compute may already be in flight; the product guarantee is that accepted cancellation prevents later RenderLab failover/finalization/publication for that attempt while the server also makes a bounded best-effort provider cancellation request.
+
+## Verified starting state — 2026-09-04
+1. Phase 14 is merged/verified on `main`: lifecycle reconciliation uses server-only claim token + lease state, generated output slot `0` is idempotent, terminal admission settlement is fixed, and browser polling is observational rather than a correctness dependency.
+2. `GenerationJobStatus` and the database already recognize terminal `cancelled`, but there is no `cancelling` state, no owner-facing Cancel API and no Cancel control. Activity can render `Cancelled`; failed-job Retry remains the only Activity mutation.
+3. Native active reconciliation serializes `queued|preparing|running|persisting` through the Phase 14 claim. Poll-time failover and durable finalization therefore have one existing server-owned mutual-exclusion boundary that Phase 15 can reuse.
+4. `persisting` means durable result finalization has begun. Phase 15 must not attempt to reverse a job once that transition wins.
+5. Current FLUX and REDGraft gateway implementations advertise `cancel_jobs=true` and expose `DELETE /jobs/{call_id}`. Qwen reference infrastructure also advertises cancellation, but Qwen is not the current user-facing Image/Edit route.
+6. The optional authenticated external RenderLab generation backend has submit/poll contracts but no currently verified cancellation contract. Phase 15 v0.1 therefore does not advertise Cancel for external-backend work.
+7. Shared-state maintenance audit found exactly four non-fixture `generation_sources`, all older than 24 hours: two `pending` and unreferenced; one `ready` and unreferenced; one `ready` and referenced by persisted job intent. The referenced source is protected because current Retry can still depend on ready temporary-source history.
+8. The same audit found `0` `media_upload_sessions`; all 12 tombstoned media assets already have `purged_at` set, with `0` pending media purges. These zero backlogs are evidence against a broad speculative sweeper.
+9. `pg_cron` and `pg_net` remain disabled; no production reconciler/maintenance schedule or secret is active; automatic Git → Vercel deployment remains disabled.
+
+## Required invariants
+- **One lifecycle writer:** Cancel, provider polling, failover, finalization and cancellation reconciliation must serialize through the Phase 14 lifecycle claim or an equivalently strict claim-token compare-and-set guard.
+- **Persistence wins once started:** `persisting|succeeded|failed|cancelled` are never cancellable. A race that reaches `persisting` before Cancel acquires the lifecycle claim returns current truth rather than undoing durable work.
+- **Cancel wins before persistence:** once an eligible job is atomically moved to `cancelling`, ordinary provider polling/failover/finalization must never adopt a later result or create a durable output for that attempt.
+- **No failover after cancellation intent:** `cancelling` jobs retry cancellation against the currently recorded provider call only; they never submit a standby replacement.
+- **Admission stays conservative:** a `cancelling` job remains capacity-active until it terminalizes `cancelled`; bound admission is released exactly when terminal cancellation is recorded.
+- **Unknown history is not garbage:** maintenance never deletes job history, durable media, referenced temporary sources or unknown R2 objects merely because they are old.
+
+## In scope
+### 15A — Native cancellation state and owner API
+- Add a normalized intermediate `cancelling` generation status between active work and terminal `cancelled`.
+- Add owner-scoped `POST /api/generation/jobs/[jobId]/cancel`. The browser supplies only the historical job ID; it never supplies worker ID, provider call ID, storage identity or execution payload.
+- Expose a product-level `canCancel` capability on Activity rows rather than making the client infer provider/backend details.
+- v0.1 cancellation eligibility is limited to RenderLab-native jobs whose current state is `queued`, `preparing` or `running` and whose server-owned dispatch identity is sufficient to cancel safely. `persisting` and all terminal states are not cancellable.
+- Missing/foreign jobs preserve the existing not-found privacy boundary. Repeated Cancel requests are idempotent and return/refresh current product truth rather than starting another execution action.
+- Optional external-backend jobs remain non-cancellable in v0.1 unless a separately authenticated external cancel contract is implemented and verified during this phase. Do not fabricate support from a local status alone.
+
+### 15B — Cancellation/provider race semantics
+- Acquire the Phase 14 lifecycle claim before accepting cancellation intent, then re-read current state under that claim.
+- Transition to `cancelling` only through a claim-token/CAS-guarded mutation from eligible active states.
+- Attempt `DELETE /jobs/{providerJobId}` only against the currently recorded native worker. Bound each provider cancellation request with an explicit timeout.
+- A confirmed provider cancellation terminalizes the RenderLab job as `cancelled`, sets ordinary terminal timestamps and releases admission.
+- A recognized provider-not-running/expired response may terminalize as `cancelled` only while the job is still claim-owned `cancelling` and no durable indexed output exists.
+- Ambiguous/transient cancellation failures leave the job `cancelling`; server-owned cancellation reconciliation retries the same provider call. It never reassigns the job or resumes ordinary result persistence.
+- Cancellation reconciliation must be bounded. If provider acknowledgement remains unavailable beyond the accepted retry/grace policy, RenderLab may terminalize locally as `cancelled` while recording internal diagnostics, because the product has already committed to discarding any late result. User-facing copy must not claim that provider compute stopped instantaneously.
+- If `persisting` wins before cancellation intent is accepted, the durable-result path continues and Cancel fails closed with refreshed current state.
+
+### 15C — Browser/UI behavior
+- Activity remains the v0.1 Cancel surface; do not add another top-level destination or shell-global job manager.
+- An eligible active row gets a compact Cancel action using the maintained Button + AlertDialog primitives. Confirmation copy states that the attempt cannot be resumed and a late result will not be published if cancellation is accepted.
+- `cancelling` is rendered truthfully (for example `Cancelling`) and remains auto-refreshed as active server-owned state. The Cancel action is not repeated while cancellation is already pending.
+- Existing `Cancelled`, failed Retry and succeeded View Result behavior remain unchanged. Cancelled jobs do not become Retry-eligible; successful Run Again/recipe reuse remains Phase 16.
+- Create may render the new `cancelling` status if it is observing that job, but the cancellation action itself remains Activity-owned in v0.1.
+- No provider name, worker identity, queue position, invented percentage or SLA is exposed.
+
+### 15D — Bounded stale staging / purge maintenance
+Implement one server-owned bounded maintenance pass with per-category limits; it is not a general database/R2 garbage collector.
+
+**Temporary `generation_sources`:**
+- candidate must be at least 24 hours old;
+- candidate must be `pending`, `ready` or `failed` staging state that has no persisted `generation_jobs.inputs` reference to that exact temporary-source ID;
+- referenced sources are always skipped regardless of age;
+- delete the known R2 object first (object already absent counts as success), then delete the staging row; if R2 deletion fails, retain the row for retry.
+
+**`media_upload_sessions`:**
+- v0.1 maintenance may clean only old nonterminal `pending`/`failed` sessions at least 24 hours old that are not linked to a promoted durable asset;
+- delete the known staging R2 object first, then delete the session row;
+- completed/promoted sessions and durable uploaded media are not age-purged.
+
+**Pending media purges:**
+- select only assets already tombstoned (`deleted_at IS NOT NULL`) with `purged_at IS NULL`;
+- retry the existing primary/thumbnail R2 deletion semantics idempotently;
+- set `purged_at` only when every known object deletion succeeds or the object is already absent;
+- never hard-delete the durable media row or generation history as part of maintenance.
+
+**Audit-only anomalies:**
+- report counts for stale-but-referenced sources and other job/output/history anomalies discovered by maintenance;
+- do not automatically delete/reclassify unknown or historically anomalous user data;
+- preserve the two known Phase 14 historical noncanonical output rows.
+
+### 15E — Internal execution / scheduling boundary
+- Cancellation reconciliation may extend the existing server-owned generation reconciliation path to include `cancelling` jobs, while ordinary active reconciliation continues to exclude them from result persistence/failover.
+- Maintenance logic should live in RenderLab server code with a narrow authenticated internal invocation surface if one is required for remote execution. Do not expose service-role capability to ordinary browsers.
+- No production scheduler is activated by implementation or merge. `pg_cron`/`pg_net`, any maintenance secret and any periodic schedule remain a separate rollout decision tied to an explicitly deployed application candidate.
+- Do not create a new paid queue/service or broad worker administration plane for this phase.
+
+## Explicitly out of scope
+- Cancel for the unverified optional external generation backend unless its authenticated cancellation contract is independently proven during Phase 15.
+- Cancelling work that has already entered `persisting` or reversing a terminal result.
+- Retry of cancelled jobs, successful-job Run Again, Remix/Reuse Settings, recipe UI, Variations or source/result comparison; Phase 16 owns creative iteration.
+- Broad R2 prefix scans, age-based durable-media deletion, hard-deleting generation history, cleanup of referenced temporary sources or automatic repair of unknown historical anomalies.
+- Generic worker/provider administration, model/workflow screens, ComfyUI graphs, billing/credits or infrastructure controls.
+- Production Vercel deployment, production reconciliation/maintenance schedule activation or enabling `pg_cron`/`pg_net`.
+- UI-054/BIMI sender-avatar work or unrelated account/email changes.
+
+## Architecture / API boundaries
+- `src/server/generation/reconcile-generation.ts` remains the lifecycle claim/reconciliation owner. Phase 15 cancellation must reuse its mutual-exclusion invariant rather than creating a second uncoordinated job-state writer.
+- `src/server/generation/native-generation.ts` remains the native worker adapter/finalization boundary; cancellation-aware guards must prevent its poll reassignment/persist path from progressing a `cancelling|cancelled` job.
+- `src/server/generation/submit-generation.ts` remains ordinary Create/Retry submission. Cancel is a mutation of the accepted job, never a new submission.
+- `generation_jobs` remains immutable creative intent/history plus mutable lifecycle state. Cancel does not create a replacement job or erase prompt/input/failover history.
+- `generation_admission_reservations` remains server-owned; cancellation settlement uses the same terminal release contract as success/failure.
+- `generation_sources`, `media_upload_sessions` and tombstoned `media_assets` keep their existing ownership/storage identity. Maintenance uses only known row-owned storage keys and never infers arbitrary R2 ownership from prefixes.
+- Activity remains server-owned data with a small feature-local mutation component; no global client job store is introduced.
+
+## Data / schema implications
+A small schema change is expected for correctness:
+- extend the `generation_jobs.status` database constraint and TypeScript status union to include `cancelling`;
+- update lifecycle indexes/queries only where the new state must be scanned or protected;
+- prefer the existing reconciliation token/lease as the synchronization primitive. Do not add a parallel cancellation table, broad event log or generic job-version system unless implementation evidence proves claim-token CAS is insufficient.
+
+No maintenance schema migration is pre-approved merely for age tracking: current `created_at`/`updated_at`, ownership, storage keys, tombstone fields and persisted job inputs are sufficient starting evidence. If implementation discovers a real schema gap, stop and amend this contract before adding unrelated DDL.
+
+Historical rows are not rewritten merely to populate cancellation metadata. Terminal `cancelled` continues to use ordinary job terminal timestamps; provider diagnostics remain server-internal.
+
+## Security / ownership implications
+- Cancel requires the same fresh verified account boundary as other private generation mutations and is owner-scoped by job ID.
+- Browser-visible `canCancel` is a capability boolean only; worker/provider IDs, cancellation endpoints and service secrets remain server-only.
+- Provider cancellation targets are reloaded from the owner-scoped job row; never trust browser-supplied routing identity.
+- Foreign/missing jobs collapse to not-found. Race/conflict responses reveal only current product state.
+- Maintenance runs with server privilege but must enforce the explicit eligibility predicates above before any R2/row deletion.
+- Maintenance never uses age alone as proof of disposability when a persisted job reference exists.
+- Existing RLS/browser-grant revocation and privileged-function empty-search-path posture must not be weakened.
+
+## Required validation matrix
+### Cancellation state-machine / race verification
+Using a run-owned mock worker and deterministic barriers/faults, prove at minimum:
+- eligible `queued|preparing|running` native job -> `cancelling` -> `cancelled`;
+- `persisting`/terminal jobs reject Cancel without mutation;
+- simultaneous Cancel requests converge idempotently;
+- Cancel racing an ordinary poll/finalization claim has one winner and no split-brain lifecycle;
+- Cancel racing safe standby reassignment either cancels the newly committed current call or loses before cancellation intent; it never spawns another standby after `cancelling`;
+- provider completes immediately before/after Cancel: if persistence won, result survives; if cancellation intent won, no durable output slot/media asset is later created;
+- transient/ambiguous provider cancel failure remains `cancelling` and bounded cancellation reconciliation retries without failover;
+- recognized provider-not-running/expired response resolves without fabricating a durable result;
+- admission remains active while `cancelling` and is released exactly once on terminal `cancelled`;
+- cancelled jobs stay non-retryable under UI-050.
+
+### Maintenance fixture verification
+Create exact run-owned database/R2 fixtures and prove:
+- stale pending unreferenced temporary source is removed;
+- stale ready unreferenced temporary source is removed;
+- stale ready **referenced** temporary source is preserved;
+- recent unreferenced temporary source is preserved;
+- stale pending/failed unpromoted media upload staging is removed;
+- completed/promoted upload state and durable media are preserved;
+- tombstoned pending-purge asset reaches `purged_at` only after primary/thumbnail objects are absent;
+- an injected object-delete failure leaves the purge/staging row retryable rather than claiming cleanup;
+- unknown/historical anomalies are reported only;
+- bounded per-category limits are respected and repeated maintenance converges idempotently.
+
+### Configured native cancellation verification
+Run a bounded exact-head cancellation case against each currently user-facing native ecosystem:
+- one FLUX Image/Edit job accepted then cancelled through the RenderLab product API;
+- one REDGraft Video/Animate job accepted then cancelled through the same contract;
+- verify provider cancellation mapping, terminal `cancelled`, no durable output asset, admission cleanup and exact run-owned Supabase/R2/Auth cleanup.
+
+Keep the live cases intentionally small and cancellation-immediate; exhaustive race/error coverage belongs to the run-owned mock worker rather than provider spend.
+
+### Browser / responsive verification
+Activity configured verification must exercise:
+- eligible active row with Cancel action;
+- confirmation dialog keyboard/pointer behavior;
+- accepted `cancelling` feedback and auto-refresh to `Cancelled`;
+- Cancel absent for `persisting`, succeeded, failed, cancelled and unsupported/non-cancellable rows;
+- unchanged failed Retry and succeeded View Result actions;
+- desktop and narrow layouts plus reduced-motion behavior where existing Activity loading motion applies.
+
+### Minimum affected regression gates
+At minimum include every path actually touched, expected to cover:
+- UI Shell Validation / UI purity;
+- Activity;
+- Generation Reconciliation;
+- Generation Admission;
+- Generation Integration;
+- Video Generation Integration;
+- Account Ownership;
+- Create Lifecycle if shared status rendering changes;
+- Reference Upload Integration;
+- Persistent Media Upload Integration;
+- Media Delete;
+- Integrated Release when shared lifecycle/internal routing changes warrant it.
+
+Path filters must be audited so the final exact implementation head really triggers the affected matrix. Hosted-minutes pressure does not waive final exact-head validation.
+
+## Documentation / handoff outputs
+Before Phase 15 can be marked complete:
+- update `PROJECT.md` from this contract to verified implementation/merge evidence;
+- record the durable Cancel decision/evidence in `docs/ui/UI_DECISIONS.md`;
+- update `docs/ui/UI_MIGRATION.md` Phase 15 checklist/status from actual verification;
+- update `docs/ui/SCREEN_REGISTRY.md` only after Activity Cancel is implemented/visually verified;
+- update `docs/architecture/PRODUCT_CAPABILITIES.md`, `FRONTEND_ARCHITECTURE.md` and `INFRASTRUCTURE.md` for implemented cancellation/maintenance/schema/internal-trigger reality;
+- record exact migrations, workflow run IDs, live provider cases, cleanup counts and production deployment/scheduler state.
+
+## Exit criteria
+Phase 15 is `COMPLETE / VERIFIED` only when:
+- owner-facing native Cancel is implemented with an intermediate cancellation state and one serialized lifecycle writer;
+- race/fault tests prove cancellation cannot resurrect into failover/persistence or create a late durable output after cancellation intent wins;
+- `persisting`/terminal result truth cannot be reversed by Cancel;
+- cancelled terminalization settles admission correctly and remains browser-independent;
+- bounded maintenance cleans only explicitly eligible stale staging/pending purge residue and preserves referenced/unknown history;
+- the currently audited old unreferenced temporary-source residue is re-audited and any actual cleanup is performed only through the verified eligibility contract; the referenced historical source remains protected unless its job reference is deliberately removed by a future product decision;
+- configured FLUX and REDGraft cancellation mapping passes on the exact implementation head;
+- affected exact-head CI/browser gates pass and exact fixtures are clean;
+- authoritative docs match implementation reality;
+- no production deployment, maintenance/reconciliation schedule or `pg_cron`/`pg_net` activation is inferred from implementation/merge.
+
+Only after Phase 15 is `COMPLETE / VERIFIED` should Phase 16 be expanded into its execution-ready Creative Iteration contract.
+'''
+project.write_text(text)
+
+migration = Path("docs/ui/UI_MIGRATION.md")
+mtext = migration.read_text()
+if '## Cycle 3 Phase 15 — Generation Control & Maintenance' not in mtext:
+    mtext += '\n' + r'''
+## Cycle 3 Phase 15 — Generation Control & Maintenance
+**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**  
+**Decision:** UI-055.  
+**Execution contract:** `PROJECT.md` Phase 15.
+
+Verified planning baseline on `main` `aa633175d4f8ec278f3ad9181d0a0105d9328163` (tree-identical to Phase 14 closure `c26b1f3e6db092fc2244db812f391298bd468e93`):
+- [x] Phase 14 lifecycle claim/output-slot/admission foundation merged and post-merge verified.
+- [x] Current FLUX/REDGraft gateways expose provider cancellation, while RenderLab has no Cancel API/UI and no `cancelling` product state.
+- [x] Lock v0.1 Cancel to RenderLab-native jobs before `persisting`; optional external-backend cancellation remains unsupported unless separately verified.
+- [x] Audit maintenance residue: 4 non-fixture temporary sources older than 24h (3 unreferenced, 1 referenced/protected), 0 upload sessions, 0 pending media purges.
+- [x] Preserve no-deployment/no-scheduler boundary; `pg_cron`/`pg_net` remain disabled.
+
+Implementation checklist:
+- [ ] Add `cancelling` lifecycle state and owner-scoped Cancel contract with claim-token/CAS serialization.
+- [ ] Prevent failover/finalization after accepted cancellation intent; reject cancellation once `persisting` wins.
+- [ ] Add bounded cancellation reconciliation and exact admission settlement.
+- [ ] Add Activity Cancel confirmation/cancelling states using maintained primitives; preserve Retry/View Result behavior.
+- [ ] Add bounded stale source/upload/pending-purge maintenance with reference-aware deletion safety.
+- [ ] Verify exhaustive mock race/fault matrix plus bounded exact-head FLUX and REDGraft live cancellation cases.
+- [ ] Verify affected responsive/browser/regression matrix and exact shared-resource cleanup.
+- [ ] Update authoritative architecture/screen docs from implemented reality before Phase 15 completion.
+- [ ] Keep production deployment and any scheduler/secret activation separate and explicitly authorized.
+
+No Phase 15 implementation, production cleanup, deployment or scheduler activation is recorded by this planning change.
+'''
+migration.write_text(mtext)
+
+decisions = Path("docs/ui/UI_DECISIONS.md")
+dtext = decisions.read_text()
+if '### UI-055 — Generation Cancel is serialized lifecycle control, not a provider shortcut' not in dtext:
+    dtext += '\n' + r'''
+### UI-055 — Generation Cancel is serialized lifecycle control, not a provider shortcut
+**Status:** Accepted  
+**Date:** 2026-09-04  
+**Decision:** Phase 15 v0.1 adds owner-facing Cancel only for RenderLab-native generation when the server says the active job is safely cancellable before durable result persistence. Cancel is a lifecycle mutation serialized through the Phase 14 reconciliation claim, with an intermediate `cancelling` state and terminal `cancelled`; it is not a browser-direct worker call. Activity is the v0.1 action surface, using server-derived `canCancel` plus maintained confirmation UI. Once `persisting` wins, Cancel is unavailable and the durable result path remains authoritative. Optional external-backend cancellation is not advertised unless an authenticated external cancel contract is separately implemented and verified.  
+**Reason:** Provider gateways already expose cancellation, but provider support alone does not protect RenderLab from late output persistence, standby reassignment, concurrent polling or premature admission release. Phase 14 finally provides the lifecycle claim/output-slot foundation needed to make cancellation a product-safe state transition rather than a best-effort infrastructure button.  
+**Consequences:** `cancelling` is active server-owned state; ordinary failover/finalization stops once cancellation intent wins, while cancellation reconciliation retries the current provider call without reassignment. Admission remains occupied until terminal `cancelled`. Cancelled jobs remain non-retryable under UI-050; successful Run Again/Remix remains Phase 16. The browser never supplies worker/provider identity. Phase 15 also permits only bounded reference-aware maintenance of stale staging and already-tombstoned pending purges; age alone never authorizes deletion of referenced or unknown user data. This decision does not authorize production deployment, scheduler activation, broad R2 garbage collection, external-backend Cancel, or unrelated UI redesign.
+'''
+decisions.write_text(dtext)
+
+capabilities = Path("docs/architecture/PRODUCT_CAPABILITIES.md")
+ctext = capabilities.read_text()
+if '## Phase 15 planning boundary — Cancel and maintenance' not in ctext:
+    ctext += '\n' + r'''
+## Phase 15 planning boundary — Cancel and maintenance
+**Contract accepted; not yet a verified product capability.** Phase 15 plans owner-facing Cancel for RenderLab-native jobs only before `persisting`, using Phase 14 lifecycle claims plus an intermediate `cancelling` state so accepted cancellation cannot later fail over or publish a result. Activity will consume a server-derived `canCancel` capability; worker/provider identity remains internal. The optional external generation backend has no currently verified cancellation contract and therefore remains non-cancellable unless Phase 15 separately proves one.
+
+The 2026-09-04 shared-state maintenance audit found four non-fixture temporary `generation_sources` older than 24 hours: three unreferenced and one ready source still referenced by persisted generation intent. The referenced source remains protected because failed-job Retry may still need it. `media_upload_sessions` is currently empty and all 12 tombstoned media assets are already purged. Phase 15 maintenance is therefore deliberately bounded to explicitly eligible unreferenced staging and pending tombstone purge retries; it is not a generic age-based media/history garbage collector.
+'''
+capabilities.write_text(ctext)
+
+infra = Path("docs/architecture/INFRASTRUCTURE.md")
+itext = infra.read_text()
+if '### Phase 15 pre-implementation control/maintenance audit — 2026-09-04' not in itext:
+    itext += '\n' + r'''
+### Phase 15 pre-implementation control/maintenance audit — 2026-09-04
+Authoritative starting `main` is `aa633175d4f8ec278f3ad9181d0a0105d9328163`, which is tree-identical to Phase 14 documentation closure `c26b1f3e6db092fc2244db812f391298bd468e93`. Phase 14 remains merged/verified but not production-deployed/scheduled. `pg_cron` and `pg_net` remain disabled and Vercel showed zero RenderLab deployments created since the Phase 14 implementation merge.
+
+Cancellation infrastructure evidence is sufficient to plan but not to claim a product capability: current FLUX and REDGraft gateways advertise `cancel_jobs=true` and implement `DELETE /jobs/{call_id}`; RenderLab itself has no Cancel API/UI and its database/type status set has terminal `cancelled` but no `cancelling`. Phase 15 accepts the existing reconciliation token/lease as the lifecycle synchronization primitive and expects the smallest status-constraint extension needed for `cancelling`; implementation must keep provider routing/IDs server-only and must not cancel `persisting` work.
+
+Read-only maintenance audit found exactly four non-fixture `generation_sources`, all older than 24 hours: two `pending` unreferenced, one `ready` unreferenced and one `ready` referenced by persisted `generation_jobs.inputs`. No rows were mutated. `media_upload_sessions` count is zero. `media_assets` has 12 tombstoned rows total and zero rows with `deleted_at IS NOT NULL AND purged_at IS NULL`, so there is no current media-purge backlog. The referenced temporary source is explicitly not disposable under the Phase 15 contract.
+
+No production maintenance endpoint/secret/schedule is active or approved by this audit. Any future internal maintenance invocation remains server-only and bounded; broad R2 prefix garbage collection or age-based deletion of durable/referenced user data is not approved.
+'''
+infra.write_text(itext)
