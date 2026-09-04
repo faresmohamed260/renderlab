@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import type {
   CreativeOperation,
   GenerationJob,
@@ -13,9 +13,10 @@ import {
 } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
-import { isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
+import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
 import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
+import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 
 type WorkflowConfig = {
   id: string;
@@ -70,7 +71,21 @@ type WorkerFailureClassification = {
   code: "WORKER_CREDIT_EXHAUSTED" | "WORKER_UNAVAILABLE" | "PROVIDER_FAILED";
 };
 
+type GeneratedMediaRow = {
+  id: string;
+  storage_key: string;
+  thumbnail_storage_key: string | null;
+  mime_type: string;
+};
+
+type DurableOutputObject = {
+  storageKey: string;
+  contentType: string;
+};
+
 const maxPollReassignmentAttempts = 3;
+const invalidWorkerGraceMs = 15 * 60 * 1000;
+const retryableProviderStaleMs = 2 * 60 * 60 * 1000;
 const creditPatterns = [
   "credit",
   "credits",
@@ -425,40 +440,69 @@ function extensionFor(contentType: string) {
   return "png";
 }
 
-async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
-  const assetId = randomUUID();
+function deterministicGenerationAssetId(jobId: string, outputIndex: number) {
+  const bytes = Buffer.from(
+    createHash("sha256")
+      .update(`renderlab:generation-output:${jobId}:${outputIndex}`)
+      .digest()
+      .subarray(0, 16),
+  );
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function outputStoragePrefix(row: JobRow, assetId: string) {
   const created = new Date(row.created_at);
   const year = created.getUTCFullYear();
   const month = String(created.getUTCMonth() + 1).padStart(2, "0");
-  const storageKey = `renderlab/generations/${year}/${month}/${assetId}.${extensionFor(contentType)}`;
-  await writeR2Object({ key: storageKey, contentType, body: bytes });
+  return `renderlab/generations/${year}/${month}/${assetId}`;
+}
 
-  let thumbnailStorageKey: string | null = null;
-  if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
-    thumbnailStorageKey = `renderlab/thumbnails/${year}/${month}/${assetId}.${extensionFor(poster.contentType)}`;
-    await writeR2Object({ key: thumbnailStorageKey, contentType: poster.contentType, body: poster.bytes });
+function thumbnailStoragePrefix(row: JobRow, assetId: string) {
+  const created = new Date(row.created_at);
+  const year = created.getUTCFullYear();
+  const month = String(created.getUTCMonth() + 1).padStart(2, "0");
+  return `renderlab/thumbnails/${year}/${month}/${assetId}`;
+}
+
+function possibleOutputExtensions(row: JobRow) {
+  return row.output_kind === "image" ? ["png", "jpg", "webp"] : ["mp4", "webm", "mov"];
+}
+
+function possibleThumbnailExtensions() {
+  return ["png", "jpg", "webp"];
+}
+
+function contentTypeMatchesKind(kind: JobRow["output_kind"], contentType: string) {
+  return kind === "image" ? contentType.startsWith("image/") : contentType.startsWith("video/");
+}
+
+async function findDurableObject(prefix: string, extensions: string[], expectedKind: "image" | "video"): Promise<DurableOutputObject | null> {
+  for (const extension of extensions) {
+    const storageKey = `${prefix}.${extension}`;
+    try {
+      const object = await headR2Object(storageKey);
+      if (contentTypeMatchesKind(expectedKind, object.contentType)) {
+        return { storageKey, contentType: object.contentType };
+      }
+    } catch {
+      // A deterministic candidate that does not exist is expected during ordinary polling.
+    }
   }
+  return null;
+}
 
-  await supabaseRest("media_assets", {
-    method: "POST",
-    body: JSON.stringify({
-      id: assetId,
-      owner_id: row.owner_id,
-      generation_job_id: row.id,
-      kind: row.output_kind,
-      mime_type: contentType,
-      storage_key: storageKey,
-      thumbnail_storage_key: thumbnailStorageKey,
-      provenance: {
-        operation: row.operation,
-        workflowId: row.workflow_id,
-        model: row.model,
-        prompt: row.prompt,
-      },
-      metadata: { ecosystem: row.ecosystem, workerId: row.worker_id },
-    }),
-  });
+async function getGeneratedOutput(row: JobRow, outputIndex: number) {
+  const rows = await supabaseRest<GeneratedMediaRow[]>(
+    `media_assets?owner_id=eq.${encodeURIComponent(row.owner_id)}&generation_job_id=eq.${encodeURIComponent(row.id)}&generation_output_index=eq.${outputIndex}&select=id,storage_key,thumbnail_storage_key,mime_type&limit=1`,
+    { method: "GET" },
+  );
+  return rows?.[0] ?? null;
+}
 
+async function completeJobWithAsset(row: JobRow, assetId: string) {
   return patchJob(row.owner_id, row.id, {
     status: "succeeded",
     worker_state: "ready",
@@ -466,6 +510,120 @@ async function persistResult(row: JobRow, bytes: Buffer, contentType: string, po
     completed_at: new Date().toISOString(),
     error_code: null,
     error_message: null,
+  });
+}
+
+async function persistGeneratedMedia({
+  row,
+  outputIndex,
+  assetId,
+  contentType,
+  storageKey,
+  thumbnailStorageKey,
+}: {
+  row: JobRow;
+  outputIndex: number;
+  assetId: string;
+  contentType: string;
+  storageKey: string;
+  thumbnailStorageKey: string | null;
+}) {
+  try {
+    await supabaseRest("media_assets", {
+      method: "POST",
+      body: JSON.stringify({
+        id: assetId,
+        owner_id: row.owner_id,
+        generation_job_id: row.id,
+        generation_output_index: outputIndex,
+        kind: row.output_kind,
+        mime_type: contentType,
+        storage_key: storageKey,
+        thumbnail_storage_key: thumbnailStorageKey,
+        provenance: {
+          operation: row.operation,
+          workflowId: row.workflow_id,
+          model: row.model,
+          prompt: row.prompt,
+        },
+        metadata: { ecosystem: row.ecosystem, workerId: row.worker_id },
+      }),
+    });
+  } catch (error) {
+    const raced = await getGeneratedOutput(row, outputIndex).catch(() => null);
+    if (!raced) throw error;
+    return completeJobWithAsset(row, raced.id);
+  }
+
+  injectGenerationFinalizationFault("after-media-insert");
+  return completeJobWithAsset(row, assetId);
+}
+
+async function recoverPersistingResult(row: JobRow) {
+  if (row.status !== "persisting") return null;
+
+  const outputIndex = 0;
+  const existing = await getGeneratedOutput(row, outputIndex);
+  if (existing) return completeJobWithAsset(row, existing.id);
+
+  const assetId = deterministicGenerationAssetId(row.id, outputIndex);
+  const primary = await findDurableObject(
+    outputStoragePrefix(row, assetId),
+    possibleOutputExtensions(row),
+    row.output_kind,
+  );
+  if (!primary) return null;
+
+  let thumbnailStorageKey: string | null = null;
+  if (row.output_kind === "video") {
+    const thumbnail = await findDurableObject(
+      thumbnailStoragePrefix(row, assetId),
+      possibleThumbnailExtensions(),
+      "image",
+    );
+    thumbnailStorageKey = thumbnail?.storageKey ?? null;
+  }
+
+  return persistGeneratedMedia({
+    row,
+    outputIndex,
+    assetId,
+    contentType: primary.contentType,
+    storageKey: primary.storageKey,
+    thumbnailStorageKey,
+  });
+}
+
+async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
+  const outputIndex = 0;
+  const existing = await getGeneratedOutput(row, outputIndex);
+  if (existing) return completeJobWithAsset(row, existing.id);
+
+  const assetId = deterministicGenerationAssetId(row.id, outputIndex);
+  const storageKey = `${outputStoragePrefix(row, assetId)}.${extensionFor(contentType)}`;
+  injectGenerationFinalizationFault("before-primary-write");
+  await writeR2Object({ key: storageKey, contentType, body: bytes });
+  injectGenerationFinalizationFault("after-primary-write");
+
+  let thumbnailStorageKey: string | null = null;
+  if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
+    const posterKey = `${thumbnailStoragePrefix(row, assetId)}.${extensionFor(poster.contentType)}`;
+    try {
+      injectGenerationFinalizationFault("thumbnail-write");
+      await writeR2Object({ key: posterKey, contentType: poster.contentType, body: poster.bytes });
+      thumbnailStorageKey = posterKey;
+    } catch {
+      thumbnailStorageKey = null;
+    }
+  }
+
+  return persistGeneratedMedia({
+    row,
+    outputIndex,
+    assetId,
+    contentType,
+    storageKey,
+    thumbnailStorageKey,
   });
 }
 
@@ -585,23 +743,60 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
   });
 }
 
-async function failJob(row: JobRow, code: string, message: string) {
+async function failJob(row: JobRow, code: string, message: string, diagnostic?: Record<string, unknown>) {
   return patchJob(row.owner_id, row.id, {
     status: "failed",
     error_code: code,
     error_message: message,
     completed_at: new Date().toISOString(),
+    ...(diagnostic ? { failover_history: [...(row.failover_history || []), diagnostic] } : {}),
   });
+}
+
+function providerFailureDiagnostic(
+  row: JobRow,
+  responseStatus: number,
+  failure: WorkerFailureClassification,
+  providerMessage: string,
+) {
+  return {
+    phase: "poll-provider-failure",
+    workerId: row.worker_id,
+    status: responseStatus,
+    kind: failure.kind,
+    code: failure.code,
+    message: providerMessage.slice(0, 500),
+    at: new Date().toISOString(),
+  };
 }
 
 export async function pollNativeGeneration(ownerId: string, jobId: string): Promise<GenerationJob | null> {
   const row = await getJobRow(ownerId, jobId);
   if (!row) return null;
   if (["succeeded", "failed", "cancelled"].includes(row.status)) return toGenerationJob(row);
+
+  const recovered = await recoverPersistingResult(row);
+  if (recovered) return toGenerationJob(recovered);
+
   if (!row.worker_id || !row.provider_job_id) return toGenerationJob(row);
 
   const worker = findWorker(row.worker_id);
-  if (!worker) throw new Error("Assigned generation worker is no longer registered.");
+  if (!worker) {
+    if (Date.now() - Date.parse(row.updated_at) < invalidWorkerGraceMs) {
+      throw new Error("Assigned generation worker is temporarily unavailable.");
+    }
+    const failed = await failJob(
+      row,
+      "generation_worker_unavailable",
+      "Generation could not resume because its assigned worker is no longer available.",
+      {
+        phase: "poll-worker-missing",
+        workerId: row.worker_id,
+        at: new Date().toISOString(),
+      },
+    );
+    return toGenerationJob(failed);
+  }
 
   const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
     method: "GET",
@@ -621,7 +816,8 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   if (!response.ok) {
     const body = await errorBody(response);
     const failure = classifyWorkerFailure(response.status, body);
-    const message = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
+    const providerMessage = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
+    const diagnostic = providerFailureDiagnostic(row, response.status, failure, providerMessage);
 
     if (failure.safeToReassign) {
       try {
@@ -630,24 +826,44 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
         const failed = await failJob(
           row,
           failure.code.toLowerCase(),
-          `${message} No safe standby worker remains for this generation.`,
+          "Generation could not continue because no safe standby worker remained.",
+          diagnostic,
         );
         return toGenerationJob(failed);
       } catch (error) {
         const failed = await failJob(
           row,
           "generation_reassignment_failed",
-          error instanceof Error ? error.message : "Generation worker reassignment failed.",
+          "Generation could not be reassigned safely.",
+          {
+            ...diagnostic,
+            phase: "poll-reassignment-failed",
+            reassignmentMessage: error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500),
+          },
         );
         return toGenerationJob(failed);
       }
     }
 
     if (failure.retryable) {
-      throw new Error(message);
+      if (Date.now() - Date.parse(row.updated_at) >= retryableProviderStaleMs) {
+        const failed = await failJob(
+          row,
+          "generation_provider_stalled",
+          "Generation could not be confirmed after prolonged provider unavailability.",
+          diagnostic,
+        );
+        return toGenerationJob(failed);
+      }
+      throw new Error("Generation provider status is temporarily unavailable.");
     }
 
-    const failed = await failJob(row, "generation_failed", String(body.error || body.detail || "Generation failed."));
+    const failed = await failJob(
+      row,
+      "generation_failed",
+      "Generation failed while processing on the assigned worker.",
+      diagnostic,
+    );
     return toGenerationJob(failed);
   }
 

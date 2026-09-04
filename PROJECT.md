@@ -81,7 +81,7 @@ RenderLab already has a substantial verified core. Cycle 3 must build on it rath
 Detailed historical evidence remains in the archived Project chronology plus `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md` and the architecture documents.
 
 ## Cycle 3 — Reliability, Creative Iteration & Capability Growth
-**Status: `IN PROGRESS — ROADMAP LOCKED; PHASE 14 CONTRACTED; IMPLEMENTATION NOT STARTED`.**
+**Status: `IN PROGRESS — PHASE 14 COMPLETE / VERIFIED; PHASE 15 ROADMAP`.**
 
 ### Cycle 3 objective
 Make RenderLab independently reliable after a generation is accepted, then turn one-shot generation into a deeper iterative creative workflow before expanding into another major creative capability.
@@ -95,7 +95,7 @@ The Cycle 3 order is intentional:
 
 ### Locked Cycle 3 roadmap
 - **Phase 13 — Email & Invite Production Hardening: `COMPLETE / VERIFIED`.** Existing production email/Auth evidence remains authoritative.
-- **Phase 14 — Autonomous Generation Lifecycle & Durable Finalization: `CONTRACTED / NOT STARTED`.** Remove browser polling as a correctness dependency, make result finalization idempotent/recoverable and prove accepted jobs can reach durable terminal state with no active user tab.
+- **Phase 14 — Autonomous Generation Lifecycle & Durable Finalization: `COMPLETE / VERIFIED`.** Remove browser polling as a correctness dependency, make result finalization idempotent/recoverable and prove accepted jobs can reach durable terminal state with no active user tab.
 - **Phase 15 — Generation Control & Maintenance: `ROADMAP`.** Build safe user cancellation only after Phase 14 establishes atomic lifecycle/reconciliation boundaries; add bounded maintenance for stale uploads/sources, pending media purges and other recoverable residue.
 - **Phase 16 — Creative Iteration: `ROADMAP`.** Prioritize Remix / Reuse Settings, successful-job Run Again/recipe reuse and source/result comparison; evaluate Variations only after durable output-slot semantics from Phase 14 are known.
 - **Phase 17 — Observability & Engineering Quality: `ROADMAP`.** Add structured lifecycle/error/capacity visibility and cheaper conventional static/unit verification without weakening the existing configured end-to-end gates.
@@ -106,7 +106,7 @@ Later phases must be expanded only after their predecessors produce the evidence
 ---
 
 # Phase 14 Execution Contract — Autonomous Generation Lifecycle & Durable Finalization
-**Status: `CONTRACTED / IMPLEMENTATION NOT STARTED`.**
+**Status: `COMPLETE / VERIFIED`.**
 
 ## Goal / user value
 An accepted RenderLab generation must finish truthfully even if the user closes the tab, loses connectivity or never polls that job again. Durable result persistence must be safe to retry after partial failures without creating duplicate product assets or silently orphaning result state.
@@ -337,9 +337,42 @@ Each phase contract must cover goal, user value, verified starting state, in/out
 Accepting a contract does not mark implementation complete, does not waive exact-head validation and does not authorize deployment.
 
 ## Immediate Handoff
-The next substantial implementation session must:
+After Phase 14 merges, the next substantial planning/implementation session must:
 1. start from current `main`, not the historical archive or conversation memory;
 2. re-read `AGENTS.md`, this `PROJECT.md`, `docs/ui/UI_MIGRATION.md` and the relevant generation/infrastructure architecture docs;
-3. verify the current native job polling/finalization and admission implementation has not changed since this contract was locked;
-4. begin **Phase 14 only**;
-5. stop before Phase 15 implementation even if Phase 14 completes in the same session, unless the repository has first been updated with verified Phase 14 evidence and a separately expanded Phase 15 contract.
+3. verify the merged Phase 14 lifecycle/reconciliation state and shared-resource baseline still match the recorded evidence;
+4. expand **Phase 15 — Generation Control & Maintenance** into an execution-ready contract before implementing Cancel or broader maintenance work;
+5. keep Phase 16+ at roadmap level and do not activate the Phase 14 production scheduler or deploy a new application candidate without separate explicit authorization.
+
+## Phase 14 Implementation Verification — 2026-09-03
+Phase 14 is `COMPLETE / VERIFIED` in the repository and shared validation infrastructure. This does **not** mean the Phase 14 application or scheduler is deployed to production.
+
+Verified implementation head: `1b3927c98be2122fdbd1b5754fc67cddfcf675ca`.
+
+- Native accepted generations can progress through a server-owned protected reconciliation path without the initiating browser remaining open. Browser GET polling now reuses the same reconciliation claim and is observational/accelerating rather than a correctness dependency.
+- Active jobs use short-lived owner/job reconciliation claims. Concurrent invocations, abandoned leases and retries converge without producing duplicate durable output slots.
+- Generated output identity is deterministic per `generation_job_id + generation_output_index`; the current single output occupies slot `0`, while the schema can represent later multi-output work without a naive one-job/one-asset uniqueness constraint.
+- Partial finalization is resumable across provider-ready/download failure, R2-primary-write success before media metadata, media metadata before terminal job patch and interrupted reconciliation. A `persisting` retry first adopts existing canonical media or the deterministic R2 object before requiring provider re-download, so already-owned durable bytes can finish even after provider output expires.
+- Optional video poster persistence is non-fatal to a valid primary video result.
+- Retryable provider outages have a bounded two-hour stale lifecycle; product-visible errors remain sanitized while worker/provider diagnostics remain server-side.
+- Terminalization settles bound admission capacity. The scheduler-vs-bind race is atomic for local terminal jobs, while accepted external-backend job UUIDs without local `generation_jobs` rows retain the established conservative bound reservation behavior.
+- Historical duplicate-linked media was audited before DDL. Exactly two succeeded historical jobs had one canonical `output_asset_ids` entry plus one extra linked media row; migration backfill indexed only the canonical slot and preserved each historical extra with `generation_output_index = NULL`. No destructive cleanup was performed.
+- Shared Supabase migrations applied: `20260903015917 renderlab_generation_reconciliation`, `20260903053454 renderlab_generation_admission_terminal_bind`, and corrective additive `20260903093654 renderlab_generation_admission_external_bind`.
+- Phase 14 privileged RPCs remain `SECURITY DEFINER`, use an empty `search_path`, and are executable by `service_role` only; browser table grants were not opened.
+- Supabase Security/Performance Advisor output has no new Phase 14-specific finding. Existing deliberate server-owned RLS/no-policy INFO, leaked-password-protection WARN, singleton `updated_by` FK INFO and low-traffic unused-index INFO remain tracked separately.
+- `pg_cron` and `pg_net` are not enabled. The intended eventual autonomous trigger remains Supabase Cron/pg_net calling the protected RenderLab endpoint, but no schedule or production reconciler secret is activated by this implementation.
+- The connected Vercel team remains Hobby and created zero RenderLab deployments on 2026-09-03 during Phase 14 implementation. Automatic Git → Vercel deployment remains disabled; production still runs the previously accepted Cycle 2/Phase 13 application.
+
+Exact implementation-head validation:
+- Generation Reconciliation: `33739813039`
+- Generation Admission: `33739812977`
+- Generation Integration: `33739812999`
+- Video Generation Integration: `33739813116`
+- Create Lifecycle Visual: `33739813138`
+- Activity Visual: `33739813077`
+- Account Ownership: `33739813067`
+- Integrated Release: `33739812996`
+- UI Shell Validation: `33739813080`
+- Brand / Launch Visual: `33739813036`
+
+Phase 15 remains roadmap-only. Phase 14 does not add user-facing Cancel, a general maintenance sweeper, creative iteration features or a production rollout.

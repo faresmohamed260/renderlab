@@ -19,6 +19,8 @@ on:
       - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "supabase/migrations/0011_renderlab_admin_access_control.sql"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"
+      - "supabase/migrations/0014_generation_admission_terminal_bind.sql"
+      - "supabase/migrations/0015_generation_admission_external_bind.sql"
       - ".github/workflows/generation-admission.yml"
   workflow_dispatch:
 

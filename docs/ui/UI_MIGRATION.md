@@ -1442,3 +1442,22 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 **Post-Cycle-2 accepted direction:** LoRA/model-adapter work is outside Phase 13.
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
+
+## Cycle 3 / Phase 14 — Autonomous Generation Lifecycle & Durable Finalization
+**Status: `COMPLETE / VERIFIED` on implementation head `1b3927c98be2122fdbd1b5754fc67cddfcf675ca`.**
+
+Phase 14 is intentionally a backend lifecycle foundation, not a Create/Activity redesign.
+
+- [x] Accepted native work can reach truthful terminal state and durable media without an active initiating browser tab.
+- [x] Create and Activity may continue polling for responsive updates, but polling now enters the same claimed server reconciliation path and is not the durability mechanism.
+- [x] Add explicit deterministic output-slot identity and uniqueness without forcing one-output-only schema semantics.
+- [x] Verify recovery at before-R2, after-R2/before-media, after-media/before-job-terminal, provider-result-expiry, optional-poster, interrupted-lease and concurrent-reconciler boundaries.
+- [x] Verify canonical generated output through the ordinary authenticated product media API.
+- [x] Bound stale retryable provider jobs and keep provider diagnostics out of product-visible errors.
+- [x] Settle admission capacity on autonomous terminalization, including local terminal-before-bind races, while preserving conservative external-backend binding.
+- [x] Preserve the two audited historical noncanonical linked media rows with null output slots; no destructive cleanup.
+- [x] Apply migrations `0013`, `0014`, `0015` as `20260903015917`, `20260903053454`, `20260903093654` respectively.
+- [x] Exact implementation-head gates passed: Reconciliation `33739813039`, Admission `33739812977`, Image Generation `33739812999`, Video Generation `33739813116`, Create `33739813138`, Activity `33739813077`, Ownership `33739813067`, Integrated Release `33739812996`, UI Shell `33739813080`, Brand/Launch `33739813036`.
+- [x] Keep production rollout separate: no `pg_cron`, no `pg_net`, no active production reconciler schedule/secret, zero Vercel deployments created during the implementation day, automatic Git → Vercel disabled.
+
+No visual approval state changed in this phase. User-facing Cancel and broader stale-artifact maintenance remain Phase 15 work; creative iteration remains Phase 16.
