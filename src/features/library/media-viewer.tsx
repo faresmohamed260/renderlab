@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import type { PublicMediaCollection } from "@/lib/api/media-collections-contract";
 import { continuationActionsForMedia } from "@/lib/capabilities/generation";
+import {
+  MediaViewerCompareButton,
+  MediaViewerCompareProvider,
+  MediaViewerMediaStage,
+} from "@/features/library/media-viewer-comparison";
 import { MediaViewerActions } from "@/features/library/media-viewer-actions";
 
 function createdLabel(value: string) {
@@ -47,17 +52,20 @@ export function MediaViewer({
   collections,
   collectionsAvailable,
   reuseRecipeJobId,
+  compareSource,
 }: {
   asset: PublicMediaAsset;
   collections: PublicMediaCollection[];
   collectionsAvailable: boolean;
   reuseRecipeJobId: string | null;
+  compareSource: PublicMediaAsset | null;
 }) {
   const actions = continuationActionsForMedia(asset.kind);
   const dimensions = asset.width && asset.height ? `${asset.width} × ${asset.height}` : null;
   const duration = durationLabel(asset.durationMs);
   const size = sizeLabel(asset.sizeBytes);
   const title = assetTitle(asset);
+  const sourceTitle = compareSource ? assetTitle(compareSource) : null;
   const hasDetails = Boolean(dimensions || duration || asset.originalFilename || size || asset.origin === "uploaded");
 
   return (
@@ -69,113 +77,104 @@ export function MediaViewer({
         </Link>
       </Button>
 
-      <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
-        <div className="flex min-h-[52vh] items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-1 p-2 sm:p-4 lg:min-h-[70vh]">
-          {asset.kind === "image" ? (
-            <img
-              src={asset.contentUrl}
-              alt={title}
-              className="max-h-[78vh] max-w-full rounded-xl object-contain"
-            />
-          ) : (
-            <video
-              src={asset.contentUrl}
-              poster={asset.thumbnailUrl || undefined}
-              controls
-              playsInline
-              className="max-h-[78vh] max-w-full rounded-xl"
-              aria-label={title}
-            />
-          )}
-        </div>
+      <MediaViewerCompareProvider enabled={Boolean(compareSource)}>
+        <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+          <MediaViewerMediaStage
+            asset={asset}
+            title={title}
+            source={compareSource}
+            sourceTitle={sourceTitle}
+          />
 
-        <aside className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">
-            {asset.origin === "uploaded" ? `uploaded ${asset.kind}` : asset.kind}
-          </p>
-          <h2 className="mt-3 text-xl font-semibold leading-7 text-text">{title}</h2>
-          <p className="mt-2 text-xs text-text-muted">
-            Created <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
-          </p>
+          <aside className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">
+              {asset.origin === "uploaded" ? `uploaded ${asset.kind}` : asset.kind}
+            </p>
+            <h2 className="mt-3 text-xl font-semibold leading-7 text-text">{title}</h2>
+            <p className="mt-2 text-xs text-text-muted">
+              Created <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
+            </p>
 
-          {asset.prompt ? (
+            {asset.prompt ? (
+              <div className="mt-6 border-t border-border pt-5">
+                <h3 className="text-xs font-semibold text-text">Prompt</h3>
+                <p className="mt-2 text-sm leading-6 text-text-muted">{asset.prompt}</p>
+              </div>
+            ) : null}
+
+            {hasDetails ? (
+              <div className="mt-6 border-t border-border pt-5">
+                <h3 className="text-xs font-semibold text-text">Details</h3>
+                <dl className="mt-3 grid grid-cols-[92px_1fr] gap-x-3 gap-y-2 text-sm">
+                  {asset.origin === "uploaded" ? (
+                    <>
+                      <dt className="text-text-muted">Source</dt>
+                      <dd className="text-text">Upload</dd>
+                    </>
+                  ) : null}
+                  {asset.originalFilename ? (
+                    <>
+                      <dt className="text-text-muted">File</dt>
+                      <dd className="break-words text-text">{asset.originalFilename}</dd>
+                    </>
+                  ) : null}
+                  {size ? (
+                    <>
+                      <dt className="text-text-muted">Size</dt>
+                      <dd className="text-text">{size}</dd>
+                    </>
+                  ) : null}
+                  {dimensions ? (
+                    <>
+                      <dt className="text-text-muted">Dimensions</dt>
+                      <dd className="text-text">{dimensions}</dd>
+                    </>
+                  ) : null}
+                  {duration ? (
+                    <>
+                      <dt className="text-text-muted">Duration</dt>
+                      <dd className="text-text">{duration}</dd>
+                    </>
+                  ) : null}
+                </dl>
+              </div>
+            ) : null}
+
+            {actions.length || reuseRecipeJobId || compareSource ? (
+              <div className="mt-6 border-t border-border pt-5">
+                <h3 className="text-xs font-semibold text-text">Continue</h3>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {actions.map((action, index) => (
+                    <Button key={action.id} asChild variant={index === 0 ? "default" : "secondary"} size="lg" className="w-full">
+                      <Link href={continuationHref(asset.id, action.id)}>{action.label}</Link>
+                    </Button>
+                  ))}
+                  {reuseRecipeJobId ? (
+                    <Button asChild variant="secondary" size="lg" className="w-full">
+                      <Link href={`/create?recipe=${encodeURIComponent(reuseRecipeJobId)}`}>Reuse settings</Link>
+                    </Button>
+                  ) : null}
+                  <MediaViewerCompareButton />
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-6 border-t border-border pt-5">
-              <h3 className="text-xs font-semibold text-text">Prompt</h3>
-              <p className="mt-2 text-sm leading-6 text-text-muted">{asset.prompt}</p>
-            </div>
-          ) : null}
-
-          {hasDetails ? (
-            <div className="mt-6 border-t border-border pt-5">
-              <h3 className="text-xs font-semibold text-text">Details</h3>
-              <dl className="mt-3 grid grid-cols-[92px_1fr] gap-x-3 gap-y-2 text-sm">
-                {asset.origin === "uploaded" ? (
-                  <>
-                    <dt className="text-text-muted">Source</dt>
-                    <dd className="text-text">Upload</dd>
-                  </>
-                ) : null}
-                {asset.originalFilename ? (
-                  <>
-                    <dt className="text-text-muted">File</dt>
-                    <dd className="break-words text-text">{asset.originalFilename}</dd>
-                  </>
-                ) : null}
-                {size ? (
-                  <>
-                    <dt className="text-text-muted">Size</dt>
-                    <dd className="text-text">{size}</dd>
-                  </>
-                ) : null}
-                {dimensions ? (
-                  <>
-                    <dt className="text-text-muted">Dimensions</dt>
-                    <dd className="text-text">{dimensions}</dd>
-                  </>
-                ) : null}
-                {duration ? (
-                  <>
-                    <dt className="text-text-muted">Duration</dt>
-                    <dd className="text-text">{duration}</dd>
-                  </>
-                ) : null}
-              </dl>
-            </div>
-          ) : null}
-
-          {actions.length || reuseRecipeJobId ? (
-            <div className="mt-6 border-t border-border pt-5">
-              <h3 className="text-xs font-semibold text-text">Continue</h3>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {actions.map((action, index) => (
-                  <Button key={action.id} asChild variant={index === 0 ? "default" : "secondary"} size="lg" className="w-full">
-                    <Link href={continuationHref(asset.id, action.id)}>{action.label}</Link>
-                  </Button>
-                ))}
-                {reuseRecipeJobId ? (
-                  <Button asChild variant="secondary" size="lg" className="w-full">
-                    <Link href={`/create?recipe=${encodeURIComponent(reuseRecipeJobId)}`}>Reuse settings</Link>
-                  </Button>
-                ) : null}
+              <h3 className="text-xs font-semibold text-text">Actions</h3>
+              <div className="mt-3">
+                <MediaViewerActions
+                  assetId={asset.id}
+                  displayName={asset.displayName}
+                  fallbackTitle={title}
+                  isFavorite={asset.isFavorite}
+                  collections={collections}
+                  collectionsAvailable={collectionsAvailable}
+                />
               </div>
             </div>
-          ) : null}
-
-          <div className="mt-6 border-t border-border pt-5">
-            <h3 className="text-xs font-semibold text-text">Actions</h3>
-            <div className="mt-3">
-              <MediaViewerActions
-                assetId={asset.id}
-                displayName={asset.displayName}
-                fallbackTitle={title}
-                isFavorite={asset.isFavorite}
-                collections={collections}
-                collectionsAvailable={collectionsAvailable}
-              />
-            </div>
-          </div>
-        </aside>
-      </div>
+          </aside>
+        </div>
+      </MediaViewerCompareProvider>
     </section>
   );
 }

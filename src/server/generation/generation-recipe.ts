@@ -77,6 +77,29 @@ export async function reconstructAvailableGenerationRecipeRequest(
   return request;
 }
 
+export async function loadGenerationComparisonSource(
+  ownerId: string,
+  jobId: string,
+) {
+  const row = await loadGenerationRecipeJob(ownerId, jobId);
+  if (!row || row.status !== "succeeded") return null;
+
+  const primaryRole = row.operation === "edit-image"
+    ? "primary-image"
+    : row.operation === "animate-image"
+      ? "first-frame"
+      : null;
+  if (!primaryRole) return null;
+
+  const request = reconstructGenerationRecipeRequest(row);
+  if (!request) return null;
+  const primaryInput = request.inputs.find((input) => input.role === primaryRole);
+  if (!primaryInput || primaryInput.source.type !== "media-asset") return null;
+
+  const source = await getMediaAsset(ownerId, primaryInput.source.id);
+  if (!source || source.kind !== "image") return null;
+  return publicMediaAsset(source);
+}
 
 function mediaRecipeLabel(asset: ReturnType<typeof publicMediaAsset>) {
   if (asset.origin === "uploaded") {
