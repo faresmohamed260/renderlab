@@ -126,10 +126,6 @@ jobs:
       - name: Verify serialized native cancellation
         run: node scripts/verify-generation-cancellation.mjs
 
-      - name: Cleanup cancellation fixtures
-        if: always()
-        run: node scripts/verify-generation-cancellation.mjs --cleanup-only || true
-
       - name: Print logs on failure
         if: failure()
         run: |
