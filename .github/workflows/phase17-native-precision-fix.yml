@@ -1,0 +1,40 @@
+name: Phase 17 precision fix
+
+on:
+  push:
+    branches:
+      - work/phase-17-observability-quality
+    paths:
+      - .github/phase17-native-precision-fix.py
+      - .github/workflows/phase17-native-precision-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-17-observability-quality
+          fetch-depth: 0
+
+      - name: Apply precise fixes
+        run: python .github/phase17-native-precision-fix.py
+
+      - name: Validate patch whitespace
+        run: git diff --check
+
+      - name: Commit fixes and remove helpers
+        shell: bash
+        run: |
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git rm .github/phase17-native-precision-fix.py .github/workflows/phase17-native-precision-fix.yml
+          git add -A
+          git diff --cached --check
+          git commit -m "Fix Phase 17 classifier extraction and bounded health evidence"
+          git push origin HEAD:work/phase-17-observability-quality
