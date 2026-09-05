@@ -1,0 +1,55 @@
+name: Phase 16 Contract Runner
+
+on:
+  push:
+    branches: [noop]
+    paths:
+      - ".github/workflows/phase16-contract-runner.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout helper source
+        uses: actions/checkout@v4
+        with:
+          ref: noop
+          fetch-depth: 0
+
+      - name: Extract authored contract payload
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          source = Path('.github/workflows/phase16-contract-sync.yml').read_text()
+          start_marker = "          python <<'PY'\n"
+          end_marker = "\n          PY\n"
+          start = source.index(start_marker) + len(start_marker)
+          end = source.index(end_marker, start)
+          payload = source[start:end]
+          lines = []
+          for line in payload.splitlines():
+              lines.append(line[10:] if line.startswith('          ') else line)
+          Path('/tmp/phase16-contract.py').write_text('\n'.join(lines) + '\n')
+          PY
+
+      - name: Apply contract to frozen planning branch
+        shell: bash
+        env:
+          EXPECTED_BASE: 3624924eb24b5d9375934fadb5050f5f198eb338
+          TARGET_BRANCH: plan/phase-16-creative-iteration-contract
+        run: |
+          set -euo pipefail
+          git fetch origin "$TARGET_BRANCH"
+          git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_BASE"
+          python /tmp/phase16-contract.py
+          git diff --check
+          git config user.name "RenderLab Automation"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md
+          git commit -m "Lock Phase 16 creative iteration contract"
+          git push origin HEAD:"$TARGET_BRANCH"
