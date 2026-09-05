@@ -1,0 +1,63 @@
+name: Phase 18 Upscale Runtime Audit
+
+on:
+  push:
+    branches: [work/phase-18-image-upscale]
+    paths:
+      - .github/workflows/phase18-runtime-audit.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-phase18-upscale-runtime-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run engineering quality gate
+        run: npm run verify:engineering-quality
+      - name: Hash official SwinIR 2x candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/001_classicalSR_DF2K_s64w8_SwinIR-M_x2.pth'
+          expected_size='67277475'
+          curl --fail --location --retry 4 --retry-all-errors --connect-timeout 30 --max-time 600 \
+            "$url" -o /tmp/swinir-x2.pth
+          size="$(stat -c '%s' /tmp/swinir-x2.pth)"
+          test "$size" = "$expected_size"
+          sha="$(sha256sum /tmp/swinir-x2.pth | awk '{print $1}')"
+          mkdir -p artifacts
+          cat > artifacts/phase18-upscale-runtime-audit.json <<JSON
+          {
+            "sourceRepository": "JingyunLiang/SwinIR",
+            "sourceTag": "v0.0",
+            "sourceCommit": "33f616625268d08ba600f8db89388eec0328edb1",
+            "asset": "001_classicalSR_DF2K_s64w8_SwinIR-M_x2.pth",
+            "assetSizeBytes": $size,
+            "assetSha256": "$sha",
+            "nativeScale": 2,
+            "projectLicense": "Apache-2.0",
+            "licenseSource": "LICENSE at source commit 33f616625268d08ba600f8db89388eec0328edb1"
+          }
+          JSON
+          cat artifacts/phase18-upscale-runtime-audit.json
+      - name: Upload runtime evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-upscale-runtime-audit-${{ github.run_id }}
+          path: artifacts/phase18-upscale-runtime-audit.json
+          if-no-files-found: error
+          retention-days: 14
