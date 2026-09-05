@@ -5,6 +5,7 @@ on:
     branches: [noop]
     paths:
       - ".github/workflows/phase16-doc-sync.yml"
+      - ".github/phase16-doc-sync.py"
 
 permissions:
   contents: write
@@ -22,6 +23,10 @@ jobs:
           ref: noop
           fetch-depth: 0
 
+      - name: Preserve patch helper
+        shell: bash
+        run: cp .github/phase16-doc-sync.py /tmp/phase16-doc-sync.py
+
       - name: Update verified Phase 16 repository record
         shell: bash
         run: |
@@ -29,5 +34,16 @@ jobs:
           git fetch origin "$TARGET_BRANCH"
           git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
-          echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKZGVmIGFwcGVuZF9vbmNlKHBhdGgsIG1hcmtlciwgYmxvY2spOgogICAgcCA9IFBhdGgocGF0aCkKICAgIHRleHQgPSBwLnJlYWRfdGV4dCgpCiAgICBpZiBtYXJrZXIgaW4gdGV4dDoKICAgICAgICByZXR1cm4KICAgIHAud3JpdGVfdGV4dCh0ZXh0LnJzdHJpcCgpICsgIlxuXG4iICsgYmxvY2suc3RyaXAoKSArICJcbiIpCgpwcm9qZWN0ID0gUGF0aCgiUFJPSkVDVC5tZCIpCnRleHQgPSBwcm9qZWN0LnJlYWRfdGV4dCgpCgpvbGRfc3RhdHVzID0gIioqU3RhdHVzOiBgSU4gUFJPR1JFU1Mg4oCUIFBIQVNFIDE1IENPTVBMRVRFIC8gVkVSSUZJRUQ7IFBIQVNFIDE2IENPTlRSQUNUIEFDQ0VQVEVEIC8gSU1QTEVNRU5UQVRJT04gTk9UIFNUQVJURUQuYC4qKiIKbmV3X3N0YXR1cyA9ICIqKlN0YXR1czogYElOIFBST0dSRVNTIOKAlCBQSEFTRSAxNkEvMTZCLzE2QyBJTVBMRU1FTlRFRCAvIFZFUklGSUVEOyBQSEFTRSAxNkQgREVTSUdOIENIRUNLUE9JTlQgUEVORElOR2AuKioiCmlmIG9sZF9zdGF0dXMgbm90IGluIHRleHQ6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCJDeWNsZSAzIHN0YXR1cyBtYXJrZXIgbm90IGZvdW5kIikKdGV4dCA9IHRleHQucmVwbGFjZShvbGRfc3RhdHVzLCBuZXdfc3RhdHVzLCAxKQoKb2xkX2ludHJvID0gIlBoYXNlIDE2IHBsYW5uaW5nIGlzIG5vdyBjYXB0dXJlZCBieSB0aGUgYWNjZXB0ZWQgZXhlY3V0aW9uIGNvbnRyYWN0IGJlbG93LiBJbXBsZW1lbnRhdGlvbiBoYXMgbm90IHN0YXJ0ZWQsIGFuZCB0aGUgY29udHJhY3QgaXRzZWxmIGRvZXMgbm90IGF1dGhvcml6ZSBwcm9kdWN0aW9uIGRlcGxveW1lbnQgb3Igc2NoZWR1bGVyIGFjdGl2YXRpb24uIgpuZXdfaW50cm8gPSAiUGhhc2UgMTYgcGxhbm5pbmcgaXMgY2FwdHVyZWQgYnkgdGhlIGFjY2VwdGVkIGV4ZWN1dGlvbiBjb250cmFjdCBiZWxvdy4gSW1wbGVtZW50YXRpb24gaXMgaW4gcHJvZ3Jlc3M6IDE2QSBzaGFyZWQgcmVjaXBlIHJlY29uc3RydWN0aW9uLCAxNkIgUmV1c2UgU2V0dGluZ3MgYW5kIDE2QyBzdWNjZXNzZnVsIFJ1biBBZ2FpbiBhcmUgaW1wbGVtZW50ZWQgYW5kIHZlcmlmaWVkOyAxNkQgY29tcGFyaXNvbiByZW1haW5zIGJsb2NrZWQgb24gaXRzIHJlcXVpcmVkIHZpc3VhbCBkZXNpZ24gY2hlY2twb2ludC4gVGhlIGNvbnRyYWN0IGFuZCB0aGlzIGltcGxlbWVudGF0aW9uIGV2aWRlbmNlIGRvIG5vdCBhdXRob3JpemUgcHJvZHVjdGlvbiBkZXBsb3ltZW50IG9yIHNjaGVkdWxlciBhY3RpdmF0aW9uLiIKaWYgb2xkX2ludHJvIG5vdCBpbiB0ZXh0OgogICAgcmFpc2UgU3lzdGVtRXhpdCgiUGhhc2UgMTYgaW50cm8gbWFya2VyIG5vdCBmb3VuZCIpCnRleHQgPSB0ZXh0LnJlcGxhY2Uob2xkX2ludHJvLCBuZXdfaW50cm8sIDEpCgpvbGRfY29udHJhY3QgPSAiIyBQaGFzZSAxNiBFeGVjdXRpb24gQ29udHJhY3Qg4oCUIENyZWF0aXZlIEl0ZXJhdGlvblxuKipTdGF0dXM6IGBBQ0NFUFRFRCAvIElNUExFTUVOVEFUSU9OIE5PVCBTVEFSVEVELmAuKioiCnByb2dyZXNzID0gIiIiIyBQaGFzZSAxNiBFeGVjdXRpb24gQ29udHJhY3Qg4oCUIENyZWF0aXZlIEl0ZXJhdGlvbgob...TRUNCATED...'
-          # Base64 payload intentionally omitted from this display rewrite for brevity
+          python /tmp/phase16-doc-sync.py
+          git diff --check
+          grep -Fq 'PHASE 16A/16B/16C IMPLEMENTED / VERIFIED; PHASE 16D DESIGN CHECKPOINT PENDING' PROJECT.md
+          grep -Fq '16D Compare source' docs/ui/UI_MIGRATION.md
+          grep -Fq 'Compare source pending design' docs/ui/SCREEN_REGISTRY.md
+          grep -Fq 'Phase 16 Creative Iteration — 16A–16C verified in RenderLab' docs/architecture/PRODUCT_CAPABILITIES.md
+          grep -Fq 'Phase 16 successful-history recipe boundary' docs/architecture/FRONTEND_ARCHITECTURE.md
+          grep -Fq 'Phase 16 Creative Iteration configured verification' docs/architecture/INFRASTRUCTURE.md
+          git config user.name "RenderLab Automation"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/SCREEN_REGISTRY.md docs/architecture/PRODUCT_CAPABILITIES.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md
+          git commit -m "Record verified Phase 16 creative iteration progress"
+          git push origin HEAD:"$TARGET_BRANCH"
