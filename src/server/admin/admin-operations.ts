@@ -10,10 +10,13 @@ import type {
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { getAdminGenerationSettings } from "@/server/admin/admin-settings";
+import { summarizeActiveAdminJobAge, summarizeRecentAdminJobs, type AdminHealthJobSample } from "@/server/admin/admin-health-summary";
+import { getRenderLabMaintenanceBacklog } from "@/server/maintenance/renderlab-maintenance";
 
 const pendingInvitationLimit = 100;
 const accountListLimit = 100;
 const invitationLifetimeMs = 60 * 60 * 1000;
+const healthSampleLimit = 200;
 
 type AdminAccountAccessRow = {
   user_id: string;
@@ -310,10 +313,59 @@ export async function updateAdminAccount(
 
 export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSnapshot> {
   try {
-    return await supabaseRest<AdminHealthSnapshot>("rpc/renderlab_admin_health", {
+    const base = await supabaseRest<Pick<AdminHealthSnapshot, "windowHours" | "since" | "activeJobs" | "statusCounts" | "operationCounts" | "errorCodeCounts">>("rpc/renderlab_admin_health", {
       method: "POST",
       body: JSON.stringify({ p_actor_user_id: actorUserId, p_window_hours: 24 }),
     });
+
+    // The privileged RPC above authorizes first. Every query below is server-only, bounded, and
+    // selects only fields needed to produce aggregate operator visibility.
+    const now = new Date();
+    const recentParams = new URLSearchParams({
+      created_at: `gte.${base.since}`,
+      select: "status,failover_history,created_at,updated_at,completed_at",
+      order: "created_at.desc",
+      limit: String(healthSampleLimit + 1),
+    });
+    const activeParams = new URLSearchParams({
+      status: "in.(queued,preparing,running,cancelling,persisting)",
+      select: "status,failover_history,created_at,updated_at,completed_at",
+      order: "updated_at.asc",
+      limit: String(healthSampleLimit + 1),
+    });
+    const reservationParams = new URLSearchParams({
+      released_at: "is.null",
+      expires_at: `gt.${now.toISOString()}`,
+      select: "id",
+      order: "expires_at.asc",
+      limit: String(healthSampleLimit + 1),
+    });
+
+    const [recentRowsRaw, activeRowsRaw, reservationRows, settings, maintenanceBacklog] = await Promise.all([
+      supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${recentParams.toString()}`),
+      supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${activeParams.toString()}`),
+      supabaseRest<Array<{ id: string }>>(`generation_admission_reservations?${reservationParams.toString()}`),
+      getAdminGenerationSettings(),
+      getRenderLabMaintenanceBacklog(),
+    ]);
+
+    const recentRows = recentRowsRaw.slice(0, healthSampleLimit);
+    const activeRows = activeRowsRaw.slice(0, healthSampleLimit);
+    return {
+      ...base,
+      recentJobs: summarizeRecentAdminJobs(recentRows, recentRowsRaw.length > healthSampleLimit),
+      activeStateAge: summarizeActiveAdminJobAge(activeRows, activeRowsRaw.length > healthSampleLimit, now.valueOf()),
+      capacity: {
+        activeReservations: {
+          count: Math.min(reservationRows.length, healthSampleLimit),
+          truncated: reservationRows.length > healthSampleLimit,
+        },
+        generationEnabled: settings.generationEnabled,
+        maxActiveJobsPerAccount: settings.maxActiveJobs,
+        maxJobsPerHourPerAccount: settings.maxJobsPerHour,
+      },
+      maintenanceBacklog,
+    };
   } catch (error) {
     const classified = classifyAccountMutationError(error);
     if (classified.code === "admin_access_required") throw classified;

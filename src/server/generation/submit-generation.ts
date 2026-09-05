@@ -1,8 +1,9 @@
-import type { GenerationJob, GenerationRequest } from "@/lib/capabilities/generation";
+import { resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
 import { getMediaAsset } from "@/server/media/media-assets";
 import { supabaseRest } from "@/server/data/supabase-rest";
+import { correlationIdForGenerationJob, createDiagnosticCorrelationId, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 import {
   bindGenerationAdmission,
   releaseGenerationAdmission,
@@ -106,25 +107,43 @@ async function submitToRenderLabBackend(ownerId: string, request: GenerationRequ
 }
 
 export async function submitGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
+  const startedAt = Date.now();
+  const operation = resolveCreativeOperation(request);
+  const requestCorrelationId = createDiagnosticCorrelationId();
+  const reject = async (response: SubmitGenerationResponse) => {
+    if (!response.ok) {
+      await emitDiagnosticEvent({
+        event: "generation.submission",
+        level: "warn",
+        correlationId: requestCorrelationId,
+        operation,
+        phase: "rejected",
+        code: response.error.code,
+        durationMs: Date.now() - startedAt,
+      });
+    }
+    return response;
+  };
+
   if (!isGenerationBackendConfigured()) {
-    return {
+    return reject({
       ok: false,
       error: { code: "generation_backend_unavailable", message: "Generation is not connected to an owner-aware backend yet." },
-    };
+    });
   }
 
   if (!(await generationImageInputsAvailable(ownerId, request))) {
-    return {
+    return reject({
       ok: false,
       error: {
         code: "generation_submission_failed",
         message: "One or more image inputs are unavailable, not ready, not images, or not owned by this account.",
       },
-    };
+    });
   }
 
   const admission = await reserveGenerationAdmission(ownerId);
-  if (!admission.ok) return admission;
+  if (!admission.ok) return reject(admission);
 
   const reservationId = admission.reservation.id;
   const submitted = isExternalGenerationBackendConfigured()
@@ -133,11 +152,20 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
 
   if (!submitted.ok) {
     await releaseGenerationAdmission(ownerId, reservationId);
-    return submitted;
+    return reject(submitted);
   }
 
   // A successful backend dispatch must never be repeated merely because binding could not
   // be confirmed. The original unbound reservation remains conservative until its lease expires.
   await bindGenerationAdmission(ownerId, reservationId, submitted.job.id);
+  await emitDiagnosticEvent({
+    event: "generation.submission",
+    correlationId: correlationIdForGenerationJob(submitted.job.id),
+    jobId: submitted.job.id,
+    operation: submitted.job.operation,
+    phase: "accepted",
+    status: submitted.job.status,
+    durationMs: Date.now() - startedAt,
+  });
   return submitted;
 }

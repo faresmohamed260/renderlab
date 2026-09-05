@@ -344,6 +344,12 @@ try {
   assert(Number(healthPayload?.health?.operationCounts?.["create-image"]) >= 1, "Admin health missed create-image.");
   assert(Number(healthPayload?.health?.statusCounts?.failed) >= 1, "Admin health missed failed status.");
   assert(Number(healthPayload?.health?.errorCodeCounts?.generation_failed) >= 1, "Admin health did not sanitize the raw worker error code.");
+  assert(Number.isInteger(healthPayload?.health?.recentJobs?.sampleSize), "Admin health is missing the bounded recent-job sample.");
+  assert(Number.isInteger(healthPayload?.health?.activeStateAge?.sampleSize), "Admin health is missing active-state age aggregation.");
+  assert(Number.isInteger(healthPayload?.health?.capacity?.activeReservations?.count), "Admin health is missing bounded admission capacity.");
+  assert(typeof healthPayload?.health?.capacity?.generationEnabled === "boolean", "Admin health is missing generation capacity configuration.");
+  assert(Number.isInteger(healthPayload?.health?.maintenanceBacklog?.staleSourceCandidates?.count), "Admin health is missing source maintenance backlog.");
+  assert(Number.isInteger(healthPayload?.health?.maintenanceBacklog?.pendingMediaPurges?.count), "Admin health is missing pending media purge backlog.");
   const healthJson = JSON.stringify(healthPayload);
   for (const forbidden of [
     secretMarker,
@@ -382,6 +388,9 @@ try {
   await page.locator("#global-max-active").waitFor({ state: "visible" });
   await page.locator("#global-max-hourly").waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Health", exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Completion p50", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Active state age", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Maintenance backlog", { exact: true }).waitFor({ state: "visible" });
   assert(
     (await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Admin", exact: true }).count()) === 0,
     "Admin was added to ordinary application navigation.",

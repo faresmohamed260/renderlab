@@ -1434,7 +1434,7 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 
 ## Current Work
 **Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 17 — Observability & Engineering Quality is `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-057. Phase 16 is `COMPLETE / VERIFIED / MERGED` on `main` `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`.
+**Current phase:** Phase 17 — Observability & Engineering Quality is `IMPLEMENTATION IN PROGRESS / VERIFICATION PENDING` under UI-057. Phase 16 is `COMPLETE / VERIFIED / MERGED` on `main` `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`.
 **Next sequence:** implement Phase 17 only from the accepted execution contract in `PROJECT.md`, beginning with cheap engineering feedback and the existing server/Admin Health seams. Phase 18 remains roadmap-only until Phase 17 is complete and a fresh deployed-worker capability audit expands it.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
 **Deployment boundary:** Phase 16 merge and Phase 17 planning changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep.
@@ -1570,7 +1570,7 @@ No schema migration, production deployment, scheduler activation, provider-routi
 **Phase 16 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
 ## Cycle 3 — Phase 17 Observability & Engineering Quality
-**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+**Status: `IMPLEMENTATION IN PROGRESS / VERIFICATION PENDING`.**
 **Decision:** UI-057.
 **Execution contract:** `PROJECT.md` Phase 17.
 
@@ -1583,13 +1583,13 @@ Verified planning baseline on merged `main` `ad3cf2a987b60098fdc361a7f8fc358ae70
 - [x] Keep telemetry-vendor adoption evidence-gated rather than a Phase 17 requirement.
 
 Implementation checklist:
-- [ ] Add conventional `npm run lint`, `npm run typecheck` and deterministic `npm run test:unit` using the lightest maintained tools compatible with current Next/TypeScript/ESM reality.
-- [ ] Add a cheap Engineering Quality GitHub gate that requires no Chromium, live provider or shared cloud fixture.
-- [ ] Add one server-owned typed structured-diagnostic/correlation boundary with explicit redaction and non-fatal emission.
-- [ ] Instrument high-value admission/submission/reconciliation/finalization/cancellation/maintenance lifecycle boundaries without logging prompt/media/account-secret/raw-provider payloads.
-- [ ] Extend fresh-admin Health with bounded truthful timing/failure/failover/stale/capacity/maintenance-backlog aggregates derived from current durable state first.
-- [ ] Prefer typed gateway/provider error codes where stable machine-readable contracts exist; retain safe textual compatibility fallback where they do not.
-- [ ] Verify redaction with sentinel secrets/content, fresh-admin authorization, exact aggregates, desktop+narrow Admin Health if visible composition changes, and exact run-owned cleanup.
+- [x] Add conventional `npm run lint`, `npm run typecheck` and deterministic `npm run test:unit` using the lightest maintained tools compatible with current Next/TypeScript/ESM reality.
+- [x] Add a cheap Engineering Quality GitHub gate that requires no Chromium, live provider or shared cloud fixture.
+- [x] Add one server-owned typed structured-diagnostic/correlation boundary with explicit redaction and non-fatal emission.
+- [x] Instrument high-value admission/submission/reconciliation/finalization/cancellation/maintenance lifecycle boundaries without logging prompt/media/account-secret/raw-provider payloads.
+- [x] Extend fresh-admin Health with bounded truthful timing/failure/failover/stale/capacity/maintenance-backlog aggregates derived from current durable state first.
+- [x] Prefer typed gateway/provider error codes where stable machine-readable contracts exist; retain safe textual compatibility fallback where they do not.
+- [ ] Verify redaction with sentinel secrets/content, fresh-admin authorization, bounded aggregates, desktop+narrow Admin Health, and exact run-owned cleanup. Configured evidence pending.
 - [ ] Pass every actually affected exact-head regression; keep live Image/Video gates when provider-adapter code is touched rather than replacing them with unit tests.
 - [ ] Update architecture/screen/infrastructure docs from implemented reality before Phase 17 completion.
 - [ ] Keep schema/event-store/vendor adoption, production deployment and scheduler activation separately evidence-gated/unauthorized by this contract.

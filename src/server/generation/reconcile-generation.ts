@@ -8,6 +8,7 @@ import {
   releaseGenerationReconciliation,
 } from "@/server/generation/generation-reconciliation-claim";
 import { pollNativeGeneration } from "@/server/generation/native-generation";
+import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type JobSnapshotRow = {
   id: string;
@@ -85,20 +86,37 @@ async function settleTerminalAdmission(job: GenerationJob, ownerId: string) {
 }
 
 export async function reconcileNativeGeneration(ownerId: string, jobId: string): Promise<GenerationJob | null> {
+  const startedAt = Date.now();
+  const correlationId = correlationIdForGenerationJob(jobId);
+  const diagnose = async (job: GenerationJob | null, phase: string, code?: string) => {
+    await emitDiagnosticEvent({
+      event: "generation.reconciliation",
+      level: code ? "warn" : "info",
+      correlationId,
+      jobId,
+      operation: job?.operation,
+      phase,
+      status: job?.status,
+      code,
+      durationMs: Date.now() - startedAt,
+    });
+    return job;
+  };
+
   const initial = await getSnapshot(ownerId, jobId);
   if (!initial) return null;
 
   if (terminalStatuses.has(initial.status)) {
     const terminal = toGenerationJob(initial);
     await settleTerminalAdmission(terminal, ownerId);
-    return terminal;
+    return diagnose(terminal, "already-terminal");
   }
 
   const token = randomUUID();
   const claimed = await claimGenerationReconciliation(ownerId, jobId, token).catch(() => false);
   if (!claimed) {
     const current = await getSnapshot(ownerId, jobId);
-    return current ? toGenerationJob(current) : null;
+    return diagnose(current ? toGenerationJob(current) : null, "claim-busy");
   }
 
   try {
@@ -108,19 +126,22 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
     if (claimedSnapshot.status === "cancelling") {
       const job = await reconcileClaimedGenerationCancellation(ownerId, jobId, token);
       if (job) await settleTerminalAdmission(job, ownerId);
-      return job;
+      return diagnose(job, "cancellation");
     }
 
     const stalled = await failStaleUndispatchedJob(claimedSnapshot);
     if (stalled) {
       const failed = toGenerationJob(stalled);
       await settleTerminalAdmission(failed, ownerId);
-      return failed;
+      return diagnose(failed, "stalled", "generation_orchestration_stalled");
     }
 
     const job = await pollNativeGeneration(ownerId, jobId);
     if (job) await settleTerminalAdmission(job, ownerId);
-    return job;
+    return diagnose(job, "polled", job?.error?.code);
+  } catch (error) {
+    await diagnose(null, "failed", "reconciliation_failed");
+    throw error;
   } finally {
     await releaseGenerationReconciliation(ownerId, jobId, token);
   }

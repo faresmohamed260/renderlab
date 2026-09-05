@@ -8,6 +8,7 @@ import {
   releaseGenerationReconciliation,
 } from "@/server/generation/generation-reconciliation-claim";
 import { findWorker } from "@/server/generation/worker-fleet";
+import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type CancellationRow = {
   id: string;
@@ -203,6 +204,16 @@ async function reconcileClaimedCancellationRow(ownerId: string, jobId: string, t
   }
 
   const outcome = await cancelProviderCall(row);
+  await emitDiagnosticEvent({
+    event: "generation.cancellation",
+    level: outcome.kind === "retryable" ? "warn" : "info",
+    correlationId: correlationIdForGenerationJob(jobId),
+    jobId,
+    operation: row.operation,
+    phase: "provider-outcome",
+    status: row.status,
+    code: outcome.kind === "retryable" ? outcome.reason : outcome.kind,
+  });
   const elapsed = Date.now() - cancellationRequestedAt(row);
   if (outcome.kind === "confirmed" || outcome.kind === "not-running" || elapsed >= cancellationGraceMs) {
     const phase = outcome.kind === "retryable" ? "cancel-local-grace-expired" : "cancel-provider-confirmed";
@@ -299,6 +310,16 @@ export async function requestGenerationCancellation(ownerId: string, jobId: stri
         return cancellationError("This generation already has a durable result and cannot be cancelled.");
       }
       current = await transitionToCancelling(current, token);
+      if (current) {
+        await emitDiagnosticEvent({
+          event: "generation.cancellation",
+          correlationId: correlationIdForGenerationJob(jobId),
+          jobId,
+          operation: current.operation,
+          phase: "intent-accepted",
+          status: current.status,
+        });
+      }
       if (!current) {
         const raced = await getCancellationRow(ownerId, jobId);
         if (raced?.status === "cancelling" || raced?.status === "cancelled") {

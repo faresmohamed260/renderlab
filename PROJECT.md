@@ -910,7 +910,7 @@ No production application rollout, reconciliation/maintenance scheduler activati
 ---
 
 # Phase 17 Execution Contract — Observability & Engineering Quality
-**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+**Status: `IMPLEMENTATION IN PROGRESS / VERIFICATION PENDING`.**
 **UI decision:** UI-057.
 **Planning baseline:** merged `main` `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`.
 
@@ -1054,3 +1054,9 @@ Phase 17 is `COMPLETE / VERIFIED` only when:
 - no production deployment or scheduler activation is inferred from implementation/merge.
 
 Only after Phase 17 is `COMPLETE / VERIFIED` should Phase 18 be expanded into an execution-ready Next Creative Capability contract from a fresh deployed-worker audit.
+
+
+## Phase 17 Implementation Progress — verification pending
+The work branch now implements the accepted 17A–17D direction without a schema migration or telemetry vendor: conventional lint/typecheck/unit scripts and a cheap Engineering Quality workflow; a server-only allowlisted non-fatal diagnostic/correlation boundary; lifecycle instrumentation for submission, reconciliation, cancellation and maintenance; typed worker failure classification with machine-code precedence and compatibility text fallback; and bounded aggregate-only Admin Health detail derived from existing job/admission/staging/purge state.
+
+This is **not** Phase 17 completion evidence. Exact-head configured workflows, the strengthened fresh-admin privacy/aggregate verifier, desktop+narrow Admin render review, cleanup, final path-filter audit and final documentation closure remain required before `COMPLETE / VERIFIED`. Production deployment and scheduler activation remain separate and unauthorized.
