@@ -1,0 +1,50 @@
+name: Phase 18 Worker Predeploy Run
+
+on:
+  push:
+    branches:
+      - work/phase-18-image-upscale
+    paths:
+      - .github/workflows/phase18-worker-predeploy-run.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: renderlab-phase18-worker-predeploy-run
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --no-tags
+          test "$(git rev-parse origin/main)" = '2d3131478d7dfbe522dc6f3a645fadd134d73ac5'
+          test "$(git merge-base HEAD origin/main)" = '2d3131478d7dfbe522dc6f3a645fadd134d73ac5'
+
+      - name: Patch and verify worker source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .phase18-worker-predeploy-patch.py
+          python3 -m py_compile workers/image-upscale/modal_app.py
+          git diff --check
+
+      - name: Commit worker correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add workers/image-upscale/modal_app.py
+          git commit -m 'fix: harden Phase 18 upscale worker preparation'
+          git push origin HEAD:work/phase-18-image-upscale
