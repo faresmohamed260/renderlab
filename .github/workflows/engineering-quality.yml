@@ -1,0 +1,63 @@
+name: Engineering Quality
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "tests/unit/**"
+      - ".oxlintrc.json"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/engineering-quality.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "tests/unit/**"
+      - ".oxlintrc.json"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/engineering-quality.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-engineering-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Verify negative gate fixtures
+        run: npm run verify:engineering-quality
+
+      - name: Verify maintained UI primitive usage
+        run: npm run verify:ui-purity
