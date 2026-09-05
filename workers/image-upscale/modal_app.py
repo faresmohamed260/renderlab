@@ -48,7 +48,20 @@ WINDOW_SIZE = 8
 
 worker_state = modal.Dict.from_name(STATE_DICT_NAME, create_if_missing=True)
 
-image = (
+gateway_image = (
+    modal.Image.debian_slim(python_version=PYTHON_VERSION)
+    .pip_install(f"modal=={MODAL_VERSION}", "fastapi[standard]==0.121.0")
+    .env(
+        {
+            "PYTHONUTF8": "1",
+            "PYTHONIOENCODING": "utf-8",
+            "RENDERLAB_UPSCALE_WORKER_ID": WORKER_ID,
+            "RENDERLAB_UPSCALE_STATE_DICT": STATE_DICT_NAME,
+        }
+    )
+)
+
+runtime_image = (
     modal.Image.from_registry(
         "nvidia/cuda:12.8.1-runtime-ubuntu22.04",
         add_python=PYTHON_VERSION,
@@ -57,7 +70,6 @@ image = (
     .apt_install("git", "curl", "ca-certificates", "libgl1", "libglib2.0-0")
     .uv_pip_install(
         f"modal=={MODAL_VERSION}",
-        "fastapi[standard]==0.121.0",
         "numpy==2.2.6",
         "Pillow==11.2.1",
         "timm==1.0.19",
@@ -83,7 +95,7 @@ image = (
     )
 )
 
-app = modal.App(APP_NAME, image=image)
+app = modal.App(APP_NAME)
 
 
 def _log(event: str, **fields: Any) -> None:
@@ -183,10 +195,12 @@ def _upscale_rgb_tensor(model: Any, tensor: Any) -> Any:
     import torch
 
     _, _, height, width = tensor.shape
-    tile = min(TILE_SIZE, height, width)
-    overlap = min(TILE_OVERLAP, max(0, tile // 4))
-    y_starts = _tile_starts(height, tile, overlap)
-    x_starts = _tile_starts(width, tile, overlap)
+    tile_height = min(TILE_SIZE, height)
+    tile_width = min(TILE_SIZE, width)
+    overlap_height = min(TILE_OVERLAP, max(0, tile_height // 4))
+    overlap_width = min(TILE_OVERLAP, max(0, tile_width // 4))
+    y_starts = _tile_starts(height, tile_height, overlap_height)
+    x_starts = _tile_starts(width, tile_width, overlap_width)
 
     output = torch.zeros(
         (1, 3, height * UPSCALE_SCALE, width * UPSCALE_SCALE),
@@ -197,7 +211,7 @@ def _upscale_rgb_tensor(model: Any, tensor: Any) -> Any:
 
     for top in y_starts:
         for left in x_starts:
-            patch = tensor[:, :, top : top + tile, left : left + tile]
+            patch = tensor[:, :, top : top + tile_height, left : left + tile_width]
             padded, patch_height, patch_width = _pad_to_window(patch)
             with torch.inference_mode():
                 result = model(padded)
@@ -213,7 +227,7 @@ def _upscale_rgb_tensor(model: Any, tensor: Any) -> Any:
 
 
 @app.cls(
-    image=image,
+    image=runtime_image,
     gpu=GPU_TYPE,
     memory=WORKER_MEMORY_MB,
     timeout=FUNCTION_TIMEOUT_SECONDS,
@@ -321,7 +335,7 @@ class ImageUpscaleWorker:
             raise
 
 
-@app.function(image=image, timeout=3600)
+@app.function(image=gateway_image, timeout=3600)
 @modal.asgi_app()
 def web():
     from fastapi import FastAPI, File, Form, HTTPException, UploadFile
