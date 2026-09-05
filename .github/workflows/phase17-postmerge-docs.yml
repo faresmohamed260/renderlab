@@ -163,8 +163,8 @@ jobs:
           test "${#changed[@]}" -eq 2
           test "${changed[0]}" = "PROJECT.md"
           test "${changed[1]}" = "docs/ui/UI_MIGRATION.md"
-          ! git diff -- PROJECT.md docs/ui/UI_MIGRATION.md | grep -F "PR #108 merge pending"
-          ! git diff -- PROJECT.md docs/ui/UI_MIGRATION.md | grep -F "PR #108 merge is pending"
+          ! grep -F "PR #108 merge pending" PROJECT.md docs/ui/UI_MIGRATION.md
+          ! grep -F "PR #108 merge is pending" PROJECT.md docs/ui/UI_MIGRATION.md
 
       - name: Commit and push closure handoff
         shell: bash
