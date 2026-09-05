@@ -35,5 +35,5 @@ A second local SVG render/inspection pass on 2026-09-05 found the refined four-c
 - Keep the low-opacity result accent treatment.
 - Use **Close comparison** for the active-state exit action.
 
-## Implementation boundary
-Implement only the smallest Viewer extension consistent with these accepted decisions, then verify image→image plus image→video at desktop/narrow, keyboard navigation and reduced-motion. The design checkpoint is complete; UI-056 / Phase 16D remains `IMPLEMENTATION PENDING` until the real rendered Viewer behavior is verified.
+## Implementation evidence / remaining boundary
+The smallest Viewer extension consistent with these accepted decisions is now implemented/configured-verified at exact head `4d1a495a8145238e1e78756c7b09cdbaee8d8115`. Creative Iteration `33964679539` covers image→image plus image→video at desktop/narrow, keyboard activation, reduced-motion, source eligibility/privacy, `Open source`, result video controls and cleanup; the full 26-workflow affected matrix also passed. Artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) contains the final rendered comparison screenshots. The remaining checkpoint is human review of those real implementation renders plus final Phase 16 repository closure; production deployment remains a separate explicit operation.

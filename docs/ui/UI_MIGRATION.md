@@ -1546,7 +1546,7 @@ No Phase 15 implementation, production cleanup, deployment or scheduler activati
 **Next after completion:** expand Phase 17 Observability & Engineering Quality into an execution-ready contract; do not implement Phase 17 from roadmap text alone.
 
 ## Cycle 3 — Phase 16 Creative Iteration — partial verified implementation
-**Status: `IN PROGRESS — 16A/16B/16C IMPLEMENTED / VERIFIED; 16D DESIGN APPROVED / IMPLEMENTATION PENDING`**
+**Status: `IN PROGRESS — 16A/16B/16C/16D IMPLEMENTED / CONFIGURED VERIFIED; FINAL HUMAN VIEWER REVIEW / PHASE CLOSURE PENDING`**
 
 - [x] **16A shared recipe reconstruction:** centralize owner-scoped historical job loading, current-contract reconstruction, operation/output revalidation and current source availability so failed Retry and successful reuse share one truthful boundary.
 - [x] **16B Reuse Settings:** successful current-valid history can open the existing Create workspace with prompt, Image/Video output settings, Advanced values, stable `@imageN` aliases/roles and exact historical input source identity prefilled. Opening a recipe performs no generation dispatch.
@@ -1555,7 +1555,7 @@ No Phase 15 implementation, production cleanup, deployment or scheduler activati
 - [x] Add dedicated configured `Creative Iteration` GitHub verification using real run-owned Supabase/R2 fixtures plus a local mock generation backend. Exact head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed run `33959979016`; artifact `9967633913` (`sha256:7fb2906c915390c0b23ae102e2dd06bdbde46736c503d80b0e554d398f660716`) contains desktop+narrow Create recipe and Activity Run Again screenshots reviewed clean.
 - [x] Exact head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed all 26 affected workflows. Library Collections `33959978965` had one post-success Playwright teardown race and passed unchanged on attempt 2; configured cleanup succeeded.
 - [x] **16D visual design checkpoint:** user-approved on 2026-09-05. Design PR #100 / merge `6dadc9e1976b976ab4584ce830286ba3a8baead1` records desktop+narrow Image→Image and Image→Video candidates after two render-review passes, with truthful aspect ratios, result-primary hierarchy, compact narrow Source context, preserved existing Actions and `Close comparison` active-state wording.
-- [ ] **16D implementation:** implement the smallest conditional Viewer extension against the accepted checkpoint, then configured-verify Image→Image and Image→Video at desktop/narrow plus keyboard and reduced-motion behavior.
-- [ ] **Phase 16 completion:** remains open until 16D is legitimately designed, implemented, rendered/keyboard/reduced-motion reviewed and the final repository record is verified.
+- [x] **16D implementation / configured verification:** exact head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` implements the accepted conditional Viewer comparison and passed Creative Iteration `33964679539` plus the full 26-workflow affected matrix. The focused verifier covers Image→Image and Image→Video, desktop+narrow layouts, keyboard activation, reduced-motion, `Open source`, preserved video controls, no horizontal overflow, fail-closed ineligible history and exact fixture cleanup. Artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) contains the final comparison screenshots.
+- [ ] **Phase 16 completion:** implementation/configured verification is complete; final human review of the rendered 16D Viewer screenshots plus the final repository/PR closure evidence remain before the phase can be marked complete.
 
 No schema migration, production deployment, scheduler activation, provider-routing redesign or Variations implementation is authorized or implied by this progress.

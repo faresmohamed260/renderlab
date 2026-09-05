@@ -361,7 +361,7 @@ Phases 6–9 are complete and verified under the Closed Beta boundary. Phase 10 
 
 Production deployment/scheduling remains separate: no Phase 14/15 app deployment, reconciler/maintenance secret, `pg_cron` or `pg_net` schedule is active from this verified implementation.
 
-### Phase 16 Creative Iteration — 16A–16C verified in RenderLab
+### Phase 16 Creative Iteration — 16A–16D configured-verified in RenderLab
 Successful durable generation history can now be reused as **current-valid product intent** without claiming historical provider replay.
 
 - `src/server/generation/generation-recipe.ts` is the shared server boundary for historical request reconstruction. It reloads the job under owner scope, parses persisted prompt/output/inputs/Advanced state through the current request contract, verifies operation/output consistency and revalidates current image input ownership/readiness.
@@ -371,4 +371,4 @@ Successful durable generation history can now be reused as **current-valid produ
 - **Run Again** is succeeded-only and server-owned. It reconstructs the same current-valid product request and calls ordinary `submitGeneration`, so current admission, routing and defaults apply. Each explicit request creates a distinct attempt; the historical row is immutable and worker/provider/workflow/model/failover metadata is excluded.
 - Failed-job **Retry** remains recovery-only, successful **Run Again** remains iteration, and active **Cancel** remains lifecycle control. These are intentionally separate product actions.
 - Exact configured verification head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed the dedicated Creative Iteration run `33959979016` and all 26 affected workflows. The focused run verified privacy, no implicit dispatch, editable Image/Video/Advanced prefill, ready temporary references, fail-closed unavailable references, distinct immutable Run Again attempts and admission denial with exact cleanup.
-- Conditional Viewer **Compare source** remains unimplemented pending the UI-056 desktop+narrow design checkpoint. Variations remains deferred because current product/worker execution still has one-output semantics.
+- Conditional Viewer **Compare source** is implemented for generated Edit/Animate results whose producing owner-scoped job still resolves an active same-owner durable primary `media-asset`. Ineligible temporary/deleted/foreign/no-source history fails closed. The feature reveals comparison progressively, preserves truthful media geometry and result-primary hierarchy, links Source only through its ordinary Viewer, preserves video controls/result actions, and adds no new route, schema or durable comparison state. Exact head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed Creative Iteration `33964679539` and all 26 affected workflows; final human review of artifact `9969057974` remains before Phase 16 closure. Variations remains deferred because current product/worker execution still has one-output semantics.

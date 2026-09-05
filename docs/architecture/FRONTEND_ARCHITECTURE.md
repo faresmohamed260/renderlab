@@ -819,11 +819,13 @@ Rules:
 
 This section supersedes the historical Phase 9 statement that no Cancel endpoint existed; that statement remains evidence of the UI-050 boundary at the time.
 
-### Phase 16 successful-history recipe boundary — 16A–16C implemented / verified
+### Phase 16 successful-history + Viewer comparison boundary — 16A–16D configured-verified
 Phase 16 extends existing routes without introducing a recipe store, global client job store or new top-level surface. `/create?recipe=<job-id>` is untrusted navigation intent: the Create Server Component resolves it only after verified account lookup and delegates owner-scoped/current-valid reconstruction to `src/server/generation/generation-recipe.ts`. The Client Component receives already-sanitized product recipe state and remains responsible only for editable composer interaction; loading recipe state never submits generation.
 
 Historical input identity remains opaque and exact. Durable inputs continue through ordinary `media-asset` product URLs. Still-ready historical `temporary-source` compatibility inputs can render through `/api/assets/reference/[sourceId]/content`, which re-authenticates the account, reloads the owner-scoped ready source and issues only a short-lived signed redirect. R2 keys never become browser product identity.
 
 Activity keeps server-rendered history and derives `canRunAgain` server-side. `POST /api/generation/jobs/[jobId]/run-again` accepts only the opaque job ID, reconstructs the current-valid product request server-side and calls the ordinary submission/admission path. `ActivityRunAgainButton` owns only transient mutation feedback and refresh; it does not become a job store. Failed Retry, successful Run Again and active Cancel retain separate routes/eligibility.
+
+`src/features/library/media-viewer-comparison.tsx` owns the interactive Compare source composition; the Viewer route/server generation-recipe boundary derives whether an active same-owner durable primary source is eligible and passes only opaque product media state. The default Viewer remains unchanged until the user opens comparison. Source navigation remains an ordinary `/library/[assetId]` link and the client receives no provider/storage identity. Wide and narrow layouts follow the approved UI-056 design while `media-viewer.tsx` keeps Prompt/Details/Continue/Actions result-owned and preserves native result video controls. Exact head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed Creative Iteration `33964679539` plus all 26 affected workflows; final human screenshot review remains a UI approval/phase-closure step rather than an architecture change.
 
 No routing hierarchy, schema, provider contract or production deployment boundary changed. Viewer Compare source remains outside implemented architecture until its required UI-056 design checkpoint is reviewed.
