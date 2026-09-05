@@ -10,13 +10,20 @@ import type {
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { getAdminGenerationSettings } from "@/server/admin/admin-settings";
-import { summarizeActiveAdminJobAge, summarizeRecentAdminJobs, type AdminHealthJobSample } from "@/server/admin/admin-health-summary";
+import { summarizeActiveAdminJobAge, summarizeRecentAdminJobs, summarizeScopedAdminHealthBase, type AdminHealthJobSample } from "@/server/admin/admin-health-summary";
 import { getRenderLabMaintenanceBacklog } from "@/server/maintenance/renderlab-maintenance";
 
 const pendingInvitationLimit = 100;
 const accountListLimit = 100;
 const invitationLifetimeMs = 60 * 60 * 1000;
 const healthSampleLimit = 200;
+
+function adminHealthTestOwnerId() {
+  if (process.env.RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE !== "true") return null;
+  const ownerId = process.env.RENDERLAB_TEST_ADMIN_HEALTH_OWNER_ID?.trim();
+  if (!ownerId) throw new Error("Admin Health test owner scope is enabled without an owner ID.");
+  return ownerId;
+}
 
 type AdminAccountAccessRow = {
   user_id: string;
@@ -321,15 +328,16 @@ export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSn
     // The privileged RPC above authorizes first. Every query below is server-only, bounded, and
     // selects only fields needed to produce aggregate operator visibility.
     const now = new Date();
+    const testOwnerId = adminHealthTestOwnerId();
     const recentParams = new URLSearchParams({
       created_at: `gte.${base.since}`,
-      select: "status,failover_history,created_at,updated_at,completed_at",
+      select: "status,operation,error_code,failover_history,created_at,updated_at,completed_at",
       order: "created_at.desc",
       limit: String(healthSampleLimit + 1),
     });
     const activeParams = new URLSearchParams({
       status: "in.(queued,preparing,running,cancelling,persisting)",
-      select: "status,failover_history,created_at,updated_at,completed_at",
+      select: "status,operation,error_code,failover_history,created_at,updated_at,completed_at",
       order: "updated_at.asc",
       limit: String(healthSampleLimit + 1),
     });
@@ -340,6 +348,11 @@ export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSn
       order: "expires_at.asc",
       limit: String(healthSampleLimit + 1),
     });
+    if (testOwnerId) {
+      recentParams.set("owner_id", `eq.${testOwnerId}`);
+      activeParams.set("owner_id", `eq.${testOwnerId}`);
+      reservationParams.set("owner_id", `eq.${testOwnerId}`);
+    }
 
     const [recentRowsRaw, activeRowsRaw, reservationRows, settings, maintenanceBacklog] = await Promise.all([
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${recentParams.toString()}`),
@@ -349,16 +362,24 @@ export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSn
       getRenderLabMaintenanceBacklog(),
     ]);
 
+    const recentTruncated = recentRowsRaw.length > healthSampleLimit;
+    const activeTruncated = activeRowsRaw.length > healthSampleLimit;
+    const reservationTruncated = reservationRows.length > healthSampleLimit;
+    if (testOwnerId && (recentTruncated || activeTruncated || reservationTruncated)) {
+      throw new Error("Admin Health configured owner scope exceeded its exact bounded fixture window.");
+    }
     const recentRows = recentRowsRaw.slice(0, healthSampleLimit);
     const activeRows = activeRowsRaw.slice(0, healthSampleLimit);
+    const scopedBase = testOwnerId ? summarizeScopedAdminHealthBase(recentRows, activeRows) : base;
     return {
       ...base,
-      recentJobs: summarizeRecentAdminJobs(recentRows, recentRowsRaw.length > healthSampleLimit),
-      activeStateAge: summarizeActiveAdminJobAge(activeRows, activeRowsRaw.length > healthSampleLimit, now.valueOf()),
+      ...scopedBase,
+      recentJobs: summarizeRecentAdminJobs(recentRows, recentTruncated),
+      activeStateAge: summarizeActiveAdminJobAge(activeRows, activeTruncated, now.valueOf()),
       capacity: {
         activeReservations: {
           count: Math.min(reservationRows.length, healthSampleLimit),
-          truncated: reservationRows.length > healthSampleLimit,
+          truncated: reservationTruncated,
         },
         generationEnabled: settings.generationEnabled,
         maxActiveJobsPerAccount: settings.maxActiveJobs,

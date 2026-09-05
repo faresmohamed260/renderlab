@@ -1,5 +1,7 @@
 export type AdminHealthJobSample = {
   status: string;
+  operation: string;
+  error_code: string | null;
   failover_history: Array<Record<string, unknown>> | null;
   created_at: string;
   updated_at: string;
@@ -16,6 +18,31 @@ function isFailoverEvent(entry: Record<string, unknown>) {
   const phase = typeof entry.phase === "string" ? entry.phase.toLowerCase() : "";
   if (phase.startsWith("cancel-")) return false;
   return phase.includes("failover") || typeof entry.kind === "string" || typeof entry.workerId === "string";
+}
+
+function increment(counts: Record<string, number>, key: string) {
+  counts[key] = (counts[key] ?? 0) + 1;
+}
+
+function safeAdminErrorCode(code: string | null) {
+  if (code === "generation_submission_failed" || code === "generation_backend_unavailable") return code;
+  return "generation_failed";
+}
+
+export function summarizeScopedAdminHealthBase(
+  recentRows: Pick<AdminHealthJobSample, "status" | "operation" | "error_code">[],
+  activeRows: Pick<AdminHealthJobSample, "status">[],
+) {
+  const statusCounts: Record<string, number> = {};
+  const operationCounts: Record<string, number> = {};
+  const errorCodeCounts: Record<string, number> = {};
+  for (const row of recentRows) {
+    increment(statusCounts, row.status);
+    increment(operationCounts, row.operation);
+    if (row.status === "failed") increment(errorCodeCounts, safeAdminErrorCode(row.error_code));
+  }
+  const activeJobs = activeRows.filter((row) => ["queued", "preparing", "running", "persisting"].includes(row.status)).length;
+  return { activeJobs, statusCounts, operationCounts, errorCodeCounts };
 }
 
 export function summarizeRecentAdminJobs(rows: AdminHealthJobSample[], truncated: boolean) {

@@ -17,7 +17,8 @@ import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/ser
 import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
-import { failureKind } from "@/server/generation/worker-failure";
+import { classifyWorkerFailure, failureKind, type WorkerFailureClassification } from "@/server/generation/worker-failure";
+import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type WorkflowConfig = {
   id: string;
@@ -637,6 +638,17 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
   const attempted = await patchJob(row.owner_id, row.id, {
     failover_history: [...(row.failover_history || []), attemptEntry],
   });
+  await emitDiagnosticEvent({
+    event: "generation.reconciliation",
+    level: "warn",
+    correlationId: correlationIdForGenerationJob(row.id),
+    jobId: row.id,
+    operation: row.operation,
+    phase: "failover-attempt",
+    status: attempted.status,
+    code: failure.code,
+    attempt: pollReassignmentAttemptCount(attempted),
+  });
 
   let response: Response;
   try {
@@ -659,7 +671,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
     throw new Error("Standby worker did not return a call ID; RenderLab will not retry the ambiguous reassignment automatically.");
   }
 
-  return patchJob(row.owner_id, row.id, {
+  const reassigned = await patchJob(row.owner_id, row.id, {
     status: "running",
     worker_id: candidate.id,
     provider_job_id: payload.call_id,
@@ -676,6 +688,17 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
       },
     ],
   });
+  await emitDiagnosticEvent({
+    event: "generation.reconciliation",
+    correlationId: correlationIdForGenerationJob(row.id),
+    jobId: row.id,
+    operation: row.operation,
+    phase: "failover-complete",
+    status: reassigned.status,
+    code: failure.code,
+    attempt: pollReassignmentAttemptCount(reassigned),
+  });
+  return reassigned;
 }
 
 async function failJob(row: JobRow, code: string, message: string, diagnostic?: Record<string, unknown>) {
@@ -711,7 +734,17 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   if (["succeeded", "failed", "cancelled"].includes(row.status)) return toGenerationJob(row);
 
   const recovered = await recoverPersistingResult(row);
-  if (recovered) return toGenerationJob(recovered);
+  if (recovered) {
+    await emitDiagnosticEvent({
+      event: "generation.reconciliation",
+      correlationId: correlationIdForGenerationJob(row.id),
+      jobId: row.id,
+      operation: row.operation,
+      phase: "finalization-recovered",
+      status: recovered.status,
+    });
+    return toGenerationJob(recovered);
+  }
 
   if (!row.worker_id || !row.provider_job_id) return toGenerationJob(row);
 
@@ -810,8 +843,24 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   if (row.output_kind === "video" && !contentType.startsWith("video/")) throw new Error("Worker returned a non-video result.");
 
   const persisting = await patchJob(row.owner_id, row.id, { status: "persisting", worker_state: "finalizing" });
+  await emitDiagnosticEvent({
+    event: "generation.reconciliation",
+    correlationId: correlationIdForGenerationJob(row.id),
+    jobId: row.id,
+    operation: row.operation,
+    phase: "provider-ready",
+    status: persisting.status,
+  });
   const bytes = Buffer.from(await response.arrayBuffer());
   const poster = row.output_kind === "video" ? await fetchPoster(worker, row.provider_job_id) : null;
   const completed = await persistResult(persisting, bytes, contentType, poster);
+  await emitDiagnosticEvent({
+    event: "generation.reconciliation",
+    correlationId: correlationIdForGenerationJob(row.id),
+    jobId: row.id,
+    operation: row.operation,
+    phase: "finalization-complete",
+    status: completed.status,
+  });
   return toGenerationJob(completed);
 }

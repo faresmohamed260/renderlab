@@ -7,6 +7,65 @@ export type DiagnosticEventName =
   | "generation.cancellation"
   | "maintenance.pass";
 
+export type DiagnosticPhase =
+  | "rejected"
+  | "accepted"
+  | "already-terminal"
+  | "claim-busy"
+  | "cancellation"
+  | "stalled"
+  | "polled"
+  | "failed"
+  | "provider-outcome"
+  | "intent-accepted"
+  | "failover-attempt"
+  | "failover-complete"
+  | "provider-ready"
+  | "finalization-recovered"
+  | "finalization-complete"
+  | "source-claims"
+  | "source-cleanup"
+  | "upload-claims"
+  | "upload-cleanup"
+  | "media-purges";
+
+export type DiagnosticStatus =
+  | "queued"
+  | "preparing"
+  | "running"
+  | "cancelling"
+  | "persisting"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
+
+export type DiagnosticCode =
+  | "invalid_request"
+  | "generation_access_denied"
+  | "generation_disabled"
+  | "generation_active_limit_reached"
+  | "generation_rate_limit_reached"
+  | "generation_backend_unavailable"
+  | "generation_submission_failed"
+  | "generation_orchestration_stalled"
+  | "reconciliation_failed"
+  | "generation_worker_unavailable"
+  | "worker_credit_exhausted"
+  | "worker_unavailable"
+  | "generation_reassignment_failed"
+  | "generation_provider_stalled"
+  | "generation_failed"
+  | "WORKER_CREDIT_EXHAUSTED"
+  | "WORKER_UNAVAILABLE"
+  | "PROVIDER_FAILED"
+  | "missing-dispatch"
+  | "unsupported-worker"
+  | "provider-unconfirmed"
+  | "timeout"
+  | "provider-unreachable"
+  | "confirmed"
+  | "not-running";
+
 export type DiagnosticEventInput = {
   event: DiagnosticEventName;
   level?: DiagnosticLevel;
@@ -30,9 +89,9 @@ export type DiagnosticEvent = {
   correlationId: string;
   jobId?: string;
   operation?: DiagnosticEventInput["operation"];
-  phase?: string;
-  status?: string;
-  code?: string;
+  phase?: DiagnosticPhase;
+  status?: DiagnosticStatus;
+  code?: DiagnosticCode;
   durationMs?: number;
   count?: number;
   successCount?: number;
@@ -42,10 +101,32 @@ export type DiagnosticEvent = {
 
 type DiagnosticSink = (event: DiagnosticEvent) => void | Promise<void>;
 
+const diagnosticPhases = new Set<DiagnosticPhase>([
+  "rejected", "accepted", "already-terminal", "claim-busy", "cancellation", "stalled", "polled", "failed",
+  "provider-outcome", "intent-accepted", "failover-attempt", "failover-complete", "provider-ready",
+  "finalization-recovered", "finalization-complete", "source-claims", "source-cleanup", "upload-claims",
+  "upload-cleanup", "media-purges",
+]);
+const diagnosticStatuses = new Set<DiagnosticStatus>([
+  "queued", "preparing", "running", "cancelling", "persisting", "succeeded", "failed", "cancelled",
+]);
+const diagnosticCodes = new Set<DiagnosticCode>([
+  "invalid_request", "generation_access_denied", "generation_disabled", "generation_active_limit_reached",
+  "generation_rate_limit_reached", "generation_backend_unavailable", "generation_submission_failed",
+  "generation_orchestration_stalled", "reconciliation_failed", "generation_worker_unavailable",
+  "worker_credit_exhausted", "worker_unavailable", "generation_reassignment_failed", "generation_provider_stalled",
+  "generation_failed", "WORKER_CREDIT_EXHAUSTED", "WORKER_UNAVAILABLE", "PROVIDER_FAILED", "missing-dispatch",
+  "unsupported-worker", "provider-unconfirmed", "timeout", "provider-unreachable", "confirmed", "not-running",
+]);
+
 function boundedToken(value: unknown, maxLength: number) {
   if (typeof value !== "string") return undefined;
   const normalized = value.trim().replace(/[^a-zA-Z0-9_.:-]/g, "_").slice(0, maxLength);
   return normalized || undefined;
+}
+
+function boundedEnum<T extends string>(value: unknown, values: Set<T>) {
+  return typeof value === "string" && values.has(value as T) ? value as T : undefined;
 }
 
 function boundedCount(value: unknown) {
@@ -76,9 +157,9 @@ export function normalizeDiagnosticEvent(input: DiagnosticEventInput, timestamp 
   };
 
   const jobId = boundedToken(input.jobId, 80);
-  const phase = boundedToken(input.phase, 64);
-  const status = boundedToken(input.status, 64);
-  const code = boundedToken(input.code, 96);
+  const phase = boundedEnum(input.phase, diagnosticPhases);
+  const status = boundedEnum(input.status, diagnosticStatuses);
+  const code = boundedEnum(input.code, diagnosticCodes);
   const durationMs = boundedCount(input.durationMs);
   const count = boundedCount(input.count);
   const successCount = boundedCount(input.successCount);
