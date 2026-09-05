@@ -98,15 +98,17 @@ assert "except modal.exception.OutputExpiredError:" in text
 # Execute only pure helpers from the AST; importing modal_app.py would construct Modal resources.
 globals_for_helpers = dict(expected)
 namespace: dict[str, object] = {}
-for name in ("_tile_starts", "_validate_geometry", "_padding_mode"):
+for name in ("_tile_starts", "_validate_geometry", "_padding_mode", "_normalized_source_geometry"):
     node = functions.get(name)
     assert node is not None, name
     module = ast.Module(body=[node], type_ignores=[])
     exec(compile(module, str(SOURCE), "exec"), globals_for_helpers, namespace)
 
+globals_for_helpers.update(namespace)
 _tile_starts = namespace["_tile_starts"]
 _validate_geometry = namespace["_validate_geometry"]
 _padding_mode = namespace["_padding_mode"]
+_normalized_source_geometry = namespace["_normalized_source_geometry"]
 
 assert _tile_starts(1, 1, 0) == [0]
 assert _tile_starts(256, 256, 32) == [0]
@@ -116,6 +118,17 @@ assert _padding_mode(7, 256, 1, 0) == "reflect"
 assert _padding_mode(2, 256, 6, 0) == "replicate"
 assert _padding_mode(256, 2, 0, 6) == "replicate"
 assert _padding_mode(1, 1, 7, 7) == "replicate"
+assert _normalized_source_geometry(3, 2, 1, 1) == (3, 2)
+assert _normalized_source_geometry(3, 2, 6, 1) == (2, 3)
+assert _normalized_source_geometry(3, 2, 8, 1) == (2, 3)
+try:
+    _normalized_source_geometry(2, 2, 1, 2)
+except ValueError as exc:
+    assert "animated or multi-frame" in str(exc)
+else:
+    raise AssertionError("multi-frame source should be rejected")
+assert "ImageOps.exif_transpose(opened)" in text
+assert "normalized source geometry mismatch" in text
 starts = _tile_starts(4096, 256, 32)
 assert starts[0] == 0 and starts[-1] == 3840 and len(starts) < 32
 

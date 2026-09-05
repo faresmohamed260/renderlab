@@ -158,15 +158,33 @@ def _validate_geometry(width: int, height: int) -> None:
         raise ValueError(f"output image exceeds {MAX_OUTPUT_PIXELS} pixels")
 
 
+def _normalized_source_geometry(
+    width: int,
+    height: int,
+    orientation: int,
+    frame_count: int,
+) -> tuple[int, int]:
+    if frame_count != 1:
+        raise ValueError("animated or multi-frame image sources are not supported")
+    if orientation in {5, 6, 7, 8}:
+        width, height = height, width
+    _validate_geometry(width, height)
+    return width, height
+
+
 def _decode_image_metadata(image_bytes: bytes) -> tuple[int, int, bool]:
     from PIL import Image
 
     with Image.open(io.BytesIO(image_bytes)) as opened:
         opened.verify()
     with Image.open(io.BytesIO(image_bytes)) as opened:
-        width, height = opened.size
+        width, height = _normalized_source_geometry(
+            opened.size[0],
+            opened.size[1],
+            int(opened.getexif().get(274, 1) or 1),
+            int(getattr(opened, "n_frames", 1) or 1),
+        )
         has_alpha = opened.mode in {"RGBA", "LA"} or "transparency" in opened.info
-    _validate_geometry(width, height)
     return width, height, has_alpha
 
 
@@ -289,7 +307,7 @@ class ImageUpscaleWorker:
     def upscale(self, *, image_bytes: bytes, content_type: str, scale: int = UPSCALE_SCALE) -> bytes:
         import numpy as np
         import torch
-        from PIL import Image
+        from PIL import Image, ImageOps
 
         if scale != UPSCALE_SCALE:
             raise ValueError(f"only {UPSCALE_SCALE}x upscale is supported")
@@ -303,8 +321,20 @@ class ImageUpscaleWorker:
         started = time.perf_counter()
         try:
             with Image.open(io.BytesIO(image_bytes)) as opened:
-                rgba = opened.convert("RGBA") if has_alpha else None
-                rgb = opened.convert("RGB")
+                expected_size = _normalized_source_geometry(
+                    opened.size[0],
+                    opened.size[1],
+                    int(opened.getexif().get(274, 1) or 1),
+                    int(getattr(opened, "n_frames", 1) or 1),
+                )
+                normalized = ImageOps.exif_transpose(opened)
+                if normalized.size != expected_size:
+                    raise RuntimeError(
+                        f"normalized source geometry mismatch: got {normalized.size[0]}x{normalized.size[1]}, "
+                        f"expected {expected_size[0]}x{expected_size[1]}"
+                    )
+                rgba = normalized.convert("RGBA") if has_alpha else None
+                rgb = normalized.convert("RGB")
 
             array = np.asarray(rgb, dtype=np.float32) / 255.0
             tensor = torch.from_numpy(array).permute(2, 0, 1).unsqueeze(0).to(self.device)
