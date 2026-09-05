@@ -36,6 +36,7 @@ const cancellableStatuses = new Set<GenerationJobStatus>(["queued", "preparing",
 const terminalStatuses = new Set<GenerationJobStatus>(["succeeded", "failed", "cancelled"]);
 const cancellationGraceMs = 10 * 60 * 1000;
 const providerCancellationTimeoutMs = 10_000;
+const cancellationClaimRetryDelaysMs = [75, 150] as const;
 
 function toGenerationJob(row: CancellationRow): GenerationJob {
   return {
@@ -89,6 +90,10 @@ function cancellationRequestedAt(row: CancellationRow) {
 
 function cancellationDiagnostic(row: CancellationRow, entry: Record<string, unknown>) {
   return [...(row.failover_history || []), entry];
+}
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancellationOutcome> {
@@ -189,7 +194,7 @@ async function recordCancellationRetry(row: CancellationRow, token: string, outc
   return rows?.[0] ?? row;
 }
 
-export async function reconcileClaimedGenerationCancellation(ownerId: string, jobId: string, token: string) {
+async function reconcileClaimedCancellationRow(ownerId: string, jobId: string, token: string) {
   const row = await getCancellationRow(ownerId, jobId);
   if (!row || row.status !== "cancelling" || row.reconcile_token !== token) return row;
 
@@ -213,6 +218,34 @@ export async function reconcileClaimedGenerationCancellation(ownerId: string, jo
   return recordCancellationRetry(row, token, outcome);
 }
 
+export async function reconcileClaimedGenerationCancellation(
+  ownerId: string,
+  jobId: string,
+  token: string,
+): Promise<GenerationJob | null> {
+  const row = await reconcileClaimedCancellationRow(ownerId, jobId, token);
+  return row ? toGenerationJob(row) : null;
+}
+
+async function acquireCancellationClaim(ownerId: string, jobId: string, token: string) {
+  for (let attempt = 0; attempt <= cancellationClaimRetryDelaysMs.length; attempt += 1) {
+    const claimed = await claimGenerationReconciliation(ownerId, jobId, token).catch(() => false);
+    if (claimed) return { claimed: true as const, current: null };
+
+    const current = await getCancellationRow(ownerId, jobId);
+    if (!current || current.status === "cancelling" || current.status === "cancelled"
+      || current.status === "persisting" || terminalStatuses.has(current.status)) {
+      return { claimed: false as const, current };
+    }
+
+    const waitMs = cancellationClaimRetryDelaysMs[attempt];
+    if (waitMs === undefined) return { claimed: false as const, current };
+    await delay(waitMs);
+  }
+
+  return { claimed: false as const, current: await getCancellationRow(ownerId, jobId) };
+}
+
 export async function requestGenerationCancellation(ownerId: string, jobId: string): Promise<CancelGenerationResponse> {
   const initial = await getCancellationRow(ownerId, jobId);
   if (!initial) {
@@ -230,16 +263,19 @@ export async function requestGenerationCancellation(ownerId: string, jobId: stri
   }
 
   const token = randomUUID();
-  const claimed = await claimGenerationReconciliation(ownerId, jobId, token).catch(() => false);
-  if (!claimed) {
-    const current = await getCancellationRow(ownerId, jobId);
+  const acquisition = await acquireCancellationClaim(ownerId, jobId, token);
+  if (!acquisition.claimed) {
+    const current = acquisition.current;
     if (!current) {
       return { ok: false, error: { code: "job_not_found", message: "Generation job was not found." } };
     }
     if (current.status === "cancelling" || current.status === "cancelled") {
       return { ok: true, job: toGenerationJob(current) };
     }
-    return cancellationError("Generation state changed before cancellation could be accepted. Refresh and try again.");
+    if (current.status === "persisting" || terminalStatuses.has(current.status)) {
+      return cancellationError("This generation can no longer be cancelled.");
+    }
+    return cancellationError("Generation state is busy. Refresh Activity and try again.");
   }
 
   try {
@@ -272,17 +308,21 @@ export async function requestGenerationCancellation(ownerId: string, jobId: stri
       }
     }
 
-    const reconciled = await reconcileClaimedGenerationCancellation(ownerId, jobId, token);
+    const reconciled = await reconcileClaimedCancellationRow(ownerId, jobId, token);
     if (!reconciled) {
       return { ok: false, error: { code: "job_not_found", message: "Generation job was not found." } };
     }
     return { ok: true, job: toGenerationJob(reconciled) };
   } catch {
+    const current = await getCancellationRow(ownerId, jobId).catch(() => null);
+    if (current?.status === "cancelling" || current?.status === "cancelled") {
+      return { ok: true, job: toGenerationJob(current) };
+    }
     return {
       ok: false,
       error: {
         code: "generation_backend_unavailable",
-        message: "Cancellation could not be confirmed right now. RenderLab will keep the accepted cancellation state when possible.",
+        message: "Cancellation could not be processed right now. Refresh Activity and try again.",
       },
     };
   } finally {
