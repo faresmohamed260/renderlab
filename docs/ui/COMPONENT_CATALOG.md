@@ -284,14 +284,25 @@ Before copying/installing an external component:
 ### MediaViewer
 **Status:** APPROVED
 **Source:** `src/features/library/media-viewer.tsx`
-**Origin:** RenderLab composition based on `design/penpot/media-viewer-v0.1.svg`
+**Origin:** RenderLab composition based on `design/penpot/media-viewer-v0.1.svg` plus approved UI-056 comparison direction in `design/penpot/media-viewer-v0.2-compare-source.md`
 **Purpose:** Contextual durable-media workspace: media-primary presentation, truthful metadata, capability-derived continuation and secondary durable asset actions.
-**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Favorite, Collections, Download and Rename; approved UI-033 single-asset Delete.
+**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Favorite, Collections, Download and Rename; approved UI-033 single-asset Delete; UI-056 successful-history Reuse Settings and conditional durable-source comparison.
 **Used by:** `/library/[assetId]`
-**Dependencies:** Next.js Link, maintained Button/AlertDialog primitives, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media/collection routes, feature-owned `MediaViewerActions` and `MediaViewerCollections`.
+**Dependencies:** Next.js Link, maintained Button/AlertDialog primitives, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media/collection routes, feature-owned `MediaViewerComparison`, `MediaViewerActions` and `MediaViewerCollections`.
 **Reuse rules:** Keep continuation derivation in the capability model. Keep durable actions on opaque media IDs/product routes. Extend Viewer actions deliberately rather than adding card/batch controls by implication.
 **Do not:** Hard-code a second continuation registry, expose worker/provider/R2 identity, use raw signed URLs as durable links, or infer batch/destructive/collection-management actions from contextual Viewer controls.
-**Notes:** Base generated-media Viewer/continuation passed `33034606396`; Download PR #11; Rename PR #12; Favorites PR #23. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` and the complete affected matrix; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and desktop/mobile Viewer artifacts preserve Continue hierarchy and existing Rename/Download composition.
+**Notes:** Base generated-media Viewer/continuation passed `33034606396`; Download PR #11; Rename PR #12; Favorites PR #23. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` and the complete affected matrix; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and desktop/mobile Viewer artifacts preserve Continue hierarchy and existing Rename/Download composition. UI-056 exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed Creative Iteration `33964679539` plus all 26 affected workflows; final comparison artifact `9969057974` was hash-checked and human-reviewed clean with no corrective code change.
+
+### MediaViewerComparison
+**Status:** APPROVED
+**Source:** `src/features/library/media-viewer-comparison.tsx`
+**Origin:** RenderLab feature-local composition using maintained Button, Next.js Link and native image/video media elements under UI-056.
+**Purpose:** Progressive Source/Result comparison for an eligible generated Edit/Animate result while keeping the ordinary Viewer unchanged by default and preserving Result as the primary media/task surface.
+**Used by:** `MediaViewer` only.
+**Dependencies:** server-derived eligible same-owner durable Source asset, `PublicMediaAsset`, maintained Button, ordinary `/library/[assetId]` navigation.
+**Reuse rules:** Keep comparison eligibility server-derived and owner/current-state validated. Wide layout keeps Result primary; narrow layout keeps full-width Result first with a compact Source card. Source exposes only `Open source`; result Prompt/Details/Continue/Actions and native video controls stay outside/owned by the result Viewer.
+**Do not:** Revive temporary/deleted/foreign history, expose storage/provider identity, turn Source into a second management surface, create durable comparison state or a new comparison route.
+**Notes:** UI-056 exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115`; Creative Iteration `33964679539`; final artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) reviewed clean across Image→Image and Image→Video desktop/narrow. No new generic primitive was introduced.
 
 ### MediaViewerActions
 **Status:** APPROVED

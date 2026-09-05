@@ -1505,7 +1505,7 @@ No Phase 15 implementation, production cleanup, deployment or scheduler activati
 
 ## Phase 16 — Creative Iteration
 **Phase contract status:** `ACCEPTED` under UI-056.
-**Execution status:** `NOT STARTED`. No deployment is included or authorized.
+**Execution status:** `COMPLETE / VERIFIED`. No deployment is included or authorized.
 
 ### Verified planning baseline — `main` `3624924eb24b5d9375934fadb5050f5f198eb338`
 - [x] Phase 15 is merged/closed and the one-shot post-merge handoff is recorded on `main`.
@@ -1516,37 +1516,37 @@ No Phase 15 implementation, production cleanup, deployment or scheduler activati
 - [x] Phase 14 output slots are extensible, but current providers/finalization/history remain single-output (`outputIndex=0`, one output asset/job); Variations is deferred.
 
 ### Accepted implementation slices
-- [ ] **16A Shared recipe reconstruction:** generalize the Retry reconstruction/current-validation boundary for successful recipe use while preserving failed-only Retry semantics.
-- [ ] **16B Reuse Settings:** generated Viewer opens an eligible producing recipe in `/create` with prompt/settings/references/Advanced state prefilled and no implicit submission.
-- [ ] **16C Successful Run Again:** eligible succeeded Activity row creates a distinct ordinary generation through current admission/routing; historical job remains immutable.
-- [ ] **16D Source/result comparison:** only generated Edit/Animate output with an active same-owner durable primary source exposes a progressive comparison treatment; desktop+narrow design checkpoint precedes UI implementation.
+- [x] **16A Shared recipe reconstruction:** generalize the Retry reconstruction/current-validation boundary for successful recipe use while preserving failed-only Retry semantics.
+- [x] **16B Reuse Settings:** generated Viewer opens an eligible producing recipe in `/create` with prompt/settings/references/Advanced state prefilled and no implicit submission.
+- [x] **16C Successful Run Again:** eligible succeeded Activity row creates a distinct ordinary generation through current admission/routing; historical job remains immutable.
+- [x] **16D Source/result comparison:** only generated Edit/Animate output with an active same-owner durable primary source exposes a progressive comparison treatment; desktop+narrow design checkpoint precedes UI implementation.
 - [x] **16E Variations decision:** deferred until a future contract defines real provider/product output cardinality, admission/seed semantics, multi-output UI and lifecycle behavior.
 
 ### Required guardrails
-- [ ] Browser sends only opaque job/media identity; reconstruction is server-owned.
-- [ ] Current parser/capability/input availability is revalidated; missing/tombstoned/foreign/current-invalid inputs fail closed and are never silently dropped/substituted.
-- [ ] Historical provider/workflow/model/worker/failover/error/storage metadata is not replayed.
-- [ ] Reuse Settings and media `source` + `action` continuation remain distinct and ambiguous mixed navigation fails boundedly.
-- [ ] Run Again uses ordinary Generation Admission and returns a distinct new job.
-- [ ] Viewer comparison never revives temporary/deleted history and preserves existing Continue/Actions hierarchy.
-- [ ] No recipe/lineage schema unless implementation evidence first amends the accepted contract.
-- [ ] No production application deployment or scheduler activation.
+- [x] Browser sends only opaque job/media identity; reconstruction is server-owned.
+- [x] Current parser/capability/input availability is revalidated; missing/tombstoned/foreign/current-invalid inputs fail closed and are never silently dropped/substituted.
+- [x] Historical provider/workflow/model/worker/failover/error/storage metadata is not replayed.
+- [x] Reuse Settings and media `source` + `action` continuation remain distinct and ambiguous mixed navigation fails boundedly.
+- [x] Run Again uses ordinary Generation Admission and returns a distinct new job.
+- [x] Viewer comparison never revives temporary/deleted history and preserves existing Continue/Actions hierarchy.
+- [x] No recipe/lineage schema unless implementation evidence first amends the accepted contract.
+- [x] No production application deployment or scheduler activation.
 
 ### Validation / exit checklist
-- [ ] Shared reconstruction tests cover ownership/privacy, current parsing, bounded legacy compatibility, stable aliases/order, input availability and provider-metadata isolation.
-- [ ] Reuse Settings configured browser coverage verifies full prefill, zero implicit dispatch, editable submit and unavailable/ambiguous navigation states.
-- [ ] Run Again coverage verifies succeeded-only eligibility, distinct job, immutable history, current admission and bounded product errors.
-- [ ] Viewer comparison covers durable source eligibility plus image→image and image→video desktop/narrow/keyboard/reduced-motion rendering.
-- [ ] Existing Create/Activity/Viewer actions and failed Retry/native Cancel remain regression-clean.
-- [ ] Every actually affected exact-head GitHub workflow passes after path-filter audit.
-- [ ] Exact Auth/Supabase/R2 fixtures clean and shared production history remains untouched.
-- [ ] Human review approves the final Viewer comparison and Create recipe-prefill responsive states.
-- [ ] Authoritative implementation docs are updated from verified reality before Phase 16 is marked complete.
+- [x] Shared reconstruction tests cover ownership/privacy, current parsing, bounded legacy compatibility, stable aliases/order, input availability and provider-metadata isolation.
+- [x] Reuse Settings configured browser coverage verifies full prefill, zero implicit dispatch, editable submit and unavailable/ambiguous navigation states.
+- [x] Run Again coverage verifies succeeded-only eligibility, distinct job, immutable history, current admission and bounded product errors.
+- [x] Viewer comparison covers durable source eligibility plus image→image and image→video desktop/narrow/keyboard/reduced-motion rendering.
+- [x] Existing Create/Activity/Viewer actions and failed Retry/native Cancel remain regression-clean.
+- [x] Every actually affected exact-head GitHub workflow passes after path-filter audit.
+- [x] Exact Auth/Supabase/R2 fixtures clean and shared production history remains untouched.
+- [x] Human review approves the final Viewer comparison and Create recipe-prefill responsive states.
+- [x] Authoritative implementation docs are updated from verified reality before Phase 16 is marked complete.
 
 **Next after completion:** expand Phase 17 Observability & Engineering Quality into an execution-ready contract; do not implement Phase 17 from roadmap text alone.
 
-## Cycle 3 — Phase 16 Creative Iteration — partial verified implementation
-**Status: `IN PROGRESS — 16A/16B/16C/16D IMPLEMENTED / CONFIGURED VERIFIED; FINAL HUMAN VIEWER REVIEW / PHASE CLOSURE PENDING`**
+## Cycle 3 — Phase 16 Creative Iteration — COMPLETE / VERIFIED
+**Status: `COMPLETE / VERIFIED`**
 
 - [x] **16A shared recipe reconstruction:** centralize owner-scoped historical job loading, current-contract reconstruction, operation/output revalidation and current source availability so failed Retry and successful reuse share one truthful boundary.
 - [x] **16B Reuse Settings:** successful current-valid history can open the existing Create workspace with prompt, Image/Video output settings, Advanced values, stable `@imageN` aliases/roles and exact historical input source identity prefilled. Opening a recipe performs no generation dispatch.
@@ -1556,6 +1556,6 @@ No Phase 15 implementation, production cleanup, deployment or scheduler activati
 - [x] Exact head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed all 26 affected workflows. Library Collections `33959978965` had one post-success Playwright teardown race and passed unchanged on attempt 2; configured cleanup succeeded.
 - [x] **16D visual design checkpoint:** user-approved on 2026-09-05. Design PR #100 / merge `6dadc9e1976b976ab4584ce830286ba3a8baead1` records desktop+narrow Image→Image and Image→Video candidates after two render-review passes, with truthful aspect ratios, result-primary hierarchy, compact narrow Source context, preserved existing Actions and `Close comparison` active-state wording.
 - [x] **16D implementation / configured verification:** exact head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` implements the accepted conditional Viewer comparison and passed Creative Iteration `33964679539` plus the full 26-workflow affected matrix. The focused verifier covers Image→Image and Image→Video, desktop+narrow layouts, keyboard activation, reduced-motion, `Open source`, preserved video controls, no horizontal overflow, fail-closed ineligible history and exact fixture cleanup. Artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) contains the final comparison screenshots.
-- [ ] **Phase 16 completion:** implementation/configured verification is complete; final human review of the rendered 16D Viewer screenshots plus the final repository/PR closure evidence remain before the phase can be marked complete.
+- [x] **Final rendered review / Phase 16 completion:** artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) was independently hash-checked and all four real Image→Image / Image→Video desktop+narrow Viewer screenshots were human-reviewed clean on 2026-09-05. Result remains primary, Source remains contextual with only `Open source`, `Close comparison` stays secondary to creative continuation, media is contained without distortion, Prompt/Details/Continue/Actions remain result-owned, and narrow full-page renders do not clip or overflow. Creative Iteration `33964679539` separately verifies the native result video `controls` element, keyboard activation, reduced-motion and exact fixture cleanup. No corrective implementation change was required; authoritative repository records now reflect Phase 16 as `COMPLETE / VERIFIED`.
 
-No schema migration, production deployment, scheduler activation, provider-routing redesign or Variations implementation is authorized or implied by this progress.
+No schema migration, production deployment, scheduler activation, provider-routing redesign or Variations implementation is authorized or implied by this completion.
