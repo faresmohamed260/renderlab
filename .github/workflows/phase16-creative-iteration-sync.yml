@@ -1,0 +1,262 @@
+name: Phase 16 Creative Iteration Sync
+
+on:
+  push:
+    branches: [noop]
+    paths:
+      - ".github/workflows/phase16-creative-iteration-sync.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout helper source
+        uses: actions/checkout@v4
+        with:
+          ref: noop
+          fetch-depth: 0
+
+      - name: Apply Phase 16B and 16C
+        shell: bash
+        env:
+          EXPECTED_HEAD: f5b43c52a9c457a7f5874a9f3722a6b33821941f
+          TARGET_BRANCH: work/phase-16-creative-iteration
+        run: |
+          set -euo pipefail
+          git fetch origin "$TARGET_BRANCH"
+          git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+
+          python <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected text not found in {path}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          Path('src/lib/api/generation-recipe-contract.ts').write_text('''import type { GenerationInputAlias, GenerationInputSource, GenerationRequest } from "@/lib/capabilities/generation";\n\nexport type GenerationRecipeReference = {\n  alias: GenerationInputAlias;\n  source: GenerationInputSource;\n  previewUrl: string;\n  label: string;\n};\n\nexport type InitialGenerationRecipe = {\n  jobId: string;\n  request: GenerationRequest;\n  references: GenerationRecipeReference[];\n};\n''')
+
+          Path('src/lib/api/generation-run-again-contract.ts').write_text('''import type { GenerationJob } from "@/lib/capabilities/generation";\n\nexport type RunAgainGenerationErrorCode =\n  | "job_not_found"\n  | "run_again_not_available"\n  | "generation_access_denied"\n  | "generation_disabled"\n  | "generation_active_limit_reached"\n  | "generation_rate_limit_reached"\n  | "generation_backend_unavailable"\n  | "generation_submission_failed";\n\nexport type RunAgainGenerationResponse =\n  | { ok: true; job: GenerationJob }\n  | {\n      ok: false;\n      error: {\n        code: RunAgainGenerationErrorCode;\n        message: string;\n      };\n    };\n''')
+
+          replace_once(
+              'src/server/media/reference-uploads.ts',
+              'import { createSignedUploadUrl, headR2Object, isR2Configured } from "@/server/storage/r2";',
+              'import { createSignedReadUrl, createSignedUploadUrl, headR2Object, isR2Configured } from "@/server/storage/r2";',
+          )
+          replace_once(
+              'src/server/media/reference-uploads.ts',
+              'export function isReferenceUploadConfigured() {\n  return isR2Configured() && isSupabaseConfigured();\n}\n',
+              '''export function isReferenceUploadConfigured() {\n  return isR2Configured() && isSupabaseConfigured();\n}\n\nexport async function getReadyReferenceSource(ownerId: string, sourceId: string) {\n  const params = new URLSearchParams({\n    select: "id,owner_id,storage_key,filename,mime_type,size_bytes,width,height,status,metadata",\n    owner_id: `eq.${ownerId}`,\n    id: `eq.${sourceId}`,\n    status: "eq.ready",\n    limit: "1",\n  });\n  const rows = await supabaseRest<SourceRow[]>(`generation_sources?${params.toString()}`, { method: "GET" });\n  const source = rows?.[0] ?? null;\n  return source?.mime_type.startsWith("image/") ? source : null;\n}\n\nexport async function getReferenceSourceContentUrl(source: Pick<SourceRow, "storage_key">) {\n  return createSignedReadUrl(source.storage_key, 300);\n}\n''',
+          )
+
+          Path('src/app/api/assets/reference/[sourceId]/content/route.ts').parent.mkdir(parents=True, exist_ok=True)
+          Path('src/app/api/assets/reference/[sourceId]/content/route.ts').write_text('''import { NextResponse } from "next/server";\nimport { getCurrentRenderLabAccount } from "@/lib/supabase/server";\nimport { getReadyReferenceSource, getReferenceSourceContentUrl } from "@/server/media/reference-uploads";\n\nconst uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nexport async function GET(\n  _request: Request,\n  context: { params: Promise<{ sourceId: string }> },\n) {\n  const { sourceId } = await context.params;\n  if (!uuidPattern.test(sourceId)) {\n    return NextResponse.json({ error: "Reference source was not found." }, { status: 404 });\n  }\n\n  const account = await getCurrentRenderLabAccount();\n  if (!account) return NextResponse.json({ error: "Sign in to access your RenderLab references." }, { status: 401 });\n\n  try {\n    const source = await getReadyReferenceSource(account.id, sourceId);\n    if (!source) return NextResponse.json({ error: "Reference source was not found." }, { status: 404 });\n    return NextResponse.redirect(await getReferenceSourceContentUrl(source), 302);\n  } catch {\n    return NextResponse.json({ error: "Reference content is unavailable." }, { status: 503 });\n  }\n}\n''')
+
+          recipe = Path('src/server/generation/generation-recipe.ts')
+          text = recipe.read_text()
+          text = text.replace(
+              'import { parseGenerationRequest } from "@/lib/api/generation-contract";\n',
+              'import { parseGenerationRequest } from "@/lib/api/generation-contract";\nimport type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";\n',
+              1,
+          )
+          text = text.replace(
+              'import { generationImageInputsAvailable } from "@/server/generation/submit-generation";\n',
+              'import { generationImageInputsAvailable } from "@/server/generation/submit-generation";\nimport { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";\nimport { getReadyReferenceSource } from "@/server/media/reference-uploads";\n',
+              1,
+          )
+          text += '''\n\nfunction mediaRecipeLabel(asset: ReturnType<typeof publicMediaAsset>) {\n  if (asset.origin === "uploaded") {\n    return asset.displayName || asset.originalFilename || "Uploaded image";\n  }\n  return "Generated result";\n}\n\nexport async function loadInitialGenerationRecipe(\n  ownerId: string,\n  jobId: string,\n): Promise<InitialGenerationRecipe | null> {\n  const row = await loadGenerationRecipeJob(ownerId, jobId);\n  if (!row || row.status !== "succeeded") return null;\n\n  const request = await reconstructAvailableGenerationRecipeRequest(ownerId, row);\n  if (!request) return null;\n\n  const references = await Promise.all(request.inputs.map(async (input) => {\n    if (input.source.type === "media-asset") {\n      const asset = await getMediaAsset(ownerId, input.source.id);\n      if (!asset || asset.kind !== "image") return null;\n      const publicAsset = publicMediaAsset(asset);\n      return {\n        alias: input.alias,\n        source: input.source,\n        previewUrl: publicAsset.contentUrl,\n        label: mediaRecipeLabel(publicAsset),\n      };\n    }\n\n    const source = await getReadyReferenceSource(ownerId, input.source.id);\n    if (!source) return null;\n    return {\n      alias: input.alias,\n      source: input.source,\n      previewUrl: `/api/assets/reference/${encodeURIComponent(source.id)}/content`,\n      label: source.filename || "Historical reference",\n    };\n  }));\n\n  if (references.some((reference) => reference === null)) return null;\n  return {\n    jobId: row.id,\n    request,\n    references: references.filter((reference): reference is NonNullable<typeof reference> => reference !== null),\n  };\n}\n'''
+          recipe.write_text(text)
+
+          Path('src/server/generation/run-again-generation.ts').write_text('''import type { RunAgainGenerationResponse } from "@/lib/api/generation-run-again-contract";\nimport {\n  loadGenerationRecipeJob,\n  reconstructAvailableGenerationRecipeRequest,\n} from "@/server/generation/generation-recipe";\nimport { submitGeneration } from "@/server/generation/submit-generation";\n\nfunction runAgainNotAvailable(): RunAgainGenerationResponse {\n  return {\n    ok: false,\n    error: {\n      code: "run_again_not_available",\n      message: "This generation can’t be run again with the current inputs and settings.",\n    },\n  };\n}\n\nexport async function runAgainGeneration(\n  ownerId: string,\n  jobId: string,\n): Promise<RunAgainGenerationResponse> {\n  const historicalJob = await loadGenerationRecipeJob(ownerId, jobId);\n  if (!historicalJob) {\n    return {\n      ok: false,\n      error: { code: "job_not_found", message: "Generation job was not found." },\n    };\n  }\n  if (historicalJob.status !== "succeeded") return runAgainNotAvailable();\n\n  const request = await reconstructAvailableGenerationRecipeRequest(ownerId, historicalJob);\n  if (!request) return runAgainNotAvailable();\n\n  const submitted = await submitGeneration(ownerId, request);\n  if (!submitted.ok) {\n    const code = submitted.error.code;\n    if (\n      code === "generation_access_denied"\n      || code === "generation_disabled"\n      || code === "generation_active_limit_reached"\n      || code === "generation_rate_limit_reached"\n    ) {\n      return { ok: false, error: { code, message: submitted.error.message } };\n    }\n    if (code === "generation_backend_unavailable") {\n      return {\n        ok: false,\n        error: {\n          code: "generation_backend_unavailable",\n          message: "Generation is temporarily unavailable. Try again shortly.",\n        },\n      };\n    }\n    return {\n      ok: false,\n      error: {\n        code: "generation_submission_failed",\n        message: "Run again could not be started. Check that the original inputs are still available and try again.",\n      },\n    };\n  }\n\n  return { ok: true, job: submitted.job };\n}\n''')
+
+          Path('src/app/api/generation/jobs/[jobId]/run-again/route.ts').parent.mkdir(parents=True, exist_ok=True)
+          Path('src/app/api/generation/jobs/[jobId]/run-again/route.ts').write_text('''import { NextResponse } from "next/server";\nimport type { RunAgainGenerationErrorCode } from "@/lib/api/generation-run-again-contract";\nimport { getCurrentRenderLabIdentity } from "@/lib/supabase/server";\nimport { runAgainGeneration } from "@/server/generation/run-again-generation";\n\nconst uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nfunction runAgainStatus(code: RunAgainGenerationErrorCode) {\n  if (code === "job_not_found") return 404;\n  if (code === "run_again_not_available") return 409;\n  if (code === "generation_access_denied") return 403;\n  if (code === "generation_disabled" || code === "generation_backend_unavailable") return 503;\n  if (code === "generation_active_limit_reached" || code === "generation_rate_limit_reached") return 429;\n  return 502;\n}\n\nexport async function POST(\n  _request: Request,\n  context: { params: Promise<{ jobId: string }> },\n) {\n  const { jobId } = await context.params;\n  if (!uuidPattern.test(jobId)) {\n    return NextResponse.json(\n      { ok: false, error: { code: "invalid_request", message: "A valid generation job ID is required." } },\n      { status: 400 },\n    );\n  }\n\n  const identity = await getCurrentRenderLabIdentity();\n  if (!identity) {\n    return NextResponse.json(\n      { ok: false, error: { code: "authentication_required", message: "Sign in to run your generation again." } },\n      { status: 401 },\n    );\n  }\n\n  try {\n    const result = await runAgainGeneration(identity.id, jobId);\n    if (!result.ok) return NextResponse.json(result, { status: runAgainStatus(result.error.code) });\n    return NextResponse.json(result, { status: 202 });\n  } catch {\n    return NextResponse.json(\n      {\n        ok: false,\n        error: {\n          code: "generation_backend_unavailable",\n          message: "Run again could not be prepared right now. Try again shortly.",\n        },\n      },\n      { status: 503 },\n    );\n  }\n}\n''')
+
+          Path('src/features/activity/activity-run-again-button.tsx').write_text('''"use client";\n\nimport { useState } from "react";\nimport { AlertCircle, CheckCircle2 } from "lucide-react";\nimport { useRouter } from "next/navigation";\nimport { Alert, AlertDescription } from "@/components/ui/alert";\nimport { Button } from "@/components/ui/button";\nimport { Spinner } from "@/components/ui/spinner";\nimport type { RunAgainGenerationResponse } from "@/lib/api/generation-run-again-contract";\n\ntype RunAgainState =\n  | { status: "idle" }\n  | { status: "submitting" }\n  | { status: "success" }\n  | { status: "error"; message: string };\n\nexport function ActivityRunAgainButton({ jobId }: { jobId: string }) {\n  const router = useRouter();\n  const [state, setState] = useState<RunAgainState>({ status: "idle" });\n  const submitting = state.status === "submitting";\n\n  async function runAgain() {\n    if (submitting) return;\n    setState({ status: "submitting" });\n    try {\n      const response = await fetch(`/api/generation/jobs/${encodeURIComponent(jobId)}/run-again`, {\n        method: "POST",\n        headers: { accept: "application/json" },\n      });\n      const payload = await response.json().catch(() => null) as RunAgainGenerationResponse | null;\n      if (!response.ok || !payload?.ok) {\n        setState({\n          status: "error",\n          message: payload && !payload.ok ? payload.error.message : "Run again could not be started. Try again.",\n        });\n        return;\n      }\n      setState({ status: "success" });\n      router.refresh();\n    } catch {\n      setState({ status: "error", message: "Run again could not be started. Try again." });\n    }\n  }\n\n  return (\n    <div className="flex min-w-0 w-full flex-col items-start gap-2 sm:w-auto">\n      <Button type="button" variant="secondary" size="sm" disabled={submitting} onClick={runAgain}>\n        {submitting ? (\n          <>\n            <Spinner aria-hidden="true" className="motion-reduce:animate-none" />\n            Running again…\n          </>\n        ) : "Run again"}\n      </Button>\n      {state.status === "success" ? (\n        <p className="flex items-center gap-1.5 text-xs text-success" role="status">\n          <CheckCircle2 aria-hidden="true" className="size-3.5" />\n          New generation started.\n        </p>\n      ) : null}\n      {state.status === "error" ? (\n        <Alert className="max-w-md py-2" role="status">\n          <AlertCircle aria-hidden="true" />\n          <AlertDescription>{state.message}</AlertDescription>\n        </Alert>\n      ) : null}\n    </div>\n  );\n}\n''')
+
+          replace_once(
+              'src/lib/api/generation-activity-contract.ts',
+              '  canCancel: boolean;\n',
+              '  canCancel: boolean;\n  canRunAgain: boolean;\n',
+          )
+
+          activity = Path('src/server/generation/generation-activity.ts')
+          text = activity.read_text()
+          text = text.replace(
+              'import { pollGenerationJob } from "@/server/generation/poll-generation";\n',
+              'import { pollGenerationJob } from "@/server/generation/poll-generation";\nimport { reconstructAvailableGenerationRecipeRequest } from "@/server/generation/generation-recipe";\n',
+              1,
+          )
+          text = text.replace(
+              '  output_asset_ids: string[];\n',
+              '  output_asset_ids: string[];\n  inputs: unknown;\n  parameters: unknown;\n',
+              1,
+          )
+          text = text.replace(
+              '    canCancel: canCancelActivity(row),\n',
+              '    canCancel: canCancelActivity(row),\n    canRunAgain: false,\n',
+              1,
+          )
+          text = text.replace(
+              '    select: "id,status,operation,output_kind,prompt,output_asset_ids,worker_id,provider_job_id,error_code,error_message,created_at,updated_at,started_at,completed_at",\n',
+              '    select: "id,status,operation,output_kind,prompt,inputs,parameters,output_asset_ids,worker_id,provider_job_id,error_code,error_message,created_at,updated_at,started_at,completed_at",\n',
+              1,
+          )
+          old = '''  const availableIds = await activeOutputIds(ownerId, refreshedItems);\n  const items = refreshedItems.map((item) => ({\n    ...item,\n    outputAssetIds: item.outputAssetIds.filter((id) => availableIds.has(id)),\n  }));\n'''
+          new = '''  const reusableIds = new Set((await Promise.all(pageRows.map(async (row) => {\n    if (row.status !== "succeeded") return null;\n    try {\n      return await reconstructAvailableGenerationRecipeRequest(ownerId, row) ? row.id : null;\n    } catch {\n      return null;\n    }\n  }))).filter((id): id is string => Boolean(id)));\n\n  const availableIds = await activeOutputIds(ownerId, refreshedItems);\n  const items = refreshedItems.map((item) => ({\n    ...item,\n    outputAssetIds: item.outputAssetIds.filter((id) => availableIds.has(id)),\n    canRunAgain: item.status === "succeeded" && reusableIds.has(item.id),\n  }));\n'''
+          if old not in text:
+              raise SystemExit('Generation activity final mapping not found')
+          activity.write_text(text.replace(old, new, 1))
+
+          activity_view = Path('src/features/activity/activity-view.tsx')
+          text = activity_view.read_text()
+          text = text.replace(
+              'import { ActivityRetryButton } from "@/features/activity/activity-retry-button";\n',
+              'import { ActivityRetryButton } from "@/features/activity/activity-retry-button";\nimport { ActivityRunAgainButton } from "@/features/activity/activity-run-again-button";\n',
+              1,
+          )
+          old = '''                  {item.status === "succeeded" && item.outputAssetIds.length > 0 ? (\n                    <Button asChild variant="secondary" size="sm">\n                      <Link href={`/library/${encodeURIComponent(item.outputAssetIds[0])}`}>View result</Link>\n                    </Button>\n                  ) : item.status === "failed" ? (\n                    <ActivityRetryButton jobId={item.id} />\n                  ) : item.canCancel ? (\n                    <ActivityCancelButton jobId={item.id} />\n                  ) : null}\n'''
+          new = '''                  {item.status === "succeeded" ? (\n                    <div className="flex flex-wrap items-start justify-end gap-2">\n                      {item.outputAssetIds.length > 0 ? (\n                        <Button asChild variant="secondary" size="sm">\n                          <Link href={`/library/${encodeURIComponent(item.outputAssetIds[0])}`}>View result</Link>\n                        </Button>\n                      ) : null}\n                      {item.canRunAgain ? <ActivityRunAgainButton jobId={item.id} /> : null}\n                    </div>\n                  ) : item.status === "failed" ? (\n                    <ActivityRetryButton jobId={item.id} />\n                  ) : item.canCancel ? (\n                    <ActivityCancelButton jobId={item.id} />\n                  ) : null}\n'''
+          if old not in text:
+              raise SystemExit('Activity action block not found')
+          activity_view.write_text(text.replace(old, new, 1))
+
+          advanced = Path('src/features/create/create-advanced-panel.tsx')
+          text = advanced.read_text()
+          text = text.replace(
+              '  GenerationAdvancedParameters,\n',
+              '  GenerationAdvancedParameters,\n',
+              1,
+          )
+          marker = '''export function createAdvancedDraft(kind: OutputKind): AdvancedDraft {\n  const defaults = advancedDefaultsForOutput(kind);\n  return {\n    negativePrompt: "",\n    seed: String(defaults.seed),\n    steps: kind === "image" ? String(generationAdvancedCapabilities.image.defaults.steps) : "",\n    guidance: kind === "image" ? String(generationAdvancedCapabilities.image.defaults.guidance) : "",\n    frameRate: generationAdvancedCapabilities.video.defaults.frameRate,\n  };\n}\n'''
+          addition = marker + '''\nexport function advancedDraftFromParameters(\n  kind: OutputKind,\n  parameters: GenerationAdvancedParameters | undefined,\n): AdvancedDraft {\n  const defaults = createAdvancedDraft(kind);\n  return {\n    negativePrompt: parameters?.negativePrompt ?? "",\n    seed: String(parameters?.seed ?? defaults.seed),\n    steps: kind === "image" ? String(parameters?.steps ?? defaults.steps) : "",\n    guidance: kind === "image" ? String(parameters?.guidance ?? defaults.guidance) : "",\n    frameRate: kind === "video"\n      ? parameters?.frameRate ?? defaults.frameRate\n      : defaults.frameRate,\n  };\n}\n'''
+          if marker not in text:
+              raise SystemExit('Advanced draft marker not found')
+          advanced.write_text(text.replace(marker, addition, 1))
+
+          create_page = '''import type { ContinuationAction } from "@/lib/capabilities/generation";\nimport { continuationActionForMedia } from "@/lib/capabilities/generation";\nimport { CreateWorkspace } from "@/features/create/create-workspace";\nimport { getCurrentRenderLabAccount } from "@/lib/supabase/server";\nimport { isSupabaseConfigured } from "@/server/data/supabase-rest";\nimport { loadInitialGenerationRecipe } from "@/server/generation/generation-recipe";\nimport { isGenerationBackendConfigured } from "@/server/generation/submit-generation";\nimport { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";\nimport { isMediaUploadConfigured } from "@/server/media/media-uploads";\nimport { isR2Configured } from "@/server/storage/r2";\n\nconst uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nfunction firstValue(value: string | string[] | undefined) {\n  return Array.isArray(value) ? value[0] : value;\n}\n\nfunction isContinuationActionId(value: string): value is ContinuationAction["id"] {\n  return value === "edit-image" || value === "animate-image";\n}\n\nexport default async function CreatePage({\n  searchParams,\n}: {\n  searchParams: Promise<Record<string, string | string[] | undefined>>;\n}) {\n  const params = await searchParams;\n  const account = await getCurrentRenderLabAccount();\n  const recipeId = firstValue(params.recipe);\n  const sourceId = firstValue(params.source);\n  const requestedAction = firstValue(params.action);\n  let initialContinuation = null;\n  let initialRecipe = null;\n  let initialNavigationError: string | null = null;\n\n  if (recipeId && (sourceId || requestedAction)) {\n    initialNavigationError = "That Create link mixes two continuation types. Start a new creation or use one saved starting point.";\n  } else if (recipeId) {\n    if (!uuidPattern.test(recipeId)) {\n      initialNavigationError = "That saved generation link is invalid. Start a new creation instead.";\n    } else if (!account) {\n      initialNavigationError = "Sign in from Settings to reuse private RenderLab generation settings.";\n    } else if (!isSupabaseConfigured() || !isR2Configured()) {\n      initialNavigationError = "That saved generation cannot be loaded in this environment. Start a new creation instead.";\n    } else {\n      try {\n        initialRecipe = await loadInitialGenerationRecipe(account.id, recipeId);\n        if (!initialRecipe) {\n          initialNavigationError = "That saved generation can’t be reused with the current inputs and settings. Start a new creation instead.";\n        }\n      } catch {\n        initialNavigationError = "That saved generation could not be loaded. Start a new creation instead.";\n      }\n    }\n  } else if (sourceId || requestedAction) {\n    if (!sourceId || !requestedAction || !uuidPattern.test(sourceId) || !isContinuationActionId(requestedAction)) {\n      initialNavigationError = "That continuation link is invalid. Start a new creation or return to Library.";\n    } else if (!account) {\n      initialNavigationError = "Sign in from Settings to continue from private RenderLab media.";\n    } else if (!isSupabaseConfigured() || !isR2Configured()) {\n      initialNavigationError = "That media item cannot be loaded in this environment. Start a new creation or return to Library.";\n    } else {\n      try {\n        const asset = await getMediaAsset(account.id, sourceId);\n        const action = asset ? continuationActionForMedia(asset.kind, requestedAction) : null;\n        if (!asset) {\n          initialNavigationError = "That media item is no longer available. Start a new creation or return to Library.";\n        } else if (!action) {\n          initialNavigationError = "That action is not available for this media item. Start a new creation or return to Library.";\n        } else {\n          initialContinuation = { asset: publicMediaAsset(asset), action };\n        }\n      } catch {\n        initialNavigationError = "That media item could not be loaded. Start a new creation or return to Library.";\n      }\n    }\n  }\n\n  return (\n    <CreateWorkspace\n      accountAvailable={Boolean(account)}\n      generationAvailable={isGenerationBackendConfigured()}\n      mediaUploadAvailable={isMediaUploadConfigured()}\n      initialContinuation={initialContinuation}\n      initialRecipe={initialRecipe}\n      initialContinuationError={initialNavigationError}\n    />\n  );\n}\n'''
+          Path('src/app/(app)/create/page.tsx').write_text(create_page)
+
+          workspace = Path('src/features/create/create-workspace.tsx')
+          text = workspace.read_text()
+          text = text.replace(
+              '  advancedParametersFromDraft,\n',
+              '  advancedDraftFromParameters,\n  advancedParametersFromDraft,\n',
+              1,
+          )
+          text = text.replace(
+              'import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";\n',
+              'import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";\nimport type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";\n',
+              1,
+          )
+          text = text.replace(
+              '  GenerationInputAlias,\n',
+              '  GenerationInputAlias,\n  GenerationInputSource,\n',
+              1,
+          )
+          old_type = '''type AttachedReference = {\n  alias: GenerationInputAlias;\n  asset: PublicMediaAsset;\n  previewUrl: string;\n  label: string;\n};\n'''
+          new_type = '''type AttachedReference = {\n  alias: GenerationInputAlias;\n  source: GenerationInputSource;\n  previewUrl: string;\n  label: string;\n};\n\nfunction nextRecipeReferenceNumber(recipe: InitialGenerationRecipe | null) {\n  if (!recipe?.references.length) return 1;\n  return Math.max(...recipe.references.map((reference) => Number(reference.alias.slice(5)) || 0)) + 1;\n}\n'''
+          if old_type not in text:
+              raise SystemExit('AttachedReference type not found')
+          text = text.replace(old_type, new_type, 1)
+          text = text.replace(
+              '  initialContinuation = null,\n  initialContinuationError = null,\n',
+              '  initialContinuation = null,\n  initialRecipe = null,\n  initialContinuationError = null,\n',
+              1,
+          )
+          text = text.replace(
+              '  initialContinuation?: InitialContinuation | null;\n  initialContinuationError?: string | null;\n',
+              '  initialContinuation?: InitialContinuation | null;\n  initialRecipe?: InitialGenerationRecipe | null;\n  initialContinuationError?: string | null;\n',
+              1,
+          )
+          old_state = '''  const [prompt, setPrompt] = useState("");\n  const [outputKind, setOutputKind] = useState<OutputKind>(() => initialContinuation?.action.outputKind ?? "image");\n  const [imageAspect, setImageAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "1:1");\n  const [videoAspect, setVideoAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "16:9");\n  const [videoResolution, setVideoResolution] = useState<VideoResolution>(defaultVideoResolution);\n  const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);\n  const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);\n  const [references, setReferences] = useState<AttachedReference[]>(() =>\n    initialContinuation\n      ? [{\n          alias: generationInputAlias(1),\n          asset: initialContinuation.asset,\n          previewUrl: initialContinuation.asset.contentUrl,\n          label: referenceAssetLabel(initialContinuation.asset),\n        }]\n      : [],\n  );\n  const [nextReferenceNumber, setNextReferenceNumber] = useState(initialContinuation ? 2 : 1);\n'''
+          new_state = '''  const [prompt, setPrompt] = useState(() => initialRecipe?.request.prompt ?? "");\n  const [outputKind, setOutputKind] = useState<OutputKind>(() =>\n    initialRecipe?.request.output.kind ?? initialContinuation?.action.outputKind ?? "image",\n  );\n  const [imageAspect, setImageAspect] = useState<AspectRatio>(() =>\n    initialRecipe?.request.output.kind === "image"\n      ? initialRecipe.request.output.aspectRatio\n      : initialContinuation ? "original" : "1:1",\n  );\n  const [videoAspect, setVideoAspect] = useState<AspectRatio>(() =>\n    initialRecipe?.request.output.kind === "video"\n      ? initialRecipe.request.output.aspectRatio\n      : initialContinuation ? "original" : "16:9",\n  );\n  const [videoResolution, setVideoResolution] = useState<VideoResolution>(() =>\n    initialRecipe?.request.output.kind === "video"\n      ? initialRecipe.request.output.resolution ?? defaultVideoResolution\n      : defaultVideoResolution,\n  );\n  const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(() => {\n    const value = initialRecipe?.request.output.kind === "video" ? initialRecipe.request.output.durationSeconds : undefined;\n    return videoDurations.includes(value as (typeof videoDurations)[number])\n      ? value as (typeof videoDurations)[number]\n      : 5;\n  });\n  const [audioEnabled, setAudioEnabled] = useState(() =>\n    initialRecipe?.request.output.kind === "video"\n      ? initialRecipe.request.output.audioEnabled ?? defaultVideoAudioEnabled\n      : defaultVideoAudioEnabled,\n  );\n  const [references, setReferences] = useState<AttachedReference[]>(() =>\n    initialRecipe\n      ? initialRecipe.references\n      : initialContinuation\n        ? [{\n            alias: generationInputAlias(1),\n            source: { type: "media-asset", id: initialContinuation.asset.id },\n            previewUrl: initialContinuation.asset.contentUrl,\n            label: referenceAssetLabel(initialContinuation.asset),\n          }]\n        : [],\n  );\n  const [nextReferenceNumber, setNextReferenceNumber] = useState(() =>\n    initialRecipe ? nextRecipeReferenceNumber(initialRecipe) : initialContinuation ? 2 : 1,\n  );\n'''
+          if old_state not in text:
+              raise SystemExit('Create initial state block not found')
+          text = text.replace(old_state, new_state, 1)
+          text = text.replace(
+              '    initialContinuation ? generationInputAlias(1) : null,\n',
+              '    initialRecipe?.references[0]?.alias ?? (initialContinuation ? generationInputAlias(1) : null),\n',
+              1,
+          )
+          text = text.replace(
+              '  const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("image"));\n  const [videoAdvanced, setVideoAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("video"));\n',
+              '''  const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() =>\n    initialRecipe?.request.output.kind === "image"\n      ? advancedDraftFromParameters("image", initialRecipe.request.advanced)\n      : createAdvancedDraft("image"),\n  );\n  const [videoAdvanced, setVideoAdvanced] = useState<AdvancedDraft>(() =>\n    initialRecipe?.request.output.kind === "video"\n      ? advancedDraftFromParameters("video", initialRecipe.request.advanced)\n      : createAdvancedDraft("video"),\n  );\n''',
+              1,
+          )
+          text = text.replace(
+              '      asset: resultAsset,\n      previewUrl: resultAsset.contentUrl,\n',
+              '      source: { type: "media-asset", id: resultAsset.id },\n      previewUrl: resultAsset.contentUrl,\n',
+              1,
+          )
+          text = text.replace(
+              '        asset,\n        previewUrl: asset.contentUrl,\n',
+              '        source: { type: "media-asset", id: asset.id },\n        previewUrl: asset.contentUrl,\n',
+              1,
+          )
+          old_inputs = '''    const inputs = references.map((reference, index) => ({\n      alias: reference.alias,\n      source: { type: "media-asset" as const, id: reference.asset.id },\n      role: generationInputRoleForIndex(outputKind, index)!,\n    }));\n'''
+          new_inputs = '''    const inputs = references.map((reference, index) => ({\n      alias: reference.alias,\n      source: reference.source,\n      role: generationInputRoleForIndex(outputKind, index)!,\n    }));\n'''
+          if old_inputs not in text:
+              raise SystemExit('Create submit input mapping not found')
+          text = text.replace(old_inputs, new_inputs, 1)
+          workspace.write_text(text)
+
+          viewer_page = Path('src/app/(app)/library/[assetId]/page.tsx')
+          text = viewer_page.read_text()
+          text = text.replace(
+              'import { isSupabaseConfigured } from "@/server/data/supabase-rest";\n',
+              'import { isSupabaseConfigured } from "@/server/data/supabase-rest";\nimport { loadInitialGenerationRecipe } from "@/server/generation/generation-recipe";\n',
+              1,
+          )
+          text = text.replace(
+              '  const collections = await listMediaCollections(account.id, asset.id).catch(() => null);\n\n  return (\n',
+              '''  const collections = await listMediaCollections(account.id, asset.id).catch(() => null);\n  const reusableRecipe = asset.generation_job_id\n    ? await loadInitialGenerationRecipe(account.id, asset.generation_job_id).catch(() => null)\n    : null;\n\n  return (\n''',
+              1,
+          )
+          text = text.replace(
+              '      collectionsAvailable={collections !== null}\n',
+              '      collectionsAvailable={collections !== null}\n      reuseRecipeJobId={reusableRecipe?.jobId ?? null}\n',
+              1,
+          )
+          viewer_page.write_text(text)
+
+          viewer = Path('src/features/library/media-viewer.tsx')
+          text = viewer.read_text()
+          text = text.replace(
+              '  collectionsAvailable,\n}: {\n',
+              '  collectionsAvailable,\n  reuseRecipeJobId,\n}: {\n',
+              1,
+          )
+          text = text.replace(
+              '  collectionsAvailable: boolean;\n}) {\n',
+              '  collectionsAvailable: boolean;\n  reuseRecipeJobId: string | null;\n}) {\n',
+              1,
+          )
+          text = text.replace(
+              '          {actions.length ? (\n',
+              '          {actions.length || reuseRecipeJobId ? (\n',
+              1,
+          )
+          marker = '''                {actions.map((action, index) => (\n                  <Button key={action.id} asChild variant={index === 0 ? "default" : "secondary"} size="lg" className="w-full">\n                    <Link href={continuationHref(asset.id, action.id)}>{action.label}</Link>\n                  </Button>\n                ))}\n'''
+          addition = marker + '''                {reuseRecipeJobId ? (\n                  <Button asChild variant="secondary" size="lg" className="w-full">\n                    <Link href={`/create?recipe=${encodeURIComponent(reuseRecipeJobId)}`}>Reuse settings</Link>\n                  </Button>\n                ) : null}\n'''
+          if marker not in text:
+              raise SystemExit('Viewer continuation actions marker not found')
+          viewer.write_text(text.replace(marker, addition, 1))
+          PY
+
+          git diff --check
+          npm ci
+          npx tsc --noEmit
+          npm run verify:ui-purity
+
+          git config user.name "RenderLab Automation"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add src
+          git commit -m "Implement Phase 16 recipe reuse and run again"
+          git push origin HEAD:"$TARGET_BRANCH"
