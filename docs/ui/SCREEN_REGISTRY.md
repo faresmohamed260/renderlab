@@ -311,3 +311,13 @@ Generated Viewer results with a current-valid producing recipe may expose **Reus
 
 ### Phase 17 Admin Health expansion — render verified
 The existing fresh-active-admin `/admin` Health section exposes bounded accepted-to-terminal timing samples, failover incidence, active-state age bands, active admission reservations/current global guardrails and Phase 15 maintenance backlog. Counts remain aggregate and bounded; raw prompt/media/account/provider/storage identity is not part of the Health browser contract. Exact head `1ecd46bb809c1953cd24f1eecbd4bbfab7dbd4be` passed Account/Admin Operations `33976269977` with exact aggregate/privacy/cleanup assertions and desktop+narrow no-overflow checks. Artifact `9972464342` (`sha256:f0b26931cb8e5ae574c457cf0f3f1ecff19f04dcde0fc3c390f19bbb57dbbd4c`) was independently hash-checked and human-reviewed clean on 2026-09-05: the existing dense Admin card/list hierarchy remains readable on desktop and 390px narrow layout, timing is explicitly labelled as accepted-to-terminal rather than SLA/ETA, and bounded truncated counts are explained with `+`. No corrective UI change was required.
+
+### Media Viewer — Phase 18 Image Upscale target
+**Status:** PLANNED — UI-058 contract accepted; implementation not started
+**Route:** existing `/library/[assetId]`; no new Upscale route
+
+**Target behavior:** an eligible active durable image may expose **Upscale 2×** in the existing Continue hierarchy. Starting the action creates a distinct asynchronous owner-scoped `upscale-image` job through a product API while the source Viewer remains stable. Accepted state gives concise local feedback plus Activity continuation; it does not fabricate completion. Source media is never overwritten. A succeeded Upscale result is an ordinary durable image and may expose UI-056 Compare source when the same-owner source remains active.
+
+**Eligibility / scope:** fixed 2× only; PNG/JPEG/WebP source; source max edge 4096 px, max 4,194,304 pixels and max 25 MB; no video, batch, model picker, prompt, Restore claim or arbitrary factor. Server state is authoritative. A desktop+narrow Viewer design checkpoint is required before implementation and final configured screenshots require human review.
+
+**Do not change:** keep the existing Viewer media-primary hierarchy, result/source comparison rules and ordinary Edit/Animate actions. Do not create an Upscale application, route, modal management framework or generic post-processing toolbar for v0.1.

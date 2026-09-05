@@ -777,3 +777,17 @@ The workflow owns real mutable fixtures, so its concurrency group is serialized 
 - Structured lifecycle diagnostics currently use ordinary server/platform logs only. Emission is best-effort/non-fatal and fields are allowlisted; no telemetry vendor, client RUM/session replay or durable event-store schema has been added.
 - Admin Health v0.1 detail is derived from existing `generation_jobs`, `generation_admission_reservations`, Phase 15 staging predicates and tombstoned media state through bounded service-role reads after fresh-admin authorization. No production scheduler or database extension is activated by this work.
 - Exact clean implementation head `1ecd46bb809c1953cd24f1eecbd4bbfab7dbd4be` passed the 29-workflow affected matrix, including Engineering Quality `33976269957`, Admin `33976269977`, Reconciliation `33976269975`, Cancellation `33976269985`, Maintenance `33976269984`, Generation Integration `33976269917` and live Video `33976269925`. No telemetry vendor/event store/schema, production deployment, `pg_cron`/`pg_net`, reconciliation schedule or maintenance schedule was introduced.
+
+### Phase 18 deployed-worker capability audit and Upscale prerequisite — 2026-09-06
+Read-only audit run `33995223659` inspected `/health`, `/runtime-health` and `/openapi.json` for all six RenderLab-registered worker endpoints without submitting generation, writing Supabase/R2 state or changing any worker. Artifact `9977854297` independently hash-matches GitHub at `sha256:3490b81b9229e048d78829848b8f1c4061aa0082859dd005481604f3881febef`.
+
+Observed registry reality:
+- `flux-primary-01`: registered `primary`, Modal workspace disabled / HTTP 404;
+- `flux-standby-01`: ready; `/jobs/edit`, GET/DELETE `/jobs/{call_id}`, multi-reference + cancel capability;
+- `ltx-primary-01`: registered `primary`, Modal workspace disabled / HTTP 404;
+- `ltx-standby-01`: ready; `/jobs/video`, GET/DELETE `/jobs/{call_id}`, poster/runtime health, 480p/720p/1080p/2K and 24/25/30 fps;
+- `qwen-primary-01` and `qwen-standby-01`: both ready; `/jobs/edit`, GET/DELETE `/jobs/{call_id}`, multi-reference + cancel capability.
+
+Every current ecosystem retains at least one ready worker, so the audit did not prove a production outage. It did prove **registry drift**: RenderLab knowingly ranks two disabled workspaces as primaries and currently pays an avoidable failed attempt before their healthy standby paths. Phase 18A must reconcile those registrations from live evidence before another worker-backed capability is productized; do not invent replacement URLs.
+
+No healthy registered gateway exposes image Upscale, Restore, Inpaint/Outpaint, LoRA selection or Director semantics. Phase 18 therefore requires a new, separately proved image-upscale worker contract before application coupling. The accepted v0.1 worker boundary is asynchronous `/jobs/upscale` + GET/DELETE job lifecycle, fixed scale 2, PNG output and exact 2× geometry, with model/runtime source+version+hash+license recorded before exposure. A worker deployment is an explicit infrastructure operation and is not authorized by the planning merge itself. Production application routing to that worker remains a later explicit rollout decision.

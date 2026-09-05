@@ -81,7 +81,7 @@ RenderLab already has a substantial verified core. Cycle 3 must build on it rath
 Detailed historical evidence remains in the archived Project chronology plus `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md` and the architecture documents.
 
 ## Cycle 3 — Reliability, Creative Iteration & Capability Growth
-**Status: `IN PROGRESS — PHASE 17 COMPLETE / VERIFIED / MERGED; PHASE 18 CONTRACT EXPANSION NEXT`.**
+**Status: `IN PROGRESS — PHASE 18 IMAGE UPSCALE CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
 
 ### Cycle 3 objective
 Make RenderLab independently reliable after a generation is accepted, then turn one-shot generation into a deeper iterative creative workflow before expanding into another major creative capability.
@@ -99,7 +99,7 @@ The Cycle 3 order is intentional:
 - **Phase 15 — Generation Control & Maintenance: `COMPLETE / VERIFIED`.** Owner-scoped native cancellation serializes through the Phase 14 lifecycle claim, and bounded staging/purge maintenance is implemented with race-safe cleanup claims. Production rollout/scheduling remains separate and is not active.
 - **Phase 16 — Creative Iteration: `COMPLETE / VERIFIED`.** Shared current-valid recipe reconstruction, Create Reuse Settings, successful Activity Run Again and conditional durable Viewer Compare source are implemented. Exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed all 26 affected workflows, including Creative Iteration `33964679539`. Final artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) was independently hash-checked and human-reviewed across Image→Image and Image→Video desktop/narrow renders; the accepted PR #100 Result-primary/contextual-Source hierarchy, truthful media geometry, `Open source` / `Close comparison` hierarchy, result-owned Prompt/Details/Continue/Actions and narrow no-overflow behavior all matched, with configured verification separately proving preserved native video controls, keyboard activation and reduced-motion. No corrective implementation change was required. Variations remains explicitly deferred because current worker/product execution still returns one output per job and has no approved output-count semantics. Phase 17 subsequently completed and merged; production rollout remains separate and unauthorized by both phase completions.
 - **Phase 17 — Observability & Engineering Quality: `COMPLETE / VERIFIED`.** Existing privileged Admin Health and server lifecycle seams now provide privacy-safe structured diagnostics, truthful bounded lifecycle/failure/failover/capacity/backlog aggregates and conventional cheap lint/typecheck/unit feedback without weakening configured browser/live-provider gates or introducing a telemetry vendor/event store. Exact implementation and repository-closure evidence is recorded below; PR #108 was squash-merged as `aaa2dcf06a927b9cbc5fe08dd3af1f47116ce1dd` from definitive exact final head `6c9af34702d8d2fc26d0e5e7d0cca649fde4cf0b` after all 29 attached workflows passed, and the merged-main push set then passed all 11 workflows GitHub actually attached.
-- **Phase 18 — Next Creative Capability: `ROADMAP`.** Re-audit current deployed workers and select one coherent capability. Preferred evaluation order is Upscale/Restore, Inpainting/Outpainting, then LoRA/model adapters. Director Video remains blocked until deployed REDGraft exposes real structured Director semantics.
+- **Phase 18 — Image Upscale v0.1: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.** Fresh read-only deployed-worker audit `33995223659` / artifact `9977854297` (`sha256:3490b81b9229e048d78829848b8f1c4061aa0082859dd005481604f3881febef`) selected one coherent next capability: fixed 2× durable-image Upscale. Restore, Inpainting/Outpainting, LoRA/model adapters and Director remain deferred. The audit also found registered FLUX and REDGraft primary workspaces disabled while their standbys remain healthy; fleet-registry reconciliation plus a real async upscale worker contract are Phase 18 prerequisites before product exposure.
 
 Later phases must be expanded only after their predecessors produce the evidence needed to plan them. This roadmap does not pre-approve every item listed under a later phase.
 
@@ -333,7 +333,7 @@ Each phase contract must cover goal, user value, verified starting state, in/out
 Accepting a contract does not mark implementation complete, does not waive exact-head validation and does not authorize deployment.
 
 ## Immediate Handoff
-Phase 16 is fully closed on merged `main`. PR #99 squash-merged exact final head `2352f150e0528f2ba3396afc46ccab80aec4e05e` as `ad3cf2a987b60098fdc361a7f8fc358ae706aeae` after the final 26-workflow affected matrix passed. The merge commit then passed all nine push-triggered workflows recorded in the Phase 16 post-merge closure below. The Phase 17 execution contract is now accepted from a fresh `ad3cf2a...` repository audit; Phase 17 implementation has not started. Continue from that contract only. Do not deploy the application, activate reconciliation/maintenance scheduling, add a telemetry vendor/event store, or begin Phase 18 capability work unless separately justified and authorized.
+Phase 17 is fully closed on repository `main` through implementation merge `aaa2dcf06a927b9cbc5fe08dd3af1f47116ce1dd` and post-merge handoff `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e`. The next execution boundary is the accepted Phase 18 Image Upscale v0.1 contract below. Implementation has not started. Begin with the Phase 18A fleet/worker prerequisite only; do not expose an Upscale product action until the worker contract is live-verified and the known disabled-primary registry drift is reconciled. Contract acceptance does not authorize a production application deployment, a worker deployment, scheduler activation or any deferred Phase 18 capability.
 
 ## Phase 14 Implementation Verification — 2026-09-03
 Phase 14 is `COMPLETE / VERIFIED` in the repository and shared validation infrastructure. This does **not** mean the Phase 14 application or scheduler is deployed to production.
@@ -1070,3 +1070,194 @@ Phase 17 is `COMPLETE / VERIFIED / MERGED`. Exact clean implementation head `1ec
 - **No speculative infrastructure:** Phase 17 adds no database migration, durable telemetry/event-store table, telemetry vendor, client RUM/session replay, production deployment or reconciliation/maintenance scheduler activation. Existing platform/server logs and current durable RenderLab state remain the v0.1 evidence sources.
 
 The next governance step is a fresh deployed-worker audit that expands Phase 18 into one coherent execution-ready capability contract. Phase 18 implementation is not pre-approved by this completion and was not started during Phase 17 closure.
+
+# Phase 18 Execution Contract — Image Upscale v0.1
+**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+**UI decision:** UI-058.
+**Planning baseline:** repository `main` `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e` after Phase 17 closure.
+**Fresh worker evidence:** read-only audit run `33995223659`, artifact `9977854297`, `sha256:3490b81b9229e048d78829848b8f1c4061aa0082859dd005481604f3881febef`; audit head `a22d2ef9beacfbb836a7585ffd8f0f5333f2277f` was created only to host the GET-only audit workflow and is not a product baseline.
+
+## Goal / user value
+Give a user one truthful, low-friction way to turn an existing durable RenderLab image into a new higher-resolution durable image without replacing the source, exposing model/workflow plumbing or forcing a prompt-driven generation form onto a non-prompt task.
+
+The v0.1 user promise is intentionally narrow:
+
+> Upscale this durable image to exactly 2× its source width and height, preserve the source, and track the work as an ordinary RenderLab asynchronous job.
+
+Phase 18 selects **Image Upscale** only. "Restore" is not bundled into the label or implementation because the fresh deployed-worker audit found no distinct restoration contract to map truthfully.
+
+## Verified starting state
+The following facts were re-audited before this contract was locked:
+
+1. **Current product operations are prompt-generation operations only.** `CreativeOperation` and the live `generation_jobs.operation` constraint currently allow `create-image`, `edit-image`, `create-video` and `animate-image` only.
+2. **The ordinary `GenerationRequest` requires a non-empty prompt and resolves Image + source as Edit Image.** Upscale therefore must not masquerade as Edit or inject a synthetic prompt merely to fit the current parser.
+3. **Durable image continuation already exists.** Media Viewer is the contextual asset workspace and continuation actions are capability-derived. The repository growth rule explicitly says Upscale/Restore should first be evaluated as Create additions or continuation actions rather than top-level destinations.
+4. **The async lifecycle foundation is already strong.** Admission, owner-scoped jobs, native cancellation, autonomous reconciliation, deterministic output-slot finalization, durable `media_assets`, maintenance and structured diagnostics are verified and must be reused rather than duplicated.
+5. **Fresh deployed-worker audit found no Upscale endpoint.** Healthy FLUX exposes `/jobs/edit`; healthy REDGraft exposes `/jobs/video`; healthy Qwen exposes `/jobs/edit`. No healthy registered gateway advertises Upscale, Restore, Inpaint/Outpaint, LoRA selection or Director semantics.
+6. **The audit found fleet-registry drift.** `flux-primary-01` and `ltx-primary-01` return Modal workspace-disabled 404s. `flux-standby-01` and `ltx-standby-01` are healthy, and both registered Qwen workers are healthy. Every ecosystem therefore retains at least one ready endpoint, but knowingly probing dead "primary" entries is not an acceptable baseline for adding another worker-backed capability.
+7. **No current image-upscale model/runtime is approved for RenderLab.** Saga contains internal resize/latent-upscale mechanics but no deployed RenderLab-compatible image-upscale product API. Model choice must therefore be proved and pinned as infrastructure, not inferred from a node name.
+8. **Production application rollout is separate.** The accepted Closed-Beta application remains candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` / deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; Phase 17 and this planning work did not deploy a newer application.
+
+## Product selection and v0.1 boundaries
+- Creative operation: `upscale-image`.
+- Entry point: contextual action on an active same-owner durable image in Media Viewer.
+- User-facing action label: **Upscale 2×**.
+- Scale: exactly `2` in v0.1; no scale picker.
+- Source kinds: active durable `image` assets only; no temporary source identity and no video.
+- Source MIME: PNG, JPEG or WebP.
+- Source byte ceiling: 25 MB.
+- Source geometry ceiling: each edge at most 4096 px and total source pixels at most 4,194,304. The server must inspect trusted decoded geometry when durable metadata is missing; browser-supplied dimensions are never authoritative.
+- Output geometry: exactly `sourceWidth × 2` by `sourceHeight × 2`, same orientation/aspect, no crop or canvas expansion; maximum output pixels 16,777,216 and maximum output edge 8192 px.
+- Output product format: PNG for v0.1. Alpha-bearing input is allowed only if the approved worker proof preserves alpha through the resulting PNG.
+- Source is immutable. The result is a distinct durable `media_asset` linked to a distinct asynchronous job.
+- No user-facing model/provider/worker selector, prompt, negative prompt, seed, steps, guidance or generic Advanced panel is part of Upscale v0.1.
+
+## In scope
+### 18A — Fleet hygiene and real worker contract prerequisite
+Before any product Upscale action is exposed:
+
+1. **Reconcile known registry drift.** Re-audit the six current registrations and remove, replace or repoint the disabled FLUX/REDGraft primary entries so RenderLab does not deliberately begin every affected request with a known-dead endpoint. Do not guess replacement URLs; registry changes require verified live health/OpenAPI evidence.
+2. **Select and pin one image-upscale runtime implementation.** Record its source, exact version/revision, immutable artifact/model hash where available, license/usage compatibility and required ComfyUI/runtime dependencies in `INFRASTRUCTURE.md`. No model name becomes ordinary product UI.
+3. **Expose an asynchronous worker contract** compatible with RenderLab lifecycle semantics:
+   - `GET /health` reports at least `ready`, `cancel_jobs` and `upscale_scales:[2]` or an equivalent typed capability declaration;
+   - `POST /jobs/upscale` accepts one multipart `image_file` plus exact integer `scale=2` and rejects other scales;
+   - submit returns an opaque `call_id` plus truthful worker state;
+   - `GET /jobs/{call_id}` returns `202` + typed state while active and the final `image/png` bytes when ready;
+   - `DELETE /jobs/{call_id}` provides idempotent cancellation semantics compatible with Phase 15;
+   - worker failure responses expose stable machine codes where practical so Phase 17 typed classification is not regressed.
+4. **Prove geometry and alpha behavior live** on small synthetic fixtures before application routing is coupled to the endpoint.
+5. The RenderLab registry may model the implementation as a dedicated internal ecosystem such as `image-upscale-v1`; the exact internal name is not user-facing. At least one endpoint must be live/healthy for implementation verification. Any production redundancy decision must be explicit before production rollout.
+
+A worker deployment is an infrastructure operation and is **not authorized merely by merging this contract**. If the implementation session lacks explicit deployment authorization, it may build/test the adapter against a local deterministic worker double but cannot mark 18A or Phase 18 complete.
+
+### 18B — Product/domain and schema contract
+- Add `upscale-image` to `CreativeOperation` and every typed parser/public contract that legitimately represents persisted jobs.
+- Do **not** broaden the ordinary prompt-based `GenerationRequest` just to carry Upscale. Introduce a narrow server product command/request for image upscale with fixed scale 2.
+- A v0.1 Upscale job has:
+  - `operation = 'upscale-image'`;
+  - `output_kind = 'image'`;
+  - one durable same-owner image input using opaque `media-asset` identity and `primary-image` semantics;
+  - no user prompt;
+  - `parameters.upscale.scale = 2` as canonical persisted intent;
+  - output slot `0` using the existing deterministic finalization identity.
+- Use the smallest compatibility migration, expected to be `0018`, to extend the `generation_jobs.operation` check and permit promptless transform jobs by relaxing `generation_jobs.prompt` nullability. Historical prompt-generation rows are not rewritten.
+- Before applying DDL, audit existing rows for operation/prompt assumptions and prove the migration against current schema state. Do not silently weaken owner/RLS/browser-grant or lifecycle constraints.
+- `media_assets` remains the output identity. No transform-specific asset table, source overwrite or mutable "current version" pointer is introduced.
+- Persisted result provenance may omit `prompt` for Upscale and must retain `operation`, workflow/model internal provenance and the producing job; the source relationship remains recoverable from the owner-scoped job inputs.
+
+### 18C — Server/API and admission boundary
+- Add one owner-authorized product route: `POST /api/media/assets/[assetId]/upscale`.
+- v0.1 accepts no arbitrary scale/model/workflow/source payload from the browser. The route identity supplies the source; scale is server-fixed to 2.
+- Reload the source under the current RenderLab account and require an active durable image. Foreign, deleted, missing or incompatible assets fail closed without revealing foreign existence.
+- Validate MIME/bytes/decoded geometry server-side before reserving expensive generation capacity where possible.
+- Reuse the existing transactional generation admission semantics. An accepted Upscale job consumes the same active/hourly generation capacity as other GPU work and binds/releases reservations through the same lifecycle rules.
+- Keep worker URL, model identity, provider job ID, storage key and credentials server-only.
+- Upscale v0.1 uses the native worker path. The existing generic external prompt-generation backend is not silently extended; a future external Upscale backend requires its own typed contract.
+- Structured diagnostics may emit the existing opaque job correlation plus operation/phase/status/error code/duration only. Do not log source name, prompt substitute, storage key or image bytes.
+
+### 18D — Lifecycle, cancellation, Retry and continuation
+- Extend native lifecycle routing/reconciliation/finalization so `upscale-image` is first-class rather than coerced through `requestFromJobRow()` for prompt generation.
+- Preserve Phase 14 deterministic output-slot persistence and crash recovery.
+- Preserve Phase 15 cancellation: active Upscale jobs are cancellable only where the worker state is safely cancellable; terminal/persisting jobs remain protected by the existing lifecycle claim semantics.
+- Failed Upscale jobs may use existing Activity **Retry**, but Retry must reconstruct only persisted owner-scoped source + fixed scale 2, revalidate the current source/limits/backend/admission contract and create a distinct new job. If the source was deleted or became ineligible, Retry is unavailable.
+- Successful Upscale jobs do **not** expose Phase 16 `Run again` or `Reuse settings` in v0.1 because there is no editable recipe to reuse. Do not fabricate recipe semantics.
+- Activity adds the truthful operation label **Upscale image** and a non-prompt summary such as **2× upscale**. Public activity data must not display "Untitled generation" as if a prompt were missing accidentally.
+- Phase 16 **Compare source** should extend to a succeeded Upscale result when its one same-owner durable source remains active. If the source is deleted/unavailable, comparison is absent; history is not resurrected.
+- The Upscale result remains an ordinary image asset: Library, Download, Rename, Favorites, Collections, Delete, Edit, Animate and another eligible Upscale may all compose through existing capability rules.
+
+### 18E — Media Viewer UX
+- Keep Media Viewer as the only new user-facing entry point in v0.1. Do not add a top-level Upscale route, Library-card quick action, separate post-processing app or new Create mode.
+- Add **Upscale 2×** inside the existing Continue hierarchy only when server-derived source/backend eligibility is true.
+- Starting the action uses a small feature-owned client mutation with duplicate-submit protection and existing maintained Button/Alert mechanics. No new generic primitive is expected.
+- On acceptance, keep the source Viewer stable and show concise local success with an **Open Activity** continuation rather than pretending the result is already ready.
+- On rejection/failure to start, show sanitized product feedback without losing Viewer context.
+- Existing Edit/Animate hierarchy remains unchanged. Narrow layouts may wrap continuation actions but must not clip, overflow or demote the media itself.
+- Before implementation of the visible action, produce a desktop+narrow repository-backed design checkpoint for the existing Viewer Continue cluster with eligible, starting and accepted states. The checkpoint must preserve UI-056 comparison hierarchy and the approved Viewer visual language.
+
+## Explicitly out of scope
+- Restore/enhance/face repair or any claim that Upscale repairs damaged content.
+- Inpainting, Outpainting, mask/canvas editing, structural guidance or ControlNet-style controls.
+- LoRA/model adapters or any user-facing model/workflow selector.
+- Director Video or fabricated structured scene/shot semantics.
+- Video upscale.
+- 4× or arbitrary scale selection, target-dimension entry, batch upscale or Library card bulk actions.
+- Prompt-conditioned super-resolution or style/detail-strength controls.
+- Variations/multiple outputs per job.
+- Replacing the source asset, mutating source R2 bytes or treating Upscale as Rename/metadata mutation.
+- A new transform-job table, generic workflow builder or ComfyUI node/graph UI.
+- Production application deployment, closed-beta policy changes, scheduler activation or unrelated worker-fleet redesign.
+
+## Security / ownership implications
+- The route and all reconstruction paths operate on opaque source asset ID under the current RenderLab account.
+- Foreign/missing/deleted source identity must collapse to the same not-available product result.
+- Browser requests never contain R2 keys, signed source URLs, worker URLs, provider job IDs or credentials.
+- Worker callbacks/polling remain server-to-server; no worker endpoint becomes a browser CORS product API.
+- Output ownership follows the accepted job owner and existing same-owner media/job enforcement.
+- Retry and Compare source re-resolve the source under current ownership/tombstone state rather than trusting historical browser data.
+
+## Validation matrix
+### Worker/fleet proof
+- Read-only registry audit must record every configured endpoint and prove no known-dead endpoint remains intentionally ranked as a live primary.
+- Live worker contract proof must verify health/capability declaration, `/jobs/upscale`, active polling, exact PNG result geometry and idempotent cancellation semantics.
+- Live 2× fixtures must include at least landscape, portrait and alpha-bearing PNG coverage; resulting width/height must be exactly doubled with no crop.
+- Record immutable model/runtime provenance and exact audit/run evidence before product exposure.
+
+### Product/domain tests
+- Engineering Quality: lint, typecheck and focused unit tests for Upscale eligibility, geometry limits, operation parsing, activity summary and worker response classification.
+- Migration validation: current-row pre-audit, clean apply, constraint/nullability inspection, owner/RLS/grant invariants and rollback/retry-safe reasoning.
+- API ownership matrix: signed-out, same-owner, foreign, deleted, non-image, unsupported MIME, oversized bytes, over-edge and over-pixel cases.
+- Admission matrix: disabled, active-limit and rolling-hour denials occur before worker dispatch; accepted job binds/release semantics remain exact.
+
+### Configured lifecycle integration
+Add a dedicated **Image Upscale Integration** workflow using run-owned Auth/Supabase/R2 fixtures and a deterministic test worker override for broad correctness without paid/provider dependency. It must verify:
+- source durable image remains byte/row-identical;
+- one accepted `upscale-image` job with fixed scale 2;
+- exact output slot 0 and exactly doubled dimensions;
+- autonomous reconciliation can finalize without browser polling;
+- duplicate reconciliation/finalization converges on one output asset;
+- cancellation is owner-scoped and source-safe;
+- failed-job Retry creates a distinct job only while source remains currently eligible;
+- successful Run Again / Reuse Settings remain absent;
+- Compare source is present only for the active same-owner source;
+- exact database/R2/Auth cleanup.
+
+### Live worker and regression coverage
+- After explicit worker-deployment authorization, run at least one small same-owner end-to-end product Upscale against the real deployed worker and verify exact 2× dimensions, PNG MIME, source preservation, durable output and cleanup.
+- Existing affected gates must include at minimum Engineering Quality, UI Shell, Account Ownership, Library Lifecycle, Activity, Activity Cancel, Generation Admission, Generation Reconciliation, Generation Cancellation, Creative Iteration, Media Download, Media Rename, Media Delete and the ordinary Image Generation integration wherever shared lifecycle/worker code changes.
+- Workflow path filters must include the new upscale adapter/worker-registry/shared lifecycle paths so later edits cannot bypass coverage.
+
+### Rendered review
+Configured browser verification must capture at minimum:
+- eligible image Viewer desktop with **Upscale 2×** in the existing Continue hierarchy;
+- the same eligible state at 390px narrow width;
+- accepted/started feedback without fake completion;
+- a succeeded Upscale result with Compare source on desktop and narrow layouts.
+
+Human review must confirm media remains primary, continuation hierarchy is not overcrowded, action/feedback text wraps cleanly, source/result geometry is truthful and UI-056 comparison behavior is preserved. Keyboard/focus and reduced-motion behavior remain required where existing Viewer mechanics animate or disclose state.
+
+## Documentation outputs
+Phase 18 implementation must keep synchronized, where affected:
+- `PROJECT.md`;
+- `docs/ui/UI_MIGRATION.md`;
+- `docs/ui/UI_DECISIONS.md` / UI-058 implementation evidence;
+- `docs/ui/SCREEN_REGISTRY.md`;
+- `docs/ui/COMPONENT_CATALOG.md` only if a new reusable component is actually adopted;
+- `docs/architecture/FRONTEND_ARCHITECTURE.md`;
+- `docs/architecture/PRODUCT_CAPABILITIES.md`;
+- `docs/architecture/INFRASTRUCTURE.md` including worker/model hashes, live registry state and any applied migration.
+
+## Exit criteria
+Phase 18 is not `COMPLETE / VERIFIED` until all of the following are true:
+1. fleet registry drift relevant to routing is reconciled with live evidence;
+2. an approved/pinned Upscale worker contract exists and its deployment, if performed, was explicitly authorized and live-verified;
+3. `upscale-image` is a truthful persisted product operation with the accepted schema migration applied/audited if required;
+4. Viewer submission, admission, lifecycle, cancellation, Retry, Activity and Compare source behavior meet this contract without exposing worker/storage details;
+5. source immutability and exact 2× result geometry are proved with run-owned fixtures;
+6. configured desktop+narrow artifacts are human-reviewed clean;
+7. the complete affected exact-final-head workflow matrix passes with exact cleanup and no weakened gate;
+8. authoritative docs reflect verified repository/shared-infrastructure reality;
+9. any PR merge is followed by verification of the actually attached `main` push workflows;
+10. production application rollout remains a separate explicit operation.
+
+## Deferred next-capability dependencies
+Restore remains the first follow-up evaluation only after a real deployed restoration semantic exists. Inpainting/Outpainting still requires a deliberate mask/canvas contract; LoRA/model adapters still require source/version/hash/license/compatibility/cache/safety/persisted-intent contracts; Director remains blocked on structured deployed REDGraft semantics. None of those later capabilities is expanded or implemented by Phase 18.

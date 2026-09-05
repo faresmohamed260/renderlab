@@ -1434,12 +1434,12 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 
 ## Current Work
 **Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 17 — Observability & Engineering Quality is `COMPLETE / VERIFIED / MERGED` under UI-057 on `main` `aaa2dcf06a927b9cbc5fe08dd3af1f47116ce1dd`. Phase 16 remains `COMPLETE / VERIFIED / MERGED` on its verified repository baseline.
-**Next sequence:** re-audit the deployed worker fleet and expand Phase 18 into one coherent execution-ready capability contract. Do not implement Phase 18 from roadmap preference alone.
+**Current phase:** Phase 18 — Image Upscale v0.1 is `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-058 from repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e`. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and is fully closed.
+**Next sequence:** begin Phase 18A fleet/worker prerequisite only from the accepted Image Upscale v0.1 contract. Reconcile the known disabled FLUX/REDGraft primary registrations and prove a real async `/jobs/upscale` worker contract before exposing any product Upscale action. Contract acceptance does not authorize a worker or application deployment.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
 **Deployment boundary:** Phase 16 and Phase 17 repository merges changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep; a post-merge Vercel audit confirmed no Phase 17 deployment was created.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
-**Next creative direction:** Phase 18 will re-audit deployed workers after Phase 17; current evaluation preference remains Upscale/Restore, then Inpainting/Outpainting, then LoRA/model adapters, with Director still blocked on structured deployed-worker semantics.
+**Next creative direction:** Phase 18 selects **Image Upscale v0.1** only: a fixed 2× durable-image Viewer continuation backed by a new truthful asynchronous worker operation. Restore is explicitly deferred because the fresh worker audit found no restoration endpoint; Inpainting/Outpainting, LoRA/model adapters and Director remain roadmap-only.
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
 
@@ -1602,3 +1602,35 @@ Implementation checklist:
 **Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
 **Next after verified completion:** re-audit the deployed worker fleet and expand Phase 18 into one coherent capability contract; do not implement Phase 18 from roadmap preference alone.
+
+## Cycle 3 / Phase 18 — Image Upscale v0.1
+**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-058.**
+
+### Fresh planning evidence
+- [x] Re-established authoritative repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e` after Phase 17 closure.
+- [x] Ran GET-only deployed-worker audit `33995223659`; artifact `9977854297` hash independently matches GitHub at `sha256:3490b81b9229e048d78829848b8f1c4061aa0082859dd005481604f3881febef`.
+- [x] Audit found `flux-primary-01` and `ltx-primary-01` registered but Modal-workspace-disabled; FLUX/LTX standbys remain ready and both Qwen registrations remain ready.
+- [x] Healthy deployed APIs expose Image Edit and Video generation/job lifecycle only; no Upscale, Restore, Inpaint/Outpaint, LoRA-selection or Director endpoint is currently deployed.
+- [x] Selected one coherent capability: **Image Upscale 2×**. Restore and all later creative capability categories remain deferred.
+- [x] Audited current domain/schema: `CreativeOperation` and `generation_jobs.operation` still cover only the four prompt-generation operations; Upscale requires truthful new operation/schema semantics and must not masquerade as Edit.
+- [x] Chosen UI boundary: Media Viewer contextual continuation, not a new top-level screen and not a new Create mode in v0.1.
+
+### Locked implementation sequence
+- [ ] **18A Fleet/worker prerequisite:** reconcile known dead-primary registry entries; select/pin model/runtime provenance; establish live async `/jobs/upscale` + GET/DELETE lifecycle and exact 2× PNG geometry. Any worker deployment requires separate explicit authorization.
+- [ ] **18B Domain/schema:** add `upscale-image`; use a narrow promptless Upscale product command; apply/audit the smallest `generation_jobs` compatibility migration only after pre-DDL row/constraint review.
+- [ ] **18C Product API/admission:** owner-scoped `POST /api/media/assets/[assetId]/upscale`, fixed scale 2, server-derived eligibility, shared generation admission, no browser worker/storage identity.
+- [ ] **18D Lifecycle/recovery:** reuse reconciliation/finalization/cancellation; failed Retry is current-source-revalidated; successful Run Again/Reuse Settings stay absent; Activity gains truthful Upscale summary; Compare source extends conditionally to succeeded Upscale results.
+- [ ] **18E Viewer UI:** add server-derived **Upscale 2×** in existing Continue hierarchy, small in-flight/accepted/error feedback, no new generic primitive; desktop+narrow design checkpoint precedes implementation.
+- [ ] **18F Verification:** dedicated run-owned Image Upscale Integration, live-worker geometry proof after authorization, ownership/admission/cancel/retry/reconciliation regressions, responsive artifacts + human review, complete exact-final-head affected matrix and cleanup.
+- [ ] Merge only after exact-final-head verification and clean PR review surface; verify the actually attached merged-`main` push workflows.
+- [ ] Keep production application rollout separate; no Phase 18 contract/merge automatically deploys RenderLab.
+
+### Explicitly deferred
+- Restore/face repair/enhancement claims;
+- Inpainting/Outpainting/mask canvas;
+- LoRA/model selectors;
+- Director Video;
+- video upscale;
+- 4×/arbitrary scale, batch upscale and Variations.
+
+**Phase 18 implementation must not begin outside the accepted 18A→18F sequence above.**
