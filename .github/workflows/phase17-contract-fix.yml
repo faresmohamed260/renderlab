@@ -21,7 +21,10 @@ jobs:
           fetch-depth: 0
 
       - name: Apply guarded contract fixes
-        run: python .github/phase17-contract-fix.py
+        shell: bash
+        run: |
+          sed -i 's/    "staleSourceCandidates",/    "maintenance backlog",/' .github/phase17-contract-fix.py
+          python .github/phase17-contract-fix.py
 
       - name: Set up Node
         uses: actions/setup-node@v4
