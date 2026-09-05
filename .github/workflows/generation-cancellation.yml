@@ -7,6 +7,7 @@ on:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/mock-native-generation-worker.mjs"
       - "scripts/verify-generation-cancellation.mjs"
+      - "scripts/verify-generation-cancellation-live.mjs"
       - "src/lib/capabilities/generation.ts"
       - "src/lib/api/generation-cancel-contract.ts"
       - "src/lib/api/generation-activity-contract.ts"
@@ -21,6 +22,7 @@ on:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/mock-native-generation-worker.mjs"
       - "scripts/verify-generation-cancellation.mjs"
+      - "scripts/verify-generation-cancellation-live.mjs"
       - "src/lib/capabilities/generation.ts"
       - "src/lib/api/generation-cancel-contract.ts"
       - "src/lib/api/generation-activity-contract.ts"
@@ -133,3 +135,78 @@ jobs:
           cat /tmp/renderlab-phase15-next.log || true
           echo "--- Phase 15 mock worker ---"
           cat /tmp/renderlab-phase15-worker.log || true
+
+  live-cancellation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
+      RENDERLAB_GENERATION_RECONCILER_SECRET: phase15-live-cancellation-reconciler-secret
+      RENDERLAB_TEST_RECONCILER_OWNER_SCOPE: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required shared-resource secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Resolve isolated live fixture owner
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE' >> "$GITHUB_ENV"
+          import { configuredTestAccountIdentity } from "./scripts/lib/configured-test-account.mjs";
+          console.log(`RENDERLAB_TEST_RECONCILER_OWNER_ID=${configuredTestAccountIdentity("generation-cancellation-live").id}`);
+          NODE
+
+      - name: Build
+        run: npm run build
+
+      - name: Start configured application with real worker registry
+        shell: bash
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-phase15-live-next.log 2>&1 &
+          echo $! > /tmp/renderlab-phase15-live-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-phase15-live-next.log
+          exit 1
+
+      - name: Verify live FLUX and REDGraft cancellation mapping
+        run: node scripts/verify-generation-cancellation-live.mjs
+
+      - name: Print live cancellation logs on failure
+        if: failure()
+        run: cat /tmp/renderlab-phase15-live-next.log || true
