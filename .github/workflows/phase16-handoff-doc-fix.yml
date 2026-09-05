@@ -1,0 +1,44 @@
+name: Phase 16 Handoff Doc Fix
+
+on:
+  push:
+    branches: [noop]
+    paths:
+      - ".github/phase16-handoff-doc-fix.py"
+      - ".github/workflows/phase16-handoff-doc-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: work/phase-16-creative-iteration
+      EXPECTED_HEAD: 2355d3342616e484ba40fd9447c492e72bd8cb3f
+    steps:
+      - name: Checkout helper source
+        uses: actions/checkout@v4
+        with:
+          ref: noop
+          fetch-depth: 0
+      - name: Preserve patch helper
+        run: cp .github/phase16-handoff-doc-fix.py /tmp/phase16-handoff-doc-fix.py
+      - name: Correct Phase 16 handoff docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$TARGET_BRANCH"
+          git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          python /tmp/phase16-handoff-doc-fix.py
+          git diff --check
+          grep -Fq '16D DESIGN APPROVED / IMPLEMENTATION PENDING' PROJECT.md
+          grep -Fq 'draft PR #99' PROJECT.md
+          grep -Fq 'design PR #100' PROJECT.md
+          ! grep -Fq '16D DESIGN CHECKPOINT PENDING' PROJECT.md
+          git config user.name "RenderLab Automation"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add PROJECT.md
+          git commit -m "Correct Phase 16 implementation handoff"
+          git push origin HEAD:"$TARGET_BRANCH"
