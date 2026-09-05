@@ -117,8 +117,11 @@ set search_path = ''
 as $$
 declare
   v_status text;
+  v_owner_id uuid;
+  v_storage_key text;
 begin
-  select upload.status into v_status
+  select upload.status, upload.owner_id, upload.storage_key
+  into v_status, v_owner_id, v_storage_key
   from public.media_upload_sessions upload
   where upload.id = p_upload_id
     and upload.created_at <= p_cutoff
@@ -133,8 +136,8 @@ begin
   if exists (
     select 1
     from public.media_assets asset
-    where asset.owner_id = upload.owner_id
-      and asset.storage_key = upload.storage_key
+    where asset.owner_id = v_owner_id
+      and asset.storage_key = v_storage_key
   ) then
     return null;
   end if;
