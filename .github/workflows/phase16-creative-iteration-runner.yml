@@ -39,4 +39,7 @@ jobs:
 
       - name: Apply verified Phase 16 batch
         shell: bash
+        env:
+          EXPECTED_HEAD: f5b43c52a9c457a7f5874a9f3722a6b33821941f
+          TARGET_BRANCH: work/phase-16-creative-iteration
         run: /tmp/phase16-sync.sh
