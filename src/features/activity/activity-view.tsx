@@ -21,6 +21,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ActivityAutoRefresh } from "@/features/activity/activity-auto-refresh";
+import { ActivityCancelButton } from "@/features/activity/activity-cancel-button";
 import { ActivityRetryButton } from "@/features/activity/activity-retry-button";
 import type { PublicGenerationActivity } from "@/lib/api/generation-activity-contract";
 import { isActiveGenerationStatus } from "@/lib/api/generation-activity-contract";
@@ -36,6 +37,7 @@ const statusLabels = {
   queued: "Queued",
   preparing: "Preparing",
   running: "Running",
+  cancelling: "Cancelling",
   persisting: "Saving result",
   succeeded: "Completed",
   failed: "Failed",
@@ -183,6 +185,8 @@ export function ActivityView({
                     </Button>
                   ) : item.status === "failed" ? (
                     <ActivityRetryButton jobId={item.id} />
+                  ) : item.canCancel ? (
+                    <ActivityCancelButton jobId={item.id} />
                   ) : null}
                 </div>
 

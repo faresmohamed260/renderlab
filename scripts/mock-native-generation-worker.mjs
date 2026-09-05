@@ -36,7 +36,15 @@ const server = http.createServer(async (request, response) => {
     await drain(request);
     const id = randomUUID();
     const kind = url.pathname === "/jobs/video" ? "video" : "image";
-    jobs.set(id, { kind, polls: 0, resultExpired: false, unavailable: false });
+    jobs.set(id, {
+      kind,
+      polls: 0,
+      resultExpired: false,
+      unavailable: false,
+      cancelled: false,
+      cancelMode: "confirm",
+      cancelAttempts: 0,
+    });
     return json(response, 200, { call_id: id, worker_state: "queued" });
   }
 
@@ -56,10 +64,30 @@ const server = http.createServer(async (request, response) => {
     return json(response, 200, { ok: true });
   }
 
+  const cancelModeMatch = url.pathname.match(/^\/jobs\/([^/]+)\/cancel-mode\/(confirm|retryable|not-running)$/);
+  if (request.method === "POST" && cancelModeMatch) {
+    const job = jobs.get(decodeURIComponent(cancelModeMatch[1]));
+    if (!job) return json(response, 404, { error: "not found" });
+    job.cancelMode = cancelModeMatch[2];
+    return json(response, 200, { ok: true, cancelMode: job.cancelMode });
+  }
+
+  const stateMatch = url.pathname.match(/^\/jobs\/([^/]+)\/state$/);
+  if (request.method === "GET" && stateMatch) {
+    const job = jobs.get(decodeURIComponent(stateMatch[1]));
+    if (!job) return json(response, 404, { error: "not found" });
+    return json(response, 200, {
+      cancelled: job.cancelled,
+      cancelMode: job.cancelMode,
+      cancelAttempts: job.cancelAttempts,
+      polls: job.polls,
+    });
+  }
+
   const posterMatch = url.pathname.match(/^\/jobs\/([^/]+)\/poster$/);
   if (request.method === "GET" && posterMatch) {
     const job = jobs.get(decodeURIComponent(posterMatch[1]));
-    if (!job || job.kind !== "video" || job.resultExpired) return json(response, 404, { error: "poster not found" });
+    if (!job || job.kind !== "video" || job.resultExpired || job.cancelled) return json(response, 404, { error: "poster not found" });
     response.writeHead(200, {
       "content-type": "image/png",
       "content-length": String(imageBytes.length),
@@ -68,9 +96,24 @@ const server = http.createServer(async (request, response) => {
   }
 
   const jobMatch = url.pathname.match(/^\/jobs\/([^/]+)$/);
+  if (request.method === "DELETE" && jobMatch) {
+    const job = jobs.get(decodeURIComponent(jobMatch[1]));
+    if (!job) return json(response, 404, { error: "not found" });
+    job.cancelAttempts += 1;
+    if (job.cancelMode === "retryable") {
+      return json(response, 503, { error: "mock cancellation temporarily unavailable" });
+    }
+    if (job.cancelMode === "not-running") {
+      return json(response, 410, { error: "mock job no longer running" });
+    }
+    job.cancelled = true;
+    return json(response, 202, { ok: true, worker_state: "cancelled" });
+  }
+
   if (request.method === "GET" && jobMatch) {
     const job = jobs.get(decodeURIComponent(jobMatch[1]));
     if (!job) return json(response, 404, { error: "not found" });
+    if (job.cancelled) return json(response, 410, { error: "cancelled" });
     if (job.unavailable) {
       return json(response, 503, { error: "phase14-internal-provider-detail-must-not-leak" });
     }
@@ -93,7 +136,7 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`Phase 14 native worker mock listening on 127.0.0.1:${port}`);
+  console.log(`RenderLab native worker mock listening on 127.0.0.1:${port}`);
 });
 
 for (const signal of ["SIGINT", "SIGTERM"]) {

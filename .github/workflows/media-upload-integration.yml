@@ -6,6 +6,7 @@ on:
       - "supabase/migrations/0003_persistent_media_uploads.sql"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - "supabase/migrations/0017_staging_cleanup_claims.sql"
       - "src/lib/api/media-upload-contract.ts"
       - "src/lib/api/media-assets-contract.ts"
       - "src/lib/supabase/**"

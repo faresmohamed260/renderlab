@@ -7,6 +7,7 @@ export type PublicGenerationActivity = {
   outputKind: OutputKind;
   prompt: string;
   outputAssetIds: string[];
+  canCancel: boolean;
   error: { code: string; message: string } | null;
   createdAt: string;
   updatedAt: string;
@@ -18,6 +19,7 @@ export const activeGenerationStatuses = new Set<GenerationJobStatus>([
   "queued",
   "preparing",
   "running",
+  "cancelling",
   "persisting",
 ]);
 

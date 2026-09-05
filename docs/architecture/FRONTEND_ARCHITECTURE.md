@@ -190,6 +190,10 @@ Hosted email configuration is a separate operational dependency. Current Auth lo
 POST     /api/generation/jobs
 GET      /api/generation/jobs/[jobId]
 POST     /api/generation/jobs/[jobId]/retry
+POST     /api/generation/jobs/[jobId]/cancel
+
+POST     /api/internal/generation/reconcile
+POST     /api/internal/maintenance
 
 GET      /api/admin/accounts
 PATCH    /api/admin/accounts/[userId]
@@ -791,3 +795,26 @@ PR #17 can proceed through final documentation-head validation and merge. Correc
 - Download remains a Viewer-contextual product action through a stable owner-scoped media route; raw signed R2 URLs are ephemeral only.
 - Rename remains a bounded owner-scoped durable display-name mutation; do not reinterpret it as file/storage rename or broader management approval.
 - Future public upload origins must be added explicitly to exact-origin R2 CORS.
+
+## Phase 15 frontend/control boundary — verified 2026-09-05
+Phase 15 keeps lifecycle truth server-owned while adding one feature-local Activity mutation.
+
+```text
+server-rendered Activity row
+  -> server-derived canCancel
+  -> ActivityCancelButton confirmation/local pending state
+  -> POST /api/generation/jobs/[jobId]/cancel { no execution payload }
+  -> fresh owner lookup + shared lifecycle claim
+  -> cancelling/cancelled server state
+  -> router refresh / existing active-state auto-refresh
+```
+
+Rules:
+- `ActivityCancelButton` owns only confirmation, request pending/error feedback and refresh. It does not own job truth, worker identity or a global job store.
+- `cancelling` participates in the existing nonterminal Activity refresh behavior. Create may observe the same status when already watching its job, but Activity remains the v0.1 cancellation action surface.
+- The client never supplies worker/provider IDs and cannot infer cancellation support from status alone; `canCancel` is derived server-side from native dispatch/lifecycle reality.
+- `persisting`/terminal/unsupported external jobs fail closed without a Cancel action. Failed Retry and succeeded View Result remain separate existing actions.
+- Internal reconciliation and maintenance routes are server-secret boundaries, not browser APIs. `POST /api/internal/maintenance` runs only bounded server-owned cleanup; it does not create a client maintenance/admin surface.
+- Exact implementation head `9cd0528ff50ef55a3ad3e09080980a71234af096` passed Activity `33939690846`, Activity Cancel `33939690827`, UI Shell `33939690826`, Generation Cancellation `33939690824`, Maintenance `33939690830` and the full affected generation/ownership/library/release matrix. Human responsive review found the Activity Cancel composition clean.
+
+This section supersedes the historical Phase 9 statement that no Cancel endpoint existed; that statement remains evidence of the UI-050 boundary at the time.

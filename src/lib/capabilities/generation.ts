@@ -148,6 +148,7 @@ export type GenerationJobStatus =
   | "queued"
   | "preparing"
   | "running"
+  | "cancelling"
   | "persisting"
   | "succeeded"
   | "failed"
