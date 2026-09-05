@@ -16,6 +16,10 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+def staged(path: str) -> str:
+    return "\n".join(line.rstrip() for line in Path(path).read_text().splitlines()).strip()
+
+
 project = replace_once(
     project,
     "**Status: `IN PROGRESS — PHASE 16 COMPLETE / VERIFIED; PHASE 17 CONTRACT EXPANSION NEXT`.**",
@@ -47,7 +51,7 @@ project = (
 project_marker = "# Phase 17 Execution Contract — Observability & Engineering Quality"
 if project_marker in project:
     raise SystemExit("PROJECT Phase 17 contract already exists")
-project = project.rstrip() + "\n\n" + Path(".github/phase17-project-append.md").read_text().strip() + "\n"
+project = project.rstrip() + "\n\n" + staged(".github/phase17-project-append.md") + "\n"
 project_path.write_text(project)
 
 current_start = migration.index("## Current Work\n")
@@ -65,11 +69,11 @@ migration = migration[:current_start] + new_current + migration[current_end:]
 migration_marker = "## Cycle 3 — Phase 17 Observability & Engineering Quality"
 if migration_marker in migration:
     raise SystemExit("UI_MIGRATION Phase 17 tracker already exists")
-migration = migration.rstrip() + "\n\n" + Path(".github/phase17-migration-append.md").read_text().strip() + "\n"
+migration = migration.rstrip() + "\n\n" + staged(".github/phase17-migration-append.md") + "\n"
 migration_path.write_text(migration)
 
 ui_marker = "### UI-057 — Operator observability extends privileged Admin Health"
 if ui_marker in decisions:
     raise SystemExit("UI_DECISIONS UI-057 already exists")
-decisions = decisions.rstrip() + "\n\n" + Path(".github/phase17-ui057.md").read_text().strip() + "\n"
+decisions = decisions.rstrip() + "\n\n" + staged(".github/phase17-ui057.md") + "\n"
 decisions_path.write_text(decisions)
