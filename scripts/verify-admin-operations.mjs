@@ -205,6 +205,11 @@ async function seedHealthJobs(ownerId) {
         provider_job_id: `private-provider-job-${runToken}`,
         error_code: "WORKER_CREDIT_EXHAUSTED",
         error_message: `raw backend error ${secretMarker}`,
+        failover_history: [{
+          kind: "unavailable",
+          workerId: `private-worker-${runToken}`,
+          at: new Date().toISOString(),
+        }],
         completed_at: new Date().toISOString(),
       },
       {
@@ -227,6 +232,17 @@ async function seedHealthJobs(ownerId) {
     ]),
   });
   await expectOk(response, "Could not seed Admin health fixture jobs");
+  await expectOk(
+    await serviceRest("generation_admission_reservations", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        owner_id: ownerId,
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      }),
+    }),
+    "Could not seed Admin health admission fixture",
+  );
   return secretMarker;
 }
 
@@ -345,8 +361,11 @@ try {
   assert(Number(healthPayload?.health?.statusCounts?.failed) >= 1, "Admin health missed failed status.");
   assert(Number(healthPayload?.health?.errorCodeCounts?.generation_failed) >= 1, "Admin health did not sanitize the raw worker error code.");
   assert(Number.isInteger(healthPayload?.health?.recentJobs?.sampleSize), "Admin health is missing the bounded recent-job sample.");
-  assert(Number.isInteger(healthPayload?.health?.activeStateAge?.sampleSize), "Admin health is missing active-state age aggregation.");
-  assert(Number.isInteger(healthPayload?.health?.capacity?.activeReservations?.count), "Admin health is missing bounded admission capacity.");
+  assert(Number(healthPayload?.health?.recentJobs?.completionTiming?.sampleCount) >= 1, "Admin health missed run-owned completion timing.");
+  assert(Number(healthPayload?.health?.recentJobs?.failovers?.jobsWithFailover) >= 1, "Admin health missed run-owned failover incidence.");
+  assert(Number(healthPayload?.health?.recentJobs?.failovers?.eventCount) >= 1, "Admin health missed run-owned failover events.");
+  assert(Number(healthPayload?.health?.activeStateAge?.sampleSize) >= 1, "Admin health missed run-owned active-state age aggregation.");
+  assert(Number(healthPayload?.health?.capacity?.activeReservations?.count) >= 1, "Admin health missed the run-owned active admission reservation.");
   assert(typeof healthPayload?.health?.capacity?.generationEnabled === "boolean", "Admin health is missing generation capacity configuration.");
   assert(Number.isInteger(healthPayload?.health?.maintenanceBacklog?.staleSourceCandidates?.count), "Admin health is missing source maintenance backlog.");
   assert(Number.isInteger(healthPayload?.health?.maintenanceBacklog?.pendingMediaPurges?.count), "Admin health is missing pending media purge backlog.");

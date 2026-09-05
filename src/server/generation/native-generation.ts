@@ -17,6 +17,7 @@ import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/ser
 import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
+import { failureKind } from "@/server/generation/worker-failure";
 
 type WorkflowConfig = {
   id: string;
@@ -64,13 +65,6 @@ type JobRow = {
 
 type InputBytes = { bytes: Buffer; contentType: string; filename: string };
 
-type WorkerFailureClassification = {
-  retryable: boolean;
-  safeToReassign: boolean;
-  kind: "credit_exhausted" | "unavailable" | "failed";
-  code: "WORKER_CREDIT_EXHAUSTED" | "WORKER_UNAVAILABLE" | "PROVIDER_FAILED";
-};
-
 type GeneratedMediaRow = {
   id: string;
   storage_key: string;
@@ -86,29 +80,6 @@ type DurableOutputObject = {
 const maxPollReassignmentAttempts = 3;
 const invalidWorkerGraceMs = 15 * 60 * 1000;
 const retryableProviderStaleMs = 2 * 60 * 60 * 1000;
-const creditPatterns = [
-  "credit",
-  "credits",
-  "quota",
-  "budget",
-  "billing",
-  "payment",
-  "insufficient",
-  "spending limit",
-  "spend limit",
-  "workspace budget",
-  "out of funds",
-  "balance",
-];
-const explicitUnavailablePatterns = [
-  "workspace is disabled",
-  "workspace disabled",
-  "disabled workspace",
-  "temporarily unavailable",
-  "app is stopped",
-  "app stopped",
-];
-
 function workflowFor(request: GenerationRequest): WorkflowConfig {
   const operation = resolveCreativeOperation(request);
   if (operation === "create-image" || operation === "edit-image") {
@@ -320,42 +291,6 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, prepare
 
 async function errorBody(response: Response) {
   try { return await response.json() as Record<string, unknown>; } catch { return {}; }
-}
-
-function workerFailureText(body: Record<string, unknown>) {
-  return [body.error, body.detail, body.errorCode, body.code, body.workerState, body.worker_state]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
-
-function classifyWorkerFailure(status: number, body: Record<string, unknown>): WorkerFailureClassification {
-  const text = workerFailureText(body);
-  const explicitState = String(body.workerState || body.worker_state || "").trim().toLowerCase();
-  const explicitCode = String(body.errorCode || body.code || "").trim().toUpperCase();
-  const credit = status === 402
-    || explicitState === "credit_exhausted"
-    || explicitCode === "WORKER_CREDIT_EXHAUSTED"
-    || creditPatterns.some((pattern) => text.includes(pattern));
-  if (credit) {
-    return { retryable: true, safeToReassign: true, kind: "credit_exhausted", code: "WORKER_CREDIT_EXHAUSTED" };
-  }
-
-  const explicitUnavailable = explicitState === "unavailable"
-    || explicitCode === "WORKER_UNAVAILABLE"
-    || explicitUnavailablePatterns.some((pattern) => text.includes(pattern));
-  if (explicitUnavailable) {
-    return { retryable: true, safeToReassign: true, kind: "unavailable", code: "WORKER_UNAVAILABLE" };
-  }
-
-  if (status === 429 || status >= 500) {
-    return { retryable: true, safeToReassign: false, kind: "unavailable", code: "WORKER_UNAVAILABLE" };
-  }
-  return { retryable: false, safeToReassign: false, kind: "failed", code: "PROVIDER_FAILED" };
-}
-
-function failureKind(status: number, body: Record<string, unknown>) {
-  return classifyWorkerFailure(status, body).kind;
 }
 
 async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {

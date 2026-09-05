@@ -29,7 +29,7 @@ const explicitUnavailablePatterns = [
 ];
 
 function workerFailureText(body: Record<string, unknown>) {
-  return [body.error, body.detail]
+  return [body.error, body.detail, body.errorCode, body.code, body.workerState, body.worker_state]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();

@@ -287,11 +287,11 @@ export function AdminOperations({
           <HealthCounts
             title="Maintenance backlog"
             counts={{
-              "Stale source candidates": snapshot.health.maintenanceBacklog.staleSourceCandidates.count,
-              "Cleaning sources": snapshot.health.maintenanceBacklog.cleaningSources.count,
-              "Stale upload candidates": snapshot.health.maintenanceBacklog.staleUploadCandidates.count,
-              "Cleaning uploads": snapshot.health.maintenanceBacklog.cleaningUploads.count,
-              "Pending media purges": snapshot.health.maintenanceBacklog.pendingMediaPurges.count,
+              "Stale source candidates": displayBoundedCount(snapshot.health.maintenanceBacklog.staleSourceCandidates),
+              "Cleaning sources": displayBoundedCount(snapshot.health.maintenanceBacklog.cleaningSources),
+              "Stale upload candidates": displayBoundedCount(snapshot.health.maintenanceBacklog.staleUploadCandidates),
+              "Cleaning uploads": displayBoundedCount(snapshot.health.maintenanceBacklog.cleaningUploads),
+              "Pending media purges": displayBoundedCount(snapshot.health.maintenanceBacklog.pendingMediaPurges),
             }}
           />
         </div>
@@ -641,7 +641,7 @@ function HealthCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function HealthCounts({ title, counts }: { title: string; counts: Record<string, number> }) {
+function HealthCounts({ title, counts }: { title: string; counts: Record<string, ReactNode> }) {
   const entries = Object.entries(counts).sort(([left], [right]) => left.localeCompare(right));
   return (
     <div className="rounded-xl border border-border bg-surface-1 p-4">
