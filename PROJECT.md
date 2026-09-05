@@ -81,7 +81,7 @@ RenderLab already has a substantial verified core. Cycle 3 must build on it rath
 Detailed historical evidence remains in the archived Project chronology plus `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md` and the architecture documents.
 
 ## Cycle 3 — Reliability, Creative Iteration & Capability Growth
-**Status: `IN PROGRESS — PHASE 15 COMPLETE / VERIFIED; PHASE 16 ROADMAP NEXT`.**
+**Status: `IN PROGRESS — PHASE 15 COMPLETE / VERIFIED; PHASE 16 CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
 
 ### Cycle 3 objective
 Make RenderLab independently reliable after a generation is accepted, then turn one-shot generation into a deeper iterative creative workflow before expanding into another major creative capability.
@@ -97,7 +97,7 @@ The Cycle 3 order is intentional:
 - **Phase 13 — Email & Invite Production Hardening: `COMPLETE / VERIFIED`.** Existing production email/Auth evidence remains authoritative.
 - **Phase 14 — Autonomous Generation Lifecycle & Durable Finalization: `COMPLETE / VERIFIED`.** Remove browser polling as a correctness dependency, make result finalization idempotent/recoverable and prove accepted jobs can reach durable terminal state with no active user tab.
 - **Phase 15 — Generation Control & Maintenance: `COMPLETE / VERIFIED`.** Owner-scoped native cancellation serializes through the Phase 14 lifecycle claim, and bounded staging/purge maintenance is implemented with race-safe cleanup claims. Production rollout/scheduling remains separate and is not active.
-- **Phase 16 — Creative Iteration: `ROADMAP`.** Prioritize Remix / Reuse Settings, successful-job Run Again/recipe reuse and source/result comparison; evaluate Variations only after durable output-slot semantics from Phase 14 are known.
+- **Phase 16 — Creative Iteration: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.** Build current-valid recipe reuse into Create, successful-job Run Again from Activity, and conditional durable source/result comparison in Viewer. Variations is explicitly deferred: Phase 14 made multi-output storage safe, but current worker/product execution still returns one output per job and has no approved output-count semantics.
 - **Phase 17 — Observability & Engineering Quality: `ROADMAP`.** Add structured lifecycle/error/capacity visibility and cheaper conventional static/unit verification without weakening the existing configured end-to-end gates.
 - **Phase 18 — Next Creative Capability: `ROADMAP`.** Re-audit current deployed workers and select one coherent capability. Preferred evaluation order is Upscale/Restore, Inpainting/Outpainting, then LoRA/model adapters. Director Video remains blocked until deployed REDGraft exposes real structured Director semantics.
 
@@ -621,3 +621,266 @@ The nullable `generation_output_index` population is a rolling-deployment observ
 No Phase 14/15 application rollout or scheduler activation followed the merge. Vercel still reports accepted production deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; automatic Git deployment remains disabled; Supabase `pg_cron` and `pg_net` remain absent; no production reconciliation or maintenance schedule/secret was activated. Supabase advisors show no new Phase 15-specific finding beyond the already tracked server-owned RLS/no-policy INFO, leaked-password-protection WARN, singleton FK INFO and unused-index INFO.
 
 Phase 16 remains roadmap-only. The next substantial product-planning task is to expand Creative Iteration into an execution-ready contract from current `main` before implementation begins.
+
+---
+
+# Phase 16 Execution Contract — Creative Iteration
+**Status: `ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+
+## Goal / user value
+Turn durable generations into reusable creative starting points without making users reconstruct successful work by hand.
+
+Phase 16 should make three common follow-up intents direct and truthful:
+1. **Reuse settings** — open a successful historical recipe in Create, prefilled from persisted product intent, then edit before generating.
+2. **Run again** — launch a fresh attempt from a successful historical recipe without editing it first.
+3. **Compare source and result** — when a generated result still has an active durable primary source, inspect the source and output together from Media Viewer.
+
+The product promise is reuse of **current-valid product intent**, not replay of historical provider execution. Worker/model/provider identity remains replaceable infrastructure and bit-identical reproduction is not promised.
+
+## Verified starting state — `main` `3624924eb24b5d9375934fadb5050f5f198eb338`
+The Phase 16 planning audit re-established the following current facts from repository code plus read-only shared-state aggregates:
+
+1. **Create already owns editable generation intent.** `GenerationRequest` persists prompt, output settings, stable input aliases/roles and Advanced parameters. `CreateWorkspace` already supports all four approved operations and lets a terminal form be edited/generated again.
+2. **Viewer continuation is media-based, not recipe-based.** Image assets currently expose capability-derived Edit and Animate links through owner-revalidated `source` + `action` navigation. Generated `PublicMediaAsset` already carries `generationJobId`, but Viewer does not load the producing job recipe.
+3. **Failed Retry provides the safe reconstruction precedent.** `retryGeneration()` loads one owner-scoped historical job, reconstructs only product intent, strips narrowly documented legacy Video tuning, passes through the current request parser, checks operation/output consistency, revalidates inputs, and submits through the ordinary generation boundary. Historical provider/workflow/worker/failover/error/output execution metadata is not replayed.
+4. **Activity keeps successful and failed semantics distinct.** Failed jobs alone expose Retry; successful jobs expose View result. General successful Run Again was intentionally deferred to this phase.
+5. **Historical inputs are not guaranteed to survive.** In the planning snapshot, 12 succeeded jobs existed; 11 referenced historical inputs, but only 5 of 11 input references were currently available and only 6 succeeded jobs had all required inputs currently available. Recipe reuse therefore cannot be inferred merely from `status=succeeded`.
+6. **Durable source comparison is conditional.** All 11 succeeded Edit/Animate jobs had a primary historical input, but only 4 currently had an active owner-scoped durable primary media source in the audited snapshot. Temporary, deleted or otherwise unavailable sources must not be resurrected merely for comparison.
+7. **Multi-output storage is ready, multi-output generation is not.** Phase 14 introduced explicit zero-based output-slot identity and deterministic per-slot persistence. Current native execution still persists only `outputIndex=0`, current worker submit contracts have no output-count/variation-count field, successful jobs in the audit all had exactly one `output_asset_id`, and the maximum indexed output slot observed was `0`.
+8. **Production still runs the older Cycle 2/Phase 13 application.** Phase 14/15 repository capability has not been rolled out and no reconciler/maintenance scheduler is active. Phase 16 implementation/merge must not imply production rollout.
+
+## Product decisions locked by this contract
+### 16A — One server-owned reusable recipe reconstruction boundary
+Create one shared server-owned reconstruction service used by successful Reuse Settings / Run Again and compatible with the existing failed Retry path.
+
+A historical recipe contains only persisted product intent:
+- prompt;
+- output kind and current-relevant output settings;
+- ordered opaque generation inputs with stable aliases and semantic roles;
+- Advanced product parameters that remain current-supported.
+
+It explicitly excludes historical:
+- workflow/model/ecosystem selection;
+- worker/provider IDs or endpoints;
+- failover history and worker state;
+- raw/backend errors;
+- output IDs as execution instructions;
+- storage keys or signed URLs.
+
+Reconstruction must:
+- load the job under the verified owner;
+- apply only the same narrowly documented legacy compatibility already accepted for Retry (for example legacy Video missing resolution normalizing through the current default, while obsolete Video Steps/Guidance are not replayed);
+- run the current `parseGenerationRequest` contract;
+- prove current resolved operation and output kind still match the historical product operation;
+- revalidate every referenced input for current owner, kind, readiness and active/non-tombstoned state;
+- fail closed if any required input is unavailable or current capability no longer accepts the recipe;
+- never silently drop an input, remove an unresolved `@imageN` mention, substitute a different media item or change the operation to make an old recipe pass.
+
+Prefer extracting/generalizing the current Retry reconstruction implementation rather than creating separate compatibility logic for each action.
+
+### 16B — Reuse Settings opens Create without dispatch
+Add one owner-scoped recipe-navigation contract, expected as `/create?recipe=<generation-job-uuid>` unless implementation evidence shows a simpler equally safe shape.
+
+Server behavior:
+- treat the query value as untrusted opaque job identity;
+- require a verified active account for private recipe loading;
+- load/reconstruct/current-validate the historical recipe server-side;
+- pass a typed `initialRecipe` into Create; the browser must not reconstruct a job from raw historical JSON;
+- malformed, missing, foreign, non-reusable or unavailable-input recipes produce bounded product guidance without leaking whether another owner has the job;
+- `recipe` is mutually exclusive with current media continuation `source` + `action`; ambiguous mixed navigation fails boundedly rather than guessing precedence.
+
+Create prefill must preserve current-valid:
+- prompt text;
+- Image/Video output kind;
+- aspect ratio;
+- Video resolution, duration and Audio state;
+- stable reference aliases, order and semantic roles;
+- current-supported Advanced values.
+
+Opening Reuse Settings must **not** submit a job. The user may change any ordinary Create control before Generate, and Generate then follows the exact ordinary current request/admission/routing path.
+
+Primary product surface: generated Media Viewer receives a contextual **Reuse settings** action when its producing job is reconstructable/current-valid. This complements, rather than replaces, media-based Edit/Animate continuation.
+
+### 16C — Successful Run Again is a new attempt, not provider replay
+Add an owner-scoped product mutation expected as `POST /api/generation/jobs/[jobId]/run-again`.
+
+Rules:
+- available for successful historical jobs only in v0.1;
+- browser sends only the opaque job ID;
+- use the same shared reconstruction/current-validation/input-preflight boundary as Reuse Settings;
+- submit through the ordinary current `submitGeneration()` path, including current account/global admission controls and current internal routing;
+- return a distinct new generation job ID;
+- never mutate the successful historical job;
+- separate explicit Run Again requests may create separate attempts; the client prevents accidental double-click concurrency but v0.1 does not claim durable request idempotency;
+- current routing/default implementation may differ from the historical provider execution, so Run Again means “make another attempt from this recipe,” not “replay the same provider call” or “reproduce identical pixels.”
+
+Primary surface: successful Activity rows keep **View result** and gain compact **Run again** only when the server can establish a reusable current recipe. Failed rows keep the existing Retry semantics and active rows keep Cancel where applicable. Do not collapse Retry and Run Again into one ambiguous action.
+
+### 16D — Conditional durable source/result comparison
+Generated Media Viewer may offer **Compare source** only when all of the following are true:
+- the asset has a producing `generationJobId` owned by the current account;
+- the producing operation has a meaningful primary source (currently Edit Image or Animate Image);
+- the persisted primary input is a durable `media-asset`, not a temporary source;
+- that source still exists, belongs to the same owner, is active/not tombstoned and is readable through the ordinary media product contract.
+
+Do not expose a comparison control when the historical source is missing, temporary, deleted, foreign or otherwise unavailable. Historical intent does not grant permission to revive unavailable media.
+
+Viewer comparison requirements:
+- result remains the primary Viewer object and existing Continue/Actions hierarchy stays intact;
+- source and result are explicitly labelled;
+- wide layouts may show source/result side-by-side; narrow layouts must use a reviewed stacked or simple switching treatment rather than squeezing two unusable panes;
+- image→image and image→video comparison must both remain truthful;
+- source media uses ordinary product media URLs/opaque identity, never R2 keys or provider metadata;
+- source may link to its own Viewer when helpful, but comparison must not create a parallel media-management surface;
+- use approved maintained primitives and existing RenderLab motion only when it improves spatial understanding; reduced-motion must remain complete.
+
+Because this changes an approved media-primary surface, implementation requires a desktop + narrow visual design checkpoint before the comparison UI is coded, followed by actual rendered screenshot review.
+
+### 16E — Variations remains deferred
+Phase 16 does **not** implement Variations.
+
+Phase 14 solved the persistence prerequisite by giving outputs explicit slots, but current execution evidence does not define a truthful Variations product contract:
+- native Image/Video workers currently accept no output-count/variation-count field;
+- one provider call currently resolves to one returned image/video body;
+- RenderLab finalization currently writes slot `0` only and marks success with one asset;
+- the planning production snapshot contained only one output ID per succeeded job.
+
+Do not simulate “Variations” by silently launching several unrelated ordinary jobs behind one button. A later Variations contract must first define provider/workflow cardinality, seed/relationship semantics, admission/cost treatment, multi-output result presentation, per-output persistence/failure behavior and cancellation/retry semantics.
+
+## Explicitly out of scope
+- Variations or batch multi-output generation.
+- New top-level Recipes, History, Remix or Compare route.
+- Durable recipe table, recipe naming/favorites/sharing, public recipe links or cross-account recipe reuse.
+- Prompt/version history or a general project/document model.
+- Provider/workflow/model selection or replay of historical routing.
+- Restoring or cloning deleted/tombstoned/temporary historical source media merely to make a recipe reusable.
+- New creative operations such as Upscale/Restore, Inpaint/Outpaint, LoRA/model adapters or Director Video.
+- Shell-global generation/media client stores or new cross-route polling architecture.
+- Billing/credits/cost estimates or SLA/ETA claims.
+- Broad redesign of approved Create, Viewer, Activity, Library or shell surfaces.
+- Production application deployment, Phase 14/15 scheduler activation or production maintenance sweeps.
+
+## Architecture / API boundaries
+- `generation_jobs` remains the historical product recipe source; do not introduce a recipe table unless implementation audit proves current normalized intent is insufficient.
+- `media_assets.generation_job_id` is the durable output→recipe linkage for generated media.
+- `/create` remains the only authoring workspace. Recipe navigation prefills it rather than creating a second editor.
+- Existing media continuation `source` + `action` remains the contract for “use this result as a new source” (Edit/Animate). Recipe reuse is a separate “use the settings that produced this result” concept.
+- Failed Retry and successful Run Again must share reconstruction/current-validation logic but keep separate eligibility/product semantics.
+- All submission still flows through ordinary `submitGeneration` and Generation Admission; Phase 16 does not add a provider-direct execution path.
+- Viewer comparison data is resolved server-side from owner-scoped asset→job→primary-source relations; do not send raw job JSON or storage metadata to the browser.
+- Keep Server Components authoritative for initial Create recipe loading and Viewer comparison resolution. Client Components own only the necessary edit/run-again/disclosure interaction state.
+
+## Data / schema implications
+The planning audit found no Phase 16 schema requirement for Reuse Settings, Run Again or comparison:
+- normalized recipe intent already lives in `generation_jobs`;
+- generated asset→job provenance already lives in `media_assets.generation_job_id`;
+- output-slot identity is already available for future multi-output work.
+
+Therefore v0.1 should prefer **no migration**. If implementation discovers a missing durable field required to reconstruct current product intent, stop and amend this contract before adding schema. Do not introduce lineage/recipe tables merely for convenience.
+
+No historical rows should be backfilled, rewritten or reclassified as part of Phase 16.
+
+## Security / ownership implications
+- Recipe/job IDs and media IDs are opaque product identities, never authorization.
+- Every recipe load, Run Again request and comparison source lookup is owner-scoped behind the fresh RenderLab account boundary.
+- Missing and foreign recipe/source identities preserve the existing not-found/privacy behavior.
+- Historical references are reauthorized against current durable media/source state before reuse.
+- Browser payloads never contain service credentials, R2 keys, worker/provider IDs or historical execution-routing metadata.
+- Run Again consumes ordinary current admission policy exactly like Create and failed Retry.
+- No browser grants/RLS weakening is permitted for recipe or comparison reads.
+
+## UI / UX requirements
+### Reuse Settings / Create
+- preserve the approved Create hierarchy; prefilled state should feel like opening an editable starting point, not a new mode or technical recipe editor;
+- clearly communicate bounded recipe-unavailable cases without destroying a user’s ordinary new-creation ability;
+- stable aliases/order and prompt mentions must remain visibly coherent after prefill;
+- existing Image/Video contextual controls, Advanced disclosure, reference replacement/removal/reorder and reduced-motion behavior remain authoritative.
+
+### Activity Run Again
+- keep job history/status/prompt hierarchy dominant;
+- Run Again is compact and secondary to history, with an in-flight `Running again…`/spinner state and bounded success/error feedback;
+- successful rows retain View result; failed Retry and native Cancel retain their distinct state gating;
+- narrow layout must wrap actions without reducing touch targets or obscuring prompt/status.
+
+### Viewer comparison
+- media remains visually primary;
+- comparison is progressive disclosure, not an always-on split-screen tax for every asset;
+- source/result labels must be unambiguous;
+- the comparison treatment must be reviewed at desktop and narrow sizes before implementation, and actual implementation screenshots must be reviewed before approval.
+
+## Required validation matrix
+### Shared recipe reconstruction
+- own current-valid succeeded recipe reconstructs exactly the current-valid prompt/output/inputs/Advanced intent;
+- malformed/signed-out/missing/foreign identities fail safely without cross-account disclosure;
+- current parser/capability mismatch fails closed;
+- stable aliases/order/roles and `@imageN` references remain consistent;
+- missing/foreign/tombstoned media and missing/not-ready temporary sources make reuse unavailable;
+- bounded legacy Video compatibility exactly matches the accepted Retry rules;
+- worker/provider/workflow/failover/error/output execution metadata is never replayed.
+
+### Reuse Settings
+- opening an eligible generated asset’s recipe prefills Create and performs zero generation submission until the user presses Generate;
+- all current-supported output and Advanced settings round-trip visibly;
+- references are owner-reloaded and prefilled in the persisted alias/order;
+- user edits then submit through ordinary current validation/admission/routing;
+- invalid `recipe`, invalid `source`/`action`, and mixed recipe+media-continuation navigation are bounded and non-ambiguous;
+- unavailable historical recipes leave Create usable for a new task rather than trapping the user.
+
+### Successful Run Again
+- own succeeded reusable job accepted; failed/cancelled/active jobs reject with stable `run_again_not_available` and no submission;
+- accepted Run Again returns a distinct job and leaves the original row unchanged;
+- ordinary generation admission, generation-disabled, active-limit and rolling-rate responses remain authoritative;
+- unavailable current inputs block before backend/provider work;
+- repeated explicit successful requests create separate attempts while one client click is guarded in-flight;
+- sanitized product errors reveal no provider/routing detail.
+
+### Viewer source/result comparison
+- generated Edit/Animate result with active same-owner durable primary source exposes comparison;
+- Create Image/Create Video result, uploaded asset, temporary-source history, deleted source, foreign source and missing job/source do not expose it;
+- source and result URLs resolve through ordinary authenticated product media boundaries;
+- image→image and image→video comparison render correctly;
+- desktop, narrow, keyboard and reduced-motion states pass rendered review;
+- existing Edit/Animate, Favorite/Collections/Rename/Download/Delete actions remain intact.
+
+### Regression / configured validation
+At minimum audit path filters and run every actually affected gate, expected to include:
+- UI Shell Validation / UI purity;
+- Create Lifecycle;
+- Activity Visual;
+- Library Lifecycle / Media Viewer coverage;
+- Account Ownership;
+- Media Delete;
+- Generation Admission;
+- Generation Integration;
+- Video Generation Integration;
+- Integrated Release when shared generation/API boundaries are touched.
+
+Use run-owned mock/external-backend fixtures for exhaustive recipe/Run Again validation so most cases spend no provider generation. Keep configured native Image/Video regressions green when shared submission logic changes; add a bounded Phase 16 live case only if mock/current regression evidence cannot prove a provider mapping that the new product contract actually depends on.
+
+Exact Auth/Supabase/R2 fixtures must self-clean. Final exact-head validation remains required.
+
+## Documentation / handoff outputs
+Before Phase 16 can be marked complete, update from verified implementation reality:
+- `PROJECT.md` — Phase 16 implementation evidence and Phase 17 handoff;
+- `docs/ui/UI_MIGRATION.md` — slice/checklist state, exact-head runs, visual review and cleanup;
+- `docs/ui/UI_DECISIONS.md` — UI-056 implementation evidence or an explicitly approved amendment;
+- `docs/ui/SCREEN_REGISTRY.md` — verified Create recipe, Viewer comparison and Activity Run Again behavior;
+- `docs/ui/COMPONENT_CATALOG.md` — any new approved feature composition / reused primitive mechanics;
+- `docs/architecture/FRONTEND_ARCHITECTURE.md` — shared reconstruction, recipe navigation, Run Again and comparison server/client boundaries;
+- `docs/architecture/PRODUCT_CAPABILITIES.md` — current recipe reuse semantics and explicit Variations deferral;
+- `docs/architecture/INFRASTRUCTURE.md` only if implementation changes infrastructure/shared-resource reality.
+
+## Exit criteria
+Phase 16 is `COMPLETE / VERIFIED` only when:
+- one shared server recipe reconstruction boundary serves successful reuse/run-again semantics without duplicating or weakening failed Retry rules;
+- Reuse Settings opens current-valid persisted intent in Create with no implicit dispatch and ordinary editing/submission remains intact;
+- successful Run Again creates a distinct ordinary job through current admission/routing while preserving the historical job;
+- unavailable/deleted/foreign/current-invalid historical inputs fail closed and are never silently substituted;
+- Viewer comparison appears only for an active durable same-owner primary source and passes desktop+narrow rendered review without degrading the existing Viewer action hierarchy;
+- Variations remains absent unless this contract is explicitly amended from new provider/product evidence;
+- no new recipe/lineage schema is introduced unless an audited need first amends the contract;
+- exact-head affected CI/configured verification and exact fixture cleanup pass;
+- authoritative repository docs match implementation reality;
+- no production deployment or scheduler activation is inferred from implementation/merge.
+
+Only after Phase 16 is `COMPLETE / VERIFIED` should Phase 17 be expanded into its execution-ready Observability & Engineering Quality contract.
