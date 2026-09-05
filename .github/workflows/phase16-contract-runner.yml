@@ -33,7 +33,11 @@ jobs:
           lines = []
           for line in payload.splitlines():
               lines.append(line[10:] if line.startswith('          ') else line)
-          Path('/tmp/phase16-contract.py').write_text('\n'.join(lines) + '\n')
+          payload = '\n'.join(lines) + '\n'
+          payload = payload.replace('  \n', '\n')
+          payload = payload.replace("decisions.write_text(text + '\\n')", "decisions.write_text(text.rstrip() + '\\n')")
+          payload = payload.replace("migration.write_text(text + '\\n')", "migration.write_text(text.rstrip() + '\\n')")
+          Path('/tmp/phase16-contract.py').write_text(payload)
           PY
 
       - name: Apply contract to frozen planning branch
