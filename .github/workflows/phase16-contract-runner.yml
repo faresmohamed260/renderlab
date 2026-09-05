@@ -19,41 +19,29 @@ jobs:
           ref: noop
           fetch-depth: 0
 
-      - name: Extract authored contract payload
-        shell: bash
-        run: |
-          python <<'PY'
-          from pathlib import Path
-          source = Path('.github/workflows/phase16-contract-sync.yml').read_text()
-          start_marker = "          python <<'PY'\n"
-          end_marker = "\n          PY\n"
-          start = source.index(start_marker) + len(start_marker)
-          end = source.index(end_marker, start)
-          payload = source[start:end]
-          lines = []
-          for line in payload.splitlines():
-              lines.append(line[10:] if line.startswith('          ') else line)
-          payload = '\n'.join(lines) + '\n'
-          payload = payload.replace('  \n', '\n')
-          payload = payload.replace("decisions.write_text(text + '\\n')", "decisions.write_text(text.rstrip() + '\\n')")
-          payload = payload.replace("migration.write_text(text + '\\n')", "migration.write_text(text.rstrip() + '\\n')")
-          Path('/tmp/phase16-contract.py').write_text(payload)
-          PY
-
-      - name: Apply contract to frozen planning branch
+      - name: Correct Phase 16 migration handoff
         shell: bash
         env:
-          EXPECTED_BASE: 3624924eb24b5d9375934fadb5050f5f198eb338
+          EXPECTED_HEAD: d24a863cc0516db501ba9e06a416ee27a6e77053
           TARGET_BRANCH: plan/phase-16-creative-iteration-contract
         run: |
           set -euo pipefail
           git fetch origin "$TARGET_BRANCH"
           git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
-          test "$(git rev-parse HEAD)" = "$EXPECTED_BASE"
-          python /tmp/phase16-contract.py
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          python <<'PY'
+          from pathlib import Path
+          path = Path('docs/ui/UI_MIGRATION.md')
+          text = path.read_text()
+          old = '**Next:** Phase 16 Creative Iteration remains roadmap-only until its execution-ready contract is merged.'
+          new = '**Next:** the accepted Phase 16 Creative Iteration contract is recorded below; implementation has not started.'
+          if text.count(old) != 1:
+              raise SystemExit('Expected Phase 15 handoff sentence not found exactly once')
+          path.write_text(text.replace(old, new, 1))
+          PY
           git diff --check
           git config user.name "RenderLab Automation"
           git config user.email "121525183+faresmohamed260@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md
-          git commit -m "Lock Phase 16 creative iteration contract"
+          git add docs/ui/UI_MIGRATION.md
+          git commit -m "Clarify Phase 16 contract handoff"
           git push origin HEAD:"$TARGET_BRANCH"
