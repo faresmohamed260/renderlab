@@ -32,7 +32,7 @@ function parseGenerationJob(value: unknown): GenerationJob | null {
   if (typeof value.createdAt !== "string" || typeof value.updatedAt !== "string") return null;
   if (!Array.isArray(value.outputAssetIds) || !value.outputAssetIds.every((item) => typeof item === "string")) return null;
 
-  const statuses = new Set(["queued", "preparing", "running", "persisting", "succeeded", "failed", "cancelled"]);
+  const statuses = new Set(["queued", "preparing", "running", "cancelling", "persisting", "succeeded", "failed", "cancelled"]);
   const operations = new Set(["create-image", "edit-image", "create-video", "animate-image"]);
   if (!statuses.has(value.status) || !operations.has(value.operation)) return null;
 
