@@ -474,6 +474,10 @@ try {
   assert(accountJson.includes(memberAccount.id), "Admin account list is missing the member fixture.");
   assert(!accountJson.includes(outsider.id), "Admin account list enumerated an Auth-only identity without RenderLab access.");
   assert(!accountJson.includes(outsider.email), "Admin account list leaked an Auth-only email without RenderLab access.");
+  const activeAdminCountBeforePromote = Array.isArray(adminAccountsPayload?.accounts)
+    ? adminAccountsPayload.accounts.filter((account) => account?.role === "admin" && account?.status === "active").length
+    : 0;
+  assert(activeAdminCountBeforePromote >= 1, "Admin account list did not include the active fixture admin.");
 
   const healthResponse = await appRequest("/api/admin/health", adminAccount);
   assert(healthResponse.status === 200, `Admin health expected 200, got ${healthResponse.status}.`);
@@ -621,7 +625,11 @@ try {
   });
   assert(lastAdmin.status === 409, `Last-active-admin protection expected 409, got ${lastAdmin.status}.`);
   const lastAdminPayload = await json(lastAdmin);
-  assert(lastAdminPayload?.error?.code === "last_active_admin", "Last-active-admin protection returned the wrong sanitized code.");
+  const expectedProtectionCode = activeAdminCountBeforePromote === 1 ? "last_active_admin" : "self_lockout";
+  assert(
+    lastAdminPayload?.error?.code === expectedProtectionCode,
+    `Admin self-suspension protection expected ${expectedProtectionCode}, got ${JSON.stringify(lastAdminPayload?.error?.code)}.`,
+  );
 
   const suspendMember = await appRequest(`/api/admin/accounts/${memberAccount.id}`, adminAccount, {
     method: "PATCH",
