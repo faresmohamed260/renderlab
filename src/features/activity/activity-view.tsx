@@ -23,6 +23,7 @@ import {
 import { ActivityAutoRefresh } from "@/features/activity/activity-auto-refresh";
 import { ActivityCancelButton } from "@/features/activity/activity-cancel-button";
 import { ActivityRetryButton } from "@/features/activity/activity-retry-button";
+import { ActivityRunAgainButton } from "@/features/activity/activity-run-again-button";
 import type { PublicGenerationActivity } from "@/lib/api/generation-activity-contract";
 import { isActiveGenerationStatus } from "@/lib/api/generation-activity-contract";
 
@@ -179,10 +180,15 @@ export function ActivityView({
                     </p>
                   </div>
 
-                  {item.status === "succeeded" && item.outputAssetIds.length > 0 ? (
-                    <Button asChild variant="secondary" size="sm">
-                      <Link href={`/library/${encodeURIComponent(item.outputAssetIds[0])}`}>View result</Link>
-                    </Button>
+                  {item.status === "succeeded" ? (
+                    <div className="flex flex-wrap items-start justify-end gap-2">
+                      {item.outputAssetIds.length > 0 ? (
+                        <Button asChild variant="secondary" size="sm">
+                          <Link href={`/library/${encodeURIComponent(item.outputAssetIds[0])}`}>View result</Link>
+                        </Button>
+                      ) : null}
+                      {item.canRunAgain ? <ActivityRunAgainButton jobId={item.id} /> : null}
+                    </div>
                   ) : item.status === "failed" ? (
                     <ActivityRetryButton jobId={item.id} />
                   ) : item.canCancel ? (

@@ -1,24 +1,24 @@
-import type { RetryGenerationResponse } from "@/lib/api/generation-retry-contract";
+import type { RunAgainGenerationResponse } from "@/lib/api/generation-run-again-contract";
 import {
   loadGenerationRecipeJob,
   reconstructAvailableGenerationRecipeRequest,
 } from "@/server/generation/generation-recipe";
 import { submitGeneration } from "@/server/generation/submit-generation";
 
-function retryNotAvailable(): RetryGenerationResponse {
+function runAgainNotAvailable(): RunAgainGenerationResponse {
   return {
     ok: false,
     error: {
-      code: "retry_not_available",
-      message: "This generation can’t be retried with the current inputs and settings.",
+      code: "run_again_not_available",
+      message: "This generation can’t be run again with the current inputs and settings.",
     },
   };
 }
 
-export async function retryGeneration(
+export async function runAgainGeneration(
   ownerId: string,
   jobId: string,
-): Promise<RetryGenerationResponse> {
+): Promise<RunAgainGenerationResponse> {
   const historicalJob = await loadGenerationRecipeJob(ownerId, jobId);
   if (!historicalJob) {
     return {
@@ -26,10 +26,10 @@ export async function retryGeneration(
       error: { code: "job_not_found", message: "Generation job was not found." },
     };
   }
-  if (historicalJob.status !== "failed") return retryNotAvailable();
+  if (historicalJob.status !== "succeeded") return runAgainNotAvailable();
 
   const request = await reconstructAvailableGenerationRecipeRequest(ownerId, historicalJob);
-  if (!request) return retryNotAvailable();
+  if (!request) return runAgainNotAvailable();
 
   const submitted = await submitGeneration(ownerId, request);
   if (!submitted.ok) {
@@ -40,10 +40,7 @@ export async function retryGeneration(
       || code === "generation_active_limit_reached"
       || code === "generation_rate_limit_reached"
     ) {
-      return {
-        ok: false,
-        error: { code, message: submitted.error.message },
-      };
+      return { ok: false, error: { code, message: submitted.error.message } };
     }
     if (code === "generation_backend_unavailable") {
       return {
@@ -58,7 +55,7 @@ export async function retryGeneration(
       ok: false,
       error: {
         code: "generation_submission_failed",
-        message: "Retry could not be started. Check that the original inputs are still available and try again.",
+        message: "Run again could not be started. Check that the original inputs are still available and try again.",
       },
     };
   }

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="1360" viewBox="0 0 390 1360">
+  <style>
+    text{font-family:Inter,ui-sans-serif,system-ui,sans-serif;fill:#F4F5F7}.muted{fill:#9CA3AF}.title{font-size:19px;font-weight:600}.body{font-size:13px}.label{font-size:12px;font-weight:600}.small{font-size:11px}
+  </style>
+  <rect width="390" height="1360" fill="#090A0C"/>
+  <rect width="390" height="56" fill="#0D0F13"/>
+  <text x="20" y="35" class="label">Media Viewer</text>
+  <text x="18" y="88" class="small muted">← Library</text>
+  <text x="18" y="116" class="small muted">EXPERIMENTAL · Compare source · Image → Image</text>
+
+  <g transform="translate(18,138)">
+    <text x="0" y="18" class="label">RESULT</text>
+    <rect x="0" y="32" width="354" height="354" rx="14" fill="#171A20" stroke="#7C6CF2" stroke-opacity=".35"/>
+    <rect x="12" y="44" width="330" height="330" rx="11" fill="#423D54"/>
+    <circle cx="177" cy="209" r="90" fill="#7C6CF2" opacity=".72"/>
+    <circle cx="205" cy="181" r="34" fill="#A59AF8" opacity=".7"/>
+  </g>
+
+  <g transform="translate(18,554)">
+    <text x="0" y="18" class="label muted">SOURCE</text>
+    <rect x="0" y="32" width="354" height="164" rx="14" fill="#171A20" stroke="#2B303A"/>
+    <rect x="12" y="44" width="138" height="138" rx="11" fill="#273544"/>
+    <circle cx="81" cy="113" r="39" fill="#536F8A"/>
+    <text x="170" y="72" class="label">Original image</text>
+    <text x="170" y="96" class="small muted">Durable primary source</text>
+    <text x="170" y="116" class="small muted">shown without crop</text>
+    <rect x="170" y="136" width="166" height="36" rx="8" fill="#171A20" stroke="#2B303A"/>
+    <text x="253" y="158" text-anchor="middle" class="small">Open source</text>
+  </g>
+
+  <g transform="translate(18,758)">
+    <text x="0" y="18" class="small muted">IMAGE</text>
+    <text x="0" y="48" class="title">Lavender sphere edit</text>
+    <text x="0" y="72" class="small muted">Created today at 10:10 AM</text>
+    <rect x="0" y="96" width="354" height="1" fill="#2B303A"/>
+    <text x="0" y="124" class="label">Prompt</text>
+    <text x="0" y="148" class="small">Make @image1 lavender with a soft reflective</text>
+    <text x="0" y="167" class="small">highlight while preserving the studio composition.</text>
+    <rect x="0" y="194" width="354" height="1" fill="#2B303A"/>
+    <text x="0" y="222" class="label">Details</text>
+    <text x="0" y="246" class="small muted">Dimensions</text><text x="108" y="246" class="small">1536 × 1536</text>
+    <rect x="0" y="274" width="354" height="1" fill="#2B303A"/>
+    <text x="0" y="302" class="label">Continue</text>
+    <rect x="0" y="320" width="171" height="42" rx="9" fill="#7C6CF2"/><text x="85.5" y="346" text-anchor="middle" class="label">Edit</text>
+    <rect x="183" y="320" width="171" height="42" rx="9" fill="#171A20" stroke="#2B303A"/><text x="268.5" y="346" text-anchor="middle" class="label">Animate</text>
+    <rect x="0" y="374" width="171" height="42" rx="9" fill="#171A20" stroke="#2B303A"/><text x="85.5" y="400" text-anchor="middle" class="small">Reuse settings</text>
+    <rect x="183" y="374" width="171" height="42" rx="9" fill="#20242C" stroke="#7C6CF2" stroke-opacity=".45"/><text x="268.5" y="400" text-anchor="middle" class="small">Close comparison</text>
+    <rect x="0" y="444" width="354" height="1" fill="#2B303A"/>
+    <text x="0" y="472" class="label">Actions</text>
+    <rect x="0" y="490" width="354" height="42" rx="9" fill="#171A20" stroke="#2B303A"/><text x="177" y="516" text-anchor="middle" class="small">Favorite · Collection · More</text>
+  </g>
+</svg>

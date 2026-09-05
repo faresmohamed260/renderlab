@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { MediaViewer } from "@/features/library/media-viewer";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
+import {
+  loadGenerationComparisonSource,
+  loadInitialGenerationRecipe,
+} from "@/server/generation/generation-recipe";
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
 import { listMediaCollections } from "@/server/media/media-collections";
 import { isR2Configured } from "@/server/storage/r2";
@@ -50,13 +54,25 @@ export default async function MediaViewerPage({
   const asset = await getMediaAsset(account.id, assetId).catch(() => null);
   if (!asset) notFound();
 
-  const collections = await listMediaCollections(account.id, asset.id).catch(() => null);
+  const generationJobId = asset.generation_job_id;
+  const [collections, reusableRecipe, comparisonSource] = await Promise.all([
+    listMediaCollections(account.id, asset.id).catch(() => null),
+    generationJobId
+      ? loadInitialGenerationRecipe(account.id, generationJobId).catch(() => null)
+      : Promise.resolve(null),
+    generationJobId
+      ? loadGenerationComparisonSource(account.id, generationJobId).catch(() => null)
+      : Promise.resolve(null),
+  ]);
+  const compareSource = comparisonSource?.id === asset.id ? null : comparisonSource;
 
   return (
     <MediaViewer
       asset={publicMediaAsset(asset)}
       collections={collections ?? []}
       collectionsAvailable={collections !== null}
+      reuseRecipeJobId={reusableRecipe?.jobId ?? null}
+      compareSource={compareSource}
     />
   );
 }
