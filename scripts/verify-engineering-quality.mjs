@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -17,8 +17,7 @@ function expectFailure(result, label) {
 
 const lintDirectory = await mkdtemp(path.join(tmpdir(), "renderlab-quality-lint-"));
 const lintFixture = path.join(lintDirectory, "lint-negative.ts");
-const typeDirectory = path.join(root, `.renderlab-quality-type-${process.pid}`);
-const typeFixture = path.join(typeDirectory, "type-negative.ts");
+const typeFixture = path.join(root, "tests", "unit", `quality-type-negative-${process.pid}.ts`);
 
 try {
   await writeFile(lintFixture, "debugger;\n", "utf8");
@@ -30,7 +29,6 @@ try {
     "Oxlint",
   );
 
-  await mkdir(typeDirectory, { recursive: true });
   await writeFile(typeFixture, "const qualityGateNumber: number = 'not-a-number';\n", "utf8");
   expectFailure(
     spawnSync(tsc, ["--noEmit", "--pretty", "false", "--incremental", "false", "-p", "tsconfig.json"], {
@@ -41,7 +39,7 @@ try {
   );
 } finally {
   await rm(lintDirectory, { recursive: true, force: true });
-  await rm(typeDirectory, { recursive: true, force: true });
+  await rm(typeFixture, { force: true });
 }
 
 console.log("Engineering quality negative fixtures were rejected as expected.");
