@@ -1,0 +1,64 @@
+name: Phase 17 fixture shape fix
+
+on:
+  push:
+    branches: [work/phase-17-observability-quality]
+    paths:
+      - ".github/workflows/phase17-fixture-shape-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-17-observability-quality
+          fetch-depth: 0
+
+      - name: Patch exact Admin fixture shape
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/verify-admin-operations.mjs")
+          text = path.read_text()
+          old = '''          error_code: null,\n          error_message: null,\n          created_at: activeAt,'''
+          new = '''          error_code: null,\n          error_message: null,\n          failover_history: [],\n          created_at: activeAt,'''
+          if text.count(old) != 1:
+              raise SystemExit(f"expected one queued health fixture block, found {text.count(old)}")
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify corrected source
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run test:unit
+          node --check scripts/verify-admin-operations.mjs
+
+      - name: Commit verifier fix only
+        shell: bash
+        run: |
+          git add scripts/verify-admin-operations.mjs
+          git diff --cached --check
+          test "$(git diff --cached --name-only)" = "scripts/verify-admin-operations.mjs"
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git commit -m "Fix Admin Health fixture batch shape"
+          git push origin HEAD:work/phase-17-observability-quality
