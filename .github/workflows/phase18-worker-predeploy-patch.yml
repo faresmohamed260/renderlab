@@ -1,0 +1,181 @@
+name: Phase 18 Worker Predeploy Patch
+
+on:
+  push:
+    branches: [work/phase-18-image-upscale]
+    paths:
+      - .github/workflows/phase18-worker-predeploy-patch.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: renderlab-phase18-worker-predeploy-patch
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard Phase 18 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --no-tags
+          test "$(git rev-parse origin/main)" = '2d3131478d7dfbe522dc6f3a645fadd134d73ac5'
+          test "$(git merge-base HEAD origin/main)" = '2d3131478d7dfbe522dc6f3a645fadd134d73ac5'
+
+      - name: Apply predeployment worker corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('workers/image-upscale/modal_app.py')
+          text = path.read_text()
+
+          old_image = '''image = (\n    modal.Image.from_registry(\n        "nvidia/cuda:12.8.1-runtime-ubuntu22.04",\n        add_python=PYTHON_VERSION,\n    )\n    .entrypoint([])\n    .apt_install("git", "curl", "ca-certificates", "libgl1", "libglib2.0-0")\n    .uv_pip_install(\n        f"modal=={MODAL_VERSION}",\n        "fastapi[standard]==0.121.0",\n        "numpy==2.2.6",\n        "Pillow==11.2.1",\n        "timm==1.0.19",\n        "torch==2.7.1",\n        "torchvision==0.22.1",\n        extra_index_url="https://download.pytorch.org/whl/cu128",\n    )\n    .run_commands(\n        f"git clone --filter=blob:none {SWINIR_REPOSITORY} {SWINIR_SOURCE_DIR}",\n        f"git -C {SWINIR_SOURCE_DIR} checkout --detach {SWINIR_COMMIT}",\n        "mkdir -p /opt/models",\n        f"curl --fail --location --retry 4 --retry-all-errors --connect-timeout 30 --max-time 600 '{SWINIR_WEIGHT_URL}' -o '{SWINIR_WEIGHT_PATH}'",\n        f"test \\\"$(stat -c '%s' '{SWINIR_WEIGHT_PATH}')\\\" = '{SWINIR_WEIGHT_BYTES}'",\n        f"echo '{SWINIR_WEIGHT_SHA256}  {SWINIR_WEIGHT_PATH}' | sha256sum -c -",\n    )\n    .env(\n        {\n            "PYTHONUTF8": "1",\n            "PYTHONIOENCODING": "utf-8",\n            "RENDERLAB_UPSCALE_WORKER_ID": WORKER_ID,\n            "RENDERLAB_UPSCALE_STATE_DICT": STATE_DICT_NAME,\n        }\n    )\n)\n\napp = modal.App(APP_NAME, image=image)\n'''
+          new_image = '''gateway_image = (\n    modal.Image.debian_slim(python_version=PYTHON_VERSION)\n    .pip_install(f"modal=={MODAL_VERSION}", "fastapi[standard]==0.121.0")\n    .env(\n        {\n            "PYTHONUTF8": "1",\n            "PYTHONIOENCODING": "utf-8",\n            "RENDERLAB_UPSCALE_WORKER_ID": WORKER_ID,\n            "RENDERLAB_UPSCALE_STATE_DICT": STATE_DICT_NAME,\n        }\n    )\n)\n\nruntime_image = (\n    modal.Image.from_registry(\n        "nvidia/cuda:12.8.1-runtime-ubuntu22.04",\n        add_python=PYTHON_VERSION,\n    )\n    .entrypoint([])\n    .apt_install("git", "curl", "ca-certificates", "libgl1", "libglib2.0-0")\n    .uv_pip_install(\n        f"modal=={MODAL_VERSION}",\n        "numpy==2.2.6",\n        "Pillow==11.2.1",\n        "timm==1.0.19",\n        "torch==2.7.1",\n        "torchvision==0.22.1",\n        extra_index_url="https://download.pytorch.org/whl/cu128",\n    )\n    .run_commands(\n        f"git clone --filter=blob:none {SWINIR_REPOSITORY} {SWINIR_SOURCE_DIR}",\n        f"git -C {SWINIR_SOURCE_DIR} checkout --detach {SWINIR_COMMIT}",\n        "mkdir -p /opt/models",\n        f"curl --fail --location --retry 4 --retry-all-errors --connect-timeout 30 --max-time 600 '{SWINIR_WEIGHT_URL}' -o '{SWINIR_WEIGHT_PATH}'",\n        f"test \\\"$(stat -c '%s' '{SWINIR_WEIGHT_PATH}')\\\" = '{SWINIR_WEIGHT_BYTES}'",\n        f"echo '{SWINIR_WEIGHT_SHA256}  {SWINIR_WEIGHT_PATH}' | sha256sum -c -",\n    )\n    .env(\n        {\n            "PYTHONUTF8": "1",\n            "PYTHONIOENCODING": "utf-8",\n            "RENDERLAB_UPSCALE_WORKER_ID": WORKER_ID,\n            "RENDERLAB_UPSCALE_STATE_DICT": STATE_DICT_NAME,\n        }\n    )\n)\n\napp = modal.App(APP_NAME)\n'''
+          if text.count(old_image) != 1:
+              raise SystemExit(f'expected one worker image block, found {text.count(old_image)}')
+          text = text.replace(old_image, new_image, 1)
+
+          old_tiles = '''    tile = min(TILE_SIZE, height, width)\n    overlap = min(TILE_OVERLAP, max(0, tile // 4))\n    y_starts = _tile_starts(height, tile, overlap)\n    x_starts = _tile_starts(width, tile, overlap)\n'''
+          new_tiles = '''    tile_height = min(TILE_SIZE, height)\n    tile_width = min(TILE_SIZE, width)\n    overlap_height = min(TILE_OVERLAP, max(0, tile_height // 4))\n    overlap_width = min(TILE_OVERLAP, max(0, tile_width // 4))\n    y_starts = _tile_starts(height, tile_height, overlap_height)\n    x_starts = _tile_starts(width, tile_width, overlap_width)\n'''
+          if text.count(old_tiles) != 1:
+              raise SystemExit('worker tiling target not found exactly once')
+          text = text.replace(old_tiles, new_tiles, 1)
+          old_patch = '            patch = tensor[:, :, top : top + tile, left : left + tile]\n'
+          new_patch = '            patch = tensor[:, :, top : top + tile_height, left : left + tile_width]\n'
+          if text.count(old_patch) != 1:
+              raise SystemExit('worker patch slicing target not found exactly once')
+          text = text.replace(old_patch, new_patch, 1)
+
+          if text.count('@app.cls(\n    image=image,') != 1:
+              raise SystemExit('runtime image decorator target not found exactly once')
+          text = text.replace('@app.cls(\n    image=image,', '@app.cls(\n    image=runtime_image,', 1)
+          if text.count('@app.function(image=image, timeout=3600)') != 1:
+              raise SystemExit('gateway image decorator target not found exactly once')
+          text = text.replace('@app.function(image=image, timeout=3600)', '@app.function(image=gateway_image, timeout=3600)', 1)
+          path.write_text(text)
+
+          verify = Path('workers/image-upscale/verify_worker.py')
+          verify.write_text(r'''from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+SOURCE = Path(__file__).with_name("modal_app.py")
+text = SOURCE.read_text(encoding="utf-8")
+compile(text, str(SOURCE), "exec")
+tree = ast.parse(text, filename=str(SOURCE))
+
+literal_names = {
+    "SWINIR_COMMIT",
+    "SWINIR_LICENSE",
+    "SWINIR_WEIGHT_NAME",
+    "SWINIR_WEIGHT_BYTES",
+    "SWINIR_WEIGHT_SHA256",
+    "UPSCALE_SCALE",
+    "MAX_INPUT_BYTES",
+    "MAX_INPUT_EDGE",
+    "MAX_INPUT_PIXELS",
+    "MAX_OUTPUT_EDGE",
+    "MAX_OUTPUT_PIXELS",
+    "TILE_SIZE",
+    "TILE_OVERLAP",
+    "WINDOW_SIZE",
+}
+values = {}
+functions = {}
+for node in tree.body:
+    if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+        name = node.targets[0].id
+        if name in literal_names:
+            values[name] = ast.literal_eval(node.value)
+    elif isinstance(node, ast.FunctionDef):
+        functions[node.name] = node
+
+expected = {
+    "SWINIR_COMMIT": "33f616625268d08ba600f8db89388eec0328edb1",
+    "SWINIR_LICENSE": "Apache-2.0",
+    "SWINIR_WEIGHT_NAME": "001_classicalSR_DF2K_s64w8_SwinIR-M_x2.pth",
+    "SWINIR_WEIGHT_BYTES": 67_277_475,
+    "SWINIR_WEIGHT_SHA256": "2032ebf8f401dd3ce2fae5f3852117cb72101ec6ed8358faa64c2a3fa09ed4ac",
+    "UPSCALE_SCALE": 2,
+    "MAX_INPUT_BYTES": 25 * 1024 * 1024,
+    "MAX_INPUT_EDGE": 4096,
+    "MAX_INPUT_PIXELS": 4_194_304,
+    "MAX_OUTPUT_EDGE": 8192,
+    "MAX_OUTPUT_PIXELS": 16_777_216,
+    "TILE_SIZE": 256,
+    "TILE_OVERLAP": 32,
+    "WINDOW_SIZE": 8,
+}
+assert values == expected, (values, expected)
+
+assert 'gateway_image = (' in text
+assert 'runtime_image = (' in text
+assert '@app.cls(\n    image=runtime_image,' in text
+assert '@app.function(image=gateway_image, timeout=3600)' in text
+assert '"/health"' in text
+assert '"/jobs/upscale"' in text
+assert text.count('"/jobs/{call_id}"') == 2
+assert 'upscale_scales' in text and '[UPSCALE_SCALE]' in text
+assert 'media_type="image/png"' in text
+assert 'Image.Resampling.LANCZOS' in text
+
+namespace = {}
+for name in ("_tile_starts", "_validate_geometry"):
+    node = functions.get(name)
+    assert node is not None, name
+    module = ast.Module(body=[node], type_ignores=[])
+    exec(compile(module, str(SOURCE), "exec"), {**expected}, namespace)
+
+_tile_starts = namespace["_tile_starts"]
+_validate_geometry = namespace["_validate_geometry"]
+assert _tile_starts(1, 1, 0) == [0]
+assert _tile_starts(256, 256, 32) == [0]
+assert _tile_starts(257, 256, 32) == [0, 1]
+starts = _tile_starts(4096, 256, 32)
+assert starts[0] == 0 and starts[-1] == 3840 and len(starts) < 32
+
+_validate_geometry(2048, 2048)
+_validate_geometry(4096, 1024)
+for bad in ((0, 1), (4097, 1), (2049, 2048), (4096, 1025)):
+    try:
+        _validate_geometry(*bad)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(f"geometry should be rejected: {bad}")
+
+assert 'tile_height = min(TILE_SIZE, height)' in text
+assert 'tile_width = min(TILE_SIZE, width)' in text
+assert 'top : top + tile_height' in text
+assert 'left : left + tile_width' in text
+print("Phase 18 upscale worker offline contract verification passed.")
+''')
+
+          workflow = Path('.github/workflows/upscale-worker-validation.yml')
+          workflow.write_text('''name: Upscale Worker Validation\n\non:\n  pull_request:\n    paths:\n      - workers/image-upscale/**\n      - src/server/generation/worker-fleet.ts\n      - tests/unit/worker-fleet.test.mjs\n      - .github/workflows/upscale-worker-validation.yml\n  push:\n    branches: [main, work/phase-18-image-upscale]\n    paths:\n      - workers/image-upscale/**\n      - src/server/generation/worker-fleet.ts\n      - tests/unit/worker-fleet.test.mjs\n      - .github/workflows/upscale-worker-validation.yml\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: renderlab-upscale-worker-${{ github.ref }}\n  cancel-in-progress: true\n\njobs:\n  offline-contract:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 24\n          cache: npm\n          cache-dependency-path: package.json\n      - name: Install dependencies\n        run: npm install --no-audit --no-fund\n      - name: Engineering quality\n        run: npm run verify:engineering-quality\n      - name: Worker syntax and contract\n        run: python3 workers/image-upscale/verify_worker.py\n''')
+          PY
+
+          python3 workers/image-upscale/verify_worker.py
+          git diff --check
+
+      - name: Commit predeployment worker corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add workers/image-upscale/modal_app.py workers/image-upscale/verify_worker.py .github/workflows/upscale-worker-validation.yml
+          git commit -m 'fix: harden Phase 18 upscale worker preparation'
+          git push origin HEAD:work/phase-18-image-upscale
