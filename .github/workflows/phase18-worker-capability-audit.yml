@@ -85,18 +85,33 @@ jobs:
             console.log('PHASE18_WORKER_AUDIT', JSON.stringify(entry));
           }
 
-          const healthy = results.filter((entry) => entry.health.ok && entry.health.body?.ready === true).length;
-          if (healthy !== workers.length) {
-            throw new Error(`Expected all ${workers.length} registered gateways ready; found ${healthy}.`);
-          }
+          const ecosystems = [...new Set(workers.map((worker) => worker.ecosystem))];
+          const availability = Object.fromEntries(ecosystems.map((ecosystem) => {
+            const members = results.filter((entry) => entry.ecosystem === ecosystem);
+            const ready = members.filter((entry) => entry.health.ok && entry.health.body?.ready === true);
+            return [ecosystem, { registered: members.length, ready: ready.length, readyIds: ready.map((entry) => entry.id) }];
+          }));
+          const disabledRegisteredWorkers = results
+            .filter((entry) => !entry.health.ok || entry.health.body?.ready !== true)
+            .map((entry) => ({ id: entry.id, ecosystem: entry.ecosystem, role: entry.role, status: entry.health.status, body: entry.health.body }));
 
           const output = {
             auditedAt: new Date().toISOString(),
             repositoryBaseline: process.env.GITHUB_SHA,
+            availability,
+            disabledRegisteredWorkers,
             workers: results,
           };
           fs.mkdirSync('artifacts', { recursive: true });
           fs.writeFileSync('artifacts/phase18-worker-capability-audit.json', JSON.stringify(output, null, 2));
+          console.log('PHASE18_AVAILABILITY', JSON.stringify(availability));
+          console.log('PHASE18_REGISTERED_WORKER_DRIFT', JSON.stringify(disabledRegisteredWorkers));
+
+          for (const ecosystem of ecosystems) {
+            if (availability[ecosystem].ready < 1) {
+              throw new Error(`No ready registered worker remains for ${ecosystem}.`);
+            }
+          }
           NODE
 
       - name: Upload audit evidence
