@@ -766,3 +766,8 @@ The shared database schema is intentionally ahead of the currently deployed appl
 - Supabase `pg_cron` and `pg_net` are still not enabled.
 - No production reconciler secret, maintenance secret, reconciliation schedule or maintenance schedule was activated.
 - Therefore repository verification proves the Phase 14/15 candidate behavior, but production does not receive autonomous reconciliation, indexed new-output finalization, user-facing Cancel or maintenance until a separately authorized exact-candidate rollout and scheduler activation occurs.
+
+### Phase 16 Creative Iteration configured verification
+Phase 16A–16C add no production infrastructure, schema migration, scheduler or provider-routing change. Their dedicated `.github/workflows/creative-iteration.yml` is development/verification infrastructure only. It builds the production app, runs UI purity, starts a local mock external generation backend, and exercises authenticated browser/API behavior against run-owned rows/objects in the approved shared Supabase/R2 resources.
+
+The workflow owns real mutable fixtures, so its concurrency group is serialized per PR/ref with `cancel-in-progress: false`; a superseding commit must not interrupt cleanup and strand shared database/R2 state merely to save hosted minutes. `scripts/verify-creative-iteration.mjs` uses deterministic configured test-account namespaces, records no production user data, and always deletes the run-owned Auth/database/R2 fixtures. Exact run `33959979016` cleaned owner assets/sources/objects plus the foreign-owner fixture and then passed a separate cleanup-only step. This CI workflow does not authorize production generation, a Vercel deployment or scheduler activation.

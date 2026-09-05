@@ -818,3 +818,12 @@ Rules:
 - Exact implementation head `9cd0528ff50ef55a3ad3e09080980a71234af096` passed Activity `33939690846`, Activity Cancel `33939690827`, UI Shell `33939690826`, Generation Cancellation `33939690824`, Maintenance `33939690830` and the full affected generation/ownership/library/release matrix. Human responsive review found the Activity Cancel composition clean.
 
 This section supersedes the historical Phase 9 statement that no Cancel endpoint existed; that statement remains evidence of the UI-050 boundary at the time.
+
+### Phase 16 successful-history recipe boundary — 16A–16C implemented / verified
+Phase 16 extends existing routes without introducing a recipe store, global client job store or new top-level surface. `/create?recipe=<job-id>` is untrusted navigation intent: the Create Server Component resolves it only after verified account lookup and delegates owner-scoped/current-valid reconstruction to `src/server/generation/generation-recipe.ts`. The Client Component receives already-sanitized product recipe state and remains responsible only for editable composer interaction; loading recipe state never submits generation.
+
+Historical input identity remains opaque and exact. Durable inputs continue through ordinary `media-asset` product URLs. Still-ready historical `temporary-source` compatibility inputs can render through `/api/assets/reference/[sourceId]/content`, which re-authenticates the account, reloads the owner-scoped ready source and issues only a short-lived signed redirect. R2 keys never become browser product identity.
+
+Activity keeps server-rendered history and derives `canRunAgain` server-side. `POST /api/generation/jobs/[jobId]/run-again` accepts only the opaque job ID, reconstructs the current-valid product request server-side and calls the ordinary submission/admission path. `ActivityRunAgainButton` owns only transient mutation feedback and refresh; it does not become a job store. Failed Retry, successful Run Again and active Cancel retain separate routes/eligibility.
+
+No routing hierarchy, schema, provider contract or production deployment boundary changed. Viewer Compare source remains outside implemented architecture until its required UI-056 design checkpoint is reviewed.

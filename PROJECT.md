@@ -81,7 +81,7 @@ RenderLab already has a substantial verified core. Cycle 3 must build on it rath
 Detailed historical evidence remains in the archived Project chronology plus `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md` and the architecture documents.
 
 ## Cycle 3 — Reliability, Creative Iteration & Capability Growth
-**Status: `IN PROGRESS — PHASE 15 COMPLETE / VERIFIED; PHASE 16 CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+**Status: `IN PROGRESS — PHASE 16A/16B/16C IMPLEMENTED / VERIFIED; PHASE 16D DESIGN CHECKPOINT PENDING`.**
 
 ### Cycle 3 objective
 Make RenderLab independently reliable after a generation is accepted, then turn one-shot generation into a deeper iterative creative workflow before expanding into another major creative capability.
@@ -97,7 +97,7 @@ The Cycle 3 order is intentional:
 - **Phase 13 — Email & Invite Production Hardening: `COMPLETE / VERIFIED`.** Existing production email/Auth evidence remains authoritative.
 - **Phase 14 — Autonomous Generation Lifecycle & Durable Finalization: `COMPLETE / VERIFIED`.** Remove browser polling as a correctness dependency, make result finalization idempotent/recoverable and prove accepted jobs can reach durable terminal state with no active user tab.
 - **Phase 15 — Generation Control & Maintenance: `COMPLETE / VERIFIED`.** Owner-scoped native cancellation serializes through the Phase 14 lifecycle claim, and bounded staging/purge maintenance is implemented with race-safe cleanup claims. Production rollout/scheduling remains separate and is not active.
-- **Phase 16 — Creative Iteration: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.** Build current-valid recipe reuse into Create, successful-job Run Again from Activity, and conditional durable source/result comparison in Viewer. Variations is explicitly deferred: Phase 14 made multi-output storage safe, but current worker/product execution still returns one output per job and has no approved output-count semantics.
+- **Phase 16 — Creative Iteration: `IN PROGRESS — 16A/16B/16C IMPLEMENTED / VERIFIED; 16D DESIGN CHECKPOINT PENDING`.** Shared current-valid recipe reconstruction, Create Reuse Settings and successful Activity Run Again are implemented and configured-verified. Conditional durable source/result comparison remains unimplemented until its required desktop+narrow visual design checkpoint is reviewed. Variations remains explicitly deferred: Phase 14 made multi-output storage safe, but current worker/product execution still returns one output per job and has no approved output-count semantics.
 - **Phase 17 — Observability & Engineering Quality: `ROADMAP`.** Add structured lifecycle/error/capacity visibility and cheaper conventional static/unit verification without weakening the existing configured end-to-end gates.
 - **Phase 18 — Next Creative Capability: `ROADMAP`.** Re-audit current deployed workers and select one coherent capability. Preferred evaluation order is Upscale/Restore, Inpainting/Outpainting, then LoRA/model adapters. Director Video remains blocked until deployed REDGraft exposes real structured Director semantics.
 
@@ -620,12 +620,23 @@ The nullable `generation_output_index` population is a rolling-deployment observ
 
 No Phase 14/15 application rollout or scheduler activation followed the merge. Vercel still reports accepted production deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; automatic Git deployment remains disabled; Supabase `pg_cron` and `pg_net` remain absent; no production reconciliation or maintenance schedule/secret was activated. Supabase advisors show no new Phase 15-specific finding beyond the already tracked server-owned RLS/no-policy INFO, leaked-password-protection WARN, singleton FK INFO and unused-index INFO.
 
-Phase 16 planning is now captured by the accepted execution contract below. Implementation has not started, and the contract itself does not authorize production deployment or scheduler activation.
+Phase 16 planning is captured by the accepted execution contract below. Implementation is in progress: 16A shared recipe reconstruction, 16B Reuse Settings and 16C successful Run Again are implemented and verified; 16D comparison remains blocked on its required visual design checkpoint. The contract and this implementation evidence do not authorize production deployment or scheduler activation.
 
 ---
 
 # Phase 16 Execution Contract — Creative Iteration
-**Status: `ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+**Status: `IN PROGRESS — 16A/16B/16C IMPLEMENTED / VERIFIED; 16D DESIGN CHECKPOINT PENDING`.**
+
+## Verified implementation progress — 2026-09-05
+- **16A shared recipe reconstruction:** owner-scoped historical intent is reconstructed through the current generation contract, including the already-approved narrow legacy Video compatibility, and current input ownership/readiness is revalidated before reuse.
+- **16B Reuse Settings:** successful current-valid history can open `/create?recipe=<job-id>` with persisted prompt, output settings, Advanced values, stable input aliases/roles and exact source identity prefilled. Opening the recipe never dispatches generation; edits submit through the ordinary Create boundary.
+- **Historical temporary references:** still-ready same-owner `temporary-source` inputs remain reusable through a narrow authenticated product content redirect; R2/storage identity stays server-only and temporary sources are not promoted into a parallel durable-media model.
+- **16C Run Again:** successful current-valid Activity rows can submit a distinct new ordinary generation attempt through current admission/routing. Failed Retry, successful Run Again and active Cancel remain separate semantics; the historical successful job is immutable and worker/provider/workflow/model/failover metadata is never replayed.
+- **Focused configured verification:** exact head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed Creative Iteration run `33959979016`, including signed-out/foreign privacy, zero implicit dispatch, editable Image/Video/Advanced recipe prefill, stable aliases, ready temporary-source reuse, unavailable-input fail-closed behavior, distinct immutable Run Again attempts, admission denial, exact fixture cleanup and four desktop/narrow screenshots. Artifact `9967633913` has SHA-256 `7fb2906c915390c0b23ae102e2dd06bdbde46736c503d80b0e554d398f660716` and was visually reviewed clean for the implemented 16B/16C surfaces.
+- **Full affected regression matrix:** the same exact head passed all 26 affected workflows. Library Collections run `33959978965` completed its product assertions on attempt 1 but hit a Playwright in-flight-route teardown race after success; unchanged attempt 2 passed with cleanup. Key gates include Create Lifecycle `33959978960`, Activity `33959978980`, Generation Admission `33959978976`, Generation Integration `33959978997`, Video Generation `33959978972`, UI Shell `33959978999` and Integrated Release `33959978983`.
+- **16D remains unimplemented:** UI-056 and this contract require a reviewed desktop+narrow Media Viewer comparison design checkpoint before code. No comparison layout has been self-approved or inferred merely because direct Penpot automation is unavailable.
+- **No rollout implication:** no schema migration, production deployment, production scheduler activation, provider-routing redesign or historical data rewrite is part of 16A–16C.
+
 
 ## Goal / user value
 Turn durable generations into reusable creative starting points without making users reconstruct successful work by hand.

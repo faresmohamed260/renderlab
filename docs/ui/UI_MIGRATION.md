@@ -1544,3 +1544,17 @@ No Phase 15 implementation, production cleanup, deployment or scheduler activati
 - [ ] Authoritative implementation docs are updated from verified reality before Phase 16 is marked complete.
 
 **Next after completion:** expand Phase 17 Observability & Engineering Quality into an execution-ready contract; do not implement Phase 17 from roadmap text alone.
+
+## Cycle 3 — Phase 16 Creative Iteration — partial verified implementation
+**Status: `IN PROGRESS — 16A/16B/16C IMPLEMENTED / VERIFIED; 16D DESIGN CHECKPOINT PENDING`**
+
+- [x] **16A shared recipe reconstruction:** centralize owner-scoped historical job loading, current-contract reconstruction, operation/output revalidation and current source availability so failed Retry and successful reuse share one truthful boundary.
+- [x] **16B Reuse Settings:** successful current-valid history can open the existing Create workspace with prompt, Image/Video output settings, Advanced values, stable `@imageN` aliases/roles and exact historical input source identity prefilled. Opening a recipe performs no generation dispatch.
+- [x] Preserve still-ready same-owner historical `temporary-source` inputs without cloning or silently converting them to durable media. Their preview uses a narrow authenticated short-lived product redirect; storage identity remains server-only.
+- [x] **16C Run Again:** successful current-valid Activity rows expose a compact Run again action that creates a distinct ordinary current generation attempt. Failed Retry and active Cancel remain separate product semantics; provider/worker/workflow/model/failover state is not replayed.
+- [x] Add dedicated configured `Creative Iteration` GitHub verification using real run-owned Supabase/R2 fixtures plus a local mock generation backend. Exact head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed run `33959979016`; artifact `9967633913` (`sha256:7fb2906c915390c0b23ae102e2dd06bdbde46736c503d80b0e554d398f660716`) contains desktop+narrow Create recipe and Activity Run Again screenshots reviewed clean.
+- [x] Exact head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed all 26 affected workflows. Library Collections `33959978965` had one post-success Playwright teardown race and passed unchanged on attempt 2; configured cleanup succeeded.
+- [ ] **16D Compare source:** not implemented. UI-056 requires a reviewed desktop+narrow Media Viewer visual design checkpoint first; lack of direct Penpot automation does not waive that checkpoint.
+- [ ] **Phase 16 completion:** remains open until 16D is legitimately designed, implemented, rendered/keyboard/reduced-motion reviewed and the final repository record is verified.
+
+No schema migration, production deployment, scheduler activation, provider-routing redesign or Variations implementation is authorized or implied by this progress.
