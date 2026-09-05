@@ -1,3 +1,4 @@
+# Temporary Phase 17 planning helper; self-removes on success.
 name: Phase 17 documentation patch
 
 on:
