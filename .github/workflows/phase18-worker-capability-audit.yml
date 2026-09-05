@@ -1,0 +1,108 @@
+name: Phase 18 Deployed Worker Capability Audit
+
+on:
+  push:
+    branches: [audit/phase-18-worker-capabilities]
+    paths:
+      - .github/workflows/phase18-worker-capability-audit.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-phase18-worker-capability-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Probe deployed worker contracts read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+
+          const workers = [
+            { id: 'flux-primary-01', ecosystem: 'flux2-klein-9b', role: 'primary', url: 'https://grimcircuit--saga-flux2-klein-gateway-web.modal.run' },
+            { id: 'flux-standby-01', ecosystem: 'flux2-klein-9b', role: 'standby', url: 'https://silentspecter67--saga-flux2-klein-gateway-web.modal.run' },
+            { id: 'ltx-primary-01', ecosystem: 'ltx25-redgraft', role: 'primary', url: 'https://dreadcipher67--saga-ltx25-gateway-web.modal.run' },
+            { id: 'ltx-standby-01', ecosystem: 'ltx25-redgraft', role: 'standby', url: 'https://blackzerox67--saga-ltx25-gateway-web.modal.run' },
+            { id: 'qwen-primary-01', ecosystem: 'qwen-image-edit-2511', role: 'primary', url: 'https://voidtrek--saga-qwen-image-edit-2511-gateway-web.modal.run' },
+            { id: 'qwen-standby-01', ecosystem: 'qwen-image-edit-2511', role: 'standby', url: 'https://nyxprotocol--saga-qwen-image-edit-2511-gateway-web.modal.run' },
+          ];
+
+          async function get(url, timeoutMs = 120000) {
+            try {
+              const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), cache: 'no-store' });
+              const text = await response.text();
+              let body = text;
+              try { body = text ? JSON.parse(text) : null; } catch {}
+              return { ok: response.ok, status: response.status, body };
+            } catch (error) {
+              return { ok: false, status: null, error: error instanceof Error ? error.message : String(error), body: null };
+            }
+          }
+
+          function publicHealth(body) {
+            if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
+            const allowed = [
+              'ready', 'status', 'model', 'model_name', 'gpu', 'gpu_type', 'multiple_references',
+              'cancel_jobs', 'enabled_resolutions', 'frame_rates', 'resolutions', 'max_references',
+              'supports_audio', 'audio_enabled', 'version'
+            ];
+            return Object.fromEntries(allowed.filter((key) => key in body).map((key) => [key, body[key]]));
+          }
+
+          const results = [];
+          for (const worker of workers) {
+            const health = await get(`${worker.url}/health`);
+            const runtime = await get(`${worker.url}/runtime-health`, 600000);
+            const openapi = await get(`${worker.url}/openapi.json`);
+            const paths = openapi.ok && openapi.body && typeof openapi.body === 'object'
+              ? Object.keys(openapi.body.paths || {}).sort()
+              : [];
+            const methods = {};
+            if (openapi.ok && openapi.body && typeof openapi.body === 'object') {
+              for (const [path, item] of Object.entries(openapi.body.paths || {})) {
+                methods[path] = Object.keys(item || {}).filter((key) => ['get','post','put','patch','delete'].includes(key)).sort();
+              }
+            }
+            const entry = {
+              id: worker.id,
+              ecosystem: worker.ecosystem,
+              role: worker.role,
+              health: { ok: health.ok, status: health.status, body: publicHealth(health.body), ...(health.error ? { error: health.error } : {}) },
+              runtimeHealth: { ok: runtime.ok, status: runtime.status, body: publicHealth(runtime.body), ...(runtime.error ? { error: runtime.error } : {}) },
+              openapi: { ok: openapi.ok, status: openapi.status, paths, methods, ...(openapi.error ? { error: openapi.error } : {}) },
+            };
+            results.push(entry);
+            console.log('PHASE18_WORKER_AUDIT', JSON.stringify(entry));
+          }
+
+          const healthy = results.filter((entry) => entry.health.ok && entry.health.body?.ready === true).length;
+          if (healthy !== workers.length) {
+            throw new Error(`Expected all ${workers.length} registered gateways ready; found ${healthy}.`);
+          }
+
+          const output = {
+            auditedAt: new Date().toISOString(),
+            repositoryBaseline: process.env.GITHUB_SHA,
+            workers: results,
+          };
+          fs.mkdirSync('artifacts', { recursive: true });
+          fs.writeFileSync('artifacts/phase18-worker-capability-audit.json', JSON.stringify(output, null, 2));
+          NODE
+
+      - name: Upload audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-worker-capability-audit-${{ github.run_id }}
+          path: artifacts/phase18-worker-capability-audit.json
+          if-no-files-found: error
+          retention-days: 14
