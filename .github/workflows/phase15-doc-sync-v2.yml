@@ -1,0 +1,76 @@
+name: Phase 15 Documentation Sync v2
+
+on:
+  push:
+    branches: [noop]
+    paths:
+      - ".github/workflows/phase15-doc-sync-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout helper source
+        uses: actions/checkout@v4
+        with:
+          ref: noop
+          fetch-depth: 0
+
+      - name: Apply original patch with exact whitespace repair
+        shell: bash
+        env:
+          TARGET_BRANCH: work/phase15-generation-control-maintenance
+          EXPECTED_HEAD: 9cd0528ff50ef55a3ad3e09080980a71234af096
+        run: |
+          set -euo pipefail
+          cp .github/workflows/phase15-doc-sync.yml /tmp/phase15-doc-sync.yml
+          git fetch origin "$TARGET_BRANCH"
+          git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+
+          python <<'PY'
+          from pathlib import Path
+
+          lines = Path('/tmp/phase15-doc-sync.yml').read_text().splitlines()
+          start = lines.index("          python <<'PY'") + 1
+          end = lines.index("          PY", start)
+          extracted = []
+          for line in lines[start:end]:
+              if line.startswith("          "):
+                  line = line[10:]
+              extracted.append(line)
+          Path('/tmp/phase15-patch.py').write_text('\n'.join(extracted) + '\n')
+          PY
+
+          python /tmp/phase15-patch.py
+
+          python <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          check = subprocess.run(['git', 'diff', '--check'], text=True, capture_output=True)
+          issues = {}
+          for line in check.stdout.splitlines():
+              match = re.match(r'^(.*?):(\d+): trailing whitespace\.$', line)
+              if match:
+                  issues.setdefault(match.group(1), set()).add(int(match.group(2)))
+          for path, numbers in issues.items():
+              file = Path(path)
+              lines = file.read_text().splitlines()
+              for number in numbers:
+                  lines[number - 1] = lines[number - 1].rstrip(' \t')
+              file.write_text('\n'.join(lines) + '\n')
+          PY
+
+          git diff --check
+          git status --short
+          git config user.name "RenderLab Automation"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add PROJECT.md docs .github/workflows/reference-upload-integration.yml .github/workflows/media-upload-integration.yml
+          git commit -m "Finalize Phase 15 verified handoff"
+          git push origin HEAD:"$TARGET_BRANCH"
