@@ -341,3 +341,13 @@ Do not treat examples, registry listings, Saga components, or desired concepts a
 **Reuse rules:** The server decides recovery mode; the browser never enables recovery by query string alone. Keep password values transient and Auth-owned.
 **Do not:** Persist passwords, bypass ordinary reauthentication, or use this form as a general Auth-admin credential surface.
 **Notes:** Recovery redirect origin handling uses same-origin relative redirects so SSR-issued session/recovery cookies survive proxy/host differences. Verified in Account Identity `33282141315`.
+
+### ActivityCancelButton
+**Status:** Approved / verified under UI-055
+**Location:** `src/features/activity/activity-cancel-button.tsx`
+**Role:** Feature-local native-generation cancellation interaction for an Activity row whose server-owned `canCancel` capability is true.
+**Composition:** Maintained `Button` + `AlertDialog`; owns only confirmation, busy and sanitized local feedback, then refreshes server-owned Activity state.
+**Contract:** Browser sends only the opaque job ID to `POST /api/generation/jobs/[jobId]/cancel`. It never receives or infers worker/provider routing. The action disappears after cancellation intent is accepted; `Cancelling`/`Cancelled` truth comes from server state.
+**Responsive/accessibility:** compact secondary row action on desktop; touch-friendly stacked composition when narrow; maintained dialog focus/keyboard semantics; reduced-motion-safe.
+**Evidence:** Activity Cancel Visual `33939690827`; visually identical artifact `9960993664` manually reviewed clean.
+**Do not generalize:** This is not a generic global job manager or provider-cancel primitive. Keep it Activity-feature-owned until a second approved product need justifies extraction.

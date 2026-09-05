@@ -223,7 +223,7 @@ Run `33027460976` live-verified `Create Image → persisted media asset → Edit
 
 ### Verified job/runtime behavior
 - asynchronous `generation_jobs`;
-- queued/running/persisting/succeeded/failed/cancelled product states;
+- queued/preparing/running/cancelling/persisting/succeeded/failed/cancelled product states;
 - success only after R2 + `media_assets` persistence;
 - bounded client retry/backoff for transient status/network errors;
 - primary/standby submission routing;
@@ -342,8 +342,21 @@ Phases 6–9 are complete and verified under the Closed Beta boundary. Phase 10 
 - Terminal lifecycle settles generation-admission concurrency. Local terminal-before-bind races release atomically; accepted external backend jobs without a local RenderLab job row remain conservatively admission-bound.
 - Exact implementation head `1b3927c98be2122fdbd1b5754fc67cddfcf675ca` passed dedicated reconciliation/admission fault coverage plus real Image/Video generation and existing Create/Activity/ownership/release regressions. Production scheduler activation remains separate from the verified capability.
 
+## Phase 15 Generation Control & Maintenance — Verified in RenderLab
+- RenderLab-native jobs expose an owner-facing Cancel capability only while the server says the current queued/preparing/running attempt is safely cancellable. `persisting` and terminal state win over cancellation and are never reversed.
+- `cancelling` is a first-class nonterminal product state. Cancellation intent, ordinary reconciliation, failover and durable finalization serialize through the Phase 14 lifecycle claim. Once cancellation intent wins, that attempt never fails over or publishes a durable late result.
+- Provider cancellation targets only the currently persisted native call with bounded timeout. Confirmed provider cancellation or recognized not-running state may terminalize immediately; ambiguous failures stay `cancelling` for server-owned retry. A ten-minute local grace may terminalize while permanently discarding late output without claiming provider compute stopped instantly.
+- Terminal cancellation releases bound generation-admission capacity. Repeated/concurrent Cancel is idempotent. Cancelled jobs remain historical terminal attempts and are not Retry-eligible.
+- The optional external RenderLab generation backend remains non-cancellable because no authenticated external cancellation contract has been verified.
+- Activity consumes only a server-derived `canCancel` boolean and opaque job ID. Worker/provider/storage identity remains internal.
+- Exact head `9cd0528ff50ef55a3ad3e09080980a71234af096` passed Generation Cancellation `33939690824`, including exhaustive mock races/faults and bounded real FLUX + REDGraft cancellation through the ordinary product API with zero durable output; Activity Cancel Visual `33939690827` verified the responsive interaction.
 
-## Phase 15 planning boundary — Cancel and maintenance
-**Contract accepted; not yet a verified product capability.** Phase 15 plans owner-facing Cancel for RenderLab-native jobs only before `persisting`, using Phase 14 lifecycle claims plus an intermediate `cancelling` state so accepted cancellation cannot later fail over or publish a result. Activity will consume a server-derived `canCancel` capability; worker/provider identity remains internal. The optional external generation backend has no currently verified cancellation contract and therefore remains non-cancellable unless Phase 15 separately proves one.
+### Bounded maintenance capability
+- Phase 15 adds server-owned maintenance for only three proven categories: stale unreferenced temporary generation sources, stale unpromoted pending/failed media-upload staging, and already-tombstoned assets whose R2 purge is pending.
+- Eligibility is bounded and ownership/storage identity comes from existing rows. `generation_sources` and `media_upload_sessions` use an internal `cleaning` claim plus a quiescence/re-reference pass before physical deletion. Late references restore a source; promoted media is adopted; R2 failure leaves retryable state.
+- Referenced temporary sources, durable media, generation history, unknown R2 objects and historical output anomalies are not age-purged.
+- Shared migrations `20260905015926 renderlab_generation_cancellation` and `20260905020803 renderlab_staging_cleanup_claims` are applied. Maintenance Integration `33939690830` passed race/fault/idempotence verification.
+- Final shared audit after verification: zero fixture users, active jobs/claims, indexed duplicate output slots, pending media purges and nonterminal upload sessions; three old unreferenced temporary sources remain eligible backlog and one old referenced source remains protected. Maintenance is implemented but not production-scheduled.
+- The shared schema is ahead of the still-deployed Cycle 2/Phase 13 application. Old-production generations may continue creating nullable `generation_output_index` rows until Phase 14/15 is explicitly rolled out; those rows are product history, not maintenance garbage.
 
-The 2026-09-04 shared-state maintenance audit found four non-fixture temporary `generation_sources` older than 24 hours: three unreferenced and one ready source still referenced by persisted generation intent. The referenced source remains protected because failed-job Retry may still need it. `media_upload_sessions` is currently empty and all 12 tombstoned media assets are already purged. Phase 15 maintenance is therefore deliberately bounded to explicitly eligible unreferenced staging and pending tombstone purge retries; it is not a generic age-based media/history garbage collector.
+Production deployment/scheduling remains separate: no Phase 14/15 app deployment, reconciler/maintenance secret, `pg_cron` or `pg_net` schedule is active from this verified implementation.

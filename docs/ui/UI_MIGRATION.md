@@ -1487,3 +1487,17 @@ Implementation checklist:
 - [ ] Keep production deployment and any scheduler/secret activation separate and explicitly authorized.
 
 No Phase 15 implementation, production cleanup, deployment or scheduler activation is recorded by this planning change.
+
+## Cycle 3 Phase 15 — Generation Control & Maintenance — COMPLETE / VERIFIED
+**Verified implementation head:** `9cd0528ff50ef55a3ad3e09080980a71234af096`
+**Decision:** UI-055
+**Production deployment:** not part of this completion.
+
+- Activity now exposes server-derived native `canCancel` only for safely cancellable queued/preparing/running jobs, with maintained Button + AlertDialog confirmation and truthful `Cancelling` → `Cancelled` presentation.
+- `persisting`/terminal/unsupported rows do not expose Cancel; failed Retry and succeeded View Result behavior remain unchanged; cancelled jobs remain non-retryable.
+- Activity Cancel Visual `33939690827` passed desktop/narrow/reduced-motion and keyboard/pointer states. Human review of visually identical artifact `9960993664` found no hierarchy, touch-target, clipping or motion issue.
+- Generation Cancellation `33939690824` passed exhaustive mock concurrency/transient/not-running/grace/admission/no-output cases plus live FLUX and REDGraft product-API cancellation. Maintenance Integration `33939690830` passed bounded stale-source/upload/purge cleanup, late-reference/promotion protection and retryable R2-delete failure.
+- Migrations `0016_generation_cancellation.sql` and `0017_staging_cleanup_claims.sql` are applied to shared Supabase. No production application deployment, scheduler, `pg_cron` or `pg_net` activation followed.
+- Exact implementation-head affected gates all passed, including UI Shell, Activity, Create, Library lifecycle, Media Delete, Account Ownership, Generation Admission/Reconciliation/Image/Video and Integrated Release. Final validation coverage also includes Reference Upload and Persistent Media Upload because migration `0017` changes their staging status constraints.
+
+**Next:** Phase 16 Creative Iteration remains roadmap-only until its execution-ready contract is merged.

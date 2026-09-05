@@ -737,3 +737,32 @@ Cancellation infrastructure evidence is sufficient to plan but not to claim a pr
 Read-only maintenance audit found exactly four non-fixture `generation_sources`, all older than 24 hours: two `pending` unreferenced, one `ready` unreferenced and one `ready` referenced by persisted `generation_jobs.inputs`. No rows were mutated. `media_upload_sessions` count is zero. `media_assets` has 12 tombstoned rows total and zero rows with `deleted_at IS NOT NULL AND purged_at IS NULL`, so there is no current media-purge backlog. The referenced temporary source is explicitly not disposable under the Phase 15 contract.
 
 No production maintenance endpoint/secret/schedule is active or approved by this audit. Any future internal maintenance invocation remains server-only and bounded; broad R2 prefix garbage collection or age-based deletion of durable/referenced user data is not approved.
+
+## Phase 15 Generation Control & Maintenance — verified implementation / rollout not activated
+**Verified application head:** `9cd0528ff50ef55a3ad3e09080980a71234af096`
+**Shared Supabase migrations applied:** `20260905015926 renderlab_generation_cancellation`, `20260905020803 renderlab_staging_cleanup_claims`.
+
+### Cancellation lifecycle
+- `generation_jobs.status` now includes `cancelling`, and the active reconciliation candidate index includes it.
+- Owner-facing `POST /api/generation/jobs/[jobId]/cancel` reuses the Phase 14 owner/job reconciliation lease. The server re-reads lifecycle/dispatch state while claim-owned, rejects persistence/terminal winners, then records cancellation intent before attempting provider DELETE on the current persisted call.
+- A `cancelling` job never re-enters ordinary poll/failover/finalization. Provider cancellation is bounded; ambiguous failure is retried by reconciliation against the same call only. Terminal cancellation settles the existing admission reservation.
+- `Generation Cancellation` `33939690824` passed both exhaustive run-owned mock verification and a separate real-worker-registry job (`101234543563`). FLUX cancellation was confirmed within the live test from 02:40:26–02:40:31 UTC and REDGraft from 02:40:39–02:40:44 UTC; both ended `cancelled`, released admission and produced zero durable media. The live verifier fails if the local grace fallback is used.
+
+### Bounded maintenance
+- `POST /api/internal/maintenance` is protected by `RENDERLAB_MAINTENANCE_SECRET`; it exposes only bounded summary state and no arbitrary service-role execution surface.
+- `0017` adds internal `cleaning` status to `generation_sources` and `media_upload_sessions` plus service-role-only SECURITY DEFINER claim/reference/restore RPCs with empty search path.
+- Candidates must be at least 24 hours old. A cleanup claim is followed by a 15-minute quiescence window and a durable-reference/promotion re-check before known row-owned R2 deletion. Late job references restore source state; promoted uploads are preserved/adopted; object-delete failure leaves retryable cleanup state.
+- Tombstoned `media_assets` with `purged_at IS NULL` reuse the existing idempotent primary/thumbnail purge semantics. Maintenance never hard-deletes durable media rows or generation history and does not scan arbitrary R2 prefixes.
+- Maintenance Integration `33939690830` verified stale pending/ready/failed source cases, referenced-source preservation, recent-source preservation, stale upload cleanup, promoted upload preservation, pending purge completion, injected delete failure, bounded limits, repeat convergence and exact owner/R2 cleanup.
+
+### Final shared-state / rolling-deployment audit
+After the exact implementation-head suite completed, shared state returned to zero fixture Auth users, zero active jobs, zero reconciliation claims, zero duplicate indexed output slots, zero pending media purges and zero nonterminal upload sessions; generation defaults were restored to enabled / one active / twelve hourly / `updated_by=null`. Three old unreferenced temporary sources remain eligible for future verified maintenance and one old referenced source remains intentionally protected.
+
+The shared database schema is intentionally ahead of the currently deployed application. Migration `0013` left `media_assets.generation_output_index` nullable so the older production app could continue writing during rolling deployment. As of the 2026-09-05 audit there are eight generated-media rows with null output index, including newer production Edit jobs created by the pre-Phase-14 finalizer and a newer duplicate-linked case. They are legitimate user/product history and must **not** be swept or reclassified by Phase 15 maintenance. The indexed `(generation_job_id, generation_output_index)` uniqueness boundary remains clean for code that uses the new contract.
+
+### Production boundary remains unchanged
+- Vercel created zero RenderLab deployments on 2026-09-05 during Phase 15 implementation; production remains accepted deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2` running the older Cycle 2/Phase 13 application.
+- Automatic Git → Vercel deployment remains disabled.
+- Supabase `pg_cron` and `pg_net` are still not enabled.
+- No production reconciler secret, maintenance secret, reconciliation schedule or maintenance schedule was activated.
+- Therefore repository verification proves the Phase 14/15 candidate behavior, but production does not receive autonomous reconciliation, indexed new-output finalization, user-facing Cancel or maintenance until a separately authorized exact-candidate rollout and scheduler activation occurs.
