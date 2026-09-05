@@ -1,8 +1,8 @@
 # Media Viewer v0.2 — Compare source checkpoint
 
-**Status: `REVIEWED DESIGN CANDIDATE / APPROVED DIRECTION / IMPLEMENTATION PENDING`**
+**Status: `APPROVED / IMPLEMENTED / RENDER VERIFIED`**
 
-This package records the user-approved Phase 16 / UI-056 visual direction before Viewer comparison implementation. Approval was given on 2026-09-05 and design PR #100 merged this package into the Phase 16 implementation branch as `6dadc9e1976b976ab4584ce830286ba3a8baead1`. The SVGs are reviewed design candidates; the real responsive implementation still requires configured render/keyboard/reduced-motion verification before the Viewer extension can become `APPROVED`.
+This package records the user-approved Phase 16 / UI-056 visual direction and the final rendered implementation review. Approval was given on 2026-09-05 and design PR #100 merged this package into the Phase 16 implementation branch as `6dadc9e1976b976ab4584ce830286ba3a8baead1`. The real implementation was subsequently configured-verified and its final responsive renders were human-reviewed on 2026-09-05.
 
 ## Candidate files
 - `media-viewer-v0.2-compare-source-desktop-image.svg` — Image → Image, 1440×1100.
@@ -35,5 +35,17 @@ A second local SVG render/inspection pass on 2026-09-05 found the refined four-c
 - Keep the low-opacity result accent treatment.
 - Use **Close comparison** for the active-state exit action.
 
-## Implementation evidence / remaining boundary
-The smallest Viewer extension consistent with these accepted decisions is now implemented/configured-verified at exact head `4d1a495a8145238e1e78756c7b09cdbaee8d8115`. Creative Iteration `33964679539` covers image→image plus image→video at desktop/narrow, keyboard activation, reduced-motion, source eligibility/privacy, `Open source`, result video controls and cleanup; the full 26-workflow affected matrix also passed. Artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) contains the final rendered comparison screenshots. The remaining checkpoint is human review of those real implementation renders plus final Phase 16 repository closure; production deployment remains a separate explicit operation.
+## Final implementation and rendered review
+The smallest Viewer extension consistent with these accepted decisions is implemented/configured-verified at exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115`. Creative Iteration `33964679539` covers Image→Image plus Image→Video at desktop/narrow, keyboard activation, reduced-motion, source eligibility/privacy, `Open source`, result video controls and cleanup; the full 26-workflow affected matrix also passed.
+
+Final artifact `9969057974` has SHA-256 `cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`. The archive hash was independently rechecked before review. Human inspection of all four real implementation screenshots on 2026-09-05 found no design mismatch requiring code changes:
+- desktop Image→Image and Image→Video keep Result visibly primary at the accepted wide proportion while Source remains secondary;
+- media is contained without stretch/distortion, including the distinct image/video cases;
+- narrow Image→Image and Image→Video keep a full-width Result first and a compact contextual Source card immediately below, with no horizontal clipping or overflow;
+- Source exposes only `Open source`; management actions remain absent from the Source treatment;
+- `Close comparison` is appropriately secondary to the primary creative continuation hierarchy while remaining clear and reachable;
+- Prompt, Details, Continue and Actions remain result-owned and intact;
+- the configured browser verifier separately exercised preserved result video playback controls, keyboard activation and reduced-motion behavior;
+- the ordinary narrow shell's fixed chrome remains present without changing comparison ownership or hiding the required result actions in the full-page review.
+
+The real 16D Viewer implementation therefore matches the accepted PR #100 design direction and is **render verified**. No redesign or corrective implementation change was required. Phase 16 repository/PR closure may proceed, but production deployment remains a separate explicit operation.
