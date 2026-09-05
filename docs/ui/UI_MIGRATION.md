@@ -1434,8 +1434,8 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 
 ## Current Work
 **Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 18 — Image Upscale v0.1 is `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-058 from repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e`. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and is fully closed.
-**Next sequence:** begin Phase 18A fleet/worker prerequisite only from the accepted Image Upscale v0.1 contract. Reconcile the known disabled FLUX/REDGraft primary registrations and prove a real async `/jobs/upscale` worker contract before exposing any product Upscale action. Contract acceptance does not authorize a worker or application deployment.
+**Current phase:** Phase 18A — Image Upscale worker prerequisite is `PREDEPLOY PREPARATION VERIFIED / WORKER DEPLOYMENT + LIVE PROOF PENDING` under UI-058. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and fully closed; no Upscale product/schema/UI coupling has started.
+**Next sequence:** remain inside Phase 18A. The repository-side routing/runtime/worker preparation is verified; the next hard gate is an explicitly authorized worker deployment followed by live `/health` + `/jobs/upscale` geometry/alpha/lifecycle proof. Do not begin 18B or expose any product Upscale action before that evidence. Application deployment remains separate and unauthorized.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
 **Deployment boundary:** Phase 16 and Phase 17 repository merges changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep; a post-merge Vercel audit confirmed no Phase 17 deployment was created.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
@@ -1601,10 +1601,10 @@ Implementation checklist:
 
 **Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
-**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 implementation remains not started and deployment remains separately authorized.
+**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18A repository preparation has now started and is verified offline; worker/application deployment remains separately authorized.
 
 ## Cycle 3 / Phase 18 — Image Upscale v0.1
-**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-058.**
+**Status: `IMPLEMENTATION IN PROGRESS — 18A PREDEPLOY PREPARATION VERIFIED / UNDEPLOYED` under UI-058.**
 
 ### Fresh planning evidence
 - [x] Re-established authoritative repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e` after Phase 17 closure.
@@ -1615,8 +1615,16 @@ Implementation checklist:
 - [x] Audited current domain/schema: `CreativeOperation` and `generation_jobs.operation` still cover only the four prompt-generation operations; Upscale requires truthful new operation/schema semantics and must not masquerade as Edit.
 - [x] Chosen UI boundary: Media Viewer contextual continuation, not a new top-level screen and not a new Create mode in v0.1.
 
+### 18A predeployment preparation — verified / deployment pending
+- [x] Preserve disabled FLUX/REDGraft primary registrations for historical lookup while excluding them from new submission routing; focused unit coverage added.
+- [x] Pin the undeployed SwinIR 2× candidate to source commit `33f616625268d08ba600f8db89388eec0328edb1`, Apache-2.0 project license, exact official 67,277,475-byte weight and `sha256:2032ebf8f401dd3ce2fae5f3852117cb72101ec6ed8358faa64c2a3fa09ed4ac`.
+- [x] Runtime audit `33997212864` passed Engineering Quality + official weight size/hash verification; artifact `9978418889` digest is `sha256:5d6d7ace3384a260bf2e9f59dacea85dfa3fa4e6026af46a825eaca74208dc53`.
+- [x] Prepare undeployed RenderLab-owned `workers/image-upscale/modal_app.py` with lightweight gateway/heavy runtime separation, fixed 2× async lifecycle, exact limits, rectangular tiling and alpha path.
+- [x] Permanent offline `Upscale Worker Validation` run `33997784521` passed.
+- [ ] Deploy the worker only after explicit authorization, then prove live RGB + alpha exact-2× geometry, PNG output, polling/cancellation and cleanup before 18A can complete.
+
 ### Locked implementation sequence
-- [ ] **18A Fleet/worker prerequisite:** reconcile known dead-primary registry entries; select/pin model/runtime provenance; establish live async `/jobs/upscale` + GET/DELETE lifecycle and exact 2× PNG geometry. Any worker deployment requires separate explicit authorization.
+- [ ] **18A Fleet/worker prerequisite:** repository-side reconciliation/runtime/worker preparation is verified; live deployment + contract proof remain. Any worker deployment requires separate explicit authorization.
 - [ ] **18B Domain/schema:** add `upscale-image`; use a narrow promptless Upscale product command; apply/audit the smallest `generation_jobs` compatibility migration only after pre-DDL row/constraint review.
 - [ ] **18C Product API/admission:** owner-scoped `POST /api/media/assets/[assetId]/upscale`, fixed scale 2, server-derived eligibility, shared generation admission, no browser worker/storage identity.
 - [ ] **18D Lifecycle/recovery:** reuse reconciliation/finalization/cancellation; failed Retry is current-source-revalidated; successful Run Again/Reuse Settings stay absent; Activity gains truthful Upscale summary; Compare source extends conditionally to succeeded Upscale results.
@@ -1633,4 +1641,4 @@ Implementation checklist:
 - video upscale;
 - 4×/arbitrary scale, batch upscale and Variations.
 
-**Phase 18 implementation must not begin outside the accepted 18A→18F sequence above.**
+**Phase 18 implementation is in progress and must remain inside the accepted 18A→18F sequence above. 18B must not begin until 18A live worker proof is complete.**
