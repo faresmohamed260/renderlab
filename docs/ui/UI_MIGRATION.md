@@ -1434,10 +1434,10 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 
 ## Current Work
 **Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 17 — Observability & Engineering Quality is `COMPLETE / VERIFIED` under UI-057; PR #108 merge is pending. Phase 16 is `COMPLETE / VERIFIED / MERGED` on `main` `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`.
-**Next sequence:** finish exact-final-head validation and merge verified Phase 17 PR #108, then re-audit the deployed worker fleet and expand Phase 18 into one coherent execution-ready capability contract. Do not implement Phase 18 from roadmap preference alone.
+**Current phase:** Phase 17 — Observability & Engineering Quality is `COMPLETE / VERIFIED / MERGED` under UI-057 on `main` `aaa2dcf06a927b9cbc5fe08dd3af1f47116ce1dd`. Phase 16 remains `COMPLETE / VERIFIED / MERGED` on its verified repository baseline.
+**Next sequence:** re-audit the deployed worker fleet and expand Phase 18 into one coherent execution-ready capability contract. Do not implement Phase 18 from roadmap preference alone.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
-**Deployment boundary:** Phase 16 merge and Phase 17 planning changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep.
+**Deployment boundary:** Phase 16 and Phase 17 repository merges changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep; a post-merge Vercel audit confirmed no Phase 17 deployment was created.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
 **Next creative direction:** Phase 18 will re-audit deployed workers after Phase 17; current evaluation preference remains Upscale/Restore, then Inpainting/Outpainting, then LoRA/model adapters, with Director still blocked on structured deployed-worker semantics.
 ## Session Handoff Rule
@@ -1570,7 +1570,7 @@ No schema migration, production deployment, scheduler activation, provider-routi
 **Phase 16 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
 ## Cycle 3 — Phase 17 Observability & Engineering Quality
-**Status: `COMPLETE / VERIFIED` — exact implementation/render evidence recorded below; PR #108 merge pending.**
+**Status: `COMPLETE / VERIFIED / MERGED` — exact implementation/render, exact-final-head and merged-main evidence recorded below.**
 **Decision:** UI-057.
 **Execution contract:** `PROJECT.md` Phase 17.
 
@@ -1593,5 +1593,12 @@ Implementation checklist:
 - [x] Pass every actually affected exact-head regression: all 29 workflows attached to clean implementation head `1ecd46bb809c1953cd24f1eecbd4bbfab7dbd4be` passed, including Engineering Quality `33976269957`, Generation Admission `33976269950`, Generation/Reconciliation/Cancellation/Maintenance and live Video `33976269925`.
 - [x] Update architecture/screen/infrastructure docs from implemented reality before Phase 17 completion.
 - [x] Keep schema/event-store/vendor adoption, production deployment and scheduler activation separately evidence-gated/unauthorized by this contract; none was introduced or activated.
+
+- [x] Definitive exact final PR head `6c9af34702d8d2fc26d0e5e7d0cca649fde4cf0b` was a true empty/tree-identical validation commit on docs-complete tree `c48a1f33e6db512abaa1072b45e4bdd59de7258e`; all 29 attached workflows passed with zero failures and zero cancellations.
+- [x] PR #108 was marked ready and squash-merged with the expected-head guard as `aaa2dcf06a927b9cbc5fe08dd3af1f47116ce1dd`.
+- [x] Merged `main` `aaa2dcf06a927b9cbc5fe08dd3af1f47116ce1dd` passed all 11 actually attached push workflows: Engineering Quality `33992552565`, Deployment Readiness `33992552541`, Reference Upload Integration `33992552558`, Generation Integration `33992552557`, Video Generation Integration `33992552570`, Generation Reconciliation `33992552537`, Generation Cancellation `33992552555`, Maintenance Integration `33992552530`, Activity Cancel Visual `33992552529`, Creative Iteration `33992552596`, and UI Shell Validation `33992552536`.
+- [x] Live Vercel audit after merge found no Phase 17 deployment; production remains exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. No scheduler activation, schema migration, telemetry vendor/event store, client tracking or production maintenance sweep followed repository closure.
+
+**Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
 **Next after verified completion:** re-audit the deployed worker fleet and expand Phase 18 into one coherent capability contract; do not implement Phase 18 from roadmap preference alone.
