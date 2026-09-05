@@ -1433,13 +1433,13 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 **Desired outcome:** supported mailbox clients show the RenderLab mark beside the sender name, similar to established branded senders, while email authentication and unrelated `faresuniform.uk` mail remain safe.
 
 ## Current Work
-**Current cycle:** Cycle 3 — Beta Operations & Access Reliability is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`; no next Cycle 3 phase is currently contracted.
-**Next sequence:** Re-establish the post-Phase-13 repository/production baseline and expand the immediate next Cycle 3 phase contract before implementation; do not infer or start a new phase from older conversation history.
-**Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`; docs-only `main` may advance beyond that application SHA. Automatic Git deployment remains disabled.
-**Deployment boundary:** Phase 13 changed email/DNS/hosted-Auth configuration only; no application code or Vercel deployment changed. The accepted Closed-Beta production application/deployment remains unchanged; any future application code fix must create/revalidate an exact candidate before rollout.
+**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
+**Current phase:** Phase 17 — Observability & Engineering Quality is `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-057. Phase 16 is `COMPLETE / VERIFIED / MERGED` on `main` `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`.
+**Next sequence:** implement Phase 17 only from the accepted execution contract in `PROJECT.md`, beginning with cheap engineering feedback and the existing server/Admin Health seams. Phase 18 remains roadmap-only until Phase 17 is complete and a fresh deployed-worker capability audit expands it.
+**Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
+**Deployment boundary:** Phase 16 merge and Phase 17 planning changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
-**Post-Cycle-2 accepted direction:** LoRA/model-adapter work is outside Phase 13.
+**Next creative direction:** Phase 18 will re-audit deployed workers after Phase 17; current evaluation preference remains Upscale/Restore, then Inpainting/Outpainting, then LoRA/model adapters, with Director still blocked on structured deployed-worker semantics.
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
 
@@ -1559,3 +1559,39 @@ No Phase 15 implementation, production cleanup, deployment or scheduler activati
 - [x] **Final rendered review / Phase 16 completion:** artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) was independently hash-checked and all four real Image→Image / Image→Video desktop+narrow Viewer screenshots were human-reviewed clean on 2026-09-05. Result remains primary, Source remains contextual with only `Open source`, `Close comparison` stays secondary to creative continuation, media is contained without distortion, Prompt/Details/Continue/Actions remain result-owned, and narrow full-page renders do not clip or overflow. Creative Iteration `33964679539` separately verifies the native result video `controls` element, keyboard activation, reduced-motion and exact fixture cleanup. No corrective implementation change was required; authoritative repository records now reflect Phase 16 as `COMPLETE / VERIFIED`.
 
 No schema migration, production deployment, scheduler activation, provider-routing redesign or Variations implementation is authorized or implied by this completion.
+
+## Cycle 3 — Phase 16 Post-Merge Closure — 2026-09-05
+- [x] PR #99 exact final head `2352f150e0528f2ba3396afc46ccab80aec4e05e` completed the 26-workflow affected matrix; the only rerun was an unchanged Library Lifecycle retry after a classified transient `ECONNRESET`/fetch timeout, with cleanup intact.
+- [x] Squash-merge PR #99 as `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`.
+- [x] Verify all nine merge-triggered push workflows on exact merge SHA: Activity Cancel `33967198561`, Generation `33967198351`, Video Generation `33967198358`, Reference Upload `33967198361`, UI Shell `33967198395`, Reconciliation `33967198451`, Cancellation `33967198513`, Maintenance `33967198402`, Creative Iteration `33967198317`.
+- [x] Preserve final Phase 16 rendered approval artifact `9969057974` / `sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5` and the accepted PR #100 comparison hierarchy.
+- [x] Keep production rollout/scheduler state unchanged; no Phase 16 merge operation deployed the app or activated reconciliation/maintenance scheduling.
+
+**Phase 16 repository status: `COMPLETE / VERIFIED / MERGED`.**
+
+## Cycle 3 — Phase 17 Observability & Engineering Quality
+**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+**Decision:** UI-057.
+**Execution contract:** `PROJECT.md` Phase 17.
+
+Verified planning baseline on merged `main` `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`:
+- [x] Phase 16 is merged and its nine push-triggered workflows are green.
+- [x] Audit current package/TS/CI reality: strict/no-emit TypeScript exists, while conventional `lint`, `typecheck` and focused unit-test scripts do not; UI Shell currently reaches full build/Chromium/Playwright for broad verification.
+- [x] Audit existing privileged operator seam: Admin Health is already fresh-admin-only and returns bounded 24-hour active/status/operation/sanitized-failure aggregates.
+- [x] Audit lifecycle/maintenance seams: current jobs/admission/failover/timestamps plus Phase 15 bounded maintenance summaries can support the first operator metrics without a speculative event-store migration.
+- [x] Lock privacy/no-new-ops-surface boundary under UI-057; ordinary users do not receive provider/worker diagnostics and Admin aggregates do not expose content/identity/storage/provider internals.
+- [x] Keep telemetry-vendor adoption evidence-gated rather than a Phase 17 requirement.
+
+Implementation checklist:
+- [ ] Add conventional `npm run lint`, `npm run typecheck` and deterministic `npm run test:unit` using the lightest maintained tools compatible with current Next/TypeScript/ESM reality.
+- [ ] Add a cheap Engineering Quality GitHub gate that requires no Chromium, live provider or shared cloud fixture.
+- [ ] Add one server-owned typed structured-diagnostic/correlation boundary with explicit redaction and non-fatal emission.
+- [ ] Instrument high-value admission/submission/reconciliation/finalization/cancellation/maintenance lifecycle boundaries without logging prompt/media/account-secret/raw-provider payloads.
+- [ ] Extend fresh-admin Health with bounded truthful timing/failure/failover/stale/capacity/maintenance-backlog aggregates derived from current durable state first.
+- [ ] Prefer typed gateway/provider error codes where stable machine-readable contracts exist; retain safe textual compatibility fallback where they do not.
+- [ ] Verify redaction with sentinel secrets/content, fresh-admin authorization, exact aggregates, desktop+narrow Admin Health if visible composition changes, and exact run-owned cleanup.
+- [ ] Pass every actually affected exact-head regression; keep live Image/Video gates when provider-adapter code is touched rather than replacing them with unit tests.
+- [ ] Update architecture/screen/infrastructure docs from implemented reality before Phase 17 completion.
+- [ ] Keep schema/event-store/vendor adoption, production deployment and scheduler activation separately evidence-gated/unauthorized by this contract.
+
+**Next after verified completion:** re-audit the deployed worker fleet and expand Phase 18 into one coherent capability contract; do not implement Phase 18 from roadmap preference alone.
