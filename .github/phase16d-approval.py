@@ -1,7 +1,9 @@
 from pathlib import Path
 
-TARGET_STATUS_OLD = "PHASE 16A/16B/16C IMPLEMENTED / VERIFIED; PHASE 16D DESIGN CHECKPOINT PENDING"
-TARGET_STATUS_NEW = "PHASE 16A/16B/16C IMPLEMENTED / VERIFIED; PHASE 16D DESIGN APPROVED / IMPLEMENTATION PENDING"
+PROJECT_STATUS_OLD = "PHASE 16A/16B/16C IMPLEMENTED / VERIFIED; PHASE 16D DESIGN CHECKPOINT PENDING"
+PROJECT_STATUS_NEW = "PHASE 16A/16B/16C IMPLEMENTED / VERIFIED; PHASE 16D DESIGN APPROVED / IMPLEMENTATION PENDING"
+UI_MIGRATION_STATUS_OLD = "IN PROGRESS — 16A/16B/16C IMPLEMENTED / VERIFIED; 16D DESIGN CHECKPOINT PENDING"
+UI_MIGRATION_STATUS_NEW = "IN PROGRESS — 16A/16B/16C IMPLEMENTED / VERIFIED; 16D DESIGN APPROVED / IMPLEMENTATION PENDING"
 
 
 def replace_once(path: str, old: str, new: str) -> None:
@@ -15,9 +17,9 @@ def replace_once(path: str, old: str, new: str) -> None:
 # PROJECT.md: advance the durable phase status and record the accepted checkpoint.
 p = Path("PROJECT.md")
 text = p.read_text()
-if TARGET_STATUS_OLD not in text:
+if PROJECT_STATUS_OLD not in text:
     raise SystemExit("Phase 16 status marker not found in PROJECT.md")
-text = text.replace(TARGET_STATUS_OLD, TARGET_STATUS_NEW)
+text = text.replace(PROJECT_STATUS_OLD, PROJECT_STATUS_NEW)
 old = "- **16D remains unimplemented:** UI-056 and this contract require a reviewed desktop+narrow Media Viewer comparison design checkpoint before code. No comparison layout has been self-approved or inferred merely because direct Penpot automation is unavailable."
 new = "- **16D design checkpoint approved:** user approval on 2026-09-05 accepted design PR #100 / branch merge `6dadc9e1976b976ab4584ce830286ba3a8baead1`. The v0.1 comparison direction keeps the default Viewer unchanged; uses progressive disclosure; keeps Result primary at roughly 60/40 on wide layouts with truthful media aspect ratios; stacks a full-width Result before a compact contextual Source card on narrow layouts; gives Source only `Open source`; preserves result-owned Prompt/Details/Continue/Actions and video controls; uses `Close comparison` as the active-state label; and introduces no route, schema, provider/storage exposure or durable comparison state. Viewer comparison code is still unimplemented at this checkpoint."
 if old not in text:
@@ -35,9 +37,9 @@ replace_once(
 # UI migration status/checklist.
 p = Path("docs/ui/UI_MIGRATION.md")
 text = p.read_text()
-if TARGET_STATUS_OLD not in text:
+if UI_MIGRATION_STATUS_OLD not in text:
     raise SystemExit("Phase 16 partial status marker not found in UI_MIGRATION.md")
-text = text.replace(TARGET_STATUS_OLD, TARGET_STATUS_NEW)
+text = text.replace(UI_MIGRATION_STATUS_OLD, UI_MIGRATION_STATUS_NEW)
 old = "- [ ] **16D Compare source:** not implemented. UI-056 requires a reviewed desktop+narrow Media Viewer visual design checkpoint first; lack of direct Penpot automation does not waive that checkpoint."
 new = "- [x] **16D visual design checkpoint:** user-approved on 2026-09-05. Design PR #100 / merge `6dadc9e1976b976ab4584ce830286ba3a8baead1` records desktop+narrow Image→Image and Image→Video candidates after two render-review passes, with truthful aspect ratios, result-primary hierarchy, compact narrow Source context, preserved existing Actions and `Close comparison` active-state wording.\n- [ ] **16D implementation:** implement the smallest conditional Viewer extension against the accepted checkpoint, then configured-verify Image→Image and Image→Video at desktop/narrow plus keyboard and reduced-motion behavior."
 if old not in text:
