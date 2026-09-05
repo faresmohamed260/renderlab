@@ -1601,7 +1601,7 @@ Implementation checklist:
 
 **Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
-**Next after verified completion:** re-audit the deployed worker fleet and expand Phase 18 into one coherent capability contract; do not implement Phase 18 from roadmap preference alone.
+**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 implementation remains not started and deployment remains separately authorized.
 
 ## Cycle 3 / Phase 18 — Image Upscale v0.1
 **Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-058.**
