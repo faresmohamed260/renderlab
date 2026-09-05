@@ -50,7 +50,11 @@ worker_state = modal.Dict.from_name(STATE_DICT_NAME, create_if_missing=True)
 
 gateway_image = (
     modal.Image.debian_slim(python_version=PYTHON_VERSION)
-    .pip_install(f"modal=={MODAL_VERSION}", "fastapi[standard]==0.121.0")
+    .pip_install(
+        f"modal=={MODAL_VERSION}",
+        "fastapi[standard]==0.121.0",
+        "Pillow==11.2.1",
+    )
     .env(
         {
             "PYTHONUTF8": "1",
@@ -166,6 +170,12 @@ def _decode_image_metadata(image_bytes: bytes) -> tuple[int, int, bool]:
     return width, height, has_alpha
 
 
+def _padding_mode(height: int, width: int, pad_height: int, pad_width: int) -> str:
+    can_reflect_height = pad_height == 0 or (height > 1 and pad_height < height)
+    can_reflect_width = pad_width == 0 or (width > 1 and pad_width < width)
+    return "reflect" if can_reflect_height and can_reflect_width else "replicate"
+
+
 def _pad_to_window(tensor: Any) -> tuple[Any, int, int]:
     import torch
     import torch.nn.functional as functional
@@ -176,7 +186,7 @@ def _pad_to_window(tensor: Any) -> tuple[Any, int, int]:
     if not pad_height and not pad_width:
         return tensor, height, width
 
-    mode = "reflect" if height > 1 and width > 1 else "replicate"
+    mode = _padding_mode(height, width, pad_height, pad_width)
     return functional.pad(tensor, (0, pad_width, 0, pad_height), mode=mode), height, width
 
 

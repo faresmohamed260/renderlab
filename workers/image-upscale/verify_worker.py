@@ -77,6 +77,7 @@ assert values == expected, (values, expected)
 assert "gateway_image = (" in text
 assert "runtime_image = (" in text
 assert "modal.Image.debian_slim" in text
+assert text.count("Pillow==11.2.1") == 2
 assert "nvidia/cuda:12.8.1-runtime-ubuntu22.04" in text
 assert "app = modal.App(APP_NAME)" in text
 assert "@app.cls(\n    image=runtime_image," in text
@@ -97,7 +98,7 @@ assert "except modal.exception.OutputExpiredError:" in text
 # Execute only pure helpers from the AST; importing modal_app.py would construct Modal resources.
 globals_for_helpers = dict(expected)
 namespace: dict[str, object] = {}
-for name in ("_tile_starts", "_validate_geometry"):
+for name in ("_tile_starts", "_validate_geometry", "_padding_mode"):
     node = functions.get(name)
     assert node is not None, name
     module = ast.Module(body=[node], type_ignores=[])
@@ -105,10 +106,16 @@ for name in ("_tile_starts", "_validate_geometry"):
 
 _tile_starts = namespace["_tile_starts"]
 _validate_geometry = namespace["_validate_geometry"]
+_padding_mode = namespace["_padding_mode"]
 
 assert _tile_starts(1, 1, 0) == [0]
 assert _tile_starts(256, 256, 32) == [0]
 assert _tile_starts(257, 256, 32) == [0, 1]
+assert _padding_mode(256, 256, 0, 0) == "reflect"
+assert _padding_mode(7, 256, 1, 0) == "reflect"
+assert _padding_mode(2, 256, 6, 0) == "replicate"
+assert _padding_mode(256, 2, 0, 6) == "replicate"
+assert _padding_mode(1, 1, 7, 7) == "replicate"
 starts = _tile_starts(4096, 256, 32)
 assert starts[0] == 0 and starts[-1] == 3840 and len(starts) < 32
 
