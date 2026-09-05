@@ -830,7 +830,8 @@ Activity keeps server-rendered history and derives `canRunAgain` server-side. `P
 
 No routing hierarchy, schema, provider contract or production deployment boundary changed. Viewer Compare source is part of the verified Phase 16 frontend architecture and remains a feature-local progressive Viewer state rather than a new route or durable comparison model.
 
-## Phase 17 observability boundary — implementation in progress
+## Phase 17 observability boundary — verified
 - Structured diagnostics are server-only, allowlisted and non-fatal. Generation-job correlation is deterministic opaque identity; pre-job operations use a fresh server-generated correlation ID. Diagnostic payloads do not accept arbitrary detail bags.
 - `/admin` remains the only operator UI. Fresh-admin Health keeps the existing privileged RPC as the authorization/core-count boundary, then performs bounded service-role reads of lifecycle/admission/staging/purge fields to build aggregate timing/failover/stale/capacity/backlog summaries. Raw rows and identities do not cross the server contract.
 - The visible Health composition reuses existing Admin cards/count lists; no new route, shell item, client-global store or dashboard framework is introduced.
+- Exact clean implementation head `1ecd46bb809c1953cd24f1eecbd4bbfab7dbd4be` passed all 29 affected workflows. Account/Admin `33976269977` plus artifact `9972464342` (`sha256:f0b26931cb8e5ae574c457cf0f3f1ecff19f04dcde0fc3c390f19bbb57dbbd4c`) verified the fresh-admin/privacy/aggregate contract and desktop+narrow composition; human review found no corrective frontend change necessary.

@@ -1434,8 +1434,8 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 
 ## Current Work
 **Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 17 — Observability & Engineering Quality is `IMPLEMENTATION IN PROGRESS / VERIFICATION PENDING` under UI-057. Phase 16 is `COMPLETE / VERIFIED / MERGED` on `main` `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`.
-**Next sequence:** implement Phase 17 only from the accepted execution contract in `PROJECT.md`, beginning with cheap engineering feedback and the existing server/Admin Health seams. Phase 18 remains roadmap-only until Phase 17 is complete and a fresh deployed-worker capability audit expands it.
+**Current phase:** Phase 17 — Observability & Engineering Quality is `COMPLETE / VERIFIED` under UI-057; PR #108 merge is pending. Phase 16 is `COMPLETE / VERIFIED / MERGED` on `main` `ad3cf2a987b60098fdc361a7f8fc358ae706aeae`.
+**Next sequence:** finish exact-final-head validation and merge verified Phase 17 PR #108, then re-audit the deployed worker fleet and expand Phase 18 into one coherent execution-ready capability contract. Do not implement Phase 18 from roadmap preference alone.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
 **Deployment boundary:** Phase 16 merge and Phase 17 planning changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
@@ -1570,7 +1570,7 @@ No schema migration, production deployment, scheduler activation, provider-routi
 **Phase 16 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
 ## Cycle 3 — Phase 17 Observability & Engineering Quality
-**Status: `IMPLEMENTATION IN PROGRESS / VERIFICATION PENDING`.**
+**Status: `COMPLETE / VERIFIED` — exact implementation/render evidence recorded below; PR #108 merge pending.**
 **Decision:** UI-057.
 **Execution contract:** `PROJECT.md` Phase 17.
 
@@ -1589,9 +1589,9 @@ Implementation checklist:
 - [x] Instrument high-value admission/submission/reconciliation/finalization/cancellation/maintenance lifecycle boundaries without logging prompt/media/account-secret/raw-provider payloads.
 - [x] Extend fresh-admin Health with bounded truthful timing/failure/failover/stale/capacity/maintenance-backlog aggregates derived from current durable state first.
 - [x] Prefer typed gateway/provider error codes where stable machine-readable contracts exist; retain safe textual compatibility fallback where they do not.
-- [ ] Verify redaction with sentinel secrets/content, fresh-admin authorization, bounded aggregates, desktop+narrow Admin Health, and exact run-owned cleanup. Configured evidence pending.
-- [ ] Pass every actually affected exact-head regression; keep live Image/Video gates when provider-adapter code is touched rather than replacing them with unit tests.
-- [ ] Update architecture/screen/infrastructure docs from implemented reality before Phase 17 completion.
-- [ ] Keep schema/event-store/vendor adoption, production deployment and scheduler activation separately evidence-gated/unauthorized by this contract.
+- [x] Verify redaction with sentinel secrets/content, fresh-admin authorization, exact bounded aggregates, desktop+narrow Admin Health and exact run-owned cleanup: Account/Admin `33976269977`, artifact `9972464342` (`sha256:f0b26931cb8e5ae574c457cf0f3f1ecff19f04dcde0fc3c390f19bbb57dbbd4c`) passed and was human-reviewed clean.
+- [x] Pass every actually affected exact-head regression: all 29 workflows attached to clean implementation head `1ecd46bb809c1953cd24f1eecbd4bbfab7dbd4be` passed, including Engineering Quality `33976269957`, Generation Admission `33976269950`, Generation/Reconciliation/Cancellation/Maintenance and live Video `33976269925`.
+- [x] Update architecture/screen/infrastructure docs from implemented reality before Phase 17 completion.
+- [x] Keep schema/event-store/vendor adoption, production deployment and scheduler activation separately evidence-gated/unauthorized by this contract; none was introduced or activated.
 
 **Next after verified completion:** re-audit the deployed worker fleet and expand Phase 18 into one coherent capability contract; do not implement Phase 18 from roadmap preference alone.
