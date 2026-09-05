@@ -239,6 +239,7 @@ async function seedHealthJobs(ownerId) {
           provider_job_id: null,
           error_code: null,
           error_message: null,
+          failover_history: [],
           created_at: activeAt,
           updated_at: activeAt,
           completed_at: null,
