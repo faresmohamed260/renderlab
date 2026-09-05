@@ -1,0 +1,66 @@
+name: Phase 17 contract fix
+
+on:
+  push:
+    branches: [work/phase-17-observability-quality]
+    paths:
+      - ".github/workflows/phase17-contract-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-17-observability-quality
+          fetch-depth: 0
+
+      - name: Apply guarded contract fixes
+        run: python .github/phase17-contract-fix.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Verify negative fixtures
+        run: npm run verify:engineering-quality
+
+      - name: Verify Admin verifier syntax
+        run: node --check scripts/verify-admin-operations.mjs
+
+      - name: Audit whitespace and guarded diff
+        run: |
+          git diff --check
+          test -f .github/phase17-contract-fix.py
+          test -f .github/workflows/phase17-contract-fix.yml
+
+      - name: Commit guarded fixes and remove helper
+        shell: bash
+        run: |
+          rm .github/phase17-contract-fix.py .github/workflows/phase17-contract-fix.yml
+          git add -A
+          git diff --cached --check
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git commit -m "Fix Phase 17 observability verification boundary"
+          git push origin HEAD:work/phase-17-observability-quality
