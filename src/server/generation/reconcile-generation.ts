@@ -106,10 +106,8 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
     if (!claimedSnapshot) return null;
 
     if (claimedSnapshot.status === "cancelling") {
-      const reconciled = await reconcileClaimedGenerationCancellation(ownerId, jobId, token);
-      if (!reconciled) return null;
-      const job = toGenerationJob(reconciled);
-      await settleTerminalAdmission(job, ownerId);
+      const job = await reconcileClaimedGenerationCancellation(ownerId, jobId, token);
+      if (job) await settleTerminalAdmission(job, ownerId);
       return job;
     }
 
