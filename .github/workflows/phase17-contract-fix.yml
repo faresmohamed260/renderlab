@@ -57,12 +57,28 @@ jobs:
           test -f .github/phase17-contract-fix.py
           test -f .github/workflows/phase17-contract-fix.yml
 
-      - name: Commit guarded fixes and remove helper
+      - name: Commit source fixes only
         shell: bash
         run: |
-          rm .github/phase17-contract-fix.py .github/workflows/phase17-contract-fix.yml
+          git checkout -- \
+            .github/workflows/admin-operations.yml \
+            .github/workflows/generation-bridge-integration.yml \
+            .github/workflows/video-generation-integration.yml \
+            .github/workflows/generation-reconciliation.yml \
+            .github/workflows/generation-cancellation.yml \
+            .github/workflows/generation-admission.yml \
+            .github/workflows/activity-visual.yml \
+            .github/workflows/activity-cancel-visual.yml \
+            .github/workflows/maintenance-integration.yml
+          rm .github/phase17-contract-fix.py
+          rm -f package-lock.json
           git add -A
           git diff --cached --check
+          git diff --cached --name-only | tee /tmp/phase17-source-files.txt
+          if grep -q '^.github/workflows/' /tmp/phase17-source-files.txt; then
+            echo "::error::Source-only commit still contains workflow changes."
+            exit 1
+          fi
           git config user.name "Fares Mohamed"
           git config user.email "121525183+faresmohamed260@users.noreply.github.com"
           git commit -m "Fix Phase 17 observability verification boundary"
