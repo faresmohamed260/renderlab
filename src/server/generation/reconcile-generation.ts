@@ -1,8 +1,13 @@
 import { randomUUID } from "node:crypto";
 import type { GenerationJob } from "@/lib/capabilities/generation";
 import { supabaseRest } from "@/server/data/supabase-rest";
-import { pollNativeGeneration } from "@/server/generation/native-generation";
+import { reconcileClaimedGenerationCancellation } from "@/server/generation/cancel-generation";
 import { releaseBoundGenerationAdmission } from "@/server/generation/generation-admission";
+import {
+  claimGenerationReconciliation,
+  releaseGenerationReconciliation,
+} from "@/server/generation/generation-reconciliation-claim";
+import { pollNativeGeneration } from "@/server/generation/native-generation";
 
 type JobSnapshotRow = {
   id: string;
@@ -26,8 +31,7 @@ export type GenerationReconciliationSummary = {
 };
 
 const terminalStatuses = new Set<GenerationJob["status"]>(["succeeded", "failed", "cancelled"]);
-const candidateStatuses = "queued,preparing,running,persisting";
-const reconciliationLeaseSeconds = 600;
+const candidateStatuses = "queued,preparing,running,cancelling,persisting";
 const staleMissingDispatchGraceMs = 15 * 60 * 1000;
 
 function toGenerationJob(row: JobSnapshotRow): GenerationJob {
@@ -52,40 +56,14 @@ async function getSnapshot(ownerId: string, jobId: string) {
   return rows?.[0] ?? null;
 }
 
-async function claimReconciliation(ownerId: string, jobId: string, token: string) {
-  return supabaseRest<boolean>("rpc/renderlab_claim_generation_reconciliation", {
-    method: "POST",
-    body: JSON.stringify({
-      p_owner_id: ownerId,
-      p_job_id: jobId,
-      p_token: token,
-      p_lease_seconds: reconciliationLeaseSeconds,
-    }),
-  });
-}
-
-async function releaseReconciliation(ownerId: string, jobId: string, token: string) {
-  try {
-    return await supabaseRest<boolean>("rpc/renderlab_release_generation_reconciliation", {
-      method: "POST",
-      body: JSON.stringify({
-        p_owner_id: ownerId,
-        p_job_id: jobId,
-        p_token: token,
-      }),
-    });
-  } catch {
-    return false;
-  }
-}
-
 async function failStaleUndispatchedJob(row: JobSnapshotRow) {
+  if (row.status === "cancelling") return null;
   if (row.worker_id && row.provider_job_id) return null;
   if (Date.now() - Date.parse(row.updated_at) < staleMissingDispatchGraceMs) return null;
 
   const completedAt = new Date().toISOString();
   const rows = await supabaseRest<JobSnapshotRow[]>(
-    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=in.(${candidateStatuses})&select=id,owner_id,status,operation,output_asset_ids,error_code,error_message,worker_id,provider_job_id,created_at,updated_at`,
+    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=in.(queued,preparing,running,persisting)&select=id,owner_id,status,operation,output_asset_ids,error_code,error_message,worker_id,provider_job_id,created_at,updated_at`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
@@ -117,7 +95,7 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
   }
 
   const token = randomUUID();
-  const claimed = await claimReconciliation(ownerId, jobId, token).catch(() => false);
+  const claimed = await claimGenerationReconciliation(ownerId, jobId, token).catch(() => false);
   if (!claimed) {
     const current = await getSnapshot(ownerId, jobId);
     return current ? toGenerationJob(current) : null;
@@ -126,6 +104,14 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
   try {
     const claimedSnapshot = await getSnapshot(ownerId, jobId);
     if (!claimedSnapshot) return null;
+
+    if (claimedSnapshot.status === "cancelling") {
+      const reconciled = await reconcileClaimedGenerationCancellation(ownerId, jobId, token);
+      if (!reconciled) return null;
+      const job = toGenerationJob(reconciled);
+      await settleTerminalAdmission(job, ownerId);
+      return job;
+    }
 
     const stalled = await failStaleUndispatchedJob(claimedSnapshot);
     if (stalled) {
@@ -138,7 +124,7 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
     if (job) await settleTerminalAdmission(job, ownerId);
     return job;
   } finally {
-    await releaseReconciliation(ownerId, jobId, token);
+    await releaseGenerationReconciliation(ownerId, jobId, token);
   }
 }
 
