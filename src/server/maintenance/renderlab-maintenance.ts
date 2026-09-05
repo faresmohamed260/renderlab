@@ -1,6 +1,7 @@
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { deleteMediaAsset } from "@/server/media/media-assets";
 import { deleteR2Object } from "@/server/storage/r2";
+import { createDiagnosticCorrelationId, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type SourceRow = {
   id: string;
@@ -34,6 +35,14 @@ export type RenderLabMaintenanceSummary = {
   uploadClaims: { scanned: number; claimed: number; failed: number };
   uploadCleanup: { scanned: number; deleted: number; adopted: number; failed: number };
   mediaPurges: { scanned: number; purged: number; pending: number; failed: number };
+};
+
+export type RenderLabMaintenanceBacklog = {
+  staleSourceCandidates: { count: number; truncated: boolean };
+  cleaningSources: { count: number; truncated: boolean };
+  staleUploadCandidates: { count: number; truncated: boolean };
+  cleaningUploads: { count: number; truncated: boolean };
+  pendingMediaPurges: { count: number; truncated: boolean };
 };
 
 const staleAgeMs = 24 * 60 * 60 * 1000;
@@ -244,6 +253,38 @@ async function retryPendingMediaPurges(limit: number) {
   return summary;
 }
 
+export async function getRenderLabMaintenanceBacklog(limit = 32): Promise<RenderLabMaintenanceBacklog> {
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 64);
+  const scanLimit = safeLimit + 1;
+  const now = Date.now();
+  const staleCutoff = new Date(now - staleAgeMs).toISOString();
+  const nowIso = new Date(now).toISOString();
+
+  const [sourceRows, cleaningSourceRows, uploadRows, cleaningUploadRows, purgeRows] = await Promise.all([
+    listSourceClaims(scanLimit, staleCutoff),
+    listSourceCleanup(scanLimit, nowIso),
+    listUploadClaims(scanLimit, staleCutoff),
+    listUploadCleanup(scanLimit, nowIso),
+    supabaseRest<PurgeRow[]>(
+      `media_assets?deleted_at=not.is.null&purged_at=is.null${testOwnerFilter()}&select=id,owner_id&order=deleted_at.asc,id.asc&limit=${scanLimit}`,
+      { method: "GET" },
+    ),
+  ]);
+
+  const sourceSample = sourceRows.slice(0, safeLimit);
+  const sourceReferences = await Promise.all(sourceSample.map((source) => sourceIsReferenced(source.id).catch(() => true)));
+  const staleSourceCount = sourceReferences.filter((referenced) => !referenced).length;
+  const bounded = (rows: unknown[]) => ({ count: Math.min(rows.length, safeLimit), truncated: rows.length > safeLimit });
+
+  return {
+    staleSourceCandidates: { count: staleSourceCount, truncated: sourceRows.length > safeLimit },
+    cleaningSources: bounded(cleaningSourceRows),
+    staleUploadCandidates: bounded(uploadRows),
+    cleaningUploads: bounded(cleaningUploadRows),
+    pendingMediaPurges: bounded(purgeRows),
+  };
+}
+
 export async function runRenderLabMaintenance(limit = defaultBatchLimit): Promise<RenderLabMaintenanceSummary> {
   const safeLimit = boundedLimit(limit);
   const now = Date.now();
@@ -259,5 +300,14 @@ export async function runRenderLabMaintenance(limit = defaultBatchLimit): Promis
   const sourceClaims = await claimOldSources(safeLimit, staleCutoff);
   const uploadClaims = await claimOldUploads(safeLimit, staleCutoff);
 
-  return { sourceClaims, sourceCleanup, uploadClaims, uploadCleanup, mediaPurges };
+  const summary = { sourceClaims, sourceCleanup, uploadClaims, uploadCleanup, mediaPurges };
+  const correlationId = createDiagnosticCorrelationId();
+  await Promise.all([
+    emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "source-claims", count: sourceClaims.scanned, successCount: sourceClaims.claimed, failureCount: sourceClaims.failed }),
+    emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "source-cleanup", count: sourceCleanup.scanned, successCount: sourceCleanup.deleted + sourceCleanup.restoredReferenced, failureCount: sourceCleanup.failed }),
+    emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "upload-claims", count: uploadClaims.scanned, successCount: uploadClaims.claimed, failureCount: uploadClaims.failed }),
+    emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "upload-cleanup", count: uploadCleanup.scanned, successCount: uploadCleanup.deleted + uploadCleanup.adopted, failureCount: uploadCleanup.failed }),
+    emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "media-purges", count: mediaPurges.scanned, successCount: mediaPurges.purged, failureCount: mediaPurges.failed }),
+  ]);
+  return summary;
 }

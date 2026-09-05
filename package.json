@@ -7,7 +7,11 @@
     "prebuild": "node scripts/verify-vercel-env.mjs",
     "build": "next build",
     "start": "next start",
+    "lint": "oxlint src scripts tests",
+    "typecheck": "tsc --noEmit --pretty false --incremental false",
+    "test:unit": "node --test tests/unit/*.test.mjs",
     "test:ui": "playwright test",
+    "verify:engineering-quality": "node scripts/verify-engineering-quality.mjs",
     "verify:ui-purity": "node scripts/verify-ui-purity.mjs"
   },
   "dependencies": {
@@ -32,6 +36,7 @@
     "@types/node": "26.2.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
+    "oxlint": "1.81.0",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2"
   }

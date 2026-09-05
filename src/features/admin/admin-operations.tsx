@@ -38,6 +38,19 @@ function titleCase(value: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function displayDuration(milliseconds: number | null) {
+  if (milliseconds === null) return "—";
+  const seconds = Math.max(0, Math.round(milliseconds / 1000));
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  return `${(minutes / 60).toFixed(1)}h`;
+}
+
+function displayBoundedCount(value: { count: number; truncated: boolean }) {
+  return `${value.count}${value.truncated ? "+" : ""}`;
+}
+
 export function AdminOperations({
   snapshot,
   actorUserId,
@@ -241,16 +254,52 @@ export function AdminOperations({
         title="Health"
         description={`Aggregate RenderLab product state over the last ${snapshot.health.windowHours} hours. Raw prompts, media, provider data and backend errors are excluded.`}
       >
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <HealthCard label="Active jobs" value={String(snapshot.health.activeJobs)} />
-          <HealthCard label="Window" value={`${snapshot.health.windowHours} hours`} />
-          <HealthCard label="Since" value={displayDate(snapshot.health.since)} />
+          <HealthCard label="Active reservations" value={displayBoundedCount(snapshot.health.capacity.activeReservations)} />
+          <HealthCard label="Completion p50" value={displayDuration(snapshot.health.recentJobs.completionTiming.p50Ms)} />
+          <HealthCard label="Completion p95" value={displayDuration(snapshot.health.recentJobs.completionTiming.p95Ms)} />
         </div>
+        <p className="mt-2 text-xs leading-5 text-text-muted">
+          Completion timing is accepted-to-terminal duration for {snapshot.health.recentJobs.completionTiming.sampleCount} recent jobs; it is not an SLA or ETA.
+        </p>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-3">
           <HealthCounts title="Status counts" counts={snapshot.health.statusCounts} />
           <HealthCounts title="Operation counts" counts={snapshot.health.operationCounts} />
           <HealthCounts title="Sanitized error codes" counts={snapshot.health.errorCodeCounts} />
+          <HealthCounts
+            title="Active state age"
+            counts={{
+              "Under 15 minutes": snapshot.health.activeStateAge.under15Minutes,
+              "15–60 minutes": snapshot.health.activeStateAge.minutes15To60,
+              "1–2 hours": snapshot.health.activeStateAge.hours1To2,
+              "Over 2 hours": snapshot.health.activeStateAge.over2Hours,
+            }}
+          />
+          <HealthCounts
+            title="Failover incidence"
+            counts={{
+              "Jobs with failover": snapshot.health.recentJobs.failovers.jobsWithFailover,
+              "Failover events": snapshot.health.recentJobs.failovers.eventCount,
+            }}
+          />
+          <HealthCounts
+            title="Maintenance backlog"
+            counts={{
+              "Stale source candidates": displayBoundedCount(snapshot.health.maintenanceBacklog.staleSourceCandidates),
+              "Cleaning sources": displayBoundedCount(snapshot.health.maintenanceBacklog.cleaningSources),
+              "Stale upload candidates": displayBoundedCount(snapshot.health.maintenanceBacklog.staleUploadCandidates),
+              "Cleaning uploads": displayBoundedCount(snapshot.health.maintenanceBacklog.cleaningUploads),
+              "Pending media purges": displayBoundedCount(snapshot.health.maintenanceBacklog.pendingMediaPurges),
+            }}
+          />
+        </div>
+
+        <div className="mt-4 rounded-xl border border-border bg-surface-1 p-4 text-xs leading-5 text-text-muted">
+          <p>Window: {snapshot.health.windowHours} hours since {displayDate(snapshot.health.since)}.</p>
+          <p className="mt-1">Capacity: generation {snapshot.health.capacity.generationEnabled ? "enabled" : "paused"}; per-account defaults are {snapshot.health.capacity.maxActiveJobsPerAccount} active and {snapshot.health.capacity.maxJobsPerHourPerAccount} per hour.</p>
+          <p className="mt-1">A “+” count means the bounded operator scan was truncated; raw job, account, provider and storage identities remain server-only.</p>
         </div>
       </AdminSection>
     </div>
@@ -592,7 +641,7 @@ function HealthCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function HealthCounts({ title, counts }: { title: string; counts: Record<string, number> }) {
+function HealthCounts({ title, counts }: { title: string; counts: Record<string, ReactNode> }) {
   const entries = Object.entries(counts).sort(([left], [right]) => left.localeCompare(right));
   return (
     <div className="rounded-xl border border-border bg-surface-1 p-4">

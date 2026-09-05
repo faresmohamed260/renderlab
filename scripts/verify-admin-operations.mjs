@@ -1,5 +1,5 @@
 import { chromium } from "@playwright/test";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import {
   createConfiguredTestAccount,
@@ -185,49 +185,187 @@ async function setAccountAccess(userId, patch) {
 }
 
 async function seedHealthJobs(ownerId) {
+  const now = Date.now();
+  const failedCreatedAt = new Date(now - 30_000).toISOString();
+  const failedCompletedAt = new Date(now - 10_000).toISOString();
+  const activeAt = new Date(now - 20 * 60_000).toISOString();
+  const staleAt = new Date(now - 30 * 60 * 60_000).toISOString();
+  const cleaningAt = new Date(now - 20 * 60_000).toISOString();
   const secretMarker = `raw-provider-marker-${runToken}`;
-  const response = await serviceRest("generation_jobs", {
-    method: "POST",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify([
-      {
+  const storageMarker = `private-storage-marker-${runToken}`;
+  const contentMarker = `private-content-marker-${runToken}`;
+
+  await expectOk(
+    await serviceRest("generation_jobs", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify([
+        {
+          owner_id: ownerId,
+          status: "failed",
+          operation: "create-image",
+          output_kind: "image",
+          prompt: `private prompt ${secretMarker}`,
+          workflow_id: `private-workflow-${runToken}`,
+          model: `private-model-${runToken}`,
+          ecosystem: "private-ecosystem",
+          inputs: [],
+          parameters: {},
+          worker_id: `private-worker-${runToken}`,
+          provider_job_id: `private-provider-job-${runToken}`,
+          error_code: "WORKER_CREDIT_EXHAUSTED",
+          error_message: `raw backend error ${secretMarker}`,
+          failover_history: [{
+            kind: "unavailable",
+            workerId: `private-worker-${runToken}`,
+            at: failedCompletedAt,
+          }],
+          created_at: failedCreatedAt,
+          updated_at: failedCompletedAt,
+          completed_at: failedCompletedAt,
+        },
+        {
+          owner_id: ownerId,
+          status: "queued",
+          operation: "create-video",
+          output_kind: "video",
+          prompt: `active private prompt ${secretMarker}`,
+          workflow_id: `active-private-workflow-${runToken}`,
+          model: `active-private-model-${runToken}`,
+          ecosystem: "private-ecosystem",
+          inputs: [],
+          parameters: {},
+          worker_id: null,
+          provider_job_id: null,
+          error_code: null,
+          error_message: null,
+          failover_history: [],
+          created_at: activeAt,
+          updated_at: activeAt,
+          completed_at: null,
+        },
+      ]),
+    }),
+    "Could not seed Admin health fixture jobs",
+  );
+
+  await expectOk(
+    await serviceRest("generation_admission_reservations", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
         owner_id: ownerId,
-        status: "failed",
-        operation: "create-image",
-        output_kind: "image",
-        prompt: `private prompt ${secretMarker}`,
-        workflow_id: `private-workflow-${runToken}`,
-        model: `private-model-${runToken}`,
-        ecosystem: "private-ecosystem",
-        inputs: [],
-        parameters: {},
-        worker_id: `private-worker-${runToken}`,
-        provider_job_id: `private-provider-job-${runToken}`,
-        error_code: "WORKER_CREDIT_EXHAUSTED",
-        error_message: `raw backend error ${secretMarker}`,
-        completed_at: new Date().toISOString(),
-      },
-      {
+        expires_at: new Date(now + 30 * 60_000).toISOString(),
+      }),
+    }),
+    "Could not seed Admin health admission fixture",
+  );
+
+  const staleSourceId = randomUUID();
+  const cleaningSourceId = randomUUID();
+  await expectOk(
+    await serviceRest("generation_sources", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify([
+        {
+          id: staleSourceId,
+          owner_id: ownerId,
+          storage_key: `renderlab/admin-health/${storageMarker}/stale-source-${staleSourceId}.png`,
+          filename: `${contentMarker}-stale.png`,
+          mime_type: "image/png",
+          size_bytes: 1,
+          purpose: "reference",
+          status: "ready",
+          metadata: { private: contentMarker },
+          created_at: staleAt,
+          updated_at: staleAt,
+        },
+        {
+          id: cleaningSourceId,
+          owner_id: ownerId,
+          storage_key: `renderlab/admin-health/${storageMarker}/cleaning-source-${cleaningSourceId}.png`,
+          filename: `${contentMarker}-cleaning.png`,
+          mime_type: "image/png",
+          size_bytes: 1,
+          purpose: "reference",
+          status: "cleaning",
+          metadata: { private: contentMarker },
+          created_at: staleAt,
+          updated_at: cleaningAt,
+        },
+      ]),
+    }),
+    "Could not seed Admin health source backlog fixtures",
+  );
+
+  const staleUploadId = randomUUID();
+  const cleaningUploadId = randomUUID();
+  await expectOk(
+    await serviceRest("media_upload_sessions", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify([
+        {
+          id: staleUploadId,
+          owner_id: ownerId,
+          storage_key: `renderlab/admin-health/${storageMarker}/stale-upload-${staleUploadId}.png`,
+          filename: `${contentMarker}-upload-stale.png`,
+          display_name: `${contentMarker} upload stale`,
+          mime_type: "image/png",
+          size_bytes: 1,
+          status: "pending",
+          metadata: { private: contentMarker },
+          created_at: staleAt,
+          updated_at: staleAt,
+        },
+        {
+          id: cleaningUploadId,
+          owner_id: ownerId,
+          storage_key: `renderlab/admin-health/${storageMarker}/cleaning-upload-${cleaningUploadId}.png`,
+          filename: `${contentMarker}-upload-cleaning.png`,
+          display_name: `${contentMarker} upload cleaning`,
+          mime_type: "image/png",
+          size_bytes: 1,
+          status: "cleaning",
+          metadata: { private: contentMarker },
+          created_at: staleAt,
+          updated_at: cleaningAt,
+        },
+      ]),
+    }),
+    "Could not seed Admin health upload backlog fixtures",
+  );
+
+  const purgeAssetId = randomUUID();
+  await expectOk(
+    await serviceRest("media_assets", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        id: purgeAssetId,
         owner_id: ownerId,
-        status: "queued",
-        operation: "create-video",
-        output_kind: "video",
-        prompt: `active private prompt ${secretMarker}`,
-        workflow_id: `active-private-workflow-${runToken}`,
-        model: `active-private-model-${runToken}`,
-        ecosystem: "private-ecosystem",
-        inputs: [],
-        parameters: {},
-        worker_id: null,
-        provider_job_id: null,
-        error_code: null,
-        error_message: null,
-        completed_at: null,
-      },
-    ]),
-  });
-  await expectOk(response, "Could not seed Admin health fixture jobs");
-  return secretMarker;
+        generation_job_id: null,
+        origin: "uploaded",
+        kind: "image",
+        mime_type: "image/png",
+        storage_key: `renderlab/admin-health/${storageMarker}/purge-${purgeAssetId}.png`,
+        thumbnail_storage_key: null,
+        original_filename: `${contentMarker}-purge.png`,
+        display_name: `${contentMarker} purge`,
+        size_bytes: 1,
+        provenance: { private: contentMarker },
+        metadata: { private: contentMarker },
+        created_at: staleAt,
+        updated_at: staleAt,
+        deleted_at: staleAt,
+        purged_at: null,
+      }),
+    }),
+    "Could not seed Admin health purge backlog fixture",
+  );
+
+  return { secretMarker, storageMarker, contentMarker, completionMs: 20_000 };
 }
 
 if (cleanupOnly) {
@@ -255,8 +393,9 @@ try {
 
   await setAccountAccess(adminAccount.id, { role: "admin", status: "active" });
   await setAccountAccess(memberAccount.id, { role: "member", status: "active" });
-  const secretMarker = await seedHealthJobs(memberAccount.id);
+  const healthFixture = await seedHealthJobs(memberAccount.id);
   settingsBaseline = await captureGenerationSettingsBaseline();
+  const healthExpectedSettings = { ...settingsBaseline };
 
   const signedOutSettings = await fetch(`${baseUrl}/api/admin/settings`);
   assert(signedOutSettings.status === 403, `Signed-out Admin settings expected 403, got ${signedOutSettings.status}.`);
@@ -335,18 +474,39 @@ try {
   assert(accountJson.includes(memberAccount.id), "Admin account list is missing the member fixture.");
   assert(!accountJson.includes(outsider.id), "Admin account list enumerated an Auth-only identity without RenderLab access.");
   assert(!accountJson.includes(outsider.email), "Admin account list leaked an Auth-only email without RenderLab access.");
+  const activeAdminCountBeforePromote = Array.isArray(adminAccountsPayload?.accounts)
+    ? adminAccountsPayload.accounts.filter((account) => account?.role === "admin" && account?.status === "active").length
+    : 0;
+  assert(activeAdminCountBeforePromote >= 1, "Admin account list did not include the active fixture admin.");
 
   const healthResponse = await appRequest("/api/admin/health", adminAccount);
   assert(healthResponse.status === 200, `Admin health expected 200, got ${healthResponse.status}.`);
   const healthPayload = await json(healthResponse);
   assert(healthPayload?.ok === true, "Admin health response was not successful.");
-  assert(Number(healthPayload?.health?.activeJobs) >= 1, "Admin health did not count the active run-owned job.");
-  assert(Number(healthPayload?.health?.operationCounts?.["create-image"]) >= 1, "Admin health missed create-image.");
-  assert(Number(healthPayload?.health?.statusCounts?.failed) >= 1, "Admin health missed failed status.");
-  assert(Number(healthPayload?.health?.errorCodeCounts?.generation_failed) >= 1, "Admin health did not sanitize the raw worker error code.");
+  const health = healthPayload?.health;
+  assert(health?.activeJobs === 1, `Admin health active-job count was not exact: ${JSON.stringify(health?.activeJobs)}.`);
+  assert(JSON.stringify(health?.statusCounts) === JSON.stringify({ failed: 1, queued: 1 }), `Admin health status counts were not exact: ${JSON.stringify(health?.statusCounts)}.`);
+  assert(JSON.stringify(health?.operationCounts) === JSON.stringify({ "create-image": 1, "create-video": 1 }), `Admin health operation counts were not exact: ${JSON.stringify(health?.operationCounts)}.`);
+  assert(JSON.stringify(health?.errorCodeCounts) === JSON.stringify({ generation_failed: 1 }), `Admin health safe error counts were not exact: ${JSON.stringify(health?.errorCodeCounts)}.`);
+  assert(health?.recentJobs?.sampleSize === 2 && health?.recentJobs?.truncated === false, `Admin health recent-job bound was not exact: ${JSON.stringify(health?.recentJobs)}.`);
+  assert(health?.recentJobs?.completionTiming?.sampleCount === 1, "Admin health completion sample count was not exact.");
+  assert(health?.recentJobs?.completionTiming?.p50Ms === healthFixture.completionMs, `Admin health p50 timing was not exact: ${JSON.stringify(health?.recentJobs?.completionTiming)}.`);
+  assert(health?.recentJobs?.completionTiming?.p95Ms === healthFixture.completionMs, `Admin health p95 timing was not exact: ${JSON.stringify(health?.recentJobs?.completionTiming)}.`);
+  assert(health?.recentJobs?.failovers?.jobsWithFailover === 1 && health?.recentJobs?.failovers?.eventCount === 1, `Admin health failover incidence was not exact: ${JSON.stringify(health?.recentJobs?.failovers)}.`);
+  assert(JSON.stringify(health?.activeStateAge) === JSON.stringify({ sampleSize: 1, truncated: false, under15Minutes: 0, minutes15To60: 1, hours1To2: 0, over2Hours: 0 }), `Admin health active-age buckets were not exact: ${JSON.stringify(health?.activeStateAge)}.`);
+  assert(JSON.stringify(health?.capacity?.activeReservations) === JSON.stringify({ count: 1, truncated: false }), `Admin health active reservations were not exact: ${JSON.stringify(health?.capacity?.activeReservations)}.`);
+  assert(health?.capacity?.generationEnabled === healthExpectedSettings.generation_enabled, "Admin health generation capacity state did not match the restored singleton.");
+  assert(health?.capacity?.maxActiveJobsPerAccount === healthExpectedSettings.max_active_jobs, "Admin health active limit did not match the restored singleton.");
+  assert(health?.capacity?.maxJobsPerHourPerAccount === healthExpectedSettings.max_jobs_per_hour, "Admin health hourly limit did not match the restored singleton.");
+  for (const [label, value] of Object.entries(health?.maintenanceBacklog ?? {})) {
+    assert(JSON.stringify(value) === JSON.stringify({ count: 1, truncated: false }), `Admin health maintenance backlog ${label} was not exact: ${JSON.stringify(value)}.`);
+  }
+  assert(Object.keys(health?.maintenanceBacklog ?? {}).length === 5, "Admin health maintenance backlog did not expose exactly five bounded categories.");
   const healthJson = JSON.stringify(healthPayload);
   for (const forbidden of [
-    secretMarker,
+    healthFixture.secretMarker,
+    healthFixture.storageMarker,
+    healthFixture.contentMarker,
     `private-workflow-${runToken}`,
     `private-model-${runToken}`,
     `private-worker-${runToken}`,
@@ -382,6 +542,9 @@ try {
   await page.locator("#global-max-active").waitFor({ state: "visible" });
   await page.locator("#global-max-hourly").waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Health", exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Completion p50", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Active state age", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Maintenance backlog", { exact: true }).waitFor({ state: "visible" });
   assert(
     (await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Admin", exact: true }).count()) === 0,
     "Admin was added to ordinary application navigation.",
@@ -462,7 +625,11 @@ try {
   });
   assert(lastAdmin.status === 409, `Last-active-admin protection expected 409, got ${lastAdmin.status}.`);
   const lastAdminPayload = await json(lastAdmin);
-  assert(lastAdminPayload?.error?.code === "last_active_admin", "Last-active-admin protection returned the wrong sanitized code.");
+  const expectedProtectionCode = activeAdminCountBeforePromote === 1 ? "last_active_admin" : "self_lockout";
+  assert(
+    lastAdminPayload?.error?.code === expectedProtectionCode,
+    `Admin self-suspension protection expected ${expectedProtectionCode}, got ${JSON.stringify(lastAdminPayload?.error?.code)}.`,
+  );
 
   const suspendMember = await appRequest(`/api/admin/accounts/${memberAccount.id}`, adminAccount, {
     method: "PATCH",

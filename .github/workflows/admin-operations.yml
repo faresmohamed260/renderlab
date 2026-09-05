@@ -14,6 +14,8 @@ on:
       - "src/lib/supabase/**"
       - "src/server/account/**"
       - "src/server/admin/**"
+      - "src/server/maintenance/**"
+      - "src/server/observability/**"
       - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "supabase/migrations/0011_renderlab_admin_access_control.sql"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"
@@ -40,6 +42,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
       RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
+      RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE: "true"
+      RENDERLAB_TEST_MAINTENANCE_OWNER_SCOPE: "true"
 
     steps:
       - name: Checkout
@@ -64,6 +68,16 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Resolve isolated Admin Health owner
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE' >> "$GITHUB_ENV"
+          import { configuredTestAccountIdentity } from "./scripts/lib/configured-test-account.mjs";
+          const ownerId = configuredTestAccountIdentity("admin-operations-member").id;
+          console.log(`RENDERLAB_TEST_ADMIN_HEALTH_OWNER_ID=${ownerId}`);
+          console.log(`RENDERLAB_TEST_MAINTENANCE_OWNER_ID=${ownerId}`);
+          NODE
 
       - name: Audit exact changed files and whitespace
         if: github.event_name == 'pull_request'
