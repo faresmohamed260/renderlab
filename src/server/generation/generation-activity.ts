@@ -5,6 +5,7 @@ import {
 } from "@/lib/api/generation-activity-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { pollGenerationJob } from "@/server/generation/poll-generation";
+import { findWorker } from "@/server/generation/worker-fleet";
 
 type GenerationActivityRow = {
   id: string;
@@ -13,6 +14,8 @@ type GenerationActivityRow = {
   output_kind: OutputKind;
   prompt: string;
   output_asset_ids: string[];
+  worker_id: string | null;
+  provider_job_id: string | null;
   error_code: string | null;
   error_message: string | null;
   created_at: string;
@@ -20,6 +23,8 @@ type GenerationActivityRow = {
   started_at: string | null;
   completed_at: string | null;
 };
+
+const cancellableStatuses = new Set<GenerationJobStatus>(["queued", "preparing", "running"]);
 
 function activityError(row: Pick<GenerationActivityRow, "status" | "error_code" | "error_message">) {
   if (row.status !== "failed" || !row.error_message) return null;
@@ -32,6 +37,13 @@ function activityError(row: Pick<GenerationActivityRow, "status" | "error_code" 
   };
 }
 
+function canCancelActivity(row: GenerationActivityRow) {
+  if (!cancellableStatuses.has(row.status) || !row.worker_id || !row.provider_job_id) return false;
+  if ((row.output_asset_ids ?? []).length > 0) return false;
+  const worker = findWorker(row.worker_id);
+  return Boolean(worker && (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft"));
+}
+
 function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationActivity {
   return {
     id: row.id,
@@ -40,6 +52,7 @@ function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationA
     outputKind: row.output_kind,
     prompt: row.prompt,
     outputAssetIds: row.output_asset_ids ?? [],
+    canCancel: canCancelActivity(row),
     error: activityError(row),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -72,7 +85,7 @@ export async function listGenerationActivity({
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 40);
   const safeOffset = Math.max(Math.trunc(offset), 0);
   const params = new URLSearchParams({
-    select: "id,status,operation,output_kind,prompt,output_asset_ids,error_code,error_message,created_at,updated_at,started_at,completed_at",
+    select: "id,status,operation,output_kind,prompt,output_asset_ids,worker_id,provider_job_id,error_code,error_message,created_at,updated_at,started_at,completed_at",
     owner_id: `eq.${ownerId}`,
     order: "created_at.desc,id.desc",
     limit: String(safeLimit + 1),
@@ -92,6 +105,7 @@ export async function listGenerationActivity({
         status: refreshed.status,
         updatedAt: refreshed.updatedAt,
         outputAssetIds: refreshed.outputAssetIds,
+        canCancel: fallback.canCancel && cancellableStatuses.has(refreshed.status) && refreshed.outputAssetIds.length === 0,
         error: refreshed.status === "failed"
           ? activityError({
               status: "failed",
