@@ -81,7 +81,7 @@ RenderLab already has a substantial verified core. Cycle 3 must build on it rath
 Detailed historical evidence remains in the archived Project chronology plus `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md` and the architecture documents.
 
 ## Cycle 3 — Reliability, Creative Iteration & Capability Growth
-**Status: `IN PROGRESS — PHASE 16A/16B/16C IMPLEMENTED / VERIFIED; PHASE 16D DESIGN CHECKPOINT PENDING`.**
+**Status: `IN PROGRESS — PHASE 16A/16B/16C IMPLEMENTED / VERIFIED; PHASE 16D DESIGN APPROVED / IMPLEMENTATION PENDING`.**
 
 ### Cycle 3 objective
 Make RenderLab independently reliable after a generation is accepted, then turn one-shot generation into a deeper iterative creative workflow before expanding into another major creative capability.
@@ -634,7 +634,7 @@ Phase 16 planning is captured by the accepted execution contract below. Implemen
 - **16C Run Again:** successful current-valid Activity rows can submit a distinct new ordinary generation attempt through current admission/routing. Failed Retry, successful Run Again and active Cancel remain separate semantics; the historical successful job is immutable and worker/provider/workflow/model/failover metadata is never replayed.
 - **Focused configured verification:** exact head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed Creative Iteration run `33959979016`, including signed-out/foreign privacy, zero implicit dispatch, editable Image/Video/Advanced recipe prefill, stable aliases, ready temporary-source reuse, unavailable-input fail-closed behavior, distinct immutable Run Again attempts, admission denial, exact fixture cleanup and four desktop/narrow screenshots. Artifact `9967633913` has SHA-256 `7fb2906c915390c0b23ae102e2dd06bdbde46736c503d80b0e554d398f660716` and was visually reviewed clean for the implemented 16B/16C surfaces.
 - **Full affected regression matrix:** the same exact head passed all 26 affected workflows. Library Collections run `33959978965` completed its product assertions on attempt 1 but hit a Playwright in-flight-route teardown race after success; unchanged attempt 2 passed with cleanup. Key gates include Create Lifecycle `33959978960`, Activity `33959978980`, Generation Admission `33959978976`, Generation Integration `33959978997`, Video Generation `33959978972`, UI Shell `33959978999` and Integrated Release `33959978983`.
-- **16D remains unimplemented:** UI-056 and this contract require a reviewed desktop+narrow Media Viewer comparison design checkpoint before code. No comparison layout has been self-approved or inferred merely because direct Penpot automation is unavailable.
+- **16D design checkpoint approved:** user approval on 2026-09-05 accepted design PR #100 / branch merge `6dadc9e1976b976ab4584ce830286ba3a8baead1`. The v0.1 comparison direction keeps the default Viewer unchanged; uses progressive disclosure; keeps Result primary at roughly 60/40 on wide layouts with truthful media aspect ratios; stacks a full-width Result before a compact contextual Source card on narrow layouts; gives Source only `Open source`; preserves result-owned Prompt/Details/Continue/Actions and video controls; uses `Close comparison` as the active-state label; and introduces no route, schema, provider/storage exposure or durable comparison state. Viewer comparison code is still unimplemented at this checkpoint.
 - **No rollout implication:** no schema migration, production deployment, production scheduler activation, provider-routing redesign or historical data rewrite is part of 16A–16C.
 
 

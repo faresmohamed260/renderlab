@@ -1,8 +1,8 @@
 # Media Viewer v0.2 — Compare source checkpoint
 
-**Status: `EXPERIMENTAL / REVIEW REQUIRED / NOT IMPLEMENTATION PERMISSION`**
+**Status: `REVIEWED DESIGN CANDIDATE / APPROVED DIRECTION / IMPLEMENTATION PENDING`**
 
-This package exists only to satisfy the Phase 16 / UI-056 visual checkpoint before any Viewer comparison code is written. It does not change the approved Media Viewer, does not authorize implementation, and does not make the candidate `APPROVED`.
+This package records the user-approved Phase 16 / UI-056 visual direction before Viewer comparison implementation. Approval was given on 2026-09-05 and design PR #100 merged this package into the Phase 16 implementation branch as `6dadc9e1976b976ab4584ce830286ba3a8baead1`. The SVGs are reviewed design candidates; the real responsive implementation still requires configured render/keyboard/reduced-motion verification before the Viewer extension can become `APPROVED`.
 
 ## Candidate files
 - `media-viewer-v0.2-compare-source-desktop-image.svg` — Image → Image, 1440×1100.
@@ -24,18 +24,16 @@ This package exists only to satisfy the Phase 16 / UI-056 visual checkpoint befo
 11. **No backend expansion is implied.** No schema change, source resurrection, temporary-source comparison, provider replay, or new media identity is part of this candidate.
 
 ## Render-review correction
-The first candidate render exposed two design-artifact defects before implementation: desktop examples stretched media into tall portrait frames, and the narrow artboards cropped the existing Actions section. The refined files correct both problems. This correction is design-only evidence, not approval of the feature.
+The first candidate render exposed two design-artifact defects before implementation: desktop examples stretched media into tall portrait frames, and the narrow artboards cropped the existing Actions section. The refined files correct both problems. This correction was part of the approved design checkpoint.
 
-A second local SVG render/inspection pass on 2026-09-05 found the refined four-case package visually coherent: media geometry is no longer distorted, the result remains clearly primary, the narrow source treatment reads as contextual rather than as a competing Viewer, and existing Actions remain visible. This is a quality check of the candidate artifact only; human checkpoint approval is still required before implementation.
+A second local SVG render/inspection pass on 2026-09-05 found the refined four-case package visually coherent: media geometry is no longer distorted, the result remains clearly primary, the narrow source treatment reads as contextual rather than as a competing Viewer, and existing Actions remain visible. This quality check preceded the explicit user approval recorded above.
 
-## Review questions
-The checkpoint should explicitly decide these before implementation:
+## Accepted checkpoint decisions
+- Keep the wide result/source priority at roughly 60/40.
+- Keep the compact narrow Source card immediately below the full-width Result.
+- Keep `Open source` inside the contextual source pane/card.
+- Keep the low-opacity result accent treatment.
+- Use **Close comparison** for the active-state exit action.
 
-- Is the wide result/source priority strong enough at roughly 60/40, or should the result take more space?
-- On narrow screens, should the compact Source card remain immediately below Result as shown, or move below result metadata/Details?
-- Is `Open source` useful inside the contextual source card/pane, or should source navigation remain outside the comparison surface?
-- Does the low-opacity result accent border communicate primary status without reading as a selected-card state?
-- Is **Close comparison** the clearest active-state wording?
-
-## Acceptance boundary
-If this direction is accepted, record the accepted decisions in repository UI documentation before implementation. Then implement the smallest Viewer extension and verify image→image plus image→video at desktop/narrow, keyboard navigation and reduced-motion. Until that happens, UI-056 / Phase 16D remains `DESIGN CHECKPOINT PENDING`.
+## Implementation boundary
+Implement only the smallest Viewer extension consistent with these accepted decisions, then verify image→image plus image→video at desktop/narrow, keyboard navigation and reduced-motion. The design checkpoint is complete; UI-056 / Phase 16D remains `IMPLEMENTATION PENDING` until the real rendered Viewer behavior is verified.
