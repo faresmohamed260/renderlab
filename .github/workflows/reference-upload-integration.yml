@@ -15,6 +15,7 @@ on:
       - "src/lib/api/reference-upload-contract.ts"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
       - "supabase/migrations/0005_core_account_ownership_enforce.sql"
+      - "supabase/migrations/0017_staging_cleanup_claims.sql"
       - "package.json"
   push:
     branches: [main]
