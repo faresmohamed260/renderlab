@@ -5,6 +5,7 @@ import {
 } from "@/lib/api/generation-activity-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { pollGenerationJob } from "@/server/generation/poll-generation";
+import { reconstructAvailableGenerationRecipeRequest } from "@/server/generation/generation-recipe";
 import { findWorker } from "@/server/generation/worker-fleet";
 
 type GenerationActivityRow = {
@@ -14,6 +15,8 @@ type GenerationActivityRow = {
   output_kind: OutputKind;
   prompt: string;
   output_asset_ids: string[];
+  inputs: unknown;
+  parameters: unknown;
   worker_id: string | null;
   provider_job_id: string | null;
   error_code: string | null;
@@ -53,6 +56,7 @@ function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationA
     prompt: row.prompt,
     outputAssetIds: row.output_asset_ids ?? [],
     canCancel: canCancelActivity(row),
+    canRunAgain: false,
     error: activityError(row),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -85,7 +89,7 @@ export async function listGenerationActivity({
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 40);
   const safeOffset = Math.max(Math.trunc(offset), 0);
   const params = new URLSearchParams({
-    select: "id,status,operation,output_kind,prompt,output_asset_ids,worker_id,provider_job_id,error_code,error_message,created_at,updated_at,started_at,completed_at",
+    select: "id,status,operation,output_kind,prompt,inputs,parameters,output_asset_ids,worker_id,provider_job_id,error_code,error_message,created_at,updated_at,started_at,completed_at",
     owner_id: `eq.${ownerId}`,
     order: "created_at.desc,id.desc",
     limit: String(safeLimit + 1),
@@ -119,10 +123,20 @@ export async function listGenerationActivity({
     }
   }));
 
+  const reusableIds = new Set((await Promise.all(pageRows.map(async (row) => {
+    if (row.status !== "succeeded") return null;
+    try {
+      return await reconstructAvailableGenerationRecipeRequest(ownerId, row) ? row.id : null;
+    } catch {
+      return null;
+    }
+  }))).filter((id): id is string => Boolean(id)));
+
   const availableIds = await activeOutputIds(ownerId, refreshedItems);
   const items = refreshedItems.map((item) => ({
     ...item,
     outputAssetIds: item.outputAssetIds.filter((id) => availableIds.has(id)),
+    canRunAgain: item.status === "succeeded" && reusableIds.has(item.id),
   }));
 
   return {

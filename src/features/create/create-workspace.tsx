@@ -23,6 +23,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
+  advancedDraftFromParameters,
   advancedParametersFromDraft,
   CreateAdvancedPanel,
   createAdvancedDraft,
@@ -30,6 +31,7 @@ import {
 } from "@/features/create/create-advanced-panel";
 import { CreateReferenceMentionMenu } from "@/features/create/create-reference-mention-menu";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
+import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import {
   maxMediaUploadBytes,
   supportedMediaUploadMimeTypes,
@@ -40,6 +42,7 @@ import type {
   AspectRatio,
   ContinuationAction,
   GenerationInputAlias,
+  GenerationInputSource,
   GenerationJob,
   OutputKind,
   PresetAspectRatio,
@@ -67,10 +70,15 @@ type InitialContinuation = {
 
 type AttachedReference = {
   alias: GenerationInputAlias;
-  asset: PublicMediaAsset;
+  source: GenerationInputSource;
   previewUrl: string;
   label: string;
 };
+
+function nextRecipeReferenceNumber(recipe: InitialGenerationRecipe | null) {
+  if (!recipe?.references.length) return 1;
+  return Math.max(...recipe.references.map((reference) => Number(reference.alias.slice(5)) || 0)) + 1;
+}
 
 function referenceAssetLabel(asset: PublicMediaAsset) {
   if (asset.origin === "uploaded") {
@@ -223,12 +231,14 @@ export function CreateWorkspace({
   generationAvailable,
   mediaUploadAvailable,
   initialContinuation = null,
+  initialRecipe = null,
   initialContinuationError = null,
 }: {
   accountAvailable: boolean;
   generationAvailable: boolean;
   mediaUploadAvailable: boolean;
   initialContinuation?: InitialContinuation | null;
+  initialRecipe?: InitialGenerationRecipe | null;
   initialContinuationError?: string | null;
 }) {
   const reduceMotion = Boolean(useReducedMotion());
@@ -237,34 +247,69 @@ export function CreateWorkspace({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const promptSelectionRef = useRef({ start: 0, end: 0 });
-  const [prompt, setPrompt] = useState("");
-  const [outputKind, setOutputKind] = useState<OutputKind>(() => initialContinuation?.action.outputKind ?? "image");
-  const [imageAspect, setImageAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "1:1");
-  const [videoAspect, setVideoAspect] = useState<AspectRatio>(() => initialContinuation ? "original" : "16:9");
-  const [videoResolution, setVideoResolution] = useState<VideoResolution>(defaultVideoResolution);
-  const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(5);
-  const [audioEnabled, setAudioEnabled] = useState(defaultVideoAudioEnabled);
-  const [references, setReferences] = useState<AttachedReference[]>(() =>
-    initialContinuation
-      ? [{
-          alias: generationInputAlias(1),
-          asset: initialContinuation.asset,
-          previewUrl: initialContinuation.asset.contentUrl,
-          label: referenceAssetLabel(initialContinuation.asset),
-        }]
-      : [],
+  const [prompt, setPrompt] = useState(() => initialRecipe?.request.prompt ?? "");
+  const [outputKind, setOutputKind] = useState<OutputKind>(() =>
+    initialRecipe?.request.output.kind ?? initialContinuation?.action.outputKind ?? "image",
   );
-  const [nextReferenceNumber, setNextReferenceNumber] = useState(initialContinuation ? 2 : 1);
+  const [imageAspect, setImageAspect] = useState<AspectRatio>(() =>
+    initialRecipe?.request.output.kind === "image"
+      ? initialRecipe.request.output.aspectRatio
+      : initialContinuation ? "original" : "1:1",
+  );
+  const [videoAspect, setVideoAspect] = useState<AspectRatio>(() =>
+    initialRecipe?.request.output.kind === "video"
+      ? initialRecipe.request.output.aspectRatio
+      : initialContinuation ? "original" : "16:9",
+  );
+  const [videoResolution, setVideoResolution] = useState<VideoResolution>(() =>
+    initialRecipe?.request.output.kind === "video"
+      ? initialRecipe.request.output.resolution ?? defaultVideoResolution
+      : defaultVideoResolution,
+  );
+  const [durationSeconds, setDurationSeconds] = useState<(typeof videoDurations)[number]>(() => {
+    const value = initialRecipe?.request.output.kind === "video" ? initialRecipe.request.output.durationSeconds : undefined;
+    return videoDurations.includes(value as (typeof videoDurations)[number])
+      ? value as (typeof videoDurations)[number]
+      : 5;
+  });
+  const [audioEnabled, setAudioEnabled] = useState(() =>
+    initialRecipe?.request.output.kind === "video"
+      ? initialRecipe.request.output.audioEnabled ?? defaultVideoAudioEnabled
+      : defaultVideoAudioEnabled,
+  );
+  const [references, setReferences] = useState<AttachedReference[]>(() =>
+    initialRecipe
+      ? initialRecipe.references
+      : initialContinuation
+        ? [{
+            alias: generationInputAlias(1),
+            source: { type: "media-asset", id: initialContinuation.asset.id },
+            previewUrl: initialContinuation.asset.contentUrl,
+            label: referenceAssetLabel(initialContinuation.asset),
+          }]
+        : [],
+  );
+  const [nextReferenceNumber, setNextReferenceNumber] = useState(() =>
+    initialRecipe ? nextRecipeReferenceNumber(initialRecipe) : initialContinuation ? 2 : 1,
+  );
   const [referenceMentionOpen, setReferenceMentionOpen] = useState(false);
   const [mentionMenuAnchorAlias, setMentionMenuAnchorAlias] = useState<GenerationInputAlias | null>(() =>
-    initialContinuation ? generationInputAlias(1) : null,
+    initialRecipe?.references[0]?.alias ?? (initialContinuation ? generationInputAlias(1) : null),
   );
   const [mentionRange, setMentionRange] = useState<{ start: number; end: number } | null>(null);
   const [referenceUploadTargetAlias, setReferenceUploadTargetAlias] = useState<GenerationInputAlias | null>(null);
   const [referenceUploading, setReferenceUploading] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("image"));
-  const [videoAdvanced, setVideoAdvanced] = useState<AdvancedDraft>(() => createAdvancedDraft("video"));
+  const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() =>
+    initialRecipe?.request.output.kind === "image"
+      ? advancedDraftFromParameters("image", initialRecipe.request.advanced)
+      : createAdvancedDraft("image"),
+  );
+  const [videoAdvanced, setVideoAdvanced] = useState<AdvancedDraft>(() =>
+    initialRecipe?.request.output.kind === "video"
+      ? advancedDraftFromParameters("video", initialRecipe.request.advanced)
+      : createAdvancedDraft("video"),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(initialContinuationError);
   const [job, setJob] = useState<GenerationJob | null>(null);
@@ -528,7 +573,7 @@ export function CreateWorkspace({
     const nextAlias = generationInputAlias(nextReferenceNumber);
     setReferences([{
       alias: nextAlias,
-      asset: resultAsset,
+      source: { type: "media-asset", id: resultAsset.id },
       previewUrl: resultAsset.contentUrl,
       label: referenceAssetLabel(resultAsset),
     }]);
@@ -574,7 +619,7 @@ export function CreateWorkspace({
       const asset = await uploadPersistentImageFile(file, mimeType as MediaUploadMimeType);
       const attached: AttachedReference = {
         alias: uploadAlias,
-        asset,
+        source: { type: "media-asset", id: asset.id },
         previewUrl: asset.contentUrl,
         label: referenceAssetLabel(asset),
       };
@@ -619,7 +664,7 @@ export function CreateWorkspace({
 
     const inputs = references.map((reference, index) => ({
       alias: reference.alias,
-      source: { type: "media-asset" as const, id: reference.asset.id },
+      source: reference.source,
       role: generationInputRoleForIndex(outputKind, index)!,
     }));
 

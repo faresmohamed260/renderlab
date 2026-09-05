@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { MediaViewer } from "@/features/library/media-viewer";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
+import { loadInitialGenerationRecipe } from "@/server/generation/generation-recipe";
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
 import { listMediaCollections } from "@/server/media/media-collections";
 import { isR2Configured } from "@/server/storage/r2";
@@ -51,12 +52,16 @@ export default async function MediaViewerPage({
   if (!asset) notFound();
 
   const collections = await listMediaCollections(account.id, asset.id).catch(() => null);
+  const reusableRecipe = asset.generation_job_id
+    ? await loadInitialGenerationRecipe(account.id, asset.generation_job_id).catch(() => null)
+    : null;
 
   return (
     <MediaViewer
       asset={publicMediaAsset(asset)}
       collections={collections ?? []}
       collectionsAvailable={collections !== null}
+      reuseRecipeJobId={reusableRecipe?.jobId ?? null}
     />
   );
 }

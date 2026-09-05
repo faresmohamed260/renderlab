@@ -46,10 +46,12 @@ export function MediaViewer({
   asset,
   collections,
   collectionsAvailable,
+  reuseRecipeJobId,
 }: {
   asset: PublicMediaAsset;
   collections: PublicMediaCollection[];
   collectionsAvailable: boolean;
+  reuseRecipeJobId: string | null;
 }) {
   const actions = continuationActionsForMedia(asset.kind);
   const dimensions = asset.width && asset.height ? `${asset.width} × ${asset.height}` : null;
@@ -141,7 +143,7 @@ export function MediaViewer({
             </div>
           ) : null}
 
-          {actions.length ? (
+          {actions.length || reuseRecipeJobId ? (
             <div className="mt-6 border-t border-border pt-5">
               <h3 className="text-xs font-semibold text-text">Continue</h3>
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -150,6 +152,11 @@ export function MediaViewer({
                     <Link href={continuationHref(asset.id, action.id)}>{action.label}</Link>
                   </Button>
                 ))}
+                {reuseRecipeJobId ? (
+                  <Button asChild variant="secondary" size="lg" className="w-full">
+                    <Link href={`/create?recipe=${encodeURIComponent(reuseRecipeJobId)}`}>Reuse settings</Link>
+                  </Button>
+                ) : null}
               </div>
             </div>
           ) : null}

@@ -36,6 +36,22 @@ export function createAdvancedDraft(kind: OutputKind): AdvancedDraft {
   };
 }
 
+export function advancedDraftFromParameters(
+  kind: OutputKind,
+  parameters: GenerationAdvancedParameters | undefined,
+): AdvancedDraft {
+  const defaults = createAdvancedDraft(kind);
+  return {
+    negativePrompt: parameters?.negativePrompt ?? "",
+    seed: String(parameters?.seed ?? defaults.seed),
+    steps: kind === "image" ? String(parameters?.steps ?? defaults.steps) : "",
+    guidance: kind === "image" ? String(parameters?.guidance ?? defaults.guidance) : "",
+    frameRate: kind === "video"
+      ? parameters?.frameRate ?? defaults.frameRate
+      : defaults.frameRate,
+  };
+}
+
 export function advancedParametersFromDraft(
   draft: AdvancedDraft,
   kind: OutputKind,

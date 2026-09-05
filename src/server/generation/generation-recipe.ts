@@ -5,8 +5,11 @@ import type {
 } from "@/lib/capabilities/generation";
 import { resolveCreativeOperation } from "@/lib/capabilities/generation";
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
+import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { generationImageInputsAvailable } from "@/server/generation/submit-generation";
+import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
+import { getReadyReferenceSource } from "@/server/media/reference-uploads";
 
 export type GenerationRecipeJobRow = {
   id: string;
@@ -72,4 +75,53 @@ export async function reconstructAvailableGenerationRecipeRequest(
   if (!request) return null;
   if (!(await generationImageInputsAvailable(ownerId, request))) return null;
   return request;
+}
+
+
+function mediaRecipeLabel(asset: ReturnType<typeof publicMediaAsset>) {
+  if (asset.origin === "uploaded") {
+    return asset.displayName || asset.originalFilename || "Uploaded image";
+  }
+  return "Generated result";
+}
+
+export async function loadInitialGenerationRecipe(
+  ownerId: string,
+  jobId: string,
+): Promise<InitialGenerationRecipe | null> {
+  const row = await loadGenerationRecipeJob(ownerId, jobId);
+  if (!row || row.status !== "succeeded") return null;
+
+  const request = await reconstructAvailableGenerationRecipeRequest(ownerId, row);
+  if (!request) return null;
+
+  const references = await Promise.all(request.inputs.map(async (input) => {
+    if (input.source.type === "media-asset") {
+      const asset = await getMediaAsset(ownerId, input.source.id);
+      if (!asset || asset.kind !== "image") return null;
+      const publicAsset = publicMediaAsset(asset);
+      return {
+        alias: input.alias,
+        source: input.source,
+        previewUrl: publicAsset.contentUrl,
+        label: mediaRecipeLabel(publicAsset),
+      };
+    }
+
+    const source = await getReadyReferenceSource(ownerId, input.source.id);
+    if (!source) return null;
+    return {
+      alias: input.alias,
+      source: input.source,
+      previewUrl: `/api/assets/reference/${encodeURIComponent(source.id)}/content`,
+      label: source.filename || "Historical reference",
+    };
+  }));
+
+  if (references.some((reference) => reference === null)) return null;
+  return {
+    jobId: row.id,
+    request,
+    references: references.filter((reference): reference is NonNullable<typeof reference> => reference !== null),
+  };
 }

@@ -7,7 +7,7 @@ import type {
 } from "@/lib/api/reference-upload-contract";
 import { maxReferenceUploadBytes } from "@/lib/api/reference-upload-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
-import { createSignedUploadUrl, headR2Object, isR2Configured } from "@/server/storage/r2";
+import { createSignedReadUrl, createSignedUploadUrl, headR2Object, isR2Configured } from "@/server/storage/r2";
 
 type SourceRow = {
   id: string;
@@ -24,6 +24,23 @@ type SourceRow = {
 
 export function isReferenceUploadConfigured() {
   return isR2Configured() && isSupabaseConfigured();
+}
+
+export async function getReadyReferenceSource(ownerId: string, sourceId: string) {
+  const params = new URLSearchParams({
+    select: "id,owner_id,storage_key,filename,mime_type,size_bytes,width,height,status,metadata",
+    owner_id: `eq.${ownerId}`,
+    id: `eq.${sourceId}`,
+    status: "eq.ready",
+    limit: "1",
+  });
+  const rows = await supabaseRest<SourceRow[]>(`generation_sources?${params.toString()}`, { method: "GET" });
+  const source = rows?.[0] ?? null;
+  return source?.mime_type.startsWith("image/") ? source : null;
+}
+
+export async function getReferenceSourceContentUrl(source: Pick<SourceRow, "storage_key">) {
+  return createSignedReadUrl(source.storage_key, 300);
 }
 
 function safeFilename(value: string) {

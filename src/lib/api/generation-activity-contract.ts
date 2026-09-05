@@ -8,6 +8,7 @@ export type PublicGenerationActivity = {
   prompt: string;
   outputAssetIds: string[];
   canCancel: boolean;
+  canRunAgain: boolean;
   error: { code: string; message: string } | null;
   createdAt: string;
   updatedAt: string;
