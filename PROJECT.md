@@ -1069,7 +1069,7 @@ Phase 17 is `COMPLETE / VERIFIED / MERGED`. Exact clean implementation head `1ec
 - **Release boundary:** a live Vercel audit after merge found no Phase 17 deployment; production remains accepted candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. No reconciliation/maintenance scheduler, `pg_cron`/`pg_net`, telemetry vendor/event store, schema migration or production maintenance sweep was activated by repository closure.
 - **No speculative infrastructure:** Phase 17 adds no database migration, durable telemetry/event-store table, telemetry vendor, client RUM/session replay, production deployment or reconciliation/maintenance scheduler activation. Existing platform/server logs and current durable RenderLab state remain the v0.1 evidence sources.
 
-That governance step is now complete: read-only worker audit `33995223659` selected the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 implementation remains not started; contract acceptance does not authorize deployment.
+That governance step is now complete: read-only worker audit `33995223659` selected the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 implementation is now in progress: 18A is complete/live-verified, 18B is complete/verified, and 18C is next. These milestones do not authorize production application deployment or later Phase 18 slices.
 
 # Phase 18 Execution Contract — Image Upscale v0.1
 **Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B COMPLETE / VERIFIED; 18C NEXT`.**
