@@ -587,7 +587,6 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
   if (row.output_kind === "image" && contentType.startsWith("image/")) {
     const thumbnailKey = imageThumbnailStorageKey(assetId, storageKey, row.created_at);
     try {
-      injectGenerationFinalizationFault("thumbnail-write");
       const thumbnailBytes = await createImageThumbnailBytes(bytes);
       await writeR2Object({
         key: thumbnailKey,

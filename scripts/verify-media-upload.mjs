@@ -19,7 +19,7 @@ const fixtureFilename = "renderlab-اختبار-画像.png";
 const fixtureDisplayName = "Persistent upload verification";
 const fixtureAccount = configuredTestAccountIdentity("media-upload");
 const pngBytes = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z5ZsAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC",
   "base64",
 );
 
