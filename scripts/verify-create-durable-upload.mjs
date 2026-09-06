@@ -186,7 +186,8 @@ try {
   assert(submittedBody.inputs[0]?.role === "primary-image", "Create generation request did not preserve the Edit input role.");
 
   await page.unroute("**/api/generation/jobs");
-  await page.goto(`${baseUrl}/library?q=${encodeURIComponent(fixtureDisplayName)}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.goto(`${baseUrl}/library?tab=uploads&q=${encodeURIComponent(fixtureDisplayName)}`, { waitUntil: "networkidle", timeout: 60_000 });
+  assert(await page.getByRole("link", { name: "Uploads", exact: true }).getAttribute("aria-current") === "page", "Create durable upload was not verified in the Uploads section.");
   const card = page.locator(`a[href="/library/${asset.id}"]`);
   await card.waitFor({ state: "visible", timeout: 30_000 });
   assert(await card.getAttribute("aria-label") === `Open ${fixtureDisplayName}`, "Create upload was not visible as ordinary durable Library media.");
