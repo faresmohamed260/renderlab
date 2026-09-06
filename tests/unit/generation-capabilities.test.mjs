@@ -4,9 +4,14 @@ import test from "node:test";
 import {
   advancedDefaultsForOutput,
   continuationActionForMedia,
+  defaultGenerationModelForOutput,
+  defaultImageGenerationModel,
   generationInputAlias,
   generationInputRoleForIndex,
+  generationModelDefinitions,
+  generationModelsForOutput,
   generationPromptReferenceAliases,
+  isImageGenerationModel,
   isPromptGenerationOperation,
   maxGenerationInputsForOutput,
   resolveCreativeOperation,
@@ -30,6 +35,17 @@ test("generation aliases and prompt references remain deterministic", () => {
     unresolvedGenerationPromptReferenceAliases("Use @image1 and @image3", ["image1", "image2"]),
     ["image3"],
   );
+});
+
+test("generation model capability exposes contextual choices with stable defaults", () => {
+  assert.equal(defaultImageGenerationModel, "flux2-klein-9b");
+  assert.equal(defaultGenerationModelForOutput("image"), "flux2-klein-9b");
+  assert.equal(defaultGenerationModelForOutput("video"), "ltx25-redgraft");
+  assert.deepEqual(generationModelsForOutput("image"), ["flux2-klein-9b", "qwen-image-edit-2511"]);
+  assert.deepEqual(generationModelsForOutput("video"), ["ltx25-redgraft"]);
+  assert.equal(generationModelDefinitions["qwen-image-edit-2511"].label, "Qwen Image Edit");
+  assert.equal(isImageGenerationModel("qwen-image-edit-2511"), true);
+  assert.equal(isImageGenerationModel("ltx25-redgraft"), false);
 });
 
 test("generation input capabilities preserve bounded roles", () => {

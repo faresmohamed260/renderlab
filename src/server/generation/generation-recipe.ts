@@ -58,6 +58,7 @@ export function reconstructGenerationRecipeRequest(
   }
 
   const parsed = parseGenerationRequest({
+    model: row.parameters.model,
     prompt: row.prompt,
     output,
     inputs: row.inputs,

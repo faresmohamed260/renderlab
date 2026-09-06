@@ -144,6 +144,43 @@ try {
   const generate = page.getByRole("button", { name: "Generate", exact: true });
   assert(await generate.isEnabled(), "Configured Create did not enable Generate with a valid prompt for an authenticated account.");
 
+  const imageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
+  await imageModel.click();
+  assert(
+    (await page.getByRole("menuitemradio", { name: /FLUX\.2 Klein/ }).getAttribute("data-state")) === "checked",
+    "FLUX was not the default Image model.",
+  );
+  await page.getByRole("menuitemradio", { name: /Qwen Image Edit/ }).click();
+  await page.getByRole("button", { name: "Image model Qwen Image Edit", exact: true }).waitFor({ state: "visible" });
+  await page.getByRole("button", { name: "Open Advanced controls" }).click();
+  await page.getByText("Qwen uses its optimized fixed 4-step image tuning.", { exact: false }).waitFor({ state: "visible" });
+  assert(await page.getByLabel("Steps").count() === 0, "Qwen incorrectly exposed configurable Steps.");
+  assert(await page.getByLabel("Guidance").count() === 0, "Qwen incorrectly exposed configurable Guidance.");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-image-model-qwen.png`, fullPage: true });
+  await page.getByRole("button", { name: "Close Advanced controls" }).click();
+
+  let capturedQwenRequest = null;
+  await page.route("**/api/generation/jobs", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
+    capturedQwenRequest = route.request().postDataJSON();
+    await route.fulfill({
+      status: 400,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: false, error: { code: "invalid_request", message: "Intentional image-model serialization probe." } }),
+    });
+  }, { times: 1 });
+  await generate.click();
+  await page.waitForTimeout(250);
+  assert(capturedQwenRequest?.model === "qwen-image-edit-2511", `Create did not serialize Qwen model intent: ${JSON.stringify(capturedQwenRequest)}`);
+  assert(!("steps" in (capturedQwenRequest?.advanced || {})), "Qwen serialized FLUX-only Steps.");
+  assert(!("guidance" in (capturedQwenRequest?.advanced || {})), "Qwen serialized FLUX-only Guidance.");
+  await page.unroute("**/api/generation/jobs");
+  await page.getByRole("button", { name: "Image model Qwen Image Edit", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: /FLUX\.2 Klein/ }).click();
+
   const videoMode = page.getByRole("radio", { name: "Video", exact: true });
   await videoMode.click();
   const videoSettings = page.getByRole("button", { name: /^Video settings\./ });
@@ -170,6 +207,12 @@ try {
   await page.setViewportSize(mobileViewport);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("radio", { name: "Image", exact: true }).click();
+  const mobileImageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
+  await mobileImageModel.waitFor({ state: "visible" });
+  await mobileImageModel.click();
+  await page.getByText("Image model", { exact: true }).waitFor({ state: "visible" });
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-image-model.png`, fullPage: true });
+  await page.keyboard.press("Escape");
   await page.getByRole("radio", { name: "Video", exact: true }).click();
   const reducedModeControl = page.locator('[data-create-motion="mode-control"]');
   await page.waitForFunction(

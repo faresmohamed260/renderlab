@@ -44,17 +44,23 @@ import type {
   GenerationInputAlias,
   GenerationInputSource,
   GenerationJob,
+  ImageGenerationModel,
   OutputKind,
   PresetAspectRatio,
   VideoResolution,
 } from "@/lib/capabilities/generation";
 import {
   continuationActionsForMedia,
+  defaultImageGenerationModel,
   defaultVideoAudioEnabled,
+  defaultVideoGenerationModel,
   defaultVideoResolution,
   generationInputAlias,
   generationInputRoleForIndex,
+  generationModelDefinitions,
   imageAspectRatios,
+  imageGenerationModels,
+  isImageGenerationModel,
   maxGenerationInputsForOutput,
   unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
@@ -90,6 +96,52 @@ function referenceAssetLabel(asset: PublicMediaAsset) {
 const maxPollRetries = 5;
 const createMotionTween = { duration: 0.2, ease: "easeOut" } as const;
 const createMotionSpring = { type: "spring", stiffness: 420, damping: 38, mass: 0.7 } as const;
+
+function ImageModelMenu({
+  value,
+  onValueChange,
+}: {
+  value: ImageGenerationModel;
+  onValueChange: (value: ImageGenerationModel) => void;
+}) {
+  const selected = generationModelDefinitions[value];
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="secondary"
+          aria-label={`Image model ${selected.label}`}
+          className="shrink-0 gap-1.5"
+        >
+          <span>{selected.label}</span>
+          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-64">
+        <DropdownMenuLabel>Image model</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={value}
+          onValueChange={(next) => onValueChange(next as ImageGenerationModel)}
+        >
+          {imageGenerationModels.map((model) => {
+            const definition = generationModelDefinitions[model];
+            return (
+              <DropdownMenuRadioItem key={model} value={model}>
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                  <span>{definition.label}</span>
+                  <span className="text-xs text-text-muted">
+                    {definition.version}{model === defaultImageGenerationModel ? " · Default" : ""}
+                  </span>
+                </span>
+              </DropdownMenuRadioItem>
+            );
+          })}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function AspectRatioMenu({
   value,
@@ -250,6 +302,11 @@ export function CreateWorkspace({
   const [prompt, setPrompt] = useState(() => initialRecipe?.request.prompt ?? "");
   const [outputKind, setOutputKind] = useState<OutputKind>(() =>
     initialRecipe?.request.output.kind ?? initialContinuation?.action.outputKind ?? "image",
+  );
+  const [imageModel, setImageModel] = useState<ImageGenerationModel>(() =>
+    initialRecipe?.request.output.kind === "image" && isImageGenerationModel(initialRecipe.request.model)
+      ? initialRecipe.request.model
+      : defaultImageGenerationModel,
   );
   const [imageAspect, setImageAspect] = useState<AspectRatio>(() =>
     initialRecipe?.request.output.kind === "image"
@@ -645,7 +702,7 @@ export function CreateWorkspace({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
-    const advanced = advancedParametersFromDraft(advancedDraft, outputKind);
+    const advanced = advancedParametersFromDraft(advancedDraft, outputKind, imageModel);
     if (!advanced) {
       setAdvancedOpen(true);
       setError(
@@ -673,6 +730,7 @@ export function CreateWorkspace({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          model: outputKind === "image" ? imageModel : defaultVideoGenerationModel,
           prompt,
           output: {
             kind: outputKind,
@@ -883,6 +941,10 @@ export function CreateWorkspace({
                   <ToggleGroupItem value="video">Video</ToggleGroupItem>
                 </ToggleGroup>
 
+                {outputKind === "image" ? (
+                  <ImageModelMenu value={imageModel} onValueChange={setImageModel} />
+                ) : null}
+
                 <AspectRatioMenu
                   value={aspectRatio}
                   options={outputKind === "image" ? imageAspectRatios : videoAspectRatios}
@@ -952,6 +1014,7 @@ export function CreateWorkspace({
 
             <CreateAdvancedPanel
               outputKind={outputKind}
+              imageModel={imageModel}
               draft={advancedDraft}
               onDraftChange={setAdvancedDraft}
               onReset={resetAdvanced}

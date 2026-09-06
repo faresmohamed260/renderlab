@@ -10,10 +10,12 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import type {
   GenerationAdvancedParameters,
   GenerationFrameRate,
+  ImageGenerationModel,
   OutputKind,
 } from "@/lib/capabilities/generation";
 import {
   advancedDefaultsForOutput,
+  defaultImageGenerationModel,
   generationAdvancedCapabilities,
 } from "@/lib/capabilities/generation";
 
@@ -55,6 +57,7 @@ export function advancedDraftFromParameters(
 export function advancedParametersFromDraft(
   draft: AdvancedDraft,
   kind: OutputKind,
+  imageModel: ImageGenerationModel = defaultImageGenerationModel,
 ): GenerationAdvancedParameters | null {
   if (!draft.seed.trim()) return null;
 
@@ -69,6 +72,8 @@ export function advancedParametersFromDraft(
   if (kind === "video") {
     return { ...common, frameRate: draft.frameRate };
   }
+
+  if (imageModel === "qwen-image-edit-2511") return common;
 
   if (!draft.steps.trim() || !draft.guidance.trim()) return null;
   const steps = Number(draft.steps);
@@ -89,11 +94,13 @@ export function advancedParametersFromDraft(
 
 export function CreateAdvancedPanel({
   outputKind,
+  imageModel = defaultImageGenerationModel,
   draft,
   onDraftChange,
   onReset,
 }: {
   outputKind: OutputKind;
+  imageModel?: ImageGenerationModel;
   draft: AdvancedDraft;
   onDraftChange: (next: AdvancedDraft) => void;
   onReset: () => void;
@@ -118,7 +125,7 @@ export function CreateAdvancedPanel({
 
       <AnimatePresence initial={false} mode="wait">
         <motion.div
-          key={outputKind}
+          key={`${outputKind}:${imageModel}`}
           data-create-motion="advanced-fields"
           initial={reduceMotion ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -153,33 +160,39 @@ export function CreateAdvancedPanel({
           </Field>
 
           {outputKind === "image" ? (
-            <>
-              <Field>
-                <FieldLabel htmlFor="advanced-steps">{generationAdvancedCapabilities.steps.label}</FieldLabel>
-                <Input
-                  id="advanced-steps"
-                  type="number"
-                  min={generationAdvancedCapabilities.steps.min}
-                  max={generationAdvancedCapabilities.steps.max}
-                  step="1"
-                  value={draft.steps}
-                  onChange={(event) => onDraftChange({ ...draft, steps: event.target.value })}
-                />
-              </Field>
+            imageModel === "qwen-image-edit-2511" ? (
+              <p className="col-span-2 text-xs leading-5 text-text-muted sm:col-span-3">
+                Qwen uses its optimized fixed 4-step image tuning. Steps and Guidance are managed by the model.
+              </p>
+            ) : (
+              <>
+                <Field>
+                  <FieldLabel htmlFor="advanced-steps">{generationAdvancedCapabilities.steps.label}</FieldLabel>
+                  <Input
+                    id="advanced-steps"
+                    type="number"
+                    min={generationAdvancedCapabilities.steps.min}
+                    max={generationAdvancedCapabilities.steps.max}
+                    step="1"
+                    value={draft.steps}
+                    onChange={(event) => onDraftChange({ ...draft, steps: event.target.value })}
+                  />
+                </Field>
 
-              <Field>
-                <FieldLabel htmlFor="advanced-guidance">{generationAdvancedCapabilities.guidance.label}</FieldLabel>
-                <Input
-                  id="advanced-guidance"
-                  type="number"
-                  min={generationAdvancedCapabilities.guidance.min}
-                  max={generationAdvancedCapabilities.guidance.max}
-                  step={generationAdvancedCapabilities.guidance.step}
-                  value={draft.guidance}
-                  onChange={(event) => onDraftChange({ ...draft, guidance: event.target.value })}
-                />
-              </Field>
-            </>
+                <Field>
+                  <FieldLabel htmlFor="advanced-guidance">{generationAdvancedCapabilities.guidance.label}</FieldLabel>
+                  <Input
+                    id="advanced-guidance"
+                    type="number"
+                    min={generationAdvancedCapabilities.guidance.min}
+                    max={generationAdvancedCapabilities.guidance.max}
+                    step={generationAdvancedCapabilities.guidance.step}
+                    value={draft.guidance}
+                    onChange={(event) => onDraftChange({ ...draft, guidance: event.target.value })}
+                  />
+                </Field>
+              </>
+            )
           ) : null}
 
           {outputKind === "video" ? (

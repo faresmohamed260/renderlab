@@ -1,5 +1,37 @@
 export type OutputKind = "image" | "video";
 
+export const imageGenerationModels = ["flux2-klein-9b", "qwen-image-edit-2511"] as const;
+export const videoGenerationModels = ["ltx25-redgraft"] as const;
+export type ImageGenerationModel = (typeof imageGenerationModels)[number];
+export type VideoGenerationModel = (typeof videoGenerationModels)[number];
+export type GenerationModel = ImageGenerationModel | VideoGenerationModel;
+
+export const defaultImageGenerationModel: ImageGenerationModel = "flux2-klein-9b";
+export const defaultVideoGenerationModel: VideoGenerationModel = "ltx25-redgraft";
+export const qwenImageFixedSteps = 4;
+export const qwenImageFixedGuidance = 1;
+
+export const generationModelDefinitions: Record<
+  GenerationModel,
+  { label: string; version: string; outputKind: OutputKind }
+> = {
+  "flux2-klein-9b": { label: "FLUX.2 Klein", version: "9B", outputKind: "image" },
+  "qwen-image-edit-2511": { label: "Qwen Image Edit", version: "2511", outputKind: "image" },
+  "ltx25-redgraft": { label: "REDGraft LTX", version: "2.5", outputKind: "video" },
+};
+
+export function generationModelsForOutput(kind: OutputKind): readonly GenerationModel[] {
+  return kind === "image" ? imageGenerationModels : videoGenerationModels;
+}
+
+export function defaultGenerationModelForOutput(kind: OutputKind): GenerationModel {
+  return kind === "image" ? defaultImageGenerationModel : defaultVideoGenerationModel;
+}
+
+export function isImageGenerationModel(model: string | undefined): model is ImageGenerationModel {
+  return imageGenerationModels.includes(model as ImageGenerationModel);
+}
+
 export type PromptGenerationOperation =
   | "create-image"
   | "edit-image"
@@ -145,6 +177,7 @@ export function advancedDefaultsForOutput(kind: OutputKind) {
 }
 
 export type GenerationRequest = {
+  model?: GenerationModel;
   prompt: string;
   output: {
     kind: OutputKind;
@@ -156,6 +189,10 @@ export type GenerationRequest = {
   inputs: GenerationInput[];
   advanced?: GenerationAdvancedParameters;
 };
+
+export function generationModelForRequest(request: GenerationRequest): GenerationModel {
+  return request.model ?? defaultGenerationModelForOutput(request.output.kind);
+}
 
 export type GenerationJobStatus =
   | "queued"

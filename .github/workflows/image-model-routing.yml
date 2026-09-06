@@ -1,0 +1,116 @@
+name: Image Model Routing
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/image-model-routing.yml"
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/mock-native-generation-worker.mjs"
+      - "scripts/verify-image-model-routing.mjs"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/api/generation-contract.ts"
+      - "src/server/generation/**"
+      - "src/app/api/generation/**"
+      - "src/lib/supabase/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/image-model-routing.yml"
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/mock-native-generation-worker.mjs"
+      - "scripts/verify-image-model-routing.mjs"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/api/generation-contract.ts"
+      - "src/server/generation/**"
+      - "src/app/api/generation/**"
+      - "src/lib/supabase/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-image-model-routing-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE: "true"
+      RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL: http://127.0.0.1:4312
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required shared-resource secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Start local native worker
+        shell: bash
+        run: |
+          node scripts/mock-native-generation-worker.mjs > /tmp/renderlab-model-worker.log 2>&1 &
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4312/health > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/renderlab-model-worker.log || true
+          exit 1
+
+      - name: Start configured application
+        shell: bash
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-model-next.log 2>&1 &
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/create > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/renderlab-model-next.log || true
+          exit 1
+
+      - name: Verify image model routing
+        run: node scripts/verify-image-model-routing.mjs
+
+      - name: Cleanup routing fixtures
+        if: always()
+        run: node scripts/verify-image-model-routing.mjs --cleanup-only || true
+
+      - name: Print logs on failure
+        if: failure()
+        run: |
+          cat /tmp/renderlab-model-worker.log || true
+          cat /tmp/renderlab-model-next.log || true

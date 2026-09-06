@@ -1678,3 +1678,18 @@ Implementation checklist:
 - [x] PR #112 merged as `7798fab8ad8caff19a74005502eb7472297ba7a8` only after all 30 workflows on exact final head `f9e61a2f06ef4f6ef2ff27f170f50495eeb7647f` passed.
 - [x] Bounded post-merge maintenance run `34062569699` backfilled all 13 eligible legacy active image rows, with 0 failures and 0 remaining null thumbnail keys; evidence artifact `9997940257` has ZIP `sha256:bb02409e57ac2ba0737b72fb9cc848d7974bede01ff181f8ac4e36638f7d4e46`.
 - [x] Explicit rollout run `34063455944` deployed source `71a9034039a64beec66894cc4f79b1f62bfc7bf7` as READY production deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` and verified the custom domain, R2 upload CORS, durable image upload, WebP thumbnail, private 240-second thumbnail redirect cache, Library listing and exact fixture cleanup. Rollback to `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` was not required. Evidence artifact `9998223539` has JSON sha256 `4d4130f6c2a8768b5a4a5f068e1d2d6b182c849ccaf10df229f985c9ebab05fd` and ZIP sha256 `540839b3655089fc9b4c72b7bee0a21280b29dbe377e3b054c295b92737e9bdb`. No Supabase schema change, R2 resource migration, worker change, scheduler change or creative-capability expansion occurred.
+
+## Post-Cycle 3 Corrective Maintenance — Contextual Image Model Choice
+**Status: `IMPLEMENTED / STAGING-VERIFIED / EXACT-HEAD PR ACCEPTANCE PENDING`.**
+
+- [x] Treat the model as bounded Create product intent instead of an invisible worker-routing detail.
+- [x] In Image mode expose a compact maintained-dropdown selector with **FLUX.2 Klein** as the default and **Qwen Image Edit** as the current alternative; do not add a Models destination.
+- [x] Keep the selector contextual: Video has one current model and keeps no redundant model control.
+- [x] Persist the canonical model ID in existing generation-job parameters and preserve it through current-valid Reuse Settings, successful Run Again and failed Retry reconstruction.
+- [x] Keep worker primary/standby, provider IDs, workflow IDs and failover behavior server-owned and absent from the browser contract.
+- [x] Respect model-specific tuning: Qwen uses verified fixed 4-step / CFG 1.0 execution, hides configurable Steps/Guidance and rejects incompatible submitted tuning; FLUX retains its current configurable Image Advanced controls.
+- [x] Preserve historical compatibility: omitted model intent defaults to FLUX for Image and REDGraft for Video.
+- [x] Fresh Qwen audit `34064898642` / artifact `9998623751` verified both registered gateways; isolated local routing run `34065515794` proved Qwen → Qwen fleet, FLUX → current FLUX fleet, old omitted-model → FLUX, and exact cleanup without real provider work.
+- [ ] Complete final exact-head PR workflow matrix and responsive rendered review before merge.
+
+No schema migration, worker deployment, new infrastructure resource or production rollout is authorized by this maintenance item.
