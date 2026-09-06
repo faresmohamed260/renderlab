@@ -1,0 +1,164 @@
+name: Phase 18B Docs Patch
+
+on:
+  push:
+    branches:
+      - work/phase-18-image-upscale
+    paths:
+      - .github/workflows/phase18b-docs-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-18-image-upscale
+          fetch-depth: 0
+      - name: Patch authoritative docs and self-remove
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one occurrence, found {count}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          def insert_once(path, marker, insertion):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(marker)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one marker, found {count}: {marker[:100]!r}")
+              p.write_text(text.replace(marker, insertion + marker, 1))
+
+          # PROJECT.md
+          replace_once(
+              "PROJECT.md",
+              "**Status: `IN PROGRESS — PHASE 18A COMPLETE / LIVE VERIFIED; PHASE 18B NEXT`.**",
+              "**Status: `IN PROGRESS — PHASE 18A COMPLETE / LIVE VERIFIED; PHASE 18B COMPLETE / VERIFIED; PHASE 18C NEXT`.**",
+          )
+          replace_once(
+              "PROJECT.md",
+              "**Phase 18 — Image Upscale v0.1: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B NEXT`.**",
+              "**Phase 18 — Image Upscale v0.1: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B COMPLETE / VERIFIED; 18C NEXT`.**",
+          )
+          replace_once(
+              "PROJECT.md",
+              "**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B NOT STARTED`.**",
+              "**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B COMPLETE / VERIFIED; 18C NEXT`.**",
+          )
+          replace_once(
+              "PROJECT.md",
+              "**Handoff boundary:** Phase 18B may now start, but only from a fresh pre-DDL audit of current `generation_jobs.operation` rows/constraints and related domain contracts. The accepted contract still requires the smallest compatible `upscale-image` schema/domain change and forbids masquerading Upscale as Edit.",
+              "**Handoff boundary:** Phase 18B is now complete/verified from a fresh pre-DDL audit plus the smallest compatible `upscale-image` domain/schema change. Phase 18C is next and remains unstarted; Upscale must continue to stay separate from prompt-generation submission and from Edit semantics.",
+          )
+          replace_once(
+              "PROJECT.md",
+              "This checkpoint was the predeployment gate and did **not** complete 18A by itself. It has since been superseded by the explicitly authorized deployment and corrected full live proof recorded in **Phase 18A live worker verification — 2026-09-06** above. No `upscale-image` schema/product/API/UI coupling has started; the next hard gate is the Phase 18B pre-DDL domain/schema audit.",
+              "This checkpoint was the predeployment gate and did **not** complete 18A by itself. It has since been superseded by the explicitly authorized deployment and corrected full live proof recorded in **Phase 18A live worker verification — 2026-09-06** above. Phase 18B has since added the truthful `upscale-image` domain/schema contract described below; product API/admission/lifecycle/UI coupling remains unstarted and belongs to 18C–18E.",
+          )
+          project_evidence = """#### 18B implementation verification — 2026-09-06\nPhase 18B is `COMPLETE / VERIFIED`. This is a domain/schema milestone only; it does not expose Upscale through the RenderLab product yet.\n\n- A fresh shared-state pre-DDL audit confirmed the live `generation_jobs.operation` check still allowed only the four prompt-generation operations, `prompt` was `NOT NULL`, all audited existing prompt rows were non-null/nonblank, core RLS remained enabled, browser table grants remained empty and same-owner generated-media/job links had zero violations. Historical prompt-generation rows were not rewritten.\n- `CreativeOperation` now truthfully includes `upscale-image`, while `PromptGenerationOperation` and ordinary `GenerationRequest` remain prompt-only. `resolveCreativeOperation()` still resolves only Create/Edit/Video/Animate; Upscale is not coerced through prompt-generation parsing.\n- `src/lib/capabilities/upscale.ts` adds the narrow server-owned `UpscaleImageCommand`: `operation='upscale-image'`, `outputKind='image'`, `prompt=null`, one durable `media-asset` input with `image1` / `primary-image` semantics, and fixed `parameters.upscale.scale=2`. Source ownership/eligibility is intentionally not trusted from this object; 18C must reload the route asset under the current owner before dispatch.\n- Persisted/public job contracts that legitimately represent history now allow `prompt: null`. Shared prompt-recipe reconstruction explicitly rejects non-prompt operations, so a succeeded Upscale row cannot accidentally gain Phase 16 Run Again/Reuse Settings and failed Upscale Retry is not fabricated before 18D. Activity can type the `Upscale image` operation label, but the truthful non-prompt `2× upscale` summary remains 18D work.\n- Repository migration `0018_image_upscale_job_semantics.sql` was applied to shared Supabase as `20260906004810 renderlab_image_upscale_job_semantics`. It adds `upscale-image`, drops column-level prompt `NOT NULL`, and adds an operation-specific prompt check: Upscale requires `NULL` prompt while the four prompt-generation operations still require a non-null, nonblank prompt. No transform table or historical rewrite was introduced.\n- Post-DDL audit confirmed the new checks/nullability, zero invalid historical prompt rows, RLS still enabled, zero `anon`/`authenticated` raw-table grants and zero generated-media/job owner-link violations. Supabase Security Advisor reported no new 18B-specific issue; the intentional server-owned RLS/no-policy INFO and unrelated leaked-password-protection warning remain pre-existing tracked posture.\n- Exact implementation head `5f9fd7a608df29b1fa25870da369ab55291b875f` passed Engineering Quality, including lint/typecheck/unit tests for the operation split and canonical fixed-2× command, plus all completed affected configured regressions. The final exact-head validation record is closed only after the remaining attached Video Generation Integration run completes.\n- No Upscale product route, generation-admission dispatch, native Upscale routing/reconciliation/finalization/cancellation/failed Retry, Compare source behavior, Viewer action, production application deployment, scheduler, `pg_cron` or `pg_net` activation was added by 18B. Those remain sequenced under 18C–18F.\n\n"""
+          insert_once("PROJECT.md", "### 18C — Server/API and admission boundary\n", project_evidence)
+
+          p = Path("PROJECT.md")
+          text = p.read_text()
+          pattern = r"## Immediate Handoff\n.*?(?=\n\n## Phase 14 Implementation Verification)"
+          replacement = """## Immediate Handoff\nPhase 17 remains fully closed/merged. Phase 18A is complete/live-verified on the dedicated SwinIR 2× worker, and Phase 18B is complete/verified on `work/phase-18-image-upscale`: `upscale-image` is now a truthful promptless persisted operation, the narrow fixed-2× command exists, and shared migration `20260906004810 renderlab_image_upscale_job_semantics` is applied/audited without rewriting historical prompt jobs or weakening owner/RLS/browser-grant invariants. Phase 18C is next and has not started. Do not infer product exposure from the schema: no Upscale API/admission dispatch, lifecycle routing, Activity Retry/summary/Compare source, Viewer action, production app rollout or scheduler activation is implemented by 18B. Production deployment and deferred Phase 18 capabilities remain unauthorized."""
+          text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit(f"PROJECT.md: Immediate Handoff replacement count {count}")
+          p.write_text(text)
+
+          # UI_MIGRATION.md
+          replace_once(
+              "docs/ui/UI_MIGRATION.md",
+              "**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B NEXT` under UI-058.**",
+              "**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B COMPLETE / VERIFIED; 18C NEXT` under UI-058.**",
+          )
+          replace_once(
+              "docs/ui/UI_MIGRATION.md",
+              "- [x] Audited current domain/schema: `CreativeOperation` and `generation_jobs.operation` still cover only the four prompt-generation operations; Upscale requires truthful new operation/schema semantics and must not masquerade as Edit.",
+              "- [x] Pre-DDL domain/schema audit confirmed `CreativeOperation` and the live `generation_jobs.operation` constraint still covered only the four prompt-generation operations, `prompt` was non-null for all audited history, and owner/RLS/browser-grant invariants were clean before mutation.",
+          )
+          migration_evidence = """### 18B product/domain/schema — COMPLETE / VERIFIED\n- [x] Keep ordinary `GenerationRequest` prompt-only; split `PromptGenerationOperation` from persisted `CreativeOperation` and add truthful `upscale-image`.\n- [x] Add one narrow server-owned fixed-2× `UpscaleImageCommand` with `prompt=null`, one durable `media-asset` / `primary-image` input and canonical `parameters.upscale.scale=2`.\n- [x] Make persisted/public Activity prompt nullable while explicitly rejecting non-prompt operations from Phase 16 recipe reconstruction, preventing accidental Run Again/Reuse Settings before 18D.\n- [x] Apply repository migration `0018_image_upscale_job_semantics.sql` as shared migration `20260906004810 renderlab_image_upscale_job_semantics`: operation check includes `upscale-image`; prompt is nullable only under a companion semantic check that requires null for Upscale and nonblank prompt for the four prompt operations.\n- [x] Post-DDL audit: no historical row rewrite, zero invalid prompt rows, RLS still enabled, zero direct `anon`/`authenticated` `generation_jobs` grants, zero media/job owner-link violations, no new 18B-specific Security Advisor finding.\n- [x] Exact implementation head `5f9fd7a608df29b1fa25870da369ab55291b875f` passed Engineering Quality and every completed attached affected workflow; exact final-head closure still waits for the remaining attached Video Generation Integration run plus docs-final validation.\n- [x] Keep 18C+ unimplemented: no product Upscale route/admission dispatch, lifecycle/failed-Retry/Activity summary/Compare source, Viewer action, production application deployment or scheduler activation.\n\n"""
+          insert_once("docs/ui/UI_MIGRATION.md", "### Locked implementation sequence\n", migration_evidence)
+          replace_once(
+              "docs/ui/UI_MIGRATION.md",
+              "- [ ] **18B Domain/schema:** add `upscale-image`; use a narrow promptless Upscale product command; apply/audit the smallest `generation_jobs` compatibility migration only after pre-DDL row/constraint review.",
+              "- [x] **18B Domain/schema:** `upscale-image`, the narrow promptless fixed-2× command and migration `0018` are implemented/applied/audited; historical prompt rows and owner/RLS/browser-grant invariants remain intact.",
+          )
+          replace_once(
+              "docs/ui/UI_MIGRATION.md",
+              "**Phase 18 implementation is in progress and must remain inside the accepted 18A→18F sequence above. 18A is complete/live-verified; 18B is the next slice and must start with the accepted fresh pre-DDL audit before any schema mutation.**",
+              "**Phase 18 implementation remains inside the accepted 18A→18F sequence. 18A is complete/live-verified and 18B is complete/verified; 18C is the next unstarted slice. No later lifecycle/UI/product rollout is implied by the 18B schema/domain milestone.**",
+          )
+
+          # UI_DECISIONS.md
+          replace_once(
+              "docs/ui/UI_DECISIONS.md",
+              "### UI-058 — Image Upscale is a contextual durable-media continuation\n**Status:** Accepted",
+              "### UI-058 — Image Upscale is a contextual durable-media continuation\n**Status:** Accepted — 18A/18B verified; visible Viewer implementation pending",
+          )
+          ui058_evidence = """\n\n#### UI-058 Phase 18B implementation evidence — 2026-09-06\nThe underlying domain/schema prerequisite is verified without changing the accepted visible composition. `CreativeOperation` now includes truthful promptless `upscale-image`; ordinary prompt-generation requests remain unchanged; the fixed-2× Upscale command accepts only one durable `media-asset` source identity; and shared migration `20260906004810 renderlab_image_upscale_job_semantics` permits null prompt only for Upscale while preserving nonblank prompts for existing operations. Recipe reconstruction rejects Upscale, so successful Run Again/Reuse Settings cannot appear accidentally before the later lifecycle slice. No Viewer action, Activity `2× upscale` summary, Compare source extension or other visible UI was implemented in 18B, so the required desktop+narrow UI-058 design checkpoint remains a future 18E gate.\n"""
+          p = Path("docs/ui/UI_DECISIONS.md")
+          text = p.read_text()
+          if "#### UI-058 Phase 18B implementation evidence" in text:
+              raise SystemExit("UI-058 18B evidence already present")
+          p.write_text(text.rstrip() + ui058_evidence + "\n")
+
+          # PRODUCT_CAPABILITIES.md
+          replace_once(
+              "docs/architecture/PRODUCT_CAPABILITIES.md",
+              "## Phase 18 selected capability — Image Upscale v0.1 — contract accepted / implementation not started",
+              "## Phase 18 Image Upscale v0.1 — 18A/18B verified; product exposure pending",
+          )
+          replace_once(
+              "docs/architecture/PRODUCT_CAPABILITIES.md",
+              "This is an **accepted target capability**, not a verified RenderLab capability yet. Current `GenerationRequest` remains prompt-generation-only. Phase 18 must add a separate narrow Upscale product command, truthful persisted `upscale-image` job semantics and a real async worker contract before the Viewer action is exposed. Existing admission, cancellation, reconciliation, finalization, Activity and owner boundaries are reused. Restore remains deferred until a distinct deployed restoration semantic exists.",
+              "Phase 18A and 18B now verify the worker plus domain/schema prerequisites, but Upscale is **not yet product-exposed**. `GenerationRequest` remains prompt-generation-only; persisted `CreativeOperation` now additionally includes `upscale-image`, and `src/lib/capabilities/upscale.ts` owns the separate fixed-2× promptless command with one durable `media-asset` primary image and canonical `parameters.upscale.scale=2`. Shared migration `20260906004810 renderlab_image_upscale_job_semantics` adds the operation and permits `prompt=NULL` only for Upscale while retaining nonblank prompts for Create/Edit/Video/Animate; historical rows are unchanged and RLS/browser-grant/owner invariants remain clean. Public history can represent nullable prompt, while prompt recipe reconstruction rejects non-prompt Upscale so successful Run Again/Reuse Settings remain absent. Product API/admission, native lifecycle/cancellation/failed Retry, truthful non-prompt Activity summary, Compare source and Viewer action remain 18C–18E work. Restore remains deferred until a distinct deployed restoration semantic exists.",
+          )
+
+          # FRONTEND_ARCHITECTURE.md
+          replace_once(
+              "docs/architecture/FRONTEND_ARCHITECTURE.md",
+              "### Phase 18 planned Image Upscale frontend boundary — UI-058 — implementation not started",
+              "### Phase 18 Image Upscale frontend/domain boundary — UI-058 — 18B verified, Viewer work pending",
+          )
+          frontend_evidence = """\n\nPhase 18B establishes the server/domain shape without widening the Create client contract. `GenerationRequest` remains the prompt composer contract and resolves only the four prompt operations. Persisted `CreativeOperation` is broader and now includes `upscale-image`; the separate `UpscaleImageCommand` is fixed to one durable `media-asset` primary image, null prompt and scale 2. Activity/public job history is null-safe for prompt, but shared recipe reconstruction rejects non-prompt operations so Upscale cannot leak into Reuse Settings/Run Again. No client mutation, route, native dispatch or Viewer eligibility state is added yet; those remain 18C–18E.\n"""
+          p = Path("docs/architecture/FRONTEND_ARCHITECTURE.md")
+          text = p.read_text()
+          if "Phase 18B establishes the server/domain shape" in text:
+              raise SystemExit("FRONTEND_ARCHITECTURE Phase 18B evidence already present")
+          p.write_text(text.rstrip() + frontend_evidence + "\n")
+
+          # INFRASTRUCTURE.md
+          replace_once(
+              "docs/architecture/INFRASTRUCTURE.md",
+              "Phase 18A is therefore complete/live-verified. No production RenderLab application deployment, scheduler activation, schema change, product routing, `pg_cron` or `pg_net` activation followed this worker deployment. Phase 18B remains a separate domain/schema slice and must start with its accepted pre-DDL audit.",
+              "Phase 18A is therefore complete/live-verified. No production RenderLab application deployment, scheduler activation, product routing, `pg_cron` or `pg_net` activation followed this worker deployment. Phase 18B has since completed the separately audited domain/schema slice recorded below.",
+          )
+          infra_evidence = """\n\n#### Phase 18B shared schema/domain — COMPLETE / VERIFIED\nA fresh pre-DDL audit on 2026-09-06 found the live `generation_jobs` operation check still limited to Create/Edit/Video/Animate, `prompt` column-level `NOT NULL`, no null/blank historical prompts in the audited rows, RLS enabled, zero direct browser grants and zero same-owner media/job link violations. The migration was therefore kept deliberately additive/compatibility-oriented rather than rewriting historical intent.\n\nRepository `0018_image_upscale_job_semantics.sql` is applied to shared Supabase project `rashyleshocuvpgcooxy` as `20260906004810 renderlab_image_upscale_job_semantics`. It extends `generation_jobs_operation_check` with `upscale-image`, drops the column-level prompt `NOT NULL`, and adds `generation_jobs_prompt_semantics_check`: Upscale requires `prompt IS NULL`; the four prompt-generation operations require non-null/nonblank prompt. It adds no table/function/RPC/policy/grant, does not touch `media_assets` output-slot identity, and does not encode source ownership inside JSON. Same-owner active image eligibility remains an 18C server reload responsibility.\n\nPost-DDL audit verified zero invalid rows, RLS still enabled, zero `anon`/`authenticated` `generation_jobs` grants and zero generated-media/job owner-link violations. The Security Advisor produced no new Phase 18B-specific finding; the existing intentional RLS/no-policy INFO and unrelated leaked-password-protection warning remain tracked. The shared schema is therefore ahead of the product route in a rolling-compatible way: existing deployed prompt-generation code can continue writing nonblank prompt jobs, while no deployed/product path yet creates `upscale-image`. No Vercel rollout, scheduler activation, `pg_cron`, `pg_net`, Upscale product routing or worker redeployment accompanied this migration.\n"""
+          p = Path("docs/architecture/INFRASTRUCTURE.md")
+          text = p.read_text()
+          if "#### Phase 18B shared schema/domain" in text:
+              raise SystemExit("INFRASTRUCTURE Phase 18B evidence already present")
+          p.write_text(text.rstrip() + infra_evidence + "\n")
+
+          Path(".github/workflows/phase18b-docs-patch.yml").unlink()
+      - name: Commit documentation closure
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/architecture/PRODUCT_CAPABILITIES.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md .github/workflows/phase18b-docs-patch.yml
+          git diff --cached --check
+          git commit -m "Document Phase 18B verification"
+          git push origin HEAD:work/phase-18-image-upscale
