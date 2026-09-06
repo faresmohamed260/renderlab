@@ -774,6 +774,8 @@ try {
     "Upscale Viewer exposed Reuse settings after source deletion.",
   );
 
+  await page.goto(`${baseUrl}/library/${imageResultId}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await compareButton.waitFor({ state: "visible", timeout: 30_000 });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await compareButton.click();
