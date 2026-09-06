@@ -10,6 +10,7 @@ import {
   MediaViewerMediaStage,
 } from "@/features/library/media-viewer-comparison";
 import { MediaViewerActions } from "@/features/library/media-viewer-actions";
+import { MediaViewerUpscaleAction } from "@/features/library/media-viewer-upscale-action";
 
 function createdLabel(value: string) {
   const date = new Date(value);
@@ -53,12 +54,14 @@ export function MediaViewer({
   collectionsAvailable,
   reuseRecipeJobId,
   compareSource,
+  upscaleEligible,
 }: {
   asset: PublicMediaAsset;
   collections: PublicMediaCollection[];
   collectionsAvailable: boolean;
   reuseRecipeJobId: string | null;
   compareSource: PublicMediaAsset | null;
+  upscaleEligible: boolean;
 }) {
   const actions = continuationActionsForMedia(asset.kind);
   const dimensions = asset.width && asset.height ? `${asset.width} × ${asset.height}` : null;
@@ -140,7 +143,7 @@ export function MediaViewer({
               </div>
             ) : null}
 
-            {actions.length || reuseRecipeJobId || compareSource ? (
+            {actions.length || reuseRecipeJobId || compareSource || upscaleEligible ? (
               <div className="mt-6 border-t border-border pt-5">
                 <h3 className="text-xs font-semibold text-text">Continue</h3>
                 <div className="mt-3 grid grid-cols-2 gap-2">
@@ -149,6 +152,7 @@ export function MediaViewer({
                       <Link href={continuationHref(asset.id, action.id)}>{action.label}</Link>
                     </Button>
                   ))}
+                  {upscaleEligible ? <MediaViewerUpscaleAction assetId={asset.id} /> : null}
                   {reuseRecipeJobId ? (
                     <Button asChild variant="secondary" size="lg" className="w-full">
                       <Link href={`/create?recipe=${encodeURIComponent(reuseRecipeJobId)}`}>Reuse settings</Link>
