@@ -15,6 +15,7 @@ import {
 import {
   createUpscaleImageCommand,
   imageUpscaleScale,
+  isImageUpscaleAssetMetadataEligible,
 } from "../../src/lib/capabilities/upscale.ts";
 
 test("generation aliases and prompt references remain deterministic", () => {
@@ -88,6 +89,23 @@ test("upscale command is promptless, fixed 2x, and uses one durable primary imag
     parameters: { upscale: { scale: 2 } },
   });
   assert.throws(() => createUpscaleImageCommand("   "), RangeError);
+});
+
+test("upscale Viewer metadata eligibility is conservative and capability-derived", () => {
+  const eligible = {
+    kind: "image",
+    mimeType: "image/png",
+    width: 1024,
+    height: 1024,
+    sizeBytes: "2048",
+  };
+  assert.equal(isImageUpscaleAssetMetadataEligible(eligible), true);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, kind: "video" }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, mimeType: "image/gif" }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, width: null }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, width: 4097 }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, width: 4096, height: 4096 }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, sizeBytes: 25 * 1024 * 1024 + 1 }), false);
 });
 
 test("continuation and advanced defaults stay capability-derived", () => {
