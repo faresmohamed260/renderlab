@@ -1601,10 +1601,10 @@ Implementation checklist:
 
 **Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
-**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18A is now complete/live-verified after the explicitly authorized worker-only deployment; production application deployment remains separate and unauthorized.
+**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18A is complete/live-verified and 18B–18C are complete/verified on the implementation branch; production application deployment remains separate and unauthorized.
 
 ## Cycle 3 / Phase 18 — Image Upscale v0.1
-**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B COMPLETE / VERIFIED; 18C NEXT` under UI-058.**
+**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B COMPLETE / VERIFIED; 18C COMPLETE / VERIFIED; 18D NEXT` under UI-058.**
 
 ### Fresh planning evidence
 - [x] Re-established authoritative repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e` after Phase 17 closure.
@@ -1631,13 +1631,13 @@ Implementation checklist:
 - [x] Make persisted/public Activity prompt nullable while explicitly rejecting non-prompt operations from Phase 16 recipe reconstruction, preventing accidental Run Again/Reuse Settings before 18D.
 - [x] Apply repository migration `0018_image_upscale_job_semantics.sql` as shared migration `20260906004810 renderlab_image_upscale_job_semantics`: operation check includes `upscale-image`; prompt is nullable only under a companion semantic check that requires null for Upscale and nonblank prompt for the four prompt operations.
 - [x] Post-DDL audit: no historical row rewrite, zero invalid prompt rows, RLS still enabled, zero direct `anon`/`authenticated` `generation_jobs` grants, zero media/job owner-link violations, no new 18B-specific Security Advisor finding.
-- [x] Exact implementation head `5f9fd7a608df29b1fa25870da369ab55291b875f` passed Engineering Quality and every completed attached affected workflow; exact final-head closure still waits for the remaining attached Video Generation Integration run plus docs-final validation.
-- [x] Keep 18C+ unimplemented: no product Upscale route/admission dispatch, lifecycle/failed-Retry/Activity summary/Compare source, Viewer action, production application deployment or scheduler activation.
+- [x] Phase 18B closed on definitive tree-identical head `8e6e594b3f9aa7372f4fac758d248a75efa17a40` after all 19 attached workflows passed, including Generation Admission `34003078656` and Video Generation Integration `34003078685`; the post-CI schema/RLS/browser-grant/owner audit remained clean.
+- [x] Keep 18D+ unimplemented during 18C: no Upscale lifecycle/finalization/cancellation/failed Retry, Activity summary/Compare-source extension, Viewer action, production application deployment or scheduler activation.
 
 ### Locked implementation sequence
 - [x] **18A Fleet/worker prerequisite:** registry hygiene, pinned SwinIR runtime, worker deployment and complete live contract proof are verified. The deployment authorization was worker-only and does not authorize RenderLab application rollout.
 - [x] **18B Domain/schema:** `upscale-image`, the narrow promptless fixed-2× command and migration `0018` are implemented/applied/audited; historical prompt rows and owner/RLS/browser-grant invariants remain intact.
-- [ ] **18C Product API/admission:** owner-scoped `POST /api/media/assets/[assetId]/upscale`, fixed scale 2, server-derived eligibility, shared generation admission, no browser worker/storage identity.
+- [x] **18C Product API/admission:** owner-scoped `POST /api/media/assets/[assetId]/upscale`, fixed scale 2, server-derived active durable-image eligibility, shared generation admission and native Upscale dispatch are verified. Configured Generation Integration `34004300165` and Generation Admission `34004300161` passed; no browser worker/storage/model identity crosses the route.
 - [ ] **18D Lifecycle/recovery:** reuse reconciliation/finalization/cancellation; failed Retry is current-source-revalidated; successful Run Again/Reuse Settings stay absent; Activity gains truthful Upscale summary; Compare source extends conditionally to succeeded Upscale results.
 - [ ] **18E Viewer UI:** add server-derived **Upscale 2×** in existing Continue hierarchy, small in-flight/accepted/error feedback, no new generic primitive; desktop+narrow design checkpoint precedes implementation.
 - [ ] **18F Verification:** dedicated run-owned Image Upscale Integration, live-worker geometry proof after authorization, ownership/admission/cancel/retry/reconciliation regressions, responsive artifacts + human review, complete exact-final-head affected matrix and cleanup.
@@ -1652,4 +1652,4 @@ Implementation checklist:
 - video upscale;
 - 4×/arbitrary scale, batch upscale and Variations.
 
-**Phase 18 implementation remains inside the accepted 18A→18F sequence. 18A is complete/live-verified and 18B is complete/verified; 18C is the next unstarted slice. No later lifecycle/UI/product rollout is implied by the 18B schema/domain milestone.**
+**Phase 18 implementation remains inside the accepted 18A→18F sequence. 18A is complete/live-verified and 18B–18C are complete/verified; 18D is the next unstarted slice. No lifecycle/UI/production rollout is implied by the 18C API/admission milestone.**
