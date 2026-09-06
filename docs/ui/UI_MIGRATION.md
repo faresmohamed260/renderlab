@@ -1433,9 +1433,9 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 **Desired outcome:** supported mailbox clients show the RenderLab mark beside the sender name, similar to established branded senders, while email authentication and unrelated `faresuniform.uk` mail remain safe.
 
 ## Current Work
-**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 18 — Image Upscale v0.1 is `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-058 from repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e`. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and is fully closed.
-**Next sequence:** begin Phase 18A fleet/worker prerequisite only from the accepted Image Upscale v0.1 contract. Reconcile the known disabled FLUX/REDGraft primary registrations and prove a real async `/jobs/upscale` worker contract before exposing any product Upscale action. Contract acceptance does not authorize a worker or application deployment.
+**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `COMPLETE / VERIFIED THROUGH PHASE 18; REPOSITORY MERGE PENDING`; Cycle 2 remains `COMPLETE / VERIFIED`.
+**Current phase:** Phase 18 — Image Upscale v0.1 is `COMPLETE / VERIFIED` through 18F on PR #111; repository merge remains pending. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and fully closed.
+**Next sequence:** preserve the verified Phase 18 candidate; repository merge requires explicit authorization. Production application rollout remains separate and unauthorized.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
 **Deployment boundary:** Phase 16 and Phase 17 repository merges changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep; a post-merge Vercel audit confirmed no Phase 17 deployment was created.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
@@ -1601,10 +1601,10 @@ Implementation checklist:
 
 **Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
-**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 implementation remains not started and deployment remains separately authorized.
+**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 is complete/verified through 18F on PR #111; repository merge remains pending, and production application deployment remains separate and unauthorized.
 
 ## Cycle 3 / Phase 18 — Image Upscale v0.1
-**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` under UI-058.**
+**Status: `COMPLETE / VERIFIED — REPOSITORY MERGE PENDING` under UI-058.**
 
 ### Fresh planning evidence
 - [x] Re-established authoritative repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e` after Phase 17 closure.
@@ -1612,16 +1612,35 @@ Implementation checklist:
 - [x] Audit found `flux-primary-01` and `ltx-primary-01` registered but Modal-workspace-disabled; FLUX/LTX standbys remain ready and both Qwen registrations remain ready.
 - [x] Healthy deployed APIs expose Image Edit and Video generation/job lifecycle only; no Upscale, Restore, Inpaint/Outpaint, LoRA-selection or Director endpoint is currently deployed.
 - [x] Selected one coherent capability: **Image Upscale 2×**. Restore and all later creative capability categories remain deferred.
-- [x] Audited current domain/schema: `CreativeOperation` and `generation_jobs.operation` still cover only the four prompt-generation operations; Upscale requires truthful new operation/schema semantics and must not masquerade as Edit.
+- [x] Pre-DDL domain/schema audit confirmed `CreativeOperation` and the live `generation_jobs.operation` constraint still covered only the four prompt-generation operations, `prompt` was non-null for all audited history, and owner/RLS/browser-grant invariants were clean before mutation.
 - [x] Chosen UI boundary: Media Viewer contextual continuation, not a new top-level screen and not a new Create mode in v0.1.
 
+### 18A fleet/worker prerequisite — COMPLETE / LIVE VERIFIED
+- [x] Preserve disabled FLUX/REDGraft primary registrations for historical lookup while excluding them from new submission routing; focused unit coverage added.
+- [x] Pin the SwinIR 2× candidate to source commit `33f616625268d08ba600f8db89388eec0328edb1`, Apache-2.0 project license, exact official 67,277,475-byte weight and `sha256:2032ebf8f401dd3ce2fae5f3852117cb72101ec6ed8358faa64c2a3fa09ed4ac`.
+- [x] Runtime audit `33997212864` passed Engineering Quality + official weight size/hash verification; artifact `9978418889` digest is `sha256:5d6d7ace3384a260bf2e9f59dacea85dfa3fa4e6026af46a825eaca74208dc53`.
+- [x] Prepare RenderLab-owned `workers/image-upscale/modal_app.py` with lightweight gateway/heavy runtime separation, fixed 2× async lifecycle, exact limits, rectangular tiling and alpha path.
+- [x] Permanent offline `Upscale Worker Validation` run `33997784521` passed; after live POST exposed the route-local `UploadFile` forward-reference bug, the annotation scope was corrected and the verifier strengthened before redeployment.
+- [x] Explicitly authorized worker-only deployment completed from exact RenderLab source `3b7f4a4dcc27a64e1423cbd2c6d0993b24ceb3e8` as Modal app `renderlab-image-upscale` in healthy workspace `modal-45` (`renderlab-upscale-01`).
+- [x] Corrected smoke proved invalid scale → `400` and real 8×8 RGB → 16×16 PNG through submit/poll. Corrected full live proof `34000980137` then passed 10 cases covering health/provenance, fixed-scale + geometry rejection, RGB, alpha, EXIF normalization, animated rejection, cancellation, accepted 4096×1024 → 8192×2048 result transport and final healthy/sleeping state.
+- [x] Full proof artifact `9979491468` has ZIP digest `sha256:4a8f2a06b0bcf305eaa9b270bbfbe5937e0f8b5abeb004f5ab57c2665e7e6d04`; `evidence.json` is `sha256:0ad85f892357f1e6d611b32b27a03fa030eef8df3ffe7afb3dae2950919a1dab`. Persistent proof fixtures: Supabase `0`, R2 `0`. No application/schema/UI rollout followed.
+
+### 18B product/domain/schema — COMPLETE / VERIFIED
+- [x] Keep ordinary `GenerationRequest` prompt-only; split `PromptGenerationOperation` from persisted `CreativeOperation` and add truthful `upscale-image`.
+- [x] Add one narrow server-owned fixed-2× `UpscaleImageCommand` with `prompt=null`, one durable `media-asset` / `primary-image` input and canonical `parameters.upscale.scale=2`.
+- [x] Make persisted/public Activity prompt nullable while explicitly rejecting non-prompt operations from Phase 16 recipe reconstruction, preventing accidental Run Again/Reuse Settings before 18D.
+- [x] Apply repository migration `0018_image_upscale_job_semantics.sql` as shared migration `20260906004810 renderlab_image_upscale_job_semantics`: operation check includes `upscale-image`; prompt is nullable only under a companion semantic check that requires null for Upscale and nonblank prompt for the four prompt operations.
+- [x] Post-DDL audit: no historical row rewrite, zero invalid prompt rows, RLS still enabled, zero direct `anon`/`authenticated` `generation_jobs` grants, zero media/job owner-link violations, no new 18B-specific Security Advisor finding.
+- [x] Phase 18B closed on definitive tree-identical head `8e6e594b3f9aa7372f4fac758d248a75efa17a40` after all 19 attached workflows passed, including Generation Admission `34003078656` and Video Generation Integration `34003078685`; the post-CI schema/RLS/browser-grant/owner audit remained clean.
+- [x] Keep 18D+ unimplemented during 18C: no Upscale lifecycle/finalization/cancellation/failed Retry, Activity summary/Compare-source extension, Viewer action, production application deployment or scheduler activation.
+
 ### Locked implementation sequence
-- [ ] **18A Fleet/worker prerequisite:** reconcile known dead-primary registry entries; select/pin model/runtime provenance; establish live async `/jobs/upscale` + GET/DELETE lifecycle and exact 2× PNG geometry. Any worker deployment requires separate explicit authorization.
-- [ ] **18B Domain/schema:** add `upscale-image`; use a narrow promptless Upscale product command; apply/audit the smallest `generation_jobs` compatibility migration only after pre-DDL row/constraint review.
-- [ ] **18C Product API/admission:** owner-scoped `POST /api/media/assets/[assetId]/upscale`, fixed scale 2, server-derived eligibility, shared generation admission, no browser worker/storage identity.
-- [ ] **18D Lifecycle/recovery:** reuse reconciliation/finalization/cancellation; failed Retry is current-source-revalidated; successful Run Again/Reuse Settings stay absent; Activity gains truthful Upscale summary; Compare source extends conditionally to succeeded Upscale results.
-- [ ] **18E Viewer UI:** add server-derived **Upscale 2×** in existing Continue hierarchy, small in-flight/accepted/error feedback, no new generic primitive; desktop+narrow design checkpoint precedes implementation.
-- [ ] **18F Verification:** dedicated run-owned Image Upscale Integration, live-worker geometry proof after authorization, ownership/admission/cancel/retry/reconciliation regressions, responsive artifacts + human review, complete exact-final-head affected matrix and cleanup.
+- [x] **18A Fleet/worker prerequisite:** registry hygiene, pinned SwinIR runtime, worker deployment and complete live contract proof are verified. The deployment authorization was worker-only and does not authorize RenderLab application rollout.
+- [x] **18B Domain/schema:** `upscale-image`, the narrow promptless fixed-2× command and migration `0018` are implemented/applied/audited; historical prompt rows and owner/RLS/browser-grant invariants remain intact.
+- [x] **18C Product API/admission:** owner-scoped `POST /api/media/assets/[assetId]/upscale`, fixed scale 2, server-derived active durable-image eligibility, shared generation admission and native Upscale dispatch are verified. Configured Generation Integration `34004300165` and Generation Admission `34004300161` passed; no browser worker/storage/model identity crosses the route.
+- [x] **18D Lifecycle/recovery:** server-owned Upscale reconciliation/finalization and native cancellation reuse the established lifecycle machinery; failed Retry reconstructs canonical fixed-2× intent and current-revalidates its durable source; successful Run Again/Reuse Settings remain absent; Activity renders truthful `2× upscale`; and succeeded Upscale results expose Compare only while the same-owner durable source remains active. Generation Reconciliation `34029067603`, Generation Cancellation `34029067647`, Activity Visual `34029067528`, and corrected full Creative Iteration validation `34029968258` passed. The initial Creative Iteration red gate was a stale verifier-navigation bug, not a product-loader failure, and was corrected at `3b1db7508d6a0e54768743df36ffca505236d2bf` after instrumented proof confirmed active-source resolution and tombstoned-source suppression.
+- [x] **18E Viewer UI:** repository-backed desktop + 390px design checkpoint precedes implementation; server-derived `Upscale 2×` appears as the full-width secondary Continue row beneath Edit/Animate only for eligible durable images; feature-local Button/Spinner/Alert state provides duplicate-submit locking, `Starting upscale…`, accepted `Open Activity`, and retryable sanitized errors without replacing the source Viewer or sending browser-owned settings. Implementation head `ac4aed60e64061ee6a911c858cdc032b6f9a7423` passed Upscale Viewer Visual `34033506667`; artifact `9989427506` (`sha256:49e40583899891a1f1863ff8fd49a714febf11bfdb999bb781849f45c3e01121`) was independently hash-checked and human-reviewed clean with no corrective UI change. Generation Integration `34033506663`, Creative Iteration `34033506642`, UI Shell `34033506628`, Engineering Quality `34033506656`, Reconciliation `34033510954`, Cancellation `34033506603` and the remaining real implementation-head regressions passed; two early GitHub scheduler cancellations created no jobs and are not product failures.
+- [x] **18F Verification:** Image Upscale Integration `34042759032` passed on exact proof head `fec2ad2762d21cbd92c8db03c8a95130a6b6ecb7` with the complete run-owned product matrix, already-deployed live-worker `8×6 → 16×12` PNG proof, exact cleanup and human-reviewed desktop/390px comparison evidence. Artifact `9992236657`: `sha256:68e5755c3c32b64e7f6606a7c7c94a8ed0774871975c3cf611759b46dee4eaf9`. Exact-head matrix: 32/32 successful after unchanged Library History rerun cleared a GitHub Actions download/setup timeout.
 - [ ] Merge only after exact-final-head verification and clean PR review surface; verify the actually attached merged-`main` push workflows.
 - [ ] Keep production application rollout separate; no Phase 18 contract/merge automatically deploys RenderLab.
 
@@ -1633,4 +1652,4 @@ Implementation checklist:
 - video upscale;
 - 4×/arbitrary scale, batch upscale and Variations.
 
-**Phase 18 implementation must not begin outside the accepted 18A→18F sequence above.**
+**Phase 18 completed the accepted 18A→18F sequence and is `COMPLETE / VERIFIED` on PR #111; repository merge remains pending. This does not imply production rollout, scheduler activation or another capability.**

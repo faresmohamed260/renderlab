@@ -1,0 +1,241 @@
+name: Image Upscale Integration
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/mock-image-upscale-worker.mjs"
+      - "scripts/verify-image-upscale.mjs"
+      - "src/lib/api/generation-activity-contract.ts"
+      - "src/lib/api/generation-cancel-contract.ts"
+      - "src/lib/api/generation-retry-contract.ts"
+      - "src/lib/api/generation-run-again-contract.ts"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/capabilities/upscale.ts"
+      - "src/server/generation/**"
+      - "src/server/media/**"
+      - "src/server/storage/**"
+      - "workers/image-upscale/**"
+      - "src/features/activity/**"
+      - "src/features/library/media-viewer*"
+      - "src/app/(app)/library/**"
+      - "src/app/api/generation/**"
+      - "src/app/api/internal/generation/**"
+      - "src/app/api/media/assets/**"
+      - "supabase/migrations/0013_generation_reconciliation.sql"
+      - "supabase/migrations/0016_generation_cancellation.sql"
+      - "supabase/migrations/0018_image_upscale_job_semantics.sql"
+      - ".github/workflows/image-upscale-integration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/mock-image-upscale-worker.mjs"
+      - "scripts/verify-image-upscale.mjs"
+      - "src/lib/api/generation-activity-contract.ts"
+      - "src/lib/api/generation-cancel-contract.ts"
+      - "src/lib/api/generation-retry-contract.ts"
+      - "src/lib/api/generation-run-again-contract.ts"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/capabilities/upscale.ts"
+      - "src/server/generation/**"
+      - "src/server/media/**"
+      - "src/server/storage/**"
+      - "workers/image-upscale/**"
+      - "src/features/activity/**"
+      - "src/features/library/media-viewer*"
+      - "src/app/(app)/library/**"
+      - "src/app/api/generation/**"
+      - "src/app/api/internal/generation/**"
+      - "src/app/api/media/assets/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/image-upscale-integration.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-image-upscale-integration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image-upscale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
+      RENDERLAB_GENERATION_RECONCILER_SECRET: phase18f-image-upscale-reconciler-secret
+      RENDERLAB_PHASE18F_ARTIFACT_DIR: artifacts/phase18f-image-upscale
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required shared-resource secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Resolve isolated fixture owners
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE' >> "$GITHUB_ENV"
+          import { configuredTestAccountIdentity } from "./scripts/lib/configured-test-account.mjs";
+          console.log(`PHASE18F_MOCK_OWNER_ID=${configuredTestAccountIdentity("phase18f-image-upscale").id}`);
+          console.log(`PHASE18F_LIVE_OWNER_ID=${configuredTestAccountIdentity("phase18f-image-upscale-live").id}`);
+          NODE
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start geometry-aware Upscale worker mock
+        shell: bash
+        run: |
+          RENDERLAB_TEST_UPSCALE_WORKER_PORT=4320 node scripts/mock-image-upscale-worker.mjs > /tmp/renderlab-phase18f-worker.log 2>&1 &
+          echo $! > /tmp/renderlab-phase18f-worker.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4320/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-phase18f-worker.log
+          exit 1
+
+      - name: Start configured mock-backed application
+        shell: bash
+        run: |
+          RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE=true \
+          RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL=http://127.0.0.1:4320 \
+          RENDERLAB_TEST_RECONCILER_OWNER_SCOPE=true \
+          RENDERLAB_TEST_RECONCILER_OWNER_ID="$PHASE18F_MOCK_OWNER_ID" \
+          npm run start -- -p 3000 > /tmp/renderlab-phase18f-mock-next.log 2>&1 &
+          echo $! > /tmp/renderlab-phase18f-mock-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-phase18f-mock-next.log
+          exit 1
+
+      - name: Verify complete run-owned Image Upscale product matrix
+        env:
+          RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+          RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL: http://127.0.0.1:4320
+        run: node scripts/verify-image-upscale.mjs
+
+      - name: Resolve deployed Upscale worker endpoint
+        shell: bash
+        env:
+          DIRECT_UPSCALE_GATEWAY: ${{ secrets.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL || 'https://silentspecter67--renderlab-image-upscale-web.modal.run' }}
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: |
+          live_gateway="${DIRECT_UPSCALE_GATEWAY:-}"
+          if [ -z "$live_gateway" ]; then
+            if [ -z "${MODAL_TOKEN_ID:-}" ] || [ -z "${MODAL_TOKEN_SECRET:-}" ]; then
+              echo "::error::Neither RENDERLAB_UPSCALE_WORKER_GATEWAY_URL nor Modal credentials are configured for the required Phase 18F live product proof."
+              exit 1
+            fi
+            python -m pip install --disable-pip-version-check --quiet 'modal==1.4.2'
+            live_gateway="$(python - <<'PY'
+          import modal
+          url = modal.Function.from_name("renderlab-image-upscale", "web").get_web_url()
+          if not url:
+              raise SystemExit("deployed RenderLab Upscale web endpoint was not found")
+          print(url.rstrip("/"))
+          PY
+            )"
+          fi
+          live_gateway="${live_gateway%/}"
+          echo "::add-mask::$live_gateway"
+          echo "PHASE18F_LIVE_GATEWAY=$live_gateway" >> "$GITHUB_ENV"
+          curl --fail --silent "$live_gateway/health" > /tmp/renderlab-phase18f-live-health.json
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const health = JSON.parse(fs.readFileSync("/tmp/renderlab-phase18f-live-health.json", "utf8"));
+          if (health.ready !== true || health.cancel_jobs !== true || !Array.isArray(health.upscale_scales) || !health.upscale_scales.includes(2)) {
+            throw new Error(`Live Upscale worker health contract mismatch: ${JSON.stringify(health)}`);
+          }
+          console.log("Live Upscale worker health contract verified.");
+          NODE
+
+      - name: Start configured real-worker application
+        shell: bash
+        run: |
+          RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE=false \
+          RENDERLAB_UPSCALE_WORKER_GATEWAY_URL="$PHASE18F_LIVE_GATEWAY" \
+          RENDERLAB_TEST_RECONCILER_OWNER_SCOPE=true \
+          RENDERLAB_TEST_RECONCILER_OWNER_ID="$PHASE18F_LIVE_OWNER_ID" \
+          npm run start -- -p 3001 > /tmp/renderlab-phase18f-live-next.log 2>&1 &
+          echo $! > /tmp/renderlab-phase18f-live-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3001/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-phase18f-live-next.log
+          exit 1
+
+      - name: Verify bounded real-worker end-to-end product Upscale
+        env:
+          RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3001
+        run: node scripts/verify-image-upscale.mjs --live
+
+      - name: Cleanup Phase 18F fixtures
+        if: always()
+        shell: bash
+        run: |
+          RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL=http://127.0.0.1:4320 node scripts/verify-image-upscale.mjs --cleanup-only
+          node scripts/verify-image-upscale.mjs --live --cleanup-only
+
+      - name: Print logs on failure
+        if: failure()
+        shell: bash
+        run: |
+          echo "--- mock-backed RenderLab ---"
+          cat /tmp/renderlab-phase18f-mock-next.log || true
+          echo "--- Phase 18F mock worker ---"
+          cat /tmp/renderlab-phase18f-worker.log || true
+          echo "--- real-worker RenderLab ---"
+          cat /tmp/renderlab-phase18f-live-next.log || true
+
+      - name: Upload Phase 18F evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18f-image-upscale-evidence
+          path: artifacts/phase18f-image-upscale
+          if-no-files-found: warn

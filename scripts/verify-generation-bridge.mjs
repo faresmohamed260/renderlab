@@ -1,4 +1,5 @@
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { createServer } from "node:http";
 import sharp from "sharp";
 import {
   configuredTestAccountIdentity,
@@ -12,7 +13,9 @@ const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const r2Bucket = process.env.R2_BUCKET_NAME;
 const fixtureAccount = configuredTestAccountIdentity("generation-bridge");
+const foreignUpscaleAccount = configuredTestAccountIdentity("generation-bridge-upscale-foreign");
 const fixtureJobIds = new Set();
+const upscaleMockCalls = [];
 
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
@@ -22,6 +25,7 @@ for (const [name, value] of Object.entries({
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
   R2_BUCKET_NAME: r2Bucket,
+  RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL: process.env.RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL,
 })) {
   if (!value) throw new Error(`${name} is required for configured generation verification.`);
 }
@@ -36,6 +40,41 @@ const r2Client = new S3Client({
   requestChecksumCalculation: "WHEN_REQUIRED",
   responseChecksumValidation: "WHEN_REQUIRED",
 });
+
+const upscaleMockAddress = new URL(process.env.RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL);
+const upscaleMock = createServer((request, response) => {
+  if (request.method !== "POST" || request.url !== "/jobs/upscale") {
+    response.writeHead(404).end();
+    return;
+  }
+  const chunks = [];
+  request.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+  request.on("end", () => {
+    const body = Buffer.concat(chunks).toString("latin1");
+    const contentType = String(request.headers["content-type"] || "");
+    upscaleMockCalls.push({ contentType, body, bytes: Buffer.byteLength(body, "latin1") });
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({
+      status: "queued",
+      call_id: `renderlab-upscale-ci-call-${upscaleMockCalls.length}`,
+      worker_state: "queued",
+      worker_id: "renderlab-upscale-01",
+      ecosystem: "image-upscale-v1",
+    }));
+  });
+});
+
+async function startUpscaleMock() {
+  await new Promise((resolve, reject) => {
+    upscaleMock.once("error", reject);
+    upscaleMock.listen(Number(upscaleMockAddress.port), upscaleMockAddress.hostname, resolve);
+  });
+}
+
+async function stopUpscaleMock() {
+  if (!upscaleMock.listening) return;
+  await new Promise((resolve) => upscaleMock.close(resolve));
+}
 
 async function jsonRequest(url, account, init = {}) {
   const response = await fetch(url, withAccountAuthorization(account, init));
@@ -189,12 +228,91 @@ async function verifyGeneration(account, request, expectedOperation, label, expe
   throw new Error(`${label} timed out before persistence completed.`);
 }
 
+async function verifyUpscaleAdmissionBoundary(account, foreignAccount, assetId) {
+  const endpoint = `${baseUrl}/api/media/assets/${encodeURIComponent(assetId)}/upscale`;
+  const before = upscaleMockCalls.length;
+
+  const browserSettings = await jsonRequest(endpoint, account, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ scale: 4 }),
+  });
+  if (browserSettings.response.status !== 400 || browserSettings.payload?.error?.code !== "invalid_request") {
+    throw new Error(`Upscale accepted browser-owned settings: ${browserSettings.response.status} ${JSON.stringify(browserSettings.payload)}`);
+  }
+
+  const foreign = await jsonRequest(endpoint, foreignAccount, { method: "POST" });
+  if (foreign.response.status !== 404 || foreign.payload?.error?.code !== "asset_not_found") {
+    throw new Error(`Upscale foreign-source privacy boundary failed: ${foreign.response.status} ${JSON.stringify(foreign.payload)}`);
+  }
+  if (upscaleMockCalls.length !== before) throw new Error("Rejected Upscale requests reached the worker.");
+
+  const submission = await jsonRequest(endpoint, account, { method: "POST" });
+  if (submission.response.status !== 202 || !submission.payload?.ok || !submission.payload?.job?.id) {
+    throw new Error(`Upscale submission failed (${submission.response.status}): ${JSON.stringify(submission.payload)}`);
+  }
+  const jobId = submission.payload.job.id;
+  fixtureJobIds.add(jobId);
+
+  const row = await loadJob(jobId);
+  if (
+    !row
+    || row.owner_id !== account.id
+    || row.status !== "running"
+    || row.operation !== "upscale-image"
+    || row.output_kind !== "image"
+    || row.prompt !== null
+    || row.workflow_id !== "swinir-classical-sr-image-upscale-2x"
+    || row.model !== "SwinIR Classical SR · 2×"
+    || row.ecosystem !== "image-upscale-v1"
+    || row.worker_id !== "renderlab-upscale-01"
+    || row.provider_job_id !== "renderlab-upscale-ci-call-1"
+    || row.inputs?.[0]?.alias !== "image1"
+    || row.inputs?.[0]?.role !== "primary-image"
+    || row.inputs?.[0]?.source?.type !== "media-asset"
+    || row.inputs?.[0]?.source?.id !== assetId
+    || row.parameters?.upscale?.scale !== 2
+  ) {
+    throw new Error(`Upscale persisted intent/dispatch identity is incorrect: ${JSON.stringify(row)}`);
+  }
+
+  const reservations = await rows(
+    `generation_admission_reservations?owner_id=eq.${encodeURIComponent(account.id)}&job_id=eq.${encodeURIComponent(jobId)}&released_at=is.null&select=id,job_id`,
+  );
+  if (reservations.length !== 1) {
+    throw new Error(`Upscale did not bind exactly one active admission reservation: ${JSON.stringify(reservations)}`);
+  }
+  if ((await loadAssets(jobId)).length !== 0) {
+    throw new Error("Phase 18C Upscale submission must not fabricate a durable output before lifecycle/finalization is implemented.");
+  }
+
+  const call = upscaleMockCalls.at(-1);
+  if (
+    upscaleMockCalls.length !== before + 1
+    || !call?.contentType.startsWith("multipart/form-data;")
+    || !call.body.includes('name="image_file"')
+    || !call.body.includes('name="scale"')
+    || !call.body.includes("\r\n\r\n2\r\n")
+  ) {
+    throw new Error(`Upscale worker request did not preserve the fixed native contract: ${JSON.stringify({ calls: upscaleMockCalls.length, contentType: call?.contentType, bytes: call?.bytes })}`);
+  }
+
+  console.log(`Upscale 18C API/admission/native-dispatch boundary verified. owner=${account.id} job=${jobId} source=${assetId}`);
+  return { jobId };
+}
+
 let createResult = null;
 let editResult = null;
 let overrideResult = null;
+let upscaleResult = null;
+let foreignAccount = null;
 try {
   await cleanupFixtureAccount();
+  await deleteConfiguredTestAccount(foreignUpscaleAccount);
+  await startUpscaleMock();
   const account = await createConfiguredTestAccount("generation-bridge");
+  foreignAccount = await createConfiguredTestAccount("generation-bridge-upscale-foreign");
+
   createResult = await verifyGeneration(
     account,
     {
@@ -241,10 +359,15 @@ try {
     "4:5",
   );
 
-  console.log(`Native Create ratio -> Edit Original -> Edit override verified successfully for owner=${account.id}.`);
+  upscaleResult = await verifyUpscaleAdmissionBoundary(account, foreignAccount, createResult.assetId);
+  console.log(`Native Create ratio -> Edit Original -> Edit override plus Phase 18C Upscale admission verified successfully for owner=${account.id}.`);
 } finally {
+  if (upscaleResult?.jobId) fixtureJobIds.add(upscaleResult.jobId);
   if (overrideResult?.jobId) fixtureJobIds.add(overrideResult.jobId);
   if (editResult?.jobId) fixtureJobIds.add(editResult.jobId);
   if (createResult?.jobId) fixtureJobIds.add(createResult.jobId);
   await cleanupFixtureAccount();
+  if (foreignAccount) await deleteConfiguredTestAccount(foreignAccount);
+  else await deleteConfiguredTestAccount(foreignUpscaleAccount).catch(() => {});
+  await stopUpscaleMock();
 }

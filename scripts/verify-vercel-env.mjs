@@ -13,6 +13,7 @@ const required = [
   "CLOUDFLARE_R2_ACCESS_KEY_ID",
   "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
   "CLOUDFLARE_R2_BUCKET",
+  "RENDERLAB_UPSCALE_WORKER_GATEWAY_URL",
 ];
 
 const missing = required.filter((name) => !process.env[name]?.trim());
@@ -33,6 +34,11 @@ if (Boolean(externalBackendUrl) !== Boolean(externalBackendToken)) {
   throw new Error(
     "RENDERLAB_GENERATION_BACKEND_URL and RENDERLAB_GENERATION_BACKEND_TOKEN must be configured together or both omitted.",
   );
+}
+
+const upscaleWorkerUrl = new URL(process.env.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL.trim());
+if (upscaleWorkerUrl.protocol !== "https:") {
+  throw new Error("RENDERLAB_UPSCALE_WORKER_GATEWAY_URL must use HTTPS.");
 }
 
 console.log("Vercel production environment contract is complete.");

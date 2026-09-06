@@ -18,6 +18,7 @@ import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import { classifyWorkerFailure, failureKind, type WorkerFailureClassification } from "@/server/generation/worker-failure";
+import { inspectUpscaleOutputMetadata, type UpscaleOutputMetadata } from "@/server/generation/upscale-output-metadata";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type WorkflowConfig = {
@@ -39,16 +40,16 @@ type WorkflowConfig = {
   };
 };
 
-type JobRow = {
+export type NativeGenerationJobRow = {
   id: string;
   owner_id: string;
   status: GenerationJob["status"];
   operation: CreativeOperation;
   output_kind: "image" | "video";
-  prompt: string;
+  prompt: string | null;
   workflow_id: string;
   model: string;
-  ecosystem: GenerationWorker["ecosystem"];
+  ecosystem: string;
   inputs: GenerationRequest["inputs"];
   parameters: Record<string, unknown>;
   worker_id: string | null;
@@ -63,6 +64,8 @@ type JobRow = {
   started_at: string | null;
   completed_at: string | null;
 };
+
+type JobRow = NativeGenerationJobRow;
 
 type InputBytes = { bytes: Buffer; contentType: string; filename: string };
 
@@ -116,7 +119,7 @@ export function isNativeGenerationConfigured() {
   return isSupabaseConfigured() && isR2Configured();
 }
 
-function toGenerationJob(row: JobRow): GenerationJob {
+export function toGenerationJob(row: JobRow): GenerationJob {
   return {
     id: row.id,
     status: row.status,
@@ -152,7 +155,7 @@ async function insertJob(ownerId: string, request: GenerationRequest, workflow: 
   return rows[0];
 }
 
-async function getJobRow(ownerId: string, jobId: string) {
+export async function getJobRow(ownerId: string, jobId: string) {
   const rows = await supabaseRest<JobRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`,
     { method: "GET" },
@@ -160,7 +163,7 @@ async function getJobRow(ownerId: string, jobId: string) {
   return rows?.[0] ?? null;
 }
 
-async function patchJob(ownerId: string, jobId: string, patch: Record<string, unknown>) {
+export async function patchJob(ownerId: string, jobId: string, patch: Record<string, unknown>) {
   const rows = await supabaseRest<JobRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*`,
     {
@@ -456,6 +459,7 @@ async function persistGeneratedMedia({
   contentType,
   storageKey,
   thumbnailStorageKey,
+  upscaleMetadata,
 }: {
   row: JobRow;
   outputIndex: number;
@@ -463,6 +467,7 @@ async function persistGeneratedMedia({
   contentType: string;
   storageKey: string;
   thumbnailStorageKey: string | null;
+  upscaleMetadata?: UpscaleOutputMetadata | null;
 }) {
   try {
     await supabaseRest("media_assets", {
@@ -476,6 +481,13 @@ async function persistGeneratedMedia({
         mime_type: contentType,
         storage_key: storageKey,
         thumbnail_storage_key: thumbnailStorageKey,
+        ...(upscaleMetadata
+          ? {
+              size_bytes: upscaleMetadata.sizeBytes,
+              width: upscaleMetadata.width,
+              height: upscaleMetadata.height,
+            }
+          : {}),
         provenance: {
           operation: row.operation,
           workflowId: row.workflow_id,
@@ -495,7 +507,7 @@ async function persistGeneratedMedia({
   return completeJobWithAsset(row, assetId);
 }
 
-async function recoverPersistingResult(row: JobRow) {
+export async function recoverPersistingResult(row: JobRow) {
   if (row.status !== "persisting") return null;
 
   const outputIndex = 0;
@@ -509,6 +521,13 @@ async function recoverPersistingResult(row: JobRow) {
     row.output_kind,
   );
   if (!primary) return null;
+  if (row.operation === "upscale-image" && primary.contentType !== "image/png") return null;
+
+  let upscaleMetadata: UpscaleOutputMetadata | null = null;
+  if (row.operation === "upscale-image") {
+    const object = await readR2Object(primary.storageKey);
+    upscaleMetadata = await inspectUpscaleOutputMetadata(object.bytes, primary.contentType);
+  }
 
   let thumbnailStorageKey: string | null = null;
   if (row.output_kind === "video") {
@@ -527,14 +546,18 @@ async function recoverPersistingResult(row: JobRow) {
     contentType: primary.contentType,
     storageKey: primary.storageKey,
     thumbnailStorageKey,
+    upscaleMetadata,
   });
 }
 
-async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
+export async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
   const outputIndex = 0;
   const existing = await getGeneratedOutput(row, outputIndex);
   if (existing) return completeJobWithAsset(row, existing.id);
 
+  const upscaleMetadata = row.operation === "upscale-image"
+    ? await inspectUpscaleOutputMetadata(bytes, contentType)
+    : null;
   const assetId = deterministicGenerationAssetId(row.id, outputIndex);
   const storageKey = `${outputStoragePrefix(row, assetId)}.${extensionFor(contentType)}`;
   injectGenerationFinalizationFault("before-primary-write");
@@ -560,6 +583,7 @@ async function persistResult(row: JobRow, bytes: Buffer, contentType: string, po
     contentType,
     storageKey,
     thumbnailStorageKey,
+    upscaleMetadata,
   });
 }
 
@@ -579,6 +603,9 @@ async function fetchPoster(worker: GenerationWorker, callId: string) {
 }
 
 function requestFromJobRow(row: JobRow): GenerationRequest {
+  if (typeof row.prompt !== "string" || !row.prompt.trim()) {
+    throw new Error("Stored prompt generation request is missing its prompt.");
+  }
   const output = row.parameters.output as GenerationRequest["output"] | undefined;
   const advanced = row.parameters.advanced as GenerationRequest["advanced"] | undefined;
   if (!output?.aspectRatio) throw new Error("Stored generation request is missing its output settings.");

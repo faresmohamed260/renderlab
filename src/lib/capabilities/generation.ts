@@ -1,10 +1,23 @@
 export type OutputKind = "image" | "video";
 
-export type CreativeOperation =
+export type PromptGenerationOperation =
   | "create-image"
   | "edit-image"
   | "create-video"
   | "animate-image";
+
+export type CreativeOperation = PromptGenerationOperation | "upscale-image";
+
+const promptGenerationOperationSet = new Set<PromptGenerationOperation>([
+  "create-image",
+  "edit-image",
+  "create-video",
+  "animate-image",
+]);
+
+export function isPromptGenerationOperation(operation: string): operation is PromptGenerationOperation {
+  return promptGenerationOperationSet.has(operation as PromptGenerationOperation);
+}
 
 export type PresetAspectRatio =
   | "1:1"
@@ -198,7 +211,7 @@ export function continuationActionForMedia(
   return continuationActionsForMedia(kind).find((action) => action.id === actionId) ?? null;
 }
 
-export function resolveCreativeOperation(request: GenerationRequest): CreativeOperation {
+export function resolveCreativeOperation(request: GenerationRequest): PromptGenerationOperation {
   const hasImageInput = request.inputs.some(
     (input) => input.role === "reference" || input.role === "primary-image" || input.role === "first-frame",
   );

@@ -151,8 +151,8 @@ Approved behavior:
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** APPROVED — Media Viewer base + Download + Rename + Favorites + Collections v0.1 / UI-032 + Delete v0.1 / UI-033 + Reuse Settings / Compare source / UI-056
-**Implementation:** `src/features/library/media-viewer.tsx`, `src/features/library/media-viewer-comparison.tsx`
+**Status:** APPROVED — Media Viewer base + Download + Rename + Favorites + Collections v0.1 / UI-032 + Delete v0.1 / UI-033 + Reuse Settings / Compare source / UI-056 + Image Upscale 2× / UI-058
+**Implementation:** `src/features/library/media-viewer.tsx`, `src/features/library/media-viewer-comparison.tsx`, `src/features/library/media-viewer-upscale-action.tsx`
 **Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
 **Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts` (GET/PATCH/DELETE), `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/app/api/media/collections/route.ts`, collection membership route, `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-collections.ts`
 **Design artifacts:** `design/penpot/media-viewer-v0.1.svg`, `design/penpot/media-viewer-v0.2-compare-source.md`
@@ -204,7 +204,7 @@ Approved behavior:
 
 ### Activity
 **Route:** `/activity`  
-**Status:** APPROVED — Activity v0.1 / UI-035 + failed-job Retry / UI-050 + native Cancel / UI-055 + successful Run Again / UI-056
+**Status:** APPROVED — Activity v0.1 / UI-035 + failed-job Retry / UI-050 + native Cancel / UI-055 + successful Run Again / UI-056 + Upscale lifecycle/recovery summary / UI-058
 **Implementation:** `src/app/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`, `src/features/activity/activity-retry-button.tsx`, `src/features/activity/activity-cancel-button.tsx`, `src/features/activity/activity-run-again-button.tsx`
 **Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/lib/api/generation-retry-contract.ts`, `src/lib/api/generation-cancel-contract.ts`, `src/lib/api/generation-run-again-contract.ts`, `src/server/generation/generation-activity.ts`, `src/server/generation/retry-generation.ts`, `src/server/generation/run-again-generation.ts`, `src/server/generation/cancel-generation.ts`, `POST /api/generation/jobs/[jobId]/retry`, `POST /api/generation/jobs/[jobId]/run-again`, `POST /api/generation/jobs/[jobId]/cancel`, server-owned reconciliation
 **Purpose:** Show current/recent account-owned RenderLab `generation_jobs`, real execution state and actionable product recovery/control without exposing worker infrastructure as user responsibility.
@@ -312,11 +312,11 @@ Generated Viewer results with a current-valid producing recipe may expose **Reus
 ### Phase 17 Admin Health expansion — render verified
 The existing fresh-active-admin `/admin` Health section exposes bounded accepted-to-terminal timing samples, failover incidence, active-state age bands, active admission reservations/current global guardrails and Phase 15 maintenance backlog. Counts remain aggregate and bounded; raw prompt/media/account/provider/storage identity is not part of the Health browser contract. Exact head `1ecd46bb809c1953cd24f1eecbd4bbfab7dbd4be` passed Account/Admin Operations `33976269977` with exact aggregate/privacy/cleanup assertions and desktop+narrow no-overflow checks. Artifact `9972464342` (`sha256:f0b26931cb8e5ae574c457cf0f3f1ecff19f04dcde0fc3c390f19bbb57dbbd4c`) was independently hash-checked and human-reviewed clean on 2026-09-05: the existing dense Admin card/list hierarchy remains readable on desktop and 390px narrow layout, timing is explicitly labelled as accepted-to-terminal rather than SLA/ETA, and bounded truncated counts are explained with `+`. No corrective UI change was required.
 
-### Media Viewer — Phase 18 Image Upscale target
-**Status:** PLANNED — UI-058 contract accepted; implementation not started
+### Media Viewer — Phase 18 Image Upscale extension — render verified
+**Status:** APPROVED incremental extension — UI-058 / 18E implemented and render verified; 18F product proof remains next
 **Route:** existing `/library/[assetId]`; no new Upscale route
 
-**Target behavior:** an eligible active durable image may expose **Upscale 2×** in the existing Continue hierarchy. Starting the action creates a distinct asynchronous owner-scoped `upscale-image` job through a product API while the source Viewer remains stable. Accepted state gives concise local feedback plus Activity continuation; it does not fabricate completion. Source media is never overwritten. A succeeded Upscale result is an ordinary durable image and may expose UI-056 Compare source when the same-owner source remains active.
+**Verified behavior:** an eligible active durable image exposes **Upscale 2×** in the existing Continue hierarchy as a full-width secondary row beneath Edit/Animate. Action presence is server-derived from owner-loaded durable metadata plus backend configuration; the browser sends only the opaque asset route identity. Starting is duplicate-locked and truthful (`Starting upscale…`); acceptance keeps the source Viewer stable, shows `Upscale started. Track progress in Activity.` plus **Open Activity**, and does not fabricate completion; errors stay local/retryable. Ineligible geometry omits the action rather than showing a false disabled promise. Succeeded Upscale results continue to use the existing UI-056 Compare source path from 18D while the same-owner source remains active. Implementation head `ac4aed60e64061ee6a911c858cdc032b6f9a7423` passed Upscale Viewer Visual `34033506667`; artifact `9989427506` (`sha256:49e40583899891a1f1863ff8fd49a714febf11bfdb999bb781849f45c3e01121`) was hash-checked and human-reviewed clean for desktop/narrow eligible, starting, accepted and error states with no horizontal overflow or hierarchy correction required. Design checkpoint: `design/penpot/media-viewer-v0.3-upscale-2x.md` plus desktop/mobile SVGs. No new route, Create mode, generic primitive or production rollout was introduced.
 
 **Eligibility / scope:** fixed 2× only; PNG/JPEG/WebP source; source max edge 4096 px, max 4,194,304 pixels and max 25 MB; no video, batch, model picker, prompt, Restore claim or arbitrary factor. Server state is authoritative. A desktop+narrow Viewer design checkpoint is required before implementation and final configured screenshots require human review.
 

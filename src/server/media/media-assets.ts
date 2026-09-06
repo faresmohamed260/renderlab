@@ -48,6 +48,7 @@ const creativeOperations = new Set<CreativeOperation>([
   "edit-image",
   "create-video",
   "animate-image",
+  "upscale-image",
 ]);
 
 const windowsReservedBasenames = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;

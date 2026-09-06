@@ -5,7 +5,8 @@ export type PublicGenerationActivity = {
   status: GenerationJobStatus;
   operation: CreativeOperation;
   outputKind: OutputKind;
-  prompt: string;
+  prompt: string | null;
+  summary: string;
   outputAssetIds: string[];
   canCancel: boolean;
   canRunAgain: boolean;

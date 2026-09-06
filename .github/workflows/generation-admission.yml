@@ -78,16 +78,11 @@ jobs:
           git diff --check "$base"...HEAD
           git diff --name-only "$base"...HEAD | tee /tmp/renderlab-generation-admission-changed-files.txt
 
-      - name: Enforce Phase 10C scope boundary
-        if: github.event_name == 'pull_request'
+      - name: Protect completed Phase 10C migration boundary
         shell: bash
         run: |
-          if grep -Eq '^(vercel\.json|proxy\.ts|src/app/auth/|src/app/settings/password/|src/server/account/recovery-flow\.ts|\.github/workflows/deployment-readiness\.yml)$' /tmp/renderlab-generation-admission-changed-files.txt; then
-            echo "::error::Phase 10C must not include deployment or Phase 10D auth/session hardening paths."
-            exit 1
-          fi
           if grep -Eqi 'billing|payment|stripe|credit[_ -]?ledger|password|session[_ -]?hardening' supabase/migrations/0012_renderlab_generation_admission.sql; then
-            echo "::error::Phase 10C migration contains billing or Phase 10D scope."
+            echo "::error::The completed Phase 10C admission migration contains unrelated billing or auth/session scope."
             exit 1
           fi
 

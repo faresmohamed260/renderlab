@@ -7,10 +7,16 @@ import {
   generationInputAlias,
   generationInputRoleForIndex,
   generationPromptReferenceAliases,
+  isPromptGenerationOperation,
   maxGenerationInputsForOutput,
   resolveCreativeOperation,
   unresolvedGenerationPromptReferenceAliases,
 } from "../../src/lib/capabilities/generation.ts";
+import {
+  createUpscaleImageCommand,
+  imageUpscaleScale,
+  isImageUpscaleAssetMetadataEligible,
+} from "../../src/lib/capabilities/upscale.ts";
 
 test("generation aliases and prompt references remain deterministic", () => {
   assert.equal(generationInputAlias(1), "image1");
@@ -36,7 +42,7 @@ test("generation input capabilities preserve bounded roles", () => {
   assert.equal(generationInputRoleForIndex("video", 1), null);
 });
 
-test("creative operation resolution follows product input intent", () => {
+test("creative operation resolution follows prompt-generation input intent", () => {
   const base = {
     prompt: "test",
     output: { kind: "image", aspectRatio: "1:1" },
@@ -63,6 +69,43 @@ test("creative operation resolution follows product input intent", () => {
     }),
     "animate-image",
   );
+  assert.equal(isPromptGenerationOperation("create-image"), true);
+  assert.equal(isPromptGenerationOperation("upscale-image"), false);
+});
+
+test("upscale command is promptless, fixed 2x, and uses one durable primary image", () => {
+  assert.equal(imageUpscaleScale, 2);
+  assert.deepEqual(createUpscaleImageCommand(" asset-123 "), {
+    operation: "upscale-image",
+    outputKind: "image",
+    prompt: null,
+    inputs: [
+      {
+        alias: "image1",
+        role: "primary-image",
+        source: { type: "media-asset", id: "asset-123" },
+      },
+    ],
+    parameters: { upscale: { scale: 2 } },
+  });
+  assert.throws(() => createUpscaleImageCommand("   "), RangeError);
+});
+
+test("upscale Viewer metadata eligibility is conservative and capability-derived", () => {
+  const eligible = {
+    kind: "image",
+    mimeType: "image/png",
+    width: 1024,
+    height: 1024,
+    sizeBytes: "2048",
+  };
+  assert.equal(isImageUpscaleAssetMetadataEligible(eligible), true);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, kind: "video" }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, mimeType: "image/gif" }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, width: null }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, width: 4097 }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, width: 4096, height: 4096 }), false);
+  assert.equal(isImageUpscaleAssetMetadataEligible({ ...eligible, sizeBytes: 25 * 1024 * 1024 + 1 }), false);
 });
 
 test("continuation and advanced defaults stay capability-derived", () => {

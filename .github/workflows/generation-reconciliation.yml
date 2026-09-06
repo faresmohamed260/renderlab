@@ -67,6 +67,9 @@ jobs:
       RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE: "true"
       RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL: http://127.0.0.1:4312
       RENDERLAB_TEST_NATIVE_WORKER_PORT: "4312"
+      # Phase 18D uses the same run-owned mock gateway for Upscale lifecycle proof; production worker configuration is not used here.
+      RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE: "true"
+      RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL: http://127.0.0.1:4312
       RENDERLAB_TEST_RECONCILER_OWNER_SCOPE: "true"
       RENDERLAB_TEST_GENERATION_FINALIZATION_FAULTS: "true"
       RENDERLAB_TEST_GENERATION_FINALIZATION_FAULT_SEQUENCE: before-primary-write,after-primary-write,after-media-insert,thumbnail-write
