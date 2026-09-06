@@ -159,7 +159,7 @@ export function ActivityView({
           <ol className={hasActive ? "mt-4 space-y-3" : "mt-8 space-y-3"}>
             {items.map((item) => (
               <li key={item.id} className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-text">
@@ -182,9 +182,14 @@ export function ActivityView({
                   </div>
 
                   {item.status === "succeeded" ? (
-                    <div className="flex flex-wrap items-start justify-end gap-2">
+                    <div className="flex w-full items-start gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
                       {item.outputAssetIds.length > 0 ? (
-                        <Button asChild variant="secondary" size="sm">
+                        <Button
+                          asChild
+                          variant="secondary"
+                          size="sm"
+                          className={item.canRunAgain ? "min-w-0 flex-1 sm:flex-none" : undefined}
+                        >
                           <Link href={`/library/${encodeURIComponent(item.outputAssetIds[0])}`}>View result</Link>
                         </Button>
                       ) : null}
