@@ -1601,10 +1601,10 @@ Implementation checklist:
 
 **Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
-**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18A repository preparation has now started and is verified offline; worker/application deployment remains separately authorized.
+**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18A is now complete/live-verified after the explicitly authorized worker-only deployment; production application deployment remains separate and unauthorized.
 
 ## Cycle 3 / Phase 18 — Image Upscale v0.1
-**Status: `IMPLEMENTATION IN PROGRESS — 18A PREDEPLOY PREPARATION VERIFIED / UNDEPLOYED` under UI-058.**
+**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B NEXT` under UI-058.**
 
 ### Fresh planning evidence
 - [x] Re-established authoritative repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e` after Phase 17 closure.
@@ -1615,16 +1615,18 @@ Implementation checklist:
 - [x] Audited current domain/schema: `CreativeOperation` and `generation_jobs.operation` still cover only the four prompt-generation operations; Upscale requires truthful new operation/schema semantics and must not masquerade as Edit.
 - [x] Chosen UI boundary: Media Viewer contextual continuation, not a new top-level screen and not a new Create mode in v0.1.
 
-### 18A predeployment preparation — verified / deployment pending
+### 18A fleet/worker prerequisite — COMPLETE / LIVE VERIFIED
 - [x] Preserve disabled FLUX/REDGraft primary registrations for historical lookup while excluding them from new submission routing; focused unit coverage added.
 - [x] Pin the undeployed SwinIR 2× candidate to source commit `33f616625268d08ba600f8db89388eec0328edb1`, Apache-2.0 project license, exact official 67,277,475-byte weight and `sha256:2032ebf8f401dd3ce2fae5f3852117cb72101ec6ed8358faa64c2a3fa09ed4ac`.
 - [x] Runtime audit `33997212864` passed Engineering Quality + official weight size/hash verification; artifact `9978418889` digest is `sha256:5d6d7ace3384a260bf2e9f59dacea85dfa3fa4e6026af46a825eaca74208dc53`.
-- [x] Prepare undeployed RenderLab-owned `workers/image-upscale/modal_app.py` with lightweight gateway/heavy runtime separation, fixed 2× async lifecycle, exact limits, rectangular tiling and alpha path.
-- [x] Permanent offline `Upscale Worker Validation` run `33997784521` passed.
-- [ ] Deploy the worker only after explicit authorization, then prove live RGB + alpha exact-2× geometry, PNG output, polling/cancellation and cleanup before 18A can complete.
+- [x] Prepare RenderLab-owned `workers/image-upscale/modal_app.py` with lightweight gateway/heavy runtime separation, fixed 2× async lifecycle, exact limits, rectangular tiling and alpha path.
+- [x] Permanent offline `Upscale Worker Validation` run `33997784521` passed; after live POST exposed the route-local `UploadFile` forward-reference bug, the annotation scope was corrected and the verifier strengthened before redeployment.
+- [x] Explicitly authorized worker-only deployment completed from exact RenderLab source `3b7f4a4dcc27a64e1423cbd2c6d0993b24ceb3e8` as Modal app `renderlab-image-upscale` in healthy workspace `modal-45` (`renderlab-upscale-01`).
+- [x] Corrected smoke proved invalid scale → `400` and real 8×8 RGB → 16×16 PNG through submit/poll. Corrected full live proof `34000980137` then passed 10 cases covering health/provenance, fixed-scale + geometry rejection, RGB, alpha, EXIF normalization, animated rejection, cancellation, accepted 4096×1024 → 8192×2048 result transport and final healthy/sleeping state.
+- [x] Full proof artifact `9979491468` has ZIP digest `sha256:4a8f2a06b0bcf305eaa9b270bbfbe5937e0f8b5abeb004f5ab57c2665e7e6d04`; `evidence.json` is `sha256:0ad85f892357f1e6d611b32b27a03fa030eef8df3ffe7afb3dae2950919a1dab`. Persistent proof fixtures: Supabase `0`, R2 `0`. No application/schema/UI rollout followed.
 
 ### Locked implementation sequence
-- [ ] **18A Fleet/worker prerequisite:** repository-side reconciliation/runtime/worker preparation is verified; live deployment + contract proof remain. Any worker deployment requires separate explicit authorization.
+- [x] **18A Fleet/worker prerequisite:** registry hygiene, pinned SwinIR runtime, worker deployment and complete live contract proof are verified. The deployment authorization was worker-only and does not authorize RenderLab application rollout.
 - [ ] **18B Domain/schema:** add `upscale-image`; use a narrow promptless Upscale product command; apply/audit the smallest `generation_jobs` compatibility migration only after pre-DDL row/constraint review.
 - [ ] **18C Product API/admission:** owner-scoped `POST /api/media/assets/[assetId]/upscale`, fixed scale 2, server-derived eligibility, shared generation admission, no browser worker/storage identity.
 - [ ] **18D Lifecycle/recovery:** reuse reconciliation/finalization/cancellation; failed Retry is current-source-revalidated; successful Run Again/Reuse Settings stay absent; Activity gains truthful Upscale summary; Compare source extends conditionally to succeeded Upscale results.
@@ -1641,4 +1643,4 @@ Implementation checklist:
 - video upscale;
 - 4×/arbitrary scale, batch upscale and Variations.
 
-**Phase 18 implementation is in progress and must remain inside the accepted 18A→18F sequence above. 18B must not begin until 18A live worker proof is complete.**
+**Phase 18 implementation is in progress and must remain inside the accepted 18A→18F sequence above. 18A is complete/live-verified; 18B is the next slice and must start with the accepted fresh pre-DDL audit before any schema mutation.**
