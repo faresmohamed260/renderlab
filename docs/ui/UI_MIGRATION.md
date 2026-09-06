@@ -1667,7 +1667,7 @@ Implementation checklist:
 **Cycle 3 production rollout status: `COMPLETE / VERIFIED / LIVE`.**
 
 ## Post-Cycle 3 Stabilization — Navigation & Library Revisit Performance
-**Status: `COMPLETE / VERIFIED / MERGED`; production rollout remains separate.**
+**Status: `COMPLETE / VERIFIED / MERGED / LIVE`.**
 
 - [x] Preserve the existing App Router / server-owned account model; no new client-global media store or experimental `staleTimes`/cache-components migration.
 - [x] Full-prefetch the bounded persistent shell destinations, then refresh the newly entered top-level section in place to combine immediate paint with fresh owner-scoped data.
@@ -1677,4 +1677,4 @@ Implementation checklist:
 - [x] Keep Library filtering, search, collections, pagination, ownership, deletion, continuation and Activity truthfulness unchanged.
 - [x] PR #112 merged as `7798fab8ad8caff19a74005502eb7472297ba7a8` only after all 30 workflows on exact final head `f9e61a2f06ef4f6ef2ff27f170f50495eeb7647f` passed.
 - [x] Bounded post-merge maintenance run `34062569699` backfilled all 13 eligible legacy active image rows, with 0 failures and 0 remaining null thumbnail keys; evidence artifact `9997940257` has ZIP `sha256:bb02409e57ac2ba0737b72fb9cc848d7974bede01ff181f8ac4e36638f7d4e46`.
-- [x] No production deployment, Supabase schema change, R2 resource migration, worker change, scheduler change or creative-capability expansion was part of this corrective pass. Production remains on `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` / application source `c493eaead6997cce1c22c6835c98177d6346ff41`.
+- [x] Explicit rollout run `34063455944` deployed source `71a9034039a64beec66894cc4f79b1f62bfc7bf7` as READY production deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` and verified the custom domain, R2 upload CORS, durable image upload, WebP thumbnail, private 240-second thumbnail redirect cache, Library listing and exact fixture cleanup. Rollback to `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` was not required. Evidence artifact `9998223539` has JSON sha256 `4d4130f6c2a8768b5a4a5f068e1d2d6b182c849ccaf10df229f985c9ebab05fd` and ZIP sha256 `540839b3655089fc9b4c72b7bee0a21280b29dbe377e3b054c295b92737e9bdb`. No Supabase schema change, R2 resource migration, worker change, scheduler change or creative-capability expansion occurred.
