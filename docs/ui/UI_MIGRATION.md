@@ -1433,7 +1433,7 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 **Desired outcome:** supported mailbox clients show the RenderLab mark beside the sender name, similar to established branded senders, while email authentication and unrelated `faresuniform.uk` mail remain safe.
 
 ## Current Work
-**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `IN PROGRESS`; Cycle 2 remains `COMPLETE / VERIFIED`.
+**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `COMPLETE / VERIFIED THROUGH PHASE 18; REPOSITORY MERGE PENDING`; Cycle 2 remains `COMPLETE / VERIFIED`.
 **Current phase:** Phase 18 — Image Upscale v0.1 is `COMPLETE / VERIFIED` through 18F on PR #111; repository merge remains pending. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and fully closed.
 **Next sequence:** preserve the verified Phase 18 candidate; repository merge requires explicit authorization. Production application rollout remains separate and unauthorized.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
@@ -1601,7 +1601,7 @@ Implementation checklist:
 
 **Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
-**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18A is complete/live-verified and 18B–18C are complete/verified on the implementation branch; production application deployment remains separate and unauthorized.
+**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 is complete/verified through 18F on PR #111; repository merge remains pending, and production application deployment remains separate and unauthorized.
 
 ## Cycle 3 / Phase 18 — Image Upscale v0.1
 **Status: `COMPLETE / VERIFIED — REPOSITORY MERGE PENDING` under UI-058.**
