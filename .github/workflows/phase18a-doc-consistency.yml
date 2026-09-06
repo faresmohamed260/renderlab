@@ -1,0 +1,114 @@
+name: Phase 18A Documentation Consistency
+
+on:
+  push:
+    branches:
+      - work/phase-18-image-upscale
+    paths:
+      - .github/workflows/phase18a-doc-consistency.yml
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-18-image-upscale
+          fetch-depth: 0
+
+      - name: Normalize current Phase 18A language
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one target, found {count}: {old[:120]!r}")
+              p.write_text(text.replace(old, new), encoding="utf-8")
+
+          replace_exact(
+              "PROJECT.md",
+              "verified-disabled FLUX/REDgraft primaries",
+              "verified-disabled FLUX/REDGraft primaries",
+          )
+          replace_exact(
+              "PROJECT.md",
+              "#### 18A predeployment preparation — `VERIFIED / UNDEPLOYED`",
+              "#### 18A repository preparation checkpoint — `VERIFIED BEFORE DEPLOYMENT`",
+          )
+          replace_exact(
+              "PROJECT.md",
+              "- `workers/image-upscale/modal_app.py` defines the undeployed RenderLab-owned fixed-2× async contract with a lightweight gateway image separated from the CUDA/model image, exact source/weight pinning, PNG output, source/output geometry guards, rectangular tiled inference, alpha preservation path and typed worker failures/cancellation.",
+              "- `workers/image-upscale/modal_app.py` defined the RenderLab-owned fixed-2× async contract before deployment, with a lightweight gateway image separated from the CUDA/model image, exact source/weight pinning, PNG output, source/output geometry guards, rectangular tiled inference, alpha preservation path and typed worker failures/cancellation. The corrected source at `3b7f4a4dcc27a64e1423cbd2c6d0993b24ceb3e8` is now the live-verified deployment source recorded above.",
+          )
+          replace_exact(
+              "PROJECT.md",
+              "This evidence **does not complete 18A**. No new Modal worker/gateway has been deployed, no live `/health` or `/jobs/upscale` endpoint exists, and the required live synthetic RGB/alpha exact-2× lifecycle proof has not run. No `upscale-image` schema/product/API/UI coupling has started. The next hard gate is explicit worker-deployment authorization followed by live contract proof.",
+              "This checkpoint was the predeployment gate and did **not** complete 18A by itself. It has since been superseded by the explicitly authorized deployment and corrected full live proof recorded in **Phase 18A live worker verification — 2026-09-06** above. No `upscale-image` schema/product/API/UI coupling has started; the next hard gate is the Phase 18B pre-DDL domain/schema audit.",
+          )
+
+          replace_exact(
+              "docs/ui/UI_MIGRATION.md",
+              "Pin the undeployed SwinIR 2× candidate",
+              "Pin the SwinIR 2× candidate",
+          )
+
+          replace_exact(
+              "docs/architecture/INFRASTRUCTURE.md",
+              "The Phase 18 work branch now records the repository-side prerequisite without pretending the infrastructure is live:",
+              "The Phase 18 work branch records the repository-side prerequisite and the subsequently verified live worker state:",
+          )
+          replace_exact(
+              "docs/architecture/INFRASTRUCTURE.md",
+              "The current predeployment runtime candidate is official SwinIR classical-SR native 2×",
+              "The deployed/live-verified runtime is official SwinIR classical-SR native 2×",
+          )
+          replace_exact(
+              "docs/architecture/INFRASTRUCTURE.md",
+              "The model file is downloaded only into the future Modal runtime image and hash-checked at image build; it is not committed to this repository.",
+              "The model file is downloaded into the Modal runtime image and hash-checked at image build; it is not committed to this repository.",
+          )
+
+          guards = {
+              "PROJECT.md": [
+                  "REDgraft",
+                  "18A predeployment preparation — `VERIFIED / UNDEPLOYED`",
+                  "This evidence **does not complete 18A**",
+                  "No new Modal worker/gateway has been deployed",
+              ],
+              "docs/architecture/INFRASTRUCTURE.md": [
+                  "without pretending the infrastructure is live",
+                  "current predeployment runtime candidate",
+                  "future Modal runtime image",
+              ],
+          }
+          for path, needles in guards.items():
+              text = Path(path).read_text(encoding="utf-8")
+              for needle in needles:
+                  if needle in text:
+                      raise SystemExit(f"{path}: stale Phase 18A language remains: {needle}")
+          PY
+
+          git diff --check
+          git diff -- PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/INFRASTRUCTURE.md
+
+      - name: Commit normalized docs and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git rm .github/workflows/phase18a-doc-consistency.yml
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/INFRASTRUCTURE.md
+          git diff --cached --check
+          git commit -m "docs: normalize Phase 18A live state"
+          git push origin HEAD:work/phase-18-image-upscale
