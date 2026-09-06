@@ -1433,11 +1433,11 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 **Desired outcome:** supported mailbox clients show the RenderLab mark beside the sender name, similar to established branded senders, while email authentication and unrelated `faresuniform.uk` mail remain safe.
 
 ## Current Work
-**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `COMPLETE / VERIFIED THROUGH PHASE 18; REPOSITORY MERGE PENDING`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 18 — Image Upscale v0.1 is `COMPLETE / VERIFIED` through 18F on PR #111; repository merge remains pending. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and fully closed.
-**Next sequence:** preserve the verified Phase 18 candidate; repository merge requires explicit authorization. Production application rollout remains separate and unauthorized.
+**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `COMPLETE / VERIFIED THROUGH PHASE 18 / MERGED`; Cycle 2 remains `COMPLETE / VERIFIED`.
+**Current phase:** Phase 18 — Image Upscale v0.1 is `COMPLETE / VERIFIED / MERGED`; PR #111 was squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d`. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and fully closed.
+**Next sequence:** preserve the merged Phase 18 baseline. Production application rollout remains separate and unauthorized; do not expand another capability without a new accepted phase/contract.
 **Release reality:** exact candidate `d6b8f386db3893e583c99b23fc3397b0eb377d42` remains the accepted Closed-Beta production application at READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2`. Automatic Git deployment remains disabled.
-**Deployment boundary:** Phase 16 and Phase 17 repository merges changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep; a post-merge Vercel audit confirmed no Phase 17 deployment was created.
+**Deployment boundary:** Phase 16, Phase 17 and Phase 18 repository merges changed repository state only. They do not authorize or imply a production application rollout, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep; a post-merge Vercel audit confirmed no Phase 17 deployment was created.
 **Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
 **Next creative direction:** Phase 18 selects **Image Upscale v0.1** only: a fixed 2× durable-image Viewer continuation backed by a new truthful asynchronous worker operation. Restore is explicitly deferred because the fresh worker audit found no restoration endpoint; Inpainting/Outpainting, LoRA/model adapters and Director remain roadmap-only.
 ## Session Handoff Rule
@@ -1601,10 +1601,10 @@ Implementation checklist:
 
 **Phase 17 repository status: `COMPLETE / VERIFIED / MERGED`.**
 
-**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 is complete/verified through 18F on PR #111; repository merge remains pending, and production application deployment remains separate and unauthorized.
+**Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18 is complete/verified/merged through PR #111 as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d`; production application deployment remains separate and unauthorized.
 
 ## Cycle 3 / Phase 18 — Image Upscale v0.1
-**Status: `COMPLETE / VERIFIED — REPOSITORY MERGE PENDING` under UI-058.**
+**Status: `COMPLETE / VERIFIED / MERGED` under UI-058.**
 
 ### Fresh planning evidence
 - [x] Re-established authoritative repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e` after Phase 17 closure.
@@ -1641,7 +1641,7 @@ Implementation checklist:
 - [x] **18D Lifecycle/recovery:** server-owned Upscale reconciliation/finalization and native cancellation reuse the established lifecycle machinery; failed Retry reconstructs canonical fixed-2× intent and current-revalidates its durable source; successful Run Again/Reuse Settings remain absent; Activity renders truthful `2× upscale`; and succeeded Upscale results expose Compare only while the same-owner durable source remains active. Generation Reconciliation `34029067603`, Generation Cancellation `34029067647`, Activity Visual `34029067528`, and corrected full Creative Iteration validation `34029968258` passed. The initial Creative Iteration red gate was a stale verifier-navigation bug, not a product-loader failure, and was corrected at `3b1db7508d6a0e54768743df36ffca505236d2bf` after instrumented proof confirmed active-source resolution and tombstoned-source suppression.
 - [x] **18E Viewer UI:** repository-backed desktop + 390px design checkpoint precedes implementation; server-derived `Upscale 2×` appears as the full-width secondary Continue row beneath Edit/Animate only for eligible durable images; feature-local Button/Spinner/Alert state provides duplicate-submit locking, `Starting upscale…`, accepted `Open Activity`, and retryable sanitized errors without replacing the source Viewer or sending browser-owned settings. Implementation head `ac4aed60e64061ee6a911c858cdc032b6f9a7423` passed Upscale Viewer Visual `34033506667`; artifact `9989427506` (`sha256:49e40583899891a1f1863ff8fd49a714febf11bfdb999bb781849f45c3e01121`) was independently hash-checked and human-reviewed clean with no corrective UI change. Generation Integration `34033506663`, Creative Iteration `34033506642`, UI Shell `34033506628`, Engineering Quality `34033506656`, Reconciliation `34033510954`, Cancellation `34033506603` and the remaining real implementation-head regressions passed; two early GitHub scheduler cancellations created no jobs and are not product failures.
 - [x] **18F Verification:** Image Upscale Integration `34042759032` passed on exact proof head `fec2ad2762d21cbd92c8db03c8a95130a6b6ecb7` with the complete run-owned product matrix, already-deployed live-worker `8×6 → 16×12` PNG proof, exact cleanup and human-reviewed desktop/390px comparison evidence. Artifact `9992236657`: `sha256:68e5755c3c32b64e7f6606a7c7c94a8ed0774871975c3cf611759b46dee4eaf9`. Exact-head matrix: 32/32 successful after unchanged Library History rerun cleared a GitHub Actions download/setup timeout.
-- [ ] Merge only after exact-final-head verification and clean PR review surface; verify the actually attached merged-`main` push workflows.
+- [x] PR #111 squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d` from definitive exact head `c40705d760639eb6fffdf9d51fc69ed397fc55a0` after 32/32 attached PR workflows passed and the review surface was clean. Merged `main` then passed all **14 workflows / 15 checks** GitHub attached: Generation Reconciliation `34052332628`, Engineering Quality `34052332629`, UI Shell Validation `34052332633`, Maintenance Integration `34052332651`, Reference Upload Integration `34052332658`, Generation Cancellation `34052332660`, Video Generation Integration `34052332666`, Image Upscale Integration `34052332670`, Deployment Readiness `34052332678`, Generation Integration `34052332689`, Creative Iteration `34052332696`, Upscale Worker Validation `34052332700`, Activity Cancel Visual `34052332702`, and Upscale Viewer Visual `34052332712`.
 - [ ] Keep production application rollout separate; no Phase 18 contract/merge automatically deploys RenderLab.
 
 ### Explicitly deferred
@@ -1652,4 +1652,4 @@ Implementation checklist:
 - video upscale;
 - 4×/arbitrary scale, batch upscale and Variations.
 
-**Phase 18 completed the accepted 18A→18F sequence and is `COMPLETE / VERIFIED` on PR #111; repository merge remains pending. This does not imply production rollout, scheduler activation or another capability.**
+**Phase 18 completed the accepted 18A→18F sequence and is `COMPLETE / VERIFIED / MERGED` through PR #111 as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d`. This does not imply production rollout, scheduler activation or another capability.**
