@@ -4,18 +4,23 @@ import type {
   GenerationFrameRate,
   GenerationInput,
   GenerationJob,
+  GenerationModel,
   GenerationRequest,
   OutputKind,
 } from "@/lib/capabilities/generation";
 import {
+  defaultGenerationModelForOutput,
   defaultVideoAudioEnabled,
   defaultVideoResolution,
   generationAdvancedCapabilities,
   generationInputAlias,
   generationInputAliasPattern,
   generationInputRoleForIndex,
+  generationModelsForOutput,
   imageAspectRatios,
   maxGenerationInputsForOutput,
+  qwenImageFixedGuidance,
+  qwenImageFixedSteps,
   unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
   videoDurations,
@@ -95,6 +100,7 @@ function parseInputs(value: unknown): GenerationInput[] | null {
 function parseAdvanced(
   value: unknown,
   kind: OutputKind,
+  model: GenerationModel,
 ): GenerationAdvancedParameters | null | undefined {
   if (value === undefined) return undefined;
   if (!isRecord(value)) return null;
@@ -111,7 +117,9 @@ function parseAdvanced(
   }
   if (value.steps !== undefined) {
     if (kind !== "image") return null;
-    if (
+    if (model === "qwen-image-edit-2511") {
+      if (value.steps !== qwenImageFixedSteps) return null;
+    } else if (
       !Number.isInteger(value.steps)
       || (value.steps as number) < generationAdvancedCapabilities.steps.min
       || (value.steps as number) > generationAdvancedCapabilities.steps.max
@@ -120,13 +128,15 @@ function parseAdvanced(
   }
   if (value.guidance !== undefined) {
     if (kind !== "image") return null;
-    if (
+    if (model === "qwen-image-edit-2511") {
+      if (value.guidance !== qwenImageFixedGuidance) return null;
+    } else if (
       typeof value.guidance !== "number"
       || !Number.isFinite(value.guidance)
       || value.guidance < generationAdvancedCapabilities.guidance.min
       || value.guidance > generationAdvancedCapabilities.guidance.max
     ) return null;
-    advanced.guidance = value.guidance;
+    advanced.guidance = value.guidance as number;
   }
   if (value.frameRate !== undefined) {
     if (kind !== "video") return null;
@@ -169,6 +179,18 @@ export function parseGenerationRequest(value: unknown):
   }
 
   const outputKind = kind as OutputKind;
+  let model: GenerationModel;
+  if (value.model === undefined) {
+    model = defaultGenerationModelForOutput(outputKind);
+  } else if (
+    typeof value.model !== "string"
+    || !generationModelsForOutput(outputKind).includes(value.model as GenerationModel)
+  ) {
+    return { ok: false, error: { code: "invalid_request", message: "Unsupported model for the selected output type." } };
+  } else {
+    model = value.model as GenerationModel;
+  }
+
   const maxInputs = maxGenerationInputsForOutput(outputKind);
   if (inputs.length > maxInputs) {
     return {
@@ -239,7 +261,7 @@ export function parseGenerationRequest(value: unknown):
     return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include video-only settings." } };
   }
 
-  const advanced = parseAdvanced(value.advanced, outputKind);
+  const advanced = parseAdvanced(value.advanced, outputKind, model);
   if (advanced === null) {
     return { ok: false, error: { code: "invalid_request", message: "Advanced generation parameters are invalid." } };
   }
@@ -247,6 +269,7 @@ export function parseGenerationRequest(value: unknown):
   return {
     ok: true,
     request: {
+      model,
       prompt,
       output: {
         kind: kind as OutputKind,

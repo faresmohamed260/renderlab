@@ -8,6 +8,9 @@ import {
   defaultVideoAudioEnabled,
   defaultVideoResolution,
   generationInputAlias,
+  generationModelForRequest,
+  qwenImageFixedGuidance,
+  qwenImageFixedSteps,
   resolveCreativeOperation,
   type VideoResolution,
 } from "@/lib/capabilities/generation";
@@ -91,7 +94,28 @@ const invalidWorkerGraceMs = 15 * 60 * 1000;
 const retryableProviderStaleMs = 2 * 60 * 60 * 1000;
 function workflowFor(request: GenerationRequest): WorkflowConfig {
   const operation = resolveCreativeOperation(request);
+  const requestedModel = generationModelForRequest(request);
+
   if (operation === "create-image" || operation === "edit-image") {
+    if (requestedModel === "qwen-image-edit-2511") {
+      return {
+        id: operation === "edit-image" ? "qwen-image-edit-2511-edit" : "qwen-image-edit-2511-generate",
+        model: "Qwen Image Edit 2511 · Lightning 4-step",
+        ecosystem: "qwen-image-edit-2511",
+        kind: "image",
+        submitPath: "/jobs/edit",
+        outputMimeType: "image/png",
+        defaults: {
+          seed: 42,
+          steps: qwenImageFixedSteps,
+          guidance: qwenImageFixedGuidance,
+          megapixels: 1,
+        },
+      };
+    }
+    if (requestedModel !== "flux2-klein-9b") {
+      throw new Error("The selected model does not support image generation.");
+    }
     return {
       id: operation === "edit-image" ? "flux2-klein-image-edit" : "flux2-klein-image-generate",
       model: "FLUX.2 Klein 9B · DarkBeast V2 BFS",
@@ -101,6 +125,10 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
       outputMimeType: "image/png",
       defaults: { seed: 42, steps: 4, guidance: 1, megapixels: 1 },
     };
+  }
+
+  if (requestedModel !== "ltx25-redgraft") {
+    throw new Error("The selected model does not support video generation.");
   }
   return {
     id: "ltx25-redgraft-video",
@@ -153,7 +181,7 @@ async function insertJob(ownerId: string, request: GenerationRequest, workflow: 
       model: workflow.model,
       ecosystem: workflow.ecosystem,
       inputs: request.inputs,
-      parameters: { output: request.output, advanced: request.advanced ?? {} },
+      parameters: { model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {} },
     }),
   });
   if (!rows?.[0]) throw new Error("Generation job could not be created.");
@@ -279,8 +307,9 @@ function buildForm(request: GenerationRequest, workflow: WorkflowConfig, prepare
     form.append("prompt", executionPrompt);
     form.append("negative_prompt", request.advanced?.negativePrompt ?? "");
     form.append("seed", String(request.advanced?.seed ?? workflow.defaults.seed));
-    form.append("steps", String(request.advanced?.steps ?? workflow.defaults.steps!));
-    form.append("cfg", String(request.advanced?.guidance ?? workflow.defaults.guidance!));
+    const fixedQwenTuning = workflow.ecosystem === "qwen-image-edit-2511";
+    form.append("steps", String(fixedQwenTuning ? workflow.defaults.steps! : request.advanced?.steps ?? workflow.defaults.steps!));
+    form.append("cfg", String(fixedQwenTuning ? workflow.defaults.guidance! : request.advanced?.guidance ?? workflow.defaults.guidance!));
     form.append("megapixels", String(workflow.defaults.megapixels));
     return form;
   }
