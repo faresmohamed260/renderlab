@@ -1,0 +1,76 @@
+name: Audit Qwen Model Choice
+
+on:
+  push:
+    branches:
+      - audit/qwen-model-choice-20260907
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe registered Qwen gateways
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python - <<'PY'
+          import json, urllib.request
+          gateways = {
+              "primary": "https://voidtrek--saga-qwen-image-edit-2511-gateway-web.modal.run",
+              "standby": "https://nyxprotocol--saga-qwen-image-edit-2511-gateway-web.modal.run",
+          }
+          evidence = {}
+          for role, base in gateways.items():
+              with urllib.request.urlopen(base + "/health", timeout=30) as response:
+                  health = json.load(response)
+              with urllib.request.urlopen(base + "/openapi.json", timeout=30) as response:
+                  openapi = json.load(response)
+              assert health.get("ready") is True, (role, health)
+              assert health.get("model") == "Qwen/Qwen-Image-Edit-2511", (role, health.get("model"))
+              assert health.get("multiple_references") is True, (role, health)
+              acceleration = health.get("acceleration") or {}
+              assert acceleration.get("default_steps") == 4, (role, acceleration)
+              assert acceleration.get("steps") == [4], (role, acceleration)
+              assert float(acceleration.get("true_cfg_scale")) == 1.0, (role, acceleration)
+              paths = openapi.get("paths", {})
+              assert "post" in paths.get("/jobs/edit", {}), (role, sorted(paths))
+              assert "get" in paths.get("/jobs/{call_id}", {}), (role, sorted(paths))
+              assert "delete" in paths.get("/jobs/{call_id}", {}), (role, sorted(paths))
+              schema_ref = paths["/jobs/edit"]["post"]["requestBody"]["content"]["multipart/form-data"]["schema"]["$ref"]
+              schema_name = schema_ref.rsplit("/", 1)[-1]
+              schema = openapi["components"]["schemas"][schema_name]
+              props = schema.get("properties", {})
+              assert props.get("image_files", {}).get("type") == "array", (role, props.get("image_files"))
+              assert props.get("steps", {}).get("default") == 4, (role, props.get("steps"))
+              assert float(props.get("cfg", {}).get("default")) == 1.0, (role, props.get("cfg"))
+              evidence[role] = {
+                  "health": health,
+                  "contract": {
+                      "paths": sorted(path for path in paths if path in {"/health", "/jobs/edit", "/jobs/{call_id}"}),
+                      "edit_schema": schema,
+                  },
+              }
+          with open("artifacts/qwen-model-choice-audit.json", "w") as f:
+              json.dump(evidence, f, indent=2, sort_keys=True)
+          print(json.dumps({role: {"ready": item["health"]["ready"], "model": item["health"]["model"], "default_steps": item["health"]["acceleration"]["default_steps"], "cfg": item["health"]["acceleration"]["true_cfg_scale"]} for role, item in evidence.items()}, indent=2))
+          PY
+
+      - name: Upload audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: qwen-model-choice-audit
+          path: artifacts/qwen-model-choice-audit.json
+          retention-days: 14
+
+      - name: Remove temporary audit branch
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete "${GITHUB_REF_NAME}" || true
