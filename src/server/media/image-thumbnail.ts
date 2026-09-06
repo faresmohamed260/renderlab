@@ -3,6 +3,7 @@ import sharp from "sharp";
 export const IMAGE_THUMBNAIL_CONTENT_TYPE = "image/webp";
 export const IMAGE_THUMBNAIL_MAX_EDGE = 640;
 
+// Thumbnail transforms run during durable persistence or explicit maintenance, never on Library reads.
 export async function createImageThumbnailBytes(bytes: Uint8Array) {
   return sharp(Buffer.from(bytes))
     .rotate()
