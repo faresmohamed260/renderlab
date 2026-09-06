@@ -564,7 +564,9 @@ try {
   const visualUploadedKey = `renderlab/batch-actions-fixtures/${randomUUID()}/visual-uploaded.png`;
   fixture.storageKeys.push(visualUploadedKey);
   await writeFixture(fixture);
+  // UI-060 page selection is origin-scoped; mixed-origin batch behavior is already proved above through the API contract.
   const visualUploaded = await createAsset(owner.id, {
+    origin: "generated",
     displayName: "RenderLab Batch Organize Visual Uploaded",
     storageKey: visualUploadedKey,
     favorite: true,
@@ -575,6 +577,7 @@ try {
   fixture.storageKeys.push(visualKeepKey);
   await writeFixture(fixture);
   const visualKeep = await createAsset(owner.id, {
+    origin: "generated",
     displayName: "RenderLab Batch Organize Visual Keep",
     storageKey: visualKeepKey,
     favorite: true,
@@ -649,6 +652,7 @@ try {
     fixture.storageKeys.push(key);
     await writeFixture(fixture);
     const asset = await createAsset(owner.id, {
+      origin: "generated",
       displayName: `RenderLab Batch Delete Visual ${label}`,
       storageKey: key,
     });
