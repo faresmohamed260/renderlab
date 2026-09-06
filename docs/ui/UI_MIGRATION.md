@@ -1604,7 +1604,7 @@ Implementation checklist:
 **Post-Phase-17 governance:** completed by read-only worker audit `33995223659` and the accepted Phase 18 Image Upscale v0.1 contract below. Phase 18A is now complete/live-verified after the explicitly authorized worker-only deployment; production application deployment remains separate and unauthorized.
 
 ## Cycle 3 / Phase 18 — Image Upscale v0.1
-**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B NEXT` under UI-058.**
+**Status: `IMPLEMENTATION IN PROGRESS — 18A COMPLETE / LIVE VERIFIED; 18B COMPLETE / VERIFIED; 18C NEXT` under UI-058.**
 
 ### Fresh planning evidence
 - [x] Re-established authoritative repository baseline `e0ba6ae3e8eadefbe1a7c1ae6bf37d3fdaec755e` after Phase 17 closure.
@@ -1612,7 +1612,7 @@ Implementation checklist:
 - [x] Audit found `flux-primary-01` and `ltx-primary-01` registered but Modal-workspace-disabled; FLUX/LTX standbys remain ready and both Qwen registrations remain ready.
 - [x] Healthy deployed APIs expose Image Edit and Video generation/job lifecycle only; no Upscale, Restore, Inpaint/Outpaint, LoRA-selection or Director endpoint is currently deployed.
 - [x] Selected one coherent capability: **Image Upscale 2×**. Restore and all later creative capability categories remain deferred.
-- [x] Audited current domain/schema: `CreativeOperation` and `generation_jobs.operation` still cover only the four prompt-generation operations; Upscale requires truthful new operation/schema semantics and must not masquerade as Edit.
+- [x] Pre-DDL domain/schema audit confirmed `CreativeOperation` and the live `generation_jobs.operation` constraint still covered only the four prompt-generation operations, `prompt` was non-null for all audited history, and owner/RLS/browser-grant invariants were clean before mutation.
 - [x] Chosen UI boundary: Media Viewer contextual continuation, not a new top-level screen and not a new Create mode in v0.1.
 
 ### 18A fleet/worker prerequisite — COMPLETE / LIVE VERIFIED
@@ -1625,9 +1625,18 @@ Implementation checklist:
 - [x] Corrected smoke proved invalid scale → `400` and real 8×8 RGB → 16×16 PNG through submit/poll. Corrected full live proof `34000980137` then passed 10 cases covering health/provenance, fixed-scale + geometry rejection, RGB, alpha, EXIF normalization, animated rejection, cancellation, accepted 4096×1024 → 8192×2048 result transport and final healthy/sleeping state.
 - [x] Full proof artifact `9979491468` has ZIP digest `sha256:4a8f2a06b0bcf305eaa9b270bbfbe5937e0f8b5abeb004f5ab57c2665e7e6d04`; `evidence.json` is `sha256:0ad85f892357f1e6d611b32b27a03fa030eef8df3ffe7afb3dae2950919a1dab`. Persistent proof fixtures: Supabase `0`, R2 `0`. No application/schema/UI rollout followed.
 
+### 18B product/domain/schema — COMPLETE / VERIFIED
+- [x] Keep ordinary `GenerationRequest` prompt-only; split `PromptGenerationOperation` from persisted `CreativeOperation` and add truthful `upscale-image`.
+- [x] Add one narrow server-owned fixed-2× `UpscaleImageCommand` with `prompt=null`, one durable `media-asset` / `primary-image` input and canonical `parameters.upscale.scale=2`.
+- [x] Make persisted/public Activity prompt nullable while explicitly rejecting non-prompt operations from Phase 16 recipe reconstruction, preventing accidental Run Again/Reuse Settings before 18D.
+- [x] Apply repository migration `0018_image_upscale_job_semantics.sql` as shared migration `20260906004810 renderlab_image_upscale_job_semantics`: operation check includes `upscale-image`; prompt is nullable only under a companion semantic check that requires null for Upscale and nonblank prompt for the four prompt operations.
+- [x] Post-DDL audit: no historical row rewrite, zero invalid prompt rows, RLS still enabled, zero direct `anon`/`authenticated` `generation_jobs` grants, zero media/job owner-link violations, no new 18B-specific Security Advisor finding.
+- [x] Exact implementation head `5f9fd7a608df29b1fa25870da369ab55291b875f` passed Engineering Quality and every completed attached affected workflow; exact final-head closure still waits for the remaining attached Video Generation Integration run plus docs-final validation.
+- [x] Keep 18C+ unimplemented: no product Upscale route/admission dispatch, lifecycle/failed-Retry/Activity summary/Compare source, Viewer action, production application deployment or scheduler activation.
+
 ### Locked implementation sequence
 - [x] **18A Fleet/worker prerequisite:** registry hygiene, pinned SwinIR runtime, worker deployment and complete live contract proof are verified. The deployment authorization was worker-only and does not authorize RenderLab application rollout.
-- [ ] **18B Domain/schema:** add `upscale-image`; use a narrow promptless Upscale product command; apply/audit the smallest `generation_jobs` compatibility migration only after pre-DDL row/constraint review.
+- [x] **18B Domain/schema:** `upscale-image`, the narrow promptless fixed-2× command and migration `0018` are implemented/applied/audited; historical prompt rows and owner/RLS/browser-grant invariants remain intact.
 - [ ] **18C Product API/admission:** owner-scoped `POST /api/media/assets/[assetId]/upscale`, fixed scale 2, server-derived eligibility, shared generation admission, no browser worker/storage identity.
 - [ ] **18D Lifecycle/recovery:** reuse reconciliation/finalization/cancellation; failed Retry is current-source-revalidated; successful Run Again/Reuse Settings stay absent; Activity gains truthful Upscale summary; Compare source extends conditionally to succeeded Upscale results.
 - [ ] **18E Viewer UI:** add server-derived **Upscale 2×** in existing Continue hierarchy, small in-flight/accepted/error feedback, no new generic primitive; desktop+narrow design checkpoint precedes implementation.
@@ -1643,4 +1652,4 @@ Implementation checklist:
 - video upscale;
 - 4×/arbitrary scale, batch upscale and Variations.
 
-**Phase 18 implementation is in progress and must remain inside the accepted 18A→18F sequence above. 18A is complete/live-verified; 18B is the next slice and must start with the accepted fresh pre-DDL audit before any schema mutation.**
+**Phase 18 implementation remains inside the accepted 18A→18F sequence. 18A is complete/live-verified and 18B is complete/verified; 18C is the next unstarted slice. No later lifecycle/UI/product rollout is implied by the 18B schema/domain milestone.**
