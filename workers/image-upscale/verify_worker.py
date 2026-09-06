@@ -82,6 +82,10 @@ assert "nvidia/cuda:12.8.1-runtime-ubuntu22.04" in text
 assert "app = modal.App(APP_NAME)" in text
 assert "@app.cls(\n    image=runtime_image," in text
 assert "@app.function(image=gateway_image, timeout=3600)" in text
+# FastAPI multipart types are imported inside web(); they must resolve eagerly at route definition time.
+# Postponed annotations turn UploadFile into an unresolved ForwardRef in the deployed gateway.
+assert "from __future__ import annotations" not in text
+assert "image_file: UploadFile = File(...)" in text
 
 # Preserve the accepted async worker contract and fixed 2x product boundary.
 assert '"/health"' in text
