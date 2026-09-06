@@ -1653,3 +1653,15 @@ Implementation checklist:
 - 4×/arbitrary scale, batch upscale and Variations.
 
 **Phase 18 completed the accepted 18A→18F sequence and is `COMPLETE / VERIFIED / MERGED` through PR #111 as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d`. This does not imply production rollout, scheduler activation or another capability.**
+
+### Cycle 3 production rollout closure — 2026-09-06
+- [x] Deploy exact merged application source `c493eaead6997cce1c22c6835c98177d6346ff41` as READY Vercel production deployment `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA`.
+- [x] Verify `https://renderlab.faresuniform.uk` Closed-Beta public routes after production alias cutover and exact-origin R2 browser-upload CORS.
+- [x] Verify authenticated production Create Image, Run Again admission, failed Retry with immutable history and native Cancel.
+- [x] Verify eligible Media Viewer exposes `Upscale 2×` and a real run-owned `8×6` image produces one slot-0 `16×12` durable output while preserving source bytes.
+- [x] Clean exact run-owned Auth/access/job/source/media/upload/admission-reservation/R2 fixtures to zero.
+- [x] Preserve prior READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2` as rollback until smoke passed; rollback was not required.
+- [x] Record rollout workflow `34056745193` and evidence artifact `9996244698` (`evidence.json sha256:490d14dbe13f6b018deccc28efde78a9fab959ab085138795712ac06b2f4a1a6`; artifact ZIP `sha256:c9e3d8829f4605b8fcb93cc8c4e44b1ca8bae5852934aef88384fd17292db00d`).
+- [x] Keep automatic Git → Vercel deployment disabled. No Supabase schema, Upscale worker deployment, reconciliation/maintenance scheduler, `pg_cron`, `pg_net` or deferred capability expansion changed.
+
+**Cycle 3 production rollout status: `COMPLETE / VERIFIED / LIVE`.**
