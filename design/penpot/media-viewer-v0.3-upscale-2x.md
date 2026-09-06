@@ -1,6 +1,6 @@
 # Media Viewer v0.3 — Upscale 2× checkpoint
 
-**Status: `REVIEWED DESIGN CANDIDATE — PHASE 18E REPOSITORY-BACKED CHECKPOINT`**
+**Status: `APPROVED / IMPLEMENTED / RENDER VERIFIED`**
 
 This package records the Phase 18E / UI-058 desktop+narrow design checkpoint required before the visible Media Viewer Upscale action is implemented. Direct Penpot automation is not available in this session, so the checkpoint follows `docs/ui/DESIGN_WORKFLOW.md`: open repository-backed SVG candidates, repository-recorded decisions, then real GitHub/Playwright rendered validation before the surface can be marked approved.
 
@@ -27,3 +27,10 @@ The checkpoint extends the already-approved Viewer rather than redesigning it. `
 The desktop state sheet deliberately keeps the media stage visually dominant while enlarging the sidebar continuation slice enough to inspect button hierarchy and feedback wrapping. The narrow state sheet uses the repository's 390px review width and shows media before metadata/continuation in every state. The accepted state uses success color only as a semantic status accent rather than recoloring the whole Continue surface.
 
 The candidate is ready for the smallest implementation and real GitHub-render validation. It is **not** an approved implementation by itself; Phase 18E becomes verified only after the real Viewer passes configured desktop+narrow interaction/render review and the affected exact-head regression matrix. Phase 18F remains separate.
+
+## Final implementation and rendered review
+The accepted checkpoint is implemented at exact implementation head `ac4aed60e64061ee6a911c858cdc032b6f9a7423`. Upscale Viewer Visual `34033506667` passed build, UI-purity, configured private Viewer interaction, duplicate-submit locking, payloadless POST, eligible/ineligible presence, accepted/error behavior, reduced-motion 390px layout, no-horizontal-overflow assertions and exact fixture cleanup.
+
+Artifact `9989427506` has GitHub digest `sha256:49e40583899891a1f1863ff8fd49a714febf11bfdb999bb781849f45c3e01121`; the downloaded ZIP was independently hash-checked to the same digest. Human review of `phase18e-upscale-viewer-eligible-desktop.png`, `phase18e-upscale-viewer-starting-desktop.png`, `phase18e-upscale-viewer-accepted-desktop.png`, `phase18e-upscale-viewer-accepted-narrow.png` and `phase18e-upscale-viewer-error-narrow.png` found the real implementation consistent with the checkpoint: media remains primary; Edit/Animate retain the first-row hierarchy; Upscale occupies the stable full-width secondary row; starting/accepted/error feedback is truthful and compact; narrow content does not clip horizontally; existing result/source comparison ownership is unchanged. No corrective implementation change was required.
+
+Phase 18E is therefore render verified. These SVG/Markdown artifacts remain design handoff evidence rather than the runtime source of truth. Phase 18F product/live proof and any production rollout remain separate.
