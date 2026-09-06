@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   CircleUserRound,
@@ -10,7 +10,7 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -44,13 +44,22 @@ function routeTitle(pathname: string) {
   return "Create";
 }
 
+function routeSection(pathname: string) {
+  if (pathname.startsWith("/create")) return "/create";
+  if (pathname.startsWith("/library")) return "/library";
+  if (pathname.startsWith("/activity")) return "/activity";
+  if (pathname.startsWith("/settings")) return "/settings";
+  if (pathname.startsWith("/admin")) return "/admin";
+  return null;
+}
+
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const active = isActive(pathname, item.href);
   const Icon = item.icon;
 
   return (
     <Button asChild variant={active ? "secondary" : "ghost"} size="lg" className="w-full justify-start gap-3 px-3">
-      <Link href={item.href} aria-current={active ? "page" : undefined} className={active ? "font-semibold" : "font-normal"}>
+      <Link href={item.href} prefetch={true} aria-current={active ? "page" : undefined} className={active ? "font-semibold" : "font-normal"}>
         <Icon aria-hidden="true" className={active ? "text-accent" : "text-text-muted"} />
         <span>{item.label}</span>
       </Link>
@@ -71,7 +80,7 @@ function MobileNavLink({ item, pathname }: { item: NavItem; pathname: string }) 
         active ? "font-semibold text-text" : "font-normal text-text-muted",
       )}
     >
-      <Link href={item.href} aria-current={active ? "page" : undefined}>
+      <Link href={item.href} prefetch={true} aria-current={active ? "page" : undefined}>
         <Icon aria-hidden="true" className={active ? "text-accent" : "text-text-muted"} />
         <span>{item.label}</span>
       </Link>
@@ -81,7 +90,19 @@ function MobileNavLink({ item, pathname }: { item: NavItem; pathname: string }) 
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const title = routeTitle(pathname);
+  const section = routeSection(pathname);
+  const previousSection = useRef(section);
+
+  useEffect(() => {
+    if (section && previousSection.current !== section) {
+      previousSection.current = section;
+      router.refresh();
+      return;
+    }
+    previousSection.current = section;
+  }, [router, section]);
 
   return (
     <div className="min-h-dvh bg-canvas text-text lg:flex">
@@ -89,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="sticky top-0 hidden h-dvh w-52 shrink-0 border-r border-border bg-surface-1 px-5 py-5 lg:flex lg:flex-col"
         aria-label="Application navigation"
       >
-        <Link href="/create" aria-label="Open Create workspace" className="mb-7 inline-flex min-h-11 items-center text-lg font-semibold tracking-tight">
+        <Link href="/create" prefetch={true} aria-label="Open Create workspace" className="mb-7 inline-flex min-h-11 items-center text-lg font-semibold tracking-tight">
           <RenderLabBrand markClassName="size-7" textClassName="text-lg" />
         </Link>
 
@@ -108,19 +129,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-canvas/95 px-4 backdrop-blur sm:px-6">
-          <Link href="/create" aria-label="Open Create workspace" className="mr-4 inline-flex min-h-11 items-center font-semibold tracking-tight lg:hidden">
+          <Link href="/create" prefetch={true} aria-label="Open Create workspace" className="mr-4 inline-flex min-h-11 items-center font-semibold tracking-tight lg:hidden">
             <RenderLabBrand markClassName="size-6" textClassName="text-sm" />
           </Link>
           <h1 className="hidden text-base font-semibold lg:block">{title}</h1>
 
           <div className="ml-auto flex items-center gap-2">
             <Button asChild variant="ghost" size="icon-lg">
-              <Link href="/activity" aria-label="Open activity">
+              <Link href="/activity" prefetch={true} aria-label="Open activity">
                 <Activity aria-hidden="true" />
               </Link>
             </Button>
             <Button asChild variant="ghost" size="icon-lg">
-              <Link href="/settings" aria-label="Open settings and account">
+              <Link href="/settings" prefetch={true} aria-label="Open settings and account">
                 <CircleUserRound aria-hidden="true" />
               </Link>
             </Button>

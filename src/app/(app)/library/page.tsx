@@ -56,8 +56,7 @@ export default async function LibraryPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = await searchParams;
-  const account = await getCurrentRenderLabAccount();
+  const [params, account] = await Promise.all([searchParams, getCurrentRenderLabAccount()]);
   const kind = parseKind(params.kind);
   const sort = parseSort(params.sort);
   const searchQuery = parseSearch(params.q);
@@ -72,20 +71,8 @@ export default async function LibraryPage({
   let collectionMissing = false;
 
   if (account && isSupabaseConfigured()) {
-    try {
-      collections = await listMediaCollections(account.id);
-      collectionMissing = Boolean(
-        selectedCollectionId && !collections.some((collection) => collection.id === selectedCollectionId),
-      );
-    } catch {
-      collectionsAvailable = false;
-      available = false;
-    }
-  }
-
-  if (account && available && !collectionMissing) {
-    try {
-      const result = await listMediaAssets({
+  const assetsPromise = available
+    ? listMediaAssets({
         ownerId: account.id,
         ...(kind === "all" ? {} : { kind }),
         ...(searchQuery ? { search: searchQuery } : {}),
@@ -94,13 +81,31 @@ export default async function LibraryPage({
         sort,
         limit: pageSize,
         offset,
-      });
-      items = result.items.map(publicMediaAsset);
-      hasMore = result.page.hasMore;
-    } catch {
-      available = false;
-    }
+      })
+    : Promise.resolve(null);
+
+  const [collectionsResult, assetsResult] = await Promise.allSettled([
+    listMediaCollections(account.id),
+    assetsPromise,
+  ]);
+
+  if (collectionsResult.status === "fulfilled") {
+    collections = collectionsResult.value;
+    collectionMissing = Boolean(
+      selectedCollectionId && !collections.some((collection) => collection.id === selectedCollectionId),
+    );
+  } else {
+    collectionsAvailable = false;
+    available = false;
   }
+
+  if (assetsResult.status === "rejected") {
+    available = false;
+  } else if (assetsResult.value && available && !collectionMissing) {
+    items = assetsResult.value.items.map(publicMediaAsset);
+    hasMore = assetsResult.value.page.hasMore;
+  }
+}
 
   return (
     <LibraryView

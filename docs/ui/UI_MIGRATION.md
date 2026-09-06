@@ -1665,3 +1665,15 @@ Implementation checklist:
 - [x] Keep automatic Git → Vercel deployment disabled. No Supabase schema, Upscale worker deployment, reconciliation/maintenance scheduler, `pg_cron`, `pg_net` or deferred capability expansion changed.
 
 **Cycle 3 production rollout status: `COMPLETE / VERIFIED / LIVE`.**
+
+## Post-Cycle 3 Stabilization — Navigation & Library Revisit Performance
+**Status: `IMPLEMENTED / CI VALIDATED`; production rollout remains separate.**
+
+- [x] Preserve the existing App Router / server-owned account model; no new client-global media store or experimental `staleTimes`/cache-components migration.
+- [x] Full-prefetch the bounded persistent shell destinations, then refresh the newly entered top-level section in place to combine immediate paint with fresh owner-scoped data.
+- [x] Remove the Library collection → media-list waterfall by issuing the independent owner-scoped queries concurrently and preserving existing unavailable/missing-collection semantics.
+- [x] Reuse owner-authorized media redirects in the browser for 240 seconds only; responses remain `private` and the existing 300-second signed R2 read lifetime is unchanged.
+- [x] Prefer a Library asset's thumbnail route when one exists; fall back to content for image rows without a durable thumbnail. Do not claim a new image-thumbnail generation/backfill capability.
+- [x] Keep Library filtering, search, collections, pagination, ownership, deletion, continuation and Activity truthfulness unchanged.
+- [x] Corrected working tree passed UI purity, lint, TypeScript, unit tests and production build in GitHub Actions `34059367614` before commit; exact-head PR workflows remain required before merge.
+- [x] No production deployment, Supabase schema change, R2 migration, worker change, scheduler change or creative-capability expansion is part of this corrective pass.

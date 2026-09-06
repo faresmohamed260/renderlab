@@ -1327,3 +1327,15 @@ Phase 18 is not `COMPLETE / VERIFIED` until all of the following are true:
 
 ## Deferred next-capability dependencies
 Restore remains the first follow-up evaluation only after a real deployed restoration semantic exists. Inpainting/Outpainting still requires a deliberate mask/canvas contract; LoRA/model adapters still require source/version/hash/license/compatibility/cache/safety/persisted-intent contracts; Director remains blocked on structured deployed REDGraft semantics. None of those later capabilities is expanded or implemented by Phase 18.
+
+## Post-Cycle 3 Stabilization — Corrective Maintenance
+These fixes correct shipped behavior without opening a new major cycle or expanding creative capability.
+
+### Navigation and Library revisit performance — `IMPLEMENTED / CI VALIDATED`
+- Persistent app-shell destinations explicitly prefetch their full route payload so normal Create / Library / Activity / Settings tab switches can paint from the client router cache instead of blocking on a fresh server round trip.
+- After a real top-level section switch, the shell refreshes that destination in place so prefetched private Library/Activity data cannot remain silently stale.
+- Library account/search parsing and owner-scoped collection/media queries remove avoidable sequential waiting; collections and the first media page are fetched concurrently after identity is established.
+- Owner-authorized media content/thumbnail redirects may be reused only by the same browser (`Cache-Control: private, max-age=240`), shorter than the existing 300-second signed-read lifetime. No shared/CDN cache of private media is introduced.
+- Library image cards now prefer `thumbnailUrl` whenever the asset actually has one, while retaining `contentUrl` as fallback. This correction does not invent a new image-thumbnail generation/backfill service; current generated/uploaded image rows may still legitimately lack `thumbnail_storage_key`.
+- Validation run: GitHub Actions `34059367614` runs UI purity, lint, TypeScript, unit tests and a production build on the corrected working tree before it is committed. Normal PR path-filtered workflows remain the exact-head acceptance gate.
+- Production deployment remains a separate explicit operation; this maintenance work does not authorize deployment.
