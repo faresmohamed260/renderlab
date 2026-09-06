@@ -1678,3 +1678,18 @@ Implementation checklist:
 - [x] PR #112 merged as `7798fab8ad8caff19a74005502eb7472297ba7a8` only after all 30 workflows on exact final head `f9e61a2f06ef4f6ef2ff27f170f50495eeb7647f` passed.
 - [x] Bounded post-merge maintenance run `34062569699` backfilled all 13 eligible legacy active image rows, with 0 failures and 0 remaining null thumbnail keys; evidence artifact `9997940257` has ZIP `sha256:bb02409e57ac2ba0737b72fb9cc848d7974bede01ff181f8ac4e36638f7d4e46`.
 - [x] Explicit rollout run `34063455944` deployed source `71a9034039a64beec66894cc4f79b1f62bfc7bf7` as READY production deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` and verified the custom domain, R2 upload CORS, durable image upload, WebP thumbnail, private 240-second thumbnail redirect cache, Library listing and exact fixture cleanup. Rollback to `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` was not required. Evidence artifact `9998223539` has JSON sha256 `4d4130f6c2a8768b5a4a5f068e1d2d6b182c849ccaf10df229f985c9ebab05fd` and ZIP sha256 `540839b3655089fc9b4c72b7bee0a21280b29dbe377e3b054c295b92737e9bdb`. No Supabase schema change, R2 resource migration, worker change, scheduler change or creative-capability expansion occurred.
+
+## Post-Cycle 3 Corrective Maintenance — Library Creatives / Uploads
+**Status: `IMPLEMENTED / STATIC-VALIDATED / EXACT-HEAD PR ACCEPTANCE PENDING`.**
+
+- [x] Keep one durable `media_assets` identity and use the existing indexed `origin=generated|uploaded` field as the section boundary.
+- [x] Make **Creatives** the canonical `/library` default and **Uploads** the URL-owned `?tab=uploads` alternative.
+- [x] Preserve kind/search/Favorites/Collections/sort state when changing sections while clearing stale pagination.
+- [x] Scope page results, empty states and page-scoped selection to the active origin section.
+- [x] Keep Upload and desktop drag/drop affordances inside Uploads; Creatives must not accept a drop or show the Upload action.
+- [x] Keep Viewer/deep-link identity and all existing media mutations/continuations unchanged across both origins.
+- [x] Add an optional validated `origin` filter to `GET /api/media/assets` while preserving unified results when it is omitted.
+- [x] Preserve existing schema/infrastructure; no migration, backfill or provider/worker change is required.
+- [ ] Complete exact-head Library lifecycle/search/drag-drop and affected regression workflows, then inspect desktop and 390px rendered artifacts before merge.
+
+This corrective item supersedes only the earlier v0.1 prohibition on Creatives/Uploads navigation. It does not create parallel Upload media identity or a second Library system.
