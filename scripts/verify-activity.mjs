@@ -412,6 +412,21 @@ try {
   });
   jobs.push(succeededJob);
 
+  const upscaleActivityJob = await createJob(owner, {
+    status: "succeeded",
+    operation: "upscale-image",
+    outputKind: "image",
+    prompt: null,
+    inputs: [{
+      alias: "image1",
+      role: "primary-image",
+      source: { type: "media-asset", id: retryInputAssetId },
+    }],
+    parameters: { upscale: { scale: 2 } },
+    createdAt: at(1.5),
+  });
+  jobs.push(upscaleActivityJob);
+
   const retryImageJob = await createJob(owner, {
     status: "failed",
     operation: "edit-image",
@@ -602,6 +617,9 @@ try {
   await page.locator("h2").filter({ hasText: /^Activity$/ }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Nebula active study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Golden result study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("Upscale image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("2× upscale", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  assert((await page.getByText("Untitled generation", { exact: true }).count()) === 0, "Promptless Upscale rendered as an accidental missing-prompt generation.");
   await page.getByText("Retry image study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   assert((await page.getByText("Foreign account secret prompt", { exact: true }).count()) === 0, "Activity exposed another account's job.");
   assert((await page.getByText("provider-job-secret", { exact: false }).count()) === 0, "Activity exposed provider job identity.");

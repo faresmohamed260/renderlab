@@ -5,6 +5,7 @@ import type {
 } from "@/lib/capabilities/generation";
 import { isPromptGenerationOperation, resolveCreativeOperation } from "@/lib/capabilities/generation";
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
+import { persistedUpscaleSourceAssetId } from "@/lib/capabilities/upscale";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { generationImageInputsAvailable } from "@/server/generation/submit-generation";
@@ -84,6 +85,20 @@ export async function loadGenerationComparisonSource(
 ) {
   const row = await loadGenerationRecipeJob(ownerId, jobId);
   if (!row || row.status !== "succeeded") return null;
+
+  if (row.operation === "upscale-image") {
+    const sourceAssetId = persistedUpscaleSourceAssetId({
+      operation: row.operation,
+      outputKind: row.output_kind,
+      prompt: row.prompt,
+      inputs: row.inputs,
+      parameters: row.parameters,
+    });
+    if (!sourceAssetId) return null;
+    const source = await getMediaAsset(ownerId, sourceAssetId);
+    if (!source || source.kind !== "image") return null;
+    return publicMediaAsset(source);
+  }
 
   const primaryRole = row.operation === "edit-image"
     ? "primary-image"

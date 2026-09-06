@@ -6,6 +6,7 @@ export type PublicGenerationActivity = {
   operation: CreativeOperation;
   outputKind: OutputKind;
   prompt: string | null;
+  summary: string;
   outputAssetIds: string[];
   canCancel: boolean;
   canRunAgain: boolean;

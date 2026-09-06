@@ -8,6 +8,7 @@ import {
   releaseGenerationReconciliation,
 } from "@/server/generation/generation-reconciliation-claim";
 import { pollNativeGeneration } from "@/server/generation/native-generation";
+import { pollNativeUpscaleGeneration } from "@/server/generation/upscale-lifecycle";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type JobSnapshotRow = {
@@ -136,7 +137,9 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
       return diagnose(failed, "stalled", "generation_orchestration_stalled");
     }
 
-    const job = await pollNativeGeneration(ownerId, jobId);
+    const job = claimedSnapshot.operation === "upscale-image"
+      ? await pollNativeUpscaleGeneration(ownerId, jobId)
+      : await pollNativeGeneration(ownerId, jobId);
     if (job) await settleTerminalAdmission(job, ownerId);
     return diagnose(job, "polled", job?.error?.code);
   } catch (error) {

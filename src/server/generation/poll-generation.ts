@@ -1,5 +1,5 @@
 import type { GenerationJob } from "@/lib/capabilities/generation";
-import { isNativeGenerationConfigured } from "@/server/generation/native-generation";
+import { getJobRow, isNativeGenerationConfigured } from "@/server/generation/native-generation";
 import { reconcileNativeGeneration } from "@/server/generation/reconcile-generation";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
@@ -21,6 +21,11 @@ function parseBackendJob(value: unknown): GenerationJob | null {
 }
 
 export async function pollGenerationJob(ownerId: string, jobId: string): Promise<GenerationJob | null> {
+  const localJob = await getJobRow(ownerId, jobId).catch(() => null);
+  if (localJob?.operation === "upscale-image") {
+    return reconcileNativeGeneration(ownerId, jobId);
+  }
+
   if (isExternalGenerationBackendConfigured()) {
     const response = await fetch(`${backendUrl!.replace(/\/$/, "")}/jobs/${encodeURIComponent(jobId)}`, {
       method: "GET",

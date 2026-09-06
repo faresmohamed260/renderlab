@@ -560,6 +560,34 @@ try {
     generationOutputIndex: 0,
   });
 
+  const upscaleCompareSource = await createMediaAsset(owner, {
+    displayName: "Phase18D Upscale compare source",
+  });
+  const upscaleCompareResultId = randomUUID();
+  const upscaleCompareJob = await createJob(owner, {
+    status: "succeeded",
+    operation: "upscale-image",
+    outputKind: "image",
+    prompt: null,
+    inputs: [{
+      alias: "image1",
+      role: "primary-image",
+      source: { type: "media-asset", id: upscaleCompareSource.id },
+    }],
+    parameters: { upscale: { scale: 2 } },
+    outputAssetIds: [upscaleCompareResultId],
+    workflowId: "swinir-classical-sr-image-upscale-2x",
+    model: "SwinIR Classical SR · 2×",
+    ecosystem: "image-upscale-v1",
+  });
+  await createMediaAsset(owner, {
+    id: upscaleCompareResultId,
+    displayName: "Phase18D Upscale compare result",
+    origin: "generated",
+    generationJobId: upscaleCompareJob.id,
+    generationOutputIndex: 0,
+  });
+
   const videoJob = await createJob(owner, {
     status: "succeeded",
     operation: "create-video",
@@ -709,6 +737,42 @@ try {
   await page.getByRole("button", { name: "Close comparison", exact: true }).click();
   await compareButton.waitFor({ state: "visible" });
   assert((await page.getByRole("link", { name: "Open source", exact: true }).count()) === 0, "Closing comparison did not restore the default Viewer.");
+
+  await page.goto(`${baseUrl}/library/${upscaleCompareResultId}`, { waitUntil: "networkidle", timeout: 60_000 });
+  assert(
+    (await page.getByRole("link", { name: "Reuse settings", exact: true }).count()) === 0,
+    "Successful Upscale incorrectly exposed Reuse settings.",
+  );
+  const upscaleCompareButton = page.getByRole("button", { name: "Compare source", exact: true });
+  await upscaleCompareButton.waitFor({ state: "visible", timeout: 30_000 });
+  await upscaleCompareButton.click();
+  const upscaleOpenSource = page.getByRole("link", { name: "Open source", exact: true });
+  await upscaleOpenSource.waitFor({ state: "visible", timeout: 30_000 });
+  assert(
+    (await upscaleOpenSource.getAttribute("href")) === `/library/${upscaleCompareSource.id}`,
+    "Upscale Compare source did not resolve the active durable source.",
+  );
+  await page.getByRole("button", { name: "Close comparison", exact: true }).click();
+
+  const tombstoneAt = new Date().toISOString();
+  const tombstoneResponse = await supabase(
+    `media_assets?owner_id=eq.${encodeURIComponent(owner.id)}&id=eq.${encodeURIComponent(upscaleCompareSource.id)}`,
+    {
+      method: "PATCH",
+      headers: { prefer: "return=minimal" },
+      body: JSON.stringify({ deleted_at: tombstoneAt }),
+    },
+  );
+  assert(tombstoneResponse.ok, `Could not tombstone Upscale comparison source (${tombstoneResponse.status}).`);
+  await page.reload({ waitUntil: "networkidle", timeout: 60_000 });
+  assert(
+    (await page.getByRole("button", { name: "Compare source", exact: true }).count()) === 0,
+    "Upscale Compare source resurrected a tombstoned source.",
+  );
+  assert(
+    (await page.getByRole("link", { name: "Reuse settings", exact: true }).count()) === 0,
+    "Upscale Viewer exposed Reuse settings after source deletion.",
+  );
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -872,7 +936,7 @@ try {
   await patchAccountAccess(owner.id, { generation_enabled: true });
 
   console.log(
-    `Phase 16 creative iteration verified. owner=${owner.id} reusableJobs=3 compareCases=2 backendSubmissions=${capturedBackendRequests.length}`,
+    `Phase 16 creative iteration + Phase 18D comparison regression verified. owner=${owner.id} reusableJobs=3 compareCases=3 backendSubmissions=${capturedBackendRequests.length}`,
   );
 } catch (error) {
   primaryError = error;

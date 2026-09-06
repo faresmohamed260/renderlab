@@ -39,16 +39,16 @@ type WorkflowConfig = {
   };
 };
 
-type JobRow = {
+export type NativeGenerationJobRow = {
   id: string;
   owner_id: string;
   status: GenerationJob["status"];
   operation: CreativeOperation;
   output_kind: "image" | "video";
-  prompt: string;
+  prompt: string | null;
   workflow_id: string;
   model: string;
-  ecosystem: GenerationWorker["ecosystem"];
+  ecosystem: string;
   inputs: GenerationRequest["inputs"];
   parameters: Record<string, unknown>;
   worker_id: string | null;
@@ -63,6 +63,8 @@ type JobRow = {
   started_at: string | null;
   completed_at: string | null;
 };
+
+type JobRow = NativeGenerationJobRow;
 
 type InputBytes = { bytes: Buffer; contentType: string; filename: string };
 
@@ -116,7 +118,7 @@ export function isNativeGenerationConfigured() {
   return isSupabaseConfigured() && isR2Configured();
 }
 
-function toGenerationJob(row: JobRow): GenerationJob {
+export function toGenerationJob(row: JobRow): GenerationJob {
   return {
     id: row.id,
     status: row.status,
@@ -152,7 +154,7 @@ async function insertJob(ownerId: string, request: GenerationRequest, workflow: 
   return rows[0];
 }
 
-async function getJobRow(ownerId: string, jobId: string) {
+export async function getJobRow(ownerId: string, jobId: string) {
   const rows = await supabaseRest<JobRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`,
     { method: "GET" },
@@ -160,7 +162,7 @@ async function getJobRow(ownerId: string, jobId: string) {
   return rows?.[0] ?? null;
 }
 
-async function patchJob(ownerId: string, jobId: string, patch: Record<string, unknown>) {
+export async function patchJob(ownerId: string, jobId: string, patch: Record<string, unknown>) {
   const rows = await supabaseRest<JobRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*`,
     {
@@ -495,7 +497,7 @@ async function persistGeneratedMedia({
   return completeJobWithAsset(row, assetId);
 }
 
-async function recoverPersistingResult(row: JobRow) {
+export async function recoverPersistingResult(row: JobRow) {
   if (row.status !== "persisting") return null;
 
   const outputIndex = 0;
@@ -509,6 +511,7 @@ async function recoverPersistingResult(row: JobRow) {
     row.output_kind,
   );
   if (!primary) return null;
+  if (row.operation === "upscale-image" && primary.contentType !== "image/png") return null;
 
   let thumbnailStorageKey: string | null = null;
   if (row.output_kind === "video") {
@@ -530,7 +533,7 @@ async function recoverPersistingResult(row: JobRow) {
   });
 }
 
-async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
+export async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
   const outputIndex = 0;
   const existing = await getGeneratedOutput(row, outputIndex);
   if (existing) return completeJobWithAsset(row, existing.id);
@@ -579,6 +582,9 @@ async function fetchPoster(worker: GenerationWorker, callId: string) {
 }
 
 function requestFromJobRow(row: JobRow): GenerationRequest {
+  if (typeof row.prompt !== "string" || !row.prompt.trim()) {
+    throw new Error("Stored prompt generation request is missing its prompt.");
+  }
   const output = row.parameters.output as GenerationRequest["output"] | undefined;
   const advanced = row.parameters.advanced as GenerationRequest["advanced"] | undefined;
   if (!output?.aspectRatio) throw new Error("Stored generation request is missing its output settings.");

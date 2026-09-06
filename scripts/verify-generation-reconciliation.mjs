@@ -3,6 +3,7 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
+  PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import {
@@ -21,6 +22,10 @@ const reconcilerSecret = process.env.RENDERLAB_GENERATION_RECONCILER_SECRET;
 const r2Bucket = process.env.R2_BUCKET_NAME;
 const fixtureAccount = configuredTestAccountIdentity("generation-reconciliation");
 const fixtureKeys = new Set();
+const upscaleSourceBytes = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZgZsAAAAASUVORK5CYII=",
+  "base64",
+);
 
 for (const [name, value] of Object.entries({
   SUPABASE_URL: supabaseUrl,
@@ -166,6 +171,80 @@ async function setMockProviderState(job, state) {
   if (!response.ok) {
     throw new Error(`Could not set Phase 14 mock provider state ${state} (${response.status}): ${await response.text()}`);
   }
+}
+
+async function createUpscaleSource(account, label) {
+  const id = randomUUID();
+  const key = `renderlab/phase18d-fixtures/${account.id}/source-${id}.png`;
+  await r2Client.send(new PutObjectCommand({
+    Bucket: r2Bucket,
+    Key: key,
+    Body: upscaleSourceBytes,
+    ContentType: "image/png",
+  }));
+  fixtureKeys.add(key);
+  const inserted = await serviceMutation("media_assets?select=*", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      id,
+      owner_id: account.id,
+      generation_job_id: null,
+      generation_output_index: null,
+      origin: "uploaded",
+      kind: "image",
+      mime_type: "image/png",
+      storage_key: key,
+      thumbnail_storage_key: null,
+      original_filename: `${label}.png`,
+      display_name: label,
+      size_bytes: upscaleSourceBytes.length,
+      width: 1,
+      height: 1,
+      duration_ms: null,
+      provenance: {},
+      metadata: { verification: "phase18d-upscale-lifecycle" },
+    }),
+  });
+  if (!inserted?.[0]?.id) throw new Error(`Could not create ${label} Upscale source fixture.`);
+  return inserted[0];
+}
+
+async function submitUpscale(account, sourceAssetId, label) {
+  const response = await fetch(
+    `${baseUrl}/api/media/assets/${encodeURIComponent(sourceAssetId)}/upscale`,
+    withAccountAuthorization(account, {
+      method: "POST",
+      headers: { accept: "application/json" },
+    }),
+  );
+  const payload = await response.json().catch(() => null);
+  if (response.status !== 202 || !payload?.ok || !payload.job?.id) {
+    throw new Error(`${label} Upscale submission failed (${response.status}): ${JSON.stringify(payload)}`);
+  }
+  const job = await loadJob(payload.job.id);
+  if (
+    !job
+    || job.operation !== "upscale-image"
+    || job.prompt !== null
+    || job.parameters?.upscale?.scale !== 2
+    || job.inputs?.[0]?.source?.id !== sourceAssetId
+  ) {
+    throw new Error(`${label} did not persist canonical Upscale intent: ${JSON.stringify(job)}`);
+  }
+  fixtureKeys.add(expectedPrimaryKey(job, "image"));
+  return job;
+}
+
+async function postRetry(account, jobId) {
+  const response = await fetch(
+    `${baseUrl}/api/generation/jobs/${encodeURIComponent(jobId)}/retry`,
+    withAccountAuthorization(account, {
+      method: "POST",
+      headers: { accept: "application/json" },
+    }),
+  );
+  return { response, payload: await response.json().catch(() => null) };
 }
 
 async function submit(account, request, label) {
@@ -473,6 +552,85 @@ try {
   const staleProviderReservations = await loadReservations(staleProvider.id);
   if (staleProviderReservations.length !== 1 || !staleProviderReservations[0].released_at) {
     throw new Error(`Stale provider terminalization did not settle admission: ${JSON.stringify(staleProviderReservations)}`);
+  }
+
+  // Phase 18D: promptless Upscale uses the same autonomous deterministic finalizer,
+  // preserves its source, and failed Retry reconstructs only current fixed-2x source intent.
+  const upscaleSource = await createUpscaleSource(account, "Phase18D upscale source");
+  const upscaleJob = await submitUpscale(account, upscaleSource.id, "Autonomous");
+  await requireReconcile();
+  if ((await loadJob(upscaleJob.id))?.status !== "running") {
+    throw new Error("Upscale did not remain running after its first worker poll.");
+  }
+  await requireReconcile();
+  const upscaleSuccess = await assertCanonicalSuccess(account, upscaleJob.id, "image");
+  if (upscaleSuccess.asset.mime_type !== "image/png") {
+    throw new Error(`Upscale finalizer persisted a non-PNG result: ${JSON.stringify(upscaleSuccess.asset)}`);
+  }
+  await requireReconcile();
+  if ((await loadAssets(upscaleJob.id)).length !== 1) {
+    throw new Error("Repeated Upscale reconciliation created a duplicate output asset.");
+  }
+  const sourceAfter = (await rows(
+    `media_assets?owner_id=eq.${encodeURIComponent(account.id)}&id=eq.${encodeURIComponent(upscaleSource.id)}&select=id,storage_key,deleted_at&limit=1`,
+  ))[0];
+  if (!sourceAfter || sourceAfter.storage_key !== upscaleSource.storage_key || sourceAfter.deleted_at !== null) {
+    throw new Error(`Upscale mutated its durable source: ${JSON.stringify(sourceAfter)}`);
+  }
+  if (!(await objectExists(upscaleSource.storage_key))) throw new Error("Upscale source object was removed during finalization.");
+
+  const retrySource = await createUpscaleSource(account, "Phase18D retry source");
+  const retryHistorical = await submitUpscale(account, retrySource.id, "Retry historical");
+  const failedAt = new Date().toISOString();
+  await serviceMutation(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(account.id)}&id=eq.${encodeURIComponent(retryHistorical.id)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "failed",
+        worker_state: "failed",
+        error_code: "generation_failed",
+        error_message: "Synthetic Phase 18D retry fixture failure.",
+        completed_at: failedAt,
+        updated_at: failedAt,
+      }),
+    },
+  );
+  await serviceMutation(
+    `generation_admission_reservations?owner_id=eq.${encodeURIComponent(account.id)}&job_id=eq.${encodeURIComponent(retryHistorical.id)}&released_at=is.null`,
+    { method: "PATCH", body: JSON.stringify({ released_at: failedAt }) },
+  );
+
+  const retried = await postRetry(account, retryHistorical.id);
+  if (retried.response.status !== 202 || !retried.payload?.ok || !retried.payload.job?.id) {
+    throw new Error(`Failed Upscale Retry was not accepted: ${JSON.stringify(retried.payload)}`);
+  }
+  if (retried.payload.job.id === retryHistorical.id) throw new Error("Upscale Retry reused the historical job identity.");
+  const retriedJob = await loadJob(retried.payload.job.id);
+  if (
+    retriedJob?.operation !== "upscale-image"
+    || retriedJob.prompt !== null
+    || retriedJob.parameters?.upscale?.scale !== 2
+    || retriedJob.inputs?.[0]?.source?.id !== retrySource.id
+  ) {
+    throw new Error(`Upscale Retry did not reconstruct current canonical intent: ${JSON.stringify(retriedJob)}`);
+  }
+  fixtureKeys.add(expectedPrimaryKey(retriedJob, "image"));
+  await requireReconcile();
+  await requireReconcile();
+  await assertCanonicalSuccess(account, retriedJob.id, "image");
+
+  const deletedAt = new Date().toISOString();
+  await serviceMutation(
+    `media_assets?owner_id=eq.${encodeURIComponent(account.id)}&id=eq.${encodeURIComponent(retrySource.id)}`,
+    { method: "PATCH", body: JSON.stringify({ deleted_at: deletedAt }) },
+  );
+  const unavailableRetry = await postRetry(account, retryHistorical.id);
+  if (
+    unavailableRetry.response.status !== 409
+    || unavailableRetry.payload?.error?.code !== "retry_not_available"
+  ) {
+    throw new Error(`Deleted-source Upscale Retry did not fail closed: ${JSON.stringify(unavailableRetry.payload)}`);
   }
 
   const remainingActive = await rows(

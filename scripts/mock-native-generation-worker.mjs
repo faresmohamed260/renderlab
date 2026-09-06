@@ -32,7 +32,7 @@ const server = http.createServer(async (request, response) => {
     return json(response, 200, { ok: true, jobs: jobs.size });
   }
 
-  if (request.method === "POST" && (url.pathname === "/jobs/edit" || url.pathname === "/jobs/video")) {
+  if (request.method === "POST" && (url.pathname === "/jobs/edit" || url.pathname === "/jobs/video" || url.pathname === "/jobs/upscale")) {
     await drain(request);
     const id = randomUUID();
     const kind = url.pathname === "/jobs/video" ? "video" : "image";
@@ -45,6 +45,14 @@ const server = http.createServer(async (request, response) => {
       cancelMode: "confirm",
       cancelAttempts: 0,
     });
+    if (url.pathname === "/jobs/upscale") {
+      return json(response, 200, {
+        call_id: id,
+        worker_state: "queued",
+        worker_id: "renderlab-upscale-01",
+        ecosystem: "image-upscale-v1",
+      });
+    }
     return json(response, 200, { call_id: id, worker_state: "queued" });
   }
 

@@ -4,9 +4,9 @@ import {
   type PublicGenerationActivity,
 } from "@/lib/api/generation-activity-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
+import { isSupportedNativeCancellationWorker } from "@/server/generation/cancel-generation";
 import { pollGenerationJob } from "@/server/generation/poll-generation";
 import { reconstructAvailableGenerationRecipeRequest } from "@/server/generation/generation-recipe";
-import { findWorker } from "@/server/generation/worker-fleet";
 
 type GenerationActivityRow = {
   id: string;
@@ -43,8 +43,12 @@ function activityError(row: Pick<GenerationActivityRow, "status" | "error_code" 
 function canCancelActivity(row: GenerationActivityRow) {
   if (!cancellableStatuses.has(row.status) || !row.worker_id || !row.provider_job_id) return false;
   if ((row.output_asset_ids ?? []).length > 0) return false;
-  const worker = findWorker(row.worker_id);
-  return Boolean(worker && (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft"));
+  return isSupportedNativeCancellationWorker(row.worker_id);
+}
+
+function activitySummary(row: GenerationActivityRow) {
+  if (row.operation === "upscale-image") return "2× upscale";
+  return row.prompt?.trim() || "Untitled generation";
 }
 
 function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationActivity {
@@ -54,6 +58,7 @@ function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationA
     operation: row.operation,
     outputKind: row.output_kind,
     prompt: row.prompt,
+    summary: activitySummary(row),
     outputAssetIds: row.output_asset_ids ?? [],
     canCancel: canCancelActivity(row),
     canRunAgain: false,

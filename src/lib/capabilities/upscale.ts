@@ -96,3 +96,30 @@ export function createUpscaleImageCommand(assetId: string): UpscaleImageCommand 
     },
   };
 }
+
+export type PersistedUpscaleIntent = {
+  operation: unknown;
+  outputKind: unknown;
+  prompt: unknown;
+  inputs: unknown;
+  parameters: unknown;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+export function persistedUpscaleSourceAssetId(intent: PersistedUpscaleIntent): string | null {
+  if (intent.operation !== "upscale-image" || intent.outputKind !== "image" || intent.prompt !== null) return null;
+  if (!Array.isArray(intent.inputs) || intent.inputs.length !== 1) return null;
+
+  const input = intent.inputs[0];
+  if (!isRecord(input) || input.alias !== "image1" || input.role !== "primary-image") return null;
+  if (!isRecord(input.source) || input.source.type !== "media-asset") return null;
+  const sourceId = typeof input.source.id === "string" ? input.source.id.trim() : "";
+  if (!sourceId) return null;
+
+  if (!isRecord(intent.parameters) || !isRecord(intent.parameters.upscale)) return null;
+  if (intent.parameters.upscale.scale !== imageUpscaleScale) return null;
+  return sourceId;
+}

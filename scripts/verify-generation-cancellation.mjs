@@ -111,6 +111,51 @@ async function submit(account, outputKind, label) {
   return job;
 }
 
+async function createUpscaleCancellationJob(account, label) {
+  const providerResponse = await fetch(`${mockWorkerUrl}/jobs/upscale`, {
+    method: "POST",
+    body: new FormData(),
+  });
+  const provider = await providerResponse.json().catch(() => null);
+  assert(
+    providerResponse.ok && provider?.call_id && provider?.worker_id === "renderlab-upscale-01",
+    `Could not create ${label} Upscale provider fixture: ${JSON.stringify(provider)}`,
+  );
+  const now = new Date().toISOString();
+  const id = randomUUID();
+  const inserted = await mutate("generation_jobs?select=*", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      id,
+      owner_id: account.id,
+      status: "running",
+      operation: "upscale-image",
+      output_kind: "image",
+      prompt: null,
+      workflow_id: "swinir-classical-sr-image-upscale-2x",
+      model: "SwinIR Classical SR · 2×",
+      ecosystem: "image-upscale-v1",
+      inputs: [{
+        alias: "image1",
+        role: "primary-image",
+        source: { type: "media-asset", id: randomUUID() },
+      }],
+      parameters: { upscale: { scale: 2 } },
+      worker_id: "renderlab-upscale-01",
+      provider_job_id: provider.call_id,
+      worker_state: "queued",
+      failover_history: [],
+      output_asset_ids: [],
+      created_at: now,
+      updated_at: now,
+      started_at: now,
+    }),
+  });
+  assert(inserted?.[0]?.id === id, `Could not persist ${label} Upscale cancellation fixture.`);
+  return inserted[0];
+}
+
 async function postCancel(account, jobId) {
   const response = await fetch(
     `${baseUrl}/api/generation/jobs/${encodeURIComponent(jobId)}/cancel`,
@@ -185,6 +230,19 @@ try {
   const repeated = await postCancel(owner, confirmed.id);
   assert(repeated.status === 200 && repeated.body?.job?.status === "cancelled", "Repeated Cancel was not idempotent.");
   assert((await mockState(confirmed)).cancelAttempts === 1, "Repeated terminal Cancel hit provider twice.");
+
+  const upscaleCancelJob = await createUpscaleCancellationJob(owner, "Phase18D");
+  const upscaleCancel = await postCancel(owner, upscaleCancelJob.id);
+  assert(
+    upscaleCancel.status === 200 && upscaleCancel.body?.ok && upscaleCancel.body.job.status === "cancelled",
+    `Upscale Cancel did not terminalize through the dedicated worker: ${JSON.stringify(upscaleCancel)}`,
+  );
+  const upscaleCancelState = await mockState(upscaleCancelJob);
+  assert(
+    upscaleCancelState.cancelled === true && upscaleCancelState.cancelAttempts === 1,
+    `Upscale provider Cancel mapping mismatch: ${JSON.stringify(upscaleCancelState)}`,
+  );
+  await assertNoDurableOutput(owner.id, upscaleCancelJob.id);
 
   const simultaneous = await submit(owner, "video", "simultaneous cancel video");
   const [simA, simB] = await Promise.all([postCancel(owner, simultaneous.id), postCancel(owner, simultaneous.id)]);

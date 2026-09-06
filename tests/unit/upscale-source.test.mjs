@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   imageUpscaleLimits,
   imageUpscaleSupportedMimeTypes,
+  persistedUpscaleSourceAssetId,
   validateImageUpscaleGeometry,
 } from "../../src/lib/capabilities/upscale.ts";
 
@@ -41,4 +42,28 @@ test("upscale geometry rejects empty, oversized-byte, edge, and pixel inputs", (
   );
   assert.throws(() => validateImageUpscaleGeometry(4097, 1, 1), RangeError);
   assert.throws(() => validateImageUpscaleGeometry(4096, 1025, 1), RangeError);
+});
+
+test("persisted Upscale reconstruction accepts only canonical fixed-2x durable intent", () => {
+  const canonical = {
+    operation: "upscale-image",
+    outputKind: "image",
+    prompt: null,
+    inputs: [{
+      alias: "image1",
+      role: "primary-image",
+      source: { type: "media-asset", id: "source-asset-id" },
+    }],
+    parameters: { upscale: { scale: 2 } },
+  };
+  assert.equal(persistedUpscaleSourceAssetId(canonical), "source-asset-id");
+  assert.equal(persistedUpscaleSourceAssetId({ ...canonical, prompt: "synthetic" }), null);
+  assert.equal(persistedUpscaleSourceAssetId({ ...canonical, parameters: { upscale: { scale: 4 } } }), null);
+  assert.equal(
+    persistedUpscaleSourceAssetId({
+      ...canonical,
+      inputs: [{ ...canonical.inputs[0], source: { type: "temporary-source", id: "source-asset-id" } }],
+    }),
+    null,
+  );
 });

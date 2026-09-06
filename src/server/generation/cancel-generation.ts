@@ -8,6 +8,7 @@ import {
   releaseGenerationReconciliation,
 } from "@/server/generation/generation-reconciliation-claim";
 import { findWorker } from "@/server/generation/worker-fleet";
+import { getImageUpscaleWorker } from "@/server/generation/upscale-worker";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type CancellationRow = {
@@ -73,10 +74,21 @@ async function hasIndexedDurableOutput(ownerId: string, jobId: string) {
   return Boolean(rows?.[0]);
 }
 
+function cancellationGatewayForWorker(workerId: string) {
+  const worker = findWorker(workerId);
+  if (worker && (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft")) {
+    return worker.gatewayUrl;
+  }
+  const upscaleWorker = getImageUpscaleWorker();
+  return upscaleWorker?.id === workerId ? upscaleWorker.gatewayUrl : null;
+}
+
+export function isSupportedNativeCancellationWorker(workerId: string) {
+  return Boolean(cancellationGatewayForWorker(workerId));
+}
+
 function isSupportedNativeCancellation(row: CancellationRow) {
-  if (!row.worker_id || !row.provider_job_id) return false;
-  const worker = findWorker(row.worker_id);
-  return Boolean(worker && (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft"));
+  return Boolean(row.worker_id && row.provider_job_id && isSupportedNativeCancellationWorker(row.worker_id));
 }
 
 function cancellationRequestedAt(row: CancellationRow) {
@@ -101,13 +113,13 @@ async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancell
   if (!row.worker_id || !row.provider_job_id) {
     return { kind: "retryable", status: null, reason: "missing-dispatch" };
   }
-  const worker = findWorker(row.worker_id);
-  if (!worker || (worker.ecosystem !== "flux2-klein-9b" && worker.ecosystem !== "ltx25-redgraft")) {
+  const gatewayUrl = cancellationGatewayForWorker(row.worker_id);
+  if (!gatewayUrl) {
     return { kind: "retryable", status: null, reason: "unsupported-worker" };
   }
 
   try {
-    const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
+    const response = await fetch(`${gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
       method: "DELETE",
       headers: { accept: "application/json" },
       cache: "no-store",

@@ -174,7 +174,7 @@ export function ActivityView({
                       </span>
                     </div>
                     <p className="mt-3 line-clamp-2 text-[15px] leading-6 text-text">
-                      {item.prompt || "Untitled generation"}
+                      {item.summary}
                     </p>
                     <p className="mt-2 text-xs text-text-muted">
                       <time dateTime={item.createdAt}>{formatTimestamp(item.createdAt)}</time>
