@@ -1,0 +1,74 @@
+name: Phase 18 Gateway Annotation Fix
+
+on:
+  push:
+    branches:
+      - work/phase-18-image-upscale
+    paths:
+      - .github/workflows/phase18-gateway-annotation-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-18-image-upscale
+          fetch-depth: 0
+
+      - name: Guard exact parent and main
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = 'b5366b8487c194ace2ac84016ffbcdcf3ba0470d'
+          git fetch origin main --no-tags
+          test "$(git rev-parse origin/main)" = '2d3131478d7dfbe522dc6f3a645fadd134d73ac5'
+
+      - name: Fix route-local FastAPI annotation resolution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          worker = Path('workers/image-upscale/modal_app.py')
+          text = worker.read_text(encoding='utf-8')
+          prefix = 'from __future__ import annotations\n\n'
+          if not text.startswith(prefix):
+              raise SystemExit('expected postponed-annotation prefix missing')
+          worker.write_text(text[len(prefix):], encoding='utf-8')
+
+          verifier = Path('workers/image-upscale/verify_worker.py')
+          verify = verifier.read_text(encoding='utf-8')
+          marker = '''assert "@app.function(image=gateway_image, timeout=3600)" in text\n\n# Preserve the accepted async worker contract and fixed 2x product boundary.\n'''
+          replacement = '''assert "@app.function(image=gateway_image, timeout=3600)" in text\n# FastAPI multipart types are imported inside web(); they must resolve eagerly at route definition time.\n# Postponed annotations turn UploadFile into an unresolved ForwardRef in the deployed gateway.\nassert "from __future__ import annotations" not in text\nassert "image_file: UploadFile = File(...)" in text\n\n# Preserve the accepted async worker contract and fixed 2x product boundary.\n'''
+          if verify.count(marker) != 1:
+              raise SystemExit(f'verifier marker count={verify.count(marker)}')
+          verifier.write_text(verify.replace(marker, replacement, 1), encoding='utf-8')
+          PY
+
+          python3 workers/image-upscale/verify_worker.py
+          python3 -m py_compile workers/image-upscale/modal_app.py
+          git diff --check
+
+          git rm .github/workflows/phase18-gateway-annotation-fix.yml
+          mapfile -t changed < <(git diff --name-only b5366b8487c194ace2ac84016ffbcdcf3ba0470d | sort)
+          expected=(workers/image-upscale/modal_app.py workers/image-upscale/verify_worker.py)
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          test "${#changed[@]}" -eq "${#expected_sorted[@]}"
+          for i in "${!expected_sorted[@]}"; do test "${changed[$i]}" = "${expected_sorted[$i]}"; done
+
+      - name: Commit atomic gateway fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add workers/image-upscale/modal_app.py workers/image-upscale/verify_worker.py
+          git commit -am 'fix: resolve upscale gateway multipart annotations'
+          git push origin HEAD:work/phase-18-image-upscale
