@@ -40,7 +40,11 @@ export async function POST(
 ) {
   const { assetId } = await context.params;
   if (!uuidPattern.test(assetId)) return invalidRequest("A valid media asset ID is required.");
-  if (request.body !== null) return invalidRequest("Upscale 2× does not accept browser-supplied settings.");
+
+  const requestBody = await request.arrayBuffer();
+  if (requestBody.byteLength > 0) {
+    return invalidRequest("Upscale 2× does not accept browser-supplied settings.");
+  }
 
   const account = await getCurrentRenderLabAccount();
   if (!account) return authenticationRequired();
