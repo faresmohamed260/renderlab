@@ -1617,7 +1617,7 @@ Implementation checklist:
 
 ### 18A fleet/worker prerequisite — COMPLETE / LIVE VERIFIED
 - [x] Preserve disabled FLUX/REDGraft primary registrations for historical lookup while excluding them from new submission routing; focused unit coverage added.
-- [x] Pin the undeployed SwinIR 2× candidate to source commit `33f616625268d08ba600f8db89388eec0328edb1`, Apache-2.0 project license, exact official 67,277,475-byte weight and `sha256:2032ebf8f401dd3ce2fae5f3852117cb72101ec6ed8358faa64c2a3fa09ed4ac`.
+- [x] Pin the SwinIR 2× candidate to source commit `33f616625268d08ba600f8db89388eec0328edb1`, Apache-2.0 project license, exact official 67,277,475-byte weight and `sha256:2032ebf8f401dd3ce2fae5f3852117cb72101ec6ed8358faa64c2a3fa09ed4ac`.
 - [x] Runtime audit `33997212864` passed Engineering Quality + official weight size/hash verification; artifact `9978418889` digest is `sha256:5d6d7ace3384a260bf2e9f59dacea85dfa3fa4e6026af46a825eaca74208dc53`.
 - [x] Prepare RenderLab-owned `workers/image-upscale/modal_app.py` with lightweight gateway/heavy runtime separation, fixed 2× async lifecycle, exact limits, rectangular tiling and alpha path.
 - [x] Permanent offline `Upscale Worker Validation` run `33997784521` passed; after live POST exposed the route-local `UploadFile` forward-reference bug, the annotation scope was corrected and the verifier strengthened before redeployment.
