@@ -2,6 +2,7 @@ import sharp from "sharp";
 import {
   imageUpscaleLimits,
   imageUpscaleSupportedMimeTypes,
+  validateImageUpscaleGeometry,
   type ImageUpscaleMimeType,
 } from "@/lib/capabilities/upscale";
 import { getMediaAsset, type MediaAssetRecord } from "@/server/media/media-assets";
@@ -47,10 +48,7 @@ export async function inspectUpscaleImageBytes(
 ): Promise<InspectedUpscaleImage> {
   const mimeType = supportedMimeType(declaredMimeType);
   if (!mimeType) unavailable("Upscale supports active PNG, JPEG, or WebP images only.");
-  if (!bytes.byteLength) unavailable("The source image is empty.");
-  if (bytes.byteLength > imageUpscaleLimits.maxInputBytes) {
-    unavailable("The source image must be 25 MB or smaller.");
-  }
+  validateImageUpscaleGeometry(1, 1, bytes.byteLength);
 
   let metadata: sharp.Metadata;
   try {
@@ -71,32 +69,12 @@ export async function inspectUpscaleImageBytes(
   if ([5, 6, 7, 8].includes(metadata.orientation ?? 1)) {
     [width, height] = [height, width];
   }
-  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
-    unavailable("The source image geometry is invalid.");
-  }
-  if (width > imageUpscaleLimits.maxInputEdge || height > imageUpscaleLimits.maxInputEdge) {
-    unavailable(`The source image may not exceed ${imageUpscaleLimits.maxInputEdge}px on either edge.`);
-  }
-  if (width * height > imageUpscaleLimits.maxInputPixels) {
-    unavailable(`The source image may not exceed ${imageUpscaleLimits.maxInputPixels.toLocaleString("en-US")} pixels.`);
-  }
-
-  const outputWidth = width * 2;
-  const outputHeight = height * 2;
-  if (outputWidth > imageUpscaleLimits.maxOutputEdge || outputHeight > imageUpscaleLimits.maxOutputEdge) {
-    unavailable(`The 2× result may not exceed ${imageUpscaleLimits.maxOutputEdge}px on either edge.`);
-  }
-  if (outputWidth * outputHeight > imageUpscaleLimits.maxOutputPixels) {
-    unavailable(`The 2× result may not exceed ${imageUpscaleLimits.maxOutputPixels.toLocaleString("en-US")} pixels.`);
-  }
+  const geometry = validateImageUpscaleGeometry(width, height, bytes.byteLength);
 
   return {
     mimeType,
     sizeBytes: bytes.byteLength,
-    width,
-    height,
-    outputWidth,
-    outputHeight,
+    ...geometry,
   };
 }
 
