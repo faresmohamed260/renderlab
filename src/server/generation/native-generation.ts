@@ -331,12 +331,21 @@ async function errorBody(response: Response) {
   try { return await response.json() as Record<string, unknown>; } catch { return {}; }
 }
 
+function gatewayUrlForWorker(worker: GenerationWorker) {
+  if (process.env.RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE === "true") {
+    const override = process.env.RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL?.trim().replace(/\/+$/, "");
+    if (!override) throw new Error("Native worker test override requires a gateway URL.");
+    return override;
+  }
+  return worker.gatewayUrl;
+}
+
 async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
   const prepared = await prepareWorkerPayload(request, workflow, sources);
   const failures: Array<Record<string, unknown>> = [];
   for (const worker of workersForEcosystem(workflow.ecosystem)) {
     try {
-      const response = await fetch(`${worker.gatewayUrl}${workflow.submitPath}`, {
+      const response = await fetch(`${gatewayUrlForWorker(worker)}${workflow.submitPath}`, {
         method: "POST",
         body: buildForm(request, workflow, prepared),
         cache: "no-store",
