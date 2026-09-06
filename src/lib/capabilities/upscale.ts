@@ -50,6 +50,38 @@ export function validateImageUpscaleGeometry(
   return { width, height, outputWidth, outputHeight };
 }
 
+export type ImageUpscaleAssetMetadata = {
+  kind: unknown;
+  mimeType: unknown;
+  width: unknown;
+  height: unknown;
+  sizeBytes: unknown;
+};
+
+function normalizedAssetSizeBytes(value: unknown) {
+  if (typeof value === "number") return Number.isSafeInteger(value) ? value : null;
+  if (typeof value !== "string" || !/^\d+$/.test(value.trim())) return null;
+  const parsed = Number(value.trim());
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+export function isImageUpscaleAssetMetadataEligible(asset: ImageUpscaleAssetMetadata) {
+  if (asset.kind !== "image") return false;
+  if (typeof asset.mimeType !== "string") return false;
+  const mimeType = asset.mimeType.split(";", 1)[0].trim().toLowerCase();
+  if (!imageUpscaleSupportedMimeTypes.includes(mimeType as ImageUpscaleMimeType)) return false;
+  if (!Number.isInteger(asset.width) || !Number.isInteger(asset.height)) return false;
+  const sizeBytes = normalizedAssetSizeBytes(asset.sizeBytes);
+  if (sizeBytes == null) return false;
+
+  try {
+    validateImageUpscaleGeometry(asset.width as number, asset.height as number, sizeBytes);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type UpscaleImageInput = {
   alias: "image1";
   role: "primary-image";
