@@ -171,6 +171,8 @@ async function verifyOutput(jobId, source, expectedWidth, expectedHeight, label)
   assert(asset.width === expectedWidth && asset.height === expectedHeight,
     `${label}: persisted geometry ${asset.width}x${asset.height}, expected ${expectedWidth}x${expectedHeight}.`);
   const bytes = await getObject(asset.storage_key);
+  assert(Number(asset.size_bytes) === bytes.length,
+    `${label}: persisted size ${asset.size_bytes}, expected ${bytes.length}.`);
   const meta = await sharp(bytes).metadata();
   assert(meta.width === expectedWidth && meta.height === expectedHeight,
     `${label}: stored PNG geometry ${meta.width}x${meta.height}, expected ${expectedWidth}x${expectedHeight}.`);
@@ -201,6 +203,16 @@ async function verifyMock(account, foreignAccount) {
   trackedKeys.add(successOutput.asset.storage_key);
   if (successOutput.asset.thumbnail_storage_key) trackedKeys.add(successOutput.asset.thumbnail_storage_key);
   assert((await activeReservations(account.id, successJobId)).length === 0, "Succeeded Upscale retained active admission capacity.");
+
+  const publicResult = await jsonRequest(`${baseUrl}/api/media/assets/${encodeURIComponent(successOutput.asset.id)}`, account);
+  assert(publicResult.response.ok && publicResult.payload?.ok,
+    `Succeeded Upscale result was not readable through the product media contract: ${JSON.stringify(publicResult.payload)}`);
+  assert(publicResult.payload.asset.operation === "upscale-image",
+    `Succeeded Upscale public provenance lost its operation: ${JSON.stringify(publicResult.payload.asset)}`);
+  assert(publicResult.payload.asset.width === 26 && publicResult.payload.asset.height === 14,
+    `Succeeded Upscale public geometry is incorrect: ${JSON.stringify(publicResult.payload.asset)}`);
+  assert(publicResult.payload.asset.sizeBytes === successOutput.bytes.length,
+    `Succeeded Upscale public size is incorrect: ${JSON.stringify(publicResult.payload.asset)}`);
 
   await reconcileOnce();
   await reconcileOnce();
@@ -244,11 +256,15 @@ async function verifyMock(account, foreignAccount) {
   await verifySourceUnchanged(retrySource, "Upscale Retry");
 
   const browser = await chromium.launch({ headless: true });
+  let page = null;
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1100 }, colorScheme: "dark" });
-    const page = await context.newPage();
+    page = await context.newPage();
     await routeLocalAppRequestsWithAccount(page, baseUrl, account);
     await page.goto(`${baseUrl}/library/${successOutput.asset.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+    const upscaleAgain = page.getByRole("button", { name: "Upscale 2×", exact: true });
+    await upscaleAgain.waitFor({ state: "visible", timeout: 30_000 });
+    assert(await upscaleAgain.isEnabled(), "Succeeded Upscale result was not itself eligible for another fixed-2× Upscale.");
     const compare = page.getByRole("button", { name: "Compare source", exact: true });
     await compare.waitFor({ state: "visible", timeout: 30_000 });
     assert((await page.getByText("Reuse settings", { exact: true }).count()) === 0, "Succeeded Upscale incorrectly exposed Reuse Settings.");
@@ -261,19 +277,22 @@ async function verifyMock(account, foreignAccount) {
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), "Upscale result comparison overflowed narrow Viewer.");
     await page.screenshot({ path: `${artifactDir}/phase18f-upscale-result-compare-narrow.png`, fullPage: true });
   } finally {
+    if (page) await page.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {});
     await browser.close();
   }
 
   await productDelete(account, successSource.row.id);
   const browserAfterDelete = await chromium.launch({ headless: true });
+  let pageAfterDelete = null;
   try {
     const context = await browserAfterDelete.newContext({ viewport: { width: 1000, height: 800 }, colorScheme: "dark" });
-    const page = await context.newPage();
-    await routeLocalAppRequestsWithAccount(page, baseUrl, account);
-    await page.goto(`${baseUrl}/library/${successOutput.asset.id}`, { waitUntil: "networkidle", timeout: 60_000 });
-    assert((await page.getByRole("button", { name: "Compare source", exact: true }).count()) === 0,
+    pageAfterDelete = await context.newPage();
+    await routeLocalAppRequestsWithAccount(pageAfterDelete, baseUrl, account);
+    await pageAfterDelete.goto(`${baseUrl}/library/${successOutput.asset.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+    assert((await pageAfterDelete.getByRole("button", { name: "Compare source", exact: true }).count()) === 0,
       "Tombstoned Upscale source was resurrected for Compare source.");
   } finally {
+    if (pageAfterDelete) await pageAfterDelete.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {});
     await browserAfterDelete.close();
   }
 
@@ -292,6 +311,9 @@ async function verifyMock(account, foreignAccount) {
       sourceGeometry: [13, 7],
       resultGeometry: [26, 14],
       resultMime: successOutput.asset.mime_type,
+      resultSizeBytes: successOutput.bytes.length,
+      resultOperation: publicResult.payload.asset.operation,
+      resultEligibleForAnotherUpscale: true,
       outputIndex: successOutput.asset.generation_output_index,
       sourceHashBefore: successSource.hash,
       sourcePreservedBeforeTombstone: true,
@@ -331,6 +353,7 @@ async function verifyLive(account) {
       sourceGeometry: [8, 6],
       resultGeometry: [16, 12],
       resultMime: output.asset.mime_type,
+      resultSizeBytes: output.bytes.length,
       outputIndex: output.asset.generation_output_index,
       sourceHash: source.hash,
       sourcePreserved: true,
