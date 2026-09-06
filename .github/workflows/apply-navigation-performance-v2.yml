@@ -1,0 +1,229 @@
+name: Apply navigation performance correction v2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-navigation-performance-v2.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: renderlab-apply-navigation-performance-v2-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.head_ref == 'work/post-cycle3-navigation-library-performance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout correction branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Require authoritative base
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "b6f12a2ca87a3b8757c3115ea26baa463781082b"
+          test "$(git merge-base HEAD origin/main)" = "b6f12a2ca87a3b8757c3115ea26baa463781082b"
+
+      - name: Apply bounded performance correction
+        env:
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+
+          def replace_exact(path: str, old: str, new: str, count: int = 1):
+              file = Path(path)
+              text = file.read_text()
+              actual = text.count(old)
+              if actual != count:
+                  raise SystemExit(f"{path}: expected {count} occurrence(s), found {actual}: {old[:80]!r}")
+              file.write_text(text.replace(old, new))
+
+          def replace_region(path: str, start: str, end: str, replacement: str):
+              file = Path(path)
+              text = file.read_text()
+              if text.count(start) != 1 or text.count(end) < 1:
+                  raise SystemExit(f"{path}: region markers are not uniquely resolvable")
+              start_index = text.index(start)
+              end_index = text.index(end, start_index)
+              file.write_text(text[:start_index] + replacement + text[end_index:])
+
+          shell = "src/components/shell/app-shell.tsx"
+          replace_exact(shell, 'import { usePathname } from "next/navigation";', 'import { usePathname, useRouter } from "next/navigation";')
+          replace_exact(shell, 'import type { ReactNode } from "react";', 'import { useEffect, useRef, type ReactNode } from "react";')
+          replace_exact(
+              shell,
+              'function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {',
+              '''function routeSection(pathname: string) {
+            if (pathname.startsWith("/create")) return "/create";
+            if (pathname.startsWith("/library")) return "/library";
+            if (pathname.startsWith("/activity")) return "/activity";
+            if (pathname.startsWith("/settings")) return "/settings";
+            if (pathname.startsWith("/admin")) return "/admin";
+            return null;
+          }
+
+          function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {''',
+          )
+          replace_exact(shell, '<Link href={item.href} aria-current=', '<Link href={item.href} prefetch={true} aria-current=', count=2)
+          replace_exact(shell, '<Link href="/create" aria-label=', '<Link href="/create" prefetch={true} aria-label=', count=2)
+          replace_exact(shell, '<Link href="/activity" aria-label="Open activity">', '<Link href="/activity" prefetch={true} aria-label="Open activity">')
+          replace_exact(shell, '<Link href="/settings" aria-label="Open settings and account">', '<Link href="/settings" prefetch={true} aria-label="Open settings and account">')
+          replace_exact(
+              shell,
+              '''  const pathname = usePathname();
+            const title = routeTitle(pathname);
+
+            return (
+          ''',
+              '''  const pathname = usePathname();
+            const router = useRouter();
+            const title = routeTitle(pathname);
+            const section = routeSection(pathname);
+            const previousSection = useRef(section);
+
+            useEffect(() => {
+              if (section && previousSection.current !== section) {
+                previousSection.current = section;
+                router.refresh();
+                return;
+              }
+              previousSection.current = section;
+            }, [router, section]);
+
+            return (
+          ''',
+          )
+
+          library = "src/app/(app)/library/page.tsx"
+          replace_exact(library, "  const params = await searchParams;\n  const account = await getCurrentRenderLabAccount();", "  const [params, account] = await Promise.all([searchParams, getCurrentRenderLabAccount()]);")
+          new_library_fetch = '''  if (account && isSupabaseConfigured()) {
+            const assetsPromise = available
+              ? listMediaAssets({
+                  ownerId: account.id,
+                  ...(kind === "all" ? {} : { kind }),
+                  ...(searchQuery ? { search: searchQuery } : {}),
+                  ...(favoriteOnly ? { favoriteOnly: true } : {}),
+                  ...(selectedCollectionId ? { collectionId: selectedCollectionId } : {}),
+                  sort,
+                  limit: pageSize,
+                  offset,
+                })
+              : Promise.resolve(null);
+
+            const [collectionsResult, assetsResult] = await Promise.allSettled([
+              listMediaCollections(account.id),
+              assetsPromise,
+            ]);
+
+            if (collectionsResult.status === "fulfilled") {
+              collections = collectionsResult.value;
+              collectionMissing = Boolean(
+                selectedCollectionId && !collections.some((collection) => collection.id === selectedCollectionId),
+              );
+            } else {
+              collectionsAvailable = false;
+              available = false;
+            }
+
+            if (assetsResult.status === "rejected") {
+              available = false;
+            } else if (assetsResult.value && available && !collectionMissing) {
+              items = assetsResult.value.items.map(publicMediaAsset);
+              hasMore = assetsResult.value.page.hasMore;
+            }
+          }
+
+          '''
+          replace_region(library, "  if (account && isSupabaseConfigured()) {", "  return (", new_library_fetch)
+
+          for route in [
+              "src/app/api/media/assets/[assetId]/content/route.ts",
+              "src/app/api/media/assets/[assetId]/thumbnail/route.ts",
+          ]:
+              replace_exact(
+                  route,
+                  "    return NextResponse.redirect(url, 302);",
+                  '    const response = NextResponse.redirect(url, 302);\n    response.headers.set("Cache-Control", "private, max-age=240");\n    return response;',
+              )
+
+          preview = "src/features/library/library-batch-selection.tsx"
+          replace_exact(preview, "        src={asset.contentUrl}", "        src={asset.thumbnailUrl ?? asset.contentUrl}")
+
+          run_id = os.environ.get("VALIDATION_RUN_ID", "unknown")
+
+          project = Path("PROJECT.md")
+          marker = "## Post-Cycle 3 Stabilization — Corrective Maintenance"
+          if marker in project.read_text():
+              raise SystemExit("PROJECT.md stabilization marker already exists")
+          project.write_text(project.read_text().rstrip() + f'''\n\n{marker}\nThese fixes correct shipped behavior without opening a new major cycle or expanding creative capability.\n\n### Navigation and Library revisit performance — `IMPLEMENTED / CI VALIDATED`\n- Persistent app-shell destinations explicitly prefetch their full route payload so normal Create / Library / Activity / Settings tab switches can paint from the client router cache instead of blocking on a fresh server round trip.\n- After a real top-level section switch, the shell refreshes that destination in place so prefetched private Library/Activity data cannot remain silently stale.\n- Library account/search parsing and owner-scoped collection/media queries remove avoidable sequential waiting; collections and the first media page are fetched concurrently after identity is established.\n- Owner-authorized media content/thumbnail redirects may be reused only by the same browser (`Cache-Control: private, max-age=240`), shorter than the existing 300-second signed-read lifetime. No shared/CDN cache of private media is introduced.\n- Library image cards now prefer `thumbnailUrl` whenever the asset actually has one, while retaining `contentUrl` as fallback. This correction does not invent a new image-thumbnail generation/backfill service; current generated/uploaded image rows may still legitimately lack `thumbnail_storage_key`.\n- Validation run: GitHub Actions `{run_id}` runs UI purity, lint, TypeScript, unit tests and a production build on the corrected working tree before it is committed. Normal PR path-filtered workflows remain the exact-head acceptance gate.\n- Production deployment remains a separate explicit operation; this maintenance work does not authorize deployment.\n''')
+
+          migration = Path("docs/ui/UI_MIGRATION.md")
+          marker = "## Post-Cycle 3 Stabilization — Navigation & Library Revisit Performance"
+          if marker in migration.read_text():
+              raise SystemExit("UI_MIGRATION.md stabilization marker already exists")
+          migration.write_text(migration.read_text().rstrip() + f'''\n\n{marker}\n**Status: `IMPLEMENTED / CI VALIDATED`; production rollout remains separate.**\n\n- [x] Preserve the existing App Router / server-owned account model; no new client-global media store or experimental `staleTimes`/cache-components migration.\n- [x] Full-prefetch the bounded persistent shell destinations, then refresh the newly entered top-level section in place to combine immediate paint with fresh owner-scoped data.\n- [x] Remove the Library collection → media-list waterfall by issuing the independent owner-scoped queries concurrently and preserving existing unavailable/missing-collection semantics.\n- [x] Reuse owner-authorized media redirects in the browser for 240 seconds only; responses remain `private` and the existing 300-second signed R2 read lifetime is unchanged.\n- [x] Prefer a Library asset's thumbnail route when one exists; fall back to content for image rows without a durable thumbnail. Do not claim a new image-thumbnail generation/backfill capability.\n- [x] Keep Library filtering, search, collections, pagination, ownership, deletion, continuation and Activity truthfulness unchanged.\n- [x] Corrected working tree passed UI purity, lint, TypeScript, unit tests and production build in GitHub Actions `{run_id}` before commit; exact-head PR workflows remain required before merge.\n- [x] No production deployment, Supabase schema change, R2 migration, worker change, scheduler change or creative-capability expansion is part of this corrective pass.\n''')
+
+          architecture = Path("docs/architecture/FRONTEND_ARCHITECTURE.md")
+          marker = "## App Navigation & Private Media Revisit Performance"
+          if marker in architecture.read_text():
+              raise SystemExit("FRONTEND_ARCHITECTURE.md navigation-performance marker already exists")
+          architecture.write_text(architecture.read_text().rstrip() + '''\n\n## App Navigation & Private Media Revisit Performance\n- The persistent app shell may fully prefetch its small fixed set of top-level product destinations to make tab-like navigation paint immediately from the client router cache.\n- A top-level section change must refresh in place after navigation so prefetched personalized Library/Activity data converges on current server truth without reverting to a blank/loading transition.\n- Library collection metadata and the first media page are independent after account resolution and should be requested concurrently rather than as a waterfall.\n- Owner-gated media redirect responses may use a short browser-private cache window that does not outlive the signed-storage read lifetime. Never mark these responses public/shared-cacheable.\n- Library cards prefer durable thumbnail URLs when the asset record provides one; full-content fallback remains required for image assets that do not yet have a durable thumbnail object. Thumbnail generation/backfill is a separate storage/media capability and must not be implied by this navigation correction.\n''')
+          PY
+
+      - name: Verify correction shape
+        run: |
+          set -euo pipefail
+          git diff --check
+          grep -Fq 'prefetch={true}' src/components/shell/app-shell.tsx
+          grep -Fq 'router.refresh()' src/components/shell/app-shell.tsx
+          grep -Fq 'Promise.allSettled' 'src/app/(app)/library/page.tsx'
+          grep -Fq 'private, max-age=240' 'src/app/api/media/assets/[assetId]/content/route.ts'
+          grep -Fq 'private, max-age=240' 'src/app/api/media/assets/[assetId]/thumbnail/route.ts'
+          grep -Fq 'asset.thumbnailUrl ?? asset.contentUrl' src/features/library/library-batch-selection.tsx
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: UI purity
+        run: npm run verify:ui-purity
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit correction and remove helper
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/apply-navigation-performance-v2.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: speed up app navigation and Library revisits"
+          git push origin "HEAD:${{ github.head_ref }}"
