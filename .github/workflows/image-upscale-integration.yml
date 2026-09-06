@@ -158,7 +158,7 @@ jobs:
       - name: Resolve deployed Upscale worker endpoint
         shell: bash
         env:
-          DIRECT_UPSCALE_GATEWAY: ${{ secrets.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL }}
+          DIRECT_UPSCALE_GATEWAY: ${{ secrets.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL || 'https://silentspecter67--renderlab-image-upscale-web.modal.run' }}
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
         run: |
