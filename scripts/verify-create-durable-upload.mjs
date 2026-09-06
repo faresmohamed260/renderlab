@@ -90,6 +90,10 @@ async function cleanupFixture() {
       if (!response.ok) throw new Error(`Could not remove Create upload session fixture (${response.status}).`);
     }
     if (assetId) {
+      const assetRows = await rows(`media_assets?id=eq.${encodeURIComponent(assetId)}&select=thumbnail_storage_key`);
+      if (assetRows[0]?.thumbnail_storage_key) {
+        await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: assetRows[0].thumbnail_storage_key })).catch(() => {});
+      }
       const response = await supabase(`media_assets?id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
       if (!response.ok) throw new Error(`Could not remove Create upload media fixture (${response.status}).`);
     }
@@ -145,16 +149,18 @@ try {
   assert(asset.generationJobId === null, "Create upload incorrectly depends on a generation job.");
   assert(asset.displayName === fixtureDisplayName, "Create upload display name was not preserved.");
   assert(asset.width === fixtureWidth && asset.height === fixtureHeight, "Create upload dimensions were not persisted.");
+  assert(asset.thumbnailUrl?.endsWith(`/api/media/assets/${asset.id}/thumbnail`), "Create durable upload did not receive a thumbnail URL.");
 
   const sessionRows = await rows(`media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=id,status,storage_key,media_asset_id,owner_id`);
   const session = sessionRows[0];
   assert(session?.status === "completed" && session.media_asset_id === asset.id, "Create upload session was not completed against the durable asset.");
   assert(session.owner_id === account.id, "Create upload session owner mismatch.");
-  const assetRows = await rows(`media_assets?id=eq.${encodeURIComponent(asset.id)}&select=id,owner_id,generation_job_id,origin,width,height,storage_key,provenance`);
+  const assetRows = await rows(`media_assets?id=eq.${encodeURIComponent(asset.id)}&select=id,owner_id,generation_job_id,origin,width,height,storage_key,thumbnail_storage_key,provenance`);
   const assetRow = assetRows[0];
   assert(assetRow?.owner_id === account.id, "Create durable upload owner mismatch.");
   assert(assetRow?.generation_job_id === null && assetRow?.origin === "uploaded", "Create durable upload has incorrect provenance linkage.");
   assert(assetRow?.provenance?.source === "user-upload", "Create durable upload did not use product-wide user-upload provenance.");
+  assert(assetRow?.thumbnail_storage_key?.endsWith(`/${asset.id}.webp`), "Create durable upload did not persist its deterministic thumbnail key.");
   await writeFile(fixturePath, JSON.stringify({ uploadId, assetId: asset.id, storageKey: session.storage_key }), "utf8");
 
   await page.getByText("Editing this image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });

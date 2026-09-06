@@ -10,7 +10,18 @@ import {
 } from "@/lib/api/media-assets-contract";
 import type { CreativeOperation } from "@/lib/capabilities/generation";
 import { supabaseRest } from "@/server/data/supabase-rest";
-import { createSignedDownloadUrl, createSignedReadUrl, deleteR2Object } from "@/server/storage/r2";
+import {
+  IMAGE_THUMBNAIL_CONTENT_TYPE,
+  createImageThumbnailBytes,
+  imageThumbnailStorageKey,
+} from "@/server/media/image-thumbnail";
+import {
+  createSignedDownloadUrl,
+  createSignedReadUrl,
+  deleteR2Object,
+  readR2Object,
+  writeR2Object,
+} from "@/server/storage/r2";
 
 export type MediaAssetRecord = {
   id: string;
@@ -141,6 +152,47 @@ async function getMediaAssetRecord(ownerId: string, assetId: string, includeDele
 
 export async function getMediaAsset(ownerId: string, assetId: string) {
   return getMediaAssetRecord(ownerId, assetId, false);
+}
+
+export async function ensureMediaAssetThumbnail(asset: MediaAssetRecord) {
+  if (asset.kind !== "image" || asset.thumbnail_storage_key) return asset;
+
+  const source = await readR2Object(asset.storage_key);
+  if (!source.contentType.startsWith("image/")) {
+    throw new Error("Media asset content is not an image.");
+  }
+
+  const thumbnailStorageKey = imageThumbnailStorageKey(asset.id, asset.storage_key, asset.created_at);
+  const thumbnailBytes = await createImageThumbnailBytes(source.bytes);
+  await writeR2Object({
+    key: thumbnailStorageKey,
+    contentType: IMAGE_THUMBNAIL_CONTENT_TYPE,
+    body: thumbnailBytes,
+  });
+
+  try {
+    const rows = await supabaseRest<MediaAssetRecord[]>(
+      `media_assets?owner_id=eq.${encodeURIComponent(asset.owner_id)}&id=eq.${encodeURIComponent(asset.id)}&deleted_at=is.null&thumbnail_storage_key=is.null&select=*`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({
+          thumbnail_storage_key: thumbnailStorageKey,
+          updated_at: new Date().toISOString(),
+        }),
+      },
+    );
+    if (rows?.[0]) return rows[0];
+
+    const current = await getMediaAsset(asset.owner_id, asset.id);
+    if (current?.thumbnail_storage_key) return current;
+    if (!current) await deleteR2Object(thumbnailStorageKey).catch(() => null);
+    return current ?? asset;
+  } catch (error) {
+    const current = await getMediaAsset(asset.owner_id, asset.id).catch(() => null);
+    if (current?.thumbnail_storage_key) return current;
+    throw error;
+  }
 }
 
 export async function renameMediaAsset(ownerId: string, assetId: string, requestedDisplayName: string) {

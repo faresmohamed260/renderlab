@@ -82,12 +82,12 @@ async function cleanupFixture() {
     `media_upload_sessions?owner_id=eq.${ownerFilter}&filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,media_asset_id`,
   );
   const assets = await rows(
-    `media_assets?owner_id=eq.${ownerFilter}&original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key`,
+    `media_assets?owner_id=eq.${ownerFilter}&original_filename=eq.${encodeURIComponent(fixtureFilename)}&select=id,storage_key,thumbnail_storage_key`,
   );
 
   const storageKeys = new Set([
     ...sessions.map((session) => session.storage_key).filter(Boolean),
-    ...assets.map((asset) => asset.storage_key).filter(Boolean),
+    ...assets.flatMap((asset) => [asset.storage_key, asset.thumbnail_storage_key]).filter(Boolean),
     fixture?.storageKey,
   ].filter(Boolean));
   const assetIds = new Set([
@@ -213,6 +213,7 @@ try {
   assert(completionPayload.asset.origin === "uploaded", "Drag/drop upload was not promoted as uploaded media.");
   assert(completionPayload.asset.displayName === fixtureDisplayName, "Drag/drop display name was not derived correctly.");
   assert(completionPayload.asset.originalFilename === fixtureFilename, "Drag/drop upload did not preserve the Unicode filename.");
+  assert(completionPayload.asset.thumbnailUrl?.endsWith(`/api/media/assets/${assetId}/thumbnail`), "Drag/drop upload did not receive a durable image thumbnail.");
   assert(ticketRequests === 1 && completionRequests === 1, `Single-file drop made unexpected upload requests tickets=${ticketRequests} completions=${completionRequests}.`);
 
   const sessionRows = await rows(

@@ -55,7 +55,7 @@ function MediaPreview({ asset }: { asset: PublicMediaAsset }) {
   if (asset.kind === "image") {
     return (
       <img
-        src={asset.contentUrl}
+        src={asset.thumbnailUrl ?? asset.contentUrl}
         alt=""
         loading="lazy"
         className="size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]"

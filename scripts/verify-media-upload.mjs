@@ -1,4 +1,8 @@
-import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 import {
   configuredTestAccountIdentity,
   createConfiguredTestAccount,
@@ -15,7 +19,7 @@ const fixtureFilename = "renderlab-اختبار-画像.png";
 const fixtureDisplayName = "Persistent upload verification";
 const fixtureAccount = configuredTestAccountIdentity("media-upload");
 const pngBytes = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z5ZsAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC",
   "base64",
 );
 
@@ -85,6 +89,12 @@ async function cleanupFixtures() {
     );
     if (!sessionDelete.ok) throw new Error(`Could not remove media upload session fixture (${sessionDelete.status}).`);
     if (session.media_asset_id) {
+      const assetRows = await rows(
+        `media_assets?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&id=eq.${encodeURIComponent(session.media_asset_id)}&select=thumbnail_storage_key`,
+      );
+      if (assetRows[0]?.thumbnail_storage_key) {
+        await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: assetRows[0].thumbnail_storage_key })).catch(() => {});
+      }
       const assetDelete = await supabase(
         `media_assets?owner_id=eq.${encodeURIComponent(fixtureAccount.id)}&id=eq.${encodeURIComponent(session.media_asset_id)}`,
         { method: "DELETE" },
@@ -145,6 +155,7 @@ try {
   assert(asset.originalFilename === fixtureFilename, "Persistent upload filename was not preserved.");
   assert(asset.sizeBytes === pngBytes.length, "Persistent upload size was not persisted.");
   assert(asset.width === 1 && asset.height === 1, "Persistent upload dimensions were not persisted.");
+  assert(asset.thumbnailUrl?.endsWith(`/api/media/assets/${asset.id}/thumbnail`), "Persistent upload did not expose its durable image thumbnail.");
 
   const repeated = await completionRequest();
   assert(repeated.response.ok && repeated.payload?.asset?.id === asset.id, "Persistent upload completion is not sequentially idempotent.");
@@ -159,6 +170,40 @@ try {
   assert(contentResponse.ok, `Uploaded asset content could not be loaded (${contentResponse.status}).`);
   assert(String(contentResponse.headers.get("content-type") || "").startsWith("image/png"), "Uploaded asset content MIME type is incorrect.");
   assert(Buffer.from(await contentResponse.arrayBuffer()).length === pngBytes.length, "Uploaded asset content length changed.");
+
+  const persistedRows = await rows(`media_assets?id=eq.${encodeURIComponent(asset.id)}&select=thumbnail_storage_key`);
+  const initialThumbnailKey = persistedRows[0]?.thumbnail_storage_key;
+  assert(initialThumbnailKey?.endsWith(`/${asset.id}.webp`), `Persistent upload thumbnail key is not deterministic: ${initialThumbnailKey}`);
+  await r2Client.send(new HeadObjectCommand({ Bucket: r2Bucket, Key: initialThumbnailKey }));
+
+  await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: initialThumbnailKey }));
+  const clearThumbnail = await supabase(`media_assets?id=eq.${encodeURIComponent(asset.id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ thumbnail_storage_key: null }),
+  });
+  assert(clearThumbnail.ok, `Could not simulate a legacy image without a thumbnail (${clearThumbnail.status}).`);
+
+  const backfill = await execFileAsync(process.execPath, [
+    "scripts/backfill-image-thumbnails.mjs",
+    "--apply",
+    `--owner-id=${account.id}`,
+    "--max=10",
+  ], { env: process.env });
+  if (backfill.stdout) console.log(backfill.stdout.trim());
+  if (backfill.stderr) console.error(backfill.stderr.trim());
+
+  const restoredRows = await rows(`media_assets?id=eq.${encodeURIComponent(asset.id)}&select=thumbnail_storage_key`);
+  assert(restoredRows[0]?.thumbnail_storage_key === initialThumbnailKey, "Legacy thumbnail backfill did not restore the deterministic key.");
+  await r2Client.send(new HeadObjectCommand({ Bucket: r2Bucket, Key: initialThumbnailKey }));
+
+  const thumbnailRedirect = await fetch(`${baseUrl}${asset.thumbnailUrl}`, withAccountAuthorization(account, { redirect: "manual" }));
+  assert(thumbnailRedirect.status === 302, `Thumbnail route did not return a signed redirect (${thumbnailRedirect.status}).`);
+  assert(thumbnailRedirect.headers.get("cache-control") === "private, max-age=240", `Thumbnail redirect cache policy is incorrect: ${thumbnailRedirect.headers.get("cache-control")}`);
+  const thumbnailLocation = thumbnailRedirect.headers.get("location");
+  assert(thumbnailLocation, "Thumbnail redirect did not include a signed location.");
+  const thumbnailContent = await fetch(thumbnailLocation);
+  assert(thumbnailContent.ok, `Signed thumbnail could not be loaded (${thumbnailContent.status}).`);
+  assert(String(thumbnailContent.headers.get("content-type") || "").startsWith("image/webp"), "Durable thumbnail is not WebP.");
 
   const listResult = await request("/api/media/assets?kind=image&limit=48", account, { headers: { accept: "application/json" } });
   assert(listResult.response.ok && listResult.payload?.ok, "Library media list could not be loaded after persistent upload.");

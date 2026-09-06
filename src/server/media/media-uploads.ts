@@ -6,7 +6,7 @@ import type {
 } from "@/lib/api/media-upload-contract";
 import { maxMediaUploadBytes } from "@/lib/api/media-upload-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
-import { getMediaAsset } from "@/server/media/media-assets";
+import { ensureMediaAssetThumbnail, getMediaAsset } from "@/server/media/media-assets";
 import {
   createSignedUploadUrl,
   deleteR2Object,
@@ -179,6 +179,15 @@ async function markUploadCompleted(
   );
 }
 
+async function withBestEffortImageThumbnail(asset: Awaited<ReturnType<typeof getMediaAsset>>) {
+  if (!asset) return asset;
+  try {
+    return await ensureMediaAssetThumbnail(asset);
+  } catch {
+    return asset;
+  }
+}
+
 export async function completeMediaUpload(ownerId: string, request: CompleteMediaUploadRequest) {
   if (!isMediaUploadConfigured()) throw new Error("Media upload storage is not configured.");
 
@@ -186,14 +195,14 @@ export async function completeMediaUpload(ownerId: string, request: CompleteMedi
   if (!row) return null;
 
   if (row.status === "completed" && row.media_asset_id) {
-    return getMediaAsset(ownerId, row.media_asset_id);
+    return withBestEffortImageThumbnail(await getMediaAsset(ownerId, row.media_asset_id));
   }
   if (row.status === "failed") throw new Error("This media upload can no longer be completed.");
 
   const existingAsset = await findAssetByStorageKey(ownerId, row.storage_key);
   if (existingAsset) {
     await markUploadCompleted(ownerId, row, existingAsset.id, null);
-    return existingAsset;
+    return withBestEffortImageThumbnail(existingAsset);
   }
 
   const object = await headR2Object(row.storage_key);
@@ -238,5 +247,5 @@ export async function completeMediaUpload(ownerId: string, request: CompleteMedi
   }
 
   await markUploadCompleted(ownerId, row, assetId, object.etag || null);
-  return getMediaAsset(ownerId, assetId);
+  return withBestEffortImageThumbnail(await getMediaAsset(ownerId, assetId));
 }
