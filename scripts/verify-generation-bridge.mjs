@@ -140,6 +140,23 @@ async function verifyMediaAsset(account, assetId, expectedKind) {
   if (metadata.payload.asset.kind !== expectedKind || !metadata.payload.asset.contentUrl) {
     throw new Error(`Media metadata has the wrong product shape: ${JSON.stringify(metadata.payload.asset)}`);
   }
+  if (expectedKind === "image") {
+    const thumbnailUrl = metadata.payload.asset.thumbnailUrl;
+    if (!thumbnailUrl?.endsWith(`/api/media/assets/${assetId}/thumbnail`)) {
+      throw new Error(`Generated image did not expose its durable thumbnail: ${JSON.stringify(metadata.payload.asset)}`);
+    }
+    const thumbnail = await fetch(
+      `${baseUrl}${thumbnailUrl}`,
+      withAccountAuthorization(account, { redirect: "follow" }),
+    );
+    if (!thumbnail.ok || !String(thumbnail.headers.get("content-type") || "").toLowerCase().startsWith("image/webp")) {
+      throw new Error(`Generated image thumbnail is not readable WebP (${thumbnail.status}).`);
+    }
+    const thumbnailMetadata = await sharp(Buffer.from(await thumbnail.arrayBuffer())).metadata();
+    if (!thumbnailMetadata.width || !thumbnailMetadata.height || Math.max(thumbnailMetadata.width, thumbnailMetadata.height) > 640) {
+      throw new Error(`Generated image thumbnail dimensions are invalid: ${JSON.stringify(thumbnailMetadata)}`);
+    }
+  }
 
   const content = await fetch(
     `${baseUrl}${metadata.payload.asset.contentUrl}`,

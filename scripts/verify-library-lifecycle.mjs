@@ -98,6 +98,10 @@ async function cleanupFixture() {
     }
 
     if (assetId) {
+      const assetRows = await rows(`media_assets?id=eq.${encodeURIComponent(assetId)}&select=thumbnail_storage_key`);
+      if (assetRows[0]?.thumbnail_storage_key) {
+        await r2Client.send(new DeleteObjectCommand({ Bucket: r2Bucket, Key: assetRows[0].thumbnail_storage_key })).catch(() => {});
+      }
       const assetDelete = await supabase(`media_assets?id=eq.${encodeURIComponent(assetId)}`, { method: "DELETE" });
       if (!assetDelete.ok) throw new Error(`Could not remove Library media fixture (${assetDelete.status}): ${await assetDelete.text()}`);
     }
@@ -205,6 +209,7 @@ try {
   assert(completionPayload.asset.displayName === fixtureDisplayName, "Browser upload display name was not derived correctly.");
   assert(completionPayload.asset.originalFilename === fixtureFilename, "Browser upload did not preserve the original Unicode filename.");
   assert(completionPayload.asset.width === fixtureWidth && completionPayload.asset.height === fixtureHeight, "Browser upload dimensions were not persisted.");
+  assert(completionPayload.asset.thumbnailUrl?.endsWith(`/api/media/assets/${assetId}/thumbnail`), "Browser upload did not receive a durable image thumbnail.");
 
   const sessionRows = await rows(
     `media_upload_sessions?id=eq.${encodeURIComponent(uploadId)}&select=status,storage_key,media_asset_id,filename,display_name,owner_id`,
@@ -224,6 +229,7 @@ try {
   assert(await card.getAttribute("aria-label") === `Open ${fixtureDisplayName}`, "Uploaded Library card did not expose the expected display name.");
   const cardImage = card.locator("img");
   await cardImage.waitFor({ state: "visible", timeout: 30_000 });
+  assert((await cardImage.getAttribute("src")) === completionPayload.asset.thumbnailUrl, "Library card did not render the durable thumbnail route.");
   const cardMetrics = await imageMetrics(cardImage, "Uploaded Library card image");
   assertRatio(cardMetrics, fixtureWidth / fixtureHeight, "Uploaded Library card image");
 

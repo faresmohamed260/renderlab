@@ -19,6 +19,11 @@ import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAsp
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import { classifyWorkerFailure, failureKind, type WorkerFailureClassification } from "@/server/generation/worker-failure";
 import { inspectUpscaleOutputMetadata, type UpscaleOutputMetadata } from "@/server/generation/upscale-output-metadata";
+import {
+  IMAGE_THUMBNAIL_CONTENT_TYPE,
+  createImageThumbnailBytes,
+  imageThumbnailStorageKey,
+} from "@/server/media/image-thumbnail";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type WorkflowConfig = {
@@ -530,7 +535,21 @@ export async function recoverPersistingResult(row: JobRow) {
   }
 
   let thumbnailStorageKey: string | null = null;
-  if (row.output_kind === "video") {
+  if (row.output_kind === "image") {
+    try {
+      const object = await readR2Object(primary.storageKey);
+      const thumbnailBytes = await createImageThumbnailBytes(object.bytes);
+      const thumbnailKey = imageThumbnailStorageKey(assetId, primary.storageKey, row.created_at);
+      await writeR2Object({
+        key: thumbnailKey,
+        contentType: IMAGE_THUMBNAIL_CONTENT_TYPE,
+        body: thumbnailBytes,
+      });
+      thumbnailStorageKey = thumbnailKey;
+    } catch {
+      thumbnailStorageKey = null;
+    }
+  } else {
     const thumbnail = await findDurableObject(
       thumbnailStoragePrefix(row, assetId),
       possibleThumbnailExtensions(),
@@ -565,7 +584,21 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
   injectGenerationFinalizationFault("after-primary-write");
 
   let thumbnailStorageKey: string | null = null;
-  if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
+  if (row.output_kind === "image" && contentType.startsWith("image/")) {
+    const thumbnailKey = imageThumbnailStorageKey(assetId, storageKey, row.created_at);
+    try {
+      injectGenerationFinalizationFault("thumbnail-write");
+      const thumbnailBytes = await createImageThumbnailBytes(bytes);
+      await writeR2Object({
+        key: thumbnailKey,
+        contentType: IMAGE_THUMBNAIL_CONTENT_TYPE,
+        body: thumbnailBytes,
+      });
+      thumbnailStorageKey = thumbnailKey;
+    } catch {
+      thumbnailStorageKey = null;
+    }
+  } else if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
     const posterKey = `${thumbnailStoragePrefix(row, assetId)}.${extensionFor(poster.contentType)}`;
     try {
       injectGenerationFinalizationFault("thumbnail-write");
