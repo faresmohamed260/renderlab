@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import type { CreativeOperation } from "@/lib/capabilities/generation";
 
 export type DiagnosticLevel = "info" | "warn" | "error";
 export type DiagnosticEventName =
@@ -71,7 +72,7 @@ export type DiagnosticEventInput = {
   level?: DiagnosticLevel;
   correlationId: string;
   jobId?: string;
-  operation?: "create-image" | "edit-image" | "create-video" | "animate-image";
+  operation?: CreativeOperation;
   phase?: string;
   status?: string;
   code?: string;

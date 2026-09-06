@@ -32,6 +32,7 @@ const operationLabels = {
   "edit-image": "Edit image",
   "create-video": "Create video",
   "animate-image": "Animate image",
+  "upscale-image": "Upscale image",
 } as const;
 
 const statusLabels = {

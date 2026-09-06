@@ -7,10 +7,15 @@ import {
   generationInputAlias,
   generationInputRoleForIndex,
   generationPromptReferenceAliases,
+  isPromptGenerationOperation,
   maxGenerationInputsForOutput,
   resolveCreativeOperation,
   unresolvedGenerationPromptReferenceAliases,
 } from "../../src/lib/capabilities/generation.ts";
+import {
+  createUpscaleImageCommand,
+  imageUpscaleScale,
+} from "../../src/lib/capabilities/upscale.ts";
 
 test("generation aliases and prompt references remain deterministic", () => {
   assert.equal(generationInputAlias(1), "image1");
@@ -36,7 +41,7 @@ test("generation input capabilities preserve bounded roles", () => {
   assert.equal(generationInputRoleForIndex("video", 1), null);
 });
 
-test("creative operation resolution follows product input intent", () => {
+test("creative operation resolution follows prompt-generation input intent", () => {
   const base = {
     prompt: "test",
     output: { kind: "image", aspectRatio: "1:1" },
@@ -63,6 +68,26 @@ test("creative operation resolution follows product input intent", () => {
     }),
     "animate-image",
   );
+  assert.equal(isPromptGenerationOperation("create-image"), true);
+  assert.equal(isPromptGenerationOperation("upscale-image"), false);
+});
+
+test("upscale command is promptless, fixed 2x, and uses one durable primary image", () => {
+  assert.equal(imageUpscaleScale, 2);
+  assert.deepEqual(createUpscaleImageCommand(" asset-123 "), {
+    operation: "upscale-image",
+    outputKind: "image",
+    prompt: null,
+    inputs: [
+      {
+        alias: "image1",
+        role: "primary-image",
+        source: { type: "media-asset", id: "asset-123" },
+      },
+    ],
+    parameters: { upscale: { scale: 2 } },
+  });
+  assert.throws(() => createUpscaleImageCommand("   "), RangeError);
 });
 
 test("continuation and advanced defaults stay capability-derived", () => {

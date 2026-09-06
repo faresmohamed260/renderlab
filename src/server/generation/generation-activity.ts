@@ -13,7 +13,7 @@ type GenerationActivityRow = {
   status: GenerationJobStatus;
   operation: CreativeOperation;
   output_kind: OutputKind;
-  prompt: string;
+  prompt: string | null;
   output_asset_ids: string[];
   inputs: unknown;
   parameters: unknown;

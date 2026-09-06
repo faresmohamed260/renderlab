@@ -3,7 +3,7 @@ import type {
   GenerationRequest,
   OutputKind,
 } from "@/lib/capabilities/generation";
-import { resolveCreativeOperation } from "@/lib/capabilities/generation";
+import { isPromptGenerationOperation, resolveCreativeOperation } from "@/lib/capabilities/generation";
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
@@ -16,7 +16,7 @@ export type GenerationRecipeJobRow = {
   status: string;
   operation: CreativeOperation;
   output_kind: OutputKind;
-  prompt: string;
+  prompt: string | null;
   inputs: unknown;
   parameters: unknown;
 };
@@ -39,6 +39,7 @@ export async function loadGenerationRecipeJob(
 export function reconstructGenerationRecipeRequest(
   row: GenerationRecipeJobRow,
 ): GenerationRequest | null {
+  if (!isPromptGenerationOperation(row.operation) || typeof row.prompt !== "string" || !row.prompt.trim()) return null;
   if (!isRecord(row.parameters) || !isRecord(row.parameters.output)) return null;
 
   const output = { ...row.parameters.output };
