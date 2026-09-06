@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { MediaViewer } from "@/features/library/media-viewer";
+import { isImageUpscaleAssetMetadataEligible } from "@/lib/capabilities/upscale";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import {
   loadGenerationComparisonSource,
   loadInitialGenerationRecipe,
 } from "@/server/generation/generation-recipe";
+import { isImageUpscaleGenerationConfigured } from "@/server/generation/submit-upscale";
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
 import { listMediaCollections } from "@/server/media/media-collections";
 import { isR2Configured } from "@/server/storage/r2";
@@ -65,6 +67,13 @@ export default async function MediaViewerPage({
       : Promise.resolve(null),
   ]);
   const compareSource = comparisonSource?.id === asset.id ? null : comparisonSource;
+  const upscaleEligible = isImageUpscaleGenerationConfigured() && isImageUpscaleAssetMetadataEligible({
+    kind: asset.kind,
+    mimeType: asset.mime_type,
+    width: asset.width,
+    height: asset.height,
+    sizeBytes: asset.size_bytes,
+  });
 
   return (
     <MediaViewer
@@ -73,6 +82,7 @@ export default async function MediaViewerPage({
       collectionsAvailable={collections !== null}
       reuseRecipeJobId={reusableRecipe?.jobId ?? null}
       compareSource={compareSource}
+      upscaleEligible={upscaleEligible}
     />
   );
 }
