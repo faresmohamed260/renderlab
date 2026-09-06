@@ -83,6 +83,7 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY_ID: "test-access-key"
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: "test-secret-key"
           CLOUDFLARE_R2_BUCKET: "test-bucket"
+          RENDERLAB_UPSCALE_WORKER_GATEWAY_URL: "https://upscale.example.invalid"
         run: node scripts/verify-vercel-env.mjs
 
       - name: Build production application with Vercel contract
@@ -95,4 +96,5 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY_ID: "test-access-key"
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: "test-secret-key"
           CLOUDFLARE_R2_BUCKET: "test-bucket"
+          RENDERLAB_UPSCALE_WORKER_GATEWAY_URL: "https://upscale.example.invalid"
         run: npm run build
