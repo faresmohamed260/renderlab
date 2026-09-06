@@ -174,7 +174,8 @@ try {
   const page = await context.newPage();
   await routeLocalAppRequestsWithAccount(page, baseUrl, account);
 
-  await page.goto(`${baseUrl}/library`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.goto(`${baseUrl}/library?tab=uploads`, { waitUntil: "networkidle", timeout: 60_000 });
+  assert(await page.getByRole("link", { name: "Uploads", exact: true }).getAttribute("aria-current") === "page", "Configured Library lifecycle did not start in Uploads.");
   const uploadButton = page.getByRole("button", { name: "Upload", exact: true });
   await uploadButton.waitFor({ state: "visible", timeout: 30_000 });
 
@@ -232,6 +233,15 @@ try {
   assert((await cardImage.getAttribute("src")) === completionPayload.asset.thumbnailUrl, "Library card did not render the durable thumbnail route.");
   const cardMetrics = await imageMetrics(cardImage, "Uploaded Library card image");
   assertRatio(cardMetrics, fixtureWidth / fixtureHeight, "Uploaded Library card image");
+
+  await page.getByRole("link", { name: "Creatives", exact: true }).click();
+  await page.waitForURL((url) => url.pathname === "/library" && !url.searchParams.has("tab"), { timeout: 30_000 });
+  assert(await page.getByRole("link", { name: "Creatives", exact: true }).getAttribute("aria-current") === "page", "Creatives tab was not active after switching from Uploads.");
+  assert(await page.locator(`a[href="/library/${assetId}"]`).count() === 0, "Creatives rendered the uploaded lifecycle asset.");
+  assert(await page.getByRole("button", { name: "Upload", exact: true }).count() === 0, "Creatives exposed the upload action after tab switch.");
+  await page.getByRole("link", { name: "Uploads", exact: true }).click();
+  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("tab") === "uploads", { timeout: 30_000 });
+  await card.waitFor({ state: "visible", timeout: 30_000 });
 
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-desktop-grid.png`, fullPage: true });
 

@@ -6,7 +6,7 @@ import {
   type PublicMediaAsset,
 } from "@/lib/api/media-assets-contract";
 import type { PublicMediaCollection } from "@/lib/api/media-collections-contract";
-import { LibraryView } from "@/features/library/library-view";
+import { LibraryView, type LibraryTab } from "@/features/library/library-view";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
@@ -21,6 +21,10 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function parseTab(value: string | string[] | undefined): LibraryTab {
+  return firstParam(value) === "uploads" ? "uploads" : "creatives";
 }
 
 function parseKind(value: string | string[] | undefined): MediaAssetListKind {
@@ -57,6 +61,7 @@ export default async function LibraryPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const [params, account] = await Promise.all([searchParams, getCurrentRenderLabAccount()]);
+  const tab = parseTab(params.tab);
   const kind = parseKind(params.kind);
   const sort = parseSort(params.sort);
   const searchQuery = parseSearch(params.q);
@@ -74,6 +79,7 @@ export default async function LibraryPage({
   const assetsPromise = available
     ? listMediaAssets({
         ownerId: account.id,
+        origin: tab === "uploads" ? "uploaded" : "generated",
         ...(kind === "all" ? {} : { kind }),
         ...(searchQuery ? { search: searchQuery } : {}),
         ...(favoriteOnly ? { favoriteOnly: true } : {}),
@@ -117,6 +123,7 @@ export default async function LibraryPage({
       collectionsAvailable={collectionsAvailable}
       selectedCollectionId={selectedCollectionId}
       collectionMissing={collectionMissing}
+      tab={tab}
       kind={kind}
       sort={sort}
       searchQuery={searchQuery}

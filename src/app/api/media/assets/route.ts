@@ -3,6 +3,7 @@ import {
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
   normalizeMediaAssetSearchQuery,
   type MediaAssetKind,
+  type MediaAssetOrigin,
   type MediaAssetSortOrder,
 } from "@/lib/api/media-assets-contract";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
@@ -11,6 +12,7 @@ import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { isR2Configured } from "@/server/storage/r2";
 
 const kinds = new Set<MediaAssetKind>(["image", "video"]);
+const origins = new Set<MediaAssetOrigin>(["generated", "uploaded"]);
 const sortOrders = new Set<MediaAssetSortOrder>(["newest", "oldest"]);
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -24,6 +26,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const rawKind = url.searchParams.get("kind");
   const kind = rawKind && rawKind !== "all" ? rawKind : undefined;
+  const rawOrigin = url.searchParams.get("origin");
+  const origin = rawOrigin || undefined;
   const rawSort = url.searchParams.get("sort");
   const sort = (rawSort || "newest") as MediaAssetSortOrder;
   const rawFavorite = url.searchParams.get("favorite");
@@ -36,6 +40,7 @@ export async function GET(request: Request) {
 
   if (
     (kind && !kinds.has(kind as MediaAssetKind))
+    || (origin && !origins.has(origin as MediaAssetOrigin))
     || !sortOrders.has(sort)
     || (rawFavorite != null && rawFavorite !== "true")
     || (rawCollection != null && !uuidPattern.test(rawCollection))
@@ -67,6 +72,7 @@ export async function GET(request: Request) {
   try {
     const result = await listMediaAssets({
       ownerId: account.id,
+      ...(origin ? { origin: origin as MediaAssetOrigin } : {}),
       ...(kind ? { kind: kind as MediaAssetKind } : {}),
       ...(search ? { search } : {}),
       ...(favoriteOnly ? { favoriteOnly: true } : {}),

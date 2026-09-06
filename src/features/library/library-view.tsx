@@ -24,6 +24,13 @@ import {
 } from "@/lib/api/media-assets-contract";
 import type { PublicMediaCollection } from "@/lib/api/media-collections-contract";
 
+export type LibraryTab = "creatives" | "uploads";
+
+const tabs: Array<{ value: LibraryTab; label: string }> = [
+  { value: "creatives", label: "Creatives" },
+  { value: "uploads", label: "Uploads" },
+];
+
 const filters: Array<{ value: MediaAssetListKind; label: string }> = [
   { value: "all", label: "All" },
   { value: "image", label: "Images" },
@@ -31,6 +38,7 @@ const filters: Array<{ value: MediaAssetListKind; label: string }> = [
 ];
 
 function libraryHref(
+  tab: LibraryTab,
   kind: MediaAssetListKind,
   searchQuery: string | null,
   sort: MediaAssetSortOrder,
@@ -39,6 +47,7 @@ function libraryHref(
   offset = 0,
 ) {
   const params = new URLSearchParams();
+  if (tab === "uploads") params.set("tab", "uploads");
   if (kind !== "all") params.set("kind", kind);
   if (searchQuery) params.set("q", searchQuery);
   if (sort !== "newest") params.set("sort", sort);
@@ -58,6 +67,7 @@ export function LibraryView({
   collectionsAvailable,
   selectedCollectionId,
   collectionMissing,
+  tab,
   kind,
   sort,
   searchQuery,
@@ -74,6 +84,7 @@ export function LibraryView({
   collectionsAvailable: boolean;
   selectedCollectionId: string | null;
   collectionMissing: boolean;
+  tab: LibraryTab;
   kind: MediaAssetListKind;
   sort: MediaAssetSortOrder;
   searchQuery: string | null;
@@ -84,6 +95,8 @@ export function LibraryView({
 }) {
   const selectedCollection = collections.find((collection) => collection.id === selectedCollectionId) ?? null;
   const selectedCollectionName = selectedCollection?.name ?? null;
+  const sectionLabel = tab === "uploads" ? "uploads" : "creatives";
+  const sectionTitle = tab === "uploads" ? "Uploads" : "Creatives";
   const previousDirection = sort === "newest" ? "newer" : "older";
   const nextDirection = sort === "newest" ? "older" : "newer";
   const previousLabel = previousDirection === "newer" ? "Newer" : "Older";
@@ -97,14 +110,14 @@ export function LibraryView({
           ? favoriteOnly
             ? `No favorites in “${selectedCollectionName}” match “${searchQuery}”`
             : `No media in “${selectedCollectionName}” matches “${searchQuery}”`
-          : favoriteOnly ? `No favorites match “${searchQuery}”` : `No media matches “${searchQuery}”`
+          : favoriteOnly ? `No favorite ${sectionLabel} match “${searchQuery}”` : `No ${sectionLabel} match “${searchQuery}”`
         : selectedCollectionName
           ? favoriteOnly ? `No favorites in “${selectedCollectionName}”` : `No media in “${selectedCollectionName}”`
           : favoriteOnly
-            ? "No favorites yet"
+            ? `No favorite ${sectionLabel} yet`
             : kind === "all"
-              ? "No media yet"
-              : `No ${kind === "image" ? "images" : "videos"} yet`;
+              ? `No ${sectionLabel} yet`
+              : `No ${kind === "image" ? "images" : "videos"} in ${sectionTitle} yet`;
   const emptyDescription = collectionMissing
     ? "This collection is unavailable or does not belong to this account."
     : offset > 0
@@ -118,21 +131,21 @@ export function LibraryView({
             ? "Favorite media added to this collection will appear here."
             : "Add media to this collection from the Viewer and it will appear here."
           : favoriteOnly
-            ? "Favorite media from the Viewer and it will appear here."
-            : uploadAvailable
-              ? "Create or upload something and saved media will appear here automatically."
+            ? `Favorite ${sectionLabel} from the Viewer and they will appear here.`
+            : tab === "uploads"
+              ? "Upload an image to keep it ready for future edits and references."
               : "Create something and saved results will appear here automatically.";
   const emptyActionHref = collectionMissing
-    ? libraryHref(kind, searchQuery, sort, favoriteOnly, null)
+    ? libraryHref(tab, kind, searchQuery, sort, favoriteOnly, null)
     : offset > 0
-      ? libraryHref(kind, searchQuery, sort, favoriteOnly, selectedCollectionId, Math.max(0, offset - limit))
+      ? libraryHref(tab, kind, searchQuery, sort, favoriteOnly, selectedCollectionId, Math.max(0, offset - limit))
       : searchQuery
-        ? libraryHref(kind, null, sort, favoriteOnly, selectedCollectionId)
+        ? libraryHref(tab, kind, null, sort, favoriteOnly, selectedCollectionId)
         : favoriteOnly
-          ? libraryHref(kind, null, sort, false, selectedCollectionId)
+          ? libraryHref(tab, kind, null, sort, false, selectedCollectionId)
           : selectedCollectionName
-            ? libraryHref(kind, null, sort, false, null)
-            : "/";
+            ? libraryHref(tab, kind, null, sort, false, null)
+            : tab === "uploads" ? null : "/create";
   const emptyActionLabel = collectionMissing
     ? "Browse all media"
     : offset > 0
@@ -143,14 +156,15 @@ export function LibraryView({
           ? "Browse without Favorites"
           : selectedCollectionName
             ? "Browse all media"
-            : "Create media";
+            : tab === "uploads" ? null : "Create media";
   const collectionHrefs = Object.fromEntries(
     collections.map((collection) => [
       collection.id,
-      libraryHref(kind, searchQuery, sort, favoriteOnly, collection.id),
+      libraryHref(tab, kind, searchQuery, sort, favoriteOnly, collection.id),
     ]),
   );
   const batchSelectionKey = [
+    tab,
     kind,
     sort,
     searchQuery ?? "",
@@ -160,7 +174,7 @@ export function LibraryView({
   ].join(":");
 
   return (
-    <LibraryDropUploadSurface enabled={accountAvailable && uploadAvailable}>
+    <LibraryDropUploadSurface enabled={accountAvailable && uploadAvailable && tab === "uploads"}>
       <section className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -169,7 +183,7 @@ export function LibraryView({
               Browse durable media and continue from the work you want to keep.
             </p>
           </div>
-          {accountAvailable && uploadAvailable ? <LibraryUploadButton /> : null}
+          {accountAvailable && uploadAvailable && tab === "uploads" ? <LibraryUploadButton /> : null}
         </div>
 
         {!accountAvailable ? (
@@ -189,14 +203,30 @@ export function LibraryView({
           </Empty>
         ) : (
           <>
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+            <nav className="mt-8 inline-flex rounded-lg border border-border bg-surface-1 p-1" aria-label="Library sections">
+              {tabs.map((section) => {
+                const active = tab === section.value;
+                return (
+                  <Button key={section.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
+                    <Link
+                      href={libraryHref(section.value, kind, searchQuery, sort, favoriteOnly, selectedCollectionId)}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {section.label}
+                    </Link>
+                  </Button>
+                );
+              })}
+            </nav>
+
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <nav className="flex rounded-lg bg-surface-2 p-1" aria-label="Library media type">
                 {filters.map((filter) => {
                   const active = kind === filter.value;
                   return (
                     <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
                       <Link
-                        href={libraryHref(filter.value, searchQuery, sort, favoriteOnly, selectedCollectionId)}
+                        href={libraryHref(tab, filter.value, searchQuery, sort, favoriteOnly, selectedCollectionId)}
                         aria-current={active ? "page" : undefined}
                       >
                         {filter.label}
@@ -207,7 +237,7 @@ export function LibraryView({
               </nav>
               <div className="flex flex-wrap items-start justify-end gap-2">
                 <Button asChild variant={favoriteOnly ? "secondary" : "outline"} size="sm">
-                  <Link href={libraryHref(kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
+                  <Link href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
                     <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
                     Favorites
                   </Link>
@@ -216,19 +246,20 @@ export function LibraryView({
                   <LibraryCollectionMenu
                     collections={collections}
                     selectedCollectionId={selectedCollectionId}
-                    allHref={libraryHref(kind, searchQuery, sort, favoriteOnly, null)}
+                    allHref={libraryHref(tab, kind, searchQuery, sort, favoriteOnly, null)}
                     collectionHrefs={collectionHrefs}
                   />
                 ) : null}
                 <LibrarySortMenu
                   sort={sort}
-                  newestHref={libraryHref(kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
-                  oldestHref={libraryHref(kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}
+                  newestHref={libraryHref(tab, kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
+                  oldestHref={libraryHref(tab, kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}
                 />
               </div>
             </div>
 
             <form action="/library" method="get" role="search" className="mt-4 flex w-full max-w-xl items-center gap-2">
+              {tab === "uploads" ? <input type="hidden" name="tab" value="uploads" /> : null}
               {kind !== "all" ? <input type="hidden" name="kind" value={kind} /> : null}
               {sort !== "newest" ? <input type="hidden" name="sort" value={sort} /> : null}
               {favoriteOnly ? <input type="hidden" name="favorite" value="true" /> : null}
@@ -252,7 +283,7 @@ export function LibraryView({
               <Button type="submit" variant="outline">Search</Button>
               {searchQuery ? (
                 <Button asChild variant="ghost">
-                  <Link href={libraryHref(kind, null, sort, favoriteOnly, selectedCollectionId)}>Clear</Link>
+                  <Link href={libraryHref(tab, kind, null, sort, favoriteOnly, selectedCollectionId)}>Clear</Link>
                 </Button>
               ) : null}
             </form>
@@ -280,15 +311,17 @@ export function LibraryView({
                   <EmptyTitle>{emptyTitle}</EmptyTitle>
                   <EmptyDescription>{emptyDescription}</EmptyDescription>
                 </EmptyHeader>
-                <EmptyContent>
-                  <Button asChild variant="secondary">
-                    <Link href={emptyActionHref}>
-                      {offset > 0 ? <ArrowLeft aria-hidden="true" data-icon="inline-start" /> : null}
-                      {emptyActionLabel}
-                      {offset === 0 && !searchQuery && !favoriteOnly && !selectedCollectionName && !collectionMissing ? <ArrowRight aria-hidden="true" data-icon="inline-end" /> : null}
-                    </Link>
-                  </Button>
-                </EmptyContent>
+                {emptyActionHref && emptyActionLabel ? (
+                  <EmptyContent>
+                    <Button asChild variant="secondary">
+                      <Link href={emptyActionHref}>
+                        {offset > 0 ? <ArrowLeft aria-hidden="true" data-icon="inline-start" /> : null}
+                        {emptyActionLabel}
+                        {offset === 0 && !searchQuery && !favoriteOnly && !selectedCollectionName && !collectionMissing ? <ArrowRight aria-hidden="true" data-icon="inline-end" /> : null}
+                      </Link>
+                    </Button>
+                  </EmptyContent>
+                ) : null}
               </Empty>
             ) : (
               <>
@@ -299,7 +332,7 @@ export function LibraryView({
                     <div>
                       {offset > 0 ? (
                         <Button asChild variant="outline">
-                          <Link href={libraryHref(kind, searchQuery, sort, favoriteOnly, selectedCollectionId, Math.max(0, offset - limit))}>
+                          <Link href={libraryHref(tab, kind, searchQuery, sort, favoriteOnly, selectedCollectionId, Math.max(0, offset - limit))}>
                             <ArrowLeft aria-hidden="true" data-icon="inline-start" />
                             {previousLabel}
                           </Link>
@@ -308,7 +341,7 @@ export function LibraryView({
                     </div>
                     {hasMore ? (
                       <Button asChild variant="outline">
-                        <Link href={libraryHref(kind, searchQuery, sort, favoriteOnly, selectedCollectionId, offset + limit)}>
+                        <Link href={libraryHref(tab, kind, searchQuery, sort, favoriteOnly, selectedCollectionId, offset + limit)}>
                           {nextLabel}
                           <ArrowRight aria-hidden="true" data-icon="inline-end" />
                         </Link>

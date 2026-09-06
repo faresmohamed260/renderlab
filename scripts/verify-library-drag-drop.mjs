@@ -166,10 +166,21 @@ try {
   });
 
   await page.goto(`${baseUrl}/library`, { waitUntil: "networkidle", timeout: 60_000 });
-
   const surface = page.locator('[data-library-drop-surface="true"]');
   await surface.waitFor({ state: "visible", timeout: 30_000 });
-  assert(await page.getByRole("button", { name: "Upload", exact: true }).isVisible(), "Upload button baseline is not visible.");
+  assert(await page.getByRole("button", { name: "Upload", exact: true }).count() === 0, "Creatives unexpectedly exposed the upload baseline.");
+
+  const disabledTransfer = await createDataTransfer(page, [
+    { name: fixtureFilename, mimeType: "image/png", base64: pngBytes.toString("base64") },
+  ]);
+  await surface.dispatchEvent("dragenter", { dataTransfer: disabledTransfer });
+  await page.waitForTimeout(150);
+  assert((await page.locator('[data-library-drop-overlay="true"]').count()) === 0, "Creatives activated the Library drop affordance.");
+  await disabledTransfer.dispose();
+
+  await page.getByRole("link", { name: "Uploads", exact: true }).click();
+  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("tab") === "uploads", { timeout: 30_000 });
+  assert(await page.getByRole("button", { name: "Upload", exact: true }).isVisible(), "Upload button baseline is not visible in Uploads.");
 
   const multipleTransfer = await createDataTransfer(page, [
     { name: "one.png", mimeType: "image/png", base64: pngBytes.toString("base64") },
