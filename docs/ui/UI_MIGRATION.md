@@ -1667,13 +1667,14 @@ Implementation checklist:
 **Cycle 3 production rollout status: `COMPLETE / VERIFIED / LIVE`.**
 
 ## Post-Cycle 3 Stabilization — Navigation & Library Revisit Performance
-**Status: `IMPLEMENTED / CI VALIDATED`; production rollout remains separate.**
+**Status: `COMPLETE / VERIFIED / MERGED`; production rollout remains separate.**
 
 - [x] Preserve the existing App Router / server-owned account model; no new client-global media store or experimental `staleTimes`/cache-components migration.
 - [x] Full-prefetch the bounded persistent shell destinations, then refresh the newly entered top-level section in place to combine immediate paint with fresh owner-scoped data.
 - [x] Remove the Library collection → media-list waterfall by issuing the independent owner-scoped queries concurrently and preserving existing unavailable/missing-collection semantics.
 - [x] Reuse owner-authorized media redirects in the browser for 240 seconds only; responses remain `private` and the existing 300-second signed R2 read lifetime is unchanged.
-- [x] Restore the intended lightweight image-grid path: new durable uploaded/generated images persist deterministic max-640px WebP thumbnails, Library cards prefer them, and a dry-run-by-default bounded maintenance script covers pre-existing active image rows. Thumbnail creation failure remains non-fatal and falls back to original content; no request-time transform or bulk schema/storage migration is introduced.
+- [x] Restore the intended lightweight image-grid path: new durable uploaded/generated images persist deterministic max-640px WebP thumbnails and Library cards prefer them. Thumbnail creation failure remains non-fatal and falls back to original content; no request-time transform or bulk schema/storage migration is introduced.
 - [x] Keep Library filtering, search, collections, pagination, ownership, deletion, continuation and Activity truthfulness unchanged.
-- [x] Corrected working tree passed UI purity, lint, TypeScript, unit tests and production build in GitHub Actions `34059367614` before commit; exact-head PR workflows remain required before merge.
-- [x] No production deployment, Supabase schema change, R2 migration, worker change, scheduler change or creative-capability expansion is part of this corrective pass.
+- [x] PR #112 merged as `7798fab8ad8caff19a74005502eb7472297ba7a8` only after all 30 workflows on exact final head `f9e61a2f06ef4f6ef2ff27f170f50495eeb7647f` passed.
+- [x] Bounded post-merge maintenance run `34062569699` backfilled all 13 eligible legacy active image rows, with 0 failures and 0 remaining null thumbnail keys; evidence artifact `9997940257` has ZIP `sha256:bb02409e57ac2ba0737b72fb9cc848d7974bede01ff181f8ac4e36638f7d4e46`.
+- [x] No production deployment, Supabase schema change, R2 resource migration, worker change, scheduler change or creative-capability expansion was part of this corrective pass. Production remains on `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` / application source `c493eaead6997cce1c22c6835c98177d6346ff41`.
