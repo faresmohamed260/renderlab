@@ -398,3 +398,20 @@ Phase 18A–18D now verify the worker, domain/schema, server API/admission and l
 - Run-owned evidence verifies promptless fixed-2× admission, server reconciliation/finalization, duplicate convergence, native Cancel, failed Retry source revalidation, successful Run Again/Reuse Settings absence and active-source-only Compare.
 - Artifact `9992236657` independently matches GitHub at `sha256:68e5755c3c32b64e7f6606a7c7c94a8ed0774871975c3cf611759b46dee4eaf9`; responsive comparison renders were human-reviewed clean and configured database/Auth/R2 cleanup passed.
 - Exact proof head closed at 32/32 attached workflows successful. PR #111 was then squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d` from definitive exact head `c40705d760639eb6fffdf9d51fc69ed397fc55a0`; merged `main` passed all 14 workflows / 15 checks GitHub attached. Phase 18 is complete/verified/merged; production rollout remains separate.
+
+## Post-Cycle 3 Productization — User-selectable Image model
+**Status:** IMPLEMENTED / STAGING VERIFIED / FINAL PR ACCEPTANCE PENDING
+
+RenderLab now treats the image-model choice as explicit product intent rather than a hard-coded native-routing decision. Current productized prompt-generation models are:
+
+| Output | Product model ID | User label | Current role |
+|---|---|---|---|
+| Image | `flux2-klein-9b` | FLUX.2 Klein 9B | Default Create/Edit image model |
+| Image | `qwen-image-edit-2511` | Qwen Image Edit 2511 | User-selectable Create/Edit alternative |
+| Video | `ltx25-redgraft` | REDGraft LTX 2.5 | Current single Video/Animate model; no redundant selector |
+
+The model ID is validated against output kind and persisted in `generation_jobs.parameters.model`. Current-valid successful recipe reuse and failed retry reconstruction therefore preserve the creative model choice. Historical jobs that predate the field remain compatible by resolving omitted Image model to FLUX and omitted Video model to REDGraft.
+
+Qwen remains deliberately differentiated from FLUX rather than pretending all Advanced controls are interchangeable. Fresh read-only audit `34064898642` / artifact `9998623751` (`sha256:5075cdef0ee55cfa7b6649642815fcb2d6f585fc27565d0eb85f6bc9907975af`) verified both registered Qwen gateways report `Qwen/Qwen-Image-Edit-2511`, multi-reference support, async `/jobs/edit`, cancellation/status endpoints, and fixed Lightning `4` steps / `true_cfg_scale=1.0`. The product therefore hides configurable Steps/Guidance for Qwen and the server rejects non-fixed supplied values. FLUX retains its configurable Image Advanced tuning. The previous bounded quality comparison still justifies FLUX as the default; this change does not claim Qwen is universally better.
+
+Isolated routing run `34065515794` used an explicit test-only native gateway override and local mock worker to prove Qwen maps to `qwen-image-edit-2511` / `qwen-primary-01`, FLUX maps to `flux2-klein-9b` / the current active FLUX standby, omitted historical intent maps to FLUX, invalid model/output or Qwen tuning fails closed, and fixtures clean up. No real provider generation was used for that routing proof.

@@ -321,3 +321,12 @@ The existing fresh-active-admin `/admin` Health section exposes bounded accepted
 **Eligibility / scope:** fixed 2× only; PNG/JPEG/WebP source; source max edge 4096 px, max 4,194,304 pixels and max 25 MB; no video, batch, model picker, prompt, Restore claim or arbitrary factor. Server state is authoritative. A desktop+narrow Viewer design checkpoint is required before implementation and final configured screenshots require human review.
 
 **Do not change:** keep the existing Viewer media-primary hierarchy, result/source comparison rules and ordinary Edit/Animate actions. Do not create an Upscale application, route, modal management framework or generic post-processing toolbar for v0.1.
+
+## Post-Cycle 3 Create Extension — Contextual Image Model Choice
+**Route:** `/create`
+**Status:** IMPLEMENTED / STAGING VERIFIED / FINAL PR RENDER REVIEW PENDING
+**Implementation:** existing `CreateWorkspace` + `CreateAdvancedPanel`; no new route or generic component.
+
+Image output now owns a compact contextual **Image model** choice. **FLUX.2 Klein** remains the default and **Qwen Image Edit** is an explicit alternative for both source-free image generation and source-backed Edit. The selector disappears in Video mode because REDGraft is currently the only productized Video choice. The browser submits only a stable product model ID; worker fleet selection/failover remains server-side. Qwen's fixed 4-step tuning removes configurable Steps/Guidance from Advanced while retaining applicable prompt/seed controls. Current-valid recipe reconstruction restores the selected model. Historical recipes lacking model identity default to the former FLUX/REDGraft behavior.
+
+Responsive Create lifecycle validation must cover the default FLUX state, Qwen menu selection, Qwen-specific Advanced composition, serialized model intent and narrow/mobile menu rendering. No top-level Models screen is approved by this extension.
