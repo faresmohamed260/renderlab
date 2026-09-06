@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import sharp from "sharp";
 
 import {
   imageUpscaleLimits,
@@ -7,6 +8,7 @@ import {
   persistedUpscaleSourceAssetId,
   validateImageUpscaleGeometry,
 } from "../../src/lib/capabilities/upscale.ts";
+import { inspectUpscaleOutputMetadata } from "../../src/server/generation/upscale-output-metadata.ts";
 
 test("upscale limits mirror the verified fixed-2x worker contract", () => {
   assert.deepEqual(imageUpscaleSupportedMimeTypes, ["image/png", "image/jpeg", "image/webp"]);
@@ -66,4 +68,23 @@ test("persisted Upscale reconstruction accepts only canonical fixed-2x durable i
     }),
     null,
   );
+});
+
+test("Upscale result metadata is derived from the actual single-frame PNG bytes", async () => {
+  const png = await sharp({
+    create: {
+      width: 26,
+      height: 14,
+      channels: 4,
+      background: { r: 12, g: 34, b: 56, alpha: 0.8 },
+    },
+  }).png().toBuffer();
+
+  assert.deepEqual(await inspectUpscaleOutputMetadata(png, "image/png"), {
+    sizeBytes: png.length,
+    width: 26,
+    height: 14,
+  });
+  await assert.rejects(() => inspectUpscaleOutputMetadata(png, "image/jpeg"));
+  await assert.rejects(() => inspectUpscaleOutputMetadata(Buffer.alloc(0), "image/png"));
 });
