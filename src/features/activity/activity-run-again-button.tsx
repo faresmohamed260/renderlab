@@ -43,8 +43,15 @@ export function ActivityRunAgainButton({ jobId }: { jobId: string }) {
   }
 
   return (
-    <div className="flex min-w-0 w-full flex-col items-start gap-2 sm:w-auto">
-      <Button type="button" variant="secondary" size="sm" disabled={submitting} onClick={runAgain}>
+    <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 sm:flex-none sm:items-start">
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="w-full sm:w-auto"
+        disabled={submitting}
+        onClick={runAgain}
+      >
         {submitting ? (
           <>
             <Spinner aria-hidden="true" className="motion-reduce:animate-none" />
