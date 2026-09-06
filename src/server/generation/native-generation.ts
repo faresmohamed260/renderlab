@@ -18,6 +18,7 @@ import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import { classifyWorkerFailure, failureKind, type WorkerFailureClassification } from "@/server/generation/worker-failure";
+import { inspectUpscaleOutputMetadata, type UpscaleOutputMetadata } from "@/server/generation/upscale-output-metadata";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
 type WorkflowConfig = {
@@ -458,6 +459,7 @@ async function persistGeneratedMedia({
   contentType,
   storageKey,
   thumbnailStorageKey,
+  upscaleMetadata,
 }: {
   row: JobRow;
   outputIndex: number;
@@ -465,6 +467,7 @@ async function persistGeneratedMedia({
   contentType: string;
   storageKey: string;
   thumbnailStorageKey: string | null;
+  upscaleMetadata?: UpscaleOutputMetadata | null;
 }) {
   try {
     await supabaseRest("media_assets", {
@@ -478,6 +481,13 @@ async function persistGeneratedMedia({
         mime_type: contentType,
         storage_key: storageKey,
         thumbnail_storage_key: thumbnailStorageKey,
+        ...(upscaleMetadata
+          ? {
+              size_bytes: upscaleMetadata.sizeBytes,
+              width: upscaleMetadata.width,
+              height: upscaleMetadata.height,
+            }
+          : {}),
         provenance: {
           operation: row.operation,
           workflowId: row.workflow_id,
@@ -513,6 +523,12 @@ export async function recoverPersistingResult(row: JobRow) {
   if (!primary) return null;
   if (row.operation === "upscale-image" && primary.contentType !== "image/png") return null;
 
+  let upscaleMetadata: UpscaleOutputMetadata | null = null;
+  if (row.operation === "upscale-image") {
+    const object = await readR2Object(primary.storageKey);
+    upscaleMetadata = await inspectUpscaleOutputMetadata(object.bytes, primary.contentType);
+  }
+
   let thumbnailStorageKey: string | null = null;
   if (row.output_kind === "video") {
     const thumbnail = await findDurableObject(
@@ -530,6 +546,7 @@ export async function recoverPersistingResult(row: JobRow) {
     contentType: primary.contentType,
     storageKey: primary.storageKey,
     thumbnailStorageKey,
+    upscaleMetadata,
   });
 }
 
@@ -538,6 +555,9 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
   const existing = await getGeneratedOutput(row, outputIndex);
   if (existing) return completeJobWithAsset(row, existing.id);
 
+  const upscaleMetadata = row.operation === "upscale-image"
+    ? await inspectUpscaleOutputMetadata(bytes, contentType)
+    : null;
   const assetId = deterministicGenerationAssetId(row.id, outputIndex);
   const storageKey = `${outputStoragePrefix(row, assetId)}.${extensionFor(contentType)}`;
   injectGenerationFinalizationFault("before-primary-write");
@@ -563,6 +583,7 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
     contentType,
     storageKey,
     thumbnailStorageKey,
+    upscaleMetadata,
   });
 }
 
