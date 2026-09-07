@@ -150,7 +150,7 @@ Approved behavior:
 
 **Current extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031, Collections v0.1 / UI-032, single-asset Durable Media Delete v0.1 / UI-033, Library Batch Delete v0.1 / UI-034 and Phase 8 Library organization / UI-049 are approved. Selection deliberately remains current-page only; Delete and organization remain bounded best-effort per item with explicit target states for reversible organization.
 
-**Do not change:** Do not couple Library to legacy `studio_*`, expose temporary `generation_sources` as durable media, add Creatives/Uploads tabs, or turn search/history ordering into a Saga-style filter console without an explicit product contract.
+**Do not change:** Do not couple Library to legacy `studio_*` or expose temporary `generation_sources` as durable media. UI-060's approved Creatives/Uploads sections are origin-scoped views over the same durable media identity; do not split them into parallel asset stores or add a third section without an explicit product contract. Do not turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  

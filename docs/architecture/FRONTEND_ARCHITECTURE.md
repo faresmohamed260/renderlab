@@ -87,7 +87,7 @@ Rules:
 Rules:
 - Bare `/` is the public Brand / Landing route; Create is the authoritative `/create` application route under `AppShell`.
 - Image/Video/Edit/Animate/models/workflows are not separate top-level routes by default.
-- Library `kind`, `q`, `sort`, `favorite`, `collection`, `offset` are URL-owned shareable browsing/discovery/organization state after account context is resolved. `favorite=true` remains the UI-031 Favorites filter; UI-032 adds optional `collection=<uuid>` without changing route hierarchy. UI-049 Phase 8A keeps collection lifecycle management on the same `/library` surface; deleting the active collection removes only `collection` plus stale `offset` while preserving compatible filters.
+- Library `tab`, `kind`, `q`, `sort`, `favorite`, `collection`, `offset` are URL-owned shareable browsing/discovery/organization state after account context is resolved. Under UI-060, Creatives/generated is canonical when `tab` is omitted and Uploads/`origin=uploaded` is `tab=uploads`; changing section clears stale `offset`. `favorite=true` remains the UI-031 Favorites filter; UI-032 adds optional `collection=<uuid>` without changing route hierarchy. UI-049 Phase 8A keeps collection lifecycle management on the same `/library` surface; deleting the active collection removes only `collection` plus stale `offset` while preserving compatible filters.
 - `sort=newest|oldest`; Newest is canonical and omitted from clean links.
 - Viewer → Create `source` + `action` are untrusted navigation intent; the server reloads durable media for the verified owner and validates compatibility.
 - Durable Download uses the Viewer asset route context and a product API; the browser never treats an R2 key/signed URL as durable identity.

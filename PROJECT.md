@@ -1379,7 +1379,7 @@ No schema migration, worker deployment, provider/routing change, new route, new 
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 20 MERGED / PHASE 21 NEXT`.**
+**Status: `ACTIVE / PHASE 21 CONTRACT READY`.**
 **Planning baseline:** `e85aa633caa25e1bc7fdc529d37f08d10cde3cea`.
 
 ## Objective
@@ -1654,3 +1654,120 @@ PR #122 squash-merged to `main` as `09ea91f753be5279428ccf25a7b043300678c3f3` wi
 A live Vercel audit after the merge found no deployment created at or after `09ea91f753be5279428ccf25a7b043300678c3f3`. The newest RenderLab deployment remains `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi`, created on 2026-09-06 22:15:21 UTC from older commit `71a9034039a64beec66894cc4f79b1f62bfc7bf7`; production therefore remains unchanged.
 
 Phase 21 is now the next roadmap phase and may be expanded into an execution-ready contract from this verified merged baseline. Phase 21 implementation has not begun, and no production deployment is authorized by this closure.
+# Phase 21 Execution Contract — Library & Viewer Spatial Media Experience
+**Status: `ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+**UI decision:** UI-064.
+**Planning baseline:** `6c57a21514d58924f59623177891b98fff925a8c` (current `main`; tree matches the closed Phase 20 handoff).
+
+## Goal / user value
+Turn Library and Media Viewer into the spatial media half of Kinetic Precision: browsing should feel like moving through a living creative archive, and opening, selecting, comparing and continuing from media should feel physically connected rather than like moving between flat cards and forms.
+
+The Phase 21 promise is visual and interaction-led. Existing durable-media semantics remain authoritative; the change is how clearly, directly and memorably users perceive and manipulate those media objects.
+
+## Verified starting state — 2026-09-07
+- Phase 20 / UI-063 is complete, verified and merged. The current `main` tree contains the closed Phase 20 handoff and no Phase 21 implementation.
+- UI-060 already separates `/library` into URL-owned **Creatives** (default generated media) and **Uploads** (`tab=uploads`) over the same durable `media_assets` identity. Kind, search, Favorites, Collections, sort and pagination compose inside either section; Upload/drag-drop belongs only to Uploads.
+- `LibraryBatchSelection` already owns transient current-page selection plus bounded Favorite/Collection organization and permanent Delete. Selection is not URL/durable state.
+- Current Library cards are a conventional responsive 4:3 grid with media preview, title and kind/date metadata plus a small hover zoom. They are functionally mature but do not yet carry the Kinetic Precision depth/spatial language.
+- Media Viewer is already the approved contextual durable-media workspace. It owns media-primary presentation, truthful metadata, capability-derived Edit/Animate, eligible Upscale 2×, Reuse settings, conditional Compare source, Favorite/Collections/Rename/Download/Delete and native video controls.
+- UI-056 comparison eligibility is server-derived; Result remains primary, Source is contextual and exposes only `Open source`. UI-058 Upscale eligibility/submission remains server-owned and does not turn Viewer into a job poller.
+- `motion@13.1.1` is already present and the UI System explicitly identifies media-card → Viewer spatial continuity as a good motion candidate. Library/Viewer do not need a second animation runtime to begin this phase.
+- Production deployment remains explicit and separate; automatic Git → Vercel deployment is disabled.
+
+## In scope
+### 21A — Kinetic Library media canvas
+- Extend the Phase 19 spectral/glass/elevation language into Library without creating a competing atmosphere.
+- Recompose the Library heading, Creatives/Uploads context, media-kind controls, search and organization controls into a clearer media-workspace hierarchy while preserving their current accessible mechanics and URL contracts.
+- Creatives/Uploads selection may gain shared-layout/morphing emphasis, but it remains navigation over the existing `tab` contract rather than client-only state.
+- Search remains a real GET form and kind/Favorites/Collections/sort remain server-owned navigation state.
+
+### 21B — Media-first cards with bounded depth
+- Make media materially more dominant than card chrome: stronger edge/elevation treatment, restrained spectral response and more intentional title/metadata hierarchy.
+- Add bounded pointer-capable hover/lift/tilt or spotlight response only where it improves object affordance. Motion must stay subtle enough that a dense media grid remains comfortable to scan.
+- Touch and keyboard users receive an equally clear static/focus/pressed hierarchy; no essential action or information may depend on hover or tilt.
+- Preserve current card destination, media identity and responsive grid semantics. Do not introduce hover-only management actions or turn cards into miniature Viewer action consoles.
+- Selection mode must remain unmistakable: selected media receives a strong static selected layer/check state even when reduced motion is enabled.
+
+### 21C — Library interaction and card → Viewer spatial continuity
+- Opening one asset should feel spatially related to the selected media object instead of like an unrelated hard cut.
+- Prefer the existing Motion + Next.js boundary. A true cross-route shared element is allowed only if it can be implemented without a global client media/router store, navigation interception, duplicated asset authorization or fragile DOM persistence.
+- If literal shared-element continuity is not safe across the current App Router boundary, the accepted implementation is matched media geometry plus a bounded Viewer media-stage entrance that clearly preserves origin/destination continuity. Do not fake a technically brittle shared element merely to satisfy the visual label.
+- Library navigation/back behavior, deep links and server ownership must continue to work without animation state.
+
+### 21D — Immersive Viewer media stage
+- Give the primary image/video stage dimensional Kinetic Precision treatment while keeping the media itself dominant and undistorted.
+- Recompose the current metadata/Continue/Actions rail as subordinate precision chrome rather than a generic opaque side card; existing labels, action availability and product semantics remain intact.
+- Native video controls, poster behavior and keyboard/touch media operation remain unchanged.
+- Viewer must remain usable when optional metadata is absent and across generated/uploaded Image/Video variants.
+
+### 21E — Spatial comparison choreography
+- Keep UI-056 eligibility, source ownership and action hierarchy exactly intact while making default Result → Source/Result comparison feel like one spatial transformation.
+- Result remains the visually primary media object on wide and narrow layouts. Source stays contextual, exposes only `Open source`, and never becomes a second management surface.
+- Use bounded layout/presence motion for open/close where it clarifies the relationship. Reduced motion must switch between the same complete layouts without transform-dependent meaning.
+- Preserve native result-video controls and the existing `Compare source` / `Close comparison` semantics.
+
+### 21F — Selection, organization and upload feedback
+- Improve the spatial entrance/exit and hierarchy of current-page Select mode and its Organize/Delete controls without changing UI-034/UI-049 semantics, 24-item bounds or best-effort behavior.
+- Organization feedback must remain truthful to server results; motion may emphasize affected cards but may not imply atomic success when per-item results differ.
+- Uploads drag/drop may inherit Kinetic Precision depth/target feedback, but the current single-image direct-upload transaction, keyboard/touch Upload button baseline and rejection behavior remain unchanged.
+
+### 21G — Responsive, accessibility and effect budget
+- Desktop and 390px layouts must keep Library navigation/search/organization, selection controls, Viewer media, Continue and Actions reachable without horizontal overflow.
+- Keyboard focus must remain high contrast over dimensional/glass surfaces; selection and comparison must be operable without pointer hover.
+- `prefers-reduced-motion` removes nonessential transforms/tilt/shared spatial movement while preserving the exact hierarchy, selection state and comparison meaning.
+- Continuous high-frequency JavaScript motion, scroll hijacking, cursor followers, full-grid parallax, WebGL/shaders and permanent particle systems are out of scope.
+- Keep the existing UI System timing/effect budget: micro feedback 120–180ms, ordinary transitions 180–260ms, larger spatial morphs roughly 260–420ms or a perceptually equivalent bounded spring.
+
+## Required visual design checkpoint before implementation
+Before Phase 21 visual implementation begins, create and review repository-backed Penpot/open-SVG design evidence (or direct Penpot frames when available) for at least:
+- Library desktop default media view;
+- Library 390px default media view;
+- Library desktop or 390px selection/organization state;
+- Viewer desktop default media stage;
+- Viewer 390px default media stage;
+- Viewer comparison on desktop and 390px.
+
+The checkpoint must demonstrate media dominance, card depth, selection readability, Viewer hierarchy and the intended card → Viewer continuity. It must explicitly show a reduced-motion/static equivalent for any interaction whose meaning could otherwise depend on motion. Existing `library-v0.1` / `library-v0.2-upload` and Media Viewer v0.1–v0.3 artifacts are historical starting points, not the Phase 21 target.
+
+## Explicitly out of scope
+- New media identity, origin semantics, search behavior, sort behavior, Favorites semantics, Collections semantics, pagination, batch bounds, delete semantics or upload transaction behavior.
+- A new Library route hierarchy, new Viewer route, modal-only Viewer replacement, third Library section, density-toggle product setting, or parallel media store.
+- New generation/post-processing capabilities, Restore, Upscale factors, model/provider controls or changes to Edit/Animate/Upscale/Reuse availability.
+- Schema migrations, Supabase/R2 contract changes, account/admission/privacy changes, worker/provider/routing changes or infrastructure recovery/deployment.
+- Create, Activity, Settings, Admin or Landing redesign; those are not Phase 21 surfaces.
+- Phase 22 implementation.
+- Production deployment.
+
+## Architecture / component boundary
+- Keep Library data/search/filter/section/pagination state server-owned and URL-addressable. `tab=uploads` remains the only non-default section parameter; Creatives remains canonical when `tab` is omitted.
+- Keep `LibraryBatchSelection` (or a deliberate feature-local extraction from it) as the transient current-page client interaction boundary. Motion state must not become selection truth.
+- Keep Media Viewer server composition with small client islands for comparison/actions/Upscale. Do not create a global media store, global animation store or client-side duplicate of owner/capability eligibility.
+- Motion is presentation state only. Stable media asset ID may key visual continuity but never authorizes access.
+- Reuse existing RenderLab primitives, Motion and Phase 19 tokens first. A feature-local media-card/viewer-motion composition may be extracted if implementation genuinely benefits from it; do not create a generic primitive before a real reuse need exists.
+- Motion Primitives or React Bits may be adopted only after the existing source/accessibility/reduced-motion/performance/license review. GSAP/Lenis are not approved for ordinary Phase 21 layout/hover continuity.
+
+## Backend / data / security implications
+- None are required by the accepted visual contract.
+- Durable media identity, owner scoping, tombstones, product content/download routes, R2 privacy and all current server validation remain unchanged.
+- Browser animation/card state must not receive worker/provider/storage identity, raw signed URLs or cross-owner data.
+- Any implementation evidence that unexpectedly requires schema, route-contract or infrastructure change must stop and amend this contract before that change proceeds.
+
+## Validation matrix
+Before Phase 21 can be marked complete:
+- `npm run lint`, `npm run typecheck`, `npm run test:unit`, `npm run verify:ui-purity` and production build pass on the final exact head.
+- Every workflow actually attached by the final implementation diff reaches terminal success. Expected minimum coverage for the current feature boundary includes Engineering Quality, UI Shell, Library Lifecycle, Library Search, Library History, Library Drag Drop, Library Favorites, Library Collections, Library Batch Delete, Media Download, Media Rename, Media Delete, Creative Iteration and Upscale Viewer Visual; implementation must audit path filters rather than treating this list as a waiver for additional attached gates.
+- Library Lifecycle (or an intentionally extended equivalent) captures final Kinetic Library + Viewer desktop/390px evidence using real owner-scoped durable media and exact cleanup.
+- Creative Iteration continues to verify eligible/ineligible comparison, Image→Image and Image→Video, keyboard operation, native video controls and reduced motion after the visual transformation.
+- Upscale Viewer continues to verify eligible/start/accepted/error Viewer states without implying job completion.
+- Existing Favorites/Collections/selection/Delete/Download/Rename/Upload behavior remains regression-clean after card/rail composition changes.
+- Human review covers at minimum desktop + 390px Library default, selection/organization, Viewer image/video, comparison and reduced-motion states. Review must reject clipped controls, hover-only meaning, excessive tilt/glow, media distortion, noisy chrome or a visually timid result that does not materially extend Kinetic Precision.
+- No permanent high-frequency animation loop or obvious scroll/layout jank is accepted in the media grid.
+- Exact configured Auth/Supabase/R2 fixtures clean after the final run-owned verification set.
+
+## Documentation outputs
+On verified implementation, update `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/COMPONENT_CATALOG.md`, `docs/ui/SCREEN_REGISTRY.md` and `docs/architecture/FRONTEND_ARCHITECTURE.md` wherever implementation changes durable visual/component/architecture state. Update infrastructure/capability docs only if verified reality actually changes those boundaries.
+
+## Exit criteria
+Phase 21 is complete only when Library visibly reads as a Kinetic Precision media workspace, opening/viewing/comparing media has coherent spatial continuity, selection/organization remains clear, every existing media product contract is preserved, exact-head functional gates are green, desktop/390px/reduced-motion renders are human-reviewed, cleanup is exact and authoritative docs match verified implementation.
+
+**Next dependency:** only after Phase 21 is complete/verified/merged and merged-main verification closes may Phase 22 — Activity, Settings, Landing & System Cohesion — be expanded from roadmap level. This contract does not pre-authorize Phase 22 or production deployment.
