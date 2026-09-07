@@ -1731,8 +1731,8 @@ The next major product pass is explicitly visual. Success is measured by user-vi
 
 ## Roadmap
 - **Phase 19 — Kinetic Foundation & App Shell:** `COMPLETE / VERIFIED` — atmospheric canvas, dimensional floating glass shell chrome, morphing active navigation, tactile feedback, fast top-level route continuity and reduced-motion/static equivalents.
-- **Phase 20 — Create as a Creative Instrument:** `READY FOR IMPLEMENTATION` — immersive instrument frame, morphing Image/Video context, reference choreography, precision-deck Advanced, tactile Generate/lifecycle states and spatial result arrival.
-- **Phase 21 — Library & Viewer Spatial Media Experience:** roadmap only until Phase 20 evidence closes.
+- **Phase 20 — Create as a Creative Instrument:** `COMPLETE / VERIFIED` — immersive instrument frame, morphing Image/Video context, reference choreography, precision-deck Advanced, tactile Generate/lifecycle states and spatial result arrival; exact functional and rendered evidence are verified below.
+- **Phase 21 — Library & Viewer Spatial Media Experience:** roadmap only; expand only after Phase 20 is merged and merged-main verification is complete.
 - **Phase 22 — Activity, Settings, Landing & System Cohesion:** roadmap only until Phase 21 evidence closes.
 
 ## Phase 19 acceptance tracker
@@ -1753,7 +1753,7 @@ UI-062 is the visual decision for this phase. No deployment is authorized by thi
 Exact implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b` is visually and functionally verified. UI Shell `34094816643` produced artifact `10008197585` (`sha256:8d6dfdc25b14b2c276d3893e720a3e81260719555e47a3f34c4119611d042448`); 1440px Create / Library / Activity, 390px Create and reduced-motion Library evidence were reviewed after the initial candidate was deliberately strengthened. Engineering Quality, Create Lifecycle, Brand / Launch, Account/Admin and Integrated Release also passed on the same exact head. Phase 19 changes only shared frontend visual/motion composition; no production deployment is implied.
 
 ## Phase 20 acceptance tracker
-**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.** UI-063 is the controlling visual/product decision. Draft PR #122; checkpoint exact head `b449cc0fbc4d87758e099b1d1d4afcd4d53595bd`.
+**Status: `COMPLETE / VERIFIED`.** UI-063 is the controlling visual/product decision. PR #122 functional acceptance head `b7358da8f71fd789249515fca87ed01a64789f5f`.
 
 - [x] Recompose the Create composer as a distinctive Kinetic Precision instrument surface without changing generation semantics.
 - [x] Add shared-layout morphing Image/Video selection while preserving one-row 390px control density.
@@ -1762,10 +1762,10 @@ Exact implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b` is visually
 - [x] Upgrade Generate into a tactile actuator with visual states derived only from truthful product lifecycle/admission state.
 - [x] Upgrade result arrival/presentation without changing durable media or continuation contracts.
 - [x] Keep reduced motion, keyboard/touch parity, focus visibility and no-horizontal-overflow behavior complete in implementation; configured lifecycle caught and corrected a 4px narrow Video overflow regression.
-- [ ] Pass the final exact-head purity/quality/build plus every attached Create/model/reference/generation/integrated regression. The connector-authored tree-identical checkpoint head exists so suppressed Actions-authored commits receive a real matrix.
-- [ ] Human-review final desktop and 390px empty/mode/reference/Advanced/active/result/reduced-motion artifacts on the final exact head.
-- [x] No optional third-party runtime was adopted; existing Motion + CSS + RenderLab primitives were sufficient. Authoritative in-progress implementation evidence is recorded, but final completion evidence remains pending.
+- [x] Pass the final exact-head purity/quality/build plus every attached Create/model/reference/generation/integrated regression. All 17 attached workflows passed on functional head `b7358da8f71fd789249515fca87ed01a64789f5f`.
+- [x] Human-review final desktop and 390px empty/mode/reference/Advanced/active/result/reduced-motion artifacts on functional head `b7358da8f71fd789249515fca87ed01a64789f5f`; Create Lifecycle `34149277859` artifact `10028815164` (`sha256:88637c653129ed7cdfba38a3b2fd5fc6022ac297cd41d4e09dcc8646cde01f3c`) is visually accepted with no corrective iteration required.
+- [x] No optional third-party runtime was adopted; existing Motion + CSS + RenderLab primitives were sufficient. Video Generation Integration `34149277852` completed all four real worker-backed Video/Animate cases and cleanup, with review artifact `10029509695` (`sha256:578216c480ed2cc55acf70167494712995617baba1bdcc10786d0a2d6e0d7dc6`).
 
 Verifier note: the active-generation lifecycle now asserts the stable `.kinetic-generate` product marker, `data-active=true` and visible `Generating` label; the earlier exact `Generate` locator failure was a stale test assumption, not a product-state failure.
 
-Production deployment remains explicit and separate. Do not mark Phase 20 complete or merge PR #122 until the final exact-head matrix and rendered review pass.
+Production deployment remains explicit and separate. Phase 20 is complete/verified at the functional and rendered-evidence boundary; PR #122 may proceed through documentation-head validation and guarded merge, but no deployment is authorized. Phase 21 remains roadmap-only until merged-main verification completes.
