@@ -512,3 +512,10 @@ The signature Phase 19 motifs are:
 **Reason:** Phase 19 successfully changed the shared shell, but the Create interior still reads primarily as a conventional form. Create is the product's signature authoring surface and therefore the highest-leverage place to deliver the user's requested futuristic, demo-quality tactility and morphing behavior while keeping RenderLab's mature backend contracts stable.
 
 **Acceptance:** final approval requires exact-head functional regressions plus human desktop/390px review of empty Image/Video, reference, Advanced, active-generation, result and reduced-motion states. A technically passing but visually timid candidate is not sufficient.
+
+#### UI-063 implementation checkpoint — 2026-09-07
+UI-063 is actively implemented on draft PR #122 from merged planning baseline `33b44663a6305ddb97122c92a5583658d69dd406`. Current exact implementation/test head at this checkpoint is `b449cc0fbc4d87758e099b1d1d4afcd4d53595bd`.
+
+The implemented candidate uses the existing Motion + CSS + RenderLab primitive stack; no GSAP, Lenis or additional animation runtime was needed. The Create composer is now a dimensional Kinetic Precision instrument, Image/Video uses a shared-layout spring treatment, references are elevated media modules, Advanced is an integrated precision deck, Generate remains visibly energized for truthful active job state, lifecycle feedback uses real RenderLab states only, and result/loading surfaces share the same visual language. Reduced-motion behavior removes transform/continuous scan effects while preserving hierarchy.
+
+Configured validation found and corrected one real 390px Video overflow regression. A later Create lifecycle failure was test-only: the verifier retained an exact `Generate` locator after the product truthfully changed the label to `Generating`; the stable product-marker assertion now verifies both active state and visible label. Final acceptance is still pending the complete exact-head workflow matrix and human review required by UI-063. This checkpoint does not mark UI-063 complete, authorize deployment, or change any generation/backend contract.

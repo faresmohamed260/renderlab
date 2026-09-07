@@ -1609,3 +1609,28 @@ Phase 20 is `COMPLETE / VERIFIED` only when:
 - reduced motion, keyboard/touch accessibility, control density and overflow remain correct;
 - the exact-head functional matrix is green and authoritative docs match verified implementation;
 - no production deployment is inferred or performed without separate explicit authorization.
+
+## Phase 20 implementation checkpoint — 2026-09-07
+**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.**
+**Draft PR:** #122 — `Implement Phase 20 Create as a Creative Instrument`
+**Base:** `main` `33b44663a6305ddb97122c92a5583658d69dd406`
+**Current exact implementation/test head at checkpoint:** `b449cc0fbc4d87758e099b1d1d4afcd4d53595bd`
+
+Verified implementation reality at this checkpoint:
+- `/create` is recomposed as a Kinetic Precision instrument surface with layered translucent depth, spectral focus response and a stronger prompt stage while preserving the existing Create route and generation contract.
+- Image/Video intent uses a shared-layout spring highlight and bounded contextual presence motion; the established 390px one-row essential-control contract remains authoritative.
+- Attached references use elevated media-module styling while preserving stable aliases, roles, ownership and continuation semantics.
+- `CreateAdvancedPanel` now renders as an integrated precision deck rather than an appended generic settings card; field visibility/validation and the dedicated Advanced control remain unchanged.
+- Generate is a luminous tactile actuator whose active presentation is driven only by real `submitting` / nonterminal job state. The lifecycle strip exposes only real RenderLab job categories and does not invent percentage progress, ETA or provider stages.
+- Loading/result surfaces use the same dimensional language and existing durable result/continuation contracts.
+- Reduced-motion equivalents remove transform/scan choreography without removing hierarchy or meaning.
+- No GSAP, Lenis or other new runtime dependency was added: the current Motion + CSS + RenderLab primitive stack proved sufficient for this slice.
+- No generation capability, model routing, worker/provider, schema, Supabase, R2, account/admission or deployment boundary changed.
+
+Validation/evidence so far:
+- A real 4px narrow Video control-row overflow introduced by the richer instrument padding was found through the configured Create lifecycle and corrected without shrinking the established controls.
+- The first active-generation verifier failure was classified as a stale test locator: the product correctly changes the actuator label from `Generate` to `Generating`, so the verifier now targets the stable `.kinetic-generate` product marker and separately asserts `data-active=true` plus visible `Generating` state.
+- Connector-authored tree-identical head `b449cc0fbc4d87758e099b1d1d4afcd4d53595bd` exists specifically so the real PR workflow matrix runs after GitHub Actions-authored helper commits were suppressed as `action_required`.
+- Final exact-head acceptance still requires terminal success for all attached workflows plus human review of desktop/390px empty Image/Video, reference, Advanced, active-generation, result and reduced-motion artifacts. Do not merge or mark Phase 20 complete before that evidence exists.
+
+Production remains unchanged. Automatic Git → Vercel deployment is disabled; Phase 20 implementation/merge does not authorize deployment.
