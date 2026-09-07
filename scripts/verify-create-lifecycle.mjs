@@ -233,6 +233,9 @@ try {
   await page.setViewportSize(mobileViewport);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("radio", { name: "Image", exact: true }).click();
+  // Give the media-query update and any already-started layout transition a bounded
+  // frame window to settle before capturing the reduced-motion acceptance state.
+  await page.waitForTimeout(500);
   const mobileImageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
   await mobileImageModel.waitFor({ state: "visible" });
   await assertCompactCreateControlRow(page, "Mobile Image");
@@ -242,6 +245,7 @@ try {
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-image-model.png`, fullPage: true });
   await page.keyboard.press("Escape");
   await page.getByRole("radio", { name: "Video", exact: true }).click();
+  await page.waitForTimeout(500);
   const reducedModeControl = page.locator('[data-create-motion="mode-control"]');
   await page.waitForFunction(
     () => document.querySelectorAll('[data-create-motion="mode-control"]').length === 1,
