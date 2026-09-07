@@ -833,8 +833,9 @@ try {
   await page.getByRole("button", { name: "Aspect ratio 16:9", exact: true }).waitFor({ state: "visible" });
   const videoSettings = page.getByRole("button", { name: "Video settings. Resolution 720p. Duration 10 seconds. Audio off", exact: true });
   await videoSettings.waitFor({ state: "visible" });
-  await videoSettings.click();
-  await page.getByRole("menuitem", { name: "Advanced controls", exact: true }).click();
+  const videoAdvancedButton = page.getByRole("button", { name: "Open Advanced controls", exact: true });
+  await videoAdvancedButton.waitFor({ state: "visible" });
+  await videoAdvancedButton.click();
   assert(await page.locator("#advanced-seed").inputValue() === "271828", "Video recipe did not prefill seed.");
   assert(await page.locator("#advanced-frame-rate").inputValue() === "25", "Video recipe did not prefill frame rate.");
   assert((await page.locator("#advanced-steps").count()) === 0 && (await page.locator("#advanced-guidance").count()) === 0, "Legacy Video steps/guidance leaked back into the current UI.");

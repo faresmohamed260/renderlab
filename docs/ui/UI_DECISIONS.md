@@ -460,3 +460,13 @@ Exact PR head `d5f80c02f041b645b7a3b1dee13d70d8139cc832` passed all 19 attached 
 
 #### UI-060 implementation verification — 2026-09-07
 Exact reconciled head `a81c02e82abb0cec6b386e4cfb69f1075f377e33` passed all 30 attached workflows, including Library Lifecycle/Search/Drag Drop, persistent upload, ownership, UI shell and affected generation/media regressions. Desktop and 390px Library artifacts were reviewed clean. PR #116 merged as `999d32812e74afdba73e3cbaa7607a64ce65d603`; all nine workflows GitHub attached to the merge SHA completed successfully. No schema/R2/worker/deployment change occurred.
+
+
+### UI-061 — Create Advanced disclosure is dedicated and the narrow control row stays compact
+**Status:** Accepted / Implemented / Exact-head verification pending
+**Date:** 2026-09-07
+**Decision:** Image and Video use the same dedicated compact Advanced disclosure button in the primary Create control row. Video's Resolution / Duration / Audio dropdown no longer contains an Advanced menu item. On narrow/mobile layouts, the non-primary Create controls remain one no-wrap row: Add reference, Image/Video intent, contextual model (Image only), aspect ratio, contextual Video settings (Video only), and Advanced. The Image model trigger uses compact visible `FLUX` / `Qwen` labels while retaining the full accessible name and full model labels/version context inside the menu. Generate remains the separate full-width primary action on narrow layouts.
+
+**Reason:** Hiding Advanced inside Video settings makes the same capability discoverable in two different ways, and the existing control widths force contextual settings onto a second row on narrow screens. The correction restores interaction parity between Image and Video while reducing chrome width instead of hiding capability.
+
+**Consequences:** This supersedes only UI-048's placement of Advanced inside the Video settings menu and the earlier Phase 7A allowance for the narrow primary-control cluster to wrap. Resolution, Duration, Audio, model intent, aspect ratios, Advanced fields, generation serialization, accessibility semantics, reduced-motion behavior and server validation are unchanged. The implementation reuses the approved Button / ToggleGroup / DropdownMenu / Collapsible layer and existing 32–36px compact visual metrics; no new primitive, route, schema, worker/provider contract or deployment is introduced. Acceptance requires configured 390px Image and Video proof that the primary controls remain on one row without horizontal overflow, plus dedicated Video Advanced interaction and existing Create lifecycle regressions.

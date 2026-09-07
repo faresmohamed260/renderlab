@@ -48,6 +48,22 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function assertCompactCreateControlRow(page, label) {
+  const metrics = await page.locator("[data-create-primary-controls]").evaluate((row) => {
+    const controls = [...row.children]
+      .map((element) => element.getBoundingClientRect())
+      .filter((rect) => rect.width > 4 && rect.height > 4);
+    return {
+      count: controls.length,
+      flexWrap: getComputedStyle(row).flexWrap,
+      overflow: row.scrollWidth - row.clientWidth,
+    };
+  });
+  assert(metrics.count >= 5, `${label} did not expose the expected compact primary controls: ${JSON.stringify(metrics)}`);
+  assert(metrics.flexWrap === "nowrap", `${label} primary controls are not constrained to one row: ${JSON.stringify(metrics)}`);
+  assert(metrics.overflow <= 2, `${label} primary controls overflowed horizontally: ${JSON.stringify(metrics)}`);
+}
+
 async function supabase(path, init = {}) {
   const headers = new Headers(init.headers);
   headers.set("apikey", supabaseKey);
@@ -145,13 +161,16 @@ try {
   assert(await generate.isEnabled(), "Configured Create did not enable Generate with a valid prompt for an authenticated account.");
 
   const imageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
+  assert((await imageModel.textContent())?.trim() === "FLUX", "Image model trigger did not use the compact FLUX label.");
   await imageModel.click();
   assert(
     (await page.getByRole("menuitemradio", { name: /FLUX\.2 Klein/ }).getAttribute("data-state")) === "checked",
     "FLUX was not the default Image model.",
   );
   await page.getByRole("menuitemradio", { name: /Qwen Image Edit/ }).click();
-  await page.getByRole("button", { name: "Image model Qwen Image Edit", exact: true }).waitFor({ state: "visible" });
+  const qwenModelButton = page.getByRole("button", { name: "Image model Qwen Image Edit", exact: true });
+  await qwenModelButton.waitFor({ state: "visible" });
+  assert((await qwenModelButton.textContent())?.trim() === "Qwen", "Image model trigger did not use the compact Qwen label.");
   await page.getByRole("button", { name: "Open Advanced controls" }).click();
   await page.getByText("Qwen uses its optimized fixed 4-step image tuning.", { exact: false }).waitFor({ state: "visible" });
   assert(await page.getByLabel("Steps").count() === 0, "Qwen incorrectly exposed configurable Steps.");
@@ -193,22 +212,27 @@ try {
   assert((await defaultResolution.getAttribute("data-state")) === "checked", "480p was not the selected Video resolution default.");
   assert(await page.getByRole("menuitemradio", { name: "2K", exact: true }).isVisible(), "2K resolution is not reachable in Video settings.");
   assert(await page.getByRole("menuitemradio", { name: "4K", exact: true }).count() === 0, "Disabled 4K leaked into Video settings.");
+  assert(await page.getByRole("menuitem", { name: /Advanced controls/ }).count() === 0, "Advanced controls are still nested inside Video settings.");
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-settings.png`, fullPage: true });
   await page.getByRole("menuitemradio", { name: "1080p", exact: true }).click();
   assert((await videoSettings.textContent())?.includes("1080p · 5 s"), "Video settings trigger did not summarize resolution and duration.");
 
-  await videoSettings.click();
-  await page.getByRole("menuitem", { name: "Advanced controls", exact: true }).click();
+  const videoAdvancedButton = page.getByRole("button", { name: "Open Advanced controls", exact: true });
+  await videoAdvancedButton.waitFor({ state: "visible", timeout: 10_000 });
+  await videoAdvancedButton.click();
   await page.getByLabel("Frame rate").waitFor({ state: "visible", timeout: 10_000 });
   assert(await page.getByLabel("Steps").count() === 0, "Inactive Video Steps control is still rendered.");
   assert(await page.getByLabel("Guidance").count() === 0, "Inactive Video Guidance control is still rendered.");
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-advanced.png`, fullPage: true });
+  await page.getByRole("button", { name: "Close Advanced controls", exact: true }).click();
 
   await page.setViewportSize(mobileViewport);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("radio", { name: "Image", exact: true }).click();
   const mobileImageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
   await mobileImageModel.waitFor({ state: "visible" });
+  await assertCompactCreateControlRow(page, "Mobile Image");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-image-controls.png`, fullPage: true });
   await mobileImageModel.click();
   await page.getByText("Image model", { exact: true }).waitFor({ state: "visible" });
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-image-model.png`, fullPage: true });
@@ -223,6 +247,8 @@ try {
   await reducedModeControl.waitFor({ state: "visible", timeout: 10_000 });
   const reducedModeTransform = await reducedModeControl.evaluate((element) => getComputedStyle(element).transform);
   assert(reducedModeTransform === "none", `Reduced-motion mode transition still applied a transform: ${reducedModeTransform}`);
+  await assertCompactCreateControlRow(page, "Mobile Video");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-video-controls-reduced.png`, fullPage: true });
   await videoSettings.click();
   await page.getByText("Resolution", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-video-settings-reduced.png`, fullPage: true });

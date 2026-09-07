@@ -72,8 +72,12 @@ test("mobile Video keeps the essential row compact and contextual settings reach
   await expect(page.getByRole("menuitemradio", { name: "2K", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitemradio", { name: "5 seconds", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitemcheckbox", { name: "Audio" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Advanced controls" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: /Advanced controls/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
+  const advanced = page.getByRole("button", { name: "Open Advanced controls", exact: true });
+  await expect(advanced).toBeVisible();
+  await advanced.click();
+  await expect(page.getByRole("combobox", { name: "Frame rate" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeVisible();
 
   await page.screenshot({ path: "artifacts/create-mobile-video.png", fullPage: true });

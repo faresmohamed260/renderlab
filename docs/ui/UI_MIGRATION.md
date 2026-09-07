@@ -1709,3 +1709,16 @@ No schema migration, worker deployment, new infrastructure resource or productio
 - [x] PR #116 merged as `999d32812e74afdba73e3cbaa7607a64ce65d603`; all nine workflows attached to the merge SHA completed successfully.
 
 This corrective item supersedes only the earlier v0.1 prohibition on Creatives/Uploads navigation. It does not create parallel Upload media identity or a second Library system. Production rollout remains separate.
+
+
+## Post-Cycle 3 Corrective Maintenance — Create control density / Advanced parity
+**Status: `IMPLEMENTED / EXACT-HEAD VERIFICATION PENDING`.**
+
+- [x] Use one dedicated Advanced button in both Image and Video modes.
+- [x] Remove Advanced from the Video Resolution / Duration / Audio dropdown without changing Video capability or request semantics.
+- [x] Compact Add reference, Image/Video intent, model/aspect/contextual settings and Advanced so the 390px primary control cluster is one no-wrap row; Generate remains the separate primary row on narrow layouts.
+- [x] Keep full accessible Image model names while using compact visible `FLUX` / `Qwen` trigger labels.
+- [x] Extend configured Create lifecycle verification to assert dedicated Video Advanced behavior, absence of nested Video Advanced, and one-row/no-horizontal-overflow Image + Video controls at 390px including reduced motion.
+- [ ] Run affected exact-head GitHub gates and human-review the final desktop + 390px Create artifacts before merge.
+
+UI-061 records this user-requested corrective composition. No new capability, schema, worker/provider path, infrastructure resource or deployment is included.
