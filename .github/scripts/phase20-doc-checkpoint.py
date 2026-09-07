@@ -14,9 +14,9 @@ append_once(
     "## Phase 20 implementation checkpoint — 2026-09-07",
     r'''
 ## Phase 20 implementation checkpoint — 2026-09-07
-**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.**  
-**Draft PR:** #122 — `Implement Phase 20 Create as a Creative Instrument`  
-**Base:** `main` `33b44663a6305ddb97122c92a5583658d69dd406`  
+**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.**
+**Draft PR:** #122 — `Implement Phase 20 Create as a Creative Instrument`
+**Base:** `main` `33b44663a6305ddb97122c92a5583658d69dd406`
 **Current exact implementation/test head at checkpoint:** `b449cc0fbc4d87758e099b1d1d4afcd4d53595bd`
 
 Verified implementation reality at this checkpoint:
