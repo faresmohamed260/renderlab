@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 8
+          fetch-depth: 10
 
       - name: Guard exact planning baseline and helper-only staging
         shell: bash
@@ -28,7 +28,6 @@ jobs:
           test "$changed" = "$expected"
 
       - name: Apply Phase 21 contract patch
-        id: patch
         shell: bash
         run: |
           python .github/phase21-contract.py
@@ -51,9 +50,10 @@ jobs:
         if: success()
         shell: bash
         run: |
+          base="6c57a21514d58924f59623177891b98fff925a8c"
           rm -f .github/phase21-contract.py .github/phase21-contract-error.txt .github/workflows/phase21-contract-docs.yml .github/workflows/phase21-contract-run.yml
           git diff --check
-          changed="$(git diff --name-only | sort)"
+          changed="$(git diff --name-only "$base" | sort)"
           expected="$(printf '%s\n' PROJECT.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/ui/SCREEN_REGISTRY.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md docs/ui/UI_SYSTEM.md | sort)"
           test "$changed" = "$expected"
           git config user.name "github-actions[bot]"
