@@ -65,11 +65,11 @@ function DesktopActiveSurface() {
   return (
     <motion.span
       layoutId="desktop-shell-active"
-      className="pointer-events-none absolute inset-0 -z-10 rounded-xl border border-white/[0.08] bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_28px_rgba(129,114,246,0.14)]"
+      className="pointer-events-none absolute inset-0 -z-10 rounded-xl border border-white/[0.09] bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_0_32px_rgba(129,114,246,0.18)]"
       transition={navSpring}
       aria-hidden="true"
     >
-      <span className="absolute inset-y-2 left-0 w-px rounded-full bg-gradient-to-b from-transparent via-accent-bright to-transparent shadow-[0_0_14px_rgba(168,156,255,0.8)]" />
+      <span className="absolute inset-y-2 left-0 w-px rounded-full bg-gradient-to-b from-transparent via-accent-bright to-transparent shadow-[0_0_16px_rgba(178,167,255,0.9)]" />
     </motion.span>
   );
 }
@@ -107,7 +107,7 @@ function NavLink({
             aria-hidden="true"
             className={cn(
               "relative z-10 transition-colors duration-200",
-              active ? "text-accent-bright drop-shadow-[0_0_10px_rgba(168,156,255,0.5)]" : "text-text-muted",
+              active ? "text-accent-bright drop-shadow-[0_0_11px_rgba(178,167,255,0.6)]" : "text-text-muted",
             )}
           />
           <span className="relative z-10">{item.label}</span>
@@ -147,7 +147,7 @@ function MobileNavLink({
           {active ? (
             <motion.span
               layoutId="mobile-shell-active"
-              className="pointer-events-none absolute inset-1 -z-10 rounded-[0.85rem] border border-white/[0.08] bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_24px_rgba(129,114,246,0.18)]"
+              className="pointer-events-none absolute inset-1 -z-10 rounded-[0.85rem] border border-white/[0.1] bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_28px_rgba(129,114,246,0.22)]"
               transition={navSpring}
               aria-hidden="true"
             />
@@ -156,7 +156,7 @@ function MobileNavLink({
             aria-hidden="true"
             className={cn(
               "relative z-10 transition-colors duration-200",
-              active ? "text-accent-bright drop-shadow-[0_0_9px_rgba(168,156,255,0.55)]" : "text-text-muted",
+              active ? "text-accent-bright drop-shadow-[0_0_10px_rgba(178,167,255,0.65)]" : "text-text-muted",
             )}
           />
           <span className="relative z-10">{item.label}</span>
@@ -196,11 +196,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [router, section]);
 
   return (
-    <div className="kinetic-app min-h-dvh text-text lg:flex">
+    <div className="kinetic-app min-h-dvh text-text lg:flex" data-kinetic-shell="true">
       <LayoutGroup id="desktop-shell-navigation">
         <aside
-          className="kinetic-glass sticky top-0 z-40 hidden h-dvh w-52 shrink-0 border-r px-4 py-5 lg:flex lg:flex-col"
+          className="kinetic-glass kinetic-rail sticky top-0 z-40 hidden h-dvh w-52 shrink-0 border-r px-4 py-5 lg:flex lg:flex-col"
           aria-label="Application navigation"
+          data-kinetic-surface="desktop-rail"
         >
           <motion.div
             whileHover={reduceMotion ? undefined : { scale: 1.018, x: 2 }}
@@ -223,7 +224,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="mx-2 mt-5 h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" aria-hidden="true" />
+          <div className="mx-2 mt-5 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" aria-hidden="true" />
 
           <nav className="mt-auto flex flex-col gap-1" aria-label="Utility navigation">
             {utilityNav.map((item) => (
@@ -234,7 +235,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </LayoutGroup>
 
       <div className="relative z-10 min-w-0 flex-1">
-        <header className="kinetic-glass sticky top-0 z-30 flex h-14 items-center border-b px-4 sm:px-6">
+        <header
+          className="kinetic-glass kinetic-topbar sticky top-0 z-30 flex h-14 items-center border-b px-4 sm:px-6"
+          data-kinetic-surface="topbar"
+        >
           <motion.div
             whileTap={reduceMotion ? undefined : { scale: 0.97 }}
             transition={navSpring}
@@ -253,12 +257,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="hidden items-center gap-2 lg:flex">
             <span
               aria-hidden="true"
-              className="size-1.5 rounded-full bg-accent-bright shadow-[0_0_14px_rgba(168,156,255,0.8)]"
+              className="size-1.5 rounded-full bg-accent-bright shadow-[0_0_16px_rgba(178,167,255,0.9)]"
             />
             <h1 className="text-sm font-semibold tracking-[0.01em] text-text/95">{title}</h1>
           </div>
 
-          <div className="ml-auto flex items-center gap-1.5 rounded-xl border border-white/[0.055] bg-black/10 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+          <div className="ml-auto flex items-center gap-1.5 rounded-xl border border-white/[0.07] bg-black/10 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.045),0_0_22px_rgba(129,114,246,0.05)]">
             <UtilityIcon reduceMotion={reduceMotion}>
               <Button asChild variant="ghost" size="icon-lg" className="rounded-lg hover:bg-white/[0.055]">
                 <Link href="/activity" prefetch={true} aria-label="Open activity">
@@ -282,6 +286,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           className="min-h-[calc(100dvh-3.5rem)] pb-24 lg:pb-0"
+          data-kinetic-content="true"
         >
           {children}
         </motion.main>
@@ -289,8 +294,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <LayoutGroup id="mobile-shell-navigation">
         <nav
-          className="kinetic-glass-strong fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 flex min-h-16 items-center gap-1 rounded-2xl border p-1.5 lg:hidden"
+          className="kinetic-glass-strong kinetic-dock fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 flex min-h-16 items-center gap-1 rounded-2xl border p-1.5 lg:hidden"
           aria-label="Mobile navigation"
+          data-kinetic-surface="mobile-dock"
         >
           <MobileNavLink item={primaryNav[0]} pathname={pathname} reduceMotion={reduceMotion} />
           <MobileNavLink item={primaryNav[1]} pathname={pathname} reduceMotion={reduceMotion} />
