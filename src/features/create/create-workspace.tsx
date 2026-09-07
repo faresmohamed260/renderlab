@@ -944,7 +944,7 @@ export function CreateWorkspace({
                   size="sm"
                   className="relative isolate shrink-0 overflow-hidden rounded-lg border border-white/[0.06] bg-black/20 p-0.5"
                 >
-                  <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1.5 data-[state=on]:bg-transparent data-[state=on]:text-text">
+                  <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
                     {outputKind === "image" ? (
                       <motion.span
                         layoutId="create-output-mode-highlight"
@@ -955,7 +955,7 @@ export function CreateWorkspace({
                     ) : null}
                     <span className="relative z-10">Image</span>
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1.5 data-[state=on]:bg-transparent data-[state=on]:text-text">
+                  <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
                     {outputKind === "video" ? (
                       <motion.span
                         layoutId="create-output-mode-highlight"
