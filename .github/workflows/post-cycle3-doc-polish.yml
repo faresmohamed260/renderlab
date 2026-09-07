@@ -1,0 +1,51 @@
+name: Post-Cycle 3 Documentation Polish
+
+on:
+  push:
+    branches:
+      - docs/post-cycle3-corrective-closure
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/post-cycle3-corrective-closure
+          fetch-depth: 0
+      - name: Remove stale pre-acceptance wording
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/ui/UI_DECISIONS.md')
+          text = path.read_text()
+          old = 'Fresh Qwen readiness audit `34064898642` / artifact `9998623751` and isolated no-provider routing proof `34065515794` are the implementation evidence before exact-head PR acceptance.'
+          new = 'Fresh Qwen readiness audit `34064898642` / artifact `9998623751` and isolated no-provider routing proof `34065515794` are the pre-acceptance implementation evidence; final exact-head and merge evidence is recorded below.'
+          if text.count(old) != 1:
+              raise SystemExit('Expected one UI-059 pre-acceptance sentence')
+          path.write_text(text.replace(old, new, 1))
+
+          path = Path('docs/ui/SCREEN_REGISTRY.md')
+          text = path.read_text()
+          old = 'Responsive Create lifecycle validation must cover the default FLUX state, Qwen menu selection, Qwen-specific Advanced composition, serialized model intent and narrow/mobile menu rendering. No top-level Models screen is approved by this extension.'
+          new = 'Responsive Create lifecycle validation covered the default FLUX state, Qwen menu selection, Qwen-specific Advanced composition, serialized model intent and narrow/mobile menu rendering. No top-level Models screen is approved by this extension.'
+          if text.count(old) != 1:
+              raise SystemExit('Expected one model validation sentence')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+      - name: Commit polish and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/post-cycle3-doc-polish.yml
+          git add docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md
+          git commit -m "Polish corrective closure wording"
+          git push origin HEAD:docs/post-cycle3-corrective-closure
