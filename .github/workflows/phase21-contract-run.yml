@@ -1,0 +1,58 @@
+name: Phase 21 contract helper
+
+on:
+  push:
+    branches:
+      - plan/phase-21-library-viewer-spatial
+    paths:
+      - ".github/workflows/phase21-contract-run.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 3
+
+      - name: Guard exact planning ancestry
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD^^)" = "6c57a21514d58924f59623177891b98fff925a8c"
+
+      - name: Apply contract patch from staged helper
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('.github/workflows/phase21-contract-docs.yml').read_text()
+          marker = "          python - <<'PY'\n"
+          end_marker = "          PY\n"
+          if marker not in source or end_marker not in source:
+              raise SystemExit('staged helper markers not found')
+          block = source.split(marker, 1)[1].split(end_marker, 1)[0]
+          code_lines = []
+          for line in block.splitlines():
+              code_lines.append(line[10:] if line.startswith('          ') else line)
+          code = '\n'.join(code_lines) + '\n'
+          exec(compile(code, 'phase21-contract-patch', 'exec'), {})
+          PY
+          git diff --check
+          git status --short
+
+      - name: Commit contract and remove helpers
+        shell: bash
+        run: |
+          rm .github/workflows/phase21-contract-docs.yml .github/workflows/phase21-contract-run.yml
+          git diff --check
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' PROJECT.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/ui/SCREEN_REGISTRY.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md docs/ui/UI_SYSTEM.md | sort)"
+          test "$changed" = "$expected"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: accept Phase 21 spatial media contract"
+          git push origin HEAD:plan/phase-21-library-viewer-spatial
