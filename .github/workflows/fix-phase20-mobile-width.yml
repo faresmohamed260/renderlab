@@ -1,0 +1,38 @@
+name: Fix Phase 20 mobile control width
+
+on:
+  push:
+    branches:
+      - work/phase-20-create-instrument
+    paths:
+      - .github/workflows/fix-phase20-mobile-width.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-20-create-instrument
+      - name: Restore compact mode width
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/features/create/create-workspace.tsx')
+          text = p.read_text()
+          old = 'overflow-hidden !px-1.5 data-[state=on]:bg-transparent'
+          if text.count(old) != 2:
+              raise SystemExit(f'expected two morphing mode items, found {text.count(old)}')
+          p.write_text(text.replace(old, 'overflow-hidden !px-1 data-[state=on]:bg-transparent'))
+          PY
+          git diff --check
+          git rm .github/workflows/fix-phase20-mobile-width.yml
+          git add src/features/create/create-workspace.tsx
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Keep Phase 20 mobile mode morph compact"
+          git push origin HEAD:work/phase-20-create-instrument
