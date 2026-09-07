@@ -26,6 +26,13 @@ async function expectDimensionalSurface(locator: import("@playwright/test").Loca
   }
 }
 
+async function waitForKineticContent(page: import("@playwright/test").Page) {
+  const content = page.locator('[data-kinetic-content="true"]');
+  await expect(content).toHaveCSS("opacity", "1");
+  await expect(content).toHaveCSS("filter", "blur(0px)");
+  await page.waitForTimeout(80);
+}
+
 test("Phase 19 renders the kinetic shell across primary desktop sections", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/create");
@@ -40,6 +47,7 @@ test("Phase 19 renders the kinetic shell across primary desktop sections", async
   await expectDimensionalSurface(topbar);
   await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute("aria-current", "page");
   await expectNoHorizontalOverflow(page);
+  await waitForKineticContent(page);
   await page.screenshot({ path: "artifacts/phase19-create-desktop.png", fullPage: true });
 
   await page.getByRole("link", { name: "Library", exact: true }).click();
@@ -47,6 +55,7 @@ test("Phase 19 renders the kinetic shell across primary desktop sections", async
   await expect(page.getByRole("link", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(shell).toBeVisible();
   await expectNoHorizontalOverflow(page);
+  await waitForKineticContent(page);
   await page.screenshot({ path: "artifacts/phase19-library-desktop.png", fullPage: true });
 
   await page.getByRole("link", { name: "Activity", exact: true }).first().click();
@@ -54,6 +63,7 @@ test("Phase 19 renders the kinetic shell across primary desktop sections", async
   await expect(page.getByRole("link", { name: "Activity", exact: true }).first()).toHaveAttribute("aria-current", "page");
   await expect(shell).toBeVisible();
   await expectNoHorizontalOverflow(page);
+  await waitForKineticContent(page);
   await page.screenshot({ path: "artifacts/phase19-activity-desktop.png", fullPage: true });
 });
 
@@ -81,6 +91,7 @@ test("Phase 19 floating mobile dock is inset, readable, and overflow-safe", asyn
   expect(topbarBox!.x + topbarBox!.width).toBeLessThan(mobileViewport.width);
   await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute("aria-current", "page");
   await expectNoHorizontalOverflow(page);
+  await waitForKineticContent(page);
   await page.screenshot({ path: "artifacts/phase19-create-mobile.png", fullPage: true });
 });
 
