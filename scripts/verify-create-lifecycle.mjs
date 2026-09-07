@@ -50,7 +50,7 @@ function assert(condition, message) {
 
 async function assertCompactCreateControlRow(page, label) {
   const metrics = await page.locator("[data-create-primary-controls]").evaluate((row) => {
-    const controls = [...row.querySelectorAll('[data-slot="button"], [data-slot="toggle-group"]')]
+    const controls = [...row.children]
       .map((element) => element.getBoundingClientRect())
       .filter((rect) => rect.width > 4 && rect.height > 4);
     const tops = controls.map((rect) => rect.top);

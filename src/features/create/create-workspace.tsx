@@ -939,9 +939,22 @@ export function CreateWorkspace({
                   <ToggleGroupItem value="video" className="px-1.5">Video</ToggleGroupItem>
                 </ToggleGroup>
 
-                {outputKind === "image" ? (
-                  <ImageModelMenu value={imageModel} onValueChange={setImageModel} />
-                ) : null}
+                <AnimatePresence initial={false} mode="popLayout">
+                  {outputKind === "image" ? (
+                    <motion.div
+                      key="image-model"
+                      layout="position"
+                      data-create-motion="mode-control"
+                      className="shrink-0"
+                      initial={reduceMotion ? false : { opacity: 0, x: 6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
+                      transition={contextTransition}
+                    >
+                      <ImageModelMenu value={imageModel} onValueChange={setImageModel} />
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
 
                 <AspectRatioMenu
                   value={aspectRatio}
