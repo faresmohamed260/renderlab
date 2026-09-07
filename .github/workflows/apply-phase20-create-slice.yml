@@ -1,0 +1,31 @@
+name: Apply Phase 20 Create slice
+
+on:
+  push:
+    branches:
+      - work/phase-20-create-instrument
+    paths:
+      - .github/workflows/apply-phase20-create-slice.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-20-create-instrument
+          fetch-depth: 0
+      - name: Apply patch
+        run: python .github/scripts/apply-phase20-create.py
+      - name: Commit implementation
+        run: |
+          git diff --check
+          git rm .github/workflows/apply-phase20-create-slice.yml .github/scripts/apply-phase20-create.py
+          git add src/features/create/create-workspace.tsx src/app/globals.css
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Implement Phase 20 Create instrument foundation"
+          git push origin HEAD:work/phase-20-create-instrument
