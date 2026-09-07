@@ -496,3 +496,19 @@ The signature Phase 19 motifs are:
 
 
 **UI-062 verification:** Phase 19 implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b` realizes the decision with floating translucent desktop rail/topbar, spectral atmospheric canvas, luminous edge treatment, shared-layout spring active navigation, tactile control response, floating mobile dock and 220ms top-level route continuity. UI Shell `34094816643` / artifact `10008197585` is the reviewed rendered evidence. Reduced motion removes continuous ambient movement and route transforms. No product/backend/deployment boundary changed.
+
+### UI-063 — Create becomes the signature Kinetic Precision creative instrument
+**Status:** Accepted / Phase 20 implementation authorized
+**Date:** 2026-09-07
+
+**Decision:** Phase 20 may deliberately redesign the internal visual composition and interaction treatment of `/create` while preserving all current product semantics. The Create workspace should feel like one coherent creative instrument: immersive prompt stage, morphing Image/Video context, media-like reference slots, a precision-oriented Advanced disclosure, a tactile Generate actuator, truthful lifecycle energy and spatial result arrival. This supersedes the earlier visual restraint only where necessary to meet the explicit Cycle 4 goal; it does not reopen generation, ownership or routing contracts.
+
+**Interaction rule:** Motion must explain state and spatial continuity. Image/Video selection may use shared-layout spring morphing; references may animate insertion/removal/reorder; Advanced may expand as a transition panel; Generate may use tactile press/luminous active state; results may arrive through bounded opacity/blur/scale/layout motion. Real product lifecycle categories may drive visual energy, but fake percentages, ETA, provider stages or decorative pseudo-progress are prohibited.
+
+**Tooling rule:** The existing Motion + CSS + RenderLab primitive stack is the default. Motion Primitives and React Bits are approved candidate sources for specific mechanics. GSAP or Lenis may be evaluated only when a concrete Phase 20 interaction cannot be expressed cleanly with the current stack; adding a second animation runtime or smooth-scroll layer merely for novelty is not approved. Watermelon UI, Kaikei.app, Taste/Vercel design-guideline skills, `awesome-design.md`, image-to-code and Emil Kowalski interaction references may inform design/review when available, but they are advisory and must pass source/license/accessibility/performance/token-fit review before any code adoption.
+
+**Guardrails:** Keep one `/create` route, current Image/Video/model/reference/Advanced semantics, current 390px essential-control density, account/admission/privacy boundaries and durable result behavior. No WebGL, cursor followers, scroll hijacking, continuous pointer physics, worker/provider exposure, schema change or deployment is authorized. Reduced motion must preserve full hierarchy without transform-dependent meaning.
+
+**Reason:** Phase 19 successfully changed the shared shell, but the Create interior still reads primarily as a conventional form. Create is the product's signature authoring surface and therefore the highest-leverage place to deliver the user's requested futuristic, demo-quality tactility and morphing behavior while keeping RenderLab's mature backend contracts stable.
+
+**Acceptance:** final approval requires exact-head functional regressions plus human desktop/390px review of empty Image/Video, reference, Advanced, active-generation, result and reduced-motion states. A technically passing but visually timid candidate is not sufficient.

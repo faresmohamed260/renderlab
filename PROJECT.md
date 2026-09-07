@@ -1379,7 +1379,7 @@ No schema migration, worker deployment, provider/routing change, new route, new 
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 19 COMPLETE / PHASE 20 NEXT`.**
+**Status: `ACTIVE / PHASE 20 CONTRACT READY`.**
 **Planning baseline:** `e85aa633caa25e1bc7fdc529d37f08d10cde3cea`.
 
 ## Objective
@@ -1494,3 +1494,118 @@ Phase 19 is complete only when a user can visibly identify the new visual era on
 - Top-level route entrance motion was tightened to 220ms with only 3px blur / 6px travel so visual continuity does not reintroduce the earlier perception of slow tab switching.
 - The implementation preserves explicit full-route prefetch plus section refresh behavior, account/privacy semantics, feature routes and product contracts. No schema, R2, worker/provider, generation capability or deployment change occurred.
 - Phase 20 may now be expanded from roadmap level into an execution contract. Production rollout remains explicit and separate.
+
+# Phase 20 Execution Contract — Create as a Creative Instrument
+**Status: `READY FOR IMPLEMENTATION`.**
+**UI decision:** UI-063.
+**Planning baseline:** `83f476c1e0b6b3bffada1300d43f6ef08be5c7ea` (Phase 19 / UI-062 merged).
+
+## Goal / user value
+Transform `/create` from a clean generation form into the signature hands-on RenderLab creative instrument. The first viewport must feel more immersive, tactile and alive while preserving every verified generation, ownership and progressive-disclosure contract.
+
+The Phase 20 user promise is visual and interaction-led:
+
+> Prompting, switching Image/Video intent, adding references, opening precision controls, starting generation and receiving a result should feel like operating one coherent creative instrument rather than filling out a stack of unrelated controls.
+
+## Verified starting state — 2026-09-07
+- Phase 19 is merged and establishes the Kinetic Precision shell, spectral atmospheric canvas, dimensional glass chrome, shared-layout spring navigation, tactile feedback and reduced-motion baseline.
+- `CreateWorkspace` already owns the complete current product intent: prompt, Image/Video mode, explicit Image model choice, aspect ratio, Video Resolution/Duration/Audio, references, Advanced controls, generation submission, lifecycle feedback and result continuation.
+- UI-061 has already compacted the primary controls into one 390px-safe row and gives Image and Video one dedicated Advanced disclosure. Phase 20 must preserve that density/availability rather than reintroduce wrapped control chrome.
+- Create already uses `motion/react` for context, reference, mode-control, Advanced and result continuity. The next pass is therefore a composition/interaction upgrade, not a new animation-runtime requirement.
+- Current composer treatment is still visually conventional: a bounded `surface-1` form with prompt field, compact controls and a separate Generate button. This is the main visual gap Phase 20 owns.
+- Existing generation state is truthful but intentionally coarse. Phase 20 may make queued/preparing/running/persisting/succeeded/failed/cancelled feel richer, but it must not fabricate percentages, provider stages, ETA or deterministic progress.
+- Production deployment remains explicit and separate. Implementation/merge does not deploy automatically.
+
+## In scope
+### 20A — Instrument frame and immersive prompt stage
+- Recompose the Create form as a distinctive Kinetic Precision instrument surface: layered translucent depth, restrained spectral rim/highlight, clearer prompt focus and more intentional internal spacing.
+- Keep the prompt itself visually dominant. Decorative atmosphere belongs at the frame/edge level rather than behind body text.
+- Add focus-within response that makes the instrument feel active without using cursor-following effects or continuous JavaScript physics.
+- Preserve the current task heading/supporting copy but integrate it spatially with the instrument rather than leaving the composer feeling like a generic card below a page heading.
+
+### 20B — Morphing Image / Video context
+- Turn the existing accessible Image/Video ToggleGroup into a shared-layout morphing selection with a restrained spring indicator.
+- Contextual model/aspect/Video settings continue to enter/leave through spatial continuity rather than hard replacement.
+- Mode changes may adjust spectral emphasis, labels and microcopy, but must not create separate Image and Video applications or routes.
+- Preserve the 390px one-row control contract and every current accessible name/semantic.
+
+### 20C — Reference media choreography
+- Make attached references read as media modules/slots rather than ordinary list rows: stronger thumbnail hierarchy, slot/alias clarity and tactile add/remove/reorder/replace response.
+- Existing stable `@imageN` aliases, primary/reference roles, source ownership and operation resolution remain authoritative.
+- Animation may clarify insertion/removal/reorder but never hide a required action or make reduced-motion users infer state from motion.
+
+### 20D — Advanced as a precision deck
+- Keep one dedicated Advanced control in both modes.
+- Recompose `CreateAdvancedPanel` as a coherent precision deck that expands from the instrument rather than reading as an appended settings form.
+- Use a transition-panel/morphing-disclosure pattern when it materially improves continuity; maintain the existing fields, model-specific visibility, validation and Reset behavior.
+- Do not expose worker/workflow/provider parameters that are not current product intent.
+
+### 20E — Generate actuator and truthful lifecycle energy
+- Make Generate the signature tactile actuator: clearer enabled/disabled hierarchy, spring press response, restrained luminous emphasis and a visibly different active-generation state.
+- Map visual energy only to real product state. Queued/preparing/running/persisting may use bounded non-percent motion; succeeded/failed/cancelled use their established semantic status roles.
+- Do not add fake progress percentages, ETA, provider-stage claims or decorative motion that implies backend progress the product cannot prove.
+- Preserve admission-limit, signed-out, upload-unavailable and generation-unavailable feedback exactly at the product-contract level.
+
+### 20F — Result arrival and continuation presentation
+- Make result arrival feel spatially connected to the instrument using bounded opacity/blur/scale/layout motion and stronger media-first presentation.
+- Preserve durable result identity, native media controls, continuation actions, Reuse Settings and all existing result semantics.
+- Result motion must not cause large layout jumps or hide the result/action hierarchy on narrow screens.
+
+### 20G — Responsive, accessibility and effect budget
+- 390px narrow layouts must keep the prompt, essential controls, Generate and result reachable with no horizontal overflow.
+- Keyboard focus, Radix semantics, screen-reader names and touch targets remain complete.
+- `prefers-reduced-motion` keeps the complete visual hierarchy while removing transform-dependent choreography and continuous ambient motion.
+- Avoid WebGL, cursor followers, scroll hijacking, permanent particle systems, large-area glow behind copy and multiple competing animation runtimes.
+
+## Optional design / interaction toolbox
+The user explicitly suggested the following as optional references/tools, not constraints. Treat them as a toolbox to evaluate against the RenderLab stack and the concrete interaction need:
+- **Motion Primitives / Motion for React:** first choice for shared-layout, spring, morphing disclosure, magnetic/tactile and layout-presence work already compatible with RenderLab.
+- **React Bits:** candidate source for selected physics-like or creative interaction patterns after accessibility/performance/reduced-motion review.
+- **GSAP:** consider only for choreography that is materially clearer or more maintainable than the existing Motion stack; do not introduce a second runtime for ordinary hover/layout transitions.
+- **Lenis:** consider only if a later surface needs deliberate smooth-scroll behavior; Phase 20 Create does not require scroll hijacking by default.
+- **Watermelon UI / Kaikei.app:** visual/component inspiration and pattern research; adoption requires stack, license, accessibility and token-fit review.
+- **Taste skill / Vercel web-design-guideline skill / `awesome-design.md`:** review heuristics when available in the active environment; they are advisory, not repository authority.
+- **Image-to-code:** acceleration aid for a specific reviewed visual reference, never a substitute for product semantics or responsive verification.
+- **Emil Kowalski design references:** interaction-quality inspiration for timing, tactility and restraint; patterns are adapted to RenderLab rather than copied as a competing visual system.
+
+No item above is mandatory and none becomes a production dependency merely because it appears in this list. Existing RenderLab primitives and Motion remain the default until a concrete gap justifies something else.
+
+## Explicitly out of scope
+- New generation capabilities, models, worker/provider routing, workflow selection, LoRA/adapters, Variations or backend parameter expansion.
+- New route or separate Image/Video apps.
+- Library/Viewer card spatial redesign (Phase 21) or Activity/Settings/Landing internal redesign (Phase 22).
+- Schema/Supabase/R2 changes, worker deployment, scheduler changes, billing or deployment.
+- WebGL/shader canvas, cursor-following particles, continuous pointer physics, audio-reactive visuals or scroll hijacking.
+- Replacing approved shadcn/Radix controls solely for visual novelty.
+
+## Architecture / component boundary
+- `CreateWorkspace` remains the single feature owner for Create composition and client interaction state.
+- `CreateAdvancedPanel` remains the Advanced field owner; visual restructuring must not duplicate validation/state.
+- Shared conventional controls continue through `src/components/ui`; any adopted external mechanic is adapted behind a RenderLab-owned wrapper/composition and recorded in `COMPONENT_CATALOG.md`.
+- Motion remains presentation state only. Generation intent, job state, account/access/admission, media identity and server validation stay in their current authoritative boundaries.
+- Prefer CSS transforms/opacity/filter and Motion layout/presence. A new runtime dependency requires a documented concrete gap, bundle/performance review and reduced-motion plan before adoption.
+
+## Required validation matrix
+Phase 20 final acceptance requires, on one exact implementation head:
+- `npm run verify:ui-purity`, lint, typecheck, unit tests and production build;
+- Create Lifecycle Visual with desktop and 390px Image + Video states;
+- Image Model Routing, Creative Iteration, Generation Admission, Generation Integration and Video Generation Integration because model/mode/Advanced/submit/result composition is affected;
+- Create Durable Upload and Reference Upload coverage for reference composition;
+- UI Shell and Integrated Release regressions;
+- any additional path-triggered account/media tests GitHub attaches;
+- rendered review of at least: empty Image, empty Video, reference-attached Edit/Animate, Advanced open, active-generation, durable result, and reduced-motion states across desktop and 390px where applicable;
+- explicit no-horizontal-overflow and keyboard/focus checks;
+- evidence that no fake progress/ETA/provider detail was introduced.
+
+## Documentation outputs
+On verified implementation update `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/COMPONENT_CATALOG.md`, `docs/ui/SCREEN_REGISTRY.md` and `docs/architecture/FRONTEND_ARCHITECTURE.md` only where implementation changes durable state. Record any external component/runtime actually adopted, including source and reason.
+
+## Exit criteria
+Phase 20 is `COMPLETE / VERIFIED` only when:
+- Create is visibly recognizable as the signature Kinetic Precision creative instrument rather than a generic form;
+- Image/Video mode, references, Advanced, Generate, active generation and result arrival feel like one coherent spatial system;
+- all existing generation/model/reference/admission/ownership semantics are preserved;
+- desktop and 390px rendered evidence is visually reviewed and clearly stronger than the Phase 19-inherited baseline;
+- reduced motion, keyboard/touch accessibility, control density and overflow remain correct;
+- the exact-head functional matrix is green and authoritative docs match verified implementation;
+- no production deployment is inferred or performed without separate explicit authorization.

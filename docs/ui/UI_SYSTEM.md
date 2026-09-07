@@ -31,7 +31,7 @@ RenderLab should feel like a **premium modern creative application**, not a defa
 - Do not add motion/effects just to imitate fashionable AI landing pages. Avoid gratuitous physics, glow, cursor effects, parallax or animation that competes with media/task focus.
 - `prefers-reduced-motion`, keyboard/touch parity, performance and accessibility remain non-negotiable. Every animated interaction needs a clear static/reduced-motion equivalent.
 
-Phase 7 Create v2 is the first planned product phase expected to deliberately apply this elevated interaction-quality bar while preserving the established RenderLab visual language.
+Cycle 4 Phase 20 is the next deliberate application of this elevated interaction-quality bar: Create becomes the signature Kinetic Precision creative instrument while preserving its mature generation, ownership and progressive-disclosure contracts.
 
 ## Semantic Color Foundation
 Dark theme is the initial product theme. Values below are the initial approved baseline and may be tuned through visual implementation review without changing their semantic roles.
@@ -368,3 +368,6 @@ The first implementation of this system belongs to `AppShell` and global semanti
 
 ### Phase 19 implemented foundation
 The Kinetic Precision foundation is now implemented at the application-shell layer. `globals.css` owns semantic spectral/glass/elevation tokens and a CSS-only low-frequency ambient canvas. `AppShell` owns floating dimensional desktop/mobile chrome, Motion shared-layout selection and tactile press/hover response, plus a deliberately short 220ms top-level route entrance. Continuous ambience uses CSS transforms/opacity; there is no permanent JavaScript animation loop. `prefers-reduced-motion` removes ambience animation and transform-dependent route movement while retaining the full static composition. This visual layer is the baseline for subsequent Cycle 4 feature work; feature content should extend it rather than create a competing atmosphere.
+
+### Cycle 4 Phase 20 sourcing note
+Phase 20 should first compose the existing RenderLab primitives, Motion for React and Phase 19 Kinetic Precision tokens. Motion Primitives and React Bits are the preferred external mechanic sources when a maintained pattern materially improves the interaction. GSAP, Lenis, Watermelon UI, Kaikei.app and design-review/reference tools suggested for Cycle 4 remain optional evaluation candidates rather than default dependencies. Any actual adoption must satisfy the existing Adoption Requirements and be recorded in `COMPONENT_CATALOG.md`; visual inspiration alone does not justify another runtime or competing component system.

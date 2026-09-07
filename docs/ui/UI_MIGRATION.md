@@ -1725,13 +1725,13 @@ UI-061 records this user-requested corrective composition. No new capability, sc
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 19 COMPLETE / PHASE 20 NEXT`.**
+**Status: `ACTIVE / PHASE 20 CONTRACT READY`.**
 
 The next major product pass is explicitly visual. Success is measured by user-visible changes to hierarchy, surfaces, motion, depth and spatial continuity, not merely by backend/performance improvements.
 
 ## Roadmap
 - **Phase 19 — Kinetic Foundation & App Shell:** `COMPLETE / VERIFIED` — atmospheric canvas, dimensional floating glass shell chrome, morphing active navigation, tactile feedback, fast top-level route continuity and reduced-motion/static equivalents.
-- **Phase 20 — Create as a Creative Instrument:** roadmap only until Phase 19 evidence closes.
+- **Phase 20 — Create as a Creative Instrument:** `READY FOR IMPLEMENTATION` — immersive instrument frame, morphing Image/Video context, reference choreography, precision-deck Advanced, tactile Generate/lifecycle states and spatial result arrival.
 - **Phase 21 — Library & Viewer Spatial Media Experience:** roadmap only until Phase 20 evidence closes.
 - **Phase 22 — Activity, Settings, Landing & System Cohesion:** roadmap only until Phase 21 evidence closes.
 
@@ -1751,3 +1751,19 @@ UI-062 is the visual decision for this phase. No deployment is authorized by thi
 
 ### Phase 19 verified closure — 2026-09-07
 Exact implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b` is visually and functionally verified. UI Shell `34094816643` produced artifact `10008197585` (`sha256:8d6dfdc25b14b2c276d3893e720a3e81260719555e47a3f34c4119611d042448`); 1440px Create / Library / Activity, 390px Create and reduced-motion Library evidence were reviewed after the initial candidate was deliberately strengthened. Engineering Quality, Create Lifecycle, Brand / Launch, Account/Admin and Integrated Release also passed on the same exact head. Phase 19 changes only shared frontend visual/motion composition; no production deployment is implied.
+
+## Phase 20 acceptance tracker
+**Status: `READY FOR IMPLEMENTATION`.** UI-063 is the controlling visual/product decision.
+
+- [ ] Recompose the Create composer as a distinctive Kinetic Precision instrument surface without changing generation semantics.
+- [ ] Add shared-layout morphing Image/Video selection while preserving one-row 390px control density.
+- [ ] Elevate reference previews/slots with truthful alias/role hierarchy and reduced-motion-safe insertion/removal/reorder feedback.
+- [ ] Recompose Advanced as a coherent precision deck using the same validated field state and dedicated control in both modes.
+- [ ] Upgrade Generate into a tactile actuator with visual states derived only from truthful product lifecycle/admission state.
+- [ ] Upgrade result arrival/presentation without changing durable media or continuation contracts.
+- [ ] Keep reduced motion, keyboard/touch parity, focus visibility and no-horizontal-overflow behavior complete.
+- [ ] Pass exact-head purity/quality/build plus affected Create/model/reference/generation/integrated regressions.
+- [ ] Human-review desktop and 390px empty/mode/reference/Advanced/active/result states and reject visually timid or noisy candidates.
+- [ ] Record only actually adopted third-party mechanics/dependencies and update authoritative docs from verified implementation reality.
+
+Production deployment remains explicit and separate.

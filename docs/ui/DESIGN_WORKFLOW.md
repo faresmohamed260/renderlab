@@ -69,3 +69,17 @@ Repository documentation should describe the design decision, not depend on an o
 - `LOCKED` — intentionally finalized and should not change without explicit product reason.
 
 A Penpot frame alone never makes implementation `APPROVED`.
+
+## Optional Cycle 4 design / interaction toolbox
+The user has suggested a broader visual-design toolbox for Cycle 4. These are **optional evaluation sources, not mandatory dependencies and not competing sources of truth**.
+
+- **Motion Primitives / Motion for React:** preferred for app-friendly morphing, shared-layout, spring, disclosure, tilt/magnetic and presence mechanics that fit the existing stack.
+- **React Bits:** candidate source for selected creative/physics-like interactions after accessibility, reduced-motion and performance review.
+- **GSAP:** candidate choreography runtime only when a concrete sequence is materially clearer or more maintainable than the existing Motion stack. Avoid dual-runtime overlap for ordinary transitions.
+- **Lenis:** candidate smooth-scroll layer only for a surface whose product experience genuinely benefits from it. Do not globally replace native scrolling or introduce scroll hijacking by default.
+- **Watermelon UI / Kaikei.app:** component and visual-pattern research sources; code adoption requires stack/license/accessibility/token-fit review.
+- **Taste skill / Vercel web-design-guideline skill / `awesome-design.md`:** advisory review heuristics when they are available in the active environment.
+- **Image-to-code:** implementation accelerator for a specific reviewed visual reference, never a source of product semantics or approval.
+- **Emil Kowalski design references:** inspiration for interaction timing, tactile feedback and restraint; adapt principles to RenderLab rather than copying a competing system.
+
+For every external source, keep the repository authority order unchanged. Prefer the smallest suitable solution, document any real adoption, and require responsive rendered review before approval.
