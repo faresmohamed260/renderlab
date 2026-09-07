@@ -1,0 +1,32 @@
+name: Phase 20 video morph clipping correction
+
+on:
+  push:
+    branches:
+      - work/phase-20-create-instrument
+    paths:
+      - .github/workflows/phase20-fix-video-morph-clip.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-20-create-instrument
+          fetch-depth: 0
+      - name: Apply video morph clipping correction
+        run: python .github/scripts/phase20-fix-video-morph-clip.py
+      - name: Commit correction and remove helper
+        shell: bash
+        run: |
+          git diff --check
+          git rm .github/workflows/phase20-fix-video-morph-clip.yml .github/scripts/phase20-fix-video-morph-clip.py
+          git add src/features/create/create-workspace.tsx
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix: stabilize Phase 20 video mode morph"
+          git push origin HEAD:work/phase-20-create-instrument
