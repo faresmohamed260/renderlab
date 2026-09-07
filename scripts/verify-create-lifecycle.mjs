@@ -202,6 +202,9 @@ try {
 
   const videoMode = page.getByRole("radio", { name: "Video", exact: true });
   await videoMode.click();
+  // Phase 20 uses bounded shared-layout motion between Image and Video. Visual
+  // acceptance screenshots should capture the settled state, not an in-flight frame.
+  await page.waitForTimeout(500);
   const videoSettings = page.getByRole("button", { name: /^Video settings\./ });
   assert(
     (await videoSettings.getAttribute("aria-label")) === "Video settings. Resolution 480p. Duration 5 seconds. Audio on",
@@ -221,6 +224,7 @@ try {
   await videoAdvancedButton.waitFor({ state: "visible", timeout: 10_000 });
   await videoAdvancedButton.click();
   await page.getByLabel("Frame rate").waitFor({ state: "visible", timeout: 10_000 });
+  await page.waitForTimeout(300);
   assert(await page.getByLabel("Steps").count() === 0, "Inactive Video Steps control is still rendered.");
   assert(await page.getByLabel("Guidance").count() === 0, "Inactive Video Guidance control is still rendered.");
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-advanced.png`, fullPage: true });
