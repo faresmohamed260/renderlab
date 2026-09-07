@@ -472,3 +472,24 @@ Exact reconciled head `a81c02e82abb0cec6b386e4cfb69f1075f377e33` passed all 30 a
 **Consequences:** This supersedes only UI-048's placement of Advanced inside the Video settings menu and the earlier Phase 7A allowance for the narrow primary-control cluster to wrap. Resolution, Duration, Audio, model intent, aspect ratios, Advanced fields, generation serialization, accessibility semantics, reduced-motion behavior and server validation are unchanged. The implementation reuses the approved Button / ToggleGroup / DropdownMenu / Collapsible layer and existing 32–36px compact visual metrics; no new primitive, route, schema, worker/provider contract or deployment is introduced.
 
 **Implementation verification — 2026-09-07:** exact final PR head `4334d76cfaf112c11ba87e961de565673551d500` passed all 11 attached workflows, including Create Lifecycle, Creative Iteration, Video Generation, Generation Admission, Integrated Release, UI Shell and Engineering Quality. Create Lifecycle `34073557139` artifact `10001298383` (`sha256:621a740704e132223122d79a520f8b56b41b5b9c83ec363478763b843e700996`) was human-reviewed on desktop and 390px: Image and Video primary controls remain on one row without horizontal overflow, Video settings contain Resolution / Duration / Audio only, and the dedicated Advanced control opens the existing Advanced panel. PR #118 squash-merged as `ea88425554a39ab904c56bbeed51ac396e0bfb38`; production deployment remains separate.
+
+
+### UI-062 — Cycle 4 uses a Kinetic Precision visual system and starts at the shared AppShell
+**Status:** Accepted / Phase 19 implementation authorized
+**Date:** 2026-09-07
+
+**Decision:** RenderLab's next visual era is **Kinetic Precision**: a dark media-first creative environment with restrained spectral atmosphere, translucent dimensional chrome, spring/shared-layout morphing, tactile interaction feedback and carefully bounded depth. Phase 19 applies the first visible layer at the shared application shell so Create, Library/Viewer, Activity and Settings immediately inherit the new visual language. The existing information architecture, destinations, product semantics and ownership boundaries remain unchanged.
+
+The signature Phase 19 motifs are:
+- atmospheric near-black canvas with low-frequency violet/electric light;
+- glass/translucent shell surfaces with subtle inner highlight and depth rather than flat opaque charcoal;
+- shared-layout spring motion for active navigation selection;
+- small press/hover/focus response that makes controls feel physical without reducing touch/keyboard parity;
+- a floating mobile navigation dock with the same active-state language;
+- reduced-motion-aware top-level route continuity.
+
+**Reason:** The current product is functionally mature but visually restrained enough to read as a conventional component-library application. The explicit product goal is now a visibly futuristic, high-end AI creative experience comparable in interaction ambition to modern model-demo sites. Starting with the shared shell establishes one coherent visual grammar before feature-level redesigns and makes the first implementation slice materially visible across the product.
+
+**Effect budget / guardrails:** Futuristic does not mean permanent spectacle. Avoid rainbow gradients, constant high-amplitude parallax, cursor-following particles, essential hover-only behavior, large-area glow behind body copy, continuous JS physics loops or expensive WebGL as baseline chrome. Continuous ambience should be CSS/transform/opacity based and subtle. Physics-like response is reserved for discrete interaction using Motion springs. `prefers-reduced-motion` must produce a complete static composition. Media, prompts and task state remain more visually important than decorative effects.
+
+**Consequences:** UI-062 deliberately evolves the approved-but-not-locked shell visual treatment and the earlier UI System warning against gratuitous effects; that warning still applies to unbounded decoration, while purposeful visible atmosphere/morphing/tactility is now an explicit product requirement. Phase 19 changes no backend capability, route, schema, worker/provider contract or deployment boundary. Feature-internal visual redesign remains sequenced into later Cycle 4 phases.
