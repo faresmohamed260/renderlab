@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1900" viewBox="0 0 1900 1900">
+  <defs>
+    <radialGradient id="bg" cx="55%" cy="8%" r="85%"><stop offset="0" stop-color="#24194b"/><stop offset=".34" stop-color="#0c0b16"/><stop offset="1" stop-color="#06070a"/></radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff" stop-opacity=".09"/><stop offset="1" stop-color="#ffffff" stop-opacity=".025"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#aa8cff"/><stop offset=".55" stop-color="#6f7cff"/><stop offset="1" stop-color="#56d4ff"/></linearGradient>
+    <linearGradient id="cardA" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#284a7b"/><stop offset="1" stop-color="#13243f"/></linearGradient>
+    <linearGradient id="cardB" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7c4a43"/><stop offset="1" stop-color="#2c181f"/></linearGradient>
+    <linearGradient id="cardC" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#315a4b"/><stop offset="1" stop-color="#122620"/></linearGradient>
+    <linearGradient id="cardD" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#58416f"/><stop offset="1" stop-color="#21172f"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="soft"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity=".48"/></filter>
+    <style>
+      text{font-family:Inter,ui-sans-serif,system-ui,sans-serif;fill:#f7f7fb}.muted{fill:#9799aa}.dim{fill:#6d7082}.title{font-size:30px;font-weight:650}.h2{font-size:22px;font-weight:640}.body{font-size:13px}.small{font-size:11px}.label{font-size:11px;font-weight:700;letter-spacing:.08em}.chip{font-size:11px;font-weight:620}
+    </style>
+  </defs>
+  <rect width="1900" height="1900" fill="#050609"/>
+  <text x="44" y="52" class="title">Phase 21 — Library Spatial Media v0.1</text>
+  <text x="44" y="78" class="body muted">UI-064 checkpoint · same Library contracts, materially stronger Kinetic Precision media hierarchy</text>
+
+  <!-- DESKTOP DEFAULT -->
+  <g transform="translate(44 110)">
+    <rect width="1280" height="780" rx="28" fill="url(#bg)" stroke="#ffffff" stroke-opacity=".10"/>
+    <ellipse cx="710" cy="65" rx="360" ry="110" fill="#7050ff" opacity=".11" filter="url(#glow)"/>
+    <!-- rail -->
+    <rect x="18" y="18" width="176" height="744" rx="24" fill="url(#glass)" stroke="#ffffff" stroke-opacity=".11"/>
+    <text x="40" y="58" class="label">RENDERLAB</text>
+    <g transform="translate(32 88)"><rect width="148" height="42" rx="13" fill="#fff" opacity=".035"/><text x="43" y="26" class="body muted">✦  Create</text></g>
+    <g transform="translate(32 138)"><rect width="148" height="42" rx="13" fill="#9b83ff" opacity=".16" stroke="#ad96ff" stroke-opacity=".28"/><circle cx="14" cy="21" r="4" fill="#b69cff"/><text x="43" y="26" class="body">▦  Library</text></g>
+    <text x="48" y="700" class="small muted">Activity</text><text x="48" y="730" class="small muted">Settings</text>
+    <!-- top chrome -->
+    <rect x="216" y="18" width="1046" height="58" rx="20" fill="url(#glass)" stroke="#ffffff" stroke-opacity=".095"/>
+    <text x="242" y="52" class="small muted">Creative archive</text><text x="1192" y="52" class="small muted">Fares ▾</text>
+    <!-- main -->
+    <g transform="translate(240 104)">
+      <text x="0" y="32" class="title">Library</text>
+      <text x="0" y="58" class="body muted">Your durable creative history, ready to inspect and continue.</text>
+      <!-- primary tabs -->
+      <g transform="translate(0 86)">
+        <rect width="226" height="44" rx="15" fill="#090a10" fill-opacity=".74" stroke="#fff" stroke-opacity=".08"/>
+        <rect x="4" y="4" width="112" height="36" rx="12" fill="url(#accent)" opacity=".24" stroke="#bdadff" stroke-opacity=".36"/>
+        <text x="27" y="27" class="chip">✦ Creatives</text><text x="142" y="27" class="chip muted">Uploads</text>
+      </g>
+      <!-- precision toolbar -->
+      <g transform="translate(0 148)" filter="url(#soft)">
+        <rect width="994" height="66" rx="20" fill="#0d0e16" fill-opacity=".82" stroke="#fff" stroke-opacity=".095"/>
+        <rect x="12" y="13" width="210" height="40" rx="13" fill="#fff" opacity=".035"/>
+        <rect x="16" y="17" width="58" height="32" rx="10" fill="#8e78ff" opacity=".18"/>
+        <text x="35" y="38" class="chip">All</text><text x="91" y="38" class="chip muted">Images</text><text x="154" y="38" class="chip muted">Videos</text>
+        <rect x="236" y="13" width="330" height="40" rx="13" fill="#07080e" stroke="#fff" stroke-opacity=".08"/>
+        <text x="254" y="38" class="small muted">⌕  Search creatives…</text>
+        <rect x="580" y="13" width="86" height="40" rx="13" fill="#fff" opacity=".035"/><text x="600" y="38" class="chip muted">♡ Favorites</text>
+        <rect x="676" y="13" width="102" height="40" rx="13" fill="#fff" opacity=".035"/><text x="693" y="38" class="chip muted">Collections</text>
+        <rect x="788" y="13" width="98" height="40" rx="13" fill="#fff" opacity=".035"/><text x="805" y="38" class="chip muted">Newest ▾</text>
+        <rect x="896" y="13" width="86" height="40" rx="13" fill="#fff" opacity=".055"/><text x="921" y="38" class="chip">Select</text>
+      </g>
+      <!-- grid -->
+      <g transform="translate(0 238)">
+        <!-- card 1 hover candidate -->
+        <g transform="translate(0 -4)" filter="url(#soft)">
+          <rect width="232" height="268" rx="18" fill="#11131b" stroke="#a58eff" stroke-opacity=".38"/>
+          <rect x="1" y="1" width="230" height="190" rx="17" fill="url(#cardA)"/>
+          <ellipse cx="118" cy="98" rx="62" ry="48" fill="#85b9ff" opacity=".65"/><ellipse cx="90" cy="72" rx="22" ry="13" fill="#d8ebff" opacity=".36"/>
+          <rect x="12" y="12" width="42" height="24" rx="9" fill="#05070c" opacity=".66"/><text x="23" y="28" class="small">IMG</text>
+          <rect x="0" y="158" width="232" height="34" fill="#080a10" opacity=".34"/>
+          <text x="14" y="218" class="body">Cobalt orbit study</text><text x="14" y="242" class="small muted">Image · 2m ago</text>
+          <circle cx="210" cy="238" r="3" fill="#9c85ff"/>
+        </g>
+        <g transform="translate(250 0)"><rect width="232" height="268" rx="18" fill="#10121a" stroke="#fff" stroke-opacity=".09"/><rect x="1" y="1" width="230" height="190" rx="17" fill="url(#cardB)"/><circle cx="116" cy="88" r="49" fill="#d99a77" opacity=".66"/><rect x="73" y="40" width="86" height="112" rx="42" fill="#3d2028" opacity=".48"/><text x="14" y="218" class="body">Editorial ember portrait</text><text x="14" y="242" class="small muted">Image · Today</text></g>
+        <g transform="translate(500 0)"><rect width="232" height="268" rx="18" fill="#10121a" stroke="#fff" stroke-opacity=".09"/><rect x="1" y="1" width="230" height="190" rx="17" fill="url(#cardC)"/><path d="M30 150 Q105 56 202 125" fill="none" stroke="#9fe1bd" stroke-width="14" opacity=".48"/><circle cx="118" cy="94" r="26" fill="#d3ffe4" opacity=".24"/><rect x="12" y="12" width="48" height="24" rx="9" fill="#05070c" opacity=".66"/><text x="22" y="28" class="small">VIDEO</text><polygon points="105,76 105,112 136,94" fill="#fff" opacity=".84"/><text x="14" y="218" class="body">Moss drift / slow camera</text><text x="14" y="242" class="small muted">Video · Today</text></g>
+        <g transform="translate(750 0)"><rect width="232" height="268" rx="18" fill="#10121a" stroke="#fff" stroke-opacity=".09"/><rect x="1" y="1" width="230" height="190" rx="17" fill="url(#cardD)"/><path d="M48 148 L92 48 L132 136 L188 58" fill="none" stroke="#cda7ff" stroke-width="18" opacity=".42"/><text x="14" y="218" class="body">Glassfold material study</text><text x="14" y="242" class="small muted">Image · Yesterday</text></g>
+        <g transform="translate(0 288)" opacity=".92"><rect width="232" height="150" rx="18" fill="#11131b" stroke="#fff" stroke-opacity=".07"/><rect x="1" y="1" width="230" height="110" rx="17" fill="#25303e"/><text x="14" y="134" class="small muted">Night architecture study</text></g>
+        <g transform="translate(250 288)" opacity=".92"><rect width="232" height="150" rx="18" fill="#11131b" stroke="#fff" stroke-opacity=".07"/><rect x="1" y="1" width="230" height="110" rx="17" fill="#3a3028"/><text x="14" y="134" class="small muted">Sandstone product frame</text></g>
+        <g transform="translate(500 288)" opacity=".92"><rect width="232" height="150" rx="18" fill="#11131b" stroke="#fff" stroke-opacity=".07"/><rect x="1" y="1" width="230" height="110" rx="17" fill="#1d3340"/><text x="14" y="134" class="small muted">Ocean nocturne</text></g>
+        <g transform="translate(750 288)" opacity=".92"><rect width="232" height="150" rx="18" fill="#11131b" stroke="#fff" stroke-opacity=".07"/><rect x="1" y="1" width="230" height="110" rx="17" fill="#33402e"/><text x="14" y="134" class="small muted">Botanical macro</text></g>
+      </g>
+    </g>
+  </g>
+  <text x="56" y="918" class="label muted">DESKTOP DEFAULT · media card may lift ≤4px / rotate ≤1.2° on fine pointer; static focus ring is equivalent meaning</text>
+
+  <!-- MOBILE DEFAULT -->
+  <g transform="translate(1370 110)">
+    <rect width="390" height="780" rx="30" fill="url(#bg)" stroke="#fff" stroke-opacity=".11"/>
+    <ellipse cx="210" cy="80" rx="170" ry="90" fill="#7359ff" opacity=".12" filter="url(#glow)"/>
+    <text x="20" y="44" class="label">LIBRARY</text><text x="332" y="44" class="small muted">•••</text>
+    <text x="20" y="92" class="h2">Library</text><text x="20" y="116" class="small muted">Your durable creative history.</text>
+    <rect x="20" y="140" width="218" height="42" rx="14" fill="#090a10" stroke="#fff" stroke-opacity=".08"/>
+    <rect x="24" y="144" width="106" height="34" rx="11" fill="#8f78ff" opacity=".2"/><text x="45" y="166" class="chip">✦ Creatives</text><text x="153" y="166" class="chip muted">Uploads</text>
+    <rect x="20" y="198" width="350" height="42" rx="13" fill="#0b0d14" stroke="#fff" stroke-opacity=".08"/><text x="38" y="224" class="small muted">⌕  Search creatives…</text>
+    <g transform="translate(20 254)"><rect width="350" height="42" rx="14" fill="#0b0d14" stroke="#fff" stroke-opacity=".075"/><rect x="4" y="4" width="54" height="34" rx="11" fill="#8c75ff" opacity=".18"/><text x="22" y="26" class="chip">All</text><text x="76" y="26" class="chip muted">Images</text><text x="136" y="26" class="chip muted">Videos</text><text x="220" y="26" class="chip muted">Newest ▾</text><text x="306" y="26" class="chip">Select</text></g>
+    <g transform="translate(20 312)">
+      <g><rect width="168" height="204" rx="16" fill="#10121a" stroke="#9f88ff" stroke-opacity=".28"/><rect x="1" y="1" width="166" height="144" rx="15" fill="url(#cardA)"/><ellipse cx="84" cy="72" rx="42" ry="32" fill="#83b8ff" opacity=".62"/><text x="10" y="168" class="small">Cobalt orbit</text><text x="10" y="189" class="small muted">Image · 2m</text></g>
+      <g transform="translate(182 0)"><rect width="168" height="204" rx="16" fill="#10121a" stroke="#fff" stroke-opacity=".08"/><rect x="1" y="1" width="166" height="144" rx="15" fill="url(#cardB)"/><circle cx="84" cy="70" r="38" fill="#d99574" opacity=".55"/><text x="10" y="168" class="small">Ember portrait</text><text x="10" y="189" class="small muted">Image · Today</text></g>
+      <g transform="translate(0 218)"><rect width="168" height="204" rx="16" fill="#10121a" stroke="#fff" stroke-opacity=".08"/><rect x="1" y="1" width="166" height="144" rx="15" fill="url(#cardC)"/><polygon points="72,54 72,88 102,71" fill="#fff" opacity=".84"/><text x="10" y="168" class="small">Moss drift</text><text x="10" y="189" class="small muted">Video · Today</text></g>
+      <g transform="translate(182 218)"><rect width="168" height="204" rx="16" fill="#10121a" stroke="#fff" stroke-opacity=".08"/><rect x="1" y="1" width="166" height="144" rx="15" fill="url(#cardD)"/><text x="10" y="168" class="small">Glassfold study</text><text x="10" y="189" class="small muted">Image · Yesterday</text></g>
+    </g>
+    <rect x="58" y="714" width="274" height="48" rx="18" fill="#10121a" fill-opacity=".92" stroke="#fff" stroke-opacity=".10"/><text x="84" y="744" class="small muted">Create</text><text x="177" y="744" class="small">Library</text><text x="269" y="744" class="small muted">Activity</text>
+  </g>
+  <text x="1374" y="918" class="label muted">390PX DEFAULT · no hover dependency · same hierarchy under reduced motion</text>
+
+  <!-- SELECTION STATE -->
+  <g transform="translate(44 990)">
+    <rect width="1716" height="820" rx="28" fill="url(#bg)" stroke="#fff" stroke-opacity=".10"/>
+    <text x="34" y="54" class="h2">Selection / organization state</text><text x="34" y="78" class="body muted">Transient current-page selection stays explicit; toolbar enters spatially but truth is the static checked/ring state.</text>
+    <g transform="translate(34 110)">
+      <rect width="1150" height="78" rx="22" fill="#0d0f18" stroke="#b39dff" stroke-opacity=".22" filter="url(#soft)"/>
+      <circle cx="34" cy="39" r="14" fill="url(#accent)"/><text x="30" y="44" class="small">3</text>
+      <text x="60" y="34" class="body">3 selected</text><text x="60" y="54" class="small muted">Current page only · up to 24</text>
+      <rect x="724" y="18" width="122" height="42" rx="13" fill="#fff" opacity=".05"/><text x="747" y="44" class="chip">Organize ▾</text>
+      <rect x="858" y="18" width="122" height="42" rx="13" fill="#ff5c73" opacity=".10" stroke="#ff7185" stroke-opacity=".20"/><text x="894" y="44" class="chip">Delete</text>
+      <rect x="992" y="18" width="140" height="42" rx="13" fill="#8e78ff" opacity=".18"/><text x="1040" y="44" class="chip">Done</text>
+    </g>
+    <g transform="translate(34 218)">
+      <g><rect width="265" height="305" rx="20" fill="#11131b" stroke="#b59fff" stroke-width="2"/><rect x="5" y="5" width="255" height="215" rx="17" fill="url(#cardA)"/><circle cx="236" cy="30" r="15" fill="url(#accent)"/><path d="M229 30l5 5 9-11" fill="none" stroke="#fff" stroke-width="2"/><text x="16" y="250" class="body">Cobalt orbit study</text><text x="16" y="278" class="small muted">Image · 2m ago</text></g>
+      <g transform="translate(285 0)"><rect width="265" height="305" rx="20" fill="#11131b" stroke="#b59fff" stroke-width="2"/><rect x="5" y="5" width="255" height="215" rx="17" fill="url(#cardB)"/><circle cx="236" cy="30" r="15" fill="url(#accent)"/><path d="M229 30l5 5 9-11" fill="none" stroke="#fff" stroke-width="2"/><text x="16" y="250" class="body">Editorial ember portrait</text><text x="16" y="278" class="small muted">Image · Today</text></g>
+      <g transform="translate(570 0)"><rect width="265" height="305" rx="20" fill="#11131b" stroke="#fff" stroke-opacity=".09"/><rect x="5" y="5" width="255" height="215" rx="17" fill="url(#cardC)"/><circle cx="236" cy="30" r="15" fill="#0d0f16" stroke="#fff" stroke-opacity=".30"/><text x="16" y="250" class="body">Moss drift / slow camera</text><text x="16" y="278" class="small muted">Video · Today</text></g>
+      <g transform="translate(855 0)"><rect width="265" height="305" rx="20" fill="#11131b" stroke="#b59fff" stroke-width="2"/><rect x="5" y="5" width="255" height="215" rx="17" fill="url(#cardD)"/><circle cx="236" cy="30" r="15" fill="url(#accent)"/><path d="M229 30l5 5 9-11" fill="none" stroke="#fff" stroke-width="2"/><text x="16" y="250" class="body">Glassfold material study</text><text x="16" y="278" class="small muted">Image · Yesterday</text></g>
+    </g>
+    <g transform="translate(1228 110)">
+      <rect width="454" height="530" rx="24" fill="#0d0f18" stroke="#fff" stroke-opacity=".09"/>
+      <text x="24" y="42" class="label">REDUCED MOTION / TOUCH</text>
+      <text x="24" y="76" class="body">Selection meaning remains entirely static:</text>
+      <text x="24" y="104" class="small muted">• 2px spectral ring + checked badge</text>
+      <text x="24" y="130" class="small muted">• toolbar appears without translate/scale</text>
+      <text x="24" y="156" class="small muted">• no card tilt, parallax, or hover-only controls</text>
+      <rect x="24" y="196" width="406" height="144" rx="18" fill="#11131b" stroke="#b59fff" stroke-width="2"/><rect x="36" y="208" width="154" height="120" rx="14" fill="url(#cardA)"/><circle cx="402" cy="224" r="15" fill="url(#accent)"/><path d="M395 224l5 5 9-11" fill="none" stroke="#fff" stroke-width="2"/><text x="212" y="248" class="body">Selected media</text><text x="212" y="274" class="small muted">Same readable state at rest.</text>
+      <text x="24" y="390" class="label">MOTION BUDGET</text><text x="24" y="420" class="small muted">Card hover: 120–180ms / ≤4px lift</text><text x="24" y="446" class="small muted">Selection toolbar: 180–220ms presence</text><text x="24" y="472" class="small muted">No continuous JS loop.</text>
+    </g>
+  </g>
+</svg>
