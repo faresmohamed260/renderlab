@@ -53,15 +53,14 @@ async function assertCompactCreateControlRow(page, label) {
     const controls = [...row.children]
       .map((element) => element.getBoundingClientRect())
       .filter((rect) => rect.width > 4 && rect.height > 4);
-    const tops = controls.map((rect) => rect.top);
     return {
       count: controls.length,
-      topSpread: tops.length ? Math.max(...tops) - Math.min(...tops) : 0,
+      flexWrap: getComputedStyle(row).flexWrap,
       overflow: row.scrollWidth - row.clientWidth,
     };
   });
   assert(metrics.count >= 5, `${label} did not expose the expected compact primary controls: ${JSON.stringify(metrics)}`);
-  assert(metrics.topSpread <= 2, `${label} primary controls wrapped onto multiple rows: ${JSON.stringify(metrics)}`);
+  assert(metrics.flexWrap === "nowrap", `${label} primary controls are not constrained to one row: ${JSON.stringify(metrics)}`);
   assert(metrics.overflow <= 2, `${label} primary controls overflowed horizontally: ${JSON.stringify(metrics)}`);
 }
 
