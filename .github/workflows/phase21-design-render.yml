@@ -28,7 +28,7 @@ jobs:
           rsvg-convert -w 950 design/penpot/phase21-library-spatial-v0.1.svg -o /tmp/phase21-render/library.png
           rsvg-convert -w 950 design/penpot/phase21-viewer-spatial-v0.1.svg -o /tmp/phase21-render/viewer.png
           rsvg-convert -w 950 design/penpot/phase21-compare-spatial-v0.1.svg -o /tmp/phase21-render/compare.png
-          magick /tmp/phase21-render/library.png /tmp/phase21-render/viewer.png /tmp/phase21-render/compare.png -append -resize 900x -quality 48 design/penpot/phase21-spatial-media-v0.1-review.jpg
+          convert /tmp/phase21-render/library.png /tmp/phase21-render/viewer.png /tmp/phase21-render/compare.png -append -resize 900x -quality 48 design/penpot/phase21-spatial-media-v0.1-review.jpg
           identify design/penpot/phase21-spatial-media-v0.1-review.jpg
 
       - name: Commit rendered evidence and remove helper
