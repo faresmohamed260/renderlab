@@ -282,9 +282,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <motion.main
           key={section ?? pathname}
-          initial={reduceMotion ? false : { opacity: 0.7, y: 9, filter: "blur(6px)" }}
+          initial={reduceMotion ? false : { opacity: 0.84, y: 6, filter: "blur(3px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           className="min-h-[calc(100dvh-5rem)] pb-28 pt-2 lg:pb-3 lg:pr-3"
           data-kinetic-content="true"
         >
