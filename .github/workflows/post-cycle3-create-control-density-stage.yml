@@ -1,0 +1,419 @@
+name: Stage Create control density correction
+
+on:
+  push:
+    branches:
+      - work/post-cycle3-create-control-density
+    paths:
+      - .github/workflows/post-cycle3-create-control-density-stage.yml
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/post-cycle3-create-control-density
+          fetch-depth: 0
+
+      - name: Apply corrective Create composition and verification
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one exact match, found {count}\n--- target ---\n{old}")
+              p.write_text(text.replace(old, new, 1))
+
+          workspace = "src/features/create/create-workspace.tsx"
+
+          replace_once(
+              workspace,
+              'const createMotionTween = { duration: 0.2, ease: "easeOut" } as const;\nconst createMotionSpring = { type: "spring", stiffness: 420, damping: 38, mass: 0.7 } as const;\n',
+              'const createMotionTween = { duration: 0.2, ease: "easeOut" } as const;\nconst createMotionSpring = { type: "spring", stiffness: 420, damping: 38, mass: 0.7 } as const;\nconst imageModelTriggerLabels: Record<ImageGenerationModel, string> = {\n  "flux2-klein-9b": "FLUX",\n  "qwen-image-edit-2511": "Qwen",\n};\n',
+          )
+
+          replace_once(
+              workspace,
+              '''        <Button
+          type="button"
+          variant="secondary"
+          aria-label={`Image model ${selected.label}`}
+          className="shrink-0 gap-1.5"
+        >
+          <span>{selected.label}</span>
+          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+        </Button>''',
+              '''        <Button
+          type="button"
+          variant="secondary"
+          size="xs"
+          aria-label={`Image model ${selected.label}`}
+          className="shrink-0 gap-1 px-2"
+        >
+          <span>{imageModelTriggerLabels[value]}</span>
+          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+        </Button>''',
+          )
+
+          replace_once(
+              workspace,
+              '''        <Button
+          type="button"
+          variant="secondary"
+          aria-label={`Aspect ratio ${value === "original" ? "Original" : value}`}
+          className="shrink-0 gap-1.5"
+        >
+          {value === "original" ? "Original" : value}
+          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+        </Button>''',
+              '''        <Button
+          type="button"
+          variant="secondary"
+          size="xs"
+          aria-label={`Aspect ratio ${value === "original" ? "Original" : value}`}
+          className="shrink-0 gap-1 px-2"
+        >
+          {value === "original" ? "Original" : value}
+          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+        </Button>''',
+          )
+
+          replace_once(workspace, '  advancedOpen,\n', '')
+          replace_once(workspace, '  onAdvancedToggle,\n', '')
+          replace_once(workspace, '  advancedOpen: boolean;\n', '')
+          replace_once(workspace, '  onAdvancedToggle: () => void;\n', '')
+
+          replace_once(
+              workspace,
+              '''        <Button
+          type="button"
+          variant="secondary"
+          aria-label={`Video settings. Resolution ${resolution}. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
+          className="shrink-0 gap-1.5"
+        >''',
+              '''        <Button
+          type="button"
+          variant="secondary"
+          size="xs"
+          aria-label={`Video settings. Resolution ${resolution}. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
+          className="shrink-0 gap-1 px-2"
+        >''',
+          )
+
+          replace_once(
+              workspace,
+              '''        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onAdvancedToggle}>
+          <MoreHorizontal aria-hidden="true" />
+          {advancedOpen ? "Hide Advanced controls" : "Advanced controls"}
+        </DropdownMenuItem>
+''',
+              '',
+          )
+
+          replace_once(
+              workspace,
+              '              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:flex-nowrap sm:overflow-visible sm:pb-0">',
+              '              <div data-create-primary-controls className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 pb-1 sm:gap-2 sm:pb-0">',
+          )
+
+          replace_once(
+              workspace,
+              '''                  variant="secondary"
+                  size="icon"
+                  disabled={
+                    !accountAvailable''',
+              '''                  variant="secondary"
+                  size="icon-sm"
+                  disabled={
+                    !accountAvailable''',
+          )
+
+          replace_once(
+              workspace,
+              '''                  size="sm"
+                  className="shrink-0"
+                >
+                  <ToggleGroupItem value="image">Image</ToggleGroupItem>
+                  <ToggleGroupItem value="video">Video</ToggleGroupItem>''',
+              '''                  size="sm"
+                  className="shrink-0 p-0.5"
+                >
+                  <ToggleGroupItem value="image" className="px-1.5">Image</ToggleGroupItem>
+                  <ToggleGroupItem value="video" className="px-1.5">Video</ToggleGroupItem>''',
+          )
+
+          p = Path(workspace)
+          text = p.read_text()
+          pattern = re.compile(r'''\n                <AnimatePresence initial=\{false\} mode="popLayout">\n                  <motion\.div\n                    key=\{outputKind\}.*?\n                </AnimatePresence>''', re.S)
+          replacement = '''
+                <AnimatePresence initial={false} mode="popLayout">
+                  {outputKind === "video" ? (
+                    <motion.div
+                      key="video-settings"
+                      layout="position"
+                      data-create-motion="mode-control"
+                      className="shrink-0"
+                      initial={reduceMotion ? false : { opacity: 0, x: 6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
+                      transition={contextTransition}
+                    >
+                      <VideoSettingsMenu
+                        resolution={videoResolution}
+                        durationSeconds={durationSeconds}
+                        audioEnabled={audioEnabled}
+                        onResolutionChange={(value) => {
+                          setVideoResolution(value);
+                          setError(null);
+                        }}
+                        onDurationChange={(value) => {
+                          setDurationSeconds(value);
+                          setError(null);
+                        }}
+                        onAudioChange={(value) => {
+                          setAudioEnabled(value);
+                          setError(null);
+                        }}
+                      />
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    aria-pressed={advancedOpen}
+                    aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
+                    title="Advanced generation controls"
+                    className={advancedOpen ? "bg-surface-3" : undefined}
+                  >
+                    <MoreHorizontal aria-hidden="true" />
+                  </Button>
+                </CollapsibleTrigger>'''
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f"{workspace}: could not replace mode-specific controls block (count={count})")
+          p.write_text(text)
+
+          verifier = "scripts/verify-create-lifecycle.mjs"
+          replace_once(
+              verifier,
+              '''function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+''',
+              '''function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+async function assertCompactCreateControlRow(page, label) {
+  const metrics = await page.locator("[data-create-primary-controls]").evaluate((row) => {
+    const controls = [...row.querySelectorAll('[data-slot="button"], [data-slot="toggle-group"]')]
+      .map((element) => element.getBoundingClientRect())
+      .filter((rect) => rect.width > 4 && rect.height > 4);
+    const tops = controls.map((rect) => rect.top);
+    return {
+      count: controls.length,
+      topSpread: tops.length ? Math.max(...tops) - Math.min(...tops) : 0,
+      overflow: row.scrollWidth - row.clientWidth,
+    };
+  });
+  assert(metrics.count >= 5, `${label} did not expose the expected compact primary controls: ${JSON.stringify(metrics)}`);
+  assert(metrics.topSpread <= 2, `${label} primary controls wrapped onto multiple rows: ${JSON.stringify(metrics)}`);
+  assert(metrics.overflow <= 2, `${label} primary controls overflowed horizontally: ${JSON.stringify(metrics)}`);
+}
+''',
+          )
+
+          replace_once(
+              verifier,
+              '''  const imageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
+  await imageModel.click();''',
+              '''  const imageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
+  assert((await imageModel.textContent())?.trim() === "FLUX", "Image model trigger did not use the compact FLUX label.");
+  await imageModel.click();''',
+          )
+
+          replace_once(
+              verifier,
+              '''  await page.getByRole("menuitemradio", { name: /Qwen Image Edit/ }).click();
+  await page.getByRole("button", { name: "Image model Qwen Image Edit", exact: true }).waitFor({ state: "visible" });''',
+              '''  await page.getByRole("menuitemradio", { name: /Qwen Image Edit/ }).click();
+  const qwenModelButton = page.getByRole("button", { name: "Image model Qwen Image Edit", exact: true });
+  await qwenModelButton.waitFor({ state: "visible" });
+  assert((await qwenModelButton.textContent())?.trim() === "Qwen", "Image model trigger did not use the compact Qwen label.");''',
+          )
+
+          replace_once(
+              verifier,
+              '''  assert(await page.getByRole("menuitemradio", { name: "4K", exact: true }).count() === 0, "Disabled 4K leaked into Video settings.");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-settings.png`, fullPage: true });''',
+              '''  assert(await page.getByRole("menuitemradio", { name: "4K", exact: true }).count() === 0, "Disabled 4K leaked into Video settings.");
+  assert(await page.getByRole("menuitem", { name: /Advanced controls/ }).count() === 0, "Advanced controls are still nested inside Video settings.");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-settings.png`, fullPage: true });''',
+          )
+
+          replace_once(
+              verifier,
+              '''  await videoSettings.click();
+  await page.getByRole("menuitem", { name: "Advanced controls", exact: true }).click();
+  await page.getByLabel("Frame rate").waitFor({ state: "visible", timeout: 10_000 });''',
+              '''  const videoAdvancedButton = page.getByRole("button", { name: "Open Advanced controls", exact: true });
+  await videoAdvancedButton.waitFor({ state: "visible", timeout: 10_000 });
+  await videoAdvancedButton.click();
+  await page.getByLabel("Frame rate").waitFor({ state: "visible", timeout: 10_000 });''',
+          )
+
+          replace_once(
+              verifier,
+              '''  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-advanced.png`, fullPage: true });
+
+  await page.setViewportSize(mobileViewport);''',
+              '''  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-advanced.png`, fullPage: true });
+  await page.getByRole("button", { name: "Close Advanced controls", exact: true }).click();
+
+  await page.setViewportSize(mobileViewport);''',
+          )
+
+          replace_once(
+              verifier,
+              '''  const mobileImageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
+  await mobileImageModel.waitFor({ state: "visible" });
+  await mobileImageModel.click();''',
+              '''  const mobileImageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
+  await mobileImageModel.waitFor({ state: "visible" });
+  await assertCompactCreateControlRow(page, "Mobile Image");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-image-controls.png`, fullPage: true });
+  await mobileImageModel.click();''',
+          )
+
+          replace_once(
+              verifier,
+              '''  const reducedModeTransform = await reducedModeControl.evaluate((element) => getComputedStyle(element).transform);
+  assert(reducedModeTransform === "none", `Reduced-motion mode transition still applied a transform: ${reducedModeTransform}`);
+  await videoSettings.click();''',
+              '''  const reducedModeTransform = await reducedModeControl.evaluate((element) => getComputedStyle(element).transform);
+  assert(reducedModeTransform === "none", `Reduced-motion mode transition still applied a transform: ${reducedModeTransform}`);
+  await assertCompactCreateControlRow(page, "Mobile Video");
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-video-controls-reduced.png`, fullPage: true });
+  await videoSettings.click();''',
+          )
+
+          # Durable UI decision / current-work documentation.
+          ui_decisions = Path("docs/ui/UI_DECISIONS.md")
+          text = ui_decisions.read_text()
+          marker = "### UI-061 — Create Advanced disclosure is dedicated and the narrow control row stays compact"
+          if marker in text:
+              raise SystemExit("UI-061 already exists")
+          text += '''
+
+### UI-061 — Create Advanced disclosure is dedicated and the narrow control row stays compact
+**Status:** Accepted / Implemented / Exact-head verification pending
+**Date:** 2026-09-07
+**Decision:** Image and Video use the same dedicated compact Advanced disclosure button in the primary Create control row. Video's Resolution / Duration / Audio dropdown no longer contains an Advanced menu item. On narrow/mobile layouts, the non-primary Create controls remain one no-wrap row: Add reference, Image/Video intent, contextual model (Image only), aspect ratio, contextual Video settings (Video only), and Advanced. The Image model trigger uses compact visible `FLUX` / `Qwen` labels while retaining the full accessible name and full model labels/version context inside the menu. Generate remains the separate full-width primary action on narrow layouts.
+
+**Reason:** Hiding Advanced inside Video settings makes the same capability discoverable in two different ways, and the existing control widths force contextual settings onto a second row on narrow screens. The correction restores interaction parity between Image and Video while reducing chrome width instead of hiding capability.
+
+**Consequences:** This supersedes only UI-048's placement of Advanced inside the Video settings menu and the earlier Phase 7A allowance for the narrow primary-control cluster to wrap. Resolution, Duration, Audio, model intent, aspect ratios, Advanced fields, generation serialization, accessibility semantics, reduced-motion behavior and server validation are unchanged. The implementation reuses the approved Button / ToggleGroup / DropdownMenu / Collapsible layer and existing 32–36px compact visual metrics; no new primitive, route, schema, worker/provider contract or deployment is introduced. Acceptance requires configured 390px Image and Video proof that the primary controls remain on one row without horizontal overflow, plus dedicated Video Advanced interaction and existing Create lifecycle regressions.
+'''
+          ui_decisions.write_text(text)
+
+          project = Path("PROJECT.md")
+          text = project.read_text()
+          marker = "## Post-Cycle 3 Corrective Maintenance — Create control density / Advanced parity"
+          if marker in text:
+              raise SystemExit("PROJECT corrective item already exists")
+          text += '''
+
+## Post-Cycle 3 Corrective Maintenance — Create control density / Advanced parity
+**Status: `IMPLEMENTED / EXACT-HEAD VERIFICATION PENDING`.**
+
+- [x] Give Image and Video the same dedicated Advanced disclosure button; remove Advanced from the Video Resolution / Duration / Audio menu.
+- [x] Compact the narrow Create control chrome so Image and Video contextual controls stay on one no-wrap row while Generate remains the full-width primary action below on narrow layouts.
+- [x] Keep full accessible model naming while shortening the visible Image-model trigger to `FLUX` / `Qwen` so the current productized model choice fits the compact row without hiding it.
+- [x] Keep resolution, duration, audio, aspect, model intent, Advanced values, serialization, worker routing and generation capability unchanged.
+- [x] Extend configured Create lifecycle verification with dedicated Video Advanced coverage plus 390px one-row/no-overflow assertions for both Image and Video.
+- [ ] Complete exact-head affected CI and human responsive artifact review before merge.
+
+No schema migration, worker deployment, provider/routing change, new route, new primitive or production rollout is authorized by this corrective item.
+'''
+          project.write_text(text)
+
+          migration = Path("docs/ui/UI_MIGRATION.md")
+          text = migration.read_text()
+          marker = "## Post-Cycle 3 Corrective Maintenance — Create control density / Advanced parity"
+          if marker in text:
+              raise SystemExit("UI_MIGRATION corrective item already exists")
+          text += '''
+
+## Post-Cycle 3 Corrective Maintenance — Create control density / Advanced parity
+**Status: `IMPLEMENTED / EXACT-HEAD VERIFICATION PENDING`.**
+
+- [x] Use one dedicated Advanced button in both Image and Video modes.
+- [x] Remove Advanced from the Video Resolution / Duration / Audio dropdown without changing Video capability or request semantics.
+- [x] Compact Add reference, Image/Video intent, model/aspect/contextual settings and Advanced so the 390px primary control cluster is one no-wrap row; Generate remains the separate primary row on narrow layouts.
+- [x] Keep full accessible Image model names while using compact visible `FLUX` / `Qwen` trigger labels.
+- [x] Extend configured Create lifecycle verification to assert dedicated Video Advanced behavior, absence of nested Video Advanced, and one-row/no-horizontal-overflow Image + Video controls at 390px including reduced motion.
+- [ ] Run affected exact-head GitHub gates and human-review the final desktop + 390px Create artifacts before merge.
+
+UI-061 records this user-requested corrective composition. No new capability, schema, worker/provider path, infrastructure resource or deployment is included.
+'''
+          migration.write_text(text)
+
+          screen = Path("docs/ui/SCREEN_REGISTRY.md")
+          text = screen.read_text()
+          old = "- Advanced controls from verified capability definitions;\n"
+          new = old + "- UI-061 gives Image and Video the same dedicated compact Advanced disclosure; Video settings contain Resolution / Duration / Audio only, and the 390px primary control cluster stays on one no-wrap row while Generate remains the separate primary action;\n"
+          if text.count(old) != 1:
+              raise SystemExit(f"SCREEN_REGISTRY Advanced bullet match count={text.count(old)}")
+          text = text.replace(old, new, 1)
+          anchor = "**UI-030 evidence:**"
+          insert = "**Post-Cycle 3 UI-061 correction:** Advanced discovery is now mode-consistent: the dedicated compact ellipsis control opens the existing `CreateAdvancedPanel` in both Image and Video, while Video's contextual dropdown owns only Resolution / Duration / Audio. Narrow Create chrome is compacted without changing generation capability, and configured 390px verification must prove the primary controls do not wrap or overflow.\n\n"
+          if text.count(anchor) != 1:
+              raise SystemExit(f"SCREEN_REGISTRY evidence anchor count={text.count(anchor)}")
+          text = text.replace(anchor, insert + anchor, 1)
+          screen.write_text(text)
+
+          catalog = Path("docs/ui/COMPONENT_CATALOG.md")
+          text = catalog.read_text()
+          anchor = "**Phase 7A premium interaction evidence:**"
+          insert = "**Post-Cycle 3 UI-061 correction:** `CreateWorkspace` keeps the same maintained Collapsible/Button/DropdownMenu mechanics but exposes Advanced through one dedicated compact trigger in both Image and Video. The Video settings menu now owns Resolution / Duration / Audio only. The narrow primary-control row uses compact approved control sizes plus short visible `FLUX` / `Qwen` model labels while preserving full accessible names/menu labels; Generate remains the separate narrow primary action. No new generic primitive is introduced.\n\n"
+          if text.count(anchor) != 1:
+              raise SystemExit(f"COMPONENT_CATALOG anchor count={text.count(anchor)}")
+          text = text.replace(anchor, insert + anchor, 1)
+          catalog.write_text(text)
+          PY
+
+          git diff --check
+          node --check scripts/verify-create-lifecycle.mjs
+
+      - name: Commit correction and remove staging workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/post-cycle3-create-control-density-stage.yml
+          git add \
+            src/features/create/create-workspace.tsx \
+            scripts/verify-create-lifecycle.mjs \
+            PROJECT.md \
+            docs/ui/UI_MIGRATION.md \
+            docs/ui/UI_DECISIONS.md \
+            docs/ui/SCREEN_REGISTRY.md \
+            docs/ui/COMPONENT_CATALOG.md
+          git diff --cached --check
+          git commit -m "Fix Create control density and Advanced parity"
+          git push origin HEAD:work/post-cycle3-create-control-density
