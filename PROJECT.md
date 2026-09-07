@@ -1379,7 +1379,7 @@ No schema migration, worker deployment, provider/routing change, new route, new 
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 20 COMPLETE / VERIFIED`.**
+**Status: `ACTIVE / PHASE 20 MERGED / PHASE 21 NEXT`.**
 **Planning baseline:** `e85aa633caa25e1bc7fdc529d37f08d10cde3cea`.
 
 ## Objective
@@ -1496,7 +1496,7 @@ Phase 19 is complete only when a user can visibly identify the new visual era on
 - Phase 20 may now be expanded from roadmap level into an execution contract. Production rollout remains explicit and separate.
 
 # Phase 20 Execution Contract — Create as a Creative Instrument
-**Status: `COMPLETE / VERIFIED`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 **UI decision:** UI-063.
 **Planning baseline:** `83f476c1e0b6b3bffada1300d43f6ef08be5c7ea` (Phase 19 / UI-062 merged).
 
@@ -1643,3 +1643,14 @@ Phase 20 functional implementation head `b7358da8f71fd789249515fca87ed01a64789f5
 Create Lifecycle Visual `34149277859` passed on the same exact head and uploaded artifact `10028815164` (`sha256:88637c653129ed7cdfba38a3b2fd5fc6022ac297cd41d4e09dcc8646cde01f3c`). Human review of its 16 desktop/390px states confirms the prompt remains dominant; Image/Video essential controls stay one-row and unclipped at 390px; the Video settings popover remains in viewport; Advanced is integrated into the instrument; reference alias/role hierarchy remains clear; active generation exposes only truthful `Generating` state; durable results retain clear hierarchy; focus remains visible; and reduced-motion states preserve meaning without transform-dependent motion. No corrective visual iteration is required.
 
 The implementation uses the existing Motion + CSS + RenderLab primitive stack and changes no generation capability, model semantics, media/reference identity, account/admission contract, schema, Supabase or R2 contract. The separately authorized REDGraft recovery and routing correction are recorded in `docs/architecture/INFRASTRUCTURE.md`; historical `-01` LTX registrations remain disabled rather than being repurposed. Production remains unchanged, automatic Git → Vercel deployment remains disabled, and this completion does not authorize deployment. Phase 21 remains roadmap-only until Phase 20 is merged and merged-main verification is complete.
+
+## Phase 20 merged-main verification — 2026-09-07
+**Status: `COMPLETE / VERIFIED / MERGED`.**
+
+Final PR head `514193d6f62dd6e574674faa07e58ececa6b11d4` passed all 17 attached exact-head workflows and has tree `c19e45c9ad5fae33f59d75cd715f5ae9352c4551`. Final Create Lifecycle `34155889018` artifact `10031015976` (`sha256:54b060f45f84b5b7eae73a642f1ee0722170579a3a418ea103cf5c10bec4ae59`) was human-reviewed clean across the required desktop/390px and reduced-motion states. Final Video Generation Integration `34155888979` passed the 1,320-case contract and all four real recovered REDGraft Video/Animate cases, with exact cleanup and artifact `10031170247` (`sha256:6c53d7d11d8f74fb23d9555a608bf38fa3d463c7d9b8ef6c893c729f8eeab6de`).
+
+PR #122 squash-merged to `main` as `09ea91f753be5279428ccf25a7b043300678c3f3` with the same tree `c19e45c9ad5fae33f59d75cd715f5ae9352c4551`. Every post-merge check completed successfully: 10 merged-main workflows / 11 check-runs, including Engineering Quality, UI Shell, Creative Iteration, Generation Integration, Generation Reconciliation, Generation Cancellation, Activity Cancel, Image Model Routing, Image Upscale and Video Generation Integration `34156796984`. The merged-main Video check again completed successfully through the recovered REDGraft route.
+
+A live Vercel audit after the merge found no deployment created at or after `09ea91f753be5279428ccf25a7b043300678c3f3`. The newest RenderLab deployment remains `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi`, created on 2026-09-06 22:15:21 UTC from older commit `71a9034039a64beec66894cc4f79b1f62bfc7bf7`; production therefore remains unchanged.
+
+Phase 21 is now the next roadmap phase and may be expanded into an execution-ready contract from this verified merged baseline. Phase 21 implementation has not begun, and no production deployment is authorized by this closure.

@@ -377,6 +377,9 @@ Both replacement gateways were verified ready with matching worker identity befo
 
 This recovery changes only the REDGraft worker/routing registration needed to restore the already-approved Create Video / Animate Image capability. It does not change product capability semantics, schema, Supabase, R2, admission/account behavior, Vercel deployment state, or the separate RenderLab image-upscale worker. Production application deployment remains explicit and was not performed by this recovery.
 
+Phase 20 final PR head `514193d6f62dd6e574674faa07e58ececa6b11d4` subsequently passed the complete 17-workflow exact-head matrix and squash-merged as `09ea91f753be5279428ccf25a7b043300678c3f3` with unchanged tree `c19e45c9ad5fae33f59d75cd715f5ae9352c4551`. Merged-main verification also completed successfully across all 10 push workflows / 11 check-runs; Video Generation Integration `34156796984` again passed through the recovered REDGraft route. A live Vercel deployment audit after merge found no RenderLab deployment created at or after `09ea91f753be5279428ccf25a7b043300678c3f3`; the newest deployment remains `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` from 2026-09-06 22:15:21 UTC. The recovery is therefore verified in merged repository state while production application deployment remains unchanged.
+
+
 
 ### Native generation flow
 ```text
