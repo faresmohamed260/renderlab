@@ -117,10 +117,10 @@ function ImageModelMenu({
           variant="secondary"
           size="xs"
           aria-label={`Image model ${selected.label}`}
-          className="shrink-0 gap-1 px-2"
+          className="relative shrink-0 gap-0 !pl-1.5 !pr-4"
         >
           <span>{imageModelTriggerLabels[value]}</span>
-          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+          <ChevronDown aria-hidden="true" className="absolute right-1 size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-64">
@@ -167,10 +167,10 @@ function AspectRatioMenu({
           variant="secondary"
           size="xs"
           aria-label={`Aspect ratio ${value === "original" ? "Original" : value}`}
-          className="shrink-0 gap-1 px-2"
+          className="relative shrink-0 gap-0 !pl-1.5 !pr-4"
         >
           {value === "original" ? "Original" : value}
-          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+          <ChevronDown aria-hidden="true" className="absolute right-1 size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-44">
@@ -217,10 +217,10 @@ function VideoSettingsMenu({
           variant="secondary"
           size="xs"
           aria-label={`Video settings. Resolution ${resolution}. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
-          className="shrink-0 gap-1 px-2"
+          className="relative shrink-0 gap-0 !pl-1.5 !pr-4"
         >
           <span>{resolution} · {durationSeconds} s</span>
-          <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+          <ChevronDown aria-hidden="true" className="absolute right-1 size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -894,7 +894,8 @@ export function CreateWorkspace({
                 <Button
                   type="button"
                   variant="secondary"
-                  size="icon-sm"
+                  size="xs"
+                  className="size-8 !px-0"
                   disabled={
                     !accountAvailable
                     || !mediaUploadAvailable
@@ -935,8 +936,8 @@ export function CreateWorkspace({
                   size="sm"
                   className="shrink-0 p-0.5"
                 >
-                  <ToggleGroupItem value="image" className="px-1.5">Image</ToggleGroupItem>
-                  <ToggleGroupItem value="video" className="px-1.5">Video</ToggleGroupItem>
+                  <ToggleGroupItem value="image" className="!px-1">Image</ToggleGroupItem>
+                  <ToggleGroupItem value="video" className="!px-1">Video</ToggleGroupItem>
                 </ToggleGroup>
 
                 <AnimatePresence initial={false} mode="popLayout">
@@ -1004,11 +1005,11 @@ export function CreateWorkspace({
                   <Button
                     type="button"
                     variant="secondary"
-                    size="icon-sm"
+                    size="xs"
                     aria-pressed={advancedOpen}
                     aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
                     title="Advanced generation controls"
-                    className={advancedOpen ? "bg-surface-3" : undefined}
+                    className={`size-8 !px-0${advancedOpen ? " bg-surface-3" : ""}`}
                   >
                     <MoreHorizontal aria-hidden="true" />
                   </Button>
