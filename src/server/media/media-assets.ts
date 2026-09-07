@@ -239,6 +239,7 @@ export async function setMediaAssetFavorite(ownerId: string, assetId: string, fa
 
 export async function listMediaAssets({
   ownerId,
+  origin,
   kind,
   search,
   favoriteOnly = false,
@@ -248,6 +249,7 @@ export async function listMediaAssets({
   offset = 0,
 }: {
   ownerId: string;
+  origin?: MediaAssetOrigin;
   kind?: MediaAssetKind;
   search?: string | null;
   favoriteOnly?: boolean;
@@ -272,6 +274,7 @@ export async function listMediaAssets({
     limit: String(safeLimit + 1),
     offset: String(safeOffset),
   });
+  if (origin) params.set("origin", `eq.${origin}`);
   if (kind) params.set("kind", `eq.${kind}`);
   if (favoriteOnly) params.set("favorited_at", "not.is.null");
   if (collectionId) {

@@ -174,19 +174,27 @@ try {
     prompt: generatedPrompt,
   });
 
-  const promptSearch = await mediaApi(account, `q=${encodeURIComponent("COBALT AURORA")}`);
+  const promptSearch = await mediaApi(account, `origin=generated&q=${encodeURIComponent("COBALT AURORA")}`);
   assert(promptSearch.items.some((asset) => asset.id === generated.id), "Case-insensitive prompt search did not return the generated fixture.");
   assert(!promptSearch.items.some((asset) => asset.id === uploaded.id), "Prompt search returned an unrelated uploaded fixture.");
 
-  const filenameSearch = await mediaApi(account, `q=${encodeURIComponent("画像.png")}`);
+  const filenameSearch = await mediaApi(account, `origin=uploaded&q=${encodeURIComponent("画像.png")}`);
   assert(filenameSearch.items.some((asset) => asset.id === uploaded.id), "Case-insensitive Unicode filename search did not return the uploaded fixture.");
   assert(!filenameSearch.items.some((asset) => asset.id === generated.id), "Filename search returned an unrelated generated fixture.");
 
-  const literalSearch = await mediaApi(account, `q=${encodeURIComponent("100%_*")}`);
+  const literalSearch = await mediaApi(account, `origin=generated&q=${encodeURIComponent("100%_*")}`);
   assert(literalSearch.items.some((asset) => asset.id === generated.id), "Literal wildcard-character prompt search did not return the expected fixture.");
 
-  const kindSearch = await mediaApi(account, `kind=video&q=${encodeURIComponent("aurora")}`);
+  const kindSearch = await mediaApi(account, `origin=generated&kind=video&q=${encodeURIComponent("aurora")}`);
   assert(kindSearch.items.length === 0, "Library kind filtering did not constrain search results.");
+
+  const generatedOriginOnly = await mediaApi(account, `origin=generated&q=${encodeURIComponent("RenderLab Search")}`);
+  assert(!generatedOriginOnly.items.some((asset) => asset.id === uploaded.id), "Generated origin scope returned an uploaded fixture.");
+  const uploadedOriginOnly = await mediaApi(account, `origin=uploaded&q=${encodeURIComponent("Cobalt aurora")}`);
+  assert(!uploadedOriginOnly.items.some((asset) => asset.id === generated.id), "Uploaded origin scope returned a generated fixture.");
+
+  const invalidOriginResponse = await fetch(`${baseUrl}/api/media/assets?origin=other`, withAccountAuthorization(account));
+  assert(invalidOriginResponse.status === 400, "Library API accepted an unsupported media origin.");
 
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1024 }, colorScheme: "dark" });
@@ -197,6 +205,11 @@ try {
   const searchbox = page.getByRole("searchbox", { name: "Search Library" });
   await searchbox.waitFor({ state: "visible", timeout: 30_000 });
   assert(await searchbox.inputValue() === "cobalt aurora", "Library search input did not reflect URL-owned query state.");
+
+  const creativesTab = page.getByRole("link", { name: "Creatives", exact: true });
+  const uploadsTab = page.getByRole("link", { name: "Uploads", exact: true });
+  assert(await creativesTab.getAttribute("aria-current") === "page", "Creatives was not the default Library tab.");
+  assert(await page.getByRole("button", { name: "Upload", exact: true }).count() === 0, "Creatives exposed the upload action.");
 
   const generatedCard = cardForAsset(page, generated.id);
   await generatedCard.waitFor({ state: "visible", timeout: 30_000 });
@@ -215,9 +228,17 @@ try {
   await page.screenshot({ path: `${artifactDir}/library-search-mobile-results.png`, fullPage: true });
 
   await page.setViewportSize({ width: 1440, height: 1024 });
+  const uploadsHref = await uploadsTab.getAttribute("href");
+  assert(uploadsHref === `/library?tab=uploads&q=${encodeURIComponent("cobalt aurora").replace(/%20/g, "+")}`, `Uploads tab did not preserve search state: ${uploadsHref}`);
+  await uploadsTab.click();
+  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("tab") === "uploads" && url.searchParams.get("q") === "cobalt aurora", { timeout: 30_000 });
+  assert(await page.getByRole("link", { name: "Uploads", exact: true }).getAttribute("aria-current") === "page", "Uploads tab was not marked active after navigation.");
+  assert(await page.getByRole("button", { name: "Upload", exact: true }).isVisible(), "Uploads tab did not expose the upload action.");
+  assert(await cardForAsset(page, generated.id).count() === 0, "Uploads tab rendered a generated fixture.");
+
   await searchbox.fill("画像.png");
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("q") === "画像.png", { timeout: 30_000 });
+  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("tab") === "uploads" && url.searchParams.get("q") === "画像.png", { timeout: 30_000 });
   const uploadedCard = cardForAsset(page, uploaded.id);
   await uploadedCard.waitFor({ state: "visible", timeout: 30_000 });
   assert(await uploadedCard.getAttribute("aria-label") === `Open ${uploadedDisplayName}`, "Uploaded search result did not preserve its expected human label.");
@@ -225,10 +246,11 @@ try {
 
   await searchbox.fill("not-present-in-renderlab");
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("q") === "not-present-in-renderlab", { timeout: 30_000 });
-  await page.getByRole("heading", { name: "No media matches “not-present-in-renderlab”", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("tab") === "uploads" && url.searchParams.get("q") === "not-present-in-renderlab", { timeout: 30_000 });
+  await page.getByRole("heading", { name: "No uploads match “not-present-in-renderlab”", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   const clearSearch = page.getByRole("link", { name: "Clear search", exact: true });
   await clearSearch.waitFor({ state: "visible", timeout: 30_000 });
+  assert(await clearSearch.getAttribute("href") === "/library?tab=uploads", "Uploads Clear search did not preserve the active Library tab.");
   await page.screenshot({ path: `${artifactDir}/library-search-desktop-empty.png`, fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });
