@@ -10,6 +10,7 @@ import {
 test("disabled fleet registrations remain historical but are excluded from new routing", () => {
   assert.equal(findWorker("flux-primary-01")?.routingStatus, "disabled");
   assert.equal(findWorker("ltx-primary-01")?.routingStatus, "disabled");
+  assert.equal(findWorker("ltx-standby-01")?.routingStatus, "disabled");
 
   assert.deepEqual(
     workersForEcosystem("flux2-klein-9b").map((worker) => worker.id),
@@ -17,7 +18,7 @@ test("disabled fleet registrations remain historical but are excluded from new r
   );
   assert.deepEqual(
     workersForEcosystem("ltx25-redgraft").map((worker) => worker.id),
-    ["ltx-standby-01"],
+    ["ltx-primary-02", "ltx-standby-02"],
   );
 });
 
