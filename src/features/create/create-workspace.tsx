@@ -1108,8 +1108,16 @@ export function CreateWorkspace({
         ) : null}
 
         {statusText ? (
-          <Alert className="mt-4" role="status">
-            <AlertDescription>{statusText}</AlertDescription>
+          <Alert
+            className="kinetic-lifecycle relative mt-4 overflow-hidden"
+            role="status"
+            data-create-lifecycle-state={job?.status}
+            data-active={jobActive ? "true" : "false"}
+          >
+            <AlertDescription className="relative z-10 flex items-center gap-3">
+              <span aria-hidden="true" className="kinetic-lifecycle-orb shrink-0" />
+              <span>{statusText}</span>
+            </AlertDescription>
           </Alert>
         ) : null}
 

@@ -298,6 +298,17 @@ try {
   assert(submissionPayload?.ok && submissionPayload.job?.id, `Create submission did not return a job: ${JSON.stringify(submissionPayload)}`);
 
   jobId = submissionPayload.job.id;
+  const activeLifecycle = page.locator("[data-create-lifecycle-state]");
+  await activeLifecycle.waitFor({ state: "visible", timeout: 10_000 });
+  const activeLifecycleState = await activeLifecycle.getAttribute("data-create-lifecycle-state");
+  assert(
+    ["queued", "preparing", "running", "persisting"].includes(activeLifecycleState),
+    `Create did not expose a truthful active lifecycle state after acceptance: ${activeLifecycleState}`,
+  );
+  assert((await generate.getAttribute("data-active")) === "true", "Generate actuator did not expose its active-generation treatment.");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-active-generation.png`, fullPage: true });
+
   await writeFile(fixturePath, JSON.stringify({ jobId }), "utf8");
   const jobRows = await rows(`generation_jobs?owner_id=eq.${encodeURIComponent(account.id)}&id=eq.${encodeURIComponent(jobId)}&select=id,owner_id&limit=1`);
   assert(jobRows[0]?.owner_id === account.id, "Create generation job was not owned by the authenticated fixture account.");
