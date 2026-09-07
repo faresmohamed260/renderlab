@@ -1722,3 +1722,28 @@ This corrective item supersedes only the earlier v0.1 prohibition on Creatives/U
 - [x] Final exact PR head `4334d76cfaf112c11ba87e961de565673551d500` passed all 11 attached workflows. Create Lifecycle `34073557139` artifact `10001298383` (`sha256:621a740704e132223122d79a520f8b56b41b5b9c83ec363478763b843e700996`) was reviewed on desktop and 390px; the compact Image/Video rows do not overflow and Video Advanced is a separate dedicated control. PR #118 squash-merged as `ea88425554a39ab904c56bbeed51ac396e0bfb38`.
 
 UI-061 records this user-requested corrective composition. No new capability, schema, worker/provider path, infrastructure resource or deployment was introduced; production rollout remains separate.
+
+
+# Cycle 4 — Kinetic Visual Experience
+**Status: `ACTIVE / PHASE 19 READY`.**
+
+The next major product pass is explicitly visual. Success is measured by user-visible changes to hierarchy, surfaces, motion, depth and spatial continuity, not merely by backend/performance improvements.
+
+## Roadmap
+- **Phase 19 — Kinetic Foundation & App Shell:** `READY FOR IMPLEMENTATION` — atmospheric canvas, dimensional/glass shell chrome, morphing active navigation, tactile feedback, top-level route continuity, reduced-motion/static equivalents.
+- **Phase 20 — Create as a Creative Instrument:** roadmap only until Phase 19 evidence closes.
+- **Phase 21 — Library & Viewer Spatial Media Experience:** roadmap only until Phase 20 evidence closes.
+- **Phase 22 — Activity, Settings, Landing & System Cohesion:** roadmap only until Phase 21 evidence closes.
+
+## Phase 19 acceptance tracker
+- [ ] Extend semantic visual tokens/effect budget without weakening contrast/status semantics.
+- [ ] Add subtle atmospheric application canvas with reduced-motion static fallback.
+- [ ] Transform desktop shell chrome into dimensional translucent surfaces.
+- [ ] Add spring/shared-layout active navigation state and tactile hover/press response.
+- [ ] Transform the mobile bottom navigation into a compact floating dock with safe-area handling.
+- [ ] Add top-level route-content continuity that does not break prefetch/refresh/focus behavior.
+- [ ] Pass purity/lint/typecheck/unit/build and affected shell/Create/Library/Activity exact-head regressions.
+- [ ] Review desktop + 390px Create/Library/Activity renders for obvious visible improvement, no overflow and reduced-motion correctness.
+- [ ] Update component/screen/architecture records from verified implementation reality.
+
+UI-062 is the visual decision for this phase. No deployment is authorized by this plan.

@@ -332,3 +332,35 @@ Established actions must behave consistently: model selection, media actions, ex
 
 ## Default Meaning of UI Tasks
 UI tasks are implementation problems by default, not invitations to invent new component mechanics. “Add X” means integrate X into the established RenderLab system using an approved component/source when possible unless redesign is explicitly requested.
+
+
+## Cycle 4 visual direction — Kinetic Precision
+Cycle 4 deliberately raises the visual ceiling beyond the earlier restrained application baseline. The product remains media-first and professional, but visible atmosphere, depth and motion are now first-class parts of the RenderLab identity when they support clarity and creative flow.
+
+### Signature visual language
+- **Canvas:** near-black foundation with sparse violet/electric spectral light and deep falloff, not a flat uniform charcoal field.
+- **Chrome:** translucent dimensional surfaces with backdrop separation, thin luminous/inner highlights and restrained elevation.
+- **State:** selected/active UI may use shared-layout morphing and localized accent light rather than only static fills.
+- **Tactility:** hover/press can use subtle scale/translation/spring response; touch and keyboard receive equivalent state/focus feedback.
+- **Spatial continuity:** meaningful mode/route/disclosure/media transitions should preserve origin/destination relationships rather than hard-cutting when practical.
+- **Media priority:** generated/uploaded media remains the strongest visual object. Effects recede around imagery and long-form text.
+
+### Effect budget
+Use visual effects in layers:
+1. **Persistent ambient layer:** one low-frequency atmospheric treatment for the application canvas. Very low amplitude; no essential information.
+2. **Shell/state layer:** glass, edge highlight, active-nav glow/morph. Visible but restrained.
+3. **Interaction layer:** brief spring/press/hover/focus response on the element being manipulated.
+4. **Feature hero moments:** richer morphing/depth only when a later feature phase explicitly approves it.
+
+Do not stack every layer at maximum intensity on the same element. Avoid broad neon halos behind body text, rainbow borders, constant cursor followers, continuous particle physics or multiple competing animated backgrounds.
+
+### Motion implementation rules
+- Existing `motion/react` remains the default engine for discrete spring/shared-layout/presence behavior.
+- Prefer transforms and opacity; avoid layout-thrashing animation of large surfaces.
+- Continuous ambience should prefer CSS keyframes/transforms and must not require a permanent high-frequency JavaScript pointer/physics loop.
+- Hover motion cannot be the only affordance. Touch/keyboard semantics remain complete.
+- `prefers-reduced-motion` disables continuous ambience and collapses nonessential spatial movement to static/near-instant state changes.
+- Preserve current timing guidance: micro feedback 120–180ms, standard transition 180–260ms, large/shared morph 260–420ms; spring response may settle naturally within the same perceived range.
+
+### Phase 19 foundation target
+The first implementation of this system belongs to `AppShell` and global semantic tokens. It should visibly change the application canvas, desktop/mobile navigation chrome, active navigation state and top-level route continuity while leaving feature data/behavior untouched. Later Cycle 4 phases extend the same language into Create, Library/Viewer and remaining user-facing surfaces.
