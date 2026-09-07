@@ -31,7 +31,7 @@ RenderLab should feel like a **premium modern creative application**, not a defa
 - Do not add motion/effects just to imitate fashionable AI landing pages. Avoid gratuitous physics, glow, cursor effects, parallax or animation that competes with media/task focus.
 - `prefers-reduced-motion`, keyboard/touch parity, performance and accessibility remain non-negotiable. Every animated interaction needs a clear static/reduced-motion equivalent.
 
-Cycle 4 Phase 20 is the next deliberate application of this elevated interaction-quality bar: Create becomes the signature Kinetic Precision creative instrument while preserving its mature generation, ownership and progressive-disclosure contracts.
+Cycle 4 Phase 20 applied this elevated interaction-quality bar to Create and is now complete/verified/merged. Phase 21 is the next deliberate feature-level application: Library and Media Viewer become the Kinetic Precision spatial media workspace while preserving mature durable-media, ownership, organization and continuation contracts.
 
 ## Semantic Color Foundation
 Dark theme is the initial product theme. Values below are the initial approved baseline and may be tuned through visual implementation review without changing their semantic roles.
@@ -371,3 +371,5 @@ The Kinetic Precision foundation is now implemented at the application-shell lay
 
 ### Cycle 4 Phase 20 sourcing note
 Phase 20 should first compose the existing RenderLab primitives, Motion for React and Phase 19 Kinetic Precision tokens. Motion Primitives and React Bits are the preferred external mechanic sources when a maintained pattern materially improves the interaction. GSAP, Lenis, Watermelon UI, Kaikei.app and design-review/reference tools suggested for Cycle 4 remain optional evaluation candidates rather than default dependencies. Any actual adoption must satisfy the existing Adoption Requirements and be recorded in `COMPONENT_CATALOG.md`; visual inspiration alone does not justify another runtime or competing component system.
+### Cycle 4 Phase 21 spatial-media target
+Phase 21 applies Kinetic Precision to Library and Media Viewer. The target is a media-first spatial workspace: bounded card depth/tactility, clear static selection, safe card → Viewer perceptual continuity, a dimensional Viewer stage and spatial Compare source choreography. Existing server/URL state, durable media identity and product actions remain outside motion state. True cross-route shared-element motion is optional when safe; matched media geometry plus a bounded Viewer entrance is preferred over brittle navigation interception or global client route/media state. Reduced motion preserves the same hierarchy and comparison/selection meaning without tilt or transform-dependent continuity.

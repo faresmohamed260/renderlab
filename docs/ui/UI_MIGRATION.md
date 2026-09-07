@@ -1725,14 +1725,14 @@ UI-061 records this user-requested corrective composition. No new capability, sc
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 20 MERGED / PHASE 21 NEXT`.**
+**Status: `ACTIVE / PHASE 21 CONTRACT READY`.**
 
 The next major product pass is explicitly visual. Success is measured by user-visible changes to hierarchy, surfaces, motion, depth and spatial continuity, not merely by backend/performance improvements.
 
 ## Roadmap
 - **Phase 19 — Kinetic Foundation & App Shell:** `COMPLETE / VERIFIED` — atmospheric canvas, dimensional floating glass shell chrome, morphing active navigation, tactile feedback, fast top-level route continuity and reduced-motion/static equivalents.
 - **Phase 20 — Create as a Creative Instrument:** `COMPLETE / VERIFIED / MERGED` — immersive instrument frame, morphing Image/Video context, reference choreography, precision-deck Advanced, tactile Generate/lifecycle states and spatial result arrival; final exact-head and merged-main evidence are verified below.
-- **Phase 21 — Library & Viewer Spatial Media Experience:** `NEXT / READY FOR CONTRACT EXPANSION` — Phase 20 is merged and merged-main verified; implementation has not begun.
+- **Phase 21 — Library & Viewer Spatial Media Experience:** `CONTRACT READY / IMPLEMENTATION NOT STARTED` — UI-064 is accepted from the verified Phase 20 merged baseline; the required visual design checkpoint precedes implementation.
 - **Phase 22 — Activity, Settings, Landing & System Cohesion:** roadmap only until Phase 21 evidence closes.
 
 ## Phase 19 acceptance tracker
@@ -1769,3 +1769,18 @@ Exact implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b` is visually
 Verifier note: the active-generation lifecycle now asserts the stable `.kinetic-generate` product marker, `data-active=true` and visible `Generating` label; the earlier exact `Generate` locator failure was a stale test assumption, not a product-state failure.
 
 Production deployment remains explicit and separate. PR #122 squash-merged as `09ea91f753be5279428ccf25a7b043300678c3f3`; all 10 merged-main workflows / 11 check-runs passed on that merged tree, including Video Generation Integration `34156796984`. A post-merge Vercel audit found no deployment at or after the merge. Phase 20 is complete/verified/merged, and Phase 21 is now ready for execution-contract expansion only; implementation has not begun.
+## Phase 21 acceptance tracker
+**Status: `CONTRACT READY / IMPLEMENTATION NOT STARTED`.** UI-064 is the controlling visual/product decision. Planning baseline `6c57a21514d58924f59623177891b98fff925a8c`.
+
+- [ ] Complete and review the required desktop/390px Library + Viewer design checkpoint before visual implementation.
+- [ ] Extend Kinetic Precision into Library hierarchy without changing UI-060 Creatives/Uploads or URL-owned filter/search/organization semantics.
+- [ ] Upgrade media cards with bounded media-first depth/tactility while preserving card destination, responsive grid behavior and non-hover accessibility.
+- [ ] Add safe card → Viewer perceptual/spatial continuity without introducing a global client media/router store or weakening deep-link/back behavior.
+- [ ] Recompose Viewer into a media-dominant dimensional stage with subordinate precision chrome while preserving native video controls and current Continue/Actions semantics.
+- [ ] Add spatial Compare source open/close choreography while keeping Result primary, Source contextual and reduced-motion meaning complete.
+- [ ] Improve current-page selection/organization and Uploads drag/drop feedback without changing product mutation contracts or bounds.
+- [ ] Pass final exact-head quality/purity/build and every actually attached Library/Viewer/media regression workflow.
+- [ ] Human-review desktop + 390px Library default/selection, Viewer image/video/comparison and reduced-motion evidence; no overflow, media distortion, hover-only meaning, excessive effects or visually timid result accepted.
+- [ ] Verify exact configured fixture cleanup and update authoritative implementation docs from reality before Phase 21 completion.
+
+No schema, Supabase/R2, account/admission, generation capability, worker/provider/routing or production-deployment change is authorized by this contract. Phase 22 remains roadmap-only.
