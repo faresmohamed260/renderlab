@@ -77,7 +77,7 @@ The Kinetic Precision foundation is now implemented at the application-shell lay
     "docs/ui/COMPONENT_CATALOG.md": """
 
 ## Cycle 4 Phase 19 component update — AppShell
-**Status:** APPROVED / KINETIC FOUNDATION VERIFIED  
+**Status:** APPROVED / KINETIC FOUNDATION VERIFIED
 `AppShell` remains the authoritative application chrome and now owns the UI-062 Kinetic Precision shell layer: floating translucent desktop rail/topbar, luminous edge separation, shared-layout spring active navigation, tactile hover/press response, floating mobile dock and reduced-motion-aware fast route continuity. It still owns no feature data or product state. Exact implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b`; rendered evidence UI Shell `34094816643` / artifact `10008197585`.
 """,
     "docs/ui/SCREEN_REGISTRY.md": """
