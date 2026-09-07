@@ -364,3 +364,7 @@ Do not stack every layer at maximum intensity on the same element. Avoid broad n
 
 ### Phase 19 foundation target
 The first implementation of this system belongs to `AppShell` and global semantic tokens. It should visibly change the application canvas, desktop/mobile navigation chrome, active navigation state and top-level route continuity while leaving feature data/behavior untouched. Later Cycle 4 phases extend the same language into Create, Library/Viewer and remaining user-facing surfaces.
+
+
+### Phase 19 implemented foundation
+The Kinetic Precision foundation is now implemented at the application-shell layer. `globals.css` owns semantic spectral/glass/elevation tokens and a CSS-only low-frequency ambient canvas. `AppShell` owns floating dimensional desktop/mobile chrome, Motion shared-layout selection and tactile press/hover response, plus a deliberately short 220ms top-level route entrance. Continuous ambience uses CSS transforms/opacity; there is no permanent JavaScript animation loop. `prefers-reduced-motion` removes ambience animation and transform-dependent route movement while retaining the full static composition. This visual layer is the baseline for subsequent Cycle 4 feature work; feature content should extend it rather than create a competing atmosphere.
