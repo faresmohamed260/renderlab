@@ -109,7 +109,7 @@ export function CreateAdvancedPanel({
   const transition = reduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
   return (
-    <CollapsibleContent className="mt-3 rounded-xl border border-border bg-surface-2 p-4">
+    <CollapsibleContent className="kinetic-precision-deck mt-3 overflow-hidden rounded-2xl border p-4 sm:p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-text">Advanced</p>

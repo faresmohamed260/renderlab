@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
+import { ChevronDown, MoreHorizontal, Plus, Sparkles, Volume2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -761,18 +761,26 @@ export function CreateWorkspace({
           <motion.div
             key={createContextKey}
             data-create-motion="context"
-            className="mb-12 sm:mb-24"
+            className="mb-8 sm:mb-12"
             initial={reduceMotion ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
             transition={contextTransition}
           >
-            <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text sm:text-[30px]">{heading}</h2>
-            <p className="mt-1 text-[15px] text-text-muted">{supportingText}</p>
+            <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-bright/80">
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-accent-bright shadow-[0_0_14px_rgba(178,167,255,0.8)]" />
+              <span>
+                {outputKind === "image"
+                  ? hasReference ? "Image edit" : "Image synthesis"
+                  : hasReference ? "Image animation" : "Video synthesis"}
+              </span>
+            </div>
+            <h2 className="text-[30px] font-semibold tracking-[-0.035em] text-text sm:text-[34px]">{heading}</h2>
+            <p className="mt-2 max-w-2xl text-[15px] leading-6 text-text-muted">{supportingText}</p>
           </motion.div>
         </AnimatePresence>
 
-        <form onSubmit={submit} noValidate className="rounded-xl border border-border bg-surface-1 p-3 sm:p-4">
+        <form onSubmit={submit} noValidate className="kinetic-composer relative isolate overflow-hidden rounded-[24px] border p-3 sm:p-4" data-create-instrument="true" data-create-mode={outputKind}>
           <Label htmlFor="create-prompt" className="sr-only">Prompt</Label>
           <Textarea
             ref={promptInputRef}
@@ -788,7 +796,7 @@ export function CreateWorkspace({
                   ? "Describe what you want to create…"
                   : "Describe the video you want to create…"
             }
-            className="min-h-32 px-1 py-1 text-[16px] leading-6 sm:min-h-28"
+            className="min-h-36 px-2 py-2 text-[17px] leading-7 placeholder:text-text-muted/55 sm:min-h-32 sm:text-[18px]"
           />
 
           {references.length ? (
@@ -800,7 +808,7 @@ export function CreateWorkspace({
                     layout="position"
                     data-create-motion="reference-row"
                     data-reference-alias={reference.alias}
-                    className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-2 sm:flex-nowrap sm:gap-3"
+                    className="kinetic-reference flex flex-wrap items-center gap-2 rounded-xl border p-2 sm:flex-nowrap sm:gap-3"
                     initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.985 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={reduceMotion ? undefined : { opacity: 0, y: -6, scale: 0.985 }}
@@ -878,7 +886,7 @@ export function CreateWorkspace({
           ) : null}
 
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="kinetic-control-deck mt-3 flex flex-col gap-2 rounded-2xl border px-1 py-1.5 sm:flex-row sm:items-center sm:p-1.5">
               <div data-create-primary-controls className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 pb-1 sm:gap-2 sm:pb-0">
                 <input
                   ref={fileInputRef}
@@ -934,22 +942,41 @@ export function CreateWorkspace({
                     setError(null);
                   }}
                   size="sm"
-                  className="shrink-0 p-0.5"
+                  className="relative isolate shrink-0 overflow-hidden rounded-lg border border-white/[0.06] bg-black/20 p-0.5"
                 >
-                  <ToggleGroupItem value="image" className="!px-1">Image</ToggleGroupItem>
-                  <ToggleGroupItem value="video" className="!px-1">Video</ToggleGroupItem>
+                  <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
+                    {outputKind === "image" ? (
+                      <motion.span
+                        layoutId="create-output-mode-highlight"
+                        aria-hidden="true"
+                        className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(129,114,246,0.32),rgba(115,215,255,0.12))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(129,114,246,0.14)]"
+                        transition={reduceMotion ? { duration: 0 } : createMotionSpring}
+                      />
+                    ) : null}
+                    <span className="relative z-10">Image</span>
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
+                    {outputKind === "video" ? (
+                      <motion.span
+                        layoutId="create-output-mode-highlight"
+                        aria-hidden="true"
+                        className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(115,215,255,0.2),rgba(129,114,246,0.28))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(115,215,255,0.12)]"
+                        transition={reduceMotion ? { duration: 0 } : createMotionSpring}
+                      />
+                    ) : null}
+                    <span className="relative z-10">Video</span>
+                  </ToggleGroupItem>
                 </ToggleGroup>
 
-                <AnimatePresence initial={false} mode="popLayout">
+                <AnimatePresence initial={false} mode="wait">
                   {outputKind === "image" ? (
                     <motion.div
                       key="image-model"
-                      layout="position"
                       data-create-motion="mode-control"
                       className="shrink-0"
-                      initial={reduceMotion ? false : { opacity: 0, x: 6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
+                      initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
                       transition={contextTransition}
                     >
                       <ImageModelMenu value={imageModel} onValueChange={setImageModel} />
@@ -968,16 +995,15 @@ export function CreateWorkspace({
                   }}
                 />
 
-                <AnimatePresence initial={false} mode="popLayout">
+                <AnimatePresence initial={false} mode="wait">
                   {outputKind === "video" ? (
                     <motion.div
                       key="video-settings"
-                      layout="position"
                       data-create-motion="mode-control"
                       className="shrink-0"
-                      initial={reduceMotion ? false : { opacity: 0, x: 6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
+                      initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
                       transition={contextTransition}
                     >
                       <VideoSettingsMenu
@@ -1016,10 +1042,23 @@ export function CreateWorkspace({
                 </CollapsibleTrigger>
               </div>
 
-              <Button type="submit" size="lg" disabled={!canSubmit} className="w-full sm:w-auto">
-                {submitting || jobActive ? <Spinner data-icon="inline-start" /> : null}
-                {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
-              </Button>
+              <motion.div
+                className="w-full sm:w-auto"
+                whileHover={!reduceMotion && canSubmit ? { scale: 1.012, y: -1 } : undefined}
+                whileTap={!reduceMotion && canSubmit ? { scale: 0.985 } : undefined}
+                transition={createMotionSpring}
+              >
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={!canSubmit}
+                  className="kinetic-generate relative w-full overflow-hidden sm:min-w-32 sm:w-auto"
+                  data-active={submitting || jobActive ? "true" : "false"}
+                >
+                  {submitting || jobActive ? <Spinner data-icon="inline-start" /> : <Sparkles aria-hidden="true" data-icon="inline-start" />}
+                  {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
+                </Button>
+              </motion.div>
             </div>
 
             <CreateAdvancedPanel
@@ -1067,8 +1106,16 @@ export function CreateWorkspace({
         ) : null}
 
         {statusText ? (
-          <Alert className="mt-4" role="status">
-            <AlertDescription>{statusText}</AlertDescription>
+          <Alert
+            className="kinetic-lifecycle relative mt-4 overflow-hidden"
+            role="status"
+            data-create-lifecycle-state={job?.status}
+            data-active={jobActive ? "true" : "false"}
+          >
+            <AlertDescription className="relative z-10 flex items-center gap-3">
+              <span aria-hidden="true" className="kinetic-lifecycle-orb shrink-0" />
+              <span>{statusText}</span>
+            </AlertDescription>
           </Alert>
         ) : null}
 
@@ -1077,7 +1124,7 @@ export function CreateWorkspace({
             <motion.div
               key="result-loading"
               data-create-motion="result"
-              className="mt-8 flex min-h-64 items-center justify-center rounded-xl border border-border bg-surface-1 text-sm text-text-muted"
+              className="kinetic-result mt-8 flex min-h-64 items-center justify-center rounded-[20px] border text-sm text-text-muted"
               role="status"
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1091,7 +1138,7 @@ export function CreateWorkspace({
             <motion.article
               key={resultAsset.id}
               data-create-motion="result"
-              className="mt-8 overflow-hidden rounded-xl border border-border bg-surface-1"
+              className="kinetic-result mt-8 overflow-hidden rounded-[20px] border"
               aria-label="Generated result"
               initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.995 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

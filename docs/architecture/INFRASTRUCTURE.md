@@ -365,6 +365,19 @@ A fresh read-only gateway audit was required after Cycle 4 Phase 20 exact-head V
 
 This note is evidence only. It does not disable routes, change routing metadata, redeploy/restart a worker, create a replacement worker, alter provider credentials, change Vercel/Supabase/R2 state, or authorize any such mutation. Production application state remains separately governed by the last explicit deployment record.
 
+### REDGraft recovery — 2026-09-07
+Following separate recovery authorization, REDGraft LTX 2.5 capacity was restored on two zero-task Modal accounts and registered under new RenderLab worker identities rather than repurposing the disabled historical registrations:
+
+- `ltx-primary-02` → `https://faresmohamed260--saga-ltx25-gateway-web.modal.run` — active primary;
+- `ltx-standby-02` → `https://bplay2086--saga-ltx25-gateway-web.modal.run` — active standby.
+
+The historical `ltx-primary-01` (`dreadcipher67`) and `ltx-standby-01` (`blackzerox67`) registrations remain present but disabled. This is deliberate because persisted jobs retain `worker_id` and polling resolves that identity through `findWorker(row.worker_id)`; reusing an old ID for a different Modal account would silently change the meaning of historical job metadata. The recovered pair was therefore re-keyed to `-02` identities before RenderLab routing was enabled.
+
+Both replacement gateways were verified ready with matching worker identity before the routing update. RenderLab functional head `b7358da8f71fd789249515fca87ed01a64789f5f` then passed all 17 attached workflows. Video Generation Integration `34149277852` proved the real recovered route end-to-end across 480p, 1080p, 720p portrait/audio and 2K Animate Original with inspected dimensions/duration/fps/audio matching contract, durable success for all four jobs and exact cleanup. Contextual artifact `10029509695` has ZIP digest `sha256:578216c480ed2cc55acf70167494712995617baba1bdcc10786d0a2d6e0d7dc6`.
+
+This recovery changes only the REDGraft worker/routing registration needed to restore the already-approved Create Video / Animate Image capability. It does not change product capability semantics, schema, Supabase, R2, admission/account behavior, Vercel deployment state, or the separate RenderLab image-upscale worker. Production application deployment remains explicit and was not performed by this recovery.
+
+
 ### Native generation flow
 ```text
 Create

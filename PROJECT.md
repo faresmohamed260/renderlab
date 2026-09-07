@@ -1379,7 +1379,7 @@ No schema migration, worker deployment, provider/routing change, new route, new 
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 20 CONTRACT READY`.**
+**Status: `ACTIVE / PHASE 20 COMPLETE / VERIFIED`.**
 **Planning baseline:** `e85aa633caa25e1bc7fdc529d37f08d10cde3cea`.
 
 ## Objective
@@ -1496,7 +1496,7 @@ Phase 19 is complete only when a user can visibly identify the new visual era on
 - Phase 20 may now be expanded from roadmap level into an execution contract. Production rollout remains explicit and separate.
 
 # Phase 20 Execution Contract — Create as a Creative Instrument
-**Status: `READY FOR IMPLEMENTATION`.**
+**Status: `COMPLETE / VERIFIED`.**
 **UI decision:** UI-063.
 **Planning baseline:** `83f476c1e0b6b3bffada1300d43f6ef08be5c7ea` (Phase 19 / UI-062 merged).
 
@@ -1609,3 +1609,37 @@ Phase 20 is `COMPLETE / VERIFIED` only when:
 - reduced motion, keyboard/touch accessibility, control density and overflow remain correct;
 - the exact-head functional matrix is green and authoritative docs match verified implementation;
 - no production deployment is inferred or performed without separate explicit authorization.
+
+## Phase 20 implementation checkpoint — 2026-09-07
+**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.**
+**Draft PR:** #122 — `Implement Phase 20 Create as a Creative Instrument`
+**Base:** `main` `33b44663a6305ddb97122c92a5583658d69dd406`
+**Current exact implementation/test head at checkpoint:** `b449cc0fbc4d87758e099b1d1d4afcd4d53595bd`
+
+Verified implementation reality at this checkpoint:
+- `/create` is recomposed as a Kinetic Precision instrument surface with layered translucent depth, spectral focus response and a stronger prompt stage while preserving the existing Create route and generation contract.
+- Image/Video intent uses a shared-layout spring highlight and bounded contextual presence motion; the established 390px one-row essential-control contract remains authoritative.
+- Attached references use elevated media-module styling while preserving stable aliases, roles, ownership and continuation semantics.
+- `CreateAdvancedPanel` now renders as an integrated precision deck rather than an appended generic settings card; field visibility/validation and the dedicated Advanced control remain unchanged.
+- Generate is a luminous tactile actuator whose active presentation is driven only by real `submitting` / nonterminal job state. The lifecycle strip exposes only real RenderLab job categories and does not invent percentage progress, ETA or provider stages.
+- Loading/result surfaces use the same dimensional language and existing durable result/continuation contracts.
+- Reduced-motion equivalents remove transform/scan choreography without removing hierarchy or meaning.
+- No GSAP, Lenis or other new runtime dependency was added: the current Motion + CSS + RenderLab primitive stack proved sufficient for this slice.
+- No generation capability, model routing, worker/provider, schema, Supabase, R2, account/admission or deployment boundary changed.
+
+Validation/evidence so far:
+- A real 4px narrow Video control-row overflow introduced by the richer instrument padding was found through the configured Create lifecycle and corrected without shrinking the established controls.
+- The first active-generation verifier failure was classified as a stale test locator: the product correctly changes the actuator label from `Generate` to `Generating`, so the verifier now targets the stable `.kinetic-generate` product marker and separately asserts `data-active=true` plus visible `Generating` state.
+- Connector-authored tree-identical head `b449cc0fbc4d87758e099b1d1d4afcd4d53595bd` exists specifically so the real PR workflow matrix runs after GitHub Actions-authored helper commits were suppressed as `action_required`.
+- Final exact-head acceptance still requires terminal success for all attached workflows plus human review of desktop/390px empty Image/Video, reference, Advanced, active-generation, result and reduced-motion artifacts. Do not merge or mark Phase 20 complete before that evidence exists.
+
+Production remains unchanged. Automatic Git → Vercel deployment is disabled; Phase 20 implementation/merge does not authorize deployment.
+
+## Phase 20 verified closure — 2026-09-07
+**Status: `COMPLETE / VERIFIED`.**
+
+Phase 20 functional implementation head `b7358da8f71fd789249515fca87ed01a64789f5f` passed all 17 attached exact-head workflows. Video Generation Integration `34149277852` passed the 1,320-case pure contract, production build and the complete configured live ownership matrix after the separately authorized REDGraft recovery: 480p Create Video produced 854×480 / 5.00s / 24fps / no audio; 1080p Create Video produced 1920×1080 / 5.00s / 24fps / no audio; 720p portrait/audio Create Video produced 720×1280 / 10.00s / 25fps / audio present; and 2K Animate Original produced 2304×1152 / 5.00s / 30fps / no audio. All four jobs reached durable success and exact cleanup completed. Contextual review artifact `10029509695` has ZIP digest `sha256:578216c480ed2cc55acf70167494712995617baba1bdcc10786d0a2d6e0d7dc6`.
+
+Create Lifecycle Visual `34149277859` passed on the same exact head and uploaded artifact `10028815164` (`sha256:88637c653129ed7cdfba38a3b2fd5fc6022ac297cd41d4e09dcc8646cde01f3c`). Human review of its 16 desktop/390px states confirms the prompt remains dominant; Image/Video essential controls stay one-row and unclipped at 390px; the Video settings popover remains in viewport; Advanced is integrated into the instrument; reference alias/role hierarchy remains clear; active generation exposes only truthful `Generating` state; durable results retain clear hierarchy; focus remains visible; and reduced-motion states preserve meaning without transform-dependent motion. No corrective visual iteration is required.
+
+The implementation uses the existing Motion + CSS + RenderLab primitive stack and changes no generation capability, model semantics, media/reference identity, account/admission contract, schema, Supabase or R2 contract. The separately authorized REDGraft recovery and routing correction are recorded in `docs/architecture/INFRASTRUCTURE.md`; historical `-01` LTX registrations remain disabled rather than being repurposed. Production remains unchanged, automatic Git → Vercel deployment remains disabled, and this completion does not authorize deployment. Phase 21 remains roadmap-only until Phase 20 is merged and merged-main verification is complete.

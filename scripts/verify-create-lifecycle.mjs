@@ -202,6 +202,9 @@ try {
 
   const videoMode = page.getByRole("radio", { name: "Video", exact: true });
   await videoMode.click();
+  // Phase 20 uses bounded shared-layout motion between Image and Video. Visual
+  // acceptance screenshots should capture the settled state, not an in-flight frame.
+  await page.waitForTimeout(500);
   const videoSettings = page.getByRole("button", { name: /^Video settings\./ });
   assert(
     (await videoSettings.getAttribute("aria-label")) === "Video settings. Resolution 480p. Duration 5 seconds. Audio on",
@@ -221,6 +224,7 @@ try {
   await videoAdvancedButton.waitFor({ state: "visible", timeout: 10_000 });
   await videoAdvancedButton.click();
   await page.getByLabel("Frame rate").waitFor({ state: "visible", timeout: 10_000 });
+  await page.waitForTimeout(300);
   assert(await page.getByLabel("Steps").count() === 0, "Inactive Video Steps control is still rendered.");
   assert(await page.getByLabel("Guidance").count() === 0, "Inactive Video Guidance control is still rendered.");
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-advanced.png`, fullPage: true });
@@ -229,6 +233,9 @@ try {
   await page.setViewportSize(mobileViewport);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("radio", { name: "Image", exact: true }).click();
+  // Give the media-query update and any already-started layout transition a bounded
+  // frame window to settle before capturing the reduced-motion acceptance state.
+  await page.waitForTimeout(500);
   const mobileImageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
   await mobileImageModel.waitFor({ state: "visible" });
   await assertCompactCreateControlRow(page, "Mobile Image");
@@ -238,6 +245,7 @@ try {
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-image-model.png`, fullPage: true });
   await page.keyboard.press("Escape");
   await page.getByRole("radio", { name: "Video", exact: true }).click();
+  await page.waitForTimeout(500);
   const reducedModeControl = page.locator('[data-create-motion="mode-control"]');
   await page.waitForFunction(
     () => document.querySelectorAll('[data-create-motion="mode-control"]').length === 1,
@@ -298,6 +306,19 @@ try {
   assert(submissionPayload?.ok && submissionPayload.job?.id, `Create submission did not return a job: ${JSON.stringify(submissionPayload)}`);
 
   jobId = submissionPayload.job.id;
+  const activeLifecycle = page.locator("[data-create-lifecycle-state]");
+  await activeLifecycle.waitFor({ state: "visible", timeout: 10_000 });
+  const activeLifecycleState = await activeLifecycle.getAttribute("data-create-lifecycle-state");
+  assert(
+    ["queued", "preparing", "running", "persisting"].includes(activeLifecycleState),
+    `Create did not expose a truthful active lifecycle state after acceptance: ${activeLifecycleState}`,
+  );
+  const activeGenerate = page.locator(".kinetic-generate");
+  assert((await activeGenerate.getAttribute("data-active")) === "true", "Generate actuator did not expose its active-generation treatment.");
+  assert((await activeGenerate.textContent())?.includes("Generating"), "Generate actuator did not communicate the active generation state.");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-active-generation.png`, fullPage: true });
+
   await writeFile(fixturePath, JSON.stringify({ jobId }), "utf8");
   const jobRows = await rows(`generation_jobs?owner_id=eq.${encodeURIComponent(account.id)}&id=eq.${encodeURIComponent(jobId)}&select=id,owner_id&limit=1`);
   assert(jobRows[0]?.owner_id === account.id, "Create generation job was not owned by the authenticated fixture account.");
