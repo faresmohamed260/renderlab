@@ -1,0 +1,34 @@
+name: Stage compact Create width correction
+
+on:
+  push:
+    branches:
+      - work/post-cycle3-create-control-density
+    paths:
+      - .github/workflows/post-cycle3-create-control-width-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/post-cycle3-create-control-density
+          fetch-depth: 0
+      - name: Apply compact width correction
+        run: |
+          python scripts/stage-create-control-width-fix.py
+          git diff --check
+          node --check scripts/verify-create-lifecycle.mjs
+      - name: Commit correction and remove staging helpers
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/post-cycle3-create-control-width-fix.yml scripts/stage-create-control-width-fix.py
+          git add src/features/create/create-workspace.tsx
+          git diff --cached --check
+          git commit -m "Fit compact Create controls on one row"
+          git push origin HEAD:work/post-cycle3-create-control-density
