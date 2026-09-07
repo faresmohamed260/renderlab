@@ -11,6 +11,21 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth);
 }
 
+async function expectDimensionalSurface(locator: import("@playwright/test").Locator) {
+  await expect(locator).not.toHaveCSS("background-image", "none");
+  await expect(locator).not.toHaveCSS("box-shadow", "none");
+  const backdropSupport = await locator.evaluate(() =>
+    CSS.supports("backdrop-filter", "blur(1px)") || CSS.supports("-webkit-backdrop-filter", "blur(1px)"),
+  );
+  if (backdropSupport) {
+    const filters = await locator.evaluate((element) => ({
+      standard: getComputedStyle(element).backdropFilter,
+      webkit: getComputedStyle(element).getPropertyValue("-webkit-backdrop-filter"),
+    }));
+    expect(filters.standard !== "none" || filters.webkit !== "none").toBeTruthy();
+  }
+}
+
 test("Phase 19 renders the kinetic shell across primary desktop sections", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/create");
@@ -21,8 +36,8 @@ test("Phase 19 renders the kinetic shell across primary desktop sections", async
   await expect(shell).toBeVisible();
   await expect(rail).toBeVisible();
   await expect(topbar).toBeVisible();
-  await expect(rail).not.toHaveCSS("backdrop-filter", "none");
-  await expect(topbar).not.toHaveCSS("backdrop-filter", "none");
+  await expectDimensionalSurface(rail);
+  await expectDimensionalSurface(topbar);
   await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute("aria-current", "page");
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: "artifacts/phase19-create-desktop.png", fullPage: true });
@@ -48,15 +63,22 @@ test("Phase 19 floating mobile dock is inset, readable, and overflow-safe", asyn
 
   const shell = page.locator('[data-kinetic-shell="true"]');
   const dock = page.locator('[data-kinetic-surface="mobile-dock"]');
+  const topbar = page.locator('[data-kinetic-surface="topbar"]');
   await expect(shell).toBeVisible();
   await expect(dock).toBeVisible();
-  await expect(dock).not.toHaveCSS("backdrop-filter", "none");
+  await expectDimensionalSurface(dock);
+  await expectDimensionalSurface(topbar);
 
   const box = await dock.boundingBox();
   expect(box).not.toBeNull();
   expect(box!.x).toBeGreaterThan(0);
   expect(box!.x + box!.width).toBeLessThan(mobileViewport.width);
   expect(box!.y + box!.height).toBeLessThan(mobileViewport.height);
+
+  const topbarBox = await topbar.boundingBox();
+  expect(topbarBox).not.toBeNull();
+  expect(topbarBox!.x).toBeGreaterThan(0);
+  expect(topbarBox!.x + topbarBox!.width).toBeLessThan(mobileViewport.width);
   await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute("aria-current", "page");
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: "artifacts/phase19-create-mobile.png", fullPage: true });
