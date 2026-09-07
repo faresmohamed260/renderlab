@@ -30,3 +30,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "docs: record Phase 20 implementation checkpoint"
           git push origin HEAD:work/phase-20-create-instrument
+
+# retry after whitespace normalization
