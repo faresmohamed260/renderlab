@@ -16,37 +16,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 3
+          fetch-depth: 8
 
-      - name: Guard exact planning ancestry
+      - name: Guard exact planning baseline and helper-only staging
         shell: bash
         run: |
-          test "$(git rev-parse HEAD^^)" = "6c57a21514d58924f59623177891b98fff925a8c"
+          base="6c57a21514d58924f59623177891b98fff925a8c"
+          git merge-base --is-ancestor "$base" HEAD
+          changed="$(git diff --name-only "$base"...HEAD | sort)"
+          expected="$(printf '%s\n' .github/phase21-contract.py .github/workflows/phase21-contract-docs.yml .github/workflows/phase21-contract-run.yml | sort)"
+          test "$changed" = "$expected"
 
-      - name: Apply contract patch from staged helper
+      - name: Apply Phase 21 contract patch
+        id: patch
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          source = Path('.github/workflows/phase21-contract-docs.yml').read_text()
-          marker = "          python - <<'PY'\n"
-          end_marker = "          PY\n"
-          if marker not in source or end_marker not in source:
-              raise SystemExit('staged helper markers not found')
-          block = source.split(marker, 1)[1].split(end_marker, 1)[0]
-          code_lines = []
-          for line in block.splitlines():
-              code_lines.append(line[10:] if line.startswith('          ') else line)
-          code = '\n'.join(code_lines) + '\n'
-          exec(compile(code, 'phase21-contract-patch', 'exec'), {})
-          PY
+          python .github/phase21-contract.py
           git diff --check
           git status --short
 
-      - name: Commit contract and remove helpers
+      - name: Commit diagnostic on patch failure
+        if: failure()
         shell: bash
         run: |
-          rm .github/workflows/phase21-contract-docs.yml .github/workflows/phase21-contract-run.yml
+          if [ -f .github/phase21-contract-error.txt ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/phase21-contract-error.txt
+            git commit -m "chore: record Phase 21 contract helper error" || true
+            git push origin HEAD:plan/phase-21-library-viewer-spatial || true
+          fi
+
+      - name: Commit contract and remove helpers
+        if: success()
+        shell: bash
+        run: |
+          rm -f .github/phase21-contract.py .github/phase21-contract-error.txt .github/workflows/phase21-contract-docs.yml .github/workflows/phase21-contract-run.yml
           git diff --check
           changed="$(git diff --name-only | sort)"
           expected="$(printf '%s\n' PROJECT.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/ui/SCREEN_REGISTRY.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md docs/ui/UI_SYSTEM.md | sort)"
