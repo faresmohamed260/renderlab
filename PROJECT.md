@@ -1363,3 +1363,16 @@ Library now separates the existing durable asset set into two same-route user-fa
 - The model-choice exact head passed 19/19 attached workflows, the reconciled Library exact head passed 30/30, and the latest implementation merge passed all nine workflows GitHub attached to `main`.
 - Production remains the separately verified application source `71a9034039a64beec66894cc4f79b1f62bfc7bf7` at READY deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` / `https://renderlab.faresuniform.uk`. These repository merges are **not deployed**.
 - Automatic Git → Vercel deployment remains disabled. No Supabase migration, R2 resource change, worker redeployment or scheduler activation is implied by repository readiness.
+
+
+## Post-Cycle 3 Corrective Maintenance — Create control density / Advanced parity
+**Status: `IMPLEMENTED / EXACT-HEAD VERIFICATION PENDING`.**
+
+- [x] Give Image and Video the same dedicated Advanced disclosure button; remove Advanced from the Video Resolution / Duration / Audio menu.
+- [x] Compact the narrow Create control chrome so Image and Video contextual controls stay on one no-wrap row while Generate remains the full-width primary action below on narrow layouts.
+- [x] Keep full accessible model naming while shortening the visible Image-model trigger to `FLUX` / `Qwen` so the current productized model choice fits the compact row without hiding it.
+- [x] Keep resolution, duration, audio, aspect, model intent, Advanced values, serialization, worker routing and generation capability unchanged.
+- [x] Extend configured Create lifecycle verification with dedicated Video Advanced coverage plus 390px one-row/no-overflow assertions for both Image and Video.
+- [ ] Complete exact-head affected CI and human responsive artifact review before merge.
+
+No schema migration, worker deployment, provider/routing change, new route, new primitive or production rollout is authorized by this corrective item.

@@ -96,6 +96,10 @@ function referenceAssetLabel(asset: PublicMediaAsset) {
 const maxPollRetries = 5;
 const createMotionTween = { duration: 0.2, ease: "easeOut" } as const;
 const createMotionSpring = { type: "spring", stiffness: 420, damping: 38, mass: 0.7 } as const;
+const imageModelTriggerLabels: Record<ImageGenerationModel, string> = {
+  "flux2-klein-9b": "FLUX",
+  "qwen-image-edit-2511": "Qwen",
+};
 
 function ImageModelMenu({
   value,
@@ -111,10 +115,11 @@ function ImageModelMenu({
         <Button
           type="button"
           variant="secondary"
+          size="xs"
           aria-label={`Image model ${selected.label}`}
-          className="shrink-0 gap-1.5"
+          className="shrink-0 gap-1 px-2"
         >
-          <span>{selected.label}</span>
+          <span>{imageModelTriggerLabels[value]}</span>
           <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
@@ -160,8 +165,9 @@ function AspectRatioMenu({
         <Button
           type="button"
           variant="secondary"
+          size="xs"
           aria-label={`Aspect ratio ${value === "original" ? "Original" : value}`}
-          className="shrink-0 gap-1.5"
+          className="shrink-0 gap-1 px-2"
         >
           {value === "original" ? "Original" : value}
           <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
@@ -192,20 +198,16 @@ function VideoSettingsMenu({
   resolution,
   durationSeconds,
   audioEnabled,
-  advancedOpen,
   onResolutionChange,
   onDurationChange,
   onAudioChange,
-  onAdvancedToggle,
 }: {
   resolution: VideoResolution;
   durationSeconds: (typeof videoDurations)[number];
   audioEnabled: boolean;
-  advancedOpen: boolean;
   onResolutionChange: (value: VideoResolution) => void;
   onDurationChange: (value: (typeof videoDurations)[number]) => void;
   onAudioChange: (value: boolean) => void;
-  onAdvancedToggle: () => void;
 }) {
   return (
     <DropdownMenu>
@@ -213,8 +215,9 @@ function VideoSettingsMenu({
         <Button
           type="button"
           variant="secondary"
+          size="xs"
           aria-label={`Video settings. Resolution ${resolution}. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
-          className="shrink-0 gap-1.5"
+          className="shrink-0 gap-1 px-2"
         >
           <span>{resolution} · {durationSeconds} s</span>
           <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
@@ -256,11 +259,6 @@ function VideoSettingsMenu({
           <Volume2 aria-hidden="true" />
           Audio
         </DropdownMenuCheckboxItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={onAdvancedToggle}>
-          <MoreHorizontal aria-hidden="true" />
-          {advancedOpen ? "Hide Advanced controls" : "Advanced controls"}
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -881,7 +879,7 @@ export function CreateWorkspace({
 
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:flex-nowrap sm:overflow-visible sm:pb-0">
+              <div data-create-primary-controls className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 pb-1 sm:gap-2 sm:pb-0">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -896,7 +894,7 @@ export function CreateWorkspace({
                 <Button
                   type="button"
                   variant="secondary"
-                  size="icon"
+                  size="icon-sm"
                   disabled={
                     !accountAvailable
                     || !mediaUploadAvailable
@@ -935,10 +933,10 @@ export function CreateWorkspace({
                     setError(null);
                   }}
                   size="sm"
-                  className="shrink-0"
+                  className="shrink-0 p-0.5"
                 >
-                  <ToggleGroupItem value="image">Image</ToggleGroupItem>
-                  <ToggleGroupItem value="video">Video</ToggleGroupItem>
+                  <ToggleGroupItem value="image" className="px-1.5">Image</ToggleGroupItem>
+                  <ToggleGroupItem value="video" className="px-1.5">Video</ToggleGroupItem>
                 </ToggleGroup>
 
                 {outputKind === "image" ? (
@@ -957,22 +955,21 @@ export function CreateWorkspace({
                 />
 
                 <AnimatePresence initial={false} mode="popLayout">
-                  <motion.div
-                    key={outputKind}
-                    layout="position"
-                    data-create-motion="mode-control"
-                    className="shrink-0"
-                    initial={reduceMotion ? false : { opacity: 0, x: 6 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
-                    transition={contextTransition}
-                  >
-                    {outputKind === "video" ? (
+                  {outputKind === "video" ? (
+                    <motion.div
+                      key="video-settings"
+                      layout="position"
+                      data-create-motion="mode-control"
+                      className="shrink-0"
+                      initial={reduceMotion ? false : { opacity: 0, x: 6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
+                      transition={contextTransition}
+                    >
                       <VideoSettingsMenu
                         resolution={videoResolution}
                         durationSeconds={durationSeconds}
                         audioEnabled={audioEnabled}
-                        advancedOpen={advancedOpen}
                         onResolutionChange={(value) => {
                           setVideoResolution(value);
                           setError(null);
@@ -985,25 +982,24 @@ export function CreateWorkspace({
                           setAudioEnabled(value);
                           setError(null);
                         }}
-                        onAdvancedToggle={() => setAdvancedOpen((current) => !current)}
                       />
-                    ) : (
-                      <CollapsibleTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="icon"
-                          aria-pressed={advancedOpen}
-                          aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
-                          title="Advanced generation controls"
-                          className={advancedOpen ? "bg-surface-3" : undefined}
-                        >
-                          <MoreHorizontal aria-hidden="true" />
-                        </Button>
-                      </CollapsibleTrigger>
-                    )}
-                  </motion.div>
+                    </motion.div>
+                  ) : null}
                 </AnimatePresence>
+
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    aria-pressed={advancedOpen}
+                    aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
+                    title="Advanced generation controls"
+                    className={advancedOpen ? "bg-surface-3" : undefined}
+                  >
+                    <MoreHorizontal aria-hidden="true" />
+                  </Button>
+                </CollapsibleTrigger>
               </div>
 
               <Button type="submit" size="lg" disabled={!canSubmit} className="w-full sm:w-auto">
