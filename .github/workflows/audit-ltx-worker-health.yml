@@ -1,0 +1,34 @@
+name: Audit REDGraft worker health
+
+on:
+  push:
+    branches:
+      - audit/ltx-worker-health-20260907
+    paths:
+      - .github/workflows/audit-ltx-worker-health.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe registered REDGraft gateways read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          for base in \
+            'https://dreadcipher67--saga-ltx25-gateway-web.modal.run' \
+            'https://blackzerox67--saga-ltx25-gateway-web.modal.run'
+          do
+            echo "=== $base ==="
+            for path in /health /; do
+              url="$base$path"
+              echo "GET $url"
+              code=$(curl --silent --show-error --location --max-time 30 --output /tmp/body --write-out '%{http_code}' "$url" || true)
+              echo "HTTP $code"
+              head -c 2000 /tmp/body || true
+              echo
+            done
+          done
