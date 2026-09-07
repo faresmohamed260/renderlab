@@ -52,6 +52,22 @@ export const generationWorkers: GenerationWorker[] = [
     gatewayUrl: gatewayUrl("https://blackzerox67--saga-ltx25-gateway-web.modal.run"),
     displayName: "REDGraft LTX 2.5 · Standby",
     role: "standby",
+    routingStatus: "disabled",
+  },
+  {
+    id: "ltx-primary-02",
+    ecosystem: "ltx25-redgraft",
+    gatewayUrl: gatewayUrl("https://faresmohamed260--saga-ltx25-gateway-web.modal.run"),
+    displayName: "REDGraft LTX 2.5 · Primary",
+    role: "primary",
+    routingStatus: "active",
+  },
+  {
+    id: "ltx-standby-02",
+    ecosystem: "ltx25-redgraft",
+    gatewayUrl: gatewayUrl("https://bplay2086--saga-ltx25-gateway-web.modal.run"),
+    displayName: "REDGraft LTX 2.5 · Standby",
+    role: "standby",
     routingStatus: "active",
   },
   {
