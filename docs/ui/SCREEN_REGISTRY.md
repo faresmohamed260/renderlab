@@ -324,9 +324,19 @@ The existing fresh-active-admin `/admin` Health section exposes bounded accepted
 
 ## Post-Cycle 3 Create Extension — Contextual Image Model Choice
 **Route:** `/create`
-**Status:** IMPLEMENTED / STAGING VERIFIED / FINAL PR RENDER REVIEW PENDING
+**Status:** IMPLEMENTED / VERIFIED / MERGED
 **Implementation:** existing `CreateWorkspace` + `CreateAdvancedPanel`; no new route or generic component.
 
 Image output now owns a compact contextual **Image model** choice. **FLUX.2 Klein** remains the default and **Qwen Image Edit** is an explicit alternative for both source-free image generation and source-backed Edit. The selector disappears in Video mode because REDGraft is currently the only productized Video choice. The browser submits only a stable product model ID; worker fleet selection/failover remains server-side. Qwen's fixed 4-step tuning removes configurable Steps/Guidance from Advanced while retaining applicable prompt/seed controls. Current-valid recipe reconstruction restores the selected model. Historical recipes lacking model identity default to the former FLUX/REDGraft behavior.
 
 Responsive Create lifecycle validation must cover the default FLUX state, Qwen menu selection, Qwen-specific Advanced composition, serialized model intent and narrow/mobile menu rendering. No top-level Models screen is approved by this extension.
+
+Exact PR head `d5f80c02f041b645b7a3b1dee13d70d8139cc832` passed all 19 attached workflows and the responsive Create/model-selection review before PR #115 merged as `e8649ba39e660e2ec98cfd2fd864b22db74e64e3`. No new route, generic component, worker deployment or production rollout was introduced.
+
+## Post-Cycle 3 Library Extension — Creatives / Uploads
+**Route:** `/library`
+**Status:** IMPLEMENTED / VERIFIED / MERGED — UI-060
+
+The approved Library remains one route and one durable-media workspace, but now exposes two higher-level origin sections. **Creatives** is canonical `/library` and maps to generated assets; **Uploads** is URL-owned as `?tab=uploads` and maps to uploaded assets. All/Images/Videos, search, Favorites, Collections, sort and pagination remain inside the active section. Upload and desktop drag/drop exist only in Uploads. Media Viewer stays `/library/[assetId]`; Rename, Download, Favorite, Collections, Delete and continuation remain asset-ID based and origin-agnostic.
+
+Exact reconciled head `a81c02e82abb0cec6b386e4cfb69f1075f377e33` passed all 30 attached workflows and final desktop/390px Library review. PR #116 merged as `999d32812e74afdba73e3cbaa7607a64ce65d603`; all nine attached merged-main workflows passed. No new route, schema, parallel Upload media identity or deployment was introduced.

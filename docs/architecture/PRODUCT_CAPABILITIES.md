@@ -400,7 +400,7 @@ Phase 18A–18D now verify the worker, domain/schema, server API/admission and l
 - Exact proof head closed at 32/32 attached workflows successful. PR #111 was then squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d` from definitive exact head `c40705d760639eb6fffdf9d51fc69ed397fc55a0`; merged `main` passed all 14 workflows / 15 checks GitHub attached. Phase 18 is complete/verified/merged; production rollout remains separate.
 
 ## Post-Cycle 3 Productization — User-selectable Image model
-**Status:** IMPLEMENTED / STAGING VERIFIED / FINAL PR ACCEPTANCE PENDING
+**Status:** COMPLETE / VERIFIED / MERGED
 
 RenderLab now treats the image-model choice as explicit product intent rather than a hard-coded native-routing decision. Current productized prompt-generation models are:
 
@@ -415,3 +415,12 @@ The model ID is validated against output kind and persisted in `generation_jobs.
 Qwen remains deliberately differentiated from FLUX rather than pretending all Advanced controls are interchangeable. Fresh read-only audit `34064898642` / artifact `9998623751` (`sha256:5075cdef0ee55cfa7b6649642815fcb2d6f585fc27565d0eb85f6bc9907975af`) verified both registered Qwen gateways report `Qwen/Qwen-Image-Edit-2511`, multi-reference support, async `/jobs/edit`, cancellation/status endpoints, and fixed Lightning `4` steps / `true_cfg_scale=1.0`. The product therefore hides configurable Steps/Guidance for Qwen and the server rejects non-fixed supplied values. FLUX retains its configurable Image Advanced tuning. The previous bounded quality comparison still justifies FLUX as the default; this change does not claim Qwen is universally better.
 
 Isolated routing run `34065515794` used an explicit test-only native gateway override and local mock worker to prove Qwen maps to `qwen-image-edit-2511` / `qwen-primary-01`, FLUX maps to `flux2-klein-9b` / the current active FLUX standby, omitted historical intent maps to FLUX, invalid model/output or Qwen tuning fails closed, and fixtures clean up. No real provider generation was used for that routing proof.
+
+Exact PR head `d5f80c02f041b645b7a3b1dee13d70d8139cc832` passed all 19 attached workflows before PR #115 merged as `e8649ba39e660e2ec98cfd2fd864b22db74e64e3`. No schema, worker, provider-resource or production deployment change was required.
+
+## Post-Cycle 3 Library browsing — Creatives / Uploads
+**Status:** COMPLETE / VERIFIED / MERGED
+
+The Library now exposes an origin browsing dimension over existing durable media: canonical **Creatives** maps to `origin=generated`, while **Uploads** maps to `origin=uploaded`. This does not change durable media identity or capability. Kind/search/Favorites/Collections/sort/pagination remain composable inside either origin. Upload/drag-drop are available only in Uploads; Viewer and asset-level capabilities remain unchanged. The media-list API accepts optional origin filtering and remains unified when omitted. Existing `media_assets.origin` schema/indexes are reused; no migration/backfill/storage/provider change was required.
+
+Exact reconciled head `a81c02e82abb0cec6b386e4cfb69f1075f377e33` passed 30/30 attached workflows; PR #116 merged as `999d32812e74afdba73e3cbaa7607a64ce65d603`, and all nine attached merged-main workflows passed.
