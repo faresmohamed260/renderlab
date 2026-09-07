@@ -968,16 +968,15 @@ export function CreateWorkspace({
                   </ToggleGroupItem>
                 </ToggleGroup>
 
-                <AnimatePresence initial={false} mode="popLayout">
+                <AnimatePresence initial={false} mode="wait">
                   {outputKind === "image" ? (
                     <motion.div
                       key="image-model"
-                      layout="position"
                       data-create-motion="mode-control"
                       className="shrink-0"
-                      initial={reduceMotion ? false : { opacity: 0, x: 6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
+                      initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
                       transition={contextTransition}
                     >
                       <ImageModelMenu value={imageModel} onValueChange={setImageModel} />
@@ -996,16 +995,15 @@ export function CreateWorkspace({
                   }}
                 />
 
-                <AnimatePresence initial={false} mode="popLayout">
+                <AnimatePresence initial={false} mode="wait">
                   {outputKind === "video" ? (
                     <motion.div
                       key="video-settings"
-                      layout="position"
                       data-create-motion="mode-control"
                       className="shrink-0"
-                      initial={reduceMotion ? false : { opacity: 0, x: 6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={reduceMotion ? undefined : { opacity: 0, x: -6 }}
+                      initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
                       transition={contextTransition}
                     >
                       <VideoSettingsMenu
