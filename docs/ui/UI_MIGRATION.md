@@ -1712,13 +1712,13 @@ This corrective item supersedes only the earlier v0.1 prohibition on Creatives/U
 
 
 ## Post-Cycle 3 Corrective Maintenance — Create control density / Advanced parity
-**Status: `IMPLEMENTED / EXACT-HEAD VERIFICATION PENDING`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 
 - [x] Use one dedicated Advanced button in both Image and Video modes.
 - [x] Remove Advanced from the Video Resolution / Duration / Audio dropdown without changing Video capability or request semantics.
 - [x] Compact Add reference, Image/Video intent, model/aspect/contextual settings and Advanced so the 390px primary control cluster is one no-wrap row; Generate remains the separate primary row on narrow layouts.
 - [x] Keep full accessible Image model names while using compact visible `FLUX` / `Qwen` trigger labels.
 - [x] Extend configured Create lifecycle verification to assert dedicated Video Advanced behavior, absence of nested Video Advanced, and one-row/no-horizontal-overflow Image + Video controls at 390px including reduced motion.
-- [ ] Run affected exact-head GitHub gates and human-review the final desktop + 390px Create artifacts before merge.
+- [x] Final exact PR head `4334d76cfaf112c11ba87e961de565673551d500` passed all 11 attached workflows. Create Lifecycle `34073557139` artifact `10001298383` (`sha256:621a740704e132223122d79a520f8b56b41b5b9c83ec363478763b843e700996`) was reviewed on desktop and 390px; the compact Image/Video rows do not overflow and Video Advanced is a separate dedicated control. PR #118 squash-merged as `ea88425554a39ab904c56bbeed51ac396e0bfb38`.
 
-UI-061 records this user-requested corrective composition. No new capability, schema, worker/provider path, infrastructure resource or deployment is included.
+UI-061 records this user-requested corrective composition. No new capability, schema, worker/provider path, infrastructure resource or deployment was introduced; production rollout remains separate.

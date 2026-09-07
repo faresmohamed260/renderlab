@@ -1366,13 +1366,13 @@ Library now separates the existing durable asset set into two same-route user-fa
 
 
 ## Post-Cycle 3 Corrective Maintenance — Create control density / Advanced parity
-**Status: `IMPLEMENTED / EXACT-HEAD VERIFICATION PENDING`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 
 - [x] Give Image and Video the same dedicated Advanced disclosure button; remove Advanced from the Video Resolution / Duration / Audio menu.
 - [x] Compact the narrow Create control chrome so Image and Video contextual controls stay on one no-wrap row while Generate remains the full-width primary action below on narrow layouts.
 - [x] Keep full accessible model naming while shortening the visible Image-model trigger to `FLUX` / `Qwen` so the current productized model choice fits the compact row without hiding it.
 - [x] Keep resolution, duration, audio, aspect, model intent, Advanced values, serialization, worker routing and generation capability unchanged.
 - [x] Extend configured Create lifecycle verification with dedicated Video Advanced coverage plus 390px one-row/no-overflow assertions for both Image and Video.
-- [ ] Complete exact-head affected CI and human responsive artifact review before merge.
+- [x] Exact final PR head `4334d76cfaf112c11ba87e961de565673551d500` passed all 11 attached workflows after the stale Creative Iteration verifier was corrected to use the dedicated Advanced button. Create Lifecycle `34073557139` produced artifact `10001298383` (`sha256:621a740704e132223122d79a520f8b56b41b5b9c83ec363478763b843e700996`); desktop and 390px Image/Video artifacts were reviewed clean for the compact no-overflow control row and separate Advanced disclosure. PR #118 squash-merged as `ea88425554a39ab904c56bbeed51ac396e0bfb38`.
 
-No schema migration, worker deployment, provider/routing change, new route, new primitive or production rollout is authorized by this corrective item.
+No schema migration, worker deployment, provider/routing change, new route, new primitive or production rollout occurred as part of this corrective item. Production rollout remains explicit and separate.
