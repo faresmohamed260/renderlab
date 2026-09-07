@@ -329,7 +329,7 @@ The existing fresh-active-admin `/admin` Health section exposes bounded accepted
 
 Image output now owns a compact contextual **Image model** choice. **FLUX.2 Klein** remains the default and **Qwen Image Edit** is an explicit alternative for both source-free image generation and source-backed Edit. The selector disappears in Video mode because REDGraft is currently the only productized Video choice. The browser submits only a stable product model ID; worker fleet selection/failover remains server-side. Qwen's fixed 4-step tuning removes configurable Steps/Guidance from Advanced while retaining applicable prompt/seed controls. Current-valid recipe reconstruction restores the selected model. Historical recipes lacking model identity default to the former FLUX/REDGraft behavior.
 
-Responsive Create lifecycle validation must cover the default FLUX state, Qwen menu selection, Qwen-specific Advanced composition, serialized model intent and narrow/mobile menu rendering. No top-level Models screen is approved by this extension.
+Responsive Create lifecycle validation covered the default FLUX state, Qwen menu selection, Qwen-specific Advanced composition, serialized model intent and narrow/mobile menu rendering. No top-level Models screen is approved by this extension.
 
 Exact PR head `d5f80c02f041b645b7a3b1dee13d70d8139cc832` passed all 19 attached workflows and the responsive Create/model-selection review before PR #115 merged as `e8649ba39e660e2ec98cfd2fd864b22db74e64e3`. No new route, generic component, worker deployment or production rollout was introduced.
 
