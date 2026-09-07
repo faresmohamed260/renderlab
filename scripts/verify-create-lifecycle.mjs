@@ -305,7 +305,9 @@ try {
     ["queued", "preparing", "running", "persisting"].includes(activeLifecycleState),
     `Create did not expose a truthful active lifecycle state after acceptance: ${activeLifecycleState}`,
   );
-  assert((await generate.getAttribute("data-active")) === "true", "Generate actuator did not expose its active-generation treatment.");
+  const activeGenerate = page.locator(".kinetic-generate");
+  assert((await activeGenerate.getAttribute("data-active")) === "true", "Generate actuator did not expose its active-generation treatment.");
+  assert((await activeGenerate.textContent())?.includes("Generating"), "Generate actuator did not communicate the active generation state.");
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-active-generation.png`, fullPage: true });
 
