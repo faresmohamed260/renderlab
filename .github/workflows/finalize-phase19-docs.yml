@@ -19,7 +19,7 @@ jobs:
           ref: work/phase-19-kinetic-shell
       - name: Apply documentation closure
         run: python .github/scripts/finalize-phase19-docs.py
-      - name: Commit documentation closure
+      - name: Commit verified documentation closure
         run: |
           git diff --check
           git rm .github/workflows/finalize-phase19-docs.yml .github/scripts/finalize-phase19-docs.py
