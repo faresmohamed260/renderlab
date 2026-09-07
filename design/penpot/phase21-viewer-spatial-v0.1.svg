@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1180" viewBox="0 0 1900 1180">
+  <defs>
+    <radialGradient id="bg" cx="52%" cy="10%" r="92%"><stop offset="0" stop-color="#211847"/><stop offset=".35" stop-color="#0b0b15"/><stop offset="1" stop-color="#050609"/></radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" stop-opacity=".085"/><stop offset="1" stop-color="#fff" stop-opacity=".02"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ac91ff"/><stop offset=".58" stop-color="#766fff"/><stop offset="1" stop-color="#58d3ff"/></linearGradient>
+    <linearGradient id="media" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#315f98"/><stop offset=".55" stop-color="#1d3458"/><stop offset="1" stop-color="#101827"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="28"/></filter>
+    <filter id="soft"><feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#000" flood-opacity=".5"/></filter>
+    <style>text{font-family:Inter,ui-sans-serif,system-ui,sans-serif;fill:#f7f7fb}.muted{fill:#989aaa}.dim{fill:#6d7080}.title{font-size:30px;font-weight:650}.h2{font-size:22px;font-weight:640}.body{font-size:13px}.small{font-size:11px}.label{font-size:11px;font-weight:700;letter-spacing:.08em}.chip{font-size:11px;font-weight:620}</style>
+  </defs>
+  <rect width="1900" height="1180" fill="#050609"/>
+  <text x="44" y="52" class="title">Phase 21 — Media Viewer Spatial Stage v0.1</text>
+  <text x="44" y="78" class="body muted">UI-064 checkpoint · media stays primary; metadata and actions become subordinate precision chrome</text>
+
+  <!-- DESKTOP -->
+  <g transform="translate(44 110)">
+    <rect width="1300" height="990" rx="28" fill="url(#bg)" stroke="#fff" stroke-opacity=".10"/>
+    <ellipse cx="700" cy="320" rx="430" ry="250" fill="#6650ff" opacity=".12" filter="url(#glow)"/>
+    <rect x="18" y="18" width="176" height="954" rx="24" fill="url(#glass)" stroke="#fff" stroke-opacity=".10"/>
+    <text x="40" y="58" class="label">RENDERLAB</text>
+    <text x="48" y="112" class="body muted">✦  Create</text><rect x="32" y="132" width="148" height="42" rx="13" fill="#9680ff" opacity=".15"/><text x="48" y="158" class="body">▦  Library</text>
+    <text x="48" y="906" class="small muted">Activity</text><text x="48" y="936" class="small muted">Settings</text>
+    <rect x="216" y="18" width="1066" height="58" rx="20" fill="url(#glass)" stroke="#fff" stroke-opacity=".09"/><text x="242" y="52" class="small muted">Media Viewer</text><text x="1210" y="52" class="small muted">•••</text>
+    <g transform="translate(238 104)">
+      <text x="0" y="24" class="small muted">← Back to Library</text>
+      <!-- media stage -->
+      <g transform="translate(0 50)" filter="url(#soft)">
+        <rect width="720" height="708" rx="26" fill="#0b0d14" fill-opacity=".76" stroke="#b49eff" stroke-opacity=".18"/>
+        <rect x="14" y="14" width="692" height="680" rx="22" fill="#06070b" stroke="#fff" stroke-opacity=".06"/>
+        <rect x="44" y="74" width="632" height="520" rx="19" fill="url(#media)"/>
+        <ellipse cx="360" cy="334" rx="164" ry="128" fill="#7bb8ff" opacity=".58"/><ellipse cx="309" cy="278" rx="60" ry="34" fill="#d9edff" opacity=".32"/>
+        <rect x="44" y="612" width="188" height="34" rx="12" fill="#0c0e16" stroke="#fff" stroke-opacity=".07"/><circle cx="62" cy="629" r="4" fill="#9b83ff"/><text x="76" y="633" class="small">Generated image · Today</text>
+        <text x="560" y="633" class="small muted">1536 × 1536</text>
+      </g>
+      <!-- precision rail -->
+      <g transform="translate(752 50)">
+        <rect width="286" height="708" rx="24" fill="url(#glass)" stroke="#fff" stroke-opacity=".10"/>
+        <g transform="translate(22 26)"><text x="0" y="16" class="label muted">IMAGE · GENERATED</text><text x="0" y="50" class="h2">Cobalt orbit study</text><text x="0" y="74" class="small muted">Created today at 10:32 PM</text></g>
+        <line x1="22" y1="122" x2="264" y2="122" stroke="#fff" stroke-opacity=".08"/>
+        <g transform="translate(22 148)"><text class="label" y="0">PROMPT</text><text y="28" class="small">A matte cobalt sphere suspended in</text><text y="47" class="small">soft spectral studio light, subtle haze…</text><text y="72" class="small muted">Show full prompt</text></g>
+        <line x1="22" y1="246" x2="264" y2="246" stroke="#fff" stroke-opacity=".08"/>
+        <g transform="translate(22 272)"><text class="label">DETAILS</text><text y="29" class="small muted">Type</text><text x="158" y="29" class="small">Image</text><text y="52" class="small muted">Dimensions</text><text x="158" y="52" class="small">1536 × 1536</text><text y="75" class="small muted">Model</text><text x="158" y="75" class="small">FLUX</text></g>
+        <line x1="22" y1="378" x2="264" y2="378" stroke="#fff" stroke-opacity=".08"/>
+        <g transform="translate(22 404)"><text class="label">CONTINUE</text><rect y="20" width="116" height="42" rx="13" fill="url(#accent)" opacity=".78"/><text x="45" y="46" class="chip">Edit</text><rect x="126" y="20" width="116" height="42" rx="13" fill="#fff" opacity=".055" stroke="#fff" stroke-opacity=".10"/><text x="158" y="46" class="chip">Animate</text><rect y="72" width="242" height="38" rx="12" fill="#fff" opacity=".035"/><text x="84" y="96" class="chip muted">Upscale 2×</text><rect y="120" width="242" height="38" rx="12" fill="#fff" opacity=".035"/><text x="78" y="144" class="chip muted">Reuse settings</text></g>
+        <line x1="22" y1="586" x2="264" y2="586" stroke="#fff" stroke-opacity=".08"/>
+        <g transform="translate(22 612)"><text class="label">ACTIONS</text><text y="34" class="small muted">♡ Favorite</text><text x="122" y="34" class="small muted">Collections ▾</text><text y="68" class="small muted">Rename</text><text x="122" y="68" class="small muted">Download</text><text y="100" class="small" fill="#ff8798">Delete</text></g>
+      </g>
+      <!-- continuity annotation -->
+      <g transform="translate(0 792)"><rect width="1038" height="76" rx="18" fill="#0b0d14" stroke="#fff" stroke-opacity=".07"/><text x="18" y="28" class="label">CARD → VIEWER CONTINUITY</text><text x="18" y="52" class="small muted">Matched media geometry + 260–360ms keyed stage entrance. True cross-route shared element only if routing stays conventional; deep links/back never depend on motion.</text></g>
+    </g>
+  </g>
+
+  <!-- MOBILE -->
+  <g transform="translate(1380 110)">
+    <rect width="390" height="990" rx="30" fill="url(#bg)" stroke="#fff" stroke-opacity=".10"/>
+    <ellipse cx="196" cy="220" rx="175" ry="150" fill="#6f58ff" opacity=".11" filter="url(#glow)"/>
+    <text x="20" y="42" class="label">MEDIA VIEWER</text><text x="336" y="42" class="small muted">•••</text>
+    <text x="20" y="84" class="small muted">← Library</text>
+    <rect x="18" y="106" width="354" height="380" rx="22" fill="#0b0d14" stroke="#ae98ff" stroke-opacity=".17"/>
+    <rect x="32" y="120" width="326" height="326" rx="18" fill="url(#media)"/><ellipse cx="195" cy="282" rx="92" ry="72" fill="#7ab7ff" opacity=".58"/><ellipse cx="166" cy="246" rx="34" ry="19" fill="#d9edff" opacity=".28"/>
+    <rect x="32" y="454" width="174" height="24" rx="9" fill="#0b0d14"/><text x="45" y="470" class="small">Image · 1536 × 1536</text>
+    <text x="20" y="530" class="label muted">IMAGE · GENERATED</text><text x="20" y="562" class="h2">Cobalt orbit study</text><text x="20" y="585" class="small muted">Created today at 10:32 PM</text>
+    <rect x="18" y="610" width="354" height="94" rx="17" fill="url(#glass)" stroke="#fff" stroke-opacity=".08"/><text x="34" y="636" class="label">PROMPT</text><text x="34" y="661" class="small">A matte cobalt sphere suspended in soft</text><text x="34" y="681" class="small">spectral studio light, subtle haze…</text>
+    <text x="20" y="744" class="label">CONTINUE</text><rect x="20" y="760" width="168" height="44" rx="13" fill="url(#accent)" opacity=".78"/><text x="87" y="788" class="chip">Edit</text><rect x="202" y="760" width="168" height="44" rx="13" fill="#fff" opacity=".055" stroke="#fff" stroke-opacity=".09"/><text x="258" y="788" class="chip">Animate</text>
+    <rect x="20" y="816" width="350" height="40" rx="12" fill="#fff" opacity=".035"/><text x="156" y="841" class="chip muted">Upscale 2×</text>
+    <rect x="20" y="868" width="350" height="58" rx="15" fill="url(#glass)" stroke="#fff" stroke-opacity=".08"/><text x="34" y="892" class="label">ACTIONS</text><text x="34" y="914" class="small muted">♡ Favorite   ·   Collections   ·   Rename   ·   Download</text>
+    <rect x="58" y="932" width="274" height="42" rx="16" fill="#10121a" fill-opacity=".94" stroke="#fff" stroke-opacity=".09"/><text x="84" y="958" class="small muted">Create</text><text x="177" y="958" class="small">Library</text><text x="269" y="958" class="small muted">Activity</text>
+  </g>
+  <text x="1384" y="1130" class="label muted">390PX · media first, actions reachable in document flow; reduced motion removes stage transform but not hierarchy</text>
+</svg>
