@@ -1680,7 +1680,7 @@ Implementation checklist:
 - [x] Explicit rollout run `34063455944` deployed source `71a9034039a64beec66894cc4f79b1f62bfc7bf7` as READY production deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` and verified the custom domain, R2 upload CORS, durable image upload, WebP thumbnail, private 240-second thumbnail redirect cache, Library listing and exact fixture cleanup. Rollback to `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` was not required. Evidence artifact `9998223539` has JSON sha256 `4d4130f6c2a8768b5a4a5f068e1d2d6b182c849ccaf10df229f985c9ebab05fd` and ZIP sha256 `540839b3655089fc9b4c72b7bee0a21280b29dbe377e3b054c295b92737e9bdb`. No Supabase schema change, R2 resource migration, worker change, scheduler change or creative-capability expansion occurred.
 
 ## Post-Cycle 3 Corrective Maintenance — Contextual Image Model Choice
-**Status: `IMPLEMENTED / STAGING-VERIFIED / EXACT-HEAD PR ACCEPTANCE PENDING`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 
 - [x] Treat the model as bounded Create product intent instead of an invisible worker-routing detail.
 - [x] In Image mode expose a compact maintained-dropdown selector with **FLUX.2 Klein** as the default and **Qwen Image Edit** as the current alternative; do not add a Models destination.
@@ -1690,6 +1690,22 @@ Implementation checklist:
 - [x] Respect model-specific tuning: Qwen uses verified fixed 4-step / CFG 1.0 execution, hides configurable Steps/Guidance and rejects incompatible submitted tuning; FLUX retains its current configurable Image Advanced controls.
 - [x] Preserve historical compatibility: omitted model intent defaults to FLUX for Image and REDGraft for Video.
 - [x] Fresh Qwen audit `34064898642` / artifact `9998623751` verified both registered gateways; isolated local routing run `34065515794` proved Qwen → Qwen fleet, FLUX → current FLUX fleet, old omitted-model → FLUX, and exact cleanup without real provider work.
-- [ ] Complete final exact-head PR workflow matrix and responsive rendered review before merge.
+- [x] Exact PR head `d5f80c02f041b645b7a3b1dee13d70d8139cc832` passed all 19 attached workflows and responsive rendered review; PR #115 merged as `e8649ba39e660e2ec98cfd2fd864b22db74e64e3`.
 
-No schema migration, worker deployment, new infrastructure resource or production rollout is authorized by this maintenance item.
+No schema migration, worker deployment, new infrastructure resource or production rollout was part of this maintenance item.
+
+## Post-Cycle 3 Corrective Maintenance — Library Creatives / Uploads
+**Status: `COMPLETE / VERIFIED / MERGED`.**
+
+- [x] Keep one durable `media_assets` identity and use the existing indexed `origin=generated|uploaded` field as the section boundary.
+- [x] Make **Creatives** the canonical `/library` default and **Uploads** the URL-owned `?tab=uploads` alternative.
+- [x] Preserve kind/search/Favorites/Collections/sort state when changing sections while clearing stale pagination.
+- [x] Scope page results, empty states and page-scoped selection to the active origin section.
+- [x] Keep Upload and desktop drag/drop affordances inside Uploads; Creatives does not accept drops or show Upload.
+- [x] Keep Viewer/deep-link identity and existing media mutations/continuations unchanged across both origins.
+- [x] Add optional validated `origin` filtering to `GET /api/media/assets` while preserving unified results when omitted.
+- [x] Reuse existing schema/infrastructure; no migration, backfill, R2 or worker change.
+- [x] Exact reconciled head `a81c02e82abb0cec6b386e4cfb69f1075f377e33` passed all 30 attached workflows, including Library Lifecycle/Search/Drag Drop and affected upload/media/generation regressions; final desktop/390px artifacts were reviewed clean.
+- [x] PR #116 merged as `999d32812e74afdba73e3cbaa7607a64ce65d603`; all nine workflows attached to the merge SHA completed successfully.
+
+This corrective item supersedes only the earlier v0.1 prohibition on Creatives/Uploads navigation. It does not create parallel Upload media identity or a second Library system. Production rollout remains separate.
