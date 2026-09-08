@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 10
     env:
       TARGET_REF: work/phase-22-system-cohesion
-      EXPECTED_SHA: 46ba6f571315ea915c96ebead3ea571abb526cea
+      EXPECTED_SHA: c522cdc57ebbfcb41f542a10da401ec2317a7f71
       RESULT_REF: tmp/phase22-ci-concurrency-fix-result
     steps:
       - name: Checkout executor branch
@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify target and stage cohesive fix
+      - name: Stage jq quoting correction
         shell: bash
         run: |
           set -euo pipefail
@@ -34,77 +34,31 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          admin = Path('.github/workflows/admin-operations.yml')
-          generation = Path('.github/workflows/generation-admission.yml')
-          matrix = Path('.github/workflows/release-candidate-matrix.yml')
-          infrastructure = Path('docs/architecture/INFRASTRUCTURE.md')
-
-          admin_text = admin.read_text()
-          generation_text = generation.read_text()
-          matrix_text = matrix.read_text()
-          infrastructure_text = infrastructure.read_text()
-
-          expression_open = '$' + '{{'
-          expression_close = '}}'
-
-          old_concurrency = """concurrency:\n  group: renderlab-generation-admission-shared\n  cancel-in-progress: false\n"""
-          admin_concurrency = (
-              "concurrency:\n"
-              f"  group: {expression_open} github.event_name == 'workflow_dispatch' && 'renderlab-generation-admission-shared' || format('renderlab-admin-operations-pr-{{0}}', github.event.pull_request.number) {expression_close}\n"
-              "  cancel-in-progress: false\n"
-          )
-          generation_concurrency = (
-              "concurrency:\n"
-              f"  group: {expression_open} github.event_name == 'workflow_dispatch' && 'renderlab-generation-admission-shared' || format('renderlab-generation-admission-pr-{{0}}', github.event.pull_request.number) {expression_close}\n"
-              "  cancel-in-progress: false\n"
-          )
-
-          if admin_text.count(old_concurrency) != 1:
-              raise SystemExit('Admin concurrency block did not match exactly once')
-          if generation_text.count(old_concurrency) != 1:
-              raise SystemExit('Generation concurrency block did not match exactly once')
-          admin_text = admin_text.replace(old_concurrency, admin_concurrency, 1)
-          generation_text = generation_text.replace(old_concurrency, generation_concurrency, 1)
-
-          old_permissions = """permissions:\n  contents: read\n"""
-          new_permissions = """permissions:\n  actions: read\n  contents: read\n"""
-          if generation_text.count(old_permissions) != 1:
-              raise SystemExit('Generation permissions block did not match exactly once')
-          generation_text = generation_text.replace(old_permissions, new_permissions, 1)
-
-          generation_marker = """      - name: Verify configured Generation Admission\n        run: node scripts/verify-generation-admission.mjs\n"""
-          token_expression = expression_open + ' github.token ' + expression_close
-          sha_expression = expression_open + ' github.event.pull_request.head.sha ' + expression_close
-          generation_wait = f"""      - name: Wait for same-SHA Admin PR fixture window\n        if: github.event_name == 'pull_request'\n        shell: bash\n        env:\n          GH_TOKEN: {token_expression}\n          TARGET_SHA: {sha_expression}\n        run: |\n          set -euo pipefail\n          admin_seen=0\n          for attempt in $(seq 1 180); do\n            admin_json=\"$(gh api \\\n              -H \"Accept: application/vnd.github+json\" \\\n              -H \"X-GitHub-Api-Version: 2022-11-28\" \\\n              \"/repos/$GITHUB_REPOSITORY/actions/workflows/admin-operations.yml/runs?event=pull_request&per_page=50\" \\\n              --jq \".workflow_runs | map(select(.head_sha == \\\"$TARGET_SHA\\\")) | sort_by(.created_at) | last // empty\")\"\n            if [ -z \"$admin_json\" ]; then\n              if [ \"$attempt\" -ge 24 ]; then\n                echo \"No same-SHA Admin PR run attached; proceeding without cross-workflow wait.\"\n                exit 0\n              fi\n              sleep 5\n              continue\n            fi\n\n            admin_seen=1\n            status=\"$(jq -r '.status' <<<\"$admin_json\")\"\n            conclusion=\"$(jq -r '.conclusion // \\\"\\\"' <<<\"$admin_json\")\"\n            run_id=\"$(jq -r '.id' <<<\"$admin_json\")\"\n            echo \"Same-SHA Admin PR run $run_id: $status $conclusion\"\n\n            if [ \"$status\" = \"completed\" ]; then\n              if [ \"$conclusion\" = \"success\" ]; then\n                exit 0\n              fi\n              echo \"::error::Same-SHA Admin PR run $run_id concluded $conclusion before Generation Admission entered its fixture window.\"\n              exit 1\n            fi\n            sleep 5\n          done\n\n          if [ \"$admin_seen\" -eq 1 ]; then\n            echo \"::error::Timed out waiting for the same-SHA Admin PR run to finish.\"\n            exit 1\n          fi\n          echo \"No same-SHA Admin PR run observed; proceeding.\"\n\n{generation_marker}"""
-          if generation_text.count(generation_marker) != 1:
-              raise SystemExit('Generation verification marker did not match exactly once')
-          generation_text = generation_text.replace(generation_marker, generation_wait, 1)
-
-          matrix_marker = """      - name: Dispatch configured release matrix\n        shell: bash\n"""
-          matrix_wait = """      - name: Wait for attached shared-fixture PR workflows\n        if: github.event_name == 'pull_request'\n        shell: bash\n        run: |\n          set -euo pipefail\n\n          wait_for_pr_workflow() {\n            local workflow=\"$1\"\n            local label=\"$2\"\n            local seen=0\n\n            for attempt in $(seq 1 180); do\n              run_json=\"$(gh api \\\n                -H \"Accept: application/vnd.github+json\" \\\n                -H \"X-GitHub-Api-Version: 2022-11-28\" \\\n                \"/repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?event=pull_request&per_page=50\" \\\n                --jq \".workflow_runs | map(select(.head_sha == \\\"$TARGET_SHA\\\")) | sort_by(.created_at) | last // empty\")\"\n\n              if [ -z \"$run_json\" ]; then\n                if [ \"$attempt\" -ge 12 ]; then\n                  echo \"No same-SHA $label PR run attached; continuing.\"\n                  return 0\n                fi\n                sleep 5\n                continue\n              fi\n\n              seen=1\n              status=\"$(jq -r '.status' <<<\"$run_json\")\"\n              conclusion=\"$(jq -r '.conclusion // \\\"\\\"' <<<\"$run_json\")\"\n              run_id=\"$(jq -r '.id' <<<\"$run_json\")\"\n              echo \"Same-SHA $label PR run $run_id: $status $conclusion\"\n\n              if [ \"$status\" = \"completed\" ]; then\n                if [ \"$conclusion\" = \"success\" ]; then\n                  return 0\n                fi\n                echo \"::error::Same-SHA $label PR run $run_id concluded $conclusion before release child dispatch.\"\n                return 1\n              fi\n              sleep 5\n            done\n\n            if [ \"$seen\" -eq 1 ]; then\n              echo \"::error::Timed out waiting for same-SHA $label PR coverage before release child dispatch.\"\n              return 1\n            fi\n            echo \"No same-SHA $label PR run observed; continuing.\"\n          }\n\n          wait_for_pr_workflow admin-operations.yml \"Admin Operations\"\n          wait_for_pr_workflow generation-admission.yml \"Generation Admission\"\n\n""" + matrix_marker
-          if matrix_text.count(matrix_marker) != 1:
-              raise SystemExit('Release matrix dispatch marker did not match exactly once')
-          matrix_text = matrix_text.replace(matrix_marker, matrix_wait, 1)
-
-          old_infra = """CI shared-resource isolation is intentionally narrow. `Account/Admin Operations` and `Generation Admission` alone use `concurrency: renderlab-generation-admission-shared` with `cancel-in-progress: false` because they temporarily mutate the singleton settings baseline. Activity, Create Lifecycle, Generation Integration and Video Generation Integration retain independent concurrency groups and set `RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS=true`; the configured-account helper responds only by seeding that exact run-owned account with `generation_enabled=true`, `max_active_jobs=4`, `max_jobs_per_hour=120`. This is test-fixture isolation, not an application/runtime bypass, and cleanup deletes the exact account access/reservations/Auth rows. The Admission verifier also closes Chromium explicitly; Activity terminalizes only accepted mock-backend jobs before its later mobile Retry so legacy UX coverage respects the real four-active ceiling.\n"""
-          new_infra = """CI shared-resource isolation is intentionally narrow. `Account/Admin Operations` and `Generation Admission` temporarily mutate the singleton settings baseline and therefore remain serialized at the actual fixture window, but GitHub's one-running/one-pending concurrency semantics require event-aware scheduling. Pull-request copies use distinct PR-scoped concurrency groups so one pending workflow cannot cancel the other before a job starts; Generation Admission waits for a same-SHA Admin PR run to finish successfully when one is attached before entering its configured verifier fixture window. Before it dispatches release children, the Release Candidate Matrix waits for any same-SHA attached Admin and Generation Admission PR copies to reach terminal success. Manual/release `workflow_dispatch` copies then keep the shared `renderlab-generation-admission-shared` group with `cancel-in-progress: false`; the matrix dispatches Admin first and waits until that exact-SHA child is running or successfully complete before enqueuing Generation Admission behind it. Activity, Create Lifecycle, Generation Integration and Video Generation Integration retain independent concurrency groups and set `RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS=true`; the configured-account helper responds only by seeding that exact run-owned account with `generation_enabled=true`, `max_active_jobs=4`, `max_jobs_per_hour=120`. This is test-fixture isolation, not an application/runtime bypass, and cleanup deletes the exact account access/reservations/Auth rows. The Admission verifier also closes Chromium explicitly; Activity terminalizes only accepted mock-backend jobs before its later mobile Retry so legacy UX coverage respects the real four-active ceiling.\n"""
-          if infrastructure_text.count(old_infra) != 1:
-              raise SystemExit('Infrastructure CI isolation paragraph did not match exactly once')
-          infrastructure_text = infrastructure_text.replace(old_infra, new_infra, 1)
-
-          admin.write_text(admin_text)
-          generation.write_text(generation_text)
-          matrix.write_text(matrix_text)
-          infrastructure.write_text(infrastructure_text)
+          paths = [
+              Path('.github/workflows/generation-admission.yml'),
+              Path('.github/workflows/release-candidate-matrix.yml'),
+          ]
+          old = "'.conclusion // \\\"\\\"'"
+          new = "'.conclusion // \"\"'"
+          total = 0
+          for path in paths:
+              text = path.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one over-escaped jq filter, found {count}')
+              path.write_text(text.replace(old, new, 1))
+              total += count
+          if total != 2:
+              raise SystemExit(f'expected two corrections, found {total}')
           PY
 
           git diff --check
           changed="$(git diff --name-only | sort)"
-          expected="$(printf '%s\n' '.github/workflows/admin-operations.yml' '.github/workflows/generation-admission.yml' '.github/workflows/release-candidate-matrix.yml' 'docs/architecture/INFRASTRUCTURE.md' | sort)"
+          expected="$(printf '%s\n' '.github/workflows/generation-admission.yml' '.github/workflows/release-candidate-matrix.yml' | sort)"
           test "$changed" = "$expected"
 
           git config user.name "RenderLab CI Stager"
           git config user.email "renderlab-ci-stager@users.noreply.github.com"
-          git add .github/workflows/admin-operations.yml .github/workflows/generation-admission.yml .github/workflows/release-candidate-matrix.yml docs/architecture/INFRASTRUCTURE.md
-          git commit -m "Fix admission CI concurrency scheduling"
+          git add .github/workflows/generation-admission.yml .github/workflows/release-candidate-matrix.yml
+          git commit -m "Fix admission wait jq quoting"
           git push --force origin "HEAD:refs/heads/$RESULT_REF"
