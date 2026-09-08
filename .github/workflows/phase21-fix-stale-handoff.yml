@@ -1,0 +1,36 @@
+name: Phase 21 handoff wording correction
+
+on:
+  push:
+    branches:
+      - work/phase-21-spatial-media
+    paths:
+      - ".github/workflows/phase21-fix-stale-handoff.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix-handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard verified closure baseline
+        run: |
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "12bb7133bf6c2686c47ccda9d26fd09b7e36c038"
+          git merge-base --is-ancestor 7469cb70cd11d320f14d6e969bad4c71aeb77c09 HEAD
+      - name: Correct stale handoff wording
+        run: python scripts/phase21-fix-stale-handoff.py
+      - name: Remove temporary helpers
+        run: rm .github/workflows/phase21-fix-stale-handoff.yml scripts/phase21-fix-stale-handoff.py
+      - name: Validate and commit correction
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: align Phase 21 handoff wording with verified state"
+          git push origin HEAD:work/phase-21-spatial-media
