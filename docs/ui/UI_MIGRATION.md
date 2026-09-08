@@ -1785,7 +1785,7 @@ Verified implementation evidence: exact implementation head `dd43169abae89e7e672
 - [x] Human-review desktop + 390px Library default/selection, Viewer image/video/comparison and reduced-motion evidence; no overflow, media distortion, hover-only meaning, excessive effects or visually timid result accepted.
 - [x] Verify exact configured fixture cleanup and update authoritative implementation docs from reality before Phase 21 completion. Final clean exact-head Library Lifecycle `34258560488`, Creative Iteration `34258560437`, Image Upscale Integration `34258560340` and their cleanup steps passed before PR #127 merged as `c17abfef07fbc580c51f458496e4e53502816229`; all five merged-main checks then passed and Vercel created no deployment.
 
-No schema, Supabase/R2, account/admission, generation capability, worker/provider/routing or production-deployment change is authorized by this contract. Phase 22 remains roadmap-only.
+No schema, Supabase/R2, account/admission, generation capability, worker/provider/routing or production-deployment change is authorized by this contract. Phase 22 is expanded below from the now-verified merged Phase 21 baseline; implementation still requires the design checkpoint.
 
 ## Phase 22 acceptance tracker
 **Status: `CONTRACT READY / DESIGN CHECKPOINT REQUIRED / IMPLEMENTATION NOT STARTED`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`.
