@@ -1,0 +1,139 @@
+from pathlib import Path
+
+
+def replace_once(text: str, old: str, new: str, label: str) -> str:
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{label}: expected exactly one match, found {count}")
+    return text.replace(old, new, 1)
+
+
+# PROJECT.md — implementation is verified, but merge/main closure is intentionally still pending.
+project_path = Path("PROJECT.md")
+project = project_path.read_text()
+project = replace_once(
+    project,
+    "**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.**\n**Planning baseline:** `c17abfef07fbc580c51f458496e4e53502816229` (Phase 21 merged baseline).",
+    "**Status: `VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING`.**\n**Planning baseline:** `c17abfef07fbc580c51f458496e4e53502816229` (Phase 21 merged baseline).",
+    "PROJECT Phase 22 status",
+)
+closure_marker = "## Exit criteria\nPhase 22 is complete only when:"
+if project.count(closure_marker) < 1:
+    raise SystemExit("PROJECT Phase 22 exit marker missing")
+if "### Phase 22 pre-merge verification — 2026-09-08" in project:
+    raise SystemExit("PROJECT Phase 22 closure already present")
+closure = """### Phase 22 pre-merge verification — 2026-09-08
+Exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a` is functionally and visually accepted for PR #130. Thirteen of the fifteen ordinary PR-attached workflows completed successfully; the Account Ownership and Account/Admin Operations PR copies were cancelled before any job started by shared workflow-concurrency churn. Release Candidate Matrix `34270048015` independently checked out the exact implementation SHA, passed whitespace/verifier-syntax/UI-purity/typecheck/production-build preflight, then dispatched the configured 23-workflow exact-SHA child matrix. Every child succeeded, including Account Ownership `34270364557`, Admin Operations `34270414187`, Video Generation Integration `34270379864`, Create Lifecycle `34270381977`, Activity Visual `34270405290`, UI Shell `34270407592` and Brand / Launch `34270409459`. Its run-manifest artifact is `10073980292` (`sha256:714622aa35c930ef65df0505250d30631cbcfc596c202cc7ea5073c73666a782`).
+
+Human review passed the final implementation artifacts: Account Identity `10073476200` (`sha256:d3d7971853a062ce4393662d3a649d3a434f47420350b613c4f92f832b4ea825`), Activity `10073569449` (`sha256:5d63a1013271919fcb9b0fe5926bdd799fad6ed061c560ffdd51ca02c45f0e56`), Brand / Launch `10073485236` (`sha256:97f1b3bd663069b46ef6feecc1319c96c92b703408c2e1904010864726d880f5`), exact-SHA Create Lifecycle `10073636995` (`sha256:09c00d85ca82b9c80bb9dda06197e646f8b418eb6989755a158cbf85f17be1f8`), Library Lifecycle `10073489435` (`sha256:e00f4f6a317d9e782cefbf31c457262d073582af84206bcfa9e5afefd330dbca`) and Creative Iteration / Viewer Compare `10073548921` (`sha256:a74dfffd1e7bdc531ac6564077192c6b44ebb9ec8a5b8a2b426eea990105c262`). Landing, Activity and Settings now belong to the same restrained Kinetic Precision system as Create and Library/Viewer on desktop and 390px; reduced-motion meaning remains static and complete; no fake progress/ETA/provider/SLA state or horizontal overflow was accepted.
+
+Acceptance caught and corrected two classes of issue before this verification: the first implementation candidate retained stale Integrated Release locators for the superseded Landing hero, and pixel review of the next candidate exposed signed-out Settings accidentally rendering the Admin continuation via optional-ID equality plus insufficient mobile bottom clearance around security actions. The final implementation requires a real identity/admin match and verifies signed-out Admin absence plus mobile Change password / Sign out reachability above the floating dock. Configured cleanup passed for Account Identity, Activity, Create Lifecycle, Library Lifecycle and Creative Iteration. No capability, schema, account policy, worker/routing, dependency, infrastructure or deployment contract changed. UI-065 records the accepted Phase 22 visual decision; no new UI-system primitive or frontend architecture boundary was introduced, so UI_SYSTEM, COMPONENT_CATALOG and FRONTEND_ARCHITECTURE require no Phase 22 implementation change.
+
+This is pre-merge verification only. Phase 22 and Cycle 4 remain merge-pending until PR #130 is guarded-merged and the workflows GitHub attaches to merged `main` pass. Production rollout remains a separate explicit operation.
+
+"""
+idx = project.rfind(closure_marker)
+project = project[:idx] + closure + project[idx:]
+project_path.write_text(project)
+
+
+# UI_MIGRATION.md — close implementation acceptance while keeping cycle merge-pending.
+migration_path = Path("docs/ui/UI_MIGRATION.md")
+migration = migration_path.read_text()
+migration = replace_once(
+    migration,
+    "# Cycle 4 — Kinetic Visual Experience\n**Status: `ACTIVE / PHASE 22 DESIGN CHECKPOINT APPROVED`.**",
+    "# Cycle 4 — Kinetic Visual Experience\n**Status: `ACTIVE / PHASE 22 IMPLEMENTATION VERIFIED / MERGE PENDING`.**",
+    "UI_MIGRATION Cycle 4 status",
+)
+migration = replace_once(
+    migration,
+    "- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS` — contract baseline `c17abfef07fbc580c51f458496e4e53502816229`; reviewed checkpoint evidence `34265429235` / artifact `10071612375`.",
+    "- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING` — contract baseline `c17abfef07fbc580c51f458496e4e53502816229`; reviewed checkpoint evidence `34265429235` / artifact `10071612375`; exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`.",
+    "UI_MIGRATION Phase 22 roadmap status",
+)
+migration = replace_once(
+    migration,
+    "## Phase 22 acceptance tracker\n**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`; checkpoint review run `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`).",
+    "## Phase 22 acceptance tracker\n**Status: `VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`; checkpoint review run `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`); exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`.",
+    "UI_MIGRATION Phase 22 tracker status",
+)
+pending_items = [
+    "- [ ] Activity: strengthen truthful lifecycle/status hierarchy while preserving server ordering, pagination, auto-refresh and separate Run Again / Retry / Cancel eligibility.",
+    "- [ ] Activity: provide static/reduced-motion equivalents and no fake percentage, ETA, provider stages or queue/SLA claims.",
+    "- [ ] Settings: align signed-out, active/suspended/access-status and password/security composition with Kinetic Precision without changing identity/access/admin authorization semantics.",
+    "- [ ] Landing: align the public hero/product-preview/CTA composition with current Kinetic Precision while preserving closed-beta truth, `/create` + `/settings` destinations and root continuation redirect behavior.",
+    "- [ ] Keep public signup/pricing/testimonial/fake-metric/provider/model/SLA claims absent; no marketing analytics/cookie expansion.",
+    "- [ ] Keep Admin internal redesign, new Settings preferences, capability/schema/worker/routing/infrastructure and production deployment out of scope.",
+    "- [ ] Run the final Cycle 4 desktop/390px/reduced-motion/accessibility/effect-budget cohesion audit across Landing, Create, Library, Viewer, Activity and Settings.",
+    "- [ ] Pass Engineering Quality, UI Shell, Activity Visual, Activity Cancel, Account Identity, Account Ownership, Brand / Launch, affected Creative Iteration/Create/Library/Viewer gates and every workflow actually attached to the exact final head.",
+    "- [ ] Verify configured cleanup and human-review final implementation screenshots before marking Phase 22 or Cycle 4 complete.",
+]
+for old in pending_items:
+    migration = replace_once(migration, old, old.replace("- [ ]", "- [x]", 1), f"UI_MIGRATION checklist {old[:50]}")
+closure_anchor = "- [x] Verify configured cleanup and human-review final implementation screenshots before marking Phase 22 or Cycle 4 complete."
+if "### Phase 22 pre-merge verified closure — 2026-09-08" in migration:
+    raise SystemExit("UI_MIGRATION Phase 22 closure already present")
+migration_closure = """
+
+### Phase 22 pre-merge verified closure — 2026-09-08
+Exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a` is accepted for merge after configured and human review. Ordinary PR checks were successful except two pre-job concurrency cancellations (Account Ownership and Account/Admin Operations); exact-SHA Release Candidate Matrix `34270048015` passed and all 23 configured child workflows succeeded, including replacement exact-SHA Account Ownership `34270364557` and Admin Operations `34270414187`, real Video Generation `34270379864`, Create Lifecycle `34270381977`, Activity `34270405290`, UI Shell `34270407592` and Brand / Launch `34270409459`. Manifest artifact `10073980292` has digest `sha256:714622aa35c930ef65df0505250d30631cbcfc596c202cc7ea5073c73666a782`.
+
+Final human-review artifacts passed: Account Identity `10073476200` (`sha256:d3d7971853a062ce4393662d3a649d3a434f47420350b613c4f92f832b4ea825`), Activity `10073569449` (`sha256:5d63a1013271919fcb9b0fe5926bdd799fad6ed061c560ffdd51ca02c45f0e56`), Brand / Launch `10073485236` (`sha256:97f1b3bd663069b46ef6feecc1319c96c92b703408c2e1904010864726d880f5`), Create Lifecycle `10073636995` (`sha256:09c00d85ca82b9c80bb9dda06197e646f8b418eb6989755a158cbf85f17be1f8`), Library Lifecycle `10073489435` (`sha256:e00f4f6a317d9e782cefbf31c457262d073582af84206bcfa9e5afefd330dbca`) and Creative Iteration / Viewer Compare `10073548921` (`sha256:a74dfffd1e7bdc531ac6564077192c6b44ebb9ec8a5b8a2b426eea990105c262`). Configured fixture cleanup passed on the reviewed Account, Activity, Create, Library and Creative Iteration runs.
+
+Acceptance corrected stale Integrated Release Landing copy assumptions plus two real Settings defects: signed-out Admin presentation from absent optional IDs and mobile security-action overlap with the floating dock. The final candidate requires a real server-derived identity/admin match and verifies mobile security controls are reachable above the dock. No backend/product capability, schema, worker/routing, infrastructure, dependency or deployment contract changed. UI-065 records the accepted decision. Cycle 4 remains active until guarded PR #130 merge and merged-main verification; production deployment remains unauthorized.
+"""
+migration = replace_once(migration, closure_anchor, closure_anchor + migration_closure, "UI_MIGRATION closure anchor")
+migration_path.write_text(migration)
+
+
+# UI_DECISIONS.md — add the required accepted Phase 22 decision.
+decisions_path = Path("docs/ui/UI_DECISIONS.md")
+decisions = decisions_path.read_text()
+if "### UI-065 —" in decisions:
+    raise SystemExit("UI-065 already exists")
+decisions = decisions.rstrip() + """
+
+### UI-065 — Activity, Settings and Landing complete Kinetic Precision system cohesion
+**Status:** Accepted / Implemented / Exact-head verified / Merge pending
+**Date:** 2026-09-08
+**Design checkpoint evidence:** `design/penpot/phase22-system-cohesion-v0.1.md` with `phase22-activity-kinetic-v0.1.svg`, `phase22-settings-trust-v0.1.svg`, `phase22-landing-kinetic-v0.1.svg` and `phase22-system-cohesion-v0.1.svg`; remote review `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`).
+
+**Decision:** Cycle 4 Phase 22 deliberately extends the already-approved Kinetic Precision language into `/activity`, `/settings` + password continuation, and public `/` without changing ownership, authorization, capability or routing semantics. Activity gains dimensional truthful lifecycle hierarchy from persisted product state; Settings becomes a deliberate identity/access/security surface; Landing becomes the public Kinetic Precision expression with a clearly decorative/static product preview. These surfaces must feel related to Create and Library/Viewer while retaining their distinct product jobs.
+
+**Activity rule:** Real persisted lifecycle meaning stays primary. Queued/preparing/running/cancelling/persisting/succeeded/failed/cancelled labels, sanitized failure copy and server-derived View Result / Run Again / Retry / Cancel eligibility remain authoritative. Motion may reinforce active state but cannot fabricate percent progress, ETA, provider stage, queue position or SLA; reduced motion keeps equivalent static meaning.
+
+**Settings rule:** Identity, Closed Beta access and admin visibility remain server-derived. Signed-out stays Sign in + Forgot password with no public account creation and no Admin continuation. Active/suspended states keep truthful access feedback; password/sign-out remain reachable on narrow layouts above the floating dock. The Admin continuation appears only for a real fresh active-admin identity match. Phase 22 adds no profile/preferences/role-editing/account-management system.
+
+**Landing rule:** `Open Create` continues to `/create`; `Sign in` continues to `/settings`; legacy root continuation still preserves query intent into Create. Closed-beta/invitation-only truth stays explicit. The product preview may communicate current operations and visual language only when clearly marked as a static illustration rather than live generation state. Public signup/pricing/testimonial/fake-metric/provider/model/SLA and marketing-analytics claims remain absent.
+
+**Cohesion/effect rule:** Reuse UI-062's existing atmospheric, glass, depth, tactile and reduced-motion system. Phase 22 may use feature-scoped CSS and existing Motion where presentation benefits, but no second animation runtime, shell-global state, WebGL/shader engine or new reusable component is justified. Effects stay subordinate to status/content hierarchy, and 390px keyboard/touch/focus behavior remains mandatory.
+
+**Verified implementation evidence:** Exact functional head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a` passed the substantive PR matrix. Release Candidate Matrix `34270048015` verified that exact SHA and all 23 configured child workflows succeeded, including Account Ownership `34270364557`, Admin Operations `34270414187`, Video Generation `34270379864`, Create Lifecycle `34270381977`, Activity `34270405290`, UI Shell `34270407592` and Brand / Launch `34270409459`; manifest artifact `10073980292` is `sha256:714622aa35c930ef65df0505250d30631cbcfc596c202cc7ea5073c73666a782`. Human review accepted final Account Identity `10073476200` (`sha256:d3d7971853a062ce4393662d3a649d3a434f47420350b613c4f92f832b4ea825`), Activity `10073569449` (`sha256:5d63a1013271919fcb9b0fe5926bdd799fad6ed061c560ffdd51ca02c45f0e56`), Brand / Launch `10073485236` (`sha256:97f1b3bd663069b46ef6feecc1319c96c92b703408c2e1904010864726d880f5`), Create `10073636995` (`sha256:09c00d85ca82b9c80bb9dda06197e646f8b418eb6989755a158cbf85f17be1f8`), Library `10073489435` (`sha256:e00f4f6a317d9e782cefbf31c457262d073582af84206bcfa9e5afefd330dbca`) and Viewer/Creative Iteration `10073548921` (`sha256:a74dfffd1e7bdc531ac6564077192c6b44ebb9ec8a5b8a2b426eea990105c262`) evidence. Acceptance caught and corrected a stale Integrated Release hero locator and two Settings defects before approval; configured cleanup passed.
+
+**Consequences:** UI-065 changes no generation/media/account/admission/schema/storage/worker/provider/routing/deployment contract and adopts no new dependency. Phase 22 remains merge-pending until PR #130 is guarded-merged and merged-main checks pass. Production rollout remains a separate explicit operation; this decision implies no Phase 23.
+""" + "\n"
+decisions_path.write_text(decisions)
+
+
+# SCREEN_REGISTRY.md — record verified Phase 22 composition without rewriting prior historical evidence.
+registry_path = Path("docs/ui/SCREEN_REGISTRY.md")
+registry = registry_path.read_text()
+if "## Cycle 4 Phase 22 screen extensions — VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING" in registry:
+    raise SystemExit("SCREEN_REGISTRY Phase 22 extension already present")
+registry = registry.rstrip() + """
+
+## Cycle 4 Phase 22 screen extensions — VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING
+
+### Brand / Landing — Kinetic Precision public expression
+The approved `/` product home now uses the reviewed Phase 22 Kinetic Precision hero and dimensional product-preview composition from `design/penpot/phase22-landing-kinetic-v0.1.svg` / `phase22-system-cohesion-v0.1.md`. `Open Create` still targets `/create`, `Sign in` still targets `/settings`, legacy root continuation remains intact, and invitation-only Closed Beta truth remains explicit. The preview is labeled as a static illustration and does not imply live generation state. No public signup/pricing/testimonial/fake-metric/provider/model/SLA or marketing-analytics expansion is approved.
+
+### Activity — Kinetic Precision lifecycle hierarchy
+`/activity` keeps server-owned account-private generation history, ordering, pagination and observational auto-refresh while presenting persisted lifecycle status with stronger dimensional hierarchy. Running/queued/saving/completed/failed/cancelled meaning remains textual and action eligibility stays separate: successful current-valid history may View result / Run again, failed current-valid history may Retry, and active eligible work may Cancel. Raw provider/worker detail and fabricated percent/ETA/queue/SLA state remain forbidden. 390px includes dedicated bottom clearance for the floating dock, and reduced motion uses static lifecycle meaning.
+
+### Settings / password — Kinetic Precision trust/security composition
+`/settings` and `/settings/password` now visually separate identity, Closed Beta access and security continuation without moving authority into the browser. Signed-out state contains Sign in + Forgot password and does not expose Admin. Active/suspended state keeps truthful server-derived access feedback and password/sign-out recovery; conditional Admin appears only for a real fresh active-admin identity match. Mobile Settings/password reserve bottom clearance so Change password / Sign out remain reachable above the shell dock. No preferences/profile/role editing/public account creation/Admin redesign is added.
+
+**Phase 22 implementation evidence:** exact functional head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`; design review `34265429235` / artifact `10071612375`; Release Candidate Matrix `34270048015` with all 23 exact-SHA child workflows successful; final reviewed artifacts Account Identity `10073476200`, Activity `10073569449`, Brand / Launch `10073485236`, Create Lifecycle `10073636995`, Library Lifecycle `10073489435`, Creative Iteration `10073548921`. Exact fixture cleanup passed on the reviewed Account, Activity, Create, Library and Creative Iteration runs. UI-065 is the controlling Phase 22 visual decision. Merge and merged-main verification remain pending; production deployment is not authorized.
+""" + "\n"
+registry_path.write_text(registry)
