@@ -18,10 +18,20 @@ jobs:
         with:
           ref: design/phase-22-system-cohesion
 
-      - name: Install SVG renderer
+      - name: Install SVG validation and render tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq librsvg2-bin imagemagick
+          sudo apt-get install -y -qq libxml2-utils librsvg2-bin imagemagick
+
+      - name: Validate checkpoint SVG source
+        shell: bash
+        run: |
+          set -euo pipefail
+          xmllint --noout \
+            design/penpot/phase22-activity-kinetic-v0.1.svg \
+            design/penpot/phase22-settings-trust-v0.1.svg \
+            design/penpot/phase22-landing-kinetic-v0.1.svg \
+            design/penpot/phase22-system-cohesion-v0.1.svg
 
       - name: Render checkpoint pixels
         shell: bash
