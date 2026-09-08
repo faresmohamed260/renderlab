@@ -1,0 +1,38 @@
+name: Phase 22 design checkpoint generation
+
+on:
+  push:
+    branches:
+      - design/phase-22-system-cohesion
+    paths:
+      - ".github/workflows/phase22-design-generate.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: design/phase-22-system-cohesion
+
+      - name: Generate repository-backed checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/.phase22-design-generator.py
+          rm scripts/.phase22-design-generator.py
+          rm .github/workflows/phase22-design-generate.yml
+          git diff --check
+
+      - name: Commit design checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "design: add Phase 22 system cohesion checkpoint"
+          git push origin HEAD:design/phase-22-system-cohesion
