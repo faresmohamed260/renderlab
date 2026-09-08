@@ -52,6 +52,24 @@ async function assertNoHorizontalOverflow(page, label) {
   assert(overflow <= 1, `${label} has horizontal overflow: ${overflow}px`);
 }
 
+async function assertReachableAfterBottomScroll(page, locator, label) {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(80);
+  const state = await locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const top = document.elementFromPoint(x, y);
+    return {
+      inViewport: rect.top >= 0 && rect.bottom <= window.innerHeight,
+      topmost: Boolean(top && (top === element || element.contains(top))),
+      topTag: top?.tagName ?? null,
+    };
+  });
+  assert(state.inViewport, `${label} could not be brought fully into the mobile viewport.`);
+  assert(state.topmost, `${label} remains occluded after bottom scroll (top element: ${state.topTag ?? "none"}).`);
+}
+
 function jwtPayload(token) {
   const parts = token.split(".");
   assert(parts.length === 3 && parts[1], "Session access token is not a JWT.");
@@ -272,6 +290,7 @@ try {
   await page.goto(`${baseUrl}/settings`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("heading", { name: "Account", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Sign in", exact: true }).waitFor({ state: "visible" });
+  assert(await page.getByRole("link", { name: "Open Admin", exact: true }).count() === 0, "Signed-out Settings exposed the Admin operations link.");
   await assertNoHorizontalOverflow(page, "Desktop signed-out Settings");
   await page.screenshot({ path: `${artifactDir}/account-identity-desktop-signed-out.png`, fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -294,6 +313,9 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await assertNoHorizontalOverflow(page, "Narrow signed-in Settings");
+  await assertReachableAfterBottomScroll(page, page.getByRole("link", { name: "Change password", exact: true }), "Narrow Settings Change password");
+  await assertReachableAfterBottomScroll(page, page.getByRole("button", { name: "Sign out", exact: true }), "Narrow Settings Sign out");
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in-actions.png` });
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in.png`, fullPage: true });
 
   await setAccessStatus("suspended");
@@ -301,6 +323,9 @@ try {
   await page.getByText("Suspended", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   const deniedMedia = await page.request.get(`${baseUrl}/api/media/assets`);
   assert(deniedMedia.status() === 401, `Suspended account media API expected 401, got ${deniedMedia.status()}.`);
+  await assertReachableAfterBottomScroll(page, page.getByRole("link", { name: "Change password", exact: true }), "Suspended Settings Change password");
+  await assertReachableAfterBottomScroll(page, page.getByRole("button", { name: "Sign out", exact: true }), "Suspended Settings Sign out");
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended-actions.png` });
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended.png`, fullPage: true });
 
   await setAccessStatus("active");
