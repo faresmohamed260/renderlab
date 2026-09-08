@@ -31,7 +31,7 @@ RenderLab should feel like a **premium modern creative application**, not a defa
 - Do not add motion/effects just to imitate fashionable AI landing pages. Avoid gratuitous physics, glow, cursor effects, parallax or animation that competes with media/task focus.
 - `prefers-reduced-motion`, keyboard/touch parity, performance and accessibility remain non-negotiable. Every animated interaction needs a clear static/reduced-motion equivalent.
 
-Cycle 4 Phase 20 applied this elevated interaction-quality bar to Create and is now complete/verified/merged. Phase 21 is the next deliberate feature-level application: Library and Media Viewer become the Kinetic Precision spatial media workspace while preserving mature durable-media, ownership, organization and continuation contracts.
+Cycle 4 Phase 20 applied this elevated interaction-quality bar to Create and Phase 21 applied it to Library/Media Viewer; both are complete/verified/merged. Phase 22 is the final Cycle 4 application: Activity, Settings and public Landing must reach the same Kinetic Precision quality while preserving their mature lifecycle, account/security and closed-beta routing contracts, followed by a cross-product cohesion audit.
 
 ## Semantic Color Foundation
 Dark theme is the initial product theme. Values below are the initial approved baseline and may be tuned through visual implementation review without changing their semantic roles.

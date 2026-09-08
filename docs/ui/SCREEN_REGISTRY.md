@@ -208,7 +208,7 @@ Approved behavior:
 ### Activity
 **Route:** `/activity`  
 **Status:** APPROVED — Activity v0.1 / UI-035 + failed-job Retry / UI-050 + native Cancel / UI-055 + successful Run Again / UI-056 + Upscale lifecycle/recovery summary / UI-058
-**Implementation:** `src/app/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`, `src/features/activity/activity-retry-button.tsx`, `src/features/activity/activity-cancel-button.tsx`, `src/features/activity/activity-run-again-button.tsx`
+**Implementation:** `src/app/(app)/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`, `src/features/activity/activity-retry-button.tsx`, `src/features/activity/activity-cancel-button.tsx`, `src/features/activity/activity-run-again-button.tsx`
 **Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/lib/api/generation-retry-contract.ts`, `src/lib/api/generation-cancel-contract.ts`, `src/lib/api/generation-run-again-contract.ts`, `src/server/generation/generation-activity.ts`, `src/server/generation/retry-generation.ts`, `src/server/generation/run-again-generation.ts`, `src/server/generation/cancel-generation.ts`, `POST /api/generation/jobs/[jobId]/retry`, `POST /api/generation/jobs/[jobId]/run-again`, `POST /api/generation/jobs/[jobId]/cancel`, server-owned reconciliation
 **Purpose:** Show current/recent account-owned RenderLab `generation_jobs`, real execution state and actionable product recovery/control without exposing worker infrastructure as user responsibility.
 
@@ -225,7 +225,7 @@ Approved behavior:
 ### Settings
 **Route:** `/settings`  
 **Status:** APPROVED — Account Identity Foundation / UI-029 + Phase 10A/10B account/admin integration / UI-051
-**Implementation:** `src/app/settings/page.tsx`  
+**Implementation:** `src/app/(app)/settings/page.tsx`
 **Account surface:** `src/features/account/account-settings.tsx`; password security: `src/features/account/account-password-form.tsx`
 **Session boundary:** `src/lib/supabase/config.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/proxy.ts`, root `proxy.ts`
 
