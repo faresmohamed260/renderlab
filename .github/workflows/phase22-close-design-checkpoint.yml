@@ -1,0 +1,33 @@
+name: Close Phase 22 design checkpoint
+
+on:
+  push:
+    branches:
+      - design/phase-22-system-cohesion
+    paths:
+      - ".github/workflows/phase22-close-design-checkpoint.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: design/phase-22-system-cohesion
+
+      - name: Apply reviewed checkpoint status
+        run: python scripts/phase22-close-design-checkpoint.py
+
+      - name: Verify and commit closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "design: approve Phase 22 system cohesion checkpoint"
+          git push origin HEAD:design/phase-22-system-cohesion
