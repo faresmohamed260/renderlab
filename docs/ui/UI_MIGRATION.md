@@ -1733,7 +1733,7 @@ The next major product pass is explicitly visual. Success is measured by user-vi
 - **Phase 19 — Kinetic Foundation & App Shell:** `COMPLETE / VERIFIED` — atmospheric canvas, dimensional floating glass shell chrome, morphing active navigation, tactile feedback, fast top-level route continuity and reduced-motion/static equivalents.
 - **Phase 20 — Create as a Creative Instrument:** `COMPLETE / VERIFIED / MERGED` — immersive instrument frame, morphing Image/Video context, reference choreography, precision-deck Advanced, tactile Generate/lifecycle states and spatial result arrival; final exact-head and merged-main evidence are verified below.
 - **Phase 21 — Library & Viewer Spatial Media Experience:** `COMPLETE / VERIFIED` — UI-064 is implemented and exact-head verified; production rollout remains separate and unauthorized.
-- **Phase 22 — Activity, Settings, Landing & System Cohesion:** roadmap only until Phase 21 evidence closes.
+- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `CONTRACT READY / DESIGN CHECKPOINT REQUIRED / IMPLEMENTATION NOT STARTED` — expanded from verified Phase 21 merged baseline `c17abfef07fbc580c51f458496e4e53502816229`.
 
 ## Phase 19 acceptance tracker
 - [x] Extend semantic visual tokens/effect budget without weakening contrast/status semantics.
@@ -1783,6 +1783,20 @@ Verified implementation evidence: exact implementation head `dd43169abae89e7e672
 - [x] Improve current-page selection/organization and Uploads drag/drop feedback without changing product mutation contracts or bounds.
 - [x] Pass final exact-head quality/purity/build and every actually attached Library/Viewer/media regression workflow.
 - [x] Human-review desktop + 390px Library default/selection, Viewer image/video/comparison and reduced-motion evidence; no overflow, media distortion, hover-only meaning, excessive effects or visually timid result accepted.
-- [ ] Verify exact configured fixture cleanup and update authoritative implementation docs from reality before Phase 21 completion.
+- [x] Verify exact configured fixture cleanup and update authoritative implementation docs from reality before Phase 21 completion. Final clean exact-head Library Lifecycle `34258560488`, Creative Iteration `34258560437`, Image Upscale Integration `34258560340` and their cleanup steps passed before PR #127 merged as `c17abfef07fbc580c51f458496e4e53502816229`; all five merged-main checks then passed and Vercel created no deployment.
 
 No schema, Supabase/R2, account/admission, generation capability, worker/provider/routing or production-deployment change is authorized by this contract. Phase 22 remains roadmap-only.
+
+## Phase 22 acceptance tracker
+**Status: `CONTRACT READY / DESIGN CHECKPOINT REQUIRED / IMPLEMENTATION NOT STARTED`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`.
+
+- [ ] Create and human-review the required repository-backed desktop/390px Activity + Settings + Landing design checkpoint before implementation.
+- [ ] Activity: strengthen truthful lifecycle/status hierarchy while preserving server ordering, pagination, auto-refresh and separate Run Again / Retry / Cancel eligibility.
+- [ ] Activity: provide static/reduced-motion equivalents and no fake percentage, ETA, provider stages or queue/SLA claims.
+- [ ] Settings: align signed-out, active/suspended/access-status and password/security composition with Kinetic Precision without changing identity/access/admin authorization semantics.
+- [ ] Landing: align the public hero/product-preview/CTA composition with current Kinetic Precision while preserving closed-beta truth, `/create` + `/settings` destinations and root continuation redirect behavior.
+- [ ] Keep public signup/pricing/testimonial/fake-metric/provider/model/SLA claims absent; no marketing analytics/cookie expansion.
+- [ ] Keep Admin internal redesign, new Settings preferences, capability/schema/worker/routing/infrastructure and production deployment out of scope.
+- [ ] Run the final Cycle 4 desktop/390px/reduced-motion/accessibility/effect-budget cohesion audit across Landing, Create, Library, Viewer, Activity and Settings.
+- [ ] Pass Engineering Quality, UI Shell, Activity Visual, Activity Cancel, Account Identity, Account Ownership, Brand / Launch, affected Creative Iteration/Create/Library/Viewer gates and every workflow actually attached to the exact final head.
+- [ ] Verify configured cleanup and human-review final implementation screenshots before marking Phase 22 or Cycle 4 complete.
