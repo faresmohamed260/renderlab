@@ -148,6 +148,59 @@ jobs:
           echo "::error::Stale branch workflow_dispatch runs did not quiesce."
           exit 1
 
+      - name: Wait for attached shared-fixture PR workflows
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          wait_for_pr_workflow() {
+            local workflow="$1"
+            local label="$2"
+            local seen=0
+
+            for attempt in $(seq 1 180); do
+              run_json="$(gh api \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "/repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?event=pull_request&per_page=50" \
+                --jq ".workflow_runs | map(select(.head_sha == \"$TARGET_SHA\")) | sort_by(.created_at) | last // empty")"
+
+              if [ -z "$run_json" ]; then
+                if [ "$attempt" -ge 12 ]; then
+                  echo "No same-SHA $label PR run attached; continuing."
+                  return 0
+                fi
+                sleep 5
+                continue
+              fi
+
+              seen=1
+              status="$(jq -r '.status' <<<"$run_json")"
+              conclusion="$(jq -r '.conclusion // \"\"' <<<"$run_json")"
+              run_id="$(jq -r '.id' <<<"$run_json")"
+              echo "Same-SHA $label PR run $run_id: $status $conclusion"
+
+              if [ "$status" = "completed" ]; then
+                if [ "$conclusion" = "success" ]; then
+                  return 0
+                fi
+                echo "::error::Same-SHA $label PR run $run_id concluded $conclusion before release child dispatch."
+                return 1
+              fi
+              sleep 5
+            done
+
+            if [ "$seen" -eq 1 ]; then
+              echo "::error::Timed out waiting for same-SHA $label PR coverage before release child dispatch."
+              return 1
+            fi
+            echo "No same-SHA $label PR run observed; continuing."
+          }
+
+          wait_for_pr_workflow admin-operations.yml "Admin Operations"
+          wait_for_pr_workflow generation-admission.yml "Generation Admission"
+
       - name: Dispatch configured release matrix
         shell: bash
         run: |

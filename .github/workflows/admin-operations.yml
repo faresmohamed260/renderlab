@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: renderlab-generation-admission-shared
+  group: ${{ github.event_name == 'workflow_dispatch' && 'renderlab-generation-admission-shared' || format('renderlab-admin-operations-pr-{0}', github.event.pull_request.number) }}
   cancel-in-progress: false
 
 jobs:
