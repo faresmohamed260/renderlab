@@ -1,0 +1,56 @@
+name: Phase 22 Integrated Release heading fix
+
+on:
+  push:
+    branches:
+      - work/phase-22-system-cohesion
+    paths:
+      - ".github/workflows/phase22-fix-integrated-release-heading.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: renderlab-phase22-integrated-release-heading-fix
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Phase 22 branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-22-system-cohesion
+          fetch-depth: 0
+
+      - name: Apply guarded locator update
+        run: python scripts/phase22-fix-integrated-release-heading.py
+
+      - name: Restore staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout HEAD -- scripts/phase22-fix-integrated-release-heading.py .github/workflows/phase22-fix-integrated-release-heading.yml
+
+      - name: Validate one-file verifier diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          node --check scripts/verify-integrated-release.mjs
+          actual="$(git diff --name-only)"
+          test "$actual" = "scripts/verify-integrated-release.mjs"
+          test "$(git diff -- scripts/verify-integrated-release.mjs | grep -c 'Create images\. Shape them\. Put them in motion\.')" -eq 2
+          test "$(git diff -- scripts/verify-integrated-release.mjs | grep -c 'Create with intent\. Keep what matters\.')" -eq 2
+
+      - name: Commit and push verifier fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-integrated-release.mjs
+          git commit -m "Update Integrated Release Landing heading contract"
+          git push origin HEAD:work/phase-22-system-cohesion
