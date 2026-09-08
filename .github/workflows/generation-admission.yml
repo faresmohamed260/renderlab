@@ -26,10 +26,11 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
-  group: renderlab-generation-admission-shared
+  group: ${{ github.event_name == 'workflow_dispatch' && 'renderlab-generation-admission-shared' || format('renderlab-generation-admission-pr-{0}', github.event.pull_request.number) }}
   cancel-in-progress: false
 
 jobs:
@@ -117,6 +118,52 @@ jobs:
           done
           cat /tmp/renderlab-next.log || true
           exit 1
+
+      - name: Wait for same-SHA Admin PR fixture window
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          admin_seen=0
+          for attempt in $(seq 1 180); do
+            admin_json="$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/$GITHUB_REPOSITORY/actions/workflows/admin-operations.yml/runs?event=pull_request&per_page=50" \
+              --jq ".workflow_runs | map(select(.head_sha == \"$TARGET_SHA\")) | sort_by(.created_at) | last // empty")"
+            if [ -z "$admin_json" ]; then
+              if [ "$attempt" -ge 24 ]; then
+                echo "No same-SHA Admin PR run attached; proceeding without cross-workflow wait."
+                exit 0
+              fi
+              sleep 5
+              continue
+            fi
+
+            admin_seen=1
+            status="$(jq -r '.status' <<<"$admin_json")"
+            conclusion="$(jq -r '.conclusion // ""' <<<"$admin_json")"
+            run_id="$(jq -r '.id' <<<"$admin_json")"
+            echo "Same-SHA Admin PR run $run_id: $status $conclusion"
+
+            if [ "$status" = "completed" ]; then
+              if [ "$conclusion" = "success" ]; then
+                exit 0
+              fi
+              echo "::error::Same-SHA Admin PR run $run_id concluded $conclusion before Generation Admission entered its fixture window."
+              exit 1
+            fi
+            sleep 5
+          done
+
+          if [ "$admin_seen" -eq 1 ]; then
+            echo "::error::Timed out waiting for the same-SHA Admin PR run to finish."
+            exit 1
+          fi
+          echo "No same-SHA Admin PR run observed; proceeding."
 
       - name: Verify configured Generation Admission
         run: node scripts/verify-generation-admission.mjs

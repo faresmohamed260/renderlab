@@ -36,6 +36,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function assertNoHorizontalOverflow(page, label) {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  assert(overflow <= 1, `${label} has horizontal overflow: ${overflow}px`);
+}
+
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -607,6 +612,9 @@ try {
   await signedOutPage.getByRole("heading", { name: "Sign in to view Activity" }).waitFor({ state: "visible", timeout: 30_000 });
   assert((await signedOutPage.getByText("Nebula active study").count()) === 0, "Signed-out Activity exposed private job data.");
   assertRetryError(await postRetry(signedOutPage, retryImageJob.id), 401, "authentication_required", "Signed-out Retry");
+  await signedOutPage.setViewportSize({ width: 390, height: 844 });
+  await assertNoHorizontalOverflow(signedOutPage, "Signed-out narrow Activity");
+  await signedOutPage.screenshot({ path: `${artifactDir}/activity-signed-out-mobile.png`, fullPage: true });
   await signedOutContext.close();
 
   const context = await browser.newContext({ viewport: { width: 1440, height: 1024 }, colorScheme: "dark" });
@@ -636,6 +644,17 @@ try {
   assert(await page.locator("li").filter({ hasText: "Golden result study" }).getByRole("button", { name: "Retry" }).count() === 0, "Succeeded job exposed Retry.");
   await page.screenshot({ path: `${artifactDir}/activity-desktop.png`, fullPage: true });
   await page.screenshot({ path: `${artifactDir}/activity-retry-desktop.png`, fullPage: true });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await assertNoHorizontalOverflow(page, "Narrow reduced-motion Activity");
+  await page.getByText("Nebula active study", { exact: true }).waitFor({ state: "visible" });
+  await page.getByRole("button", { name: "Retry", exact: true }).first().waitFor({ state: "visible" });
+  const activityAnimations = await page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length);
+  assert(activityAnimations === 0, `Reduced-motion Activity has ${activityAnimations} running animation(s).`);
+  await page.screenshot({ path: `${artifactDir}/activity-mobile-reduced-motion.png`, fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
 
   await page.goto(`${baseUrl}/activity?offset=20`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("link", { name: "Newer", exact: true }).waitFor({ state: "visible" });

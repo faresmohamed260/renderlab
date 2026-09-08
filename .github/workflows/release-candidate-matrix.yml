@@ -148,6 +148,59 @@ jobs:
           echo "::error::Stale branch workflow_dispatch runs did not quiesce."
           exit 1
 
+      - name: Wait for attached shared-fixture PR workflows
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          wait_for_pr_workflow() {
+            local workflow="$1"
+            local label="$2"
+            local seen=0
+
+            for attempt in $(seq 1 180); do
+              run_json="$(gh api \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "/repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?event=pull_request&per_page=50" \
+                --jq ".workflow_runs | map(select(.head_sha == \"$TARGET_SHA\")) | sort_by(.created_at) | last // empty")"
+
+              if [ -z "$run_json" ]; then
+                if [ "$attempt" -ge 12 ]; then
+                  echo "No same-SHA $label PR run attached; continuing."
+                  return 0
+                fi
+                sleep 5
+                continue
+              fi
+
+              seen=1
+              status="$(jq -r '.status' <<<"$run_json")"
+              conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
+              run_id="$(jq -r '.id' <<<"$run_json")"
+              echo "Same-SHA $label PR run $run_id: $status $conclusion"
+
+              if [ "$status" = "completed" ]; then
+                if [ "$conclusion" = "success" ]; then
+                  return 0
+                fi
+                echo "::error::Same-SHA $label PR run $run_id concluded $conclusion before release child dispatch."
+                return 1
+              fi
+              sleep 5
+            done
+
+            if [ "$seen" -eq 1 ]; then
+              echo "::error::Timed out waiting for same-SHA $label PR coverage before release child dispatch."
+              return 1
+            fi
+            echo "No same-SHA $label PR run observed; continuing."
+          }
+
+          wait_for_pr_workflow admin-operations.yml "Admin Operations"
+          wait_for_pr_workflow generation-admission.yml "Generation Admission"
+
       - name: Dispatch configured release matrix
         shell: bash
         run: |
@@ -182,7 +235,8 @@ jobs:
           printf '%s\n' "$started_at" > /tmp/renderlab-release-started-at
           printf '%s\n' "${workflows[@]}" > /tmp/renderlab-release-workflows
 
-          for workflow in "${workflows[@]}"; do
+          dispatch_workflow() {
+            local workflow="$1"
             echo "Dispatching $workflow at $TARGET_REF ($TARGET_SHA)"
             gh api \
               --method POST \
@@ -190,6 +244,53 @@ jobs:
               -H "X-GitHub-Api-Version: 2022-11-28" \
               "/repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/dispatches" \
               -f "ref=$TARGET_REF"
+          }
+
+          # Admin Operations and Generation Admission intentionally serialize through
+          # renderlab-generation-admission-shared. GitHub keeps only one pending run
+          # per concurrency group, so dispatching both while Admin is still pending can
+          # cancel Admin before it starts. Establish the Admin run first, then enqueue
+          # Generation Admission behind a running/completed Admin run.
+          dispatch_workflow admin-operations.yml
+          admin_ready=0
+          for attempt in $(seq 1 120); do
+            admin_json="$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/$GITHUB_REPOSITORY/actions/workflows/admin-operations.yml/runs?event=workflow_dispatch&branch=$TARGET_REF&per_page=20" \
+              --jq ".workflow_runs | map(select(.head_sha == \"$TARGET_SHA\" and .created_at >= \"$started_at\")) | sort_by(.created_at) | last // empty")"
+            if [ -z "$admin_json" ]; then
+              sleep 5
+              continue
+            fi
+            admin_status="$(jq -r '.status' <<<"$admin_json")"
+            admin_conclusion="$(jq -r '.conclusion // ""' <<<"$admin_json")"
+            admin_id="$(jq -r '.id' <<<"$admin_json")"
+            echo "Admin pre-dispatch state: $admin_status ${admin_conclusion:-} ($admin_id)"
+            if [ "$admin_status" = "in_progress" ]; then
+              admin_ready=1
+              break
+            fi
+            if [ "$admin_status" = "completed" ]; then
+              if [ "$admin_conclusion" != "success" ]; then
+                echo "::error::Admin Operations concluded $admin_conclusion before shared-lane sequencing completed."
+                exit 1
+              fi
+              admin_ready=1
+              break
+            fi
+            sleep 5
+          done
+          if [ "$admin_ready" -ne 1 ]; then
+            echo "::error::Admin Operations did not leave the pending queue before Generation Admission dispatch."
+            exit 1
+          fi
+
+          for workflow in "${workflows[@]}"; do
+            if [ "$workflow" = "admin-operations.yml" ]; then
+              continue
+            fi
+            dispatch_workflow "$workflow"
           done
 
       - name: Require exact-SHA child success

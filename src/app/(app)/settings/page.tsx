@@ -58,11 +58,11 @@ export default async function SettingsPage({
   const admin = access?.status === "active" && access.role === "admin"
     ? await getCurrentRenderLabAdmin()
     : null;
-  const showAdminLink = admin?.identity.id === identity?.id;
+  const showAdminLink = Boolean(identity && admin?.identity.id === identity.id);
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      <div className="mb-7">
+    <section className="kinetic-settings-workspace mx-auto w-full max-w-5xl px-4 pb-28 pt-8 sm:px-6 sm:pb-10 sm:pt-10 lg:px-8">
+      <div className="kinetic-settings-intro mb-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Account</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text sm:text-3xl">Settings</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
@@ -85,7 +85,7 @@ export default async function SettingsPage({
           title="Admin"
           description="Privileged RenderLab access, generation override and product-health operations."
         >
-          <div className="rounded-xl border border-border bg-surface-1 p-5 sm:p-6">
+          <div className="kinetic-settings-panel rounded-2xl border border-border p-5 sm:p-6">
             <p className="text-sm font-semibold text-text">Admin operations</p>
             <p className="mt-1 text-sm leading-6 text-text-muted">
               Your active RenderLab admin role can open the separate operations surface.
@@ -102,7 +102,7 @@ export default async function SettingsPage({
 
 function SettingsSection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
-    <section className="grid gap-3 border-t border-border py-6 sm:grid-cols-[13rem_1fr] sm:gap-8">
+    <section className="grid gap-4 border-t border-border/80 py-7 sm:grid-cols-[13rem_1fr] sm:gap-8">
       <div>
         <h2 className="text-sm font-semibold text-text">{title}</h2>
         <p className="mt-1 text-sm leading-6 text-text-muted">{description}</p>
