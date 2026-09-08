@@ -145,7 +145,7 @@ jobs:
 
             admin_seen=1
             status="$(jq -r '.status' <<<"$admin_json")"
-            conclusion="$(jq -r '.conclusion // \"\"' <<<"$admin_json")"
+            conclusion="$(jq -r '.conclusion // ""' <<<"$admin_json")"
             run_id="$(jq -r '.id' <<<"$admin_json")"
             echo "Same-SHA Admin PR run $run_id: $status $conclusion"
 

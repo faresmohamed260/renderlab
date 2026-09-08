@@ -177,7 +177,7 @@ jobs:
 
               seen=1
               status="$(jq -r '.status' <<<"$run_json")"
-              conclusion="$(jq -r '.conclusion // \"\"' <<<"$run_json")"
+              conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
               run_id="$(jq -r '.id' <<<"$run_json")"
               echo "Same-SHA $label PR run $run_id: $status $conclusion"
 
