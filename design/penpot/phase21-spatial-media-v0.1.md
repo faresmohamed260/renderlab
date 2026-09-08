@@ -1,6 +1,6 @@
 # Phase 21 Spatial Media v0.1 — Library & Viewer checkpoint
 
-**Status: `CANDIDATE / REVIEW IN PROGRESS`**
+**Status: `REVIEWED DESIGN CANDIDATE / IMPLEMENTATION READY`**
 
 **UI decision:** UI-064  
 **Contract baseline:** `5400de0413a03dbba466e896098cd5df438608d4`
@@ -25,6 +25,19 @@ This package is the repository-backed visual checkpoint required before Phase 21
 10. **Comparison motion explains one spatial transformation.** Result expands/contracts from the default stage while Source reveals/retracts beside it. `Close comparison` remains secondary to creative continuation.
 11. **Reduced motion is complete.** The same selected states, Viewer hierarchy and Compare layouts appear with no tilt and with opacity-only or immediate layout changes. No meaning depends on transform motion.
 12. **No backend implication.** The checkpoint adds no media identity, route, schema, storage, generation, worker/routing, account/admission or deployment requirement.
+
+## Rendered review — 2026-09-08
+The repository-backed checkpoint passed human pixel review after remote rendering. GitHub render run `34161759265` successfully produced the review sheet. A second exact-pixel handoff run `34184810972` published artifact `10040127604` (`phase21-spatial-media-review`, `sha256:100496dcd72b7cb7705c34443995dfeb29f59cf942299cb923900697c82d8025`), whose Library, Viewer and Compare JPEGs were inspected directly.
+
+Review findings:
+- desktop and 390px Library keep media visually dominant and controls readable without obvious horizontal clipping;
+- selection remains unmistakable through a static spectral ring/check treatment, independent of motion;
+- Viewer keeps the media stage materially primary while Prompt, Details, Continue and Actions recede into subordinate precision chrome;
+- desktop and 390px Compare keep Result primary and Source compact/contextual, with Source exposing only `Open source`;
+- the reduced-motion/static examples preserve the same hierarchy and meaning without tilt or transform dependence;
+- spectral/glass treatment stays restrained and no checkpoint frame visibly distorts intended media geometry.
+
+This review satisfies the UI-064 **design checkpoint** gate and makes the package implementation-ready. It does **not** make the Phase 21 product surface `APPROVED`; implementation still requires exact-head build/functional validation plus responsive real-application screenshot review.
 
 ## Motion / effect budget
 - card hover/focus micro response: 120–180ms; fine-pointer visual lift ≤4px and rotation ≤1.2°;
