@@ -58,10 +58,10 @@ export default async function SettingsPage({
   const admin = access?.status === "active" && access.role === "admin"
     ? await getCurrentRenderLabAdmin()
     : null;
-  const showAdminLink = admin?.identity.id === identity?.id;
+  const showAdminLink = Boolean(identity && admin?.identity.id === identity.id);
 
   return (
-    <section className="kinetic-settings-workspace mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <section className="kinetic-settings-workspace mx-auto w-full max-w-5xl px-4 pb-28 pt-8 sm:px-6 sm:pb-10 sm:pt-10 lg:px-8">
       <div className="kinetic-settings-intro mb-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Account</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text sm:text-3xl">Settings</h1>
