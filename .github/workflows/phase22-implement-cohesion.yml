@@ -26,22 +26,39 @@ jobs:
           fetch-depth: 0
 
       - name: Validate staging script syntax
-        run: python -m py_compile scripts/phase22-implement-cohesion.py
+        run: |
+          python -m py_compile scripts/phase22-implement-cohesion.py
+          rm -rf scripts/__pycache__
 
       - name: Apply guarded Phase 22 implementation
         run: python scripts/phase22-implement-cohesion.py
 
-      - name: Validate durable diff
+      - name: Restore workflow and staging files for connector-owned cleanup
         shell: bash
         run: |
           set -euo pipefail
-          test ! -e scripts/phase22-implement-cohesion.py
-          test ! -e .github/workflows/phase22-implement-cohesion.yml
+          git checkout HEAD -- \
+            .github/workflows/activity-visual.yml \
+            .github/workflows/activity-cancel-visual.yml \
+            .github/workflows/account-identity-visual.yml \
+            .github/workflows/phase22-implement-cohesion.yml \
+            scripts/phase22-implement-cohesion.py
+          rm -rf scripts/__pycache__
+
+      - name: Validate durable product diff
+        shell: bash
+        run: |
+          set -euo pipefail
           git diff --check
           node --check scripts/verify-brand-launch.mjs
-          git diff -- src/server src/lib/supabase supabase package.json package-lock.json || true
           if ! git diff --quiet -- src/server src/lib/supabase supabase package.json package-lock.json; then
             echo "::error::Phase 22 presentation patch changed prohibited backend/auth/schema/dependency paths."
+            git diff -- src/server src/lib/supabase supabase package.json package-lock.json
+            exit 1
+          fi
+          if ! git diff --quiet -- .github/workflows scripts/phase22-implement-cohesion.py; then
+            echo "::error::Executor left workflow/staging mutations in the Actions-owned commit."
+            git diff -- .github/workflows scripts/phase22-implement-cohesion.py
             exit 1
           fi
 
