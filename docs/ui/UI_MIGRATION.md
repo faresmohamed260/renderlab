@@ -1770,7 +1770,7 @@ Verifier note: the active-generation lifecycle now asserts the stable `.kinetic-
 
 Production deployment remains explicit and separate. PR #122 squash-merged as `09ea91f753be5279428ccf25a7b043300678c3f3`; all 10 merged-main workflows / 11 check-runs passed on that merged tree, including Video Generation Integration `34156796984`. A post-merge Vercel audit found no deployment at or after the merge. Phase 20 is complete/verified/merged, and Phase 21 is now ready for execution-contract expansion only; implementation has not begun.
 ## Phase 21 acceptance tracker
-**Status: `DESIGN CHECKPOINT REVIEWED / IMPLEMENTATION NOT STARTED`.** UI-064 is the controlling visual/product decision. Planning baseline `6c57a21514d58924f59623177891b98fff925a8c`. Repository-backed checkpoint `design/penpot/phase21-spatial-media-v0.1.md` passed render/human review via `34161759265` and artifact `10040127604` (`sha256:100496dcd72b7cb7705c34443995dfeb29f59cf942299cb923900697c82d8025`).
+**Status: `IMPLEMENTATION IN DRAFT / VALIDATION PENDING`.** UI-064 is the controlling visual/product decision. Planning baseline `6c57a21514d58924f59623177891b98fff925a8c`. Repository-backed checkpoint `design/penpot/phase21-spatial-media-v0.1.md` passed render/human review via `34161759265` and artifact `10040127604` (`sha256:100496dcd72b7cb7705c34443995dfeb29f59cf942299cb923900697c82d8025`).
 
 - [x] Complete and review the required desktop/390px Library + Viewer design checkpoint before visual implementation.
 - [ ] Extend Kinetic Precision into Library hierarchy without changing UI-060 Creatives/Uploads or URL-owned filter/search/organization semantics.

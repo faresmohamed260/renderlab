@@ -1655,7 +1655,7 @@ A live Vercel audit after the merge found no deployment created at or after `09e
 
 Phase 21 is now the next roadmap phase and may be expanded into an execution-ready contract from this verified merged baseline. Phase 21 implementation has not begun, and no production deployment is authorized by this closure.
 # Phase 21 Execution Contract — Library & Viewer Spatial Media Experience
-**Status: `ACCEPTED / DESIGN CHECKPOINT REVIEWED / IMPLEMENTATION NOT STARTED`.**
+**Status: `IMPLEMENTATION IN DRAFT / VALIDATION PENDING`.**
 **UI decision:** UI-064.
 **Design checkpoint:** `design/penpot/phase21-spatial-media-v0.1.md` is `REVIEWED DESIGN CANDIDATE / IMPLEMENTATION READY`; render run `34161759265` and artifact `10040127604` (`sha256:100496dcd72b7cb7705c34443995dfeb29f59cf942299cb923900697c82d8025`) passed human desktop/390px Library, Viewer, Compare and reduced-motion review on 2026-09-08.
 **Planning baseline:** `6c57a21514d58924f59623177891b98fff925a8c` (current `main`; tree matches the closed Phase 20 handoff).

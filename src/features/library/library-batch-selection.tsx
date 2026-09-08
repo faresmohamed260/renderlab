@@ -58,7 +58,7 @@ function MediaPreview({ asset }: { asset: PublicMediaAsset }) {
         src={asset.thumbnailUrl ?? asset.contentUrl}
         alt=""
         loading="lazy"
-        className="size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]"
+        className="kinetic-media-preview size-full object-cover"
       />
     );
   }
@@ -66,7 +66,7 @@ function MediaPreview({ asset }: { asset: PublicMediaAsset }) {
   if (asset.thumbnailUrl) {
     return (
       <div className="relative size-full">
-        <img src={asset.thumbnailUrl} alt="" loading="lazy" className="size-full object-cover" />
+        <img src={asset.thumbnailUrl} alt="" loading="lazy" className="kinetic-media-preview size-full object-cover" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-canvas/80 px-2 py-1 text-[11px] font-semibold text-text backdrop-blur-sm">
           <Video aria-hidden="true" size={13} />
           Video
@@ -296,7 +296,7 @@ export function LibraryBatchSelection({
               setOrganizationError(null);
               setOrganizeOpen(open);
             }}
-            className="flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-1 px-3 py-2.5"
+            className="kinetic-selection-deck flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-border px-3 py-2.5 sm:px-4"
             aria-busy={busy}
           >
             <p className="text-sm font-medium text-text" role="status" aria-live="polite">
@@ -440,15 +440,16 @@ export function LibraryBatchSelection({
             <div key={asset.id} className="relative min-w-0">
               <Link
                 href={`/library/${encodeURIComponent(asset.id)}`}
-                className={`group block min-w-0 overflow-hidden rounded-xl border bg-surface-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  selected ? "border-accent ring-1 ring-accent" : "border-border hover:border-text-muted/60"
+                className={`kinetic-media-card group block min-w-0 overflow-hidden rounded-2xl border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  selected ? "border-accent ring-1 ring-accent" : "border-border"
                 }`}
+                data-selected={selected ? "true" : "false"}
                 aria-label={`Open ${title}`}
               >
-                <div className="aspect-[4/3] overflow-hidden bg-surface-2">
+                <div className="kinetic-media-frame aspect-[4/3] overflow-hidden bg-surface-2">
                   <MediaPreview asset={asset} />
                 </div>
-                <div className="p-3">
+                <div className="kinetic-media-meta p-3">
                   <p className="truncate text-sm font-medium text-text">{title}</p>
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted">
                     <span>{asset.kind === "image" ? "Image" : "Video"}</span>
@@ -458,7 +459,7 @@ export function LibraryBatchSelection({
                 </div>
               </Link>
               {selectionMode ? (
-                <div className="absolute left-2 top-2 z-10 rounded-lg bg-canvas/80 p-1 shadow-sm backdrop-blur-sm">
+                <div className="kinetic-selection-check absolute left-2 top-2 z-10 rounded-xl p-1 shadow-sm">
                   <Checkbox
                     className="size-9 border-2 bg-canvas/90"
                     checked={selected}
