@@ -1,0 +1,94 @@
+name: Phase 21 design review closure
+
+on:
+  push:
+    branches:
+      - design/phase-21-spatial-media
+    paths:
+      - ".github/workflows/phase21-design-review-close.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  close-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard authoritative baseline
+        shell: bash
+        run: |
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "5400de0413a03dbba466e896098cd5df438608d4"
+          test "$(git merge-base HEAD origin/main)" = "5400de0413a03dbba466e896098cd5df438608d4"
+
+      - name: Record reviewed design checkpoint
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one match for {old!r}, found {count}")
+              p.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              "design/penpot/phase21-spatial-media-v0.1.md",
+              "**Status: `CANDIDATE / REVIEW IN PROGRESS`**",
+              "**Status: `REVIEWED DESIGN CANDIDATE / IMPLEMENTATION READY`**",
+          )
+
+          manifest = Path("design/penpot/phase21-spatial-media-v0.1.md")
+          text = manifest.read_text()
+          marker = "## Motion / effect budget\n"
+          review = '''## Rendered review — 2026-09-08\nThe repository-backed checkpoint passed human pixel review after remote rendering. GitHub render run `34161759265` successfully produced the review sheet. A second exact-pixel handoff run `34184810972` published artifact `10040127604` (`phase21-spatial-media-review`, `sha256:100496dcd72b7cb7705c34443995dfeb29f59cf942299cb923900697c82d8025`), whose Library, Viewer and Compare JPEGs were inspected directly.\n\nReview findings:\n- desktop and 390px Library keep media visually dominant and controls readable without obvious horizontal clipping;\n- selection remains unmistakable through a static spectral ring/check treatment, independent of motion;\n- Viewer keeps the media stage materially primary while Prompt, Details, Continue and Actions recede into subordinate precision chrome;\n- desktop and 390px Compare keep Result primary and Source compact/contextual, with Source exposing only `Open source`;\n- the reduced-motion/static examples preserve the same hierarchy and meaning without tilt or transform dependence;\n- spectral/glass treatment stays restrained and no checkpoint frame visibly distorts intended media geometry.\n\nThis review satisfies the UI-064 **design checkpoint** gate and makes the package implementation-ready. It does **not** make the Phase 21 product surface `APPROVED`; implementation still requires exact-head build/functional validation plus responsive real-application screenshot review.\n\n'''
+          if text.count(marker) != 1:
+              raise SystemExit("manifest motion marker missing or duplicated")
+          manifest.write_text(text.replace(marker, review + marker, 1))
+
+          replace_once(
+              "PROJECT.md",
+              "**Status: `ACCEPTED / IMPLEMENTATION NOT STARTED`.**\n**UI decision:** UI-064.",
+              "**Status: `ACCEPTED / DESIGN CHECKPOINT REVIEWED / IMPLEMENTATION NOT STARTED`.**\n**UI decision:** UI-064.\n**Design checkpoint:** `design/penpot/phase21-spatial-media-v0.1.md` is `REVIEWED DESIGN CANDIDATE / IMPLEMENTATION READY`; render run `34161759265` and artifact `10040127604` (`sha256:100496dcd72b7cb7705c34443995dfeb29f59cf942299cb923900697c82d8025`) passed human desktop/390px Library, Viewer, Compare and reduced-motion review on 2026-09-08.",
+          )
+
+          replace_once(
+              "docs/ui/UI_MIGRATION.md",
+              "**Status: `CONTRACT READY / IMPLEMENTATION NOT STARTED`.** UI-064 is the controlling visual/product decision. Planning baseline `6c57a21514d58924f59623177891b98fff925a8c`.",
+              "**Status: `DESIGN CHECKPOINT REVIEWED / IMPLEMENTATION NOT STARTED`.** UI-064 is the controlling visual/product decision. Planning baseline `6c57a21514d58924f59623177891b98fff925a8c`. Repository-backed checkpoint `design/penpot/phase21-spatial-media-v0.1.md` passed render/human review via `34161759265` and artifact `10040127604` (`sha256:100496dcd72b7cb7705c34443995dfeb29f59cf942299cb923900697c82d8025`).",
+          )
+          replace_once(
+              "docs/ui/UI_MIGRATION.md",
+              "- [ ] Complete and review the required desktop/390px Library + Viewer design checkpoint before visual implementation.",
+              "- [x] Complete and review the required desktop/390px Library + Viewer design checkpoint before visual implementation.",
+          )
+
+          replace_once(
+              "docs/ui/UI_DECISIONS.md",
+              "**Status:** Accepted / Contract ready / Implementation not started\n**Date:** 2026-09-07",
+              "**Status:** Accepted / Design checkpoint reviewed / Implementation not started\n**Date:** 2026-09-07\n**Design checkpoint evidence:** `design/penpot/phase21-spatial-media-v0.1.md` is a reviewed implementation-ready candidate. Remote render `34161759265` and artifact `10040127604` (`sha256:100496dcd72b7cb7705c34443995dfeb29f59cf942299cb923900697c82d8025`) were human-reviewed on 2026-09-08 across desktop/390px Library, Viewer, comparison and reduced-motion states. This closes the pre-implementation visual gate only; the real surface is not `APPROVED` until implementation verification passes.",
+          )
+          PY
+
+          rm .github/workflows/phase21-design-review-close.yml
+          git diff --check
+
+          expected=$(printf '%s\n' PROJECT.md design/penpot/phase21-compare-spatial-v0.1.svg design/penpot/phase21-library-spatial-v0.1.svg design/penpot/phase21-spatial-media-v0.1-review.jpg design/penpot/phase21-spatial-media-v0.1.md design/penpot/phase21-viewer-spatial-v0.1.svg docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md | sort)
+          actual=$(git diff --name-only origin/main | sort)
+          test "$actual" = "$expected"
+
+      - name: Commit reviewed checkpoint
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "design: close Phase 21 spatial media checkpoint"
+          git push origin HEAD:design/phase-21-spatial-media
