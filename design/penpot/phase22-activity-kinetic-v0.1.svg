@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1740" viewBox="0 0 1900 1740">
+
+  <defs>
+    <radialGradient id="bg" cx="58%" cy="6%" r="90%"><stop offset="0" stop-color="#25194d"/><stop offset=".34" stop-color="#0c0b16"/><stop offset="1" stop-color="#06070a"/></radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff" stop-opacity=".09"/><stop offset="1" stop-color="#ffffff" stop-opacity=".025"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#aa8cff"/><stop offset=".54" stop-color="#717dff"/><stop offset="1" stop-color="#58d3ff"/></linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#68dcff"/><stop offset="1" stop-color="#6f7cff"/></linearGradient>
+    <linearGradient id="warm" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffba7a"/><stop offset="1" stop-color="#ff718a"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="20"/></filter>
+    <filter id="soft"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity=".46"/></filter>
+    <style>
+      text{font-family:Inter,ui-sans-serif,system-ui,sans-serif;fill:#f7f7fb}.muted{fill:#9b9dae}.dim{fill:#6f7282}.title{font-size:30px;font-weight:650}.hero{font-size:56px;font-weight:680;letter-spacing:-.035em}.h2{font-size:22px;font-weight:640}.h3{font-size:16px;font-weight:650}.body{font-size:13px}.small{font-size:11px}.label{font-size:11px;font-weight:720;letter-spacing:.09em}.chip{font-size:11px;font-weight:640}.micro{font-size:9px;font-weight:630;letter-spacing:.06em}
+    </style>
+  </defs>
+
+<rect width="1900" height="1740" fill="#050609"/>
+<text x="44" y="52" class="title">Phase 22 — Activity Kinetic Lifecycle v0.1</text>
+<text x="44" y="78" class="body muted">Design checkpoint · stronger lifecycle hierarchy without changing server-owned truth, ordering, pagination, Retry / Run again / Cancel contracts</text>
+<g transform="translate(44 110)">
+<rect width="1280" height="760" rx="28" fill="url(#bg)" stroke="#fff" stroke-opacity=".10"/>
+<ellipse cx="742" cy="58" rx="350" ry="105" fill="#7555ff" opacity=".10" filter="url(#glow)"/>
+<rect x="18" y="18" width="176" height="724" rx="24" fill="url(#glass)" stroke="#fff" stroke-opacity=".10"/>
+<text x="40" y="58" class="label">RENDERLAB</text>
+<text x="64" y="96" class="body muted">Create</text>
+<text x="64" y="142" class="body muted">Library</text>
+<rect x="32" y="651" width="148" height="38" rx="12" fill="#937cff" opacity=".13"/>
+<circle cx="46" cy="670" r="3.5" fill="#b79fff"/>
+<text x="64" y="678" class="small ">Activity</text>
+<text x="64" y="712" class="small muted">Settings</text>
+<rect x="216" y="18" width="1046" height="58" rx="20" fill="url(#glass)" stroke="#fff" stroke-opacity=".09"/>
+<text x="242" y="52" class="small muted">Kinetic Precision workspace</text>
+<text x="1192" y="52" class="small muted">Fares</text>
+<g transform="translate(240 104)">
+  <text x="0" y="32" class="title">Activity</text><text x="0" y="58" class="body muted">Generation lifecycle across this account.</text>
+  <g transform="translate(0 92)" filter="url(#soft)">
+    <rect width="994" height="150" rx="22" fill="#11131c" stroke="#a48fff" stroke-opacity=".28"/>
+    <rect width="4" height="150" rx="2" fill="url(#accent)"/>
+    <circle cx="34" cy="34" r="8" fill="#766eff"/><circle cx="34" cy="34" r="15" fill="#766eff" opacity=".13"/>
+    <text x="56" y="39" class="label">RUNNING</text><text x="56" y="69" class="h3">Create image</text><text x="56" y="94" class="body muted">Cobalt architectural study with glass light wells</text>
+    <text x="56" y="123" class="small dim">Updated moments ago · job accepted and active</text>
+    <rect x="858" y="52" width="108" height="42" rx="13" fill="#fff" opacity=".035" stroke="#ff8da1" stroke-opacity=".28"/><text x="890" y="78" class="chip">Cancel</text>
+  </g>
+  <g transform="translate(0 260)">
+    <rect width="994" height="138" rx="20" fill="#0d0f16" stroke="#fff" stroke-opacity=".08"/>
+    <circle cx="34" cy="32" r="9" fill="#62d7ad" opacity=".9"/><path d="M29 32 l4 4 7-9" fill="none" stroke="#07120d" stroke-width="2"/>
+    <text x="56" y="37" class="label">SUCCEEDED</text><text x="56" y="68" class="h3">Create video</text><text x="56" y="93" class="body muted">Slow camera through a moss-covered atrium</text><text x="56" y="118" class="small dim">Today · durable result saved</text>
+    <rect x="736" y="48" width="104" height="42" rx="13" fill="#fff" opacity=".045"/><text x="756" y="74" class="chip">Run again</text>
+    <rect x="852" y="48" width="114" height="42" rx="13" fill="url(#accent)" opacity=".20" stroke="#baa7ff" stroke-opacity=".28"/><text x="875" y="74" class="chip">View result</text>
+  </g>
+  <g transform="translate(0 416)">
+    <rect width="486" height="146" rx="20" fill="#0d0f16" stroke="#ff947f" stroke-opacity=".16"/>
+    <circle cx="34" cy="32" r="9" fill="#ff977e" opacity=".9"/><path d="M30 28 l8 8 M38 28 l-8 8" stroke="#24100d" stroke-width="2"/>
+    <text x="56" y="37" class="label">FAILED</text><text x="56" y="68" class="h3">Edit image</text><text x="56" y="94" class="body muted">Generation could not be completed.</text><text x="56" y="119" class="small dim">Sanitized product error · history preserved</text>
+    <rect x="374" y="48" width="84" height="40" rx="12" fill="#fff" opacity=".045"/><text x="397" y="73" class="chip">Retry</text>
+    <rect x="508" y="0" width="486" height="146" rx="20" fill="#0d0f16" stroke="#fff" stroke-opacity=".075"/>
+    <circle cx="542" cy="32" r="9" fill="#777b89"/><path d="M537 32 h10" stroke="#14151a" stroke-width="2"/>
+    <text x="564" y="37" class="label muted">CANCELLED</text><text x="564" y="68" class="h3">Animate image</text><text x="564" y="94" class="body muted">Stopped before durable persistence.</text><text x="564" y="119" class="small dim">Yesterday · terminal history</text>
+  </g>
+  <g transform="translate(0 594)"><text x="0" y="22" class="small muted">Newer</text><text x="925" y="22" class="small muted">Older</text><rect x="455" y="4" width="82" height="28" rx="10" fill="#fff" opacity=".035"/><text x="476" y="23" class="micro muted">20 / PAGE</text></g>
+</g>
+</g>
+<text x="56" y="902" class="label muted">DESKTOP · active work earns one restrained spectral rail; terminal history settles to quiet surfaces; no percentage, ETA, provider stage or queue claim</text>
+
+<g transform="translate(1370 110)">
+  <rect width="390" height="760" rx="30" fill="url(#bg)" stroke="#fff" stroke-opacity=".10"/>
+  <ellipse cx="210" cy="64" rx="160" ry="82" fill="#7555ff" opacity=".10" filter="url(#glow)"/>
+  <text x="20" y="44" class="label">ACTIVITY</text><text x="20" y="91" class="h2">Activity</text><text x="20" y="114" class="small muted">Generation lifecycle across this account.</text>
+  <g transform="translate(20 142)"><rect width="350" height="166" rx="18" fill="#11131c" stroke="#a48fff" stroke-opacity=".28"/><rect width="4" height="166" rx="2" fill="url(#accent)"/><circle cx="24" cy="27" r="7" fill="#766eff"/><text x="42" y="31" class="micro">RUNNING</text><text x="18" y="65" class="h3">Create image</text><text x="18" y="90" class="small muted">Cobalt architectural study with glass light wells</text><text x="18" y="118" class="small dim">Updated moments ago</text><rect x="248" y="116" width="84" height="34" rx="11" fill="#fff" opacity=".035" stroke="#ff8da1" stroke-opacity=".28"/><text x="272" y="138" class="small">Cancel</text></g>
+  <g transform="translate(20 324)"><rect width="350" height="158" rx="18" fill="#0d0f16" stroke="#fff" stroke-opacity=".08"/><circle cx="24" cy="26" r="8" fill="#62d7ad"/><text x="42" y="30" class="micro">SUCCEEDED</text><text x="18" y="62" class="h3">Create video</text><text x="18" y="87" class="small muted">Slow camera through a moss-covered atrium</text><rect x="126" y="110" width="96" height="34" rx="11" fill="#fff" opacity=".04"/><text x="143" y="132" class="small">Run again</text><rect x="230" y="110" width="102" height="34" rx="11" fill="url(#accent)" opacity=".20"/><text x="248" y="132" class="small">View result</text></g>
+  <g transform="translate(20 498)"><rect width="350" height="138" rx="18" fill="#0d0f16" stroke="#ff947f" stroke-opacity=".16"/><circle cx="24" cy="26" r="8" fill="#ff977e"/><text x="42" y="30" class="micro">FAILED</text><text x="18" y="62" class="h3">Edit image</text><text x="18" y="87" class="small muted">Generation could not be completed.</text><rect x="258" y="88" width="74" height="34" rx="11" fill="#fff" opacity=".045"/><text x="278" y="110" class="small">Retry</text></g>
+  <rect x="20" y="658" width="350" height="48" rx="15" fill="#0a0c12" stroke="#fff" stroke-opacity=".07"/><text x="40" y="688" class="small muted">Newer</text><text x="307" y="688" class="small muted">Older</text>
+</g>
+<text x="1382" y="902" class="label muted">390PX · actions wrap inside their owning row; active meaning survives without hover</text>
+
+<g transform="translate(44 980)">
+  <rect width="1716" height="660" rx="28" fill="#090a0f" stroke="#fff" stroke-opacity=".08"/>
+  <text x="30" y="48" class="h2">Lifecycle motion + accessibility contract</text>
+  <text x="30" y="78" class="body muted">Motion clarifies real state; it never creates new state.</text>
+  <g transform="translate(30 112)"><rect width="516" height="182" rx="20" fill="#11131b" stroke="#fff" stroke-opacity=".08"/><text x="22" y="34" class="label">ACTIVE</text><text x="22" y="65" class="body">Only queued / preparing / running / cancelling / persisting</text><text x="22" y="92" class="small muted">Optional 1.8–2.4 s low-amplitude rail/bloom cycle.</text><text x="22" y="118" class="small muted">No row translation that destabilizes reading or hit targets.</text><text x="22" y="147" class="small">Reduced motion → static spectral rail + visible status label.</text></g>
+  <g transform="translate(566 112)"><rect width="516" height="182" rx="20" fill="#11131b" stroke="#fff" stroke-opacity=".08"/><text x="22" y="34" class="label">TERMINAL</text><text x="22" y="65" class="body">Succeeded / Failed / Cancelled settle immediately</text><text x="22" y="92" class="small muted">No pulse, spinner, shimmer or perpetual glow.</text><text x="22" y="118" class="small muted">Icon + text + surface tone carry meaning together.</text><text x="22" y="147" class="small">Color is supportive, never the only status signal.</text></g>
+  <g transform="translate(1102 112)"><rect width="584" height="182" rx="20" fill="#11131b" stroke="#fff" stroke-opacity=".08"/><text x="22" y="34" class="label">ACTIONS</text><text x="22" y="65" class="body">Eligibility remains server-derived</text><text x="22" y="92" class="small muted">Run again ≠ Retry ≠ Cancel. Do not merge semantics.</text><text x="22" y="118" class="small muted">Focus rings remain static, bright and unambiguous.</text><text x="22" y="147" class="small">Touch targets stay ≥44 px where the implemented primitive allows.</text></g>
+  <g transform="translate(30 330)"><rect width="1656" height="252" rx="20" fill="#0c0e14" stroke="#fff" stroke-opacity=".07"/><text x="22" y="36" class="label muted">REVIEW REJECTS</text><text x="22" y="73" class="body">Fake progress / ETA · provider or queue language · active animation on terminal history · hidden Retry/Cancel meaning · horizontal overflow at 390px · action movement that impairs focus</text><line x1="22" y1="104" x2="1630" y2="104" stroke="#fff" stroke-opacity=".06"/><text x="22" y="142" class="label muted">IMPLEMENTATION BOUNDARY</text><text x="22" y="178" class="body">Keep server-rendered rows + ActivityAutoRefresh. Presentation may animate feature-locally; browser motion state cannot become lifecycle truth.</text><text x="22" y="212" class="small muted">No schema, worker, routing, provider, admission, lifecycle or polling semantics change.</text></g>
+</g>
+</svg>
