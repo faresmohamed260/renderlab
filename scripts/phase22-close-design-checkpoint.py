@@ -19,7 +19,7 @@ def replace_exact(path: str, old: str, new: str) -> None:
 replace_exact(
     "design/penpot/phase22-system-cohesion-v0.1.md",
     "**Status:** `DESIGN CANDIDATE / REVIEW PENDING`  ",
-    "**Status:** `APPROVED / IMPLEMENTATION READY`  ",
+    "**Status:** `APPROVED / IMPLEMENTATION READY`",
 )
 
 checkpoint = Path("design/penpot/phase22-system-cohesion-v0.1.md")
