@@ -8,6 +8,7 @@ on:
       - "proxy.ts"
       - "src/lib/supabase/**"
       - "src/server/account/**"
+      - "src/app/globals.css"
       - "src/features/account/**"
       - "src/app/auth/**"
       - "src/app/(app)/settings/**"
