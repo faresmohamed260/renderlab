@@ -1725,7 +1725,7 @@ UI-061 records this user-requested corrective composition. No new capability, sc
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 22 DESIGN CHECKPOINT APPROVED`.**
+**Status: `ACTIVE / PHASE 22 IMPLEMENTATION VERIFIED / MERGE PENDING`.**
 
 The next major product pass is explicitly visual. Success is measured by user-visible changes to hierarchy, surfaces, motion, depth and spatial continuity, not merely by backend/performance improvements.
 
@@ -1733,7 +1733,7 @@ The next major product pass is explicitly visual. Success is measured by user-vi
 - **Phase 19 — Kinetic Foundation & App Shell:** `COMPLETE / VERIFIED` — atmospheric canvas, dimensional floating glass shell chrome, morphing active navigation, tactile feedback, fast top-level route continuity and reduced-motion/static equivalents.
 - **Phase 20 — Create as a Creative Instrument:** `COMPLETE / VERIFIED / MERGED` — immersive instrument frame, morphing Image/Video context, reference choreography, precision-deck Advanced, tactile Generate/lifecycle states and spatial result arrival; final exact-head and merged-main evidence are verified below.
 - **Phase 21 — Library & Viewer Spatial Media Experience:** `COMPLETE / VERIFIED` — UI-064 is implemented and exact-head verified; production rollout remains separate and unauthorized.
-- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS` — contract baseline `c17abfef07fbc580c51f458496e4e53502816229`; reviewed checkpoint evidence `34265429235` / artifact `10071612375`.
+- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING` — contract baseline `c17abfef07fbc580c51f458496e4e53502816229`; reviewed checkpoint evidence `34265429235` / artifact `10071612375`; exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`.
 
 ## Phase 19 acceptance tracker
 - [x] Extend semantic visual tokens/effect budget without weakening contrast/status semantics.
@@ -1788,15 +1788,22 @@ Verified implementation evidence: exact implementation head `dd43169abae89e7e672
 No schema, Supabase/R2, account/admission, generation capability, worker/provider/routing or production-deployment change is authorized by this contract. Phase 22 is expanded below from the now-verified merged Phase 21 baseline; implementation still requires the design checkpoint.
 
 ## Phase 22 acceptance tracker
-**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`; checkpoint review run `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`).
+**Status: `VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`; checkpoint review run `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`); exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`.
 
 - [x] Create and human-review the required repository-backed desktop/390px Activity + Settings + Landing design checkpoint before implementation; Activity, Settings, Landing and cross-product cohesion boards passed exact remote raster/human review with no corrective iteration required.
-- [ ] Activity: strengthen truthful lifecycle/status hierarchy while preserving server ordering, pagination, auto-refresh and separate Run Again / Retry / Cancel eligibility.
-- [ ] Activity: provide static/reduced-motion equivalents and no fake percentage, ETA, provider stages or queue/SLA claims.
-- [ ] Settings: align signed-out, active/suspended/access-status and password/security composition with Kinetic Precision without changing identity/access/admin authorization semantics.
-- [ ] Landing: align the public hero/product-preview/CTA composition with current Kinetic Precision while preserving closed-beta truth, `/create` + `/settings` destinations and root continuation redirect behavior.
-- [ ] Keep public signup/pricing/testimonial/fake-metric/provider/model/SLA claims absent; no marketing analytics/cookie expansion.
-- [ ] Keep Admin internal redesign, new Settings preferences, capability/schema/worker/routing/infrastructure and production deployment out of scope.
-- [ ] Run the final Cycle 4 desktop/390px/reduced-motion/accessibility/effect-budget cohesion audit across Landing, Create, Library, Viewer, Activity and Settings.
-- [ ] Pass Engineering Quality, UI Shell, Activity Visual, Activity Cancel, Account Identity, Account Ownership, Brand / Launch, affected Creative Iteration/Create/Library/Viewer gates and every workflow actually attached to the exact final head.
-- [ ] Verify configured cleanup and human-review final implementation screenshots before marking Phase 22 or Cycle 4 complete.
+- [x] Activity: strengthen truthful lifecycle/status hierarchy while preserving server ordering, pagination, auto-refresh and separate Run Again / Retry / Cancel eligibility.
+- [x] Activity: provide static/reduced-motion equivalents and no fake percentage, ETA, provider stages or queue/SLA claims.
+- [x] Settings: align signed-out, active/suspended/access-status and password/security composition with Kinetic Precision without changing identity/access/admin authorization semantics.
+- [x] Landing: align the public hero/product-preview/CTA composition with current Kinetic Precision while preserving closed-beta truth, `/create` + `/settings` destinations and root continuation redirect behavior.
+- [x] Keep public signup/pricing/testimonial/fake-metric/provider/model/SLA claims absent; no marketing analytics/cookie expansion.
+- [x] Keep Admin internal redesign, new Settings preferences, capability/schema/worker/routing/infrastructure and production deployment out of scope.
+- [x] Run the final Cycle 4 desktop/390px/reduced-motion/accessibility/effect-budget cohesion audit across Landing, Create, Library, Viewer, Activity and Settings.
+- [x] Pass Engineering Quality, UI Shell, Activity Visual, Activity Cancel, Account Identity, Account Ownership, Brand / Launch, affected Creative Iteration/Create/Library/Viewer gates and every workflow actually attached to the exact final head.
+- [x] Verify configured cleanup and human-review final implementation screenshots before marking Phase 22 or Cycle 4 complete.
+
+### Phase 22 pre-merge verified closure — 2026-09-08
+Exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a` is accepted for merge after configured and human review. Ordinary PR checks were successful except two pre-job concurrency cancellations (Account Ownership and Account/Admin Operations); exact-SHA Release Candidate Matrix `34270048015` passed and all 23 configured child workflows succeeded, including replacement exact-SHA Account Ownership `34270364557` and Admin Operations `34270414187`, real Video Generation `34270379864`, Create Lifecycle `34270381977`, Activity `34270405290`, UI Shell `34270407592` and Brand / Launch `34270409459`. Manifest artifact `10073980292` has digest `sha256:714622aa35c930ef65df0505250d30631cbcfc596c202cc7ea5073c73666a782`.
+
+Final human-review artifacts passed: Account Identity `10073476200` (`sha256:d3d7971853a062ce4393662d3a649d3a434f47420350b613c4f92f832b4ea825`), Activity `10073569449` (`sha256:5d63a1013271919fcb9b0fe5926bdd799fad6ed061c560ffdd51ca02c45f0e56`), Brand / Launch `10073485236` (`sha256:97f1b3bd663069b46ef6feecc1319c96c92b703408c2e1904010864726d880f5`), Create Lifecycle `10073636995` (`sha256:09c00d85ca82b9c80bb9dda06197e646f8b418eb6989755a158cbf85f17be1f8`), Library Lifecycle `10073489435` (`sha256:e00f4f6a317d9e782cefbf31c457262d073582af84206bcfa9e5afefd330dbca`) and Creative Iteration / Viewer Compare `10073548921` (`sha256:a74dfffd1e7bdc531ac6564077192c6b44ebb9ec8a5b8a2b426eea990105c262`). Configured fixture cleanup passed on the reviewed Account, Activity, Create, Library and Creative Iteration runs.
+
+Acceptance corrected stale Integrated Release Landing copy assumptions plus two real Settings defects: signed-out Admin presentation from absent optional IDs and mobile security-action overlap with the floating dock. The final candidate requires a real server-derived identity/admin match and verifies mobile security controls are reachable above the dock. No backend/product capability, schema, worker/routing, infrastructure, dependency or deployment contract changed. UI-065 records the accepted decision. Cycle 4 remains active until guarded PR #130 merge and merged-main verification; production deployment remains unauthorized.
