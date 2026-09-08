@@ -28,10 +28,21 @@ jobs:
         run: python scripts/phase21-stage.py
 
       - name: Validate patch whitespace
-        run: git diff --check
+        shell: bash
+        run: |
+          if ! git diff --check > /tmp/phase21-diffcheck.txt 2>&1; then
+            cp /tmp/phase21-diffcheck.txt phase21-diffcheck.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add phase21-diffcheck.txt
+            git commit -m "chore: record Phase 21 diff-check diagnostic"
+            git push origin HEAD:work/phase-21-spatial-media
+            cat /tmp/phase21-diffcheck.txt
+            exit 1
+          fi
 
       - name: Remove staging helpers
-        run: rm .github/workflows/phase21-implementation-stage.yml scripts/phase21-stage.py
+        run: rm .github/workflows/phase21-implementation-stage.yml scripts/phase21-stage.py phase21-diffcheck.txt 2>/dev/null || true
 
       - name: Commit candidate
         run: |
