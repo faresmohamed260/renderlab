@@ -24,6 +24,9 @@ jobs:
           set -euo pipefail
           git merge-base --is-ancestor c17abfef07fbc580c51f458496e4e53502816229 HEAD
           python scripts/.phase22-contract-patch.py
+          sed -i 's#`src/app/(app)/activity/page.tsx`  $#`src/app/(app)/activity/page.tsx`#' docs/ui/SCREEN_REGISTRY.md
+          sed -i 's#`src/app/(app)/settings/page.tsx`  $#`src/app/(app)/settings/page.tsx`#' docs/ui/SCREEN_REGISTRY.md
+          python -c 'from pathlib import Path; paths=["PROJECT.md","docs/ui/UI_MIGRATION.md","docs/ui/UI_SYSTEM.md","docs/ui/SCREEN_REGISTRY.md"]; [Path(p).write_text(Path(p).read_text().rstrip()+"\n") for p in paths]'
           rm scripts/.phase22-contract-patch.py
           rm .github/workflows/phase22-contract-docs.yml
           git diff --check
