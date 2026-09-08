@@ -46,6 +46,7 @@ jobs:
           set -euo pipefail
           cd target
           python ../executor/scripts/phase22-final-docs.py
+          python ../executor/scripts/phase22-normalize-final-docs.py
 
       - name: Validate documentation-only closure diff
         shell: bash
