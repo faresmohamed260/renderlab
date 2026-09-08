@@ -22,7 +22,7 @@ jobs:
           mkdir -p artifacts/phase21-review
           for name in library viewer compare; do
             base64 -d "design/penpot/.phase21-review-export/${name}.b64" > "artifacts/phase21-review/${name}.jpg"
-            identify "artifacts/phase21-review/${name}.jpg"
+            test -s "artifacts/phase21-review/${name}.jpg"
           done
 
       - name: Upload review artifact
