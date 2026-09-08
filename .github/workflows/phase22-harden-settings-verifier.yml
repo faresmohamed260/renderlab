@@ -1,0 +1,55 @@
+name: Phase 22 Settings verifier hardening
+
+on:
+  push:
+    branches:
+      - work/phase-22-system-cohesion
+    paths:
+      - ".github/workflows/phase22-harden-settings-verifier.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: renderlab-phase22-settings-verifier-hardening
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Phase 22 branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-22-system-cohesion
+          fetch-depth: 0
+
+      - name: Apply guarded Settings verifier assertions
+        run: python scripts/phase22-harden-settings-verifier.py
+
+      - name: Restore staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout HEAD -- scripts/phase22-harden-settings-verifier.py .github/workflows/phase22-harden-settings-verifier.yml
+
+      - name: Validate one-file verifier diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          node --check scripts/verify-account-identity.mjs
+          test "$(git diff --name-only)" = "scripts/verify-account-identity.mjs"
+          git diff -- scripts/verify-account-identity.mjs | grep -q "Signed-out Settings exposed the Admin operations link"
+          git diff -- scripts/verify-account-identity.mjs | grep -q "remains occluded after bottom scroll"
+
+      - name: Commit and push verifier hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-account-identity.mjs
+          git commit -m "Harden Phase 22 Settings access and reachability checks"
+          git push origin HEAD:work/phase-22-system-cohesion
