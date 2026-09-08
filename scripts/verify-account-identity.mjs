@@ -47,6 +47,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function assertNoHorizontalOverflow(page, label) {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  assert(overflow <= 1, `${label} has horizontal overflow: ${overflow}px`);
+}
+
 function jwtPayload(token) {
   const parts = token.split(".");
   assert(parts.length === 3 && parts[1], "Session access token is not a JWT.");
@@ -266,6 +271,15 @@ try {
 
   await page.goto(`${baseUrl}/settings`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("heading", { name: "Account", exact: true }).waitFor({ state: "visible" });
+  await page.getByRole("button", { name: "Sign in", exact: true }).waitFor({ state: "visible" });
+  await assertNoHorizontalOverflow(page, "Desktop signed-out Settings");
+  await page.screenshot({ path: `${artifactDir}/account-identity-desktop-signed-out.png`, fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await assertNoHorizontalOverflow(page, "Narrow signed-out Settings");
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-out.png`, fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -278,6 +292,8 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await page.getByText("Active", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await assertNoHorizontalOverflow(page, "Narrow signed-in Settings");
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in.png`, fullPage: true });
 
   await setAccessStatus("suspended");
