@@ -1,4 +1,4 @@
-name: Phase 22 final documentation
+name: Phase 22 exact-head Admin acceptance
 
 on:
   push:
@@ -8,71 +8,72 @@ on:
       - ".github/workflows/phase22-final-docs.yml"
 
 permissions:
-  contents: write
+  actions: write
+  contents: read
 
 concurrency:
-  group: renderlab-phase22-final-docs
+  group: renderlab-phase22-admin-acceptance-executor
   cancel-in-progress: false
 
 jobs:
-  close-docs:
+  admin-exact:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
+    env:
+      TARGET_REF: work/phase-22-system-cohesion
+      TARGET_SHA: d16c3c826bca3e977fe70c05d13ed0187437d1bd
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Checkout isolated executor
-        uses: actions/checkout@v4
-        with:
-          ref: tmp/phase22-final-docs-20260908
-          path: executor
-          fetch-depth: 1
-
-      - name: Checkout exact Phase 22 candidate
-        uses: actions/checkout@v4
-        with:
-          ref: work/phase-22-system-cohesion
-          path: target
-          fetch-depth: 0
-
-      - name: Verify starting head
+      - name: Verify target head
         shell: bash
         run: |
           set -euo pipefail
-          cd target
-          test "$(git rev-parse HEAD)" = "c081d53afecdd76f8c687cfc950d8f4bb0454a8a"
+          actual="$(gh api "/repos/$GITHUB_REPOSITORY/branches/$TARGET_REF" --jq '.commit.sha')"
+          test "$actual" = "$TARGET_SHA"
+          echo "Verified target $TARGET_REF at $TARGET_SHA"
 
-      - name: Apply guarded Phase 22 closure documentation
+      - name: Dispatch Admin Operations only
         shell: bash
         run: |
           set -euo pipefail
-          cd target
-          python ../executor/scripts/phase22-final-docs.py
-          python ../executor/scripts/phase22-normalize-final-docs.py
+          started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "STARTED_AT=$started_at" >> "$GITHUB_ENV"
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/$GITHUB_REPOSITORY/actions/workflows/admin-operations.yml/dispatches" \
+            -f "ref=$TARGET_REF"
 
-      - name: Validate documentation-only closure diff
+      - name: Require exact-SHA Admin success
         shell: bash
         run: |
           set -euo pipefail
-          cd target
-          git diff --check
-          actual="$(git diff --name-only | sort)"
-          expected="$(printf '%s\n' PROJECT.md docs/ui/SCREEN_REGISTRY.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md | sort)"
-          if [ "$actual" != "$expected" ]; then
-            echo "::error::Unexpected Phase 22 closure paths"
-            printf 'Actual:\n%s\nExpected:\n%s\n' "$actual" "$expected"
-            exit 1
-          fi
-          grep -Fq 'VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING' PROJECT.md
-          grep -Fq '### UI-065 — Activity, Settings and Landing complete Kinetic Precision system cohesion' docs/ui/UI_DECISIONS.md
-          grep -Fq 'Phase 22 pre-merge verified closure — 2026-09-08' docs/ui/UI_MIGRATION.md
-          grep -Fq 'Cycle 4 Phase 22 screen extensions — VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING' docs/ui/SCREEN_REGISTRY.md
-
-      - name: Commit and push one Phase 22 closure update
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd target
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md
-          git commit -m "Document Phase 22 pre-merge verification"
-          git push origin HEAD:work/phase-22-system-cohesion
+          for attempt in $(seq 1 120); do
+            run_json="$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/$GITHUB_REPOSITORY/actions/workflows/admin-operations.yml/runs?event=workflow_dispatch&branch=$TARGET_REF&per_page=20" \
+              --jq ".workflow_runs | map(select(.head_sha == \"$TARGET_SHA\" and .created_at >= \"$STARTED_AT\")) | sort_by(.created_at) | last // empty")"
+            if [ -z "$run_json" ]; then
+              sleep 10
+              continue
+            fi
+            run_id="$(jq -r '.id' <<<"$run_json")"
+            status="$(jq -r '.status' <<<"$run_json")"
+            conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
+            echo "Admin run $run_id: $status ${conclusion:-}"
+            if [ "$status" != "completed" ]; then
+              sleep 10
+              continue
+            fi
+            test "$conclusion" = "success"
+            jobs="$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs")"
+            job_count="$(jq '.jobs | length' <<<"$jobs")"
+            test "$job_count" -gt 0
+            jq -e '.jobs | all(.conclusion == "success")' <<<"$jobs" >/dev/null
+            echo "Exact-SHA Admin Operations succeeded: $run_id"
+            exit 0
+          done
+          echo "::error::Timed out waiting for exact-SHA Admin Operations."
+          exit 1
