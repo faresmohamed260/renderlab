@@ -1733,7 +1733,7 @@ The next major product pass is explicitly visual. Success is measured by user-vi
 - **Phase 19 — Kinetic Foundation & App Shell:** `COMPLETE / VERIFIED` — atmospheric canvas, dimensional floating glass shell chrome, morphing active navigation, tactile feedback, fast top-level route continuity and reduced-motion/static equivalents.
 - **Phase 20 — Create as a Creative Instrument:** `COMPLETE / VERIFIED / MERGED` — immersive instrument frame, morphing Image/Video context, reference choreography, precision-deck Advanced, tactile Generate/lifecycle states and spatial result arrival; final exact-head and merged-main evidence are verified below.
 - **Phase 21 — Library & Viewer Spatial Media Experience:** `COMPLETE / VERIFIED` — UI-064 is implemented and exact-head verified; production rollout remains separate and unauthorized.
-- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `DESIGN CHECKPOINT APPROVED / IMPLEMENTATION READY / IMPLEMENTATION NOT STARTED` — contract baseline `c17abfef07fbc580c51f458496e4e53502816229`; reviewed checkpoint evidence `34265429235` / artifact `10071612375`.
+- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS` — contract baseline `c17abfef07fbc580c51f458496e4e53502816229`; reviewed checkpoint evidence `34265429235` / artifact `10071612375`.
 
 ## Phase 19 acceptance tracker
 - [x] Extend semantic visual tokens/effect budget without weakening contrast/status semantics.
@@ -1788,7 +1788,7 @@ Verified implementation evidence: exact implementation head `dd43169abae89e7e672
 No schema, Supabase/R2, account/admission, generation capability, worker/provider/routing or production-deployment change is authorized by this contract. Phase 22 is expanded below from the now-verified merged Phase 21 baseline; implementation still requires the design checkpoint.
 
 ## Phase 22 acceptance tracker
-**Status: `DESIGN CHECKPOINT APPROVED / IMPLEMENTATION READY / IMPLEMENTATION NOT STARTED`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`; checkpoint review run `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`).
+**Status: `IMPLEMENTED IN DRAFT / EXACT-HEAD ACCEPTANCE IN PROGRESS`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`; checkpoint review run `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`).
 
 - [x] Create and human-review the required repository-backed desktop/390px Activity + Settings + Landing design checkpoint before implementation; Activity, Settings, Landing and cross-product cohesion boards passed exact remote raster/human review with no corrective iteration required.
 - [ ] Activity: strengthen truthful lifecycle/status hierarchy while preserving server ordering, pagination, auto-refresh and separate Run Again / Retry / Cancel eligibility.

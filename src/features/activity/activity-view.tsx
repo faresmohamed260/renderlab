@@ -96,7 +96,7 @@ export function ActivityView({
   hasActive: boolean;
 }) {
   return (
-    <section className="mx-auto w-full max-w-[1000px] px-4 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
+    <section className="kinetic-activity-workspace mx-auto w-full max-w-[1000px] px-4 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
       <ActivityAutoRefresh enabled={accountAvailable && available && hasActive} />
 
       <div>
@@ -150,7 +150,7 @@ export function ActivityView({
       ) : (
         <>
           {hasActive ? (
-            <p className="mt-8 flex items-center gap-2 text-sm text-text-muted" role="status">
+            <p className="kinetic-activity-live mt-8 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm text-text-muted" role="status">
               <LoaderCircle aria-hidden="true" className="size-4 motion-safe:animate-spin" />
               Updates automatically while generation work is active.
             </p>
@@ -158,7 +158,12 @@ export function ActivityView({
 
           <ol className={hasActive ? "mt-4 space-y-3" : "mt-8 space-y-3"}>
             {items.map((item) => (
-              <li key={item.id} className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
+              <li
+                key={item.id}
+                data-activity-status={item.status}
+                data-active={isActiveGenerationStatus(item.status) ? "true" : "false"}
+                className="kinetic-activity-row relative overflow-hidden rounded-2xl border p-4 sm:p-5"
+              >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -168,7 +173,7 @@ export function ActivityView({
                           : <ImageIcon aria-hidden="true" className="size-4 text-text-muted" />}
                         {operationLabels[item.operation]}
                       </span>
-                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass(item)}`}>
+                      <span className={`kinetic-activity-status inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass(item)}`}>
                         {statusIcon(item)}
                         {statusLabels[item.status]}
                       </span>

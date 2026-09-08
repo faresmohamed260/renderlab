@@ -37,13 +37,15 @@ try {
   const desktop = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
   await desktop.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
   assert(new URL(desktop.url()).pathname === "/", "Bare root did not remain the landing route.");
-  await desktop.getByRole("heading", { name: "Create images. Shape them. Put them in motion." }).waitFor();
+  await desktop.getByRole("heading", { name: "Create with intent. Keep what matters." }).waitFor();
   assert(await desktop.getByRole("complementary", { name: "Application navigation" }).count() === 0, "Landing unexpectedly rendered AppShell navigation.");
   const openCreate = desktop.getByRole("link", { name: /Open Create/ }).first();
   const signIn = desktop.getByRole("link", { name: "Sign in", exact: true }).first();
   assert((await openCreate.getAttribute("href")) === "/create", "Landing Open Create CTA does not target /create.");
   assert((await signIn.getAttribute("href")) === "/settings", "Landing Sign in CTA does not target /settings.");
   await desktop.getByText("Invitation-only access · No public sign-up").waitFor();
+  await desktop.getByText("Static product illustration — not live generation state.", { exact: true }).waitFor();
+  assert(await desktop.locator('[data-preview-static="true"]').count() === 1, "Landing product preview is not explicitly marked static.");
   for (const label of ["Create Image", "Edit Image", "Create Video", "Animate Image"]) {
     await desktop.getByText(label, { exact: true }).first().waitFor();
   }
@@ -94,7 +96,7 @@ try {
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
   await mobile.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
-  await mobile.getByRole("heading", { name: "Create images. Shape them. Put them in motion." }).waitFor();
+  await mobile.getByRole("heading", { name: "Create with intent. Keep what matters." }).waitFor();
   await mobile.getByRole("link", { name: /Open Create/ }).first().waitFor();
   await mobile.getByRole("link", { name: "Sign in", exact: true }).first().waitFor();
   await assertNoHorizontalOverflow(mobile, "Narrow landing");

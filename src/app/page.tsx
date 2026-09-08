@@ -60,14 +60,14 @@ export default async function LandingPage({
   }
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-canvas text-text">
+    <main className="kinetic-landing min-h-dvh overflow-x-hidden bg-canvas text-text">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-[44rem] opacity-35 [background-image:linear-gradient(to_right,#11141a_1px,transparent_1px),linear-gradient(to_bottom,#11141a_1px,transparent_1px)] [background-size:72px_72px]"
       />
 
       <div className="relative mx-auto w-full max-w-[1440px] px-4 pb-20 pt-4 sm:px-8 lg:px-16 lg:pb-28 lg:pt-8">
-        <header className="flex min-h-14 items-center rounded-2xl border border-border bg-[#0d0f13]/95 px-4 sm:px-6">
+        <header className="kinetic-glass kinetic-landing-header flex min-h-14 items-center rounded-2xl border border-border px-4 sm:px-6">
           <Link href="/" aria-label="RenderLab home" className="inline-flex min-h-11 items-center">
             <RenderLabBrand markClassName="size-7" textClassName="text-base sm:text-lg" />
           </Link>
@@ -88,13 +88,18 @@ export default async function LandingPage({
         </header>
 
         <section className="grid gap-12 pb-20 pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(500px,0.92fr)] lg:items-center lg:gap-16 lg:pb-28 lg:pt-20">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">The creative workspace</p>
+          <div className="kinetic-landing-copy">
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-text">
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-accent-bright shadow-[0_0_12px_var(--accent-glow)]" />
+              Closed beta · invitation only
+            </div>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-accent">The creative workspace</p>
             <h1 className="mt-5 max-w-3xl text-5xl font-semibold tracking-[-0.04em] text-text sm:text-6xl lg:text-[4.2rem] lg:leading-[1.03]">
-              Create images. Shape them. Put them in motion.
+              <span className="block">Create with intent.</span>
+              <span className="mt-1 block">Keep what matters.</span>
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-7 text-text-muted sm:text-lg">
-              RenderLab brings image and video creation, reference-driven edits, reusable media, and retryable generation history into one focused workspace.
+              Image and video creation with durable media, reusable references, truthful generation state, and a focused continuation loop.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -122,7 +127,7 @@ export default async function LandingPage({
           </div>
           <div className="mt-9 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {operations.map(({ number, title: operationTitle, body, icon: Icon }) => (
-              <article key={operationTitle} className="rounded-2xl border border-border bg-surface-1 p-5 sm:p-6">
+              <article key={operationTitle} className="kinetic-landing-card rounded-2xl border border-border p-5 sm:p-6">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-accent">{number}</span>
                   <Icon aria-hidden="true" className="size-4 text-text-muted" />
@@ -135,14 +140,14 @@ export default async function LandingPage({
         </section>
 
         <section className="grid gap-5 border-t border-border py-16 lg:grid-cols-2 lg:py-20">
-          <article className="rounded-2xl border border-border bg-surface-1 p-6 sm:p-8">
+          <article className="kinetic-landing-card rounded-2xl border border-border p-6 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Keep the work</p>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight text-text sm:text-3xl">References and results stay useful.</h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-text-muted sm:text-base">
               Create uploads become owned Library media. Generated results stay available for search, favorites, collections, download, rename, Edit and Animate continuation instead of disappearing after one generation.
             </p>
           </article>
-          <article className="rounded-2xl border border-border bg-surface-1 p-6 sm:p-8">
+          <article className="kinetic-landing-card rounded-2xl border border-border p-6 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Keep the thread</p>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight text-text sm:text-3xl">History is part of the workspace.</h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-text-muted sm:text-base">
@@ -152,7 +157,7 @@ export default async function LandingPage({
         </section>
 
         <section className="border-t border-border py-16 lg:py-20">
-          <div className="flex flex-col gap-7 rounded-3xl border border-border bg-surface-1 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between lg:p-10">
+          <div className="kinetic-glass-strong flex flex-col gap-7 rounded-3xl border border-border p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between lg:p-10">
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Closed beta</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-tight text-text sm:text-3xl">Already invited? Your workspace is ready.</h2>
@@ -184,7 +189,15 @@ export default async function LandingPage({
 
 function ProductPreview() {
   return (
-    <div aria-label="RenderLab Create workspace preview" className="rounded-3xl border border-border bg-surface-1 p-4 shadow-2xl shadow-black/20 sm:p-5">
+    <div
+      aria-label="RenderLab Create workspace product preview"
+      data-preview-static="true"
+      className="kinetic-glass-strong kinetic-landing-preview rounded-3xl border border-border p-4 sm:p-5"
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">Product preview</p>
+        <span className="rounded-full border border-border bg-surface-2/80 px-2.5 py-1 text-[10px] font-semibold text-text-muted">Static illustration</span>
+      </div>
       <div className="flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-2">
           <RenderLabMark className="size-5 text-text" />
@@ -218,7 +231,7 @@ function ProductPreview() {
             </div>
           </div>
           <div className="mt-3 rounded-xl border border-border bg-surface-2 p-3">
-            <p className="text-[11px] font-semibold text-text">Result saved to Library</p>
+            <p className="text-[11px] font-semibold text-text">Durable result</p>
             <p className="mt-1 text-[10px] text-text-muted">Continue with Edit or Animate</p>
           </div>
         </div>
@@ -230,6 +243,7 @@ function ProductPreview() {
           </span>
         ))}
       </div>
+      <p className="mt-3 text-[10px] font-medium text-text-muted">Static product illustration — not live generation state.</p>
     </div>
   );
 }

@@ -74,7 +74,7 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
 
   return (
     <form className="flex max-w-lg flex-col gap-5" onSubmit={handleSubmit}>
-      <div className="rounded-xl border border-border bg-surface-1 p-5 sm:p-6">
+      <div className="kinetic-settings-panel rounded-2xl border border-border p-5 sm:p-6">
         <FieldGroup>
           {!recoveryMode ? (
             <Field>

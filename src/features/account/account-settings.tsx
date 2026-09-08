@@ -144,11 +144,11 @@ export function AccountSettings({
     const accessState = accessPresentation(access, enforcementEnabled);
     return (
       <div className="flex flex-col gap-5">
-        <div className="rounded-xl border border-border bg-surface-1 p-5 sm:p-6">
+        <div className="kinetic-settings-panel rounded-2xl border border-border p-5 sm:p-6">
           <p className="text-sm font-semibold text-text">Signed in</p>
           <p className="mt-1 break-all text-sm text-text-muted">{identity.email ?? "RenderLab account"}</p>
 
-          <div className="mt-5 rounded-lg border border-border bg-surface-2 p-4">
+          <div className="kinetic-settings-access mt-5 rounded-xl border border-border bg-surface-2 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Closed beta access</p>
               <span className="rounded-full border border-border bg-surface-1 px-2.5 py-1 text-xs font-semibold text-text">
@@ -158,7 +158,10 @@ export function AccountSettings({
             <p className="mt-2 text-sm leading-6 text-text-muted">{accessState.message}</p>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-5 border-t border-border/70 pt-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Security</p>
+            <p className="mt-1 text-sm leading-6 text-text-muted">Manage your password or end this signed-in session.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
             <Button asChild variant="secondary">
               <Link href="/settings/password">Change password</Link>
             </Button>
@@ -166,6 +169,7 @@ export function AccountSettings({
               {busyAction === "signout" ? <Spinner aria-hidden="true" /> : null}
               Sign out
             </Button>
+            </div>
           </div>
         </div>
 
@@ -179,7 +183,11 @@ export function AccountSettings({
   }
 
   return (
-    <form className="flex max-w-lg flex-col gap-5" onSubmit={handleSignIn}>
+    <form className="kinetic-settings-panel flex max-w-lg flex-col gap-5 rounded-2xl border border-border p-5 sm:p-6" onSubmit={handleSignIn}>
+      <div>
+        <p className="text-sm font-semibold text-text">Sign in</p>
+        <p className="mt-1 text-sm leading-6 text-text-muted">Use the credentials for your invited RenderLab account.</p>
+      </div>
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="account-email">Email</FieldLabel>

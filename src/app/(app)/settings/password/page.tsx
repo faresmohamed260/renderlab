@@ -21,8 +21,8 @@ export default async function PasswordSettingsPage() {
   );
 
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      <div className="mb-6 flex flex-col gap-2">
+    <section className="kinetic-settings-workspace mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="kinetic-settings-intro mb-7 flex flex-col gap-2">
         <Link className="w-fit text-sm font-medium text-text-muted hover:text-text" href="/settings">
           ← Settings
         </Link>
