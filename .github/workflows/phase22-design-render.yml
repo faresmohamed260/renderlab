@@ -6,6 +6,10 @@ on:
       - design/phase-22-system-cohesion
     paths:
       - ".github/workflows/phase22-design-render.yml"
+      - "design/penpot/phase22-activity-kinetic-v0.1.svg"
+      - "design/penpot/phase22-settings-trust-v0.1.svg"
+      - "design/penpot/phase22-landing-kinetic-v0.1.svg"
+      - "design/penpot/phase22-system-cohesion-v0.1.svg"
 
 permissions:
   contents: write
@@ -42,7 +46,7 @@ jobs:
           rsvg-convert -w 950 design/penpot/phase22-settings-trust-v0.1.svg -o /tmp/phase22-render/settings.png
           rsvg-convert -w 950 design/penpot/phase22-landing-kinetic-v0.1.svg -o /tmp/phase22-render/landing.png
           rsvg-convert -w 950 design/penpot/phase22-system-cohesion-v0.1.svg -o /tmp/phase22-render/cohesion.png
-          magick /tmp/phase22-render/activity.png /tmp/phase22-render/settings.png /tmp/phase22-render/landing.png /tmp/phase22-render/cohesion.png -append -resize 1000x -quality 60 design/penpot/phase22-system-cohesion-v0.1-review.jpg
+          convert /tmp/phase22-render/activity.png /tmp/phase22-render/settings.png /tmp/phase22-render/landing.png /tmp/phase22-render/cohesion.png -append -resize 1000x -quality 60 design/penpot/phase22-system-cohesion-v0.1-review.jpg
           identify /tmp/phase22-render/*.png design/penpot/phase22-system-cohesion-v0.1-review.jpg
 
       - name: Upload exact review pixels
