@@ -25,7 +25,13 @@ jobs:
           test "$(git merge-base HEAD origin/main)" = "12bb7133bf6c2686c47ccda9d26fd09b7e36c038"
 
       - name: Apply UI-064 patch
-        run: python scripts/phase21-stage.py
+        run: |
+          python scripts/phase21-stage.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("src/app/globals.css")
+          path.write_text(path.read_text().rstrip() + "\n")
+          PY
 
       - name: Validate patch whitespace
         shell: bash
