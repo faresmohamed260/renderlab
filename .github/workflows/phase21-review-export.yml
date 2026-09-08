@@ -1,0 +1,44 @@
+name: Phase 21 review export
+
+on:
+  push:
+    branches:
+      - design/phase-21-spatial-media
+    paths:
+      - ".github/workflows/phase21-review-export.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install render tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin imagemagick
+
+      - name: Export compact review frames
+        shell: bash
+        run: |
+          mkdir -p design/penpot/.phase21-review-export
+          for name in library viewer compare; do
+            rsvg-convert -w 800 "design/penpot/phase21-${name}-spatial-v0.1.svg" -o "/tmp/${name}.png"
+            convert "/tmp/${name}.png" -quality 42 "design/penpot/.phase21-review-export/${name}.jpg"
+            base64 -w 76 "design/penpot/.phase21-review-export/${name}.jpg" > "design/penpot/.phase21-review-export/${name}.b64"
+            rm "design/penpot/.phase21-review-export/${name}.jpg"
+          done
+          rm .github/workflows/phase21-review-export.yml
+          git diff --check
+
+      - name: Commit temporary review export
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: export Phase 21 review pixels"
+          git push origin HEAD:design/phase-21-spatial-media
