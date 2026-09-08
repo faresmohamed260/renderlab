@@ -1,0 +1,44 @@
+name: Phase 21 review artifact
+
+on:
+  push:
+    branches:
+      - design/phase-21-spatial-media
+    paths:
+      - ".github/workflows/phase21-review-artifact.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reconstruct review images
+        shell: bash
+        run: |
+          mkdir -p artifacts/phase21-review
+          for name in library viewer compare; do
+            base64 -d "design/penpot/.phase21-review-export/${name}.b64" > "artifacts/phase21-review/${name}.jpg"
+            identify "artifacts/phase21-review/${name}.jpg"
+          done
+
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase21-spatial-media-review
+          path: artifacts/phase21-review/*.jpg
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/phase21-review-artifact.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: remove Phase 21 review artifact helper"
+          git push origin HEAD:design/phase-21-spatial-media
