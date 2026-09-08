@@ -72,7 +72,7 @@ export function MediaViewer({
   const hasDetails = Boolean(dimensions || duration || asset.originalFilename || size || asset.origin === "uploaded");
 
   return (
-    <section className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-8 sm:px-8 sm:pb-16 sm:pt-10 lg:px-10 lg:pt-12">
+    <section className="kinetic-viewer-workspace mx-auto w-full max-w-[1240px] px-4 pb-28 pt-8 sm:px-8 sm:pb-16 sm:pt-10 lg:px-10 lg:pt-12">
       <Button asChild variant="ghost">
         <Link href="/library">
           <ArrowLeft aria-hidden="true" data-icon="inline-start" />
@@ -81,7 +81,7 @@ export function MediaViewer({
       </Button>
 
       <MediaViewerCompareProvider enabled={Boolean(compareSource)}>
-        <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <div className="kinetic-viewer-layout mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px] lg:items-start lg:gap-6">
           <MediaViewerMediaStage
             asset={asset}
             title={title}
@@ -89,7 +89,7 @@ export function MediaViewer({
             sourceTitle={sourceTitle}
           />
 
-          <aside className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
+          <aside className="kinetic-viewer-rail rounded-2xl border border-border p-4 sm:p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">
               {asset.origin === "uploaded" ? `uploaded ${asset.kind}` : asset.kind}
             </p>

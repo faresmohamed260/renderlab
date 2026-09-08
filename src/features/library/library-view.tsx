@@ -175,7 +175,7 @@ export function LibraryView({
 
   return (
     <LibraryDropUploadSurface enabled={accountAvailable && uploadAvailable && tab === "uploads"}>
-      <section className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
+      <section className="kinetic-media-workspace mx-auto w-full max-w-[1240px] px-4 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text">Library</h2>
@@ -203,7 +203,7 @@ export function LibraryView({
           </Empty>
         ) : (
           <>
-            <nav className="mt-8 inline-flex rounded-lg border border-border bg-surface-1 p-1" aria-label="Library sections">
+            <nav className="kinetic-media-tabs mt-8 inline-flex rounded-xl border border-border p-1" aria-label="Library sections">
               {tabs.map((section) => {
                 const active = tab === section.value;
                 return (
@@ -219,7 +219,7 @@ export function LibraryView({
               })}
             </nav>
 
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="kinetic-media-toolbar mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border px-3 py-3 sm:px-4">
               <nav className="flex rounded-lg bg-surface-2 p-1" aria-label="Library media type">
                 {filters.map((filter) => {
                   const active = kind === filter.value;
@@ -258,7 +258,7 @@ export function LibraryView({
               </div>
             </div>
 
-            <form action="/library" method="get" role="search" className="mt-4 flex w-full max-w-xl items-center gap-2">
+            <form action="/library" method="get" role="search" className="kinetic-media-search mt-4 flex w-full max-w-xl items-center gap-2 rounded-2xl border border-border p-2">
               {tab === "uploads" ? <input type="hidden" name="tab" value="uploads" /> : null}
               {kind !== "all" ? <input type="hidden" name="kind" value={kind} /> : null}
               {sort !== "newest" ? <input type="hidden" name="sort" value={sort} /> : null}

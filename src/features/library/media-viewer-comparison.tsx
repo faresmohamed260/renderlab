@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 import {
   createContext,
   useContext,
@@ -45,7 +46,7 @@ function ResultMedia({ asset, title }: { asset: PublicMediaAsset; title: string 
       <img
         src={asset.contentUrl}
         alt={title}
-        className="max-h-[78vh] max-w-full rounded-xl object-contain"
+        className="kinetic-viewer-media max-h-[78vh] max-w-full rounded-xl object-contain"
       />
     );
   }
@@ -56,7 +57,7 @@ function ResultMedia({ asset, title }: { asset: PublicMediaAsset; title: string 
       poster={asset.thumbnailUrl || undefined}
       controls
       playsInline
-      className="max-h-[78vh] max-w-full rounded-xl"
+      className="kinetic-viewer-media max-h-[78vh] max-w-full rounded-xl"
       aria-label={title}
     />
   );
@@ -74,34 +75,54 @@ export function MediaViewerMediaStage({
   sourceTitle: string | null;
 }) {
   const { open } = useComparison();
+  const reduceMotion = useReducedMotion();
+  const transition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.32, ease: "easeOut" as const };
 
   if (!source || !open) {
     return (
-      <div
+      <motion.div
         id={comparisonRegionId}
-        className="flex min-h-[52vh] items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-1 p-2 sm:p-4 lg:min-h-[70vh]"
+        className="kinetic-viewer-stage flex min-h-[52vh] items-center justify-center overflow-hidden rounded-2xl border border-border p-2 sm:p-4 lg:min-h-[70vh]"
+        initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.992 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={transition}
       >
         <ResultMedia asset={asset} title={title} />
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div
+    <motion.div
       id={comparisonRegionId}
-      className="grid gap-3 lg:grid-cols-[minmax(220px,2fr)_minmax(0,3fr)] lg:items-stretch"
+      className="kinetic-compare-stage grid gap-3 lg:grid-cols-[minmax(220px,2fr)_minmax(0,3fr)] lg:items-stretch"
       aria-label="Source and result comparison"
+      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={transition}
     >
-      <div className="order-1 flex min-h-[52vh] flex-col rounded-2xl border border-accent/50 bg-surface-1 p-2 sm:p-4 lg:order-2 lg:min-h-[70vh]">
+      <motion.div
+        layout={!reduceMotion}
+        className="kinetic-compare-result order-1 flex min-h-[52vh] flex-col rounded-2xl border border-accent/50 p-2 sm:p-4 lg:order-2 lg:min-h-[70vh]"
+        transition={transition}
+      >
         <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-[0.08em] text-text">
           {asset.kind === "video" ? "Result video" : "Result"}
         </p>
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-surface-2 p-2 sm:p-3">
           <ResultMedia asset={asset} title={title} />
         </div>
-      </div>
+      </motion.div>
 
-      <div className="order-2 rounded-2xl border border-border bg-surface-1 p-3 lg:order-1 lg:flex lg:min-h-[70vh] lg:flex-col lg:p-4">
+      <motion.div
+        layout={!reduceMotion}
+        className="kinetic-compare-source order-2 rounded-2xl border border-border p-3 lg:order-1 lg:flex lg:min-h-[70vh] lg:flex-col lg:p-4"
+        initial={reduceMotion ? false : { opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={transition}
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">Source</p>
         <div className="mt-2 grid grid-cols-[112px_minmax(0,1fr)] items-center gap-3 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:items-stretch lg:justify-center">
           <div className="flex h-24 items-center justify-center overflow-hidden rounded-xl bg-surface-2 p-1.5 lg:h-auto lg:min-h-0 lg:flex-1 lg:p-2">
@@ -118,8 +139,8 @@ export function MediaViewerMediaStage({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
