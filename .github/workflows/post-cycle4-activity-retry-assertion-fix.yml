@@ -1,0 +1,57 @@
+name: Fix post-Cycle 4 Activity retry assertion
+
+on:
+  push:
+    branches:
+      - work/post-cycle4-production-correctives
+    paths:
+      - .github/workflows/post-cycle4-activity-retry-assertion-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    env:
+      EXPECTED_PARENT: 77222319aa61fec1a7182a8d29db92123de6cc49
+      BRANCH: work/post-cycle4-production-correctives
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/post-cycle4-production-correctives
+          fetch-depth: 0
+      - name: Guard and correct deterministic legacy Video Retry assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/verify-activity.mjs')
+          s = p.read_text()
+          old = '  assert(legacyCapture.advanced.seed === 271828 && legacyCapture.advanced.frameRate === 25, "Legacy Video Retry did not preserve supported Video advanced intent.");'
+          new = '''  const legacyRetrySeed = legacyCapture.advanced.seed;
+  assert(Number.isSafeInteger(legacyRetrySeed), "Legacy Video Retry did not submit a valid randomized seed.");
+  assert(legacyRetrySeed >= 0 && legacyRetrySeed <= 2_147_483_647, `Legacy Video Retry randomized seed was outside the conservative product range: ${legacyRetrySeed}`);
+  assert(legacyRetrySeed !== 271828, "Legacy Video Retry reused the historical seed instead of choosing a new random seed.");
+  assert(legacyCapture.advanced.frameRate === 25, "Legacy Video Retry did not preserve supported non-seed Video advanced intent.");'''
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one legacy Video Retry assertion, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          rm .github/workflows/post-cycle4-activity-retry-assertion-fix.yml
+          git diff --check
+          git diff -- scripts/verify-activity.mjs
+      - name: Commit correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          test "$(git diff --cached --name-only | wc -l)" -eq 2
+          git diff --cached --name-only | grep -Fx scripts/verify-activity.mjs >/dev/null
+          git diff --cached --name-only | grep -Fx .github/workflows/post-cycle4-activity-retry-assertion-fix.yml >/dev/null
+          git commit -m "test: align legacy Retry assertion with random seed policy"
+          git push origin HEAD:"$BRANCH"
