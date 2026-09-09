@@ -24,7 +24,7 @@ jobs:
           expected="c71554b692864c84cd1bc9f796255fdde71eae43"
           git fetch origin main --quiet
           test "$(git rev-parse origin/main)" = "$expected"
-          test "$(git rev-parse HEAD^)" = "$expected"
+          test "$(git merge-base HEAD origin/main)" = "$expected"
           changed="$(git diff --name-only "$expected"..HEAD)"
           test "$changed" = ".github/workflows/apply-ui069-docs-closure.yml"
 
@@ -33,6 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
+          import base64
           from pathlib import Path
 
           def replace_once(path, old, new):
@@ -48,65 +49,28 @@ jobs:
           replace_once("PROJECT.md", project_old, project_new)
 
           create_anchor = "- PNG/JPEG/WebP user reference input up to 25 MB;"
-          create_insert = create_anchor + "\n- UI-069 adds optional desktop file drag/drop onto the Create composer for one reference image through the exact same durable upload/validation transaction as the maintained file picker; the picker remains the keyboard/touch/mobile baseline and no second upload path exists;"
-          replace_once("docs/ui/SCREEN_REGISTRY.md", create_anchor, create_insert)
+          replace_once("docs/ui/SCREEN_REGISTRY.md", create_anchor, create_anchor + "\n- UI-069 adds optional desktop file drag/drop onto the Create composer for one reference image through the exact same durable upload/validation transaction as the maintained file picker; the picker remains the keyboard/touch/mobile baseline and no second upload path exists;")
 
           library_anchor = "- `All / Images / Videos` URL-owned kind filter;"
-          library_insert = library_anchor + "\n- UI-069 keeps Creatives/Uploads sections and All/Images/Videos filtering URL/server-owned while explicitly prefetching relevant destinations and exposing immediate link-pending feedback during dynamic server resolution; no client-owned media/filter dataset is introduced;"
-          replace_once("docs/ui/SCREEN_REGISTRY.md", library_anchor, library_insert)
+          replace_once("docs/ui/SCREEN_REGISTRY.md", library_anchor, library_anchor + "\n- UI-069 keeps Creatives/Uploads sections and All/Images/Videos filtering URL/server-owned while explicitly prefetching relevant destinations and exposing immediate link-pending feedback during dynamic server resolution; no client-owned media/filter dataset is introduced;")
 
-          library_actions_anchor = "- Favorites remains a compact Library toolbar filter, not a new top-level destination or client-only card filter."
-          library_actions_insert = library_actions_anchor + "\n- UI-069 requires Favorites, Collections and chronological sort controls to share one true control baseline/height; closed collection-management disclosure content must not reserve phantom spacing in the toolbar."
-          replace_once("docs/ui/SCREEN_REGISTRY.md", library_actions_anchor, library_actions_insert)
+          actions_anchor = "- Favorites remains a compact Library toolbar filter, not a new top-level destination or client-only card filter."
+          replace_once("docs/ui/SCREEN_REGISTRY.md", actions_anchor, actions_anchor + "\n- UI-069 requires Favorites, Collections and chronological sort controls to share one true control baseline/height; closed collection-management disclosure content must not reserve phantom spacing in the toolbar.")
 
           viewer_anchor = "- responsive media-primary image/video presentation;"
-          viewer_insert = viewer_anchor + "\n- UI-069 requires shrinkable min-content-safe Viewer layout/stage/rail composition and safe wrapping for long unbroken labels so intrinsic media or filenames cannot force horizontal viewport overflow at narrow/intermediate widths;"
-          replace_once("docs/ui/SCREEN_REGISTRY.md", viewer_anchor, viewer_insert)
+          replace_once("docs/ui/SCREEN_REGISTRY.md", viewer_anchor, viewer_anchor + "\n- UI-069 requires shrinkable min-content-safe Viewer layout/stage/rail composition and safe wrapping for long unbroken labels so intrinsic media or filenames cannot force horizontal viewport overflow at narrow/intermediate widths;")
 
           decisions_path = Path("docs/ui/UI_DECISIONS.md")
           decisions = decisions_path.read_text()
-          marker = "### UI-069 — Post-production Create / Viewer / Library corrective interaction pass"
-          if marker in decisions:
+          if "### UI-069 — Post-production Create / Viewer / Library corrective interaction pass" in decisions:
               raise SystemExit("UI_DECISIONS.md: UI-069 marker already exists")
-          decisions += """
-
-### UI-069 — Post-production Create / Viewer / Library corrective interaction pass
-**Status:** Accepted / Implemented / Verified / Merged
-**Date:** 2026-09-09
-
-**Decision:** User-directed production review adds four bounded corrections without reopening Create, Library or Viewer architecture. Desktop Create may accept one image file dropped onto the composer through the exact existing durable reference-upload transaction used by the file picker; the picker remains the keyboard/touch/mobile baseline. Media Viewer layout/stage/rail children must permit min-content shrinking, long unbroken titles/filenames must wrap safely and intrinsic media must not force horizontal viewport overflow at narrow or intermediate widths. Library Favorites / Collections / sort controls share one actual baseline and closed progressive-disclosure content may not reserve phantom spacing. Creatives↔Uploads and All↔Images↔Videos remain URL/server-owned; relevant destinations are explicitly prefetched and the activating link exposes immediate pending feedback while the dynamic authoritative server view resolves. No client-owned Library dataset/filter store is introduced.
-
-**Verification:** Guarded pre-PR run `34411812191` passed exact-baseline diff validation, UI purity, lint, typecheck, unit tests and production build. Exact PR head `cf065b62032d8b2d3be497b358b0b81067a99675` passed all 22 attached workflows. Configured Create Lifecycle `34412081831` proved a real `DataTransfer` file drop used the durable upload ticket/completion transaction and continued through multi-reference behavior. Library History `34412081854` measured Favorites / Collections / sort centers and heights within 1px. Library Lifecycle `34412081785` used a deliberately long uploaded filename at a 700px Viewer viewport and proved no horizontal overflow with both stage and rail contained. Video Generation Integration `34412081743` passed the unchanged live Create Video / Animate Image ownership regression. Reviewed desktop/mobile/intermediate artifacts matched the intended correction.
-
-PR #140 guarded squash-merged as `c71554b692864c84cd1bc9f796255fdde71eae43`. All six workflows GitHub attached to merged `main` passed: Engineering Quality `34413931082`, UI Shell Validation `34413931186`, Upscale Viewer Visual `34413931195`, Creative Iteration `34413931100`, Image Upscale Integration `34413931066` and Video Generation Integration `34413931077`.
-
-**Consequences:** No schema, account/authorization, generation/provider/worker, R2/storage, route hierarchy or deployment contract changes. Automatic Git deployment remains disabled. This correction is verified/merged but not production-deployed; live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`. UI-069 does not authorize or imply Phase 23 / Cycle 5.
-"""
-          decisions_path.write_text(decisions)
+          decisions_path.write_text(decisions + base64.b64decode("CiMjIyBVSS0wNjkg4oCUIFBvc3QtcHJvZHVjdGlvbiBDcmVhdGUgLyBWaWV3ZXIgLyBMaWJyYXJ5IGNvcnJlY3RpdmUgaW50ZXJhY3Rpb24gcGFzcwoqKlN0YXR1czoqKiBBY2NlcHRlZCAvIEltcGxlbWVudGVkIC8gVmVyaWZpZWQgLyBNZXJnZWQKKipEYXRlOioqIDIwMjYtMDktMDkKCioqRGVjaXNpb246KiogVXNlci1kaXJlY3RlZCBwcm9kdWN0aW9uIHJldmlldyBhZGRzIGZvdXIgYm91bmRlZCBjb3JyZWN0aW9ucyB3aXRob3V0IHJlb3BlbmluZyBDcmVhdGUsIExpYnJhcnkgb3IgVmlld2VyIGFyY2hpdGVjdHVyZS4gRGVza3RvcCBDcmVhdGUgbWF5IGFjY2VwdCBvbmUgaW1hZ2UgZmlsZSBkcm9wcGVkIG9udG8gdGhlIGNvbXBvc2VyIHRocm91Z2ggdGhlIGV4YWN0IGV4aXN0aW5nIGR1cmFibGUgcmVmZXJlbmNlLXVwbG9hZCB0cmFuc2FjdGlvbiB1c2VkIGJ5IHRoZSBmaWxlIHBpY2tlcjsgdGhlIHBpY2tlciByZW1haW5zIHRoZSBrZXlib2FyZC90b3VjaC9tb2JpbGUgYmFzZWxpbmUuIE1lZGlhIFZpZXdlciBsYXlvdXQvc3RhZ2UvcmFpbCBjaGlsZHJlbiBtdXN0IHBlcm1pdCBtaW4tY29udGVudCBzaHJpbmtpbmcsIGxvbmcgdW5icm9rZW4gdGl0bGVzL2ZpbGVuYW1lcyBtdXN0IHdyYXAgc2FmZWx5IGFuZCBpbnRyaW5zaWMgbWVkaWEgbXVzdCBub3QgZm9yY2UgaG9yaXpvbnRhbCB2aWV3cG9ydCBvdmVyZmxvdyBhdCBuYXJyb3cgb3IgaW50ZXJtZWRpYXRlIHdpZHRocy4gTGlicmFyeSBGYXZvcml0ZXMgLyBDb2xsZWN0aW9ucyAvIHNvcnQgY29udHJvbHMgc2hhcmUgb25lIGFjdHVhbCBiYXNlbGluZSBhbmQgY2xvc2VkIHByb2dyZXNzaXZlLWRpc2Nsb3N1cmUgY29udGVudCBtYXkgbm90IHJlc2VydmUgcGhhbnRvbSBzcGFjaW5nLiBDcmVhdGl2ZXPihpRVcGxvYWRzIGFuZCBBbGzihpRJbWFnZXPihpRWaWRlb3MgcmVtYWluIFVSTC9zZXJ2ZXItb3duZWQ7IHJlbGV2YW50IGRlc3RpbmF0aW9ucyBhcmUgZXhwbGljaXRseSBwcmVmZXRjaGVkIGFuZCB0aGUgYWN0aXZhdGluZyBsaW5rIGV4cG9zZXMgaW1tZWRpYXRlIHBlbmRpbmcgZmVlZGJhY2sgd2hpbGUgdGhlIGR5bmFtaWMgYXV0aG9yaXRhdGl2ZSBzZXJ2ZXIgdmlldyByZXNvbHZlcy4gTm8gY2xpZW50LW93bmVkIExpYnJhcnkgZGF0YXNldC9maWx0ZXIgc3RvcmUgaXMgaW50cm9kdWNlZC4KCioqVmVyaWZpY2F0aW9uOioqIEd1YXJkZWQgcHJlLVBSIHJ1biBgMzQ0MTE4MTIxOTFgIHBhc3NlZCBleGFjdC1iYXNlbGluZSBkaWZmIHZhbGlkYXRpb24sIFVJIHB1cml0eSwgbGludCwgdHlwZWNoZWNrLCB1bml0IHRlc3RzIGFuZCBwcm9kdWN0aW9uIGJ1aWxkLiBFeGFjdCBQUiBoZWFkIGBjZjA2NWI2MjAzMmQ4YjJkM2JlNDk3YjM1OGIwYjgxMDY3YTk5Njc1YCBwYXNzZWQgYWxsIDIyIGF0dGFjaGVkIHdvcmtmbG93cy4gQ29uZmlndXJlZCBDcmVhdGUgTGlmZWN5Y2xlIGAzNDQxMjA4MTgzMWAgcHJvdmVkIGEgcmVhbCBgRGF0YVRyYW5zZmVyYCBmaWxlIGRyb3AgdXNlZCB0aGUgZHVyYWJsZSB1cGxvYWQgdGlja2V0L2NvbXBsZXRpb24gdHJhbnNhY3Rpb24gYW5kIGNvbnRpbnVlZCB0aHJvdWdoIG11bHRpLXJlZmVyZW5jZSBiZWhhdmlvci4gTGlicmFyeSBIaXN0b3J5IGAzNDQxMjA4MTg1NGAgbWVhc3VyZWQgRmF2b3JpdGVzIC8gQ29sbGVjdGlvbnMgLyBzb3J0IGNlbnRlcnMgYW5kIGhlaWdodHMgd2l0aGluIDFweC4gTGlicmFyeSBMaWZlY3ljbGUgYDM0NDEyMDgxNzg1YCB1c2VkIGEgZGVsaWJlcmF0ZWx5IGxvbmcgdXBsb2FkZWQgZmlsZW5hbWUgYXQgYSA3MDBweCBWaWV3ZXIgdmlld3BvcnQgYW5kIHByb3ZlZCBubyBob3Jpem9udGFsIG92ZXJmbG93IHdpdGggYm90aCBzdGFnZSBhbmQgcmFpbCBjb250YWluZWQuIFZpZGVvIEdlbmVyYXRpb24gSW50ZWdyYXRpb24gYDM0NDEyMDgxNzQzYCBwYXNzZWQgdGhlIHVuY2hhbmdlZCBsaXZlIENyZWF0ZSBWaWRlbyAvIEFuaW1hdGUgSW1hZ2Ugb3duZXJzaGlwIHJlZ3Jlc3Npb24uIFJldmlld2VkIGRlc2t0b3AvbW9iaWxlL2ludGVybWVkaWF0ZSBhcnRpZmFjdHMgbWF0Y2hlZCB0aGUgaW50ZW5kZWQgY29ycmVjdGlvbi4KClBSICMxNDAgZ3VhcmRlZCBzcXVhc2gtbWVyZ2VkIGFzIGBjNzE1NTRiNjkyODY0Yzg0Y2QxYmM5Zjc5NjI1NWZkZGU3MWVhZTQzYC4gQWxsIHNpeCB3b3JrZmxvd3MgR2l0SHViIGF0dGFjaGVkIHRvIG1lcmdlZCBgbWFpbmAgcGFzc2VkOiBFbmdpbmVlcmluZyBRdWFsaXR5IGAzNDQxMzkzMTA4MmAsIFVJIFNoZWxsIFZhbGlkYXRpb24gYDM0NDEzOTMxMTg2YCwgVXBzY2FsZSBWaWV3ZXIgVmlzdWFsIGAzNDQxMzkzMTE5NWAsIENyZWF0aXZlIEl0ZXJhdGlvbiBgMzQ0MTM5MzExMDBgLCBJbWFnZSBVcHNjYWxlIEludGVncmF0aW9uIGAzNDQxMzkzMTA2NmAgYW5kIFZpZGVvIEdlbmVyYXRpb24gSW50ZWdyYXRpb24gYDM0NDEzOTMxMDc3YC4KCioqQ29uc2VxdWVuY2VzOioqIE5vIHNjaGVtYSwgYWNjb3VudC9hdXRob3JpemF0aW9uLCBnZW5lcmF0aW9uL3Byb3ZpZGVyL3dvcmtlciwgUjIvc3RvcmFnZSwgcm91dGUgaGllcmFyY2h5IG9yIGRlcGxveW1lbnQgY29udHJhY3QgY2hhbmdlcy4gQXV0b21hdGljIEdpdCBkZXBsb3ltZW50IHJlbWFpbnMgZGlzYWJsZWQuIFRoaXMgY29ycmVjdGlvbiBpcyB2ZXJpZmllZC9tZXJnZWQgYnV0IG5vdCBwcm9kdWN0aW9uLWRlcGxveWVkOyBsaXZlIHByb2R1Y3Rpb24gcmVtYWlucyBleGFjdCBzb3VyY2UgYDBkNTg0YzVkYWIyODhhZDFlOTlhN2I3YzFhYWMyYTJlYzEyYmY4MTRgIGF0IFJFQURZIGRlcGxveW1lbnQgYGRwbF9CcE1DV1lnZ0tremY4RnVXcGIydkx1bjQ2cjNNYC4gVUktMDY5IGRvZXMgbm90IGF1dGhvcml6ZSBvciBpbXBseSBQaGFzZSAyMyAvIEN5Y2xlIDUuCg==").decode())
 
           migration_path = Path("docs/ui/UI_MIGRATION.md")
           migration = migration_path.read_text()
-          migration_marker = "## Post-production UI-069 Create / Viewer / Library corrective pass — 2026-09-09"
-          if migration_marker in migration:
+          if "## Post-production UI-069 Create / Viewer / Library corrective pass — 2026-09-09" in migration:
               raise SystemExit("UI_MIGRATION.md: UI-069 marker already exists")
-          migration += """
-
-## Post-production UI-069 Create / Viewer / Library corrective pass — 2026-09-09
-**Status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.**
-
-- [x] Add optional desktop Create reference drag/drop through the existing durable image upload/validation path; keep the maintained file picker as the keyboard/touch/mobile baseline and introduce no second storage transaction.
-- [x] Make Media Viewer min-content-safe at narrow/intermediate widths so intrinsic media and long unbroken title/filename text cannot widen or clip the page.
-- [x] Align Library Favorites / Collections / sort controls on one actual baseline/height by removing closed-state phantom collection-manager spacing.
-- [x] Keep Creatives/Uploads and All/Images/Videos URL/server-owned while explicitly prefetching relevant destinations and exposing immediate pending feedback during dynamic navigation; no client-owned Library media/filter store.
-- [x] Guarded pre-PR run `34411812191` passed exact baseline/diff, UI purity, lint, typecheck, unit and production-build gates.
-- [x] Exact PR head `cf065b62032d8b2d3be497b358b0b81067a99675` passed all 22 attached workflows. Direct acceptance included Create Lifecycle `34412081831` (real DataTransfer durable reference drop), Library History `34412081854` (≤1px action alignment), Library Lifecycle `34412081785` (700px long-filename Viewer containment/no overflow) and Video Generation Integration `34412081743` (unchanged live ownership regression). Reviewed rendered evidence was accepted.
-- [x] PR #140 guarded squash-merged as `c71554b692864c84cd1bc9f796255fdde71eae43`.
-- [x] Every workflow GitHub attached to merged `main` passed: Engineering Quality `34413931082`, UI Shell Validation `34413931186`, Upscale Viewer Visual `34413931195`, Creative Iteration `34413931100`, Image Upscale Integration `34413931066` and Video Generation Integration `34413931077`.
-- [x] No schema, authorization, worker/provider, R2/storage, route hierarchy or deployment configuration changed. Automatic Git → Vercel deployment remains disabled.
-
-Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`; UI-068 and UI-069 are therefore verified repository changes awaiting a separate explicit production rollout. No Phase 23 / Cycle 5 work is implied.
-"""
-          migration_path.write_text(migration)
+          migration_path.write_text(migration + base64.b64decode("CiMjIFBvc3QtcHJvZHVjdGlvbiBVSS0wNjkgQ3JlYXRlIC8gVmlld2VyIC8gTGlicmFyeSBjb3JyZWN0aXZlIHBhc3Mg4oCUIDIwMjYtMDktMDkKKipTdGF0dXM6IGBDT01QTEVURSAvIFZFUklGSUVEIC8gTUVSR0VEIC8gTk9UIFlFVCBQUk9EVUNUSU9OIERFUExPWUVEYC4qKgoKLSBbeF0gQWRkIG9wdGlvbmFsIGRlc2t0b3AgQ3JlYXRlIHJlZmVyZW5jZSBkcmFnL2Ryb3AgdGhyb3VnaCB0aGUgZXhpc3RpbmcgZHVyYWJsZSBpbWFnZSB1cGxvYWQvdmFsaWRhdGlvbiBwYXRoOyBrZWVwIHRoZSBtYWludGFpbmVkIGZpbGUgcGlja2VyIGFzIHRoZSBrZXlib2FyZC90b3VjaC9tb2JpbGUgYmFzZWxpbmUgYW5kIGludHJvZHVjZSBubyBzZWNvbmQgc3RvcmFnZSB0cmFuc2FjdGlvbi4KLSBbeF0gTWFrZSBNZWRpYSBWaWV3ZXIgbWluLWNvbnRlbnQtc2FmZSBhdCBuYXJyb3cvaW50ZXJtZWRpYXRlIHdpZHRocyBzbyBpbnRyaW5zaWMgbWVkaWEgYW5kIGxvbmcgdW5icm9rZW4gdGl0bGUvZmlsZW5hbWUgdGV4dCBjYW5ub3Qgd2lkZW4gb3IgY2xpcCB0aGUgcGFnZS4KLSBbeF0gQWxpZ24gTGlicmFyeSBGYXZvcml0ZXMgLyBDb2xsZWN0aW9ucyAvIHNvcnQgY29udHJvbHMgb24gb25lIGFjdHVhbCBiYXNlbGluZS9oZWlnaHQgYnkgcmVtb3ZpbmcgY2xvc2VkLXN0YXRlIHBoYW50b20gY29sbGVjdGlvbi1tYW5hZ2VyIHNwYWNpbmcuCi0gW3hdIEtlZXAgQ3JlYXRpdmVzL1VwbG9hZHMgYW5kIEFsbC9JbWFnZXMvVmlkZW9zIFVSTC9zZXJ2ZXItb3duZWQgd2hpbGUgZXhwbGljaXRseSBwcmVmZXRjaGluZyByZWxldmFudCBkZXN0aW5hdGlvbnMgYW5kIGV4cG9zaW5nIGltbWVkaWF0ZSBwZW5kaW5nIGZlZWRiYWNrIGR1cmluZyBkeW5hbWljIG5hdmlnYXRpb247IG5vIGNsaWVudC1vd25lZCBMaWJyYXJ5IG1lZGlhL2ZpbHRlciBzdG9yZS4KLSBbeF0gR3VhcmRlZCBwcmUtUFIgcnVuIGAzNDQxMTgxMjE5MWAgcGFzc2VkIGV4YWN0IGJhc2VsaW5lL2RpZmYsIFVJIHB1cml0eSwgbGludCwgdHlwZWNoZWNrLCB1bml0IGFuZCBwcm9kdWN0aW9uLWJ1aWxkIGdhdGVzLgotIFt4XSBFeGFjdCBQUiBoZWFkIGBjZjA2NWI2MjAzMmQ4YjJkM2JlNDk3YjM1OGIwYjgxMDY3YTk5Njc1YCBwYXNzZWQgYWxsIDIyIGF0dGFjaGVkIHdvcmtmbG93cy4gRGlyZWN0IGFjY2VwdGFuY2UgaW5jbHVkZWQgQ3JlYXRlIExpZmVjeWNsZSBgMzQ0MTIwODE4MzFgIChyZWFsIERhdGFUcmFuc2ZlciBkdXJhYmxlIHJlZmVyZW5jZSBkcm9wKSwgTGlicmFyeSBIaXN0b3J5IGAzNDQxMjA4MTg1NGAgKOKJpDFweCBhY3Rpb24gYWxpZ25tZW50KSwgTGlicmFyeSBMaWZlY3ljbGUgYDM0NDEyMDgxNzg1YCAoNzAwcHggbG9uZy1maWxlbmFtZSBWaWV3ZXIgY29udGFpbm1lbnQvbm8gb3ZlcmZsb3cpIGFuZCBWaWRlbyBHZW5lcmF0aW9uIEludGVncmF0aW9uIGAzNDQxMjA4MTc0M2AgKHVuY2hhbmdlZCBsaXZlIG93bmVyc2hpcCByZWdyZXNzaW9uKS4gUmV2aWV3ZWQgcmVuZGVyZWQgZXZpZGVuY2Ugd2FzIGFjY2VwdGVkLgotIFt4XSBQUiAjMTQwIGd1YXJkZWQgc3F1YXNoLW1lcmdlZCBhcyBgYzcxNTU0YjY5Mjg2NGM4NGNkMWJjOWY3OTYyNTVmZGRlNzFlYWU0M2AuCi0gW3hdIEV2ZXJ5IHdvcmtmbG93IEdpdEh1YiBhdHRhY2hlZCB0byBtZXJnZWQgYG1haW5gIHBhc3NlZDogRW5naW5lZXJpbmcgUXVhbGl0eSBgMzQ0MTM5MzEwODJgLCBVSSBTaGVsbCBWYWxpZGF0aW9uIGAzNDQxMzkzMTE4NmAsIFVwc2NhbGUgVmlld2VyIFZpc3VhbCBgMzQ0MTM5MzExOTVgLCBDcmVhdGl2ZSBJdGVyYXRpb24gYDM0NDEzOTMxMTAwYCwgSW1hZ2UgVXBzY2FsZSBJbnRlZ3JhdGlvbiBgMzQ0MTM5MzEwNjZgIGFuZCBWaWRlbyBHZW5lcmF0aW9uIEludGVncmF0aW9uIGAzNDQxMzkzMTA3N2AuCi0gW3hdIE5vIHNjaGVtYSwgYXV0aG9yaXphdGlvbiwgd29ya2VyL3Byb3ZpZGVyLCBSMi9zdG9yYWdlLCByb3V0ZSBoaWVyYXJjaHkgb3IgZGVwbG95bWVudCBjb25maWd1cmF0aW9uIGNoYW5nZWQuIEF1dG9tYXRpYyBHaXQg4oaSIFZlcmNlbCBkZXBsb3ltZW50IHJlbWFpbnMgZGlzYWJsZWQuCgpMaXZlIHByb2R1Y3Rpb24gcmVtYWlucyBleGFjdCBzb3VyY2UgYDBkNTg0YzVkYWIyODhhZDFlOTlhN2I3YzFhYWMyYTJlYzEyYmY4MTRgIGF0IFJFQURZIGRlcGxveW1lbnQgYGRwbF9CcE1DV1lnZ0tremY4RnVXcGIydkx1bjQ2cjNNYDsgVUktMDY4IGFuZCBVSS0wNjkgYXJlIHRoZXJlZm9yZSB2ZXJpZmllZCByZXBvc2l0b3J5IGNoYW5nZXMgYXdhaXRpbmcgYSBzZXBhcmF0ZSBleHBsaWNpdCBwcm9kdWN0aW9uIHJvbGxvdXQuIE5vIFBoYXNlIDIzIC8gQ3ljbGUgNSB3b3JrIGlzIGltcGxpZWQuCg==").decode())
           PY
 
       - name: Remove temporary helper and validate effective docs-only diff
@@ -133,6 +97,6 @@ Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` 
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md .github/workflows/apply-ui069-docs-closure.yml
+          git add -A
           git commit -m "docs: record UI-069 corrective closure"
           git push origin HEAD:docs/ui-069-corrective-closure
