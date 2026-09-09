@@ -42,9 +42,8 @@ test("Phase 19 renders the kinetic shell across primary desktop sections", async
   const topbar = page.locator('[data-kinetic-surface="topbar"]');
   await expect(shell).toBeVisible();
   await expect(rail).toBeVisible();
-  await expect(topbar).toBeVisible();
+  await expect(topbar).toBeHidden();
   await expectDimensionalSurface(rail);
-  await expectDimensionalSurface(topbar);
   await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute("aria-current", "page");
   await expectNoHorizontalOverflow(page);
   await waitForKineticContent(page);
@@ -54,6 +53,8 @@ test("Phase 19 renders the kinetic shell across primary desktop sections", async
   await expect(page).toHaveURL(/\/library/);
   await expect(page.getByRole("link", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(shell).toBeVisible();
+  await expect(topbar).toBeVisible();
+  await expectDimensionalSurface(topbar);
   await expectNoHorizontalOverflow(page);
   await waitForKineticContent(page);
   await page.screenshot({ path: "artifacts/phase19-library-desktop.png", fullPage: true });

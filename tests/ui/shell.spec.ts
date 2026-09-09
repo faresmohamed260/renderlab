@@ -13,7 +13,7 @@ test("desktop shell matches the approved hierarchy", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Create", exact: true }).first()).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("link", { name: "Open Create workspace" }).first()).toHaveAttribute("href", "/create");
   await expect(page.getByRole("link", { name: "Library", exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Create", exact: true })).toBeVisible();
+  await expect(page.locator('[data-kinetic-surface="topbar"]')).toBeHidden();
   await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
 
   await page.screenshot({ path: "artifacts/shell-desktop.png", fullPage: true });

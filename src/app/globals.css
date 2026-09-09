@@ -290,6 +290,10 @@ a {
   z-index: 1;
 }
 
+.kinetic-composer [data-slot="textarea"]:focus-visible {
+  outline: none;
+}
+
 .kinetic-composer:focus-within {
   border-color: rgb(178 167 255 / 22%);
   box-shadow:

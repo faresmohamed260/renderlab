@@ -8,7 +8,12 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
   await page.goto("/create");
 
   await expect(page.getByRole("heading", { name: /What do you want to (create|explore|transform|imagine)\?/ })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
+  const prompt = page.getByRole("textbox", { name: "Prompt" });
+  const composer = page.locator('[data-create-instrument="true"]');
+  await expect(prompt).toBeVisible();
+  await prompt.focus();
+  await expect(prompt).toHaveCSS("outline-style", "none");
+  expect(await composer.evaluate((element) => element.matches(":focus-within"))).toBeTruthy();
   await expect(page.getByRole("radiogroup", { name: "Output type" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "Image", exact: true })).toBeChecked();
   await expect(page.getByRole("radio", { name: "Video", exact: true })).not.toBeChecked();
@@ -19,7 +24,7 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
   await expect(page.getByText("Generation is not connected in this environment yet.")).toBeVisible();
   await expect(page.getByText("Image uploads are not connected in this environment yet.")).toBeVisible();
 
-  await page.getByRole("textbox", { name: "Prompt" }).fill("A quiet futuristic coastal city at blue hour");
+  await prompt.fill("A quiet futuristic coastal city at blue hour");
   await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeDisabled();
 
   await page.screenshot({ path: "artifacts/create-desktop-image.png", fullPage: true });
