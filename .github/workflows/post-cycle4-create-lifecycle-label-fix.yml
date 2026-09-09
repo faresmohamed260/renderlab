@@ -1,0 +1,45 @@
+name: Align Create lifecycle compact label assertion
+
+on:
+  push:
+    branches: [work/post-cycle4-production-correctives]
+    paths: [.github/workflows/post-cycle4-create-lifecycle-label-fix.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/post-cycle4-production-correctives
+          fetch-depth: 0
+      - name: Update compact Video label assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "95975b1b09f44571050bc9a6cada79160f286a07"
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/verify-create-lifecycle.mjs')
+          s = p.read_text()
+          old = '  assert((await videoSettings.textContent())?.includes("1080p · 5 s"), "Video settings trigger did not summarize resolution and duration.");'
+          new = '  assert((await videoSettings.textContent())?.includes("1080p·5s"), "Video settings trigger did not summarize resolution and duration.");'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected one old compact-label assertion, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          rm .github/workflows/post-cycle4-create-lifecycle-label-fix.yml
+          git diff --check
+      - name: Commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          test "$(git diff --cached --name-only | wc -l)" -eq 2
+          git commit -m "test: align Create lifecycle with compact Video label"
+          git push origin HEAD:work/post-cycle4-production-correctives
