@@ -922,7 +922,7 @@ export function CreateWorkspace({
 
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <div className="kinetic-control-deck mt-3 flex flex-col gap-2 rounded-2xl border px-1 py-1.5 sm:flex-row sm:items-center sm:p-1.5">
-              <div data-create-primary-controls className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 pb-1 sm:gap-2 sm:pb-0">
+              <div data-create-primary-controls className="flex min-w-0 flex-1 flex-nowrap items-center gap-0.5 pb-1 sm:gap-2 sm:pb-0">
                 <input
                   ref={fileInputRef}
                   type="file"
