@@ -1,0 +1,95 @@
+name: Apply UI-070 Library card polish
+
+on:
+  push:
+    branches:
+      - work/ui-070-library-card-polish
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact repository baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="4e79e972b53306217c66be7f2a0ceaeee67eb23f"
+          git fetch origin main --quiet
+          test "$(git rev-parse origin/main)" = "$base"
+          test "$(git rev-list --count "$base"..HEAD)" = "2"
+          mapfile -t files < <(git diff --name-only "$base"..HEAD | sort)
+          expected=(
+            ".github/scripts/apply-ui070-library-card-polish.py"
+            ".github/workflows/apply-ui070-library-card-polish.yml"
+          )
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          test "${#files[@]}" -eq "${#expected_sorted[@]}"
+          for i in "${!files[@]}"; do test "${files[$i]}" = "${expected_sorted[$i]}"; done
+
+      - name: Apply corrective patch
+        run: python .github/scripts/apply-ui070-library-card-polish.py
+
+      - name: Remove temporary machinery and validate effective diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="4e79e972b53306217c66be7f2a0ceaeee67eb23f"
+          rm .github/scripts/apply-ui070-library-card-polish.py .github/workflows/apply-ui070-library-card-polish.yml
+          git diff --check
+          mapfile -t files < <(git diff --name-only "$base" | sort)
+          expected=(
+            "PROJECT.md"
+            "docs/ui/COMPONENT_CATALOG.md"
+            "docs/ui/SCREEN_REGISTRY.md"
+            "docs/ui/UI_DECISIONS.md"
+            "docs/ui/UI_MIGRATION.md"
+            "scripts/verify-library-history.mjs"
+            "src/app/globals.css"
+            "src/features/library/library-batch-selection.tsx"
+          )
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          test "${#files[@]}" -eq "${#expected_sorted[@]}"
+          for i in "${!files[@]}"; do test "${files[$i]}" = "${expected_sorted[$i]}"; done
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify UI purity
+        run: npm run verify:ui-purity
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: refine Library selection and media cards"
+          git push origin HEAD:work/ui-070-library-card-polish
