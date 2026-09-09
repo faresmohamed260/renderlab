@@ -1,0 +1,44 @@
+name: Fix post-Cycle 4 mobile Video trigger fit
+
+on:
+  push:
+    branches: [work/post-cycle4-production-correctives]
+    paths: [.github/workflows/post-cycle4-video-trigger-fit-fix.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/post-cycle4-production-correctives
+          fetch-depth: 0
+      - name: Apply compact visible Video label
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "656f6e41cf227072c64cab813284fbdc753a6a1a"
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/features/create/create-workspace.tsx')
+          s = p.read_text()
+          old = '<span>{resolution} · {durationSeconds} s</span>'
+          new = '<span>{resolution}·{durationSeconds}s</span>'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected one Video settings label, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          rm .github/workflows/post-cycle4-video-trigger-fit-fix.yml
+          git diff --check
+      - name: Commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: keep mobile Video controls within viewport"
+          git push origin HEAD:work/post-cycle4-production-correctives
