@@ -132,17 +132,29 @@ export function ActivityView({
         <Empty className="mt-8 min-h-72 rounded-xl border border-dashed border-border bg-surface-1 px-6">
           <EmptyHeader>
             <EmptyMedia><Clock3 aria-hidden="true" /></EmptyMedia>
-            <EmptyTitle>{offset > 0 ? "No older activity on this page" : "No generation activity yet"}</EmptyTitle>
+            <EmptyTitle>
+              {offset > 0 || hasMore ? "No visible activity on this page" : "No generation activity yet"}
+            </EmptyTitle>
             <EmptyDescription>
               {offset > 0
                 ? "Go back to more recent work."
-                : "Start creating and real generation state will appear here."}
+                : hasMore
+                  ? "Continue to older activity. Deleted results are omitted automatically."
+                  : "Start creating and real generation state will appear here."}
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Button asChild variant="secondary">
-              <Link href={offset > 0 ? activityHref(Math.max(0, offset - limit)) : "/"}>
-                {offset > 0 ? "Newer activity" : "Create media"}
+              <Link
+                href={
+                  offset > 0
+                    ? activityHref(Math.max(0, offset - limit))
+                    : hasMore
+                      ? activityHref(offset + limit)
+                      : "/"
+                }
+              >
+                {offset > 0 ? "Newer activity" : hasMore ? "Older activity" : "Create media"}
               </Link>
             </Button>
           </EmptyContent>

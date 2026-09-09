@@ -92,7 +92,7 @@ Approved behavior:
 **Implementation:** `src/features/library/library-view.tsx`  
 **Collection management:** `src/features/library/library-collection-menu.tsx`, `src/features/library/library-collection-manager.tsx`
 **Batch selection:** `src/features/library/library-batch-selection.tsx`
-**Sort control:** `src/features/library/library-sort-menu.tsx`  
+**Sort control:** `src/features/library/library-sort-toggle.tsx`
 **Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`  
 **Shared browser upload transaction:** `src/features/library/library-upload-client.ts`  
 **Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `src/server/media/media-collections.ts`, `GET /api/media/assets`, `POST /api/media/assets/batch-delete`, `POST /api/media/assets/batch-favorite`, `GET|POST /api/media/collections`, `PATCH|DELETE /api/media/collections/[collectionId]`, single-asset collection membership routes, `POST /api/media/collections/[collectionId]/items/batch`, media-upload ticket/completion routes
@@ -102,7 +102,7 @@ Approved behavior:
 
 **Approved behavior:**
 - unified durable `media_assets` browsing with canonical newest-first default;
-- explicit URL-owned `Newest first / Oldest first` ordering via `sort`, with deterministic server ordering by `created_at` + `id` in matching direction;
+- explicit URL-owned `Newest first / Oldest first` ordering via `sort`, exposed as one direct toggle with deterministic server ordering by `created_at` + `id` in matching direction;
 - `All / Images / Videos` URL-owned kind filter;
 - bounded pagination with direction-aware Newer/Older navigation;
 - responsive media grid and product media URLs;

@@ -77,7 +77,7 @@ Before copying/installing an external component:
 **Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/Collections/selection/empty state, Media Viewer and Viewer Favorite/Collections/Rename/Download/Delete actions.
 **Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
 **Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
-**Notes:** UI-026. `npm run verify:ui-purity` is the CI enforcement gate. The refactor preserved the approved surface design while centralizing control mechanics. During verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics, and UI-027 added the maintained Radix Dropdown Menu for Library ordering instead of a bespoke selector.
+**Notes:** UI-026. `npm run verify:ui-purity` is the CI enforcement gate. The refactor preserved the approved surface design while centralizing control mechanics. During verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics, and UI-027 originally added the maintained Radix Dropdown Menu for Library ordering; user-directed UI-066 later replaces that interaction with a direct maintained Button/Link toggle while URL/server ordering stays authoritative.
 
 ### AlertDialog
 **Status:** APPROVED
@@ -157,7 +157,7 @@ Before copying/installing an external component:
 **Status:** APPROVED
 **Source:** `src/features/create/create-advanced-panel.tsx`  
 **Purpose:** Advanced generation controls without turning the default composer into a technical form.  
-**Current fields:** Image — negative prompt, seed, Steps, Guidance. Video — negative prompt, seed, Frame rate. Video Steps/Guidance are deliberately absent and server-rejected under UI-048.
+**Current fields:** Image — negative prompt, seed with Randomize, Steps, Guidance. Video — negative prompt, seed with Randomize, Frame rate. Video Steps/Guidance are deliberately absent and server-rejected under UI-048.
 **Dependencies:** capability definitions, Motion for React, maintained Field/Input/Textarea/NativeSelect/Button primitives, Lucide, Collapsible.
 **Do not:** Add provider/worker identifiers or unverified workflow parameters.
 **Notes:** Phase 7A uses a reduced-motion-aware presence transition only when Image/Video changes which verified Advanced fields are rendered; field values and product contracts remain feature state, not animation state.

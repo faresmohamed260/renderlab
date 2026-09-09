@@ -100,6 +100,12 @@ const imageModelTriggerLabels: Record<ImageGenerationModel, string> = {
   "flux2-klein-9b": "FLUX",
   "qwen-image-edit-2511": "Qwen",
 };
+const rotatingCreateHeadlines = [
+  "What do you want to create?",
+  "What do you want to explore?",
+  "What do you want to transform?",
+  "What do you want to imagine?",
+] as const;
 
 function ImageModelMenu({
   value,
@@ -117,10 +123,10 @@ function ImageModelMenu({
           variant="secondary"
           size="xs"
           aria-label={`Image model ${selected.label}`}
-          className="relative shrink-0 gap-0 !pl-1.5 !pr-4"
+          className="shrink-0 gap-1 !px-1.5"
         >
           <span>{imageModelTriggerLabels[value]}</span>
-          <ChevronDown aria-hidden="true" className="absolute right-1 size-3 opacity-70" />
+          <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-64">
@@ -167,10 +173,10 @@ function AspectRatioMenu({
           variant="secondary"
           size="xs"
           aria-label={`Aspect ratio ${value === "original" ? "Original" : value}`}
-          className="relative shrink-0 gap-0 !pl-1.5 !pr-4"
+          className="shrink-0 gap-1 !px-1.5"
         >
           {value === "original" ? "Original" : value}
-          <ChevronDown aria-hidden="true" className="absolute right-1 size-3 opacity-70" />
+          <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-44">
@@ -217,10 +223,10 @@ function VideoSettingsMenu({
           variant="secondary"
           size="xs"
           aria-label={`Video settings. Resolution ${resolution}. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
-          className="relative shrink-0 gap-0 !pl-1.5 !pr-4"
+          className="shrink-0 gap-1 !px-1.5"
         >
-          <span>{resolution} · {durationSeconds} s</span>
-          <ChevronDown aria-hidden="true" className="absolute right-1 size-3 opacity-70" />
+          <span>{resolution}·{durationSeconds}s</span>
+          <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -348,6 +354,7 @@ export function CreateWorkspace({
     initialRecipe ? nextRecipeReferenceNumber(initialRecipe) : initialContinuation ? 2 : 1,
   );
   const [referenceMentionOpen, setReferenceMentionOpen] = useState(false);
+  const [createHeadlineIndex, setCreateHeadlineIndex] = useState(0);
   const [mentionMenuAnchorAlias, setMentionMenuAnchorAlias] = useState<GenerationInputAlias | null>(() =>
     initialRecipe?.references[0]?.alias ?? (initialContinuation ? generationInputAlias(1) : null),
   );
@@ -484,12 +491,24 @@ export function CreateWorkspace({
   const setAdvancedDraft = outputKind === "image" ? setImageAdvanced : setVideoAdvanced;
   const hasReference = references.length > 0;
   const maxReferences = maxGenerationInputsForOutput(outputKind);
+
+  useEffect(() => {
+    if (reduceMotion || hasReference || outputKind !== "image") {
+      setCreateHeadlineIndex(0);
+      return;
+    }
+    const intervalId = window.setInterval(() => {
+      setCreateHeadlineIndex((current) => (current + 1) % rotatingCreateHeadlines.length);
+    }, 4200);
+    return () => window.clearInterval(intervalId);
+  }, [hasReference, outputKind, reduceMotion]);
+
   const heading = hasReference
     ? outputKind === "image"
       ? "Edit an image"
       : "Animate an image"
     : outputKind === "image"
-      ? "What do you want to create?"
+      ? rotatingCreateHeadlines[createHeadlineIndex]
       : "Create a video";
   const supportingText = hasReference
     ? references.length > 1
@@ -775,7 +794,23 @@ export function CreateWorkspace({
                   : hasReference ? "Image animation" : "Video synthesis"}
               </span>
             </div>
-            <h2 className="text-[30px] font-semibold tracking-[-0.035em] text-text sm:text-[34px]">{heading}</h2>
+            <h2 className="min-h-[4.75rem] text-[30px] font-semibold tracking-[-0.035em] text-text sm:min-h-[2.75rem] sm:text-[34px]">
+              {!hasReference && outputKind === "image" ? (
+                <AnimatePresence initial={false} mode="wait">
+                  <motion.span
+                    key={createHeadlineIndex}
+                    className="block"
+                    aria-live="polite"
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+                    transition={reduceMotion ? { duration: 0 } : { duration: 0.24, ease: "easeOut" }}
+                  >
+                    {heading}
+                  </motion.span>
+                </AnimatePresence>
+              ) : heading}
+            </h2>
             <p className="mt-2 max-w-2xl text-[15px] leading-6 text-text-muted">{supportingText}</p>
           </motion.div>
         </AnimatePresence>
@@ -887,7 +922,7 @@ export function CreateWorkspace({
 
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <div className="kinetic-control-deck mt-3 flex flex-col gap-2 rounded-2xl border px-1 py-1.5 sm:flex-row sm:items-center sm:p-1.5">
-              <div data-create-primary-controls className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 pb-1 sm:gap-2 sm:pb-0">
+              <div data-create-primary-controls className="flex min-w-0 flex-1 flex-nowrap items-center gap-0.5 pb-1 sm:gap-2 sm:pb-0">
                 <input
                   ref={fileInputRef}
                   type="file"

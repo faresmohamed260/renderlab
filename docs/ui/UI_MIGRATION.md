@@ -1834,3 +1834,19 @@ Acceptance corrected stale Integrated Release Landing copy assumptions plus two 
 - [x] No schema/R2-resource/worker/provider/routing/scheduler change accompanied the rollout; automatic Git deployment remains disabled.
 
 **Cycle 4 production status: `COMPLETE / VERIFIED / LIVE`.** No Phase 23 / Cycle 5 work is implied by rollout completion.
+
+## Post-Cycle 4 production corrective review — 2026-09-09
+**Status: `AUTHORIZED / IMPLEMENTATION IN PROGRESS`.**
+**Baseline:** `b3aae9d3159aa3daeeff0390b585d010aa6f71c2` (production-rollout documentation baseline; deployed application source remains `cf3923097fce62edbee643df9b2883bd09210046`).
+
+This is user-directed post-production corrective maintenance, not Phase 23 / Cycle 5. The current approved issue set may be extended by later live review, but unreported scope must not be inferred.
+
+- [ ] Align the mobile/topbar Activity and Settings/account utility icons evenly inside their shared control surface.
+- [ ] Reflow the narrow Library media/action toolbar so filters, Favorites, Collections and sort are deliberate rather than cramped.
+- [ ] Replace the Library sort dropdown with one direct `Newest first` / `Oldest first` toggle while preserving URL-owned ordering.
+- [ ] Give compact Create model/aspect/video-setting labels and chevrons clear separation without breaking the one-row narrow control contract.
+- [ ] Add a die-style Seed randomizer in Advanced; failed Retry must submit a newly randomized seed while preserving other current-valid intent. Successful Run Again remains unchanged.
+- [ ] Remove succeeded Activity entries from the user-facing feed once all recorded result media for that job is deleted/unavailable; internal generation history remains server-owned and is not hard-deleted by this UI/product correction.
+- [ ] Rotate the source-free Image Create headline through restrained creative prompts; reduced-motion presents the stable first phrase without timed rotation.
+
+Validation must include UI purity, typecheck/build/unit coverage, affected shell/Create/Library/Activity workflows, 390px screenshots, reduced-motion behavior, no horizontal overflow, fixture cleanup and exact-head review. Production deployment remains a separate explicit operation.

@@ -197,7 +197,7 @@ try {
   await routeLocalAppRequestsWithAccount(page, baseUrl, account);
   await page.goto(`${baseUrl}/library?q=${query}&sort=oldest`, { waitUntil: "domcontentloaded", timeout: 60_000 });
 
-  const sortButton = page.getByRole("button", { name: "Oldest first", exact: true });
+  const sortButton = page.getByRole("link", { name: /^Oldest first\. Switch to newest first\.$/ });
   await sortButton.waitFor({ state: "visible", timeout: 30_000 });
   const oldestOrder = await orderedFixtureHrefs(page, [older.id, newer.id]);
   assert(oldestOrder[0] === `/library/${older.id}` && oldestOrder[1] === `/library/${newer.id}`, `Browser oldest-first order was incorrect: ${JSON.stringify(oldestOrder)}`);
@@ -207,13 +207,9 @@ try {
 
   await page.screenshot({ path: `${artifactDir}/library-history-desktop-oldest.png`, fullPage: true });
 
-  await sortButton.click();
-  const oldestRadio = page.getByRole("menuitemradio", { name: "Oldest first", exact: true });
-  await oldestRadio.waitFor({ state: "visible", timeout: 30_000 });
-  assert(await oldestRadio.getAttribute("aria-checked") === "true", "Oldest-first dropdown item was not marked selected.");
-  await page.screenshot({ path: `${artifactDir}/library-history-desktop-menu.png`, fullPage: true });
+  await page.screenshot({ path: `${artifactDir}/library-history-desktop-oldest-toggle.png`, fullPage: true });
 
-  await page.getByRole("menuitemradio", { name: "Newest first", exact: true }).click();
+  await sortButton.click();
   await page.waitForURL((url) =>
     url.pathname === "/library"
     && url.searchParams.get("q") === token
@@ -221,14 +217,14 @@ try {
     && !url.searchParams.has("offset"),
     { timeout: 30_000 },
   );
-  await page.getByRole("button", { name: "Newest first", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("link", { name: /^Newest first\. Switch to oldest first\.$/ }).waitFor({ state: "visible", timeout: 30_000 });
   const newestOrder = await orderedFixtureHrefs(page, [older.id, newer.id]);
   assert(newestOrder[0] === `/library/${newer.id}` && newestOrder[1] === `/library/${older.id}`, `Browser newest-first order was incorrect: ${JSON.stringify(newestOrder)}`);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
-  assert(await page.getByRole("button", { name: "Newest first", exact: true }).isVisible(), "Library history sort control is not visible on mobile.");
+  assert(await page.getByRole("link", { name: /^Newest first\. Switch to oldest first\.$/ }).isVisible(), "Library history sort toggle is not visible on mobile.");
   await page.screenshot({ path: `${artifactDir}/library-history-mobile-newest.png`, fullPage: true });
 
   const ownerRowsResponse = await supabase(`media_assets?id=in.(${older.id},${newer.id})&select=id,owner_id`);

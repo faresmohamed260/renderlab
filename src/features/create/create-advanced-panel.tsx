@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { Dices, RotateCcw } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { CollapsibleContent } from "@/components/ui/collapsible";
@@ -17,6 +17,7 @@ import {
   advancedDefaultsForOutput,
   defaultImageGenerationModel,
   generationAdvancedCapabilities,
+  randomGenerationSeed,
 } from "@/lib/capabilities/generation";
 
 export type AdvancedDraft = {
@@ -150,13 +151,33 @@ export function CreateAdvancedPanel({
 
           <Field>
             <FieldLabel htmlFor="advanced-seed">{generationAdvancedCapabilities.seed.label}</FieldLabel>
-            <Input
-              id="advanced-seed"
-              type="number"
-              step="1"
-              value={draft.seed}
-              onChange={(event) => onDraftChange({ ...draft, seed: event.target.value })}
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                id="advanced-seed"
+                type="number"
+                step="1"
+                value={draft.seed}
+                onChange={(event) => onDraftChange({ ...draft, seed: event.target.value })}
+                className="min-w-0 flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                className="shrink-0"
+                aria-label="Randomize seed"
+                title="Randomize seed"
+                onClick={() => {
+                  const currentSeed = Number(draft.seed);
+                  onDraftChange({
+                    ...draft,
+                    seed: String(randomGenerationSeed(Number.isSafeInteger(currentSeed) ? currentSeed : undefined)),
+                  });
+                }}
+              >
+                <Dices aria-hidden="true" />
+              </Button>
+            </div>
           </Field>
 
           {outputKind === "image" ? (
