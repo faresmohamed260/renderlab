@@ -1,0 +1,103 @@
+name: Close post-Cycle 4 corrective production rollout
+
+on:
+  push:
+    branches:
+      - docs/post-cycle4-corrective-production-rollout-closure
+
+permissions:
+  contents: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Guard exact baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814"
+          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/close-post-cycle4-corrective-production-rollout.yml"
+
+      - name: Reconcile authoritative production records
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_sha = "0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814"
+          corrective_merge = "15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd"
+          deployment_id = "dpl_BpMCWYggKkzf8FuWpb2vLun46r3M"
+          deployment_url = "https://renderlab-lzqxaaoxa-faresmohamed260-6733s-projects.vercel.app"
+          custom_domain = "https://renderlab.faresuniform.uk"
+          rollback_id = "dpl_5hA4ihp644VcCzioY66hoTXaP18v"
+          rollout_run = "34406507461"
+          artifact_id = "10125602133"
+          artifact_digest = "sha256:7003e9544480be15f089d75ada7ed2afdb64298263e31342dad45fe9a8fe93a2"
+          evidence_digest = "8be1d11d298833912e7af88e4defead2959949817b2febd496f083ecfbd86203"
+
+          project_path = Path("PROJECT.md")
+          project = project_path.read_text()
+          old_source = "- Authoritative repository source deployed for the Cycle 4 rollout is `cf3923097fce62edbee643df9b2883bd09210046`; later documentation-only closure commits do not change the deployed application tree."
+          new_source = f"- Authoritative repository source currently deployed is `{source_sha}`. It contains the verified post-Cycle 4 corrective application merge `{corrective_merge}` plus the documentation-only closure that immediately followed it."
+          old_prod = "- Accepted production application is Cycle 4 source `cf3923097fce62edbee643df9b2883bd09210046` at READY deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` / `https://renderlab-91pu92g5z-faresmohamed260-6733s-projects.vercel.app`; `https://renderlab.faresuniform.uk` aliases that deployment. Pre-Cycle-4 deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` remains the immediate rollback anchor after the successful rollout smoke."
+          new_prod = f"- Accepted production application is source `{source_sha}` at READY deployment `{deployment_id}` / `{deployment_url}`; `{custom_domain}` aliases that deployment. Prior Cycle 4 READY deployment `{rollback_id}` is the immediate rollback anchor after the successful corrective rollout smoke."
+          assert project.count(old_source) == 1
+          assert project.count(old_prod) == 1
+          project = project.replace(old_source, new_source, 1).replace(old_prod, new_prod, 1)
+          old_tail = "This corrective pass is repository-complete but **not production-deployed**. Production continues to serve application source `cf3923097fce62edbee643df9b2883bd09210046` until a separate explicit rollout is authorized. This work is not Phase 23 / Cycle 5 and does not authorize either."
+          new_tail = f"This corrective pass is now **production live** from exact source `{source_sha}` at READY deployment `{deployment_id}`. Rollout run `{rollout_run}` passed exact-SHA/pristine-source and production-environment guards, public route smoke, exact-origin R2 CORS, a real durable image upload with WebP thumbnail/Library visibility and exact cleanup; bounded Vercel runtime-error review found no runtime errors. Prior deployment `{rollback_id}` remains the immediate rollback anchor and rollback was not required. This work is not Phase 23 / Cycle 5 and does not authorize either."
+          assert project.count(old_tail) == 1
+          project = project.replace(old_tail, new_tail, 1)
+          project_path.write_text(project)
+
+          migration_path = Path("docs/ui/UI_MIGRATION.md")
+          migration = migration_path.read_text()
+          old_state = "**Production state:** deployed application source remains `cf3923097fce62edbee643df9b2883bd09210046`; the corrective pass is not production-deployed."
+          new_state = f"**Production state:** exact source `{source_sha}` is live at READY deployment `{deployment_id}` / `{deployment_url}`; `{custom_domain}` aliases it. Prior READY deployment `{rollback_id}` is the immediate rollback anchor."
+          old_status = "**Post-Cycle 4 corrective status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.** No Phase 23 / Cycle 5 work is implied."
+          new_status = "**Post-Cycle 4 corrective status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.** No Phase 23 / Cycle 5 work is implied."
+          assert migration.count(old_state) == 1
+          assert migration.count(old_status) == 1
+          migration = migration.replace(old_state, new_state, 1).replace(old_status, new_status, 1)
+          marker = "### Post-Cycle 4 corrective production rollout — 2026-09-09"
+          assert marker not in migration
+          migration += f'''\n\n{marker}\n- [x] Explicit user authorization deployed exact source `{source_sha}` through guarded rollout run `{rollout_run}`.\n- [x] Vercel reported READY deployment `{deployment_id}` / `{deployment_url}` with exact Git SHA `{source_sha}` and pristine source; `{custom_domain}` passed Landing plus `/create`, `/library`, `/activity` and `/settings` smoke.\n- [x] Exact-origin R2 PUT CORS passed; one real persistent image upload produced durable media, a WebP thumbnail and Library visibility, then cleaned its exact fixture.\n- [x] Rollback anchor `{rollback_id}` was verified READY before deployment and retained afterward; rollback was not required.\n- [x] Evidence artifact `{artifact_id}` has ZIP digest `{artifact_digest}`; `evidence.json` SHA-256 `{evidence_digest}`.\n- [x] Bounded Vercel runtime-error review found no runtime errors after rollout.\n- [x] No schema/R2-resource/worker/provider/routing/scheduler change accompanied rollout; automatic Git deployment remains disabled.\n'''
+          migration_path.write_text(migration)
+
+          decisions_path = Path("docs/ui/UI_DECISIONS.md")
+          decisions = decisions_path.read_text()
+          old_decision = "Production remains on `cf3923097fce62edbee643df9b2883bd09210046`; this verification does not authorize a rollout or Phase 23 / Cycle 5."
+          new_decision = f"Production rollout was later explicitly authorized and exact source `{source_sha}` is now live at READY deployment `{deployment_id}`; this production promotion changes no UI-066/UI-067 product semantics and does not authorize Phase 23 / Cycle 5."
+          assert decisions.count(old_decision) == 1
+          decisions = decisions.replace(old_decision, new_decision, 1)
+          decisions_path.write_text(decisions)
+
+          infra_path = Path("docs/architecture/INFRASTRUCTURE.md")
+          infra = infra_path.read_text()
+          infra_marker = "## Post-Cycle 4 corrective production rollout — 2026-09-09"
+          assert infra_marker not in infra
+          infra += f'''\n\n{infra_marker}\nThe user explicitly authorized rollout of the verified corrective repository state. Guarded run `{rollout_run}` checked out pristine exact source `{source_sha}` (containing corrective application merge `{corrective_merge}`), verified required production Vercel environment-key metadata and verified rollback deployment `{rollback_id}` was READY before cutover.\n\nVercel created READY deployment `{deployment_id}` at `{deployment_url}` and reported exact Git SHA `{source_sha}` with pristine source. `{custom_domain}` and the stable Vercel alias serve the release. The prior Cycle 4 deployment `{rollback_id}` is retained as the immediate rollback target; rollback was armed but not required.\n\nPost-cutover verification passed Landing plus `/create`, `/library`, `/activity` and `/settings`, exact-origin R2 browser-upload CORS, and one real run-owned persistent image upload through durable promotion, WebP thumbnail creation, Library visibility and exact cleanup. Evidence artifact `{artifact_id}` has ZIP digest `{artifact_digest}`; its `evidence.json` SHA-256 is `{evidence_digest}`. A bounded Vercel runtime-error query after rollout found no runtime errors.\n\nNo Supabase schema migration, R2 resource-contract mutation, worker deployment, provider/routing change, scheduler activation, `pg_cron` or `pg_net` change accompanied this rollout. `vercel.json` continues to keep automatic Git → Vercel deployment disabled; future production changes remain explicit operations.\n'''
+          infra_path.write_text(infra)
+          PY
+
+          rm .github/workflows/close-post-cycle4-corrective-production-rollout.yml
+          git diff --check
+
+      - name: Commit authoritative rollout closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(printf '%s\n' .github/workflows/close-post-cycle4-corrective-production-rollout.yml PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md .github/workflows/close-post-cycle4-corrective-production-rollout.yml
+          git commit -m "docs: record corrective production rollout"
+          git push origin HEAD:docs/post-cycle4-corrective-production-rollout-closure
