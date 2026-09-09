@@ -1379,7 +1379,7 @@ No schema migration, worker deployment, provider/routing change, new route, new 
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 22 CONTRACT READY / DESIGN CHECKPOINT REQUIRED`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 **Planning baseline:** `e85aa633caa25e1bc7fdc529d37f08d10cde3cea`.
 
 ## Objective
@@ -1778,7 +1778,7 @@ Phase 21 is complete only when Library visibly reads as a Kinetic Precision medi
 ---
 
 # Phase 22 Execution Contract — Activity, Settings, Landing & System Cohesion
-**Status: `VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 **Planning baseline:** `c17abfef07fbc580c51f458496e4e53502816229` (Phase 21 merged baseline).
 
 ## Goal / user value
@@ -1926,3 +1926,14 @@ Phase 22 is complete only when:
 - The Phase 22 product/UI implementation remains the previously human-accepted tree rooted at functional head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`; later commits through `287a3e26...` are documentation/CI-orchestration corrections and do not reopen the accepted Activity, Settings, Landing, Create, Library or Viewer pixels.
 - This handoff documentation commit is expected to be a new documentation-only `GITHUB_TOKEN`-authored head. Do **not** merge merely from the older `287a3e26...` green set: create one user/connector-authored tree-identical retrigger (or otherwise obtain ordinary PR workflow execution on the unchanged documentation tree), require every workflow GitHub attaches to that final head to be terminal-success, then mark PR #130 ready and squash-merge with `expected_head_sha`.
 - After merge, verify every workflow attached to the exact merged `main` commit and confirm production remains unchanged. Phase 22 and Cycle 4 become `COMPLETE / VERIFIED / MERGED` only after that merged-main verification. No production deployment is authorized by this handoff.
+
+## Phase 22 / Cycle 4 merged-main closure — 2026-09-09
+**Status: `COMPLETE / VERIFIED / MERGED`.**
+
+Definitive PR #130 head `7049845b7d2c8e5a7c31c0c1a32a20e665f35b87` was a connector/user-authored tree-identical validation commit on accepted tree `7847166e1f6f301b02572d2b420faa703b62ea67`. All 15 workflows GitHub attached to that exact PR head succeeded. Release Candidate Matrix `34285994347` also passed its exact-SHA 23-child configured matrix and published manifest artifact `10080083708` (`sha256:8d9b4c7c30fa27a1d950cf20eb96a64d72f928c66aa3e697b92d57477f9d3d43`).
+
+PR #130 was marked ready and guarded squash-merged with `expected_head_sha=7049845b7d2c8e5a7c31c0c1a32a20e665f35b87`. The resulting `main` commit is `e29f02a71c051e432b16a4bc34fb755fec4d5d8f` and preserves the exact accepted tree `7847166e1f6f301b02572d2b420faa703b62ea67`.
+
+Every workflow GitHub actually attached to the merged `main` push reached terminal success: Engineering Quality `34287754692`, Image Upscale Integration `34287754640`, Integrated Release `34287754668`, Activity Cancel Visual `34287754684`, Creative Iteration `34287754635`, Release Candidate Matrix `34287754646` and UI Shell Validation `34287754636`. Release Candidate Matrix attempt 1 was not waived: its Generation Bridge child hit a transient Supabase REST 504 while polling an already-running job; unchanged same-SHA attempt 2 completed all 23/23 children and published final manifest artifact `10084078116` (`sha256:89c525e0d5a9f6803e20a8e76b48fad40bbdbd34e53eb4e2f0ffecea191659b9`). The attached UI Shell push run was likewise rerun on the same merge SHA after matrix same-ref concurrency cancelled its first attempt; attempt 2 passed the full shell suite.
+
+No repository-triggered production rollout was performed or authorized. `vercel.json` continues to set `git.deploymentEnabled=false`, automatic Git → Vercel deployment remains disabled, and this closure changes documentation only. Phase 22 therefore closes Cycle 4 as `COMPLETE / VERIFIED / MERGED`. No Phase 23 implementation or production deployment is implied or authorized.

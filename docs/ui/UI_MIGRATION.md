@@ -1725,7 +1725,7 @@ UI-061 records this user-requested corrective composition. No new capability, sc
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `ACTIVE / PHASE 22 IMPLEMENTATION VERIFIED / MERGE PENDING`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 
 The next major product pass is explicitly visual. Success is measured by user-visible changes to hierarchy, surfaces, motion, depth and spatial continuity, not merely by backend/performance improvements.
 
@@ -1733,7 +1733,7 @@ The next major product pass is explicitly visual. Success is measured by user-vi
 - **Phase 19 — Kinetic Foundation & App Shell:** `COMPLETE / VERIFIED` — atmospheric canvas, dimensional floating glass shell chrome, morphing active navigation, tactile feedback, fast top-level route continuity and reduced-motion/static equivalents.
 - **Phase 20 — Create as a Creative Instrument:** `COMPLETE / VERIFIED / MERGED` — immersive instrument frame, morphing Image/Video context, reference choreography, precision-deck Advanced, tactile Generate/lifecycle states and spatial result arrival; final exact-head and merged-main evidence are verified below.
 - **Phase 21 — Library & Viewer Spatial Media Experience:** `COMPLETE / VERIFIED` — UI-064 is implemented and exact-head verified; production rollout remains separate and unauthorized.
-- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING` — contract baseline `c17abfef07fbc580c51f458496e4e53502816229`; reviewed checkpoint evidence `34265429235` / artifact `10071612375`; exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`.
+- **Phase 22 — Activity, Settings, Landing & System Cohesion:** `COMPLETE / VERIFIED / MERGED` — definitive PR head `7049845b7d2c8e5a7c31c0c1a32a20e665f35b87`; guarded squash merge `e29f02a71c051e432b16a4bc34fb755fec4d5d8f`; merged-main verification complete.
 
 ## Phase 19 acceptance tracker
 - [x] Extend semantic visual tokens/effect budget without weakening contrast/status semantics.
@@ -1813,7 +1813,14 @@ Acceptance corrected stale Integrated Release Landing copy assumptions plus two 
 - [x] Pre-handoff exact head `287a3e26eda039cb034492cd8dc872e7731fcd01` passed all 15 workflows GitHub attached to that SHA, including real Account/Admin Operations `34281812369` and Generation Admission `34281812604` jobs.
 - [x] Release Candidate Matrix `34281812498` passed its exact-SHA child gate after waiting for the same-SHA attached shared-fixture workflows; manifest artifact `10078464050`, `sha256:b1c20572a025e7a43a7a384eaa7d2762afb172d78021719267a0d65fb6d04cc2`.
 - [x] Event-aware Admin/Generation CI scheduling is implemented in `c522cdc57ebbfcb41f542a10da401ec2317a7f71` and jq quoting corrected in `287a3e26...`; the prior pre-job cancellation blocker is resolved on that exact head.
-- [ ] This handoff docs commit changes repository documentation after the green `287a3e26...` head. Before merge, obtain a user/connector-authored exact-head retrigger on the unchanged documentation tree and require every attached workflow to be green; do not borrow older-SHA success.
-- [ ] Mark PR #130 ready only after that final exact-head gate; guarded squash-merge with `expected_head_sha`.
-- [ ] Verify all workflows attached to the merged `main` commit, then update Phase 22 / Cycle 4 to `COMPLETE / VERIFIED / MERGED`.
-- [ ] Production rollout remains separate and unauthorized.
+- [x] The documentation-finalized tree received connector/user-authored tree-identical retrigger `7049845b7d2c8e5a7c31c0c1a32a20e665f35b87`; all 15 workflows attached to that definitive PR head succeeded, including Release Candidate Matrix `34285994347` with 23/23 exact-SHA children.
+- [x] Mark PR #130 ready after the final exact-head gate and guarded squash-merge with `expected_head_sha=7049845b7d2c8e5a7c31c0c1a32a20e665f35b87`; merged `main` is `e29f02a71c051e432b16a4bc34fb755fec4d5d8f` with accepted tree `7847166e1f6f301b02572d2b420faa703b62ea67`.
+- [x] Verify every workflow attached to merged `main`: all 7 push workflows are terminal-success after same-SHA matrix/UI-Shell reruns resolved transient infrastructure/concurrency interruptions without repository changes.
+- [x] Production rollout remained separate and unauthorized; automatic Git → Vercel deployment is still disabled and no deployment operation was performed by this closure.
+
+### Phase 22 / Cycle 4 merged-main closure — 2026-09-09
+- [x] Definitive PR head `7049845b7d2c8e5a7c31c0c1a32a20e665f35b87` preserved accepted tree `7847166e1f6f301b02572d2b420faa703b62ea67` and passed all 15 attached workflows. Release Candidate Matrix `34285994347` passed all 23 exact-SHA children; manifest `10080083708` (`sha256:8d9b4c7c30fa27a1d950cf20eb96a64d72f928c66aa3e697b92d57477f9d3d43`).
+- [x] PR #130 guarded squash-merged as `e29f02a71c051e432b16a4bc34fb755fec4d5d8f` with the same tree.
+- [x] All seven workflows attached to the merge push succeeded: Engineering Quality `34287754692`, Image Upscale Integration `34287754640`, Integrated Release `34287754668`, Activity Cancel Visual `34287754684`, Creative Iteration `34287754635`, Release Candidate Matrix `34287754646` and UI Shell Validation `34287754636`.
+- [x] Release Candidate Matrix attempt 2 passed 23/23 children after attempt 1 encountered a transient Supabase REST 504 in Generation Bridge; final manifest `10084078116` (`sha256:89c525e0d5a9f6803e20a8e76b48fad40bbdbd34e53eb4e2f0ffecea191659b9`). UI Shell attempt 2 passed after the matrix's same-ref dispatch cancelled the first attached push attempt; no product regression was accepted or waived.
+- [x] Phase 22 and Cycle 4 are `COMPLETE / VERIFIED / MERGED`. Production deployment remains separate and unauthorized; no Phase 23 is implied.
