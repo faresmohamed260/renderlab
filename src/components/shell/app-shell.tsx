@@ -184,6 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const title = routeTitle(pathname);
   const section = routeSection(pathname);
+  const hideDesktopTopBar = section === "/create";
   const previousSection = useRef(section);
   const reduceMotion = Boolean(useReducedMotion());
 
@@ -237,7 +238,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="relative z-10 min-w-0 flex-1 lg:pl-3">
         <header
-          className="kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:ml-0"
+          className={cn(
+            "kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:ml-0",
+            hideDesktopTopBar && "lg:hidden",
+          )}
           data-kinetic-surface="topbar"
         >
           <motion.div
