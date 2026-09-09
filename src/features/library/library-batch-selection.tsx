@@ -67,7 +67,7 @@ function MediaPreview({ asset }: { asset: PublicMediaAsset }) {
     return (
       <div className="relative size-full">
         <img src={asset.thumbnailUrl} alt="" loading="lazy" className="kinetic-media-preview size-full object-cover" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-canvas/80 px-2 py-1 text-[11px] font-semibold text-text backdrop-blur-sm">
+        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-lg border border-white/10 bg-canvas/70 px-2 py-1 text-[11px] font-semibold text-text shadow-sm backdrop-blur-md">
           <Video aria-hidden="true" size={13} />
           Video
         </span>
@@ -441,27 +441,27 @@ export function LibraryBatchSelection({
               <Link
                 href={`/library/${encodeURIComponent(asset.id)}`}
                 className={`kinetic-media-card group block min-w-0 overflow-hidden rounded-2xl border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  selected ? "border-accent ring-1 ring-accent" : "border-border"
+                  selected ? "border-accent" : "border-border"
                 }`}
                 data-selected={selected ? "true" : "false"}
                 aria-label={`Open ${title}`}
               >
                 <div className="kinetic-media-frame aspect-[4/3] overflow-hidden bg-surface-2">
                   <MediaPreview asset={asset} />
-                </div>
-                <div className="kinetic-media-meta p-3">
-                  <p className="truncate text-sm font-medium text-text">{title}</p>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted">
-                    <span>{asset.kind === "image" ? "Image" : "Video"}</span>
-                    <span aria-hidden="true">·</span>
-                    <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
-                  </p>
+                  <div className="kinetic-media-meta absolute inset-x-2 bottom-2 z-[3] rounded-xl px-3 py-2.5">
+                    <p className="truncate text-[13px] font-semibold tracking-[-0.01em] text-text drop-shadow-sm">{title}</p>
+                    <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-text-muted">
+                      <span>{asset.kind === "image" ? "Image" : "Video"}</span>
+                      <span aria-hidden="true">·</span>
+                      <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
+                    </p>
+                  </div>
                 </div>
               </Link>
               {selectionMode ? (
-                <div className="kinetic-selection-check absolute left-2 top-2 z-10 rounded-xl p-1 shadow-sm">
+                <div className="absolute left-1.5 top-1.5 z-10">
                   <Checkbox
-                    className="size-9 border-2 bg-canvas/90"
+                    className="kinetic-selection-checkbox size-11"
                     checked={selected}
                     onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
                     aria-label={`Select ${title}`}

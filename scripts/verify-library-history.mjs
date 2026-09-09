@@ -215,6 +215,28 @@ try {
   const oldestOrder = await orderedFixtureHrefs(page, [older.id, newer.id]);
   assert(oldestOrder[0] === `/library/${older.id}` && oldestOrder[1] === `/library/${newer.id}`, `Browser oldest-first order was incorrect: ${JSON.stringify(oldestOrder)}`);
 
+  await page.getByRole("button", { name: "Select", exact: true }).click();
+  const olderCheckbox = page.getByRole("checkbox", { name: `Select ${token} Older`, exact: true });
+  await olderCheckbox.waitFor({ state: "visible", timeout: 30_000 });
+  const checkboxHitBox = await olderCheckbox.boundingBox();
+  assert(checkboxHitBox && checkboxHitBox.width >= 43 && checkboxHitBox.height >= 43, `Library selection checkbox lost its practical hit target: ${JSON.stringify(checkboxHitBox)}`);
+  const checkboxVisualBox = await olderCheckbox.evaluate((node) => {
+    const visual = getComputedStyle(node, "::before");
+    return { width: visual.width, height: visual.height };
+  });
+  assert(checkboxVisualBox.width === "22px" && checkboxVisualBox.height === "22px", `Library selection checkbox visual box is not compact: ${JSON.stringify(checkboxVisualBox)}`);
+  await olderCheckbox.click();
+  assert(await olderCheckbox.getAttribute("data-state") === "checked", "Library selection checkbox did not enter checked state.");
+
+  const olderCard = page.locator(`a[href="/library/${older.id}"]`);
+  const cardBox = await olderCard.boundingBox();
+  const frameBox = await olderCard.locator(".kinetic-media-frame").boundingBox();
+  assert(cardBox && frameBox && Math.abs(cardBox.height - frameBox.height) <= 1, `Library media card metadata is still consuming a separate footer row: ${JSON.stringify({ cardBox, frameBox })}`);
+  const metadataPosition = await olderCard.locator(".kinetic-media-meta").evaluate((node) => getComputedStyle(node).position);
+  assert(metadataPosition === "absolute", `Library media metadata is not integrated over the media frame: ${metadataPosition}`);
+  await page.screenshot({ path: `${artifactDir}/library-history-desktop-selected-card.png`, fullPage: true });
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+
   const imagesHref = await page.getByRole("link", { name: "Images", exact: true }).getAttribute("href");
   assert(imagesHref === `/library?kind=image&q=${encodeURIComponent(token).replace(/%20/g, "+")}&sort=oldest`, `Kind link did not preserve oldest-first state: ${imagesHref}`);
 
@@ -239,6 +261,10 @@ try {
   await page.evaluate(() => window.scrollTo(0, 0));
   assert(await page.getByRole("link", { name: /^Newest first\. Switch to oldest first\.$/ }).isVisible(), "Library history sort toggle is not visible on mobile.");
   await page.screenshot({ path: `${artifactDir}/library-history-mobile-newest.png`, fullPage: true });
+  await page.getByRole("button", { name: "Select", exact: true }).click();
+  const mobileCheckbox = page.getByRole("checkbox").first();
+  await mobileCheckbox.click();
+  await page.screenshot({ path: `${artifactDir}/library-history-mobile-selected-card.png`, fullPage: true });
 
   const ownerRowsResponse = await supabase(`media_assets?id=in.(${older.id},${newer.id})&select=id,owner_id`);
   assert(ownerRowsResponse.ok, `Could not inspect Library history owners (${ownerRowsResponse.status}).`);

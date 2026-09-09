@@ -619,3 +619,14 @@ Create's prompt area is one visual composer rather than a nested field inside a 
 PR #140 guarded squash-merged as `c71554b692864c84cd1bc9f796255fdde71eae43`. All six workflows GitHub attached to merged `main` passed: Engineering Quality `34413931082`, UI Shell Validation `34413931186`, Upscale Viewer Visual `34413931195`, Creative Iteration `34413931100`, Image Upscale Integration `34413931066` and Video Generation Integration `34413931077`.
 
 **Consequences:** No schema, account/authorization, generation/provider/worker, R2/storage, route hierarchy or deployment contract changes. Automatic Git deployment remains disabled. This correction is verified/merged but not production-deployed; live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`. UI-069 does not authorize or imply Phase 23 / Cycle 5.
+
+
+### UI-070 — Library media cards are media-first and selection chrome is visually compact
+**Status:** Accepted / Implemented / Verification pending
+**Date:** 2026-09-10
+
+**Decision:** User-directed post-production review refines only the Library card presentation and card-level selection chrome. The maintained Radix Checkbox remains the selection mechanic, keyboard/focus semantics remain unchanged, and its interactive root stays 44×44px; the visible box is reduced to 22×22px and uses restrained checked-state accent treatment instead of the previous 36×36px filled square inside a second styled shell. Library media cards remain links to the same Viewer and keep the same title/kind/date information, but the visual composition becomes media-first: the 4:3 media frame is the full card surface and metadata sits in a compact floating glass shelf over the lower media edge rather than a separate opaque footer. Video identity moves to the top-right so it cannot compete with the top-left selection control.
+
+**Guardrails:** No card quick actions, Favorite/Collection controls, client-owned media/filter state, selection persistence, route, grid-count, durable media identity or server contract changes. The card remains fully understandable without hover; hover only adds restrained lift/saturation using the existing reduced-motion-safe Kinetic Precision system. No new primitive, animation runtime or dependency is introduced.
+
+**Verification requirement:** Exact-head UI purity/lint/typecheck/unit/build must pass, configured Library History must prove the 44px checkbox root / 22px visual box and integrated metadata geometry, and desktop + 390px selected-card screenshots must be human-reviewed before this decision is marked Verified/Merged. Production rollout remains a separate explicit operation and UI-070 does not authorize Phase 23 / Cycle 5.

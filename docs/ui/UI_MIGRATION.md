@@ -1897,3 +1897,19 @@ This is user-directed post-production corrective maintenance, not Phase 23 / Cyc
 - [x] No schema, authorization, worker/provider, R2/storage, route hierarchy or deployment configuration changed. Automatic Git → Vercel deployment remains disabled.
 
 Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`; UI-068 and UI-069 are therefore verified repository changes awaiting a separate explicit production rollout. No Phase 23 / Cycle 5 work is implied.
+
+
+## Post-production UI-070 Library card polish — 2026-09-10
+**Status: `ACCEPTED / IMPLEMENTED / VERIFICATION PENDING`.**
+
+This is a user-directed post-production Library presentation correction, not Phase 23 / Cycle 5.
+
+- [x] Replace the visually oversized card selection control with a centered 22×22 visible checkbox while retaining the maintained 44×44 Checkbox interaction/focus root and unchanged page-scoped selection semantics.
+- [x] Refine Library media cards from a plain media-plus-opaque-footer stack into a media-first full-card tile with a compact floating glass title/kind/date shelf, restrained selected-state accent, and non-overlapping top-right Video identity.
+- [x] Preserve the same card Viewer link, media geometry, grid, title/kind/date data, selection lifecycle, server/URL ownership and reduced-motion behavior; add no card quick actions or new dependency.
+- [ ] Exact-head cheap engineering gates pass.
+- [ ] Configured Library History verifies checkbox/card geometry and emits desktop + 390px selected-card artifacts.
+- [ ] Human rendered review accepts selected/unselected cards at desktop and 390px.
+- [ ] PR exact-head affected workflows pass and merged-main state is verified before marking UI-070 complete.
+
+Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`. UI-068, UI-069 and this UI-070 work remain outside production until a separate explicit rollout is authorized.
