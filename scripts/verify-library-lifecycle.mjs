@@ -16,7 +16,7 @@ const artifactDir = process.env.RENDERLAB_LIBRARY_ARTIFACT_DIR || "artifacts";
 const fixturePath = process.env.RENDERLAB_LIBRARY_FIXTURE_PATH || "/tmp/renderlab-library-lifecycle-fixture.json";
 const cleanupOnly = process.argv.includes("--cleanup-only");
 const ignoreHttpsErrors = process.env.RENDERLAB_TEST_IGNORE_HTTPS_ERRORS === "1";
-const fixtureFilename = "renderlab-اختبار-画像.png";
+const fixtureFilename = "file_00000001390820a9d2b9d79fa42e541_اختبار_画像.png";
 const fixtureDisplayName = fixtureFilename.replace(/\.[^.]+$/, "");
 const fixtureWidth = 400;
 const fixtureHeight = 300;
@@ -162,6 +162,7 @@ if (cleanupOnly) {
 await mkdir(artifactDir, { recursive: true });
 
 const desktopViewport = { width: 1440, height: 1024 };
+const intermediateViewport = { width: 700, height: 900 };
 const mobileViewport = { width: 390, height: 844 };
 let browser = null;
 let primaryError = null;
@@ -272,6 +273,30 @@ try {
   assert((await animate.getAttribute("href"))?.includes("action=animate-image"), "Animate continuation did not bind the capability action ID.");
 
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-desktop-viewer.png`, fullPage: true });
+
+  await page.setViewportSize(intermediateViewport);
+  await page.waitForTimeout(250);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const viewerLayoutMetrics = await page.locator(".kinetic-viewer-layout").evaluate((layout) => {
+    const layoutBox = layout.getBoundingClientRect();
+    const stage = document.getElementById("media-viewer-comparison")?.getBoundingClientRect() || null;
+    const rail = document.querySelector(".kinetic-viewer-rail")?.getBoundingClientRect() || null;
+    return {
+      innerWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      layoutLeft: layoutBox.left,
+      layoutRight: layoutBox.right,
+      stageLeft: stage?.left ?? null,
+      stageRight: stage?.right ?? null,
+      railLeft: rail?.left ?? null,
+      railRight: rail?.right ?? null,
+    };
+  });
+  assert(viewerLayoutMetrics.scrollWidth <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer overflowed horizontally: ${JSON.stringify(viewerLayoutMetrics)}`);
+  assert(viewerLayoutMetrics.layoutLeft >= 0 && viewerLayoutMetrics.layoutRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer layout escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);
+  assert(viewerLayoutMetrics.stageLeft !== null && viewerLayoutMetrics.stageLeft >= 0 && viewerLayoutMetrics.stageRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer media stage escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);
+  assert(viewerLayoutMetrics.railLeft !== null && viewerLayoutMetrics.railLeft >= 0 && viewerLayoutMetrics.railRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer rail escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);
+  await page.screenshot({ path: `${artifactDir}/library-lifecycle-intermediate-viewer.png`, fullPage: true });
 
   await page.setViewportSize(mobileViewport);
   await page.waitForTimeout(250);

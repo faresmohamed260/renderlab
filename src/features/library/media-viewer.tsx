@@ -81,7 +81,7 @@ export function MediaViewer({
       </Button>
 
       <MediaViewerCompareProvider enabled={Boolean(compareSource)}>
-        <div className="kinetic-viewer-layout mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px] lg:items-start lg:gap-6">
+        <div className="kinetic-viewer-layout mt-4 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_304px] lg:items-start lg:gap-6">
           <MediaViewerMediaStage
             asset={asset}
             title={title}
@@ -89,11 +89,11 @@ export function MediaViewer({
             sourceTitle={sourceTitle}
           />
 
-          <aside className="kinetic-viewer-rail rounded-2xl border border-border p-4 sm:p-5">
+          <aside className="kinetic-viewer-rail min-w-0 rounded-2xl border border-border p-4 sm:p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">
               {asset.origin === "uploaded" ? `uploaded ${asset.kind}` : asset.kind}
             </p>
-            <h2 className="mt-3 text-xl font-semibold leading-7 text-text">{title}</h2>
+            <h2 className="mt-3 break-words text-xl font-semibold leading-7 text-text [overflow-wrap:anywhere]">{title}</h2>
             <p className="mt-2 text-xs text-text-muted">
               Created <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
             </p>
@@ -108,7 +108,7 @@ export function MediaViewer({
             {hasDetails ? (
               <div className="mt-6 border-t border-border pt-5">
                 <h3 className="text-xs font-semibold text-text">Details</h3>
-                <dl className="mt-3 grid grid-cols-[92px_1fr] gap-x-3 gap-y-2 text-sm">
+                <dl className="mt-3 grid min-w-0 grid-cols-[92px_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
                   {asset.origin === "uploaded" ? (
                     <>
                       <dt className="text-text-muted">Source</dt>
@@ -118,7 +118,7 @@ export function MediaViewer({
                   {asset.originalFilename ? (
                     <>
                       <dt className="text-text-muted">File</dt>
-                      <dd className="break-words text-text">{asset.originalFilename}</dd>
+                      <dd className="min-w-0 break-words text-text [overflow-wrap:anywhere]">{asset.originalFilename}</dd>
                     </>
                   ) : null}
                   {size ? (

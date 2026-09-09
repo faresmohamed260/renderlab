@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LibraryNavigationLink } from "@/features/library/library-navigation-link";
 import type { MediaAssetSortOrder } from "@/lib/api/media-assets-contract";
 
 export function LibrarySortToggle({
@@ -18,10 +18,10 @@ export function LibrarySortToggle({
 
   return (
     <Button asChild variant="outline" size="sm" className="col-span-2 w-full sm:w-auto">
-      <Link href={nextHref} aria-label={`${label}. Switch to ${nextLabel} first.`}>
+      <LibraryNavigationLink href={nextHref} aria-label={`${label}. Switch to ${nextLabel} first.`}>
         <ArrowUpDown aria-hidden="true" data-icon="inline-start" />
         {label}
-      </Link>
+      </LibraryNavigationLink>
     </Button>
   );
 }

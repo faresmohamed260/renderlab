@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { LibraryBatchSelection } from "@/features/library/library-batch-selection";
 import { LibraryCollectionMenu } from "@/features/library/library-collection-menu";
 import { LibraryDropUploadSurface } from "@/features/library/library-drop-upload-surface";
+import { LibraryNavigationLink } from "@/features/library/library-navigation-link";
 import { LibrarySortToggle } from "@/features/library/library-sort-toggle";
 import { LibraryUploadButton } from "@/features/library/library-upload-button";
 import {
@@ -208,12 +209,12 @@ export function LibraryView({
                 const active = tab === section.value;
                 return (
                   <Button key={section.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
-                    <Link
+                    <LibraryNavigationLink
                       href={libraryHref(section.value, kind, searchQuery, sort, favoriteOnly, selectedCollectionId)}
                       aria-current={active ? "page" : undefined}
                     >
                       {section.label}
-                    </Link>
+                    </LibraryNavigationLink>
                   </Button>
                 );
               })}
@@ -225,22 +226,22 @@ export function LibraryView({
                   const active = kind === filter.value;
                   return (
                     <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm" className="w-full sm:w-auto">
-                      <Link
+                      <LibraryNavigationLink
                         href={libraryHref(tab, filter.value, searchQuery, sort, favoriteOnly, selectedCollectionId)}
                         aria-current={active ? "page" : undefined}
                       >
                         {filter.label}
-                      </Link>
+                      </LibraryNavigationLink>
                     </Button>
                   );
                 })}
               </nav>
-              <div className="grid w-full grid-cols-2 items-start gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
-                <Button asChild variant={favoriteOnly ? "secondary" : "outline"} size="sm" className="w-full sm:w-auto">
-                  <Link href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
+              <div className="grid w-full grid-cols-2 items-center gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
+                <Button asChild variant={favoriteOnly ? "secondary" : "outline"} size="sm" className="w-full self-center sm:w-auto">
+                  <LibraryNavigationLink href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
                     <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
                     Favorites
-                  </Link>
+                  </LibraryNavigationLink>
                 </Button>
                 {collectionsAvailable ? (
                   <LibraryCollectionMenu

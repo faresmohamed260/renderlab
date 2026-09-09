@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, MoreHorizontal, Plus, Sparkles, Volume2, X } from "lucide-react";
+import { ChevronDown, ImagePlus, MoreHorizontal, Plus, Sparkles, Volume2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -282,6 +282,10 @@ function isTerminalJob(job: GenerationJob | null) {
   return Boolean(job && ["succeeded", "failed", "cancelled"].includes(job.status));
 }
 
+function isFileDrag(event: DragEvent<HTMLElement>) {
+  return Array.from(event.dataTransfer.types).includes("Files");
+}
+
 export function CreateWorkspace({
   accountAvailable,
   generationAvailable,
@@ -303,6 +307,7 @@ export function CreateWorkspace({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const promptSelectionRef = useRef({ start: 0, end: 0 });
+  const referenceDragDepth = useRef(0);
   const [prompt, setPrompt] = useState(() => initialRecipe?.request.prompt ?? "");
   const [outputKind, setOutputKind] = useState<OutputKind>(() =>
     initialRecipe?.request.output.kind ?? initialContinuation?.action.outputKind ?? "image",
@@ -361,6 +366,7 @@ export function CreateWorkspace({
   const [mentionRange, setMentionRange] = useState<{ start: number; end: number } | null>(null);
   const [referenceUploadTargetAlias, setReferenceUploadTargetAlias] = useState<GenerationInputAlias | null>(null);
   const [referenceUploading, setReferenceUploading] = useState(false);
+  const [referenceDragActive, setReferenceDragActive] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() =>
     initialRecipe?.request.output.kind === "image"
@@ -491,6 +497,11 @@ export function CreateWorkspace({
   const setAdvancedDraft = outputKind === "image" ? setImageAdvanced : setVideoAdvanced;
   const hasReference = references.length > 0;
   const maxReferences = maxGenerationInputsForOutput(outputKind);
+  const referenceDropAvailable =
+    accountAvailable
+    && mediaUploadAvailable
+    && !referenceUploading
+    && references.length < maxReferences;
 
   useEffect(() => {
     if (reduceMotion || hasReference || outputKind !== "image") {
@@ -640,6 +651,55 @@ export function CreateWorkspace({
     setReferenceUploadTargetAlias(targetAlias);
     if (fileInputRef.current) fileInputRef.current.value = "";
     fileInputRef.current?.click();
+  }
+
+  function resetReferenceDragState() {
+    referenceDragDepth.current = 0;
+    setReferenceDragActive(false);
+  }
+
+  function handleReferenceDragEnter(event: DragEvent<HTMLFormElement>) {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    referenceDragDepth.current += 1;
+    if (!referenceDropAvailable) return;
+    setError(null);
+    setReferenceDragActive(true);
+  }
+
+  function handleReferenceDragOver(event: DragEvent<HTMLFormElement>) {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = referenceDropAvailable ? "copy" : "none";
+  }
+
+  function handleReferenceDragLeave(event: DragEvent<HTMLFormElement>) {
+    if (!isFileDrag(event) || referenceDragDepth.current === 0) return;
+    event.preventDefault();
+    referenceDragDepth.current = Math.max(0, referenceDragDepth.current - 1);
+    if (referenceDragDepth.current === 0) setReferenceDragActive(false);
+  }
+
+  async function handleReferenceDrop(event: DragEvent<HTMLFormElement>) {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    resetReferenceDragState();
+    if (referenceUploading) return;
+    if (!accountAvailable) {
+      setError("Sign in to add a private reference image.");
+      return;
+    }
+    if (!mediaUploadAvailable) {
+      setError("Reference upload storage is not configured in this environment.");
+      return;
+    }
+
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length !== 1) {
+      setError("Drop one image at a time.");
+      return;
+    }
+    await uploadReference(files[0]!, null);
   }
 
   function startContinuation(action: ContinuationAction) {
@@ -815,8 +875,34 @@ export function CreateWorkspace({
           </motion.div>
         </AnimatePresence>
 
-        <form onSubmit={submit} noValidate className="kinetic-composer relative isolate overflow-hidden rounded-[24px] border p-3 sm:p-4" data-create-instrument="true" data-create-mode={outputKind}>
+        <form
+          onSubmit={submit}
+          noValidate
+          className="kinetic-composer relative isolate overflow-hidden rounded-[24px] border p-3 sm:p-4"
+          data-create-instrument="true"
+          data-create-mode={outputKind}
+          data-create-drop-active={referenceDragActive ? "true" : "false"}
+          onDragEnter={handleReferenceDragEnter}
+          onDragOver={handleReferenceDragOver}
+          onDragLeave={handleReferenceDragLeave}
+          onDrop={(event) => void handleReferenceDrop(event)}
+        >
           <Label htmlFor="create-prompt" className="sr-only">Prompt</Label>
+          {referenceDragActive ? (
+            <div
+              className="pointer-events-none absolute inset-0 !z-30 flex items-center justify-center bg-canvas/90 px-6 text-center backdrop-blur-sm"
+              data-create-drop-overlay="true"
+              role="status"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <span className="flex items-center gap-2 text-sm font-semibold text-text">
+                  <ImagePlus aria-hidden="true" className="size-5 text-accent-bright" />
+                  Drop image to add as reference
+                </span>
+                <span className="text-xs text-text-muted">PNG, JPEG or WebP · up to 25 MB</span>
+              </div>
+            </div>
+          ) : null}
           <Textarea
             ref={promptInputRef}
             id="create-prompt"
