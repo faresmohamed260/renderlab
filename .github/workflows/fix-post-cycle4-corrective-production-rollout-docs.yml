@@ -1,0 +1,52 @@
+name: Fix post-Cycle 4 corrective production rollout docs
+
+on:
+  push:
+    branches:
+      - docs/post-cycle4-corrective-production-rollout-closure
+    paths:
+      - ".github/workflows/fix-post-cycle4-corrective-production-rollout-docs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Guard and reconcile
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "ae8176a864f78d1a5c91fde27c865e21f58b5367"
+          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/fix-post-cycle4-corrective-production-rollout-docs.yml"
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('PROJECT.md')
+          s = p.read_text()
+          old = '- Repository `main` now includes the verified post-Cycle 4 corrective pass merged as `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd`; production is still the earlier Cycle 4 application source `cf3923097fce62edbee643df9b2883bd09210046` until a separately authorized rollout.\n'
+          assert s.count(old) == 1
+          s = s.replace(old, '- Repository `main` includes the verified post-Cycle 4 corrective pass and its production-rollout closure; the live production source is recorded above.\n', 1)
+          p.write_text(s)
+
+          p = Path('docs/ui/UI_MIGRATION.md')
+          s = p.read_text()
+          old = '- [x] Production deployment remains separate and was not performed. Automatic Git → Vercel deployment remains disabled; no schema, R2-resource, worker/provider/routing or scheduler change accompanied this corrective pass.\n'
+          assert s.count(old) == 1
+          s = s.replace(old, '- [x] The corrective implementation merge itself did not deploy production; the later explicitly authorized rollout is recorded below. Automatic Git → Vercel deployment remains disabled, and no schema, R2-resource, worker/provider/routing or scheduler change accompanied the corrective pass or its rollout.\n', 1)
+          p.write_text(s)
+          PY
+          rm .github/workflows/fix-post-cycle4-corrective-production-rollout-docs.yml
+          git diff --check
+          expected="$(printf '%s\n' .github/workflows/fix-post-cycle4-corrective-production-rollout-docs.yml PROJECT.md docs/ui/UI_MIGRATION.md | sort)"
+          actual="$(git diff --name-only | sort)"
+          test "$actual" = "$expected"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md .github/workflows/fix-post-cycle4-corrective-production-rollout-docs.yml
+          git commit -m "docs: reconcile corrective rollout wording"
+          git push origin HEAD:docs/post-cycle4-corrective-production-rollout-closure
