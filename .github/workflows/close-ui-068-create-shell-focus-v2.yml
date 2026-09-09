@@ -1,0 +1,92 @@
+name: Close UI-068 Create shell and focus cleanup v2
+
+on:
+  push:
+    branches: [docs/ui-068-create-shell-focus-closure]
+    paths:
+      - ".github/workflows/close-ui-068-create-shell-focus-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  close:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      BASE_SHA: c33539ae682d1d1d32cc4c0eb410ec94fd556666
+      BRANCH: docs/ui-068-create-shell-focus-closure
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+      - name: Guard and reconcile authoritative UI records
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "$BASE_SHA"
+          test "$(git merge-base HEAD origin/main)" = "$BASE_SHA"
+          python <<'PY'
+          from pathlib import Path
+          def replace_once(path, old, new):
+              p=Path(path); text=p.read_text(); count=text.count(old)
+              if count != 1: raise SystemExit(f"{path}: expected exactly one match, found {count}")
+              p.write_text(text.replace(old,new,1))
+          def append_lines(path, marker, lines):
+              p=Path(path); text=p.read_text()
+              if marker in text: raise SystemExit(f"{path}: marker already exists: {marker}")
+              p.write_text(text.rstrip()+"\n\n"+"\n".join(lines)+"\n")
+          replace_once("PROJECT.md","- Repository `main` includes the verified post-Cycle 4 corrective pass and its production-rollout closure; the live production source is recorded above.","- Repository `main` additionally includes UI-068 / PR #138 as merge `c33539ae682d1d1d32cc4c0eb410ec94fd556666`: desktop Create omits redundant top-bar chrome and the unified Create composer owns the visible prompt focus boundary. This application change is verified but not production-deployed; live production remains source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` recorded above.")
+          replace_once("docs/ui/UI_SYSTEM.md","Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first.","Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first. Within Create's unified composer, the bare prompt textarea does not draw its own focus rectangle; the composer's `:focus-within` border/glow is the visible focus boundary while textarea semantics and keyboard focus remain intact.")
+          replace_once("docs/ui/UI_SYSTEM.md","- A compact top bar carries route context plus account/activity affordances.","- A compact top bar carries route context plus account/activity affordances where it adds information; desktop `/create` deliberately omits it because the persistent rail already supplies Create context plus Activity/Settings navigation.")
+          replace_once("docs/ui/UI_SYSTEM.md","- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings can remain reachable through account/utility UI unless later product evidence justifies a fourth persistent destination.","- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings remains reachable through account/utility UI. Mobile `/create` therefore retains the compact utility header even though desktop `/create` omits the redundant top bar.")
+          replace_once("docs/ui/SCREEN_REGISTRY.md","- compact route-context top bar;","- compact route-context top bar where useful; desktop Create omits it because the persistent rail already conveys Create/Activity/Settings context, while mobile Create retains the compact utility header for account/Settings access;")
+          replace_once("docs/ui/COMPONENT_CATALOG.md","### RenderLabBrand","**Post-production UI-068 note:** Desktop `/create` deliberately suppresses AppShell's top bar because the desktop rail already provides route context and Activity/Settings navigation. Mobile Create retains the compact utility header because Settings is not a persistent dock destination. Other application routes keep their top bar.\n\n### RenderLabBrand")
+          replace_once("docs/ui/COMPONENT_CATALOG.md","### CreateReferenceMentionMenu","**Post-production UI-068 note:** `CreateWorkspace` keeps one unified composer focus surface: the bare prompt textarea remains semantically focusable but does not draw an independent inner focus rectangle; the composer `:focus-within` treatment communicates visible focus.\n\n### CreateReferenceMentionMenu")
+          decision=[
+              "### UI-068 — Create composer and desktop shell chrome cleanup",
+              "**Status:** Accepted / Implemented / Verified / Merged",
+              "**Date:** 2026-09-09",
+              "",
+              "**Decision:** User-directed production review supersedes two narrow presentation details without reopening the shell or Create architecture. Desktop `/create` omits AppShell's full-width top context bar because the persistent desktop rail already communicates Create context and provides Activity/Settings navigation. Mobile Create retains the compact utility header because Settings is not a persistent mobile-dock destination, and other application routes retain their existing top bar.",
+              "",
+              "Create's prompt area is one visual composer rather than a nested field inside a card. The maintained bare `Textarea` keeps native semantics, keyboard focus and accessible naming, but inside `.kinetic-composer` its independent focus outline is suppressed; the existing composer `:focus-within` border/glow becomes the sole visible focus boundary. This is a feature-scoped visual composition rule, not a weakening of the global focus contract.",
+              "",
+              "**Verification:** Exact PR head `f2b0feb84029b057f9c113a7e02b5e0d048360ef` passed all nine attached workflows, including UI Shell Validation `34408890614`, Create Lifecycle Visual `34408890551`, Integrated Release `34408890533` and Engineering Quality `34408890546`. UI Shell artifact `10126466829` (`sha256:e3c2f5d677388df36064b14e804fbd71a62143b8621d6377061f0118e3d2e22f`) was reviewed across desktop Create focused composer, mobile Create and desktop Library: desktop Create has no redundant top bar or inner textarea focus rectangle, mobile preserves utility access, and Library retains its top bar. PR #138 guarded squash-merged as `c33539ae682d1d1d32cc4c0eb410ec94fd556666` with accepted tree `d0f3f97bb405611cef21afc7407abba874ee3ff0`; all three workflows attached to merged `main` passed: UI Shell `34409302302`, Activity Cancel `34409302293`, and Engineering Quality `34409302321`.",
+              "",
+              "**Consequences:** No generation, media, account, authorization, schema, storage, worker, provider, routing or deployment contract changes. Automatic Git deployment remains disabled. This merge is not production-deployed and does not authorize Phase 23 / Cycle 5."
+          ]
+          append_lines("docs/ui/UI_DECISIONS.md","### UI-068 — Create composer and desktop shell chrome cleanup",decision)
+          migration=[
+              "## Post-production UI-068 Create shell/composer cleanup — 2026-09-09",
+              "**Status: `COMPLETE / VERIFIED / MERGED`.**",
+              "",
+              "- [x] Desktop `/create` omits the redundant full-width AppShell top bar; the persistent rail remains the desktop Create/Library/Activity/Settings navigation/context surface.",
+              "- [x] Mobile `/create` retains the compact utility header so account/Settings access remains available above the Create/Library/Activity dock; other application routes retain their existing top bar.",
+              "- [x] The Create prompt textarea no longer draws an inner focus rectangle inside the composer; keyboard/semantic focus remains intact and the outer composer `:focus-within` treatment is the visible focus boundary.",
+              "- [x] Exact PR head `f2b0feb84029b057f9c113a7e02b5e0d048360ef` passed all nine attached workflows. UI Shell artifact `10126466829` (`sha256:e3c2f5d677388df36064b14e804fbd71a62143b8621d6377061f0118e3d2e22f`) was reviewed on desktop Create focus, mobile Create, and desktop Library states.",
+              "- [x] PR #138 guarded squash-merged as `c33539ae682d1d1d32cc4c0eb410ec94fd556666` with accepted tree `d0f3f97bb405611cef21afc7407abba874ee3ff0`.",
+              "- [x] Merged-main UI Shell `34409302302`, Activity Cancel `34409302293`, and Engineering Quality `34409302321` all passed.",
+              "- [x] No production deployment accompanied this merge. Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`; automatic Git → Vercel deployment remains disabled.",
+              "",
+              "**UI-068 status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.** No Phase 23 / Cycle 5 work is implied."
+          ]
+          append_lines("docs/ui/UI_MIGRATION.md","## Post-production UI-068 Create shell/composer cleanup",migration)
+          PY
+          git diff --check
+      - name: Commit clean documentation closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/close-ui-068-create-shell-focus.yml .github/workflows/close-ui-068-create-shell-focus-v2.yml
+          git add PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_SYSTEM.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/ui/UI_MIGRATION.md
+          actual="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' .github/workflows/close-ui-068-create-shell-focus.yml .github/workflows/close-ui-068-create-shell-focus-v2.yml PROJECT.md docs/ui/COMPONENT_CATALOG.md docs/ui/SCREEN_REGISTRY.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md docs/ui/UI_SYSTEM.md | sort)"
+          test "$actual" = "$expected"
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: record UI-068 Create shell cleanup"
+          git push origin HEAD:"$BRANCH"
