@@ -66,6 +66,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Closed-Beta enforcement is active in production. Final guarded Phase 13 cleanup preserved exactly one active admin, zero pending invitations and generation defaults enabled / one active job / 12 admitted per rolling hour / no updater.
 - Production Auth invite/recovery mail uses verified Resend custom SMTP with branded token-hash templates and click/open tracking disabled. External Gmail invite/recovery acceptance completed; Outlook-specific rendering was not exercised.
 - Automatic Git → Vercel deployment remains disabled. Documentation changes do not authorize or imply a production deployment.
+- Repository `main` now includes the verified post-Cycle 4 corrective pass merged as `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd`; production is still the earlier Cycle 4 application source `cf3923097fce62edbee643df9b2883bd09210046` until a separately authorized rollout.
 - UI-054 mailbox sender-avatar/BIMI work remains research-only and is not a Cycle 3 implementation priority.
 
 ## Completed Product Foundation
@@ -1952,6 +1953,10 @@ No repository-triggered production rollout was performed or authorized. `vercel.
 Cycle 4 is now complete in both repository and production state. This rollout does not create or authorize Phase 23 / Cycle 5 work.
 
 ## Post-Cycle 4 production corrective review — 2026-09-09
-**Status: `AUTHORIZED / IMPLEMENTATION IN PROGRESS`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 
-Live production review after Cycle 4 authorized a bounded corrective pass on baseline `b3aae9d3159aa3daeeff0390b585d010aa6f71c2`: AppShell utility alignment, narrow Library toolbar spacing plus direct Newest/Oldest toggle, Create compact-trigger spacing, Advanced seed randomization with new-seed failed Retry behavior, deleted-result removal from the user-facing Activity feed, and a restrained rotating source-free Image Create headline. This is corrective maintenance, not Phase 23 / Cycle 5. Production deployment remains a separate explicit operation.
+The bounded seven-item live-production corrective pass was implemented from baseline `b3aae9d3159aa3daeeff0390b585d010aa6f71c2`, exact-head verified on `522ce855673fdaaf3c174b9b934b320e0744a524`, and guarded squash-merged through PR #135 as `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd` with accepted tree `c91aec822a87a62ff1c72489a8eca3f8e18ec0c1`. The pass aligns AppShell utilities, de-cramps the narrow Library toolbar and replaces sort-menu interaction with a direct Newest/Oldest toggle, fixes compact Create trigger spacing while preserving the 390px row boundary, adds Advanced seed randomization plus fresh-seed failed Retry, omits succeeded Activity rows after all result media is deleted/unavailable while retaining internal history, and rotates source-free Image Create headlines with reduced-motion-safe static behavior.
+
+All 26 workflows attached to the definitive PR head completed successfully; the same-head Library Lifecycle rerun passed after its first zero-job concurrency cancellation. After merge, all 10 workflows GitHub attached to `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd` completed successfully, including Video Generation Integration `34399864436` through live Create Video / Animate Image ownership verification and fixture cleanup.
+
+This corrective pass is repository-complete but **not production-deployed**. Production continues to serve application source `cf3923097fce62edbee643df9b2883bd09210046` until a separate explicit rollout is authorized. This work is not Phase 23 / Cycle 5 and does not authorize either.
