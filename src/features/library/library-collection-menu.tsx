@@ -47,7 +47,7 @@ export function LibraryCollectionMenu({
   }
 
   return (
-    <div className="flex min-w-0 flex-col items-stretch gap-2 sm:items-end">
+    <div className="flex min-w-0 flex-col items-stretch sm:items-end">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={selected ? "secondary" : "outline"} size="sm" className="w-full max-w-none sm:w-auto sm:max-w-56">
@@ -76,7 +76,7 @@ export function LibraryCollectionMenu({
       </DropdownMenu>
 
       <Collapsible open={managerOpen} onOpenChange={setManagerOpen}>
-        <CollapsibleContent>
+        <CollapsibleContent className="pt-2">
           <LibraryCollectionManager
             collections={collections}
             selectedCollectionId={selectedCollectionId}

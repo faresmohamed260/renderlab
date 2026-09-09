@@ -199,6 +199,19 @@ try {
 
   const sortButton = page.getByRole("link", { name: /^Oldest first\. Switch to newest first\.$/ });
   await sortButton.waitFor({ state: "visible", timeout: 30_000 });
+  const favoritesButton = page.getByRole("link", { name: "Favorites", exact: true });
+  const collectionsButton = page.getByRole("button", { name: "Collections", exact: true });
+  const [favoritesBox, collectionsBox, sortBox] = await Promise.all([
+    favoritesButton.boundingBox(),
+    collectionsButton.boundingBox(),
+    sortButton.boundingBox(),
+  ]);
+  assert(favoritesBox && collectionsBox && sortBox, "Could not measure Library action controls.");
+  const favoritesCenter = favoritesBox.y + favoritesBox.height / 2;
+  const collectionsCenter = collectionsBox.y + collectionsBox.height / 2;
+  const sortCenter = sortBox.y + sortBox.height / 2;
+  assert(Math.abs(favoritesCenter - collectionsCenter) <= 1 && Math.abs(favoritesCenter - sortCenter) <= 1, `Library action controls are vertically misaligned: ${JSON.stringify({ favoritesBox, collectionsBox, sortBox })}`);
+  assert(Math.abs(favoritesBox.height - collectionsBox.height) <= 1 && Math.abs(favoritesBox.height - sortBox.height) <= 1, `Library action controls do not share one control height: ${JSON.stringify({ favoritesBox, collectionsBox, sortBox })}`);
   const oldestOrder = await orderedFixtureHrefs(page, [older.id, newer.id]);
   assert(oldestOrder[0] === `/library/${older.id}` && oldestOrder[1] === `/library/${newer.id}`, `Browser oldest-first order was incorrect: ${JSON.stringify(oldestOrder)}`);
 

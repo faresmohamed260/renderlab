@@ -84,7 +84,7 @@ export function MediaViewerMediaStage({
     return (
       <motion.div
         id={comparisonRegionId}
-        className="kinetic-viewer-stage flex min-h-[52vh] items-center justify-center overflow-hidden rounded-2xl border border-border p-2 sm:p-4 lg:min-h-[70vh]"
+        className="kinetic-viewer-stage flex min-h-[52vh] w-full min-w-0 items-center justify-center overflow-hidden rounded-2xl border border-border p-2 sm:p-4 lg:min-h-[70vh]"
         initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.992 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={transition}
@@ -97,7 +97,7 @@ export function MediaViewerMediaStage({
   return (
     <motion.div
       id={comparisonRegionId}
-      className="kinetic-compare-stage grid gap-3 lg:grid-cols-[minmax(220px,2fr)_minmax(0,3fr)] lg:items-stretch"
+      className="kinetic-compare-stage grid min-w-0 gap-3 lg:grid-cols-[minmax(220px,2fr)_minmax(0,3fr)] lg:items-stretch"
       aria-label="Source and result comparison"
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
@@ -105,7 +105,7 @@ export function MediaViewerMediaStage({
     >
       <motion.div
         layout={!reduceMotion}
-        className="kinetic-compare-result order-1 flex min-h-[52vh] flex-col rounded-2xl border border-accent/50 p-2 sm:p-4 lg:order-2 lg:min-h-[70vh]"
+        className="kinetic-compare-result order-1 flex min-h-[52vh] min-w-0 flex-col rounded-2xl border border-accent/50 p-2 sm:p-4 lg:order-2 lg:min-h-[70vh]"
         transition={transition}
       >
         <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-[0.08em] text-text">
@@ -118,7 +118,7 @@ export function MediaViewerMediaStage({
 
       <motion.div
         layout={!reduceMotion}
-        className="kinetic-compare-source order-2 rounded-2xl border border-border p-3 lg:order-1 lg:flex lg:min-h-[70vh] lg:flex-col lg:p-4"
+        className="kinetic-compare-source order-2 min-w-0 rounded-2xl border border-border p-3 lg:order-1 lg:flex lg:min-h-[70vh] lg:flex-col lg:p-4"
         initial={reduceMotion ? false : { opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={transition}

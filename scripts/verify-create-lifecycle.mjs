@@ -396,18 +396,23 @@ try {
     (response) => response.url().endsWith("/api/media/uploads/upload-completions") && response.request().method() === "POST",
     { timeout: 60_000 },
   );
-  const secondChooserPromise = page.waitForEvent("filechooser", { timeout: 30_000 });
-  await addReference.click();
-  const secondChooser = await secondChooserPromise;
-  await secondChooser.setFiles({
-    name: "phase-7b-secondary-reference.png",
-    mimeType: "image/png",
-    buffer: secondaryReferenceBytes,
-  });
+  const composer = page.locator('[data-create-instrument="true"]');
+  const droppedReferenceData = await page.evaluateHandle(({ base64 }) => {
+    const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], "phase-7b-secondary-reference.png", { type: "image/png" }));
+    return transfer;
+  }, { base64: secondaryReferenceBytes.toString("base64") });
+  await composer.dispatchEvent("dragenter", { dataTransfer: droppedReferenceData });
+  await page.locator('[data-create-drop-overlay="true"]').waitFor({ state: "visible", timeout: 5_000 });
+  await composer.dispatchEvent("dragover", { dataTransfer: droppedReferenceData });
+  await composer.dispatchEvent("drop", { dataTransfer: droppedReferenceData });
+  await page.locator('[data-create-drop-overlay="true"]').waitFor({ state: "hidden", timeout: 5_000 });
   await secondTicketPromise;
   const secondCompletion = await secondCompletionPromise;
   const secondCompletionPayload = await secondCompletion.json().catch(() => null);
-  assert(secondCompletion.ok() && secondCompletionPayload?.ok && secondCompletionPayload.asset?.id, `Second Create reference upload failed: ${JSON.stringify(secondCompletionPayload)}`);
+  await droppedReferenceData.dispose();
+  assert(secondCompletion.ok() && secondCompletionPayload?.ok && secondCompletionPayload.asset?.id, `Dragged Create reference upload failed: ${JSON.stringify(secondCompletionPayload)}`);
   const originalSecondaryAssetId = secondCompletionPayload.asset.id;
 
   const image1Mention = page.getByRole("button", { name: "Mention @image1" });
