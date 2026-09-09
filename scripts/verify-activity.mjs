@@ -385,7 +385,7 @@ try {
   const owner = await createConfiguredTestAccount("activity-owner");
   const foreign = await createConfiguredTestAccount("activity-foreign");
   const resultAssetId = randomUUID();
-  const missingHistoricalAssetId = randomUUID();
+  const deletedOutputAssetId = randomUUID();
   const retryInputAssetId = randomUUID();
   const tombstonedAssetId = randomUUID();
   const foreignInputAssetId = randomUUID();
@@ -397,6 +397,7 @@ try {
 
   await createMediaAsset(owner, resultAssetId, "Activity visible result");
   await createMediaAsset(owner, retryInputAssetId, "Retry active input");
+  await createMediaAsset(owner, deletedOutputAssetId, "Deleted Activity result", { deletedAt: at(30) });
   await createMediaAsset(owner, tombstonedAssetId, "Retry deleted input", { deletedAt: at(30) });
   await createMediaAsset(foreign, foreignInputAssetId, "Foreign retry input");
   await createGenerationSource(owner, readySourceId, "ready");
@@ -583,7 +584,7 @@ try {
   jobs.push(await createJob(owner, {
     status: "succeeded",
     prompt: "Historical deleted output",
-    outputAssetIds: [missingHistoricalAssetId],
+    outputAssetIds: [deletedOutputAssetId],
     createdAt: at(16),
   }));
 
@@ -635,6 +636,7 @@ try {
   await page.getByText("Generation could not be started. Retry when you’re ready.", { exact: true }).waitFor({ state: "visible" });
   await page.getByRole("link", { name: "View result", exact: true }).waitFor({ state: "visible" });
   assert(await page.getByRole("link", { name: "View result", exact: true }).count() === 1, "Activity rendered a result link for unavailable historical media.");
+  assert(await page.getByText("Historical deleted output", { exact: true }).count() === 0, "Activity retained an entry after its generated result was deleted.");
   assert(await page.getByRole("link", { name: "View result", exact: true }).getAttribute("href") === `/library/${resultAssetId}`, "Activity result link did not target active owner media.");
   await page.getByText("Updates automatically while generation work is active.", { exact: true }).waitFor({ state: "visible" });
   await page.getByRole("link", { name: "Older", exact: true }).waitFor({ state: "visible" });
@@ -686,7 +688,11 @@ try {
   assert(currentCapture.request?.prompt === "Retry image study", "Retry did not preserve the product prompt.");
   assert(currentCapture.request?.output?.kind === "image" && currentCapture.request?.output?.aspectRatio === "original", "Retry did not reconstruct current Image output intent.");
   assert(currentCapture.request?.inputs?.[0]?.source?.id === retryInputAssetId, "Retry did not reconstruct the durable input identity.");
-  assert(currentCapture.request?.advanced?.seed === 314159, "Retry did not preserve supported advanced intent.");
+  const retrySeed = currentCapture.request?.advanced?.seed;
+  assert(Number.isSafeInteger(retrySeed), "Retry did not submit a valid randomized seed.");
+  assert(retrySeed >= 0 && retrySeed <= 2_147_483_647, `Retry randomized seed was outside the conservative product range: ${retrySeed}`);
+  assert(retrySeed !== 314159, "Retry reused the historical seed instead of choosing a new random seed.");
+  assert(currentCapture.request?.advanced?.steps === 8 && currentCapture.request?.advanced?.guidance === 2.5, "Retry did not preserve non-seed supported advanced intent.");
   const serializedCurrentCapture = JSON.stringify(currentCapture.request);
   for (const secret of [
     "historical-secret-workflow",

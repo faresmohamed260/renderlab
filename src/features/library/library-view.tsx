@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { LibraryBatchSelection } from "@/features/library/library-batch-selection";
 import { LibraryCollectionMenu } from "@/features/library/library-collection-menu";
 import { LibraryDropUploadSurface } from "@/features/library/library-drop-upload-surface";
-import { LibrarySortMenu } from "@/features/library/library-sort-menu";
+import { LibrarySortToggle } from "@/features/library/library-sort-toggle";
 import { LibraryUploadButton } from "@/features/library/library-upload-button";
 import {
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
@@ -219,12 +219,12 @@ export function LibraryView({
               })}
             </nav>
 
-            <div className="kinetic-media-toolbar mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border px-3 py-3 sm:px-4">
-              <nav className="flex rounded-lg bg-surface-2 p-1" aria-label="Library media type">
+            <div className="kinetic-media-toolbar mt-5 flex flex-col items-stretch gap-3 rounded-2xl border border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+              <nav className="grid w-full grid-cols-3 rounded-lg bg-surface-2 p-1 sm:flex sm:w-auto" aria-label="Library media type">
                 {filters.map((filter) => {
                   const active = kind === filter.value;
                   return (
-                    <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
+                    <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm" className="w-full sm:w-auto">
                       <Link
                         href={libraryHref(tab, filter.value, searchQuery, sort, favoriteOnly, selectedCollectionId)}
                         aria-current={active ? "page" : undefined}
@@ -235,8 +235,8 @@ export function LibraryView({
                   );
                 })}
               </nav>
-              <div className="flex flex-wrap items-start justify-end gap-2">
-                <Button asChild variant={favoriteOnly ? "secondary" : "outline"} size="sm">
+              <div className="grid w-full grid-cols-2 items-start gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
+                <Button asChild variant={favoriteOnly ? "secondary" : "outline"} size="sm" className="w-full sm:w-auto">
                   <Link href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
                     <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
                     Favorites
@@ -250,7 +250,7 @@ export function LibraryView({
                     collectionHrefs={collectionHrefs}
                   />
                 ) : null}
-                <LibrarySortMenu
+                <LibrarySortToggle
                   sort={sort}
                   newestHref={libraryHref(tab, kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
                   oldestHref={libraryHref(tab, kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}

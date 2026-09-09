@@ -169,6 +169,7 @@ function MobileNavLink({
 function UtilityIcon({ children, reduceMotion }: { children: ReactNode; reduceMotion: boolean }) {
   return (
     <motion.div
+      className="flex size-11 shrink-0 items-center justify-center"
       whileHover={reduceMotion ? undefined : { y: -2, scale: 1.035 }}
       whileTap={reduceMotion ? undefined : { scale: 0.94 }}
       transition={navSpring}
@@ -262,7 +263,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <h1 className="text-sm font-semibold tracking-[0.01em] text-text/95">{title}</h1>
           </div>
 
-          <div className="ml-auto flex items-center gap-1.5 rounded-xl border border-white/[0.07] bg-black/15 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_20px_rgba(129,114,246,0.04)]">
+          <div className="ml-auto grid grid-cols-2 place-items-center gap-1 rounded-xl border border-white/[0.07] bg-black/15 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_20px_rgba(129,114,246,0.04)]">
             <UtilityIcon reduceMotion={reduceMotion}>
               <Button asChild variant="ghost" size="icon-lg" className="rounded-lg hover:bg-white/[0.065]">
                 <Link href="/activity" prefetch={true} aria-label="Open activity">

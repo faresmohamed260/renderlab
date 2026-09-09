@@ -68,7 +68,7 @@ Rules:
 - native `file` and `hidden` inputs are allowed as browser/form plumbing;
 - feature composition remains feature-owned; the primitive layer does not absorb product data contracts;
 - fix shared spacing/variants/semantics in the wrapper once rather than recreating them in each feature;
-- maintained accessibility semantics are authoritative when they correctly represent the interaction. Create Image/Video is a required single-choice Radix `radiogroup` with checked `radio` items, not two independent legacy pressed buttons; Library Newest/Oldest uses Radix Dropdown Menu radio semantics;
+- maintained accessibility semantics are authoritative when they correctly represent the interaction. Create Image/Video is a required single-choice Radix `radiogroup` with checked `radio` items, not two independent legacy pressed buttons; UI-066 keeps Library Newest/Oldest URL/server-owned while exposing the current order through one direct maintained Button/Link toggle;
 - custom generic mechanics are the last option and require a concrete documented reason that approved maintained sources do not satisfy the requirement.
 
 `npm run verify:ui-purity` enforces the native-control boundary in UI Shell CI.

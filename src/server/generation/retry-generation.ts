@@ -1,5 +1,6 @@
 import type { RetryGenerationResponse } from "@/lib/api/generation-retry-contract";
 import { persistedUpscaleSourceAssetId } from "@/lib/capabilities/upscale";
+import { randomGenerationSeed } from "@/lib/capabilities/generation";
 import {
   loadGenerationRecipeJob,
   reconstructAvailableGenerationRecipeRequest,
@@ -64,7 +65,14 @@ export async function retryGeneration(
   } else {
     const request = await reconstructAvailableGenerationRecipeRequest(ownerId, historicalJob);
     if (!request) return retryNotAvailable();
-    submitted = await submitGeneration(ownerId, request);
+    const retryRequest = {
+      ...request,
+      advanced: {
+        ...request.advanced,
+        seed: randomGenerationSeed(request.advanced?.seed),
+      },
+    };
+    submitted = await submitGeneration(ownerId, retryRequest);
   }
 
   if (!submitted.ok) {

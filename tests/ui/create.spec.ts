@@ -7,7 +7,7 @@ test("Create exposes the reviewed minimal image composer", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/create");
 
-  await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /What do you want to (create|explore|transform|imagine)\?/ })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
   await expect(page.getByRole("radiogroup", { name: "Output type" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "Image", exact: true })).toBeChecked();
@@ -98,6 +98,9 @@ test("Create honors reduced motion for contextual mode transitions", async ({ pa
   await expect(modeControl).toBeVisible();
   await expect(modeControl).toHaveCSS("transform", "none");
   await expect(page.locator('[data-create-motion="context"]')).toHaveCSS("transform", "none");
+  await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
+  await page.waitForTimeout(4500);
+  await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
 });
 
 test("Advanced controls use progressive disclosure and preserve per-output drafts", async ({ page }) => {
@@ -107,7 +110,16 @@ test("Advanced controls use progressive disclosure and preserve per-output draft
   await page.getByRole("button", { name: "Open Advanced controls" }).click();
   await expect(page.getByRole("button", { name: "Close Advanced controls" })).toBeVisible();
   await expect(page.getByText("Advanced", { exact: true })).toBeVisible();
-  await expect(page.getByRole("spinbutton", { name: "Seed" })).toHaveValue("42");
+  const seedInput = page.getByRole("spinbutton", { name: "Seed" });
+  await expect(seedInput).toHaveValue("42");
+  const randomizeSeed = page.getByRole("button", { name: "Randomize seed", exact: true });
+  await expect(randomizeSeed).toBeVisible();
+  await randomizeSeed.click();
+  const randomizedSeed = Number(await seedInput.inputValue());
+  expect(Number.isSafeInteger(randomizedSeed)).toBeTruthy();
+  expect(randomizedSeed).toBeGreaterThanOrEqual(0);
+  expect(randomizedSeed).toBeLessThanOrEqual(2_147_483_647);
+  expect(randomizedSeed).not.toBe(42);
   await expect(page.getByRole("spinbutton", { name: "Steps" })).toHaveValue("4");
   await expect(page.getByRole("spinbutton", { name: "Guidance" })).toHaveValue("1");
   await expect(page.getByRole("combobox", { name: "Frame rate" })).toHaveCount(0);

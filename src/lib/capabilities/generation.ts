@@ -126,6 +126,17 @@ export const videoResolutions = ["480p", "720p", "1080p", "2K"] as const;
 export type VideoResolution = (typeof videoResolutions)[number];
 export const defaultVideoResolution: VideoResolution = "480p";
 
+export const generationSeedMin = 0;
+export const generationSeedMax = 2_147_483_647;
+
+export function randomGenerationSeed(exclude?: number) {
+  const value = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(value);
+  const seed = value[0]! % (generationSeedMax + 1);
+  if (seed !== exclude) return seed;
+  return seed === generationSeedMax ? generationSeedMin : seed + 1;
+}
+
 export const generationAdvancedCapabilities = {
   seed: {
     label: "Seed",

@@ -89,6 +89,14 @@ test("Phase 19 floating mobile dock is inset, readable, and overflow-safe", asyn
   expect(topbarBox).not.toBeNull();
   expect(topbarBox!.x).toBeGreaterThan(0);
   expect(topbarBox!.x + topbarBox!.width).toBeLessThan(mobileViewport.width);
+  const activityUtility = page.getByRole("link", { name: "Open activity", exact: true });
+  const settingsUtility = page.getByRole("link", { name: "Open settings and account", exact: true });
+  const [activityBox, settingsBox] = await Promise.all([activityUtility.boundingBox(), settingsUtility.boundingBox()]);
+  expect(activityBox).not.toBeNull();
+  expect(settingsBox).not.toBeNull();
+  expect(Math.abs((activityBox!.y + activityBox!.height / 2) - (settingsBox!.y + settingsBox!.height / 2))).toBeLessThanOrEqual(1);
+  expect(activityBox!.width).toBe(settingsBox!.width);
+  expect(activityBox!.height).toBe(settingsBox!.height);
   await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute("aria-current", "page");
   await expectNoHorizontalOverflow(page);
   await waitForKineticContent(page);

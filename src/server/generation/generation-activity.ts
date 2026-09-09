@@ -138,11 +138,17 @@ export async function listGenerationActivity({
   }))).filter((id): id is string => Boolean(id)));
 
   const availableIds = await activeOutputIds(ownerId, refreshedItems);
-  const items = refreshedItems.map((item) => ({
-    ...item,
-    outputAssetIds: item.outputAssetIds.filter((id) => availableIds.has(id)),
-    canRunAgain: item.status === "succeeded" && reusableIds.has(item.id),
-  }));
+  const items = refreshedItems
+    .filter((item) => !(
+      item.status === "succeeded"
+      && item.outputAssetIds.length > 0
+      && item.outputAssetIds.every((id) => !availableIds.has(id))
+    ))
+    .map((item) => ({
+      ...item,
+      outputAssetIds: item.outputAssetIds.filter((id) => availableIds.has(id)),
+      canRunAgain: item.status === "succeeded" && reusableIds.has(item.id),
+    }));
 
   return {
     items,

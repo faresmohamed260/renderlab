@@ -1950,3 +1950,8 @@ No repository-triggered production rollout was performed or authorized. `vercel.
 - [x] No Supabase schema change, R2 resource-contract change, worker deployment, provider/routing change, reconciliation/maintenance scheduler activation, `pg_cron` or `pg_net` change accompanied the application rollout. Automatic Git → Vercel deployment remains disabled; future production changes remain explicit operations.
 
 Cycle 4 is now complete in both repository and production state. This rollout does not create or authorize Phase 23 / Cycle 5 work.
+
+## Post-Cycle 4 production corrective review — 2026-09-09
+**Status: `AUTHORIZED / IMPLEMENTATION IN PROGRESS`.**
+
+Live production review after Cycle 4 authorized a bounded corrective pass on baseline `b3aae9d3159aa3daeeff0390b585d010aa6f71c2`: AppShell utility alignment, narrow Library toolbar spacing plus direct Newest/Oldest toggle, Create compact-trigger spacing, Advanced seed randomization with new-seed failed Retry behavior, deleted-result removal from the user-facing Activity feed, and a restrained rotating source-free Image Create headline. This is corrective maintenance, not Phase 23 / Cycle 5. Production deployment remains a separate explicit operation.
