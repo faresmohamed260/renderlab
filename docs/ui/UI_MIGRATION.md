@@ -1856,7 +1856,7 @@ This is user-directed post-production corrective maintenance, not Phase 23 / Cyc
 - [x] Library Lifecycle attempt 2 passed on the same exact head after attempt 1 was cancelled before jobs by concurrency scheduling; no product result was waived.
 - [x] PR #135 guarded squash-merged as `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd` with accepted tree `c91aec822a87a62ff1c72489a8eca3f8e18ec0c1`.
 - [x] All 10 workflows attached to merged `main` completed successfully. Final Video Generation Integration `34399864436` passed live Create Video / Animate Image ownership verification and cleanup.
-- [x] Production deployment remains separate and was not performed. Automatic Git → Vercel deployment remains disabled; no schema, R2-resource, worker/provider/routing or scheduler change accompanied this corrective pass.
+- [x] The corrective implementation merge itself did not deploy production; the later explicitly authorized rollout is recorded below. Automatic Git → Vercel deployment remains disabled, and no schema, R2-resource, worker/provider/routing or scheduler change accompanied the corrective pass or its rollout.
 
 **Post-Cycle 4 corrective status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.** No Phase 23 / Cycle 5 work is implied.
 
