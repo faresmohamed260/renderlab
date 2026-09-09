@@ -99,6 +99,8 @@ Before copying/installing an external component:
 **Do not:** Turn Checkbox into durable selection state, a card data store or a substitute for URL/server-owned Library filtering.
 **Notes:** UI-034 final exact head `1e634fe9a582b8a7676cb70cfc7bcd5754f613ce` passed UI Shell `33220710365`, Library Batch Delete `33220710307` and the complete 16-gate affected suite; PR #29 merged as `8b0b0339f216f3ce704d965ef005b2cd020f3ae8`. Responsive selection/confirmation review was clean.
 
+**UI-070 composition note:** Library keeps the same maintained Radix Checkbox root and checked/focus semantics, but the card composition uses a 44×44 transparent interactive root around a centered 22×22 visible box so selection remains practical without visually dominating the media card.
+
 ### AppShell
 **Status:** APPROVED
 **Source:** `src/components/shell/app-shell.tsx`  
