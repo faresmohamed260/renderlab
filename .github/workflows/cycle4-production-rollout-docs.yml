@@ -2,15 +2,16 @@ name: Cycle 4 production rollout docs closure
 
 on:
   push:
-    branches: [docs/cycle4-production-rollout-closure]
+    branches:
+      - docs/cycle4-production-rollout-closure
     paths:
-      - ".github/workflows/cycle4-production-rollout-docs.yml"
+      - .github/workflows/cycle4-production-rollout-docs.yml
 
 permissions:
   contents: write
 
 jobs:
-  close:
+  close-rollout-docs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
@@ -21,125 +22,35 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: docs/cycle4-production-rollout-closure
-          fetch-depth: 2
+          fetch-depth: 0
 
-      - name: Guard exact rollout baseline
+      - name: Guard temporary-only staging state
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$BASE_SHA"
-          test "$(git diff --name-only "$BASE_SHA"..HEAD)" = ".github/workflows/cycle4-production-rollout-docs.yml"
+          git diff --name-only "$BASE_SHA" | sort > /tmp/actual.txt
+          printf '%s\n' .github/scripts/cycle4-production-rollout-docs.py .github/workflows/cycle4-production-rollout-docs.yml | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
 
-      - name: Record verified Cycle 4 production rollout
+      - name: Write verified rollout closure
         shell: bash
         run: |
           set -euo pipefail
-          python <<'PY'
-          from pathlib import Path
-
-          deployment = "dpl_5hA4ihp644VcCzioY66hoTXaP18v"
-          deployment_url = "https://renderlab-91pu92g5z-faresmohamed260-6733s-projects.vercel.app"
-          candidate = "cf3923097fce62edbee643df9b2883bd09210046"
-          run_id = "34356155380"
-          artifact = "10105911082"
-          artifact_digest = "sha256:049d143dab49881beb3ffa60ae2a0c104cd5d646d89b44d69c269098959469b8"
-          evidence_digest = "0b8367f43f87a77ec8444f26c8a5b5fcce04b9bbada165ae61f3dca853f75782"
-          rollback = "dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi"
-
-          project_path = Path("PROJECT.md")
-          project = project_path.read_text()
-          replacements = [
-              ("## Current Verified Baseline — 2026-09-06", "## Current Verified Baseline — 2026-09-09"),
-              ("- Accepted production application is Post-Cycle 3 stabilization source `71a9034039a64beec66894cc4f79b1f62bfc7bf7` at READY deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi`; `https://renderlab.faresuniform.uk` aliases that deployment. Prior Cycle 3 production deployment `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` remains the immediate rollback anchor.",
-               f"- Accepted production application is Cycle 4 source `{candidate}` at READY deployment `{deployment}` / `{deployment_url}`; `https://renderlab.faresuniform.uk` aliases that deployment. Pre-Cycle-4 deployment `{rollback}` remains the immediate rollback anchor after the successful rollout smoke."),
-              ("# Cycle 4 — Kinetic Visual Experience\n**Status: `COMPLETE / VERIFIED / MERGED`.**",
-               "# Cycle 4 — Kinetic Visual Experience\n**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.**"),
-          ]
-          for old, new in replacements:
-              count = project.count(old)
-              if count != 1:
-                  raise SystemExit(f"PROJECT replacement count {count} for: {old[:80]}")
-              project = project.replace(old, new, 1)
-
-          project_marker = "## Cycle 4 production rollout closure — 2026-09-09"
-          if project_marker in project:
-              raise SystemExit("PROJECT rollout closure already exists")
-          project += f"""
-
-## Cycle 4 production rollout closure — 2026-09-09
-**Status: `COMPLETE / VERIFIED / LIVE`.**
-
-- [x] User-authorized rollout deployed exact current `main` `{candidate}` through guarded GitHub run `{run_id}`. The rollout checked out the exact pristine SHA, verified required production environment-key metadata, built successfully on Vercel, and required Vercel to report the same Git SHA before acceptance.
-- [x] New production deployment `{deployment}` is `READY` at `{deployment_url}` and is aliased by `https://renderlab.faresuniform.uk`. The custom domain served the accepted Cycle 4 Landing copy (`Create with intent.` / `Keep what matters.`), explicit Closed Beta language and static-product-preview treatment; `/create`, `/library`, `/activity` and `/settings` also passed post-cutover HTTP smoke.
-- [x] Exact-origin browser-upload R2 CORS passed for `https://renderlab.faresuniform.uk`. A real run-owned persistent image upload produced its durable media row and WebP thumbnail, appeared through the Library contract and then cleaned its exact fixture successfully.
-- [x] Rollback to pre-Cycle-4 READY deployment `{rollback}` was armed but not required. Vercel reported no runtime errors in the bounded post-rollout window.
-- [x] Rollout evidence artifact `{artifact}` has ZIP digest `{artifact_digest}`; its `evidence.json` SHA-256 is `{evidence_digest}`.
-- [x] No Supabase schema change, R2 resource-contract change, worker deployment, provider/routing change, reconciliation/maintenance scheduler activation, `pg_cron` or `pg_net` change accompanied the application rollout. Automatic Git → Vercel deployment remains disabled; future production changes remain explicit operations.
-
-Cycle 4 is now complete in both repository and production state. This rollout does not create or authorize Phase 23 / Cycle 5 work.
-"""
-          project_path.write_text(project)
-
-          migration_path = Path("docs/ui/UI_MIGRATION.md")
-          migration = migration_path.read_text()
-          old = "# Cycle 4 — Kinetic Visual Experience\n**Status: `COMPLETE / VERIFIED / MERGED`.**"
-          new = "# Cycle 4 — Kinetic Visual Experience\n**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.**"
-          count = migration.count(old)
-          if count != 1:
-              raise SystemExit(f"UI_MIGRATION Cycle 4 status replacement count {count}")
-          migration = migration.replace(old, new, 1)
-          migration_marker = "### Cycle 4 production rollout — 2026-09-09"
-          if migration_marker in migration:
-              raise SystemExit("UI_MIGRATION rollout closure already exists")
-          migration += f"""
-
-### Cycle 4 production rollout — 2026-09-09
-- [x] Explicit user authorization promoted exact repository source `{candidate}` to Vercel production through rollout run `{run_id}`.
-- [x] READY deployment `{deployment}` / `{deployment_url}` now serves `https://renderlab.faresuniform.uk`; the accepted Phase 22 Landing plus `/create`, `/library`, `/activity` and `/settings` passed post-cutover smoke.
-- [x] Production exact-origin R2 PUT CORS, one real durable image upload, generated WebP thumbnail, Library visibility and exact fixture cleanup all passed after cutover.
-- [x] Evidence artifact `{artifact}`: `{artifact_digest}`; `evidence.json` SHA-256 `{evidence_digest}`. Rollback baseline `{rollback}` was retained and rollback was not required.
-- [x] No schema/R2-resource/worker/provider/routing/scheduler change accompanied the rollout; automatic Git deployment remains disabled.
-
-**Cycle 4 production status: `COMPLETE / VERIFIED / LIVE`.** No Phase 23 / Cycle 5 work is implied by rollout completion.
-"""
-          migration_path.write_text(migration)
-
-          infra_path = Path("docs/architecture/INFRASTRUCTURE.md")
-          infra = infra_path.read_text()
-          infra_marker = "## Cycle 4 production rollout — 2026-09-09"
-          if infra_marker in infra:
-              raise SystemExit("INFRASTRUCTURE rollout closure already exists")
-          infra += f"""
-
-## Cycle 4 production rollout — 2026-09-09
-The user explicitly authorized production rollout after Phase 22 / Cycle 4 repository closure. Guarded GitHub rollout run `{run_id}` checked out exact current `main` `{candidate}`, required a pristine tree and required production Vercel environment-key metadata before invoking a forced production build/deploy with the established Vercel CLI path.
-
-Vercel created deployment `{deployment}` at `{deployment_url}` and reported it `READY` with Git SHA `{candidate}`. Active production aliases include `https://renderlab.faresuniform.uk` and `https://renderlab-lake.vercel.app`. The prior READY deployment `{rollback}` was retained as the immediate rollback target; rollback was armed for any post-deploy failure but was not required.
-
-Post-cutover verification passed the accepted Cycle 4 Landing content plus `/create`, `/library`, `/activity` and `/settings`; exact-origin R2 browser-upload CORS returned the expected `204` for `https://renderlab.faresuniform.uk`; and a real run-owned persistent image upload verified durable promotion, WebP thumbnail creation, Library listing and exact fixture cleanup. A bounded Vercel runtime-error query after rollout returned no runtime errors.
-
-Rollout evidence artifact `{artifact}` has ZIP digest `{artifact_digest}` and the generated `evidence.json` has SHA-256 `{evidence_digest}`. No Supabase migration/schema mutation, R2 resource-contract mutation, generation/upscale worker deployment, provider/routing change, reconciliation/maintenance scheduler activation, `pg_cron` or `pg_net` change accompanied this rollout. `vercel.json` still keeps `git.deploymentEnabled=false`; automatic Git → Vercel deployment remains disabled, so future production mutations continue to require an explicit operation.
-
-This rollout makes the verified Cycle 4 application production-live. It does not authorize Phase 23 / Cycle 5 work.
-"""
-          infra_path.write_text(infra)
-          PY
-
+          sed -i 's/dpl_6htPrpLMysfqZ7wQ5btwejXPA/dpl_6htPrpLMysfqZycZ7wQ5btwejXPA/' .github/scripts/cycle4-production-rollout-docs.py
+          python .github/scripts/cycle4-production-rollout-docs.py
+          rm .github/scripts/cycle4-production-rollout-docs.py
           rm .github/workflows/cycle4-production-rollout-docs.yml
           git diff --check
-          mapfile -t changed < <(git diff --name-only "$BASE_SHA")
-          printf 'Effective closure files:\n%s\n' "${changed[*]}"
-          test "${#changed[@]}" -eq 3
-          printf '%s\n' "${changed[@]}" | sort > /tmp/actual.txt
+          git diff --name-only "$BASE_SHA" | sort > /tmp/actual.txt
           printf '%s\n' PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_MIGRATION.md | sort > /tmp/expected.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
 
-      - name: Commit self-removing rollout closure
+      - name: Commit self-removing docs closure
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/architecture/INFRASTRUCTURE.md .github/workflows/cycle4-production-rollout-docs.yml
+          git add -A
           git commit -m "docs: record Cycle 4 production rollout"
           git push origin HEAD:"$BRANCH"
