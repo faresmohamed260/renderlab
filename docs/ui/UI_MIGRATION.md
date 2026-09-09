@@ -1725,7 +1725,7 @@ UI-061 records this user-requested corrective composition. No new capability, sc
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `COMPLETE / VERIFIED / MERGED`.**
+**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.**
 
 The next major product pass is explicitly visual. Success is measured by user-visible changes to hierarchy, surfaces, motion, depth and spatial continuity, not merely by backend/performance improvements.
 
@@ -1824,3 +1824,13 @@ Acceptance corrected stale Integrated Release Landing copy assumptions plus two 
 - [x] All seven workflows attached to the merge push succeeded: Engineering Quality `34287754692`, Image Upscale Integration `34287754640`, Integrated Release `34287754668`, Activity Cancel Visual `34287754684`, Creative Iteration `34287754635`, Release Candidate Matrix `34287754646` and UI Shell Validation `34287754636`.
 - [x] Release Candidate Matrix attempt 2 passed 23/23 children after attempt 1 encountered a transient Supabase REST 504 in Generation Bridge; final manifest `10084078116` (`sha256:89c525e0d5a9f6803e20a8e76b48fad40bbdbd34e53eb4e2f0ffecea191659b9`). UI Shell attempt 2 passed after the matrix's same-ref dispatch cancelled the first attached push attempt; no product regression was accepted or waived.
 - [x] Phase 22 and Cycle 4 are `COMPLETE / VERIFIED / MERGED`. Production deployment remains separate and unauthorized; no Phase 23 is implied.
+
+
+### Cycle 4 production rollout — 2026-09-09
+- [x] Explicit user authorization promoted exact repository source `cf3923097fce62edbee643df9b2883bd09210046` to Vercel production through rollout run `34356155380`.
+- [x] READY deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` / `https://renderlab-91pu92g5z-faresmohamed260-6733s-projects.vercel.app` now serves `https://renderlab.faresuniform.uk`; the accepted Phase 22 Landing plus `/create`, `/library`, `/activity` and `/settings` passed post-cutover smoke.
+- [x] Production exact-origin R2 PUT CORS, one real durable image upload, generated WebP thumbnail, Library visibility and exact fixture cleanup all passed after cutover.
+- [x] Evidence artifact `10105911082`: `sha256:049d143dab49881beb3ffa60ae2a0c104cd5d646d89b44d69c269098959469b8`; `evidence.json` SHA-256 `0b8367f43f87a77ec8444f26c8a5b5fcce04b9bbada165ae61f3dca853f75782`. Rollback baseline `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` was retained and rollback was not required.
+- [x] No schema/R2-resource/worker/provider/routing/scheduler change accompanied the rollout; automatic Git deployment remains disabled.
+
+**Cycle 4 production status: `COMPLETE / VERIFIED / LIVE`.** No Phase 23 / Cycle 5 work is implied by rollout completion.

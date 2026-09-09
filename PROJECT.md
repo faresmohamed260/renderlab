@@ -58,11 +58,11 @@ Contextual/utility:
 
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
-## Current Verified Baseline — 2026-09-06
+## Current Verified Baseline — 2026-09-09
 - Authoritative repository `main` before this Cycle 3 planning change: `61a4882faf89d85b94c5a6955d1bd9a4508d01f0`.
 - Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`.
 - Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`.
-- Accepted production application is Post-Cycle 3 stabilization source `71a9034039a64beec66894cc4f79b1f62bfc7bf7` at READY deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi`; `https://renderlab.faresuniform.uk` aliases that deployment. Prior Cycle 3 production deployment `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` remains the immediate rollback anchor.
+- Accepted production application is Cycle 4 source `cf3923097fce62edbee643df9b2883bd09210046` at READY deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` / `https://renderlab-91pu92g5z-faresmohamed260-6733s-projects.vercel.app`; `https://renderlab.faresuniform.uk` aliases that deployment. Pre-Cycle-4 deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` remains the immediate rollback anchor after the successful rollout smoke.
 - Closed-Beta enforcement is active in production. Final guarded Phase 13 cleanup preserved exactly one active admin, zero pending invitations and generation defaults enabled / one active job / 12 admitted per rolling hour / no updater.
 - Production Auth invite/recovery mail uses verified Resend custom SMTP with branded token-hash templates and click/open tracking disabled. External Gmail invite/recovery acceptance completed; Outlook-specific rendering was not exercised.
 - Automatic Git → Vercel deployment remains disabled. Documentation changes do not authorize or imply a production deployment.
@@ -1379,7 +1379,7 @@ No schema migration, worker deployment, provider/routing change, new route, new 
 
 
 # Cycle 4 — Kinetic Visual Experience
-**Status: `COMPLETE / VERIFIED / MERGED`.**
+**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.**
 **Planning baseline:** `e85aa633caa25e1bc7fdc529d37f08d10cde3cea`.
 
 ## Objective
@@ -1937,3 +1937,16 @@ PR #130 was marked ready and guarded squash-merged with `expected_head_sha=70498
 Every workflow GitHub actually attached to the merged `main` push reached terminal success: Engineering Quality `34287754692`, Image Upscale Integration `34287754640`, Integrated Release `34287754668`, Activity Cancel Visual `34287754684`, Creative Iteration `34287754635`, Release Candidate Matrix `34287754646` and UI Shell Validation `34287754636`. Release Candidate Matrix attempt 1 was not waived: its Generation Bridge child hit a transient Supabase REST 504 while polling an already-running job; unchanged same-SHA attempt 2 completed all 23/23 children and published final manifest artifact `10084078116` (`sha256:89c525e0d5a9f6803e20a8e76b48fad40bbdbd34e53eb4e2f0ffecea191659b9`). The attached UI Shell push run was likewise rerun on the same merge SHA after matrix same-ref concurrency cancelled its first attempt; attempt 2 passed the full shell suite.
 
 No repository-triggered production rollout was performed or authorized. `vercel.json` continues to set `git.deploymentEnabled=false`, automatic Git → Vercel deployment remains disabled, and this closure changes documentation only. Phase 22 therefore closes Cycle 4 as `COMPLETE / VERIFIED / MERGED`. No Phase 23 implementation or production deployment is implied or authorized.
+
+
+## Cycle 4 production rollout closure — 2026-09-09
+**Status: `COMPLETE / VERIFIED / LIVE`.**
+
+- [x] User-authorized rollout deployed exact current `main` `cf3923097fce62edbee643df9b2883bd09210046` through guarded GitHub run `34356155380`. The rollout checked out the exact pristine SHA, verified required production environment-key metadata, built successfully on Vercel, and required Vercel to report the same Git SHA before acceptance.
+- [x] New production deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` is `READY` at `https://renderlab-91pu92g5z-faresmohamed260-6733s-projects.vercel.app` and is aliased by `https://renderlab.faresuniform.uk`. The custom domain served the accepted Cycle 4 Landing copy (`Create with intent.` / `Keep what matters.`), explicit Closed Beta language and static-product-preview treatment; `/create`, `/library`, `/activity` and `/settings` also passed post-cutover HTTP smoke.
+- [x] Exact-origin browser-upload R2 CORS passed for `https://renderlab.faresuniform.uk`. A real run-owned persistent image upload produced its durable media row and WebP thumbnail, appeared through the Library contract and then cleaned its exact fixture successfully.
+- [x] Rollback to pre-Cycle-4 READY deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` was armed but not required. Vercel reported no runtime errors in the bounded post-rollout window.
+- [x] Rollout evidence artifact `10105911082` has ZIP digest `sha256:049d143dab49881beb3ffa60ae2a0c104cd5d646d89b44d69c269098959469b8`; its `evidence.json` SHA-256 is `0b8367f43f87a77ec8444f26c8a5b5fcce04b9bbada165ae61f3dca853f75782`.
+- [x] No Supabase schema change, R2 resource-contract change, worker deployment, provider/routing change, reconciliation/maintenance scheduler activation, `pg_cron` or `pg_net` change accompanied the application rollout. Automatic Git → Vercel deployment remains disabled; future production changes remain explicit operations.
+
+Cycle 4 is now complete in both repository and production state. This rollout does not create or authorize Phase 23 / Cycle 5 work.
