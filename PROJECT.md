@@ -59,10 +59,10 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Verified Baseline — 2026-09-09
-- Authoritative repository source deployed for the Cycle 4 rollout is `cf3923097fce62edbee643df9b2883bd09210046`; later documentation-only closure commits do not change the deployed application tree.
+- Authoritative repository source currently deployed is `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814`. It contains the verified post-Cycle 4 corrective application merge `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd` plus the documentation-only closure that immediately followed it.
 - Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`.
 - Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`.
-- Accepted production application is Cycle 4 source `cf3923097fce62edbee643df9b2883bd09210046` at READY deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` / `https://renderlab-91pu92g5z-faresmohamed260-6733s-projects.vercel.app`; `https://renderlab.faresuniform.uk` aliases that deployment. Pre-Cycle-4 deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` remains the immediate rollback anchor after the successful rollout smoke.
+- Accepted production application is source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` / `https://renderlab-lzqxaaoxa-faresmohamed260-6733s-projects.vercel.app`; `https://renderlab.faresuniform.uk` aliases that deployment. Prior Cycle 4 READY deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` is the immediate rollback anchor after the successful corrective rollout smoke.
 - Closed-Beta enforcement is active in production. Final guarded Phase 13 cleanup preserved exactly one active admin, zero pending invitations and generation defaults enabled / one active job / 12 admitted per rolling hour / no updater.
 - Production Auth invite/recovery mail uses verified Resend custom SMTP with branded token-hash templates and click/open tracking disabled. External Gmail invite/recovery acceptance completed; Outlook-specific rendering was not exercised.
 - Automatic Git → Vercel deployment remains disabled. Documentation changes do not authorize or imply a production deployment.
@@ -1959,4 +1959,4 @@ The bounded seven-item live-production corrective pass was implemented from base
 
 All 26 workflows attached to the definitive PR head completed successfully; the same-head Library Lifecycle rerun passed after its first zero-job concurrency cancellation. After merge, all 10 workflows GitHub attached to `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd` completed successfully, including Video Generation Integration `34399864436` through live Create Video / Animate Image ownership verification and fixture cleanup.
 
-This corrective pass is repository-complete but **not production-deployed**. Production continues to serve application source `cf3923097fce62edbee643df9b2883bd09210046` until a separate explicit rollout is authorized. This work is not Phase 23 / Cycle 5 and does not authorize either.
+This corrective pass is now **production live** from exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`. Rollout run `34406507461` passed exact-SHA/pristine-source and production-environment guards, public route smoke, exact-origin R2 CORS, a real durable image upload with WebP thumbnail/Library visibility and exact cleanup; bounded Vercel runtime-error review found no runtime errors. Prior deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` remains the immediate rollback anchor and rollback was not required. This work is not Phase 23 / Cycle 5 and does not authorize either.
