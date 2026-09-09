@@ -1,0 +1,132 @@
+name: Close post-Cycle 4 corrective docs
+
+on:
+  push:
+    branches:
+      - docs/post-cycle4-corrective-closure
+
+permissions:
+  contents: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Guard exact baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd"
+          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/close-post-cycle4-corrective-docs.yml"
+
+      - name: Reconcile authoritative closure docs
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          main_sha = "15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd"
+          pr_head = "522ce855673fdaaf3c174b9b934b320e0744a524"
+          tree_sha = "c91aec822a87a62ff1c72489a8eca3f8e18ec0c1"
+          deployed_sha = "cf3923097fce62edbee643df9b2883bd09210046"
+
+          project_path = Path("PROJECT.md")
+          project = project_path.read_text()
+          marker = "## Post-Cycle 4 production corrective review — 2026-09-09\n"
+          assert project.count(marker) == 1
+          baseline_line = "- Automatic Git → Vercel deployment remains disabled. Documentation changes do not authorize or imply a production deployment.\n"
+          repo_line = f"- Repository `main` now includes the verified post-Cycle 4 corrective pass merged as `{main_sha}`; production is still the earlier Cycle 4 application source `{deployed_sha}` until a separately authorized rollout.\n"
+          assert project.count(baseline_line) == 1
+          if repo_line not in project:
+              project = project.replace(baseline_line, baseline_line + repo_line, 1)
+          project = project[:project.index(marker)] + f'''## Post-Cycle 4 production corrective review — 2026-09-09
+          **Status: `COMPLETE / VERIFIED / MERGED`.**
+
+          The bounded seven-item live-production corrective pass was implemented from baseline `b3aae9d3159aa3daeeff0390b585d010aa6f71c2`, exact-head verified on `{pr_head}`, and guarded squash-merged through PR #135 as `{main_sha}` with accepted tree `{tree_sha}`. The pass aligns AppShell utilities, de-cramps the narrow Library toolbar and replaces sort-menu interaction with a direct Newest/Oldest toggle, fixes compact Create trigger spacing while preserving the 390px row boundary, adds Advanced seed randomization plus fresh-seed failed Retry, omits succeeded Activity rows after all result media is deleted/unavailable while retaining internal history, and rotates source-free Image Create headlines with reduced-motion-safe static behavior.
+
+          All 26 workflows attached to the definitive PR head completed successfully; the same-head Library Lifecycle rerun passed after its first zero-job concurrency cancellation. After merge, all 10 workflows GitHub attached to `{main_sha}` completed successfully, including Video Generation Integration `34399864436` through live Create Video / Animate Image ownership verification and fixture cleanup.
+
+          This corrective pass is repository-complete but **not production-deployed**. Production continues to serve application source `{deployed_sha}` until a separate explicit rollout is authorized. This work is not Phase 23 / Cycle 5 and does not authorize either.
+          '''.replace("          ", "")
+          project_path.write_text(project)
+
+          migration_path = Path("docs/ui/UI_MIGRATION.md")
+          migration = migration_path.read_text()
+          assert migration.count(marker) == 1
+          migration = migration[:migration.index(marker)] + f'''## Post-Cycle 4 production corrective review — 2026-09-09
+          **Status: `COMPLETE / VERIFIED / MERGED`.**
+          **Implementation baseline:** `b3aae9d3159aa3daeeff0390b585d010aa6f71c2`.
+          **Production state:** deployed application source remains `{deployed_sha}`; the corrective pass is not production-deployed.
+
+          This is user-directed post-production corrective maintenance, not Phase 23 / Cycle 5.
+
+          - [x] Align the mobile/topbar Activity and Settings/account utility icons evenly inside their shared control surface.
+          - [x] Reflow the narrow Library media/action toolbar so filters, Favorites, Collections and sort are deliberate rather than cramped.
+          - [x] Replace the Library sort dropdown with one direct `Newest first` / `Oldest first` toggle while preserving URL-owned ordering.
+          - [x] Give compact Create model/aspect/video-setting labels and chevrons clear separation without breaking the one-row narrow control contract.
+          - [x] Add a die-style Seed randomizer in Advanced; failed Retry submits a newly randomized seed while preserving other current-valid intent. Successful Run Again remains unchanged.
+          - [x] Remove succeeded Activity entries from the user-facing feed once all recorded result media for that job is deleted/unavailable; internal generation history remains server-owned and is not hard-deleted.
+          - [x] Rotate the source-free Image Create headline through restrained creative prompts; reduced motion presents the stable first phrase without timed rotation.
+
+          ### Verified closure
+          - [x] Definitive PR head `{pr_head}` contained 24 intended files with no temporary helper/build/install residue and passed all 26 repository-native PR workflows.
+          - [x] Create Lifecycle validates compact Video control semantics and zero horizontal overflow at the 390px boundary after correcting both stale verifier text and a real 7px row overflow; Activity Visual validates fresh failed-Retry seed behavior while preserving supported non-seed intent.
+          - [x] Library Lifecycle attempt 2 passed on the same exact head after attempt 1 was cancelled before jobs by concurrency scheduling; no product result was waived.
+          - [x] PR #135 guarded squash-merged as `{main_sha}` with accepted tree `{tree_sha}`.
+          - [x] All 10 workflows attached to merged `main` completed successfully. Final Video Generation Integration `34399864436` passed live Create Video / Animate Image ownership verification and cleanup.
+          - [x] Production deployment remains separate and was not performed. Automatic Git → Vercel deployment remains disabled; no schema, R2-resource, worker/provider/routing or scheduler change accompanied this corrective pass.
+
+          **Post-Cycle 4 corrective status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.** No Phase 23 / Cycle 5 work is implied.
+          '''.replace("          ", "")
+          migration_path.write_text(migration)
+
+          decisions_path = Path("docs/ui/UI_DECISIONS.md")
+          decisions = decisions_path.read_text()
+          decision_marker = "### UI-066 — Post-production corrective interaction pass\n"
+          assert decisions.count(decision_marker) == 1
+          decisions = decisions[:decisions.index(decision_marker)] + f'''### UI-066 — Post-production corrective interaction pass
+          **Status: `ACCEPTED / IMPLEMENTED / VERIFIED / MERGED`.**
+
+          Live Cycle 4 production review supersedes several narrow interaction details without reopening the visual system or creating a new phase:
+
+          - AppShell top-right Activity and account/Settings utilities use equal centered control geometry on narrow screens.
+          - Library keeps URL/server-owned `sort=newest|oldest`, but UI-027's dropdown interaction is superseded by a single direct toggle whose visible label is the current order and whose activation switches to the other order. Newest remains the canonical URL default.
+          - Narrow Library actions reflow into deliberate full-width/equal groupings before returning to the compact desktop row.
+          - Create's compact model/aspect/video-setting triggers preserve UI-061's one-row contract while using ordinary flex spacing between label and chevron instead of overlapping absolute placement.
+          - Source-free Image Create rotates a bounded set of truthful creative headlines with short Motion transitions. Reduced motion disables timed rotation and presents the stable first phrase.
+          - Advanced Seed gains a die-style randomize action. Randomized product seeds are conservative non-negative 31-bit integers and a randomize action must differ from the current seed.
+          - Failed-job Retry remains a new distinct job from current-revalidated persisted intent, but now deliberately replaces the historical seed with a new random seed. Other current-valid settings are preserved. Successful Run Again remains a separate unchanged operation.
+
+          These are corrective interaction changes only: no new route, global client store, model/provider exposure, schema or deployment contract is introduced.
+
+          ### UI-067 — Deleted generated content leaves the user-facing Activity feed
+          **Status: `ACCEPTED / IMPLEMENTED / VERIFIED / MERGED`.**
+
+          When a succeeded generation's recorded result media has been deleted and no active result from that job remains, the corresponding entry is omitted from the ordinary Activity feed. This supersedes UI-035's prior user-facing consequence that deleted-output jobs remained visible without a Viewer action.
+
+          The correction changes product visibility, not lifecycle history storage: `generation_jobs` remains server-owned historical/diagnostic state and media tombstones remain intact. Active, failed, cancelled and succeeded jobs with at least one active result keep their existing Activity semantics. No database migration or hard-delete cascade is introduced.
+
+          #### UI-066 / UI-067 merged verification — 2026-09-09
+          Both decisions are implemented in definitive PR head `{pr_head}`. All 26 attached exact-head workflows passed, including Create Lifecycle, Activity Visual, UI Shell, Engineering Quality, Integrated Release and the affected Library/generation/account regressions; same-head Library Lifecycle attempt 2 passed after its initial zero-job concurrency cancellation. PR #135 guarded squash-merged as `{main_sha}` with the same accepted tree `{tree_sha}`, and all 10 workflows attached to merged `main` completed successfully. Production remains on `{deployed_sha}`; this verification does not authorize a rollout or Phase 23 / Cycle 5.
+          '''.replace("          ", "")
+          decisions_path.write_text(decisions)
+          PY
+
+          rm .github/workflows/close-post-cycle4-corrective-docs.yml
+          git diff --check
+
+      - name: Commit authoritative closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git diff --name-only | sort)" = "$(printf '%s\n' PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md | sort)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md .github/workflows/close-post-cycle4-corrective-docs.yml
+          git commit -m "docs: close post-Cycle 4 corrective review"
+          git push origin HEAD:docs/post-cycle4-corrective-closure
