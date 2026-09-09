@@ -60,6 +60,7 @@ Approved behavior:
 - Video output includes contextual Audio on/off, default ON, carried through the validated generation contract as `output.audioEnabled`;
 - Video output includes contextual **Resolution** with exact `480p`, `720p`, `1080p`, `2K` choices, default `480p`, hidden/rejected `4K`, and server-normalized/persisted `output.resolution`;
 - PNG/JPEG/WebP user reference input up to 25 MB;
+- UI-069 adds optional desktop file drag/drop onto the Create composer for one reference image through the exact same durable upload/validation transaction as the maintained file picker; the picker remains the keyboard/touch/mobile baseline and no second upload path exists;
 - signed-R2 persistent upload promoted to an owner-scoped durable `media_asset` before generation;
 - newly uploaded Create references remain ordinary Library media even if Generate is never pressed;
 - generation binds newly uploaded references through opaque `media-asset` identity rather than exposing R2/storage identity;
@@ -104,6 +105,7 @@ Approved behavior:
 - unified durable `media_assets` browsing with canonical newest-first default;
 - explicit URL-owned `Newest first / Oldest first` ordering via `sort`, exposed as one direct toggle with deterministic server ordering by `created_at` + `id` in matching direction;
 - `All / Images / Videos` URL-owned kind filter;
+- UI-069 keeps Creatives/Uploads sections and All/Images/Videos filtering URL/server-owned while explicitly prefetching relevant destinations and exposing immediate link-pending feedback during dynamic server resolution; no client-owned media/filter dataset is introduced;
 - bounded pagination with direction-aware Newer/Older navigation;
 - responsive media grid and product media URLs;
 - truthful unavailable/empty/no-match states;
@@ -119,6 +121,7 @@ Approved behavior:
 - UI-030 makes Library private to the verified account: signed-out users see an explicit sign-in state rather than media/search/upload controls, while signed-in list/search/history/upload queries are owner-scoped.
 - UI-031 adds URL-owned `favorite=true` as a server-side owner-scoped Favorites view that composes with kind/search/sort/pagination and preserves clean URL state when Favorites is inactive.
 - Favorites remains a compact Library toolbar filter, not a new top-level destination or client-only card filter.
+- UI-069 requires Favorites, Collections and chronological sort controls to share one true control baseline/height; closed collection-management disclosure content must not reserve phantom spacing in the toolbar.
 - UI-032 adds optional URL-owned `collection=<uuid>` as an owner-scoped server-side Library view that composes with kind/search/Favorites/sort/pagination.
 - Collections remain a compact Library selector plus Viewer contextual membership action, not a new top-level destination, card/batch action system or client-owned media store.
 - UI-049 Phase 8A makes Library collection management reachable even with zero collections, reuses the existing create contract, and adds owner-scoped rename/delete in a compact progressive-disclosure manager. Collection Delete removes only the collection and cascade memberships; durable media, Favorite state, R2 content, generation history and provenance remain unchanged.
@@ -163,6 +166,7 @@ Approved behavior:
 **Approved behavior:**
 - deep-linked durable asset route;
 - responsive media-primary image/video presentation;
+- UI-069 requires shrinkable min-content-safe Viewer layout/stage/rail composition and safe wrapping for long unbroken labels so intrinsic media or filenames cannot force horizontal viewport overflow at narrow/intermediate widths;
 - secondary product metadata;
 - capability-derived continuation actions;
 - persisted images expose Edit/Animate via opaque media identity + action intent;
