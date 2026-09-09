@@ -1,0 +1,48 @@
+name: Cycle 4 rollout baseline fix
+
+on:
+  push:
+    branches:
+      - docs/cycle4-production-rollout-closure
+    paths:
+      - .github/workflows/cycle4-rollout-baseline-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      BASE_SHA: cf3923097fce62edbee643df9b2883bd09210046
+      BRANCH: docs/cycle4-production-rollout-closure
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/cycle4-production-rollout-closure
+          fetch-depth: 0
+      - name: Correct live repository baseline and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('PROJECT.md')
+          s=p.read_text()
+          old='- Authoritative repository `main` before this Cycle 3 planning change: `61a4882faf89d85b94c5a6955d1bd9a4508d01f0`.'
+          new='- Authoritative repository source deployed for the Cycle 4 rollout is `cf3923097fce62edbee643df9b2883bd09210046`; later documentation-only closure commits do not change the deployed application tree.'
+          if s.count(old) != 1:
+              raise SystemExit('PROJECT current-baseline repository line did not match exactly once')
+          p.write_text(s.replace(old,new,1))
+          PY
+          rm .github/workflows/cycle4-rollout-baseline-fix.yml
+          git diff --check
+          git diff --name-only "$BASE_SHA" | sort > /tmp/actual.txt
+          printf '%s\n' PROJECT.md docs/architecture/INFRASTRUCTURE.md docs/ui/UI_MIGRATION.md | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: reconcile current production baseline"
+          git push origin HEAD:"$BRANCH"
