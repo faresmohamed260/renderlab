@@ -89,7 +89,7 @@ Interactive touch target: **44×44px minimum** where practical, including icon-o
 ## Surfaces & Elevation
 Prefer separation through tonal surfaces and borders before shadows. Shadows should be subtle in the dark UI and used primarily for floating layers such as dialogs, popovers, sheets, drag previews, and contextual overlays.
 
-Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first.
+Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first. Within Create's unified composer, the bare prompt textarea does not draw its own focus rectangle; the composer's `:focus-within` border/glow is the visible focus boundary while textarea semantics and keyboard focus remain intact.
 
 ## Application Shell Direction
 The shell structure originated in the historical Figma v0.2 exploration and has since been implemented, remotely built, and responsive-render reviewed. The repository implementation/documentation is now authoritative; the old design file is only supporting history. The shell is `APPROVED`, not `LOCKED`.
@@ -117,14 +117,14 @@ Those belong to their feature surfaces and are designed in the relevant later ph
 - `Create` and `Library` are visually primary destinations.
 - `Activity` and `Settings` remain utility destinations and sit lower in the navigation hierarchy.
 - Main route content occupies the largest possible area; navigation chrome stays narrow.
-- A compact top bar carries route context plus account/activity affordances.
+- A compact top bar carries route context plus account/activity affordances where it adds information; desktop `/create` deliberately omits it because the persistent rail already supplies Create context plus Activity/Settings navigation.
 - Idle state should not show a persistent “ready” status pill. Global status becomes more explicit only when a job, failure, degraded state, or other meaningful attention condition exists.
 - The shell must not reserve a permanent settings rail for Create.
 
 ### Mobile / narrow layouts
 - Do not shrink the desktop sidebar into an unusable strip.
 - Primary destinations use compact bottom navigation or an equivalent touch-friendly treatment.
-- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings can remain reachable through account/utility UI unless later product evidence justifies a fourth persistent destination.
+- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings remains reachable through account/utility UI. Mobile `/create` therefore retains the compact utility header even though desktop `/create` omits the redundant top bar.
 - Feature content owns its own responsive controls/sheets.
 - Avoid reproducing the entire desktop chrome vertically.
 

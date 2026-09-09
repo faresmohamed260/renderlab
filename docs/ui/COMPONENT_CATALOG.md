@@ -109,6 +109,8 @@ Before copying/installing an external component:
 **Do not:** Put Create composer, Library cards, workflows or feature-owned layout into persistent chrome.  
 **Notes:** Production build + Playwright desktop/mobile rendering approved; not locked. UI-052 / PR #73 moved shell ownership from the global root layout to `src/app/(app)/layout.tsx`; merge `46c5daa2866c6758907ee9be219bcb3cb274ca83` preserves the established application composition while public `/` renders without `AppShell`. Final PR head `773251734dbd5c5f32770699a57b1ade653604b5` passed 19/19 affected workflows and merged-main UI Shell `33323421285` passed.
 
+**Post-production UI-068 note:** Desktop `/create` deliberately suppresses AppShell's top bar because the desktop rail already provides route context and Activity/Settings navigation. Mobile Create retains the compact utility header because Settings is not a persistent dock destination. Other application routes keep their top bar.
+
 ### RenderLabBrand
 **Status:** APPROVED
 **Source:** `src/components/brand/renderlab-brand.tsx`
@@ -141,6 +143,8 @@ Before copying/installing an external component:
 **Post-Cycle 3 UI-061 correction:** `CreateWorkspace` keeps the same maintained Collapsible/Button/DropdownMenu mechanics but exposes Advanced through one dedicated compact trigger in both Image and Video. The Video settings menu now owns Resolution / Duration / Audio only. The narrow primary-control row uses compact approved control sizes plus short visible `FLUX` / `Qwen` model labels while preserving full accessible names/menu labels; Generate remains the separate narrow primary action. No new generic primitive is introduced.
 
 **Phase 7A premium interaction evidence:** PR #58 candidate exact head `51c293dad114c98754933ab192b13427a90d9570` adds purposeful Create-owned Motion layout/presence behavior for reference add/remove/reorder, operation/context copy, Image↔Video contextual controls, Advanced field changes and result arrival. Stable alias keys remain the identity boundary. Configured Create Lifecycle `33273370720` verifies `Make primary` produces and settles an actual layout transform and that reduced-motion mode changes remain transform-free; UI Shell `33273370797` covers the reduced-motion browser contract. Artifact `9720784693` was reviewed clean on desktop and narrow layouts.
+
+**Post-production UI-068 note:** `CreateWorkspace` keeps one unified composer focus surface: the bare prompt textarea remains semantically focusable but does not draw an independent inner focus rectangle; the composer `:focus-within` treatment communicates visible focus.
 
 ### CreateReferenceMentionMenu
 **Status:** APPROVED

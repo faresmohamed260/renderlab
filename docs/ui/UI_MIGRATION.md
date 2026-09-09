@@ -1869,3 +1869,16 @@ This is user-directed post-production corrective maintenance, not Phase 23 / Cyc
 - [x] Evidence artifact `10125602133` has ZIP digest `sha256:7003e9544480be15f089d75ada7ed2afdb64298263e31342dad45fe9a8fe93a2`; `evidence.json` SHA-256 `8be1d11d298833912e7af88e4defead2959949817b2febd496f083ecfbd86203`.
 - [x] Bounded Vercel runtime-error review found no runtime errors after rollout.
 - [x] No schema/R2-resource/worker/provider/routing/scheduler change accompanied rollout; automatic Git deployment remains disabled.
+
+## Post-production UI-068 Create shell/composer cleanup — 2026-09-09
+**Status: `COMPLETE / VERIFIED / MERGED`.**
+
+- [x] Desktop `/create` omits the redundant full-width AppShell top bar; the persistent rail remains the desktop Create/Library/Activity/Settings navigation/context surface.
+- [x] Mobile `/create` retains the compact utility header so account/Settings access remains available above the Create/Library/Activity dock; other application routes retain their existing top bar.
+- [x] The Create prompt textarea no longer draws an inner focus rectangle inside the composer; keyboard/semantic focus remains intact and the outer composer `:focus-within` treatment is the visible focus boundary.
+- [x] Exact PR head `f2b0feb84029b057f9c113a7e02b5e0d048360ef` passed all nine attached workflows. UI Shell artifact `10126466829` (`sha256:e3c2f5d677388df36064b14e804fbd71a62143b8621d6377061f0118e3d2e22f`) was reviewed on desktop Create focus, mobile Create, and desktop Library states.
+- [x] PR #138 guarded squash-merged as `c33539ae682d1d1d32cc4c0eb410ec94fd556666` with accepted tree `d0f3f97bb405611cef21afc7407abba874ee3ff0`.
+- [x] Merged-main UI Shell `34409302302`, Activity Cancel `34409302293`, and Engineering Quality `34409302321` all passed.
+- [x] No production deployment accompanied this merge. Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`; automatic Git → Vercel deployment remains disabled.
+
+**UI-068 status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.** No Phase 23 / Cycle 5 work is implied.

@@ -66,7 +66,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Closed-Beta enforcement is active in production. Final guarded Phase 13 cleanup preserved exactly one active admin, zero pending invitations and generation defaults enabled / one active job / 12 admitted per rolling hour / no updater.
 - Production Auth invite/recovery mail uses verified Resend custom SMTP with branded token-hash templates and click/open tracking disabled. External Gmail invite/recovery acceptance completed; Outlook-specific rendering was not exercised.
 - Automatic Git → Vercel deployment remains disabled. Documentation changes do not authorize or imply a production deployment.
-- Repository `main` includes the verified post-Cycle 4 corrective pass and its production-rollout closure; the live production source is recorded above.
+- Repository `main` additionally includes UI-068 / PR #138 as merge `c33539ae682d1d1d32cc4c0eb410ec94fd556666`: desktop Create omits redundant top-bar chrome and the unified Create composer owns the visible prompt focus boundary. This application change is verified but not production-deployed; live production remains source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` recorded above.
 - UI-054 mailbox sender-avatar/BIMI work remains research-only and is not a Cycle 3 implementation priority.
 
 ## Completed Product Foundation

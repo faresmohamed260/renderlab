@@ -21,7 +21,7 @@ Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps
 Approved behavior:
 - compact persistent desktop left navigation;
 - Create/Library primary, Activity/Settings secondary;
-- compact route-context top bar;
+- compact route-context top bar where useful; desktop Create omits it because the persistent rail already conveys Create/Activity/Settings context, while mobile Create retains the compact utility header for account/Settings access;
 - feature surfaces own route content, not the shell;
 - narrow layouts use bottom navigation for primary destinations;
 - touch-friendly semantic navigation.
