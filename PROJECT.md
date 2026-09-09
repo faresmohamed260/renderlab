@@ -59,7 +59,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Verified Baseline — 2026-09-09
-- Authoritative repository `main` before this Cycle 3 planning change: `61a4882faf89d85b94c5a6955d1bd9a4508d01f0`.
+- Authoritative repository source deployed for the Cycle 4 rollout is `cf3923097fce62edbee643df9b2883bd09210046`; later documentation-only closure commits do not change the deployed application tree.
 - Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`.
 - Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`.
 - Accepted production application is Cycle 4 source `cf3923097fce62edbee643df9b2883bd09210046` at READY deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` / `https://renderlab-91pu92g5z-faresmohamed260-6733s-projects.vercel.app`; `https://renderlab.faresuniform.uk` aliases that deployment. Pre-Cycle-4 deployment `dpl_Ck2HEMFpt2aRUwSVTrYA6YcFTbbi` remains the immediate rollback anchor after the successful rollout smoke.
