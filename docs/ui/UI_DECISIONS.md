@@ -572,7 +572,7 @@ Exact pre-handoff PR head `287a3e26eda039cb034492cd8dc872e7731fcd01` passed ever
 Definitive PR head `7049845b7d2c8e5a7c31c0c1a32a20e665f35b87` passed all 15 attached exact-head workflows and preserved tree `7847166e1f6f301b02572d2b420faa703b62ea67`. PR #130 then guarded squash-merged as `e29f02a71c051e432b16a4bc34fb755fec4d5d8f` with the same tree. All seven workflows GitHub attached to the merge push succeeded, including Release Candidate Matrix `34287754646` and UI Shell `34287754636` after same-SHA reruns. Matrix attempt 1 was classified as a transient Supabase REST 504 during Generation Bridge polling; attempt 2 passed all 23/23 configured children and published manifest `10084078116` (`sha256:89c525e0d5a9f6803e20a8e76b48fad40bbdbd34e53eb4e2f0ffecea191659b9`). UI Shell attempt 1 was cancelled by matrix same-ref concurrency after its tests had passed; the unchanged attached push run passed on attempt 2. No product/security semantics changed during those reruns. Production deployment remains separate and unauthorized, so UI-065 and Cycle 4 are `COMPLETE / VERIFIED / MERGED` without implying Phase 23.
 
 ### UI-066 — Post-production corrective interaction pass
-**Status: `ACCEPTED / USER-DIRECTED`.**
+**Status: `ACCEPTED / IMPLEMENTED / VERIFIED / MERGED`.**
 
 Live Cycle 4 production review supersedes several narrow interaction details without reopening the visual system or creating a new phase:
 
@@ -587,8 +587,11 @@ Live Cycle 4 production review supersedes several narrow interaction details wit
 These are corrective interaction changes only: no new route, global client store, model/provider exposure, schema or deployment contract is introduced.
 
 ### UI-067 — Deleted generated content leaves the user-facing Activity feed
-**Status: `ACCEPTED / USER-DIRECTED`.**
+**Status: `ACCEPTED / IMPLEMENTED / VERIFIED / MERGED`.**
 
 When a succeeded generation's recorded result media has been deleted and no active result from that job remains, the corresponding entry is omitted from the ordinary Activity feed. This supersedes UI-035's prior user-facing consequence that deleted-output jobs remained visible without a Viewer action.
 
 The correction changes product visibility, not lifecycle history storage: `generation_jobs` remains server-owned historical/diagnostic state and media tombstones remain intact. Active, failed, cancelled and succeeded jobs with at least one active result keep their existing Activity semantics. No database migration or hard-delete cascade is introduced.
+
+#### UI-066 / UI-067 merged verification — 2026-09-09
+Both decisions are implemented in definitive PR head `522ce855673fdaaf3c174b9b934b320e0744a524`. All 26 attached exact-head workflows passed, including Create Lifecycle, Activity Visual, UI Shell, Engineering Quality, Integrated Release and the affected Library/generation/account regressions; same-head Library Lifecycle attempt 2 passed after its initial zero-job concurrency cancellation. PR #135 guarded squash-merged as `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd` with the same accepted tree `c91aec822a87a62ff1c72489a8eca3f8e18ec0c1`, and all 10 workflows attached to merged `main` completed successfully. Production remains on `cf3923097fce62edbee643df9b2883bd09210046`; this verification does not authorize a rollout or Phase 23 / Cycle 5.

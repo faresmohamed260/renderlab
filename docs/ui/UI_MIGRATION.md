@@ -1836,17 +1836,26 @@ Acceptance corrected stale Integrated Release Landing copy assumptions plus two 
 **Cycle 4 production status: `COMPLETE / VERIFIED / LIVE`.** No Phase 23 / Cycle 5 work is implied by rollout completion.
 
 ## Post-Cycle 4 production corrective review — 2026-09-09
-**Status: `AUTHORIZED / IMPLEMENTATION IN PROGRESS`.**
-**Baseline:** `b3aae9d3159aa3daeeff0390b585d010aa6f71c2` (production-rollout documentation baseline; deployed application source remains `cf3923097fce62edbee643df9b2883bd09210046`).
+**Status: `COMPLETE / VERIFIED / MERGED`.**
+**Implementation baseline:** `b3aae9d3159aa3daeeff0390b585d010aa6f71c2`.
+**Production state:** deployed application source remains `cf3923097fce62edbee643df9b2883bd09210046`; the corrective pass is not production-deployed.
 
-This is user-directed post-production corrective maintenance, not Phase 23 / Cycle 5. The current approved issue set may be extended by later live review, but unreported scope must not be inferred.
+This is user-directed post-production corrective maintenance, not Phase 23 / Cycle 5.
 
-- [ ] Align the mobile/topbar Activity and Settings/account utility icons evenly inside their shared control surface.
-- [ ] Reflow the narrow Library media/action toolbar so filters, Favorites, Collections and sort are deliberate rather than cramped.
-- [ ] Replace the Library sort dropdown with one direct `Newest first` / `Oldest first` toggle while preserving URL-owned ordering.
-- [ ] Give compact Create model/aspect/video-setting labels and chevrons clear separation without breaking the one-row narrow control contract.
-- [ ] Add a die-style Seed randomizer in Advanced; failed Retry must submit a newly randomized seed while preserving other current-valid intent. Successful Run Again remains unchanged.
-- [ ] Remove succeeded Activity entries from the user-facing feed once all recorded result media for that job is deleted/unavailable; internal generation history remains server-owned and is not hard-deleted by this UI/product correction.
-- [ ] Rotate the source-free Image Create headline through restrained creative prompts; reduced-motion presents the stable first phrase without timed rotation.
+- [x] Align the mobile/topbar Activity and Settings/account utility icons evenly inside their shared control surface.
+- [x] Reflow the narrow Library media/action toolbar so filters, Favorites, Collections and sort are deliberate rather than cramped.
+- [x] Replace the Library sort dropdown with one direct `Newest first` / `Oldest first` toggle while preserving URL-owned ordering.
+- [x] Give compact Create model/aspect/video-setting labels and chevrons clear separation without breaking the one-row narrow control contract.
+- [x] Add a die-style Seed randomizer in Advanced; failed Retry submits a newly randomized seed while preserving other current-valid intent. Successful Run Again remains unchanged.
+- [x] Remove succeeded Activity entries from the user-facing feed once all recorded result media for that job is deleted/unavailable; internal generation history remains server-owned and is not hard-deleted.
+- [x] Rotate the source-free Image Create headline through restrained creative prompts; reduced motion presents the stable first phrase without timed rotation.
 
-Validation must include UI purity, typecheck/build/unit coverage, affected shell/Create/Library/Activity workflows, 390px screenshots, reduced-motion behavior, no horizontal overflow, fixture cleanup and exact-head review. Production deployment remains a separate explicit operation.
+### Verified closure
+- [x] Definitive PR head `522ce855673fdaaf3c174b9b934b320e0744a524` contained 24 intended files with no temporary helper/build/install residue and passed all 26 repository-native PR workflows.
+- [x] Create Lifecycle validates compact Video control semantics and zero horizontal overflow at the 390px boundary after correcting both stale verifier text and a real 7px row overflow; Activity Visual validates fresh failed-Retry seed behavior while preserving supported non-seed intent.
+- [x] Library Lifecycle attempt 2 passed on the same exact head after attempt 1 was cancelled before jobs by concurrency scheduling; no product result was waived.
+- [x] PR #135 guarded squash-merged as `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd` with accepted tree `c91aec822a87a62ff1c72489a8eca3f8e18ec0c1`.
+- [x] All 10 workflows attached to merged `main` completed successfully. Final Video Generation Integration `34399864436` passed live Create Video / Animate Image ownership verification and cleanup.
+- [x] Production deployment remains separate and was not performed. Automatic Git → Vercel deployment remains disabled; no schema, R2-resource, worker/provider/routing or scheduler change accompanied this corrective pass.
+
+**Post-Cycle 4 corrective status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.** No Phase 23 / Cycle 5 work is implied.
