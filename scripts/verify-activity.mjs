@@ -715,7 +715,11 @@ try {
   const legacyCapture = capturedBackendRequests.at(-1).request;
   assert(legacyCapture.output.resolution === "480p", "Legacy Video Retry did not normalize missing resolution to 480p.");
   assert(legacyCapture.output.durationSeconds === 5 && legacyCapture.output.audioEnabled === false, "Legacy Video Retry did not preserve duration/audio intent.");
-  assert(legacyCapture.advanced.seed === 271828 && legacyCapture.advanced.frameRate === 25, "Legacy Video Retry did not preserve supported Video advanced intent.");
+  const legacyRetrySeed = legacyCapture.advanced.seed;
+  assert(Number.isSafeInteger(legacyRetrySeed), "Legacy Video Retry did not submit a valid randomized seed.");
+  assert(legacyRetrySeed >= 0 && legacyRetrySeed <= 2_147_483_647, `Legacy Video Retry randomized seed was outside the conservative product range: ${legacyRetrySeed}`);
+  assert(legacyRetrySeed !== 271828, "Legacy Video Retry reused the historical seed instead of choosing a new random seed.");
+  assert(legacyCapture.advanced.frameRate === 25, "Legacy Video Retry did not preserve supported non-seed Video advanced intent.");
   assert(legacyCapture.advanced.steps === undefined && legacyCapture.advanced.guidance === undefined, "Legacy Video Retry replayed inactive Steps/Guidance.");
 
   const readyBefore = capturedBackendRequests.length;
