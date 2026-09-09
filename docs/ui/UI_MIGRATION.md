@@ -1838,7 +1838,7 @@ Acceptance corrected stale Integrated Release Landing copy assumptions plus two 
 ## Post-Cycle 4 production corrective review — 2026-09-09
 **Status: `COMPLETE / VERIFIED / MERGED`.**
 **Implementation baseline:** `b3aae9d3159aa3daeeff0390b585d010aa6f71c2`.
-**Production state:** deployed application source remains `cf3923097fce62edbee643df9b2883bd09210046`; the corrective pass is not production-deployed.
+**Production state:** exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` is live at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` / `https://renderlab-lzqxaaoxa-faresmohamed260-6733s-projects.vercel.app`; `https://renderlab.faresuniform.uk` aliases it. Prior READY deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` is the immediate rollback anchor.
 
 This is user-directed post-production corrective maintenance, not Phase 23 / Cycle 5.
 
@@ -1856,6 +1856,16 @@ This is user-directed post-production corrective maintenance, not Phase 23 / Cyc
 - [x] Library Lifecycle attempt 2 passed on the same exact head after attempt 1 was cancelled before jobs by concurrency scheduling; no product result was waived.
 - [x] PR #135 guarded squash-merged as `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd` with accepted tree `c91aec822a87a62ff1c72489a8eca3f8e18ec0c1`.
 - [x] All 10 workflows attached to merged `main` completed successfully. Final Video Generation Integration `34399864436` passed live Create Video / Animate Image ownership verification and cleanup.
-- [x] Production deployment remains separate and was not performed. Automatic Git → Vercel deployment remains disabled; no schema, R2-resource, worker/provider/routing or scheduler change accompanied this corrective pass.
+- [x] The corrective implementation merge itself did not deploy production; the later explicitly authorized rollout is recorded below. Automatic Git → Vercel deployment remains disabled, and no schema, R2-resource, worker/provider/routing or scheduler change accompanied the corrective pass or its rollout.
 
-**Post-Cycle 4 corrective status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.** No Phase 23 / Cycle 5 work is implied.
+**Post-Cycle 4 corrective status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.** No Phase 23 / Cycle 5 work is implied.
+
+
+### Post-Cycle 4 corrective production rollout — 2026-09-09
+- [x] Explicit user authorization deployed exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` through guarded rollout run `34406507461`.
+- [x] Vercel reported READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` / `https://renderlab-lzqxaaoxa-faresmohamed260-6733s-projects.vercel.app` with exact Git SHA `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` and pristine source; `https://renderlab.faresuniform.uk` passed Landing plus `/create`, `/library`, `/activity` and `/settings` smoke.
+- [x] Exact-origin R2 PUT CORS passed; one real persistent image upload produced durable media, a WebP thumbnail and Library visibility, then cleaned its exact fixture.
+- [x] Rollback anchor `dpl_5hA4ihp644VcCzioY66hoTXaP18v` was verified READY before deployment and retained afterward; rollback was not required.
+- [x] Evidence artifact `10125602133` has ZIP digest `sha256:7003e9544480be15f089d75ada7ed2afdb64298263e31342dad45fe9a8fe93a2`; `evidence.json` SHA-256 `8be1d11d298833912e7af88e4defead2959949817b2febd496f083ecfbd86203`.
+- [x] Bounded Vercel runtime-error review found no runtime errors after rollout.
+- [x] No schema/R2-resource/worker/provider/routing/scheduler change accompanied rollout; automatic Git deployment remains disabled.

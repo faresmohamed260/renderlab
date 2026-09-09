@@ -900,3 +900,13 @@ Post-cutover verification passed the accepted Cycle 4 Landing content plus `/cre
 Rollout evidence artifact `10105911082` has ZIP digest `sha256:049d143dab49881beb3ffa60ae2a0c104cd5d646d89b44d69c269098959469b8` and the generated `evidence.json` has SHA-256 `0b8367f43f87a77ec8444f26c8a5b5fcce04b9bbada165ae61f3dca853f75782`. No Supabase migration/schema mutation, R2 resource-contract mutation, generation/upscale worker deployment, provider/routing change, reconciliation/maintenance scheduler activation, `pg_cron` or `pg_net` change accompanied this rollout. `vercel.json` still keeps `git.deploymentEnabled=false`; automatic Git → Vercel deployment remains disabled, so future production mutations continue to require an explicit operation.
 
 This rollout makes the verified Cycle 4 application production-live. It does not authorize Phase 23 / Cycle 5 work.
+
+
+## Post-Cycle 4 corrective production rollout — 2026-09-09
+The user explicitly authorized rollout of the verified corrective repository state. Guarded run `34406507461` checked out pristine exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` (containing corrective application merge `15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd`), verified required production Vercel environment-key metadata and verified rollback deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` was READY before cutover.
+
+Vercel created READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` at `https://renderlab-lzqxaaoxa-faresmohamed260-6733s-projects.vercel.app` and reported exact Git SHA `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` with pristine source. `https://renderlab.faresuniform.uk` and the stable Vercel alias serve the release. The prior Cycle 4 deployment `dpl_5hA4ihp644VcCzioY66hoTXaP18v` is retained as the immediate rollback target; rollback was armed but not required.
+
+Post-cutover verification passed Landing plus `/create`, `/library`, `/activity` and `/settings`, exact-origin R2 browser-upload CORS, and one real run-owned persistent image upload through durable promotion, WebP thumbnail creation, Library visibility and exact cleanup. Evidence artifact `10125602133` has ZIP digest `sha256:7003e9544480be15f089d75ada7ed2afdb64298263e31342dad45fe9a8fe93a2`; its `evidence.json` SHA-256 is `8be1d11d298833912e7af88e4defead2959949817b2febd496f083ecfbd86203`. A bounded Vercel runtime-error query after rollout found no runtime errors.
+
+No Supabase schema migration, R2 resource-contract mutation, worker deployment, provider/routing change, scheduler activation, `pg_cron` or `pg_net` change accompanied this rollout. `vercel.json` continues to keep automatic Git → Vercel deployment disabled; future production changes remain explicit operations.
