@@ -1882,3 +1882,18 @@ This is user-directed post-production corrective maintenance, not Phase 23 / Cyc
 - [x] No production deployment accompanied this merge. Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`; automatic Git → Vercel deployment remains disabled.
 
 **UI-068 status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.** No Phase 23 / Cycle 5 work is implied.
+
+## Post-production UI-069 Create / Viewer / Library corrective pass — 2026-09-09
+**Status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.**
+
+- [x] Add optional desktop Create reference drag/drop through the existing durable image upload/validation path; keep the maintained file picker as the keyboard/touch/mobile baseline and introduce no second storage transaction.
+- [x] Make Media Viewer min-content-safe at narrow/intermediate widths so intrinsic media and long unbroken title/filename text cannot widen or clip the page.
+- [x] Align Library Favorites / Collections / sort controls on one actual baseline/height by removing closed-state phantom collection-manager spacing.
+- [x] Keep Creatives/Uploads and All/Images/Videos URL/server-owned while explicitly prefetching relevant destinations and exposing immediate pending feedback during dynamic navigation; no client-owned Library media/filter store.
+- [x] Guarded pre-PR run `34411812191` passed exact baseline/diff, UI purity, lint, typecheck, unit and production-build gates.
+- [x] Exact PR head `cf065b62032d8b2d3be497b358b0b81067a99675` passed all 22 attached workflows. Direct acceptance included Create Lifecycle `34412081831` (real DataTransfer durable reference drop), Library History `34412081854` (≤1px action alignment), Library Lifecycle `34412081785` (700px long-filename Viewer containment/no overflow) and Video Generation Integration `34412081743` (unchanged live ownership regression). Reviewed rendered evidence was accepted.
+- [x] PR #140 guarded squash-merged as `c71554b692864c84cd1bc9f796255fdde71eae43`.
+- [x] Every workflow GitHub attached to merged `main` passed: Engineering Quality `34413931082`, UI Shell Validation `34413931186`, Upscale Viewer Visual `34413931195`, Creative Iteration `34413931100`, Image Upscale Integration `34413931066` and Video Generation Integration `34413931077`.
+- [x] No schema, authorization, worker/provider, R2/storage, route hierarchy or deployment configuration changed. Automatic Git → Vercel deployment remains disabled.
+
+Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`; UI-068 and UI-069 are therefore verified repository changes awaiting a separate explicit production rollout. No Phase 23 / Cycle 5 work is implied.
