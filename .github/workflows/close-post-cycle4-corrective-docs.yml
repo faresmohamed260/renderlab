@@ -15,14 +15,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
 
       - name: Guard exact baseline
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd"
-          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/close-post-cycle4-corrective-docs.yml"
+          test "$(git diff --name-only 15df50d26d0c3647f9a6f5a7dda87f87dbc87ffd HEAD)" = ".github/workflows/close-post-cycle4-corrective-docs.yml"
 
       - name: Reconcile authoritative closure docs
         shell: bash
@@ -124,7 +123,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git diff --name-only | sort)" = "$(printf '%s\n' PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md | sort)"
+          test "$(git diff --name-only | sort)" = "$(printf '%s\n' .github/workflows/close-post-cycle4-corrective-docs.yml PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md | sort)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add PROJECT.md docs/ui/UI_DECISIONS.md docs/ui/UI_MIGRATION.md .github/workflows/close-post-cycle4-corrective-docs.yml
