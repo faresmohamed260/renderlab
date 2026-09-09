@@ -218,7 +218,7 @@ try {
   assert(await page.getByRole("menuitem", { name: /Advanced controls/ }).count() === 0, "Advanced controls are still nested inside Video settings.");
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-settings.png`, fullPage: true });
   await page.getByRole("menuitemradio", { name: "1080p", exact: true }).click();
-  assert((await videoSettings.textContent())?.includes("1080p · 5 s"), "Video settings trigger did not summarize resolution and duration.");
+  assert((await videoSettings.textContent())?.includes("1080p·5s"), "Video settings trigger did not summarize resolution and duration.");
 
   const videoAdvancedButton = page.getByRole("button", { name: "Open Advanced controls", exact: true });
   await videoAdvancedButton.waitFor({ state: "visible", timeout: 10_000 });
