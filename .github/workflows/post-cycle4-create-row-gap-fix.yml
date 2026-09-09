@@ -1,0 +1,45 @@
+name: Fix post-Cycle 4 mobile Create row gap
+
+on:
+  push:
+    branches: [work/post-cycle4-production-correctives]
+    paths: [.github/workflows/post-cycle4-create-row-gap-fix.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/post-cycle4-production-correctives
+          fetch-depth: 0
+      - name: Tighten only the mobile primary-control gap
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "30c89b5a1da625c3f4bbfc7a06bf4066ab29a132"
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/features/create/create-workspace.tsx')
+          s = p.read_text()
+          old = 'className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 pb-1 sm:gap-2 sm:pb-0"'
+          new = 'className="flex min-w-0 flex-1 flex-nowrap items-center gap-0.5 pb-1 sm:gap-2 sm:pb-0"'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected one primary-control row class, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          rm .github/workflows/post-cycle4-create-row-gap-fix.yml
+          git diff --check
+      - name: Commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          test "$(git diff --cached --name-only | wc -l)" -eq 2
+          git commit -m "fix: keep mobile Create controls within lifecycle bounds"
+          git push origin HEAD:work/post-cycle4-production-correctives
