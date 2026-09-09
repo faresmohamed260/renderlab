@@ -225,7 +225,7 @@ function VideoSettingsMenu({
           aria-label={`Video settings. Resolution ${resolution}. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
           className="shrink-0 gap-1 !px-1.5"
         >
-          <span>{resolution} · {durationSeconds} s</span>
+          <span>{resolution}·{durationSeconds}s</span>
           <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
