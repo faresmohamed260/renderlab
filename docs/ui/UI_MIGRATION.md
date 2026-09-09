@@ -1788,7 +1788,7 @@ Verified implementation evidence: exact implementation head `dd43169abae89e7e672
 No schema, Supabase/R2, account/admission, generation capability, worker/provider/routing or production-deployment change is authorized by this contract. Phase 22 is expanded below from the now-verified merged Phase 21 baseline; implementation still requires the design checkpoint.
 
 ## Phase 22 acceptance tracker
-**Status: `VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`; checkpoint review run `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`); exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`.
+**Status: `COMPLETE / VERIFIED / MERGED`.** Planning baseline `c17abfef07fbc580c51f458496e4e53502816229`; checkpoint review run `34265429235`, artifact `10071612375` (`sha256:0508d5df26e4304e21239a02c2618d93cef924f5a18aa1ba7180bb13eb3422ab`); exact implementation head `c081d53afecdd76f8c687cfc950d8f4bb0454a8a`.
 
 - [x] Create and human-review the required repository-backed desktop/390px Activity + Settings + Landing design checkpoint before implementation; Activity, Settings, Landing and cross-product cohesion boards passed exact remote raster/human review with no corrective iteration required.
 - [x] Activity: strengthen truthful lifecycle/status hierarchy while preserving server ordering, pagination, auto-refresh and separate Run Again / Retry / Cancel eligibility.
