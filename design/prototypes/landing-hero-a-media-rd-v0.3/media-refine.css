@@ -1,0 +1,21 @@
+.media-portrait {
+  filter: brightness(1.46) saturate(1.24) contrast(1.02);
+}
+
+.media-mountain {
+  filter: brightness(1.15) saturate(1.26) contrast(1.03);
+}
+
+.media-car {
+  filter: brightness(1.12) saturate(1.16) contrast(1.05);
+}
+
+.media-jellyfish {
+  filter: brightness(1.08) saturate(1.18) contrast(1.03);
+}
+
+@media (max-width: 900px) {
+  .matrix-status {
+    display: none;
+  }
+}
