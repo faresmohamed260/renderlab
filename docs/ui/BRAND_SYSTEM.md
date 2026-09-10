@@ -1,13 +1,13 @@
 # RenderLab Brand System Direction
 
-**Status:** Brand identity direction selected; production vector artwork not yet finalized  
+**Status:** `LOCKED` visual identity reference; production implementation pending  
 **Scope:** brand identity, logo/wordmark, brand expression across Landing, product surfaces, transactional/auth email, and public metadata  
 **Does not authorize:** production asset replacement, product behavior changes, backend/schema/infrastructure changes, dependency adoption, live Auth-template changes, production deployment, or a new product Cycle/Phase by itself
 
 ## Purpose
 RenderLab must feel like one coherent premium creative brand across the product, public site, identity, and communication surfaces. The brand cannot be treated as a logo placed on top of an otherwise generic AI application.
 
-This document records the user-approved direction for the next visual program. It works with `VISUAL_NORTH_STAR.md`, `UI_SYSTEM.md`, and `DESIGN_WORKFLOW.md`.
+This document records the user-approved direction for the visual program. It works with `VISUAL_NORTH_STAR.md`, `UI_SYSTEM.md`, and `DESIGN_WORKFLOW.md`.
 
 The central idea is:
 
@@ -61,20 +61,20 @@ Avoid converging on familiar "AI startup" shorthand as the primary identity:
 - every interaction using the same fade, scale, or hover glow;
 - marketing copy built around vague claims such as "unleash creativity" or "AI magic" without product substance.
 
-The existing simple line-drawn `R` remains the production mark until the selected replacement identity passes the production-vector, implementation, and validation gates below.
+The existing simple line-drawn `R` remains the production mark until the locked replacement identity is faithfully productionized and passes the implementation and validation gates below.
 
 ## Identity system goals
 The identity must work before motion or special effects are added.
 
-A successful RenderLab identity should include:
+A successful RenderLab identity includes:
 1. **Primary mark** — recognizable at small application/favicon sizes and distinctive at large marketing sizes.
 2. **Wordmark relationship** — a deliberate relationship between the mark and `RenderLab`, not merely an icon beside ordinary UI text.
-3. **Monochrome form** — must remain recognizable in one color on light and dark backgrounds.
+3. **Monochrome form** — recognizable in one color on light and dark backgrounds.
 4. **Compact form** — suitable for favicon, app icon, narrow rail, avatar-like placement, and small email header use.
 5. **Full brand lockup** — suitable for Landing, email, public metadata, documentation, and larger brand moments.
-6. **Optional motion identity** — an animated reveal/morph may extend the mark on expressive surfaces, but the static identity must stand on its own.
+6. **Optional motion identity** — an animated reveal/morph may extend the mark on expressive surfaces, but the static identity stands on its own.
 
-The selected direction is an `R` monogram only because its modular construction gives the letter a direct and ownable `Render + Lab` concept. A generic letterform remains insufficient.
+The selected direction is an `R` monogram because its modular construction gives the letter a direct and ownable `Render + Lab` concept. A generic letterform remains insufficient.
 
 ## Initial logo exploration territories
 The first identity R&D pass deliberately explored materially different concepts. They were starting territories rather than preselected answers.
@@ -112,17 +112,35 @@ Potential strengths:
 Risk to avoid:
 - infinity-symbol, waveform, or generic SaaS-loop clichés.
 
-### Selected direction — Lab Grid / modular R
+### Selected and locked direction — Lab Grid / modular R
 The first broad concept board was rejected because its symbols were visually polished but too generic and did not communicate either half of the name strongly enough.
 
-The accepted second-pass direction is a bold `R` constructed from simple modular geometric units. The units should read simultaneously as:
+The second-pass Lab Grid direction established a bold `R` constructed from simple modular geometric units. The units read simultaneously as:
 - **render blocks / pixels / image tiles** assembling into a resolved visual result; and
 - **lab cells / samples / experiment modules** suggesting iteration, testing, recombination, and controlled creative exploration.
 
-This is the selected identity concept. It is not permission to ship the generated exploration board literally. The exact geometry must be redrawn as precise owned vector artwork and pressure-tested before replacing any production identity asset.
+A later monochrome reconstruction drifted from the selected artwork and was explicitly rejected by the user. The corrected/refined board then restored the intended four-module `R`, clean wordmark, and dark/light lockups. The user explicitly approved that corrected result and instructed that it be locked.
 
-## Logo acceptance requirements
-Before the selected identity can be called production-ready, review it in real usage rather than only as a large isolated logo board.
+The exact visual identity is now controlled by:
+- `design/brand/identity-lock-2026-09-10.md` — binding geometry, wordmark, color, fidelity and change-control rules;
+- `design/brand/lab-grid-approved-lockup-2026-09-10.webp` — repository-preserved approved visual reference;
+- `design/brand/approval-2026-09-10.md` — human approval record.
+
+The earlier `design/brand/lab-grid-r-mark-v0.1.svg` and `design/brand/lab-grid-r-pressure-test-v0.1.svg` are **rejected/superseded R&D artifacts** and must not be used as production geometry sources.
+
+### Locked mark characteristics
+The approved modular `R` uses the same visual relationship shown in the canonical reference:
+- separated upper-left horizontal rectangular module;
+- upper-right rounded/bowl module;
+- separated lower-left square module;
+- separated lower-right curved/quarter-form leg module;
+- deliberate negative-space gaps between the four major modules;
+- compact upright `R` silhouette.
+
+Production vectorization is a mechanical fidelity task, not a new logo-design exercise. Do not redraw, simplify, add modules, change the bowl/leg, or alter the proportions from memory.
+
+## Logo implementation acceptance requirements
+Before the locked identity can replace production assets, review its faithful implementation in real usage rather than only as a large isolated logo.
 
 At minimum show:
 - 16px, 24px, 32px, 64px, and large-display mark behavior;
@@ -136,36 +154,46 @@ At minimum show:
 - static/reduced-motion form;
 - any proposed motion identity over its full start → transition → settled sequence.
 
-Reject final constructions that depend on tiny internal detail, delicate gradients, bloom, animation, or a particular background to be recognizable.
+Reject implementations that materially drift from the locked reference or depend on tiny internal detail, glow, blur, or animation for recognition.
 
 ## Typography direction
 Typography should feel contemporary, precise, and editorial rather than "sci-fi" for its own sake.
 
-Default direction:
+General system direction:
 - highly readable modern sans for product and transactional communication;
 - strong spacing and typographic hierarchy rather than excessive font variety;
 - a more expressive display treatment may be considered for Landing/brand moments if it remains coherent with the product;
-- custom-feeling wordmark treatment may use modified lettering or bespoke geometry, but it must remain legible and reproducible;
 - no new font dependency is approved until licensing, loading, international-character needs, and performance are reviewed.
 
 Settings, Admin, account/recovery, and email remain trust-oriented even if the Landing uses a more expressive display voice.
 
-The second-pass concept board's clean sans-serif treatment is directionally compatible with the selected identity, but exact wordmark weight, spacing, and any bespoke letter edits are not yet locked.
+### Locked wordmark appearance
+The primary identity lockup reads `RenderLab` as **one continuous word**:
+- `Render` is visibly heavier/bolder;
+- `Lab` is lighter/regular;
+- both parts share one baseline;
+- mark and wordmark have clean breathing room;
+- text never overlaps the mark, descriptor, or surrounding content;
+- the character is a clean contemporary sans-serif rather than decorative futuristic lettering.
+
+The exact production font family may be selected only to faithfully reproduce this locked appearance and satisfy licensing/performance requirements. Font selection is not permission to change the weight contrast, spacing, proportions, or visual character.
+
+`THE CREATIVE LAB` is a supported descriptor lockup shown in the approved identity reference, but it is not mandatory beside the logo in every context.
 
 ## Color direction
-The existing cobalt/violet accent is **not sacred**. It may survive, evolve, or be replaced after identity refinement.
+The product should keep generated/user media visually dominant and avoid collapsing into generic “purple AI app” styling.
 
-The accepted palette should:
-- give RenderLab a recognizable brand signature without becoming "purple AI app" shorthand;
-- keep generated/user media visually dominant;
-- work in dark application UI, public marketing, and email-safe light/dark contexts;
-- include disciplined neutral surfaces rather than relying on glow for hierarchy;
-- maintain accessible contrast for functional text and controls;
-- remain meaningful when gradients or effects are unavailable.
+### Locked identity color character
+The approved primary mark expression uses a luminous **cyan/blue → violet → pink/lilac** treatment as shown in the canonical reference. That color character is part of the locked identity.
 
-The blue/violet/pink treatment shown in the accepted second-pass identity board is an **exploration cue**, not a locked production gradient or palette. The modular `R` must succeed first in monochrome.
+Exact engineering color stops may be sampled/tuned from the reference during asset production, but productionization must not redesign the mark into a different palette without explicit user approval.
 
-Do not finalize a palette in isolation from the logo, typography, Landing concept, and representative product media.
+Required companion forms remain:
+- full-color approved expression;
+- pure black monochrome;
+- pure white/inverted monochrome.
+
+The broader application palette may still be evolved during later surface redesign work, but it must harmonize with this locked identity and keep media dominant. Changing surrounding UI colors does not authorize changing the identity treatment itself.
 
 ## Brand motion direction
 Brand motion should use the same perceptual language as the product:
@@ -175,9 +203,11 @@ Brand motion should use the same perceptual language as the product:
 - settle cleanly;
 - avoid permanent visual agitation.
 
-For the selected modular `R`, the strongest current motion hypothesis is that discrete render/experiment cells resolve into the finished mark, then remain settled. This is an extension of the selected concept, not yet a production animation requirement.
+For the locked modular `R`, the strongest current motion hypothesis is that discrete render/experiment cells resolve into the finished mark, then remain settled. This is an extension of the identity, not yet a production animation requirement.
 
-A moving logo is never required for basic recognition. Email, favicon, reduced-motion, low-power, and static contexts must receive a complete non-animated identity.
+A moving logo is never required for basic recognition. Email, favicon, reduced-motion, low-power, and static contexts receive the resolved static identity.
+
+Any future motion treatment must preserve the locked settled mark exactly; motion is not permission to morph the final identity into a different silhouette.
 
 ## Imagery and graphical language
 Generated and user media should do most of the emotional work.
@@ -188,12 +218,12 @@ Brand graphics should:
 - favor a few ownable compositional ideas over a catalog of effects;
 - remain truthful: a marketing demonstration must not imply unsupported product behavior or fabricated generation state.
 
-The modular construction of the selected `R` may inform grids, reveal cells, sampling frames, media assembly, and transition geometry across brand surfaces without repeating the logo as decoration everywhere.
+The modular construction of the locked `R` may inform grids, reveal cells, sampling frames, media assembly, and transition geometry across brand surfaces without repeating the logo as decoration everywhere.
 
 Illustrative geometry, shaders, particles, or 3D/WebGL may be explored on the Landing only when they reinforce the accepted brand idea and meet the North Star's performance/reduced-motion requirements.
 
 ## Landing page role
-The Landing is the highest-expression brand surface and should be redesigned after the production identity foundation is sufficiently defined.
+The Landing is the highest-expression brand surface and should be redesigned using the locked identity foundation.
 
 The Landing should:
 - make the product feel advanced before the visitor reads feature copy;
@@ -204,7 +234,7 @@ The Landing should:
 - remain useful, understandable, keyboard-accessible, touch-capable, and complete under reduced motion;
 - preserve truthful closed-beta/access behavior until the product decision changes.
 
-The generated second-pass Landing mockup is **directional context only**. It demonstrates how the selected mark might live in a cinematic dark environment, but its exact composition, copy, palette, controls, and layout are not accepted production design.
+The identity presentation's Landing mockups remain **directional context only**. They demonstrate how the locked identity can live in a cinematic dark environment, but their exact composition, copy, controls, and layout are not accepted production Landing design.
 
 The existing Landing implementation remains production-authoritative until a complete replacement concept and kinetic prototype are explicitly approved and implemented through the normal gates.
 
@@ -224,7 +254,7 @@ Email redesign must account for the realities of email clients:
 - preserve link visibility and plain-text meaning;
 - verify representative Gmail and Outlook rendering before production acceptance where feasible.
 
-The generated second-pass email mockup is **directional context only**. Its exact layout, CTA styling, colors, and copy are not accepted live Auth-template changes.
+The identity presentation's email-header lockup is part of the locked brand identity reference. The wider generated email mockup remains directional context only; its exact body layout, CTA styling, and copy are not accepted live Auth-template changes.
 
 ### Auth/security boundary
 Current RenderLab Auth email behavior is part of the existing Supabase/Resend production contract rather than ordinary checked-in React page code. Before changing a live invite, recovery, confirmation, or related Auth template:
@@ -242,7 +272,7 @@ Brand consistency does not mean identical visual intensity everywhere.
 
 | Surface | Brand-expression role |
 |---|---|
-| Logo / identity | Distinctive in static form; optional expressive motion extension |
+| Logo / identity | Locked static identity; optional expressive motion extension that resolves to the same mark |
 | Landing | Maximum brand expression; visual storytelling and signature interaction |
 | Create | Strong product expression; tactile creative instrument |
 | Library / Viewer | Strong media-led expression; spatial continuity |
@@ -267,56 +297,51 @@ Avoid:
 - technical backend vocabulary in customer-facing brand communication;
 - cleverness that makes an auth/security email less clear.
 
-Exact marketing copy remains a design/copy decision for the Landing phase; the generated concept-board slogans are not locked product copy.
+Exact marketing copy remains a design/copy decision for the Landing phase; concept-board slogans are not locked product copy except for the supported identity descriptor noted above.
 
 ## Brand R&D sequence
 The visual program should proceed in this order unless the user explicitly changes it:
 
-1. **Brand Identity R&D 0.1** — selected concept is now Lab Grid / modular `R`; finish exact vector geometry, monochrome/small-size behavior, wordmark relationship, palette evaluation and optional motion evidence before production identity replacement.
-2. **Landing Brand Experience R&D** — use the selected identity to produce the complete desktop/mobile visual concept plus signature temporal prototype.
-3. **Email Brand System R&D** — design representative invitation/recovery/account email patterns using the selected identity while preserving Auth/security contracts.
-4. **Create Visual R&D** — continue the already-open Create interaction-language task using the accepted brand foundation so its visual language does not bake in a superseded identity.
+1. **Brand identity productionization** — reproduce the locked Lab Grid modular `R`, wordmark relationship, dark/light forms, monochrome companions, app icon/favicon, and approved color character as precise production-safe assets without visual reinterpretation; compare side-by-side against the canonical reference.
+2. **Landing Brand Experience R&D** — use the locked identity to produce the complete desktop/mobile visual concept plus signature temporal prototype.
+3. **Email Brand System R&D** — design representative invitation/recovery/account email patterns using the locked identity while preserving Auth/security contracts.
+4. **Create Visual R&D** — continue the already-open Create interaction-language task using the locked brand foundation.
 5. **Product rollout planning** — only after approved evidence exists, define bounded implementation phases for the agreed surfaces and shared brand primitives.
 
-Research/audit work for later items may happen earlier when useful, but **production implementation should not outrun the accepted brand foundation**.
+Research/audit work for later items may happen earlier when useful, but **production implementation should not outrun the locked brand foundation**.
 
 This ordering does not itself create Phase 23/Cycle 5 and does not authorize deployment.
 
 ## Brand Identity R&D 0.1 acceptance gate
-The first brand task is complete only when all of the following are true:
-- current identity/touchpoints are audited from repository and live-config reality where relevant;
-- a reference matrix records exact influences and what must not be copied;
-- at least three materially different identity territories are reviewed;
-- each serious candidate is demonstrated in representative small/large and cross-surface contexts;
-- palette and typography direction are shown with representative media rather than as isolated swatches;
-- optional motion identity has temporal evidence plus reduced-motion/static equivalent;
-- favicon/app, shell, Landing, email, and OG/social use cases have been pressure-tested;
-- the selected direction is explicitly approved by the user;
-- the accepted decision is written back into this file and any affected UI/design-system records;
-- no production asset/template is called changed until implementation and exact-head validation actually prove it.
+The design-selection portion of Brand Identity R&D 0.1 is complete. The identity itself is visually locked; productionization remains a separate engineering/fidelity step.
 
 Current gate state:
 - current-state audit: complete;
 - reference matrix: complete;
 - materially different first-pass concepts: complete;
-- initial cross-surface concept board: complete;
-- selected direction: **Lab Grid / modular R — explicitly approved by the user**;
-- production vector construction and optical pressure tests: still open;
-- final palette/wordmark lockup: still open;
-- optional motion evidence: still open;
-- production implementation: not started.
+- initial cross-surface concept exploration: complete;
+- selected direction: complete;
+- inaccurate first vector reconstruction: explicitly rejected/superseded;
+- corrected/refined modular `R` identity: **explicitly approved and `LOCKED` by the user**;
+- canonical repository visual reference + binding lock rules: recorded;
+- production master SVG/assets: not yet implemented;
+- small-size/browser fidelity validation of production assets: not yet run;
+- optional motion evidence: not yet required/approved;
+- production identity rollout: not started.
+
+No production asset/template may be called changed until implementation and exact-head validation actually prove it.
 
 ## Engineering and release integrity
 Brand work does not lower RenderLab's engineering bar.
 
-When approved brand assets are eventually implemented:
+When locked brand assets are implemented:
 - preserve existing product/auth/security/data behavior;
 - keep accessible names and semantics independent from decorative marks;
 - keep readable contrast and focus behavior;
 - preserve reduced-motion/static equivalents;
 - review asset weight, font cost, canvas/WebGL cost, and any new runtime dependency;
 - run every relevant exact-head build/UI/visual/lifecycle workflow attached to the implementation;
-- compare production candidates against the accepted brand concept separately from functional QA;
+- compare production candidates side-by-side against the locked identity reference separately from functional QA;
 - preserve configured test-fixture ownership and cleanup;
 - update favicon, Open Graph, shell, Landing, and other real touchpoints only when in the approved implementation scope;
 - treat production Auth-template changes as a separately verified configuration operation;
@@ -325,26 +350,32 @@ When approved brand assets are eventually implemented:
 Passing tests cannot substitute for brand/design fidelity, and brand approval cannot substitute for passing tests.
 
 ## Current decision
-The user has explicitly authorized the **broader visual/branding program** and has selected the **Lab Grid modular `R` direction** as RenderLab's identity concept.
+The user has explicitly authorized the broader visual/branding program and has now **LOCKED the corrected/refined Lab Grid modular `R` identity**.
 
-The selected mark is a bold `R` built from simple modular geometric units. Its conceptual link is deliberately two-sided:
-- **Render:** discrete image/render blocks resolve into a finished visual whole.
-- **Lab:** the same units read as cells/samples/modules used for experimentation and iteration.
+Canonical change-control rule:
 
-What is approved now:
-- the **Lab Grid / modular `R`** as the selected RenderLab identity concept;
-- the conceptual relationship between modular render blocks and a creative experimentation lab;
-- developing precise owned vector geometry, monochrome/inverted forms, favicon/app icon, wordmark lockup, shell treatment, Landing treatment, email treatment and OG/social treatment from this direction;
+> **Reproduce the locked reference; do not reinterpret it.**
+
+Locked now:
+- exact visual direction and module relationship of the corrected/refined Lab Grid modular `R`;
+- the four-module silhouette and negative-space character documented in `design/brand/identity-lock-2026-09-10.md`;
+- `RenderLab` wordmark appearance with `Render` heavier and `Lab` lighter as one continuous word;
+- clean non-overlapping mark/wordmark alignment;
+- the approved cyan/blue → violet → pink/lilac primary mark character;
+- black and white monochrome companions preserving the same silhouette;
+- dark and light primary lockup relationship;
+- dark rounded-square app-icon direction;
+- `THE CREATIVE LAB` as a supported descriptor lockup;
 - treating Landing, product, and email as one brand system with different expression levels;
-- using the approved North Star's design-before-code, prototype, fidelity, accessibility, and engineering gates.
+- the North Star's design-before-code, fidelity, accessibility, and engineering gates.
 
-What is not yet approved:
-- exact final vector geometry or production asset files;
-- a locked production palette or new font dependency;
-- the generated board's Landing, product, email, or social mockups as final production layouts;
-- replacement production Landing code;
+The identity may not be visually redesigned, substituted, or “improved” by a future session unless the user explicitly reopens the locked identity decision.
+
+Still not authorized by this lock alone:
+- replacing production identity files before faithful asset implementation and validation;
+- a production Landing redesign;
 - live Auth email-template changes;
-- a production asset/configuration change;
 - a new production dependency;
+- product behavior, route, backend/schema/infrastructure changes;
 - Phase 23/Cycle 5 implementation;
 - deployment.

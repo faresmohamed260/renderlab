@@ -1,11 +1,28 @@
 # RenderLab Brand Design
 
-Repository-backed brand R&D artifacts live here. These files document concepts and pressure tests; they do not replace production assets until an implementation task explicitly does so and passes the required validation gates.
+Repository-backed brand design artifacts live here. Production assets remain separate until an implementation task explicitly replaces them and passes the required validation gates.
 
-Current identity work:
-- `identity-rd-0.1.md` — audit, rejected first pass, selected Lab Grid / modular `R` direction, and acceptance state.
-- `lab-grid-r-mark-v0.1.svg` — first precise monochrome vector geometry draft of the selected concept.
-- `lab-grid-r-pressure-test-v0.1.svg` — small-size, light/dark, app-rail, and email-header pressure test.
-- `lab-grid-r-vector-notes-v0.1.md` — construction rationale and remaining optical work.
+## Locked identity
 
-Authoritative brand direction remains `docs/ui/BRAND_SYSTEM.md`. Production identity remains unchanged until a later approved implementation replaces the current assets.
+The RenderLab identity is now visually **LOCKED** to the corrected/refined Lab Grid modular `R` approved on 2026-09-10.
+
+Use these files in this order:
+- `identity-lock-2026-09-10.md` — binding identity geometry, wordmark, color, fidelity and change-control rules.
+- `lab-grid-approved-lockup-2026-09-10.webp` — repository-preserved visual reference for the approved primary dark/light lockups.
+- `approval-2026-09-10.md` — human approval record.
+- `identity-rd-0.1.md` — historical R&D record showing how the selected direction was reached.
+
+Authoritative cross-surface brand direction remains `docs/ui/BRAND_SYSTEM.md`.
+
+## Rejected / superseded R&D artifacts
+
+The following are retained only as design history and **must not be used as implementation source**:
+- `lab-grid-r-mark-v0.1.svg`
+- `lab-grid-r-pressure-test-v0.1.svg`
+- `lab-grid-r-vector-notes-v0.1.md` where it describes that rejected reconstruction
+
+The user explicitly rejected that first vector reconstruction because it did not match the agreed mark and its presentation contained incorrect/overlapping text.
+
+Future vector productionization must reproduce the locked visual reference rather than reinterpret or “improve” the logo from memory.
+
+Production identity assets, Landing code, and live Auth email templates remain unchanged until their separately scoped implementation and exact-head validation work is completed.
