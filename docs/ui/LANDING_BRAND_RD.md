@@ -1,6 +1,6 @@
 # Landing Brand Experience R&D
 
-**Status:** IN PROGRESS — HERO + SECTION 02 DIRECTIONALLY APPROVED  
+**Status:** IN PROGRESS — HERO + SECTIONS 02–03 DIRECTIONALLY APPROVED  
 **Last verified:** 2026-09-10  
 **Parent tracker:** GitHub issue #158  
 **Workflow:** `docs/ui/CREATIVE_DEVELOPMENT.md`
@@ -70,7 +70,7 @@ The first browser pass exposed cramped mobile headline breaks and References/Lib
 ### Verified Section 02 evidence
 Accepted candidate:
 - branch: `work/landing-section-02-thread-rd-v0.1`
-- draft R&D PR: #167
+- completed R&D PR: #167, closed without merge
 - exact head: `3aaf1245a90ebcdbd48b817ba906c3f6127d1f41`
 - Engineering Quality: `34524062920` — passed
 - Landing Section 02 Thread R&D: `34524062884` — passed
@@ -78,6 +78,40 @@ Accepted candidate:
 - artifact digest: `sha256:cf5ae1fcfe858cea2fd3658419d871f1b877126f0715507c406231d8e1b29e80`
 
 Browser verification covers desktop Create/References/Motion/Library states, reverse scroll, bounded pointer depth, 390px Create/Motion states, reduced motion, loaded media, no horizontal overflow and runtime cleanliness.
+
+## Section 03 — Living Library
+**Status:** DIRECTIONALLY APPROVED by the user on 2026-09-11.
+
+Section 03 continues directly from Section 02's Library resolution and proves that durable media can become a spatial, reusable working field rather than another explanatory marketing block.
+
+Accepted properties:
+- a media-dominant spatial Library field with six representative durable-media objects at varied scales/positions rather than equal feature cards;
+- one media object is focused at a time while neighboring work yields spatially away from the active object on pointer-capable desktop;
+- the contextual treatment remains compact and subordinate, updating selected-media identity and truthful compatible continuation/actions rather than behaving like dashboard chrome;
+- pointer hover, direct activation and keyboard focus can all establish the active media object;
+- interrupted focus changes resolve directly toward the new selection rather than queueing a decorative animation sequence;
+- narrow/touch layouts deliberately replace the absolute desktop field with a horizontal snap-like media rail, one dominant item and a visible next-item cue;
+- mobile selection remains tap/focus driven with contextual details below the rail and no pointer-only meaning;
+- reduced motion removes ambient media movement and spatial yield transitions while keeping selection and all meaning complete;
+- the section uses only existing RenderLab concepts: durable generated/uploaded Library media, reusable references, compatible Edit/Animate/Upscale 2× continuation, durable video, Favorites, Collections, Rename and Download;
+- the prototype does not claim automatic variants, branches or lineage that RenderLab does not own;
+- the dark restrained canvas, concise sans typography, media-first hierarchy and modular/grid logic remain coherent with Sections 01–02.
+
+The user approved the first verified Section 03 review candidate after desktop default/motion/keyboard states and mobile default/selected states were shown.
+
+### Verified Section 03 evidence
+Accepted candidate:
+- branch: `work/landing-section-03-living-library-rd-v0.1`
+- draft R&D PR: #169
+- exact head: `a511f44c31ac80b38560b071e307e33a9969179c`
+- Engineering Quality: `34529132725` — passed
+- Landing Section 03 Living Library R&D: `34529132765` — passed
+- evidence artifact: `10172792215`
+- artifact digest: `sha256:1a63270bb3a3509d99c3e4dc1e524dcb11c0c4e7d5fae35e39c961272e518f2f`
+
+Browser verification covers 1440×900 default and changed-focus states, pointer selection/yield, keyboard focus selection, 390×844 touch layout/selection, reduced motion, six loaded media objects, no document-level horizontal overflow and runtime cleanliness.
+
+The current external R&D photographs are not production assets. Final production media may be replaced with owned/cleared RenderLab media while preserving the accepted composition, crop density, focus/yield behavior and responsive intent.
 
 ## Historical alternatives
 The original coded hero comparison in PR #163 explored:
@@ -92,9 +126,9 @@ A v0.2 in PR #164 established the refined Lab Matrix geometry before the rich-me
 ## Continuity rule for remaining Landing R&D
 Continue the Landing section-by-section under `CREATIVE_DEVELOPMENT.md`.
 
-Every remaining section must extend the accepted Lab Matrix / creative-thread grammar rather than introduce a new visual identity. The page should feel like one authored sequence rather than a stack of individually styled marketing blocks.
+Every remaining section must extend the accepted Lab Matrix / creative-thread / Living Library grammar rather than introduce a new visual identity. The page should feel like one authored sequence rather than a stack of individually styled marketing blocks.
 
-The next section should emerge naturally from Section 02's Library resolution and prove breadth, durability or reuse through media-led composition. It must avoid reverting to generic feature cards, fabricated metrics/testimonials, provider/model claims or decorative effects with no product meaning.
+The next section should close the public story naturally from the durable Library field into the existing invitation-only conversion path. It should preserve media dominance and spatial continuity, make `Open Create` and `Sign in` clear without becoming a generic CTA card, and remain truthful about closed-beta access.
 
 Already accepted sections may only be materially changed again if:
 - the user explicitly reopens them;
@@ -102,7 +136,7 @@ Already accepted sections may only be materially changed again if:
 - production feasibility requires a bounded adaptation that preserves the approved visual intent and is reviewed.
 
 ## Production boundary
-Directional approval of Sections 01–02 does **not** authorize:
+Directional approval of Sections 01–03 does **not** authorize:
 - modifying production `/`;
 - merging experimental prototype code as product implementation;
 - changing routes, auth, backend, schema, security or infrastructure;
