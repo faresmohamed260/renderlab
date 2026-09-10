@@ -88,7 +88,10 @@ try {
   assert(await desktop.locator('[data-section]').count() === 4, 'Complete Landing must contain exactly four approved design sections.');
   assert(await desktop.locator('a[href="/create"]').count() >= 3, 'Open Create path is missing from the complete page.');
   assert(await desktop.locator('a[href="/settings"]').count() >= 3, 'Sign in path is missing from the complete page.');
-  assert((await desktop.locator('body').innerText()).includes('Closed beta · invitation only'), 'Closed-beta truth is missing.');
+  const heroTruth = (await desktop.locator('.truth').textContent()) || '';
+  const closeTruth = (await desktop.locator('.access-truth').textContent()) || '';
+  assert(/closed beta/i.test(heroTruth) && /invitation only/i.test(heroTruth), `Hero closed-beta truth is missing: ${heroTruth}`);
+  assert(/closed beta/i.test(closeTruth) && /invitation only/i.test(closeTruth), `Close closed-beta truth is missing: ${closeTruth}`);
   assert(!(await desktop.locator('body').innerText()).match(/pricing|testimonial|join waitlist|sign up now/i), 'Forbidden public marketing/admission claim found.');
 
   await desktop.locator('#hero').scrollIntoViewIfNeeded();
