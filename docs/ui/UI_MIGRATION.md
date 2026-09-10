@@ -1884,7 +1884,7 @@ This is user-directed post-production corrective maintenance, not Phase 23 / Cyc
 **UI-068 status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.** No Phase 23 / Cycle 5 work is implied.
 
 ## Post-production UI-069 Create / Viewer / Library corrective pass — 2026-09-09
-**Status: `COMPLETE / VERIFIED / MERGED / NOT YET PRODUCTION DEPLOYED`.**
+**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.**
 
 - [x] Add optional desktop Create reference drag/drop through the existing durable image upload/validation path; keep the maintained file picker as the keyboard/touch/mobile baseline and introduce no second storage transaction.
 - [x] Make Media Viewer min-content-safe at narrow/intermediate widths so intrinsic media and long unbroken title/filename text cannot widen or clip the page.
@@ -1896,11 +1896,11 @@ This is user-directed post-production corrective maintenance, not Phase 23 / Cyc
 - [x] Every workflow GitHub attached to merged `main` passed: Engineering Quality `34413931082`, UI Shell Validation `34413931186`, Upscale Viewer Visual `34413931195`, Creative Iteration `34413931100`, Image Upscale Integration `34413931066` and Video Generation Integration `34413931077`.
 - [x] No schema, authorization, worker/provider, R2/storage, route hierarchy or deployment configuration changed. Automatic Git → Vercel deployment remains disabled.
 
-Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`; UI-068 and UI-069 are therefore verified repository changes awaiting a separate explicit production rollout. No Phase 23 / Cycle 5 work is implied.
+Production rollout is complete: exact source `378ea68b5c3087f84e83cc73682de2f919168c0a` is live at READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp` / `https://renderlab-fc4hli5nz-faresmohamed260-6733s-projects.vercel.app` and `https://renderlab.faresuniform.uk`. Clean rollout run `34427597654` passed the public/private route smoke with no rollback; `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` remains the preferred rollback anchor. Automatic Git → Vercel deployment remains disabled. No Phase 23 / Cycle 5 work is implied.
 
 
 ## Post-production UI-070 Library card polish — 2026-09-10
-**Status: `COMPLETE / VERIFIED / MERGED`.**
+**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.**
 
 This is a user-directed post-production Library presentation correction, not Phase 23 / Cycle 5.
 
@@ -1912,4 +1912,4 @@ This is a user-directed post-production Library presentation correction, not Pha
 - [x] Human rendered review accepted the desktop and 390px selected-card treatment from tree-identical Library History artifact `10129703554` (`sha256:9d603f1fddbb76f2e25e68fcaf6ae991e700ac0703848d279b72c0c3a7947e06`).
 - [x] PR #142 guarded squash-merged as `152e00f5b805bef0299b14635743d6978160700e`. Every workflow GitHub attached to merged `main` passed: Engineering Quality `34418649510`, UI Shell Validation `34418649507` and Activity Cancel Visual `34418649511`.
 
-Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`. UI-068, UI-069 and UI-070 are verified repository changes outside production until a separate explicit rollout is authorized. No Phase 23 / Cycle 5 work is implied.
+Production rollout is complete: exact source `378ea68b5c3087f84e83cc73682de2f919168c0a` is live at READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp` / `https://renderlab-fc4hli5nz-faresmohamed260-6733s-projects.vercel.app` and `https://renderlab.faresuniform.uk`. Clean rollout run `34427597654` passed the public/private route smoke with no rollback; `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` remains the preferred rollback anchor. Automatic Git → Vercel deployment remains disabled. No Phase 23 / Cycle 5 work is implied.
