@@ -78,7 +78,6 @@ jobs:
               f"- [x] PR #142 guarded squash-merged as `{repo_merge}`. Every workflow GitHub attached to merged `main` passed: Engineering Quality `34418649510`, UI Shell Validation `34418649507` and Activity Cancel Visual `34418649511`.",
               "",
               f"Live production remains exact source `{live_source}` at READY deployment `{live_deploy}`. UI-068, UI-069 and UI-070 are verified repository changes outside production until a separate explicit rollout is authorized. No Phase 23 / Cycle 5 work is implied.",
-              "",
           ]
           migration_lines[migration_start:] = migration_block
           migration_path.write_text("\n".join(migration_lines) + "\n")
@@ -101,7 +100,6 @@ jobs:
               f"**Verification:** Exact final PR head `{pr_head}` passed all 16 workflows GitHub attached, including Library History `34417882145`, Engineering Quality `34417882154`, UI Shell `34417882108`, Library Lifecycle `34417882119` and Library Drag Drop `34417882079`. Configured Library History proved the maintained 44×44 checkbox root, 22×22 visual box and metadata integrated inside the media frame. Tree-identical render artifact `10129703554` (`sha256:{artifact_digest}`) was human-reviewed clean at desktop and 390px. PR #142 guarded squash-merged as `{repo_merge}`; all three workflows GitHub attached to merged `main` passed: Engineering Quality `34418649510`, UI Shell Validation `34418649507` and Activity Cancel Visual `34418649511`.",
               "",
               f"**Consequences:** No schema, account/authorization, generation/provider/worker, R2/storage, route hierarchy or deployment contract changed. Automatic Git → Vercel deployment remains disabled. UI-070 is verified/merged but not production-deployed; live production remains exact source `{live_source}` at READY deployment `{live_deploy}`. UI-070 does not authorize or imply Phase 23 / Cycle 5.",
-              "",
           ]
           decisions_lines[decisions_start:] = decisions_block
           decisions_path.write_text("\n".join(decisions_lines) + "\n")
