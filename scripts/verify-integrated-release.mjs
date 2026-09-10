@@ -327,7 +327,6 @@ async function assertExactOwnerCleanup(ownerId) {
   const access = await rows(`renderlab_account_access?user_id=eq.${encodeURIComponent(ownerId)}&select=user_id&limit=1`);
   assert(access.length === 0, `Integrated Release cleanup left account access for ${ownerId}.`);
 }
-
 async function cleanupFixture() {
   await stopMockBackend().catch(() => {});
   await deleteConfiguredTestAccount(ownerIdentity).catch(() => {});
@@ -361,7 +360,7 @@ try {
   const landingContext = await browser.newContext({ viewport: { width: 1440, height: 1100 }, colorScheme: "dark" });
   const landing = await landingContext.newPage();
   await landing.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
-  await landing.getByRole("heading", { name: "Create with intent. Keep what matters." }).waitFor({ state: "visible" });
+  await landing.getByRole("heading", { name: "Render what you imagine." }).waitFor({ state: "visible" });
   assert(await landing.getByRole("complementary", { name: "Application navigation" }).count() === 0, "Integrated landing rendered AppShell navigation.");
   const openCreate = landing.getByRole("link", { name: /Open Create/ }).first();
   const signIn = landing.getByRole("link", { name: "Sign in", exact: true }).first();
@@ -380,7 +379,7 @@ try {
   });
   const narrowLanding = await narrowLandingContext.newPage();
   await narrowLanding.goto(baseUrl, { waitUntil: "networkidle", timeout: 60_000 });
-  await narrowLanding.getByRole("heading", { name: "Create with intent. Keep what matters." }).waitFor({ state: "visible" });
+  await narrowLanding.getByRole("heading", { name: "Render what you imagine." }).waitFor({ state: "visible" });
   await assertNoHorizontalOverflow(narrowLanding, "Integrated landing narrow");
   const runningAnimations = await narrowLanding.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length);
   assert(runningAnimations === 0, `Integrated reduced-motion landing has ${runningAnimations} running animation(s).`);
