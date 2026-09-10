@@ -1,0 +1,28 @@
+@media (max-width: 760px) {
+  .resolve-sticky { position: relative; padding-top: 16px; }
+  .resolve-copy { position: static; }
+  .brand {
+    position: absolute;
+    z-index: 30;
+    top: 16px;
+    left: 18px;
+  }
+  .resolve-visual { padding-top: 48px; }
+  .copy-body { margin-top: 22px; }
+}
+
+@media (max-width: 390px) {
+  .brand { left: 16px; }
+  .resolve-visual { padding-top: 46px; }
+  .resolve-stage { height: 310px; }
+  .r-canvas { width: 244px; height: 264px; }
+  .tile-0 { width: 112px; height: 94px; }
+  .tile-1 { left: 112px; width: 132px; height: 166px; }
+  .tile-2 { top: 146px; width: 96px; height: 118px; }
+  .tile-3 { left: 142px; top: 182px; width: 102px; height: 82px; }
+  .copy-body { margin-top: 18px; }
+  .eyebrow { margin-bottom: 14px; }
+  h1 { font-size: clamp(42px, 12.8vw, 50px); }
+  .dek { margin-top: 17px; }
+  .access-truth { margin-top: 18px; }
+}
