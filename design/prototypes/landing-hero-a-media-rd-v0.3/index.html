@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>RenderLab — Lab Matrix Media R&D 0.3</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="RenderLab home">
+        <img class="brand-mark" src="../landing-hero-rd-v0.1/assets/renderlab-mark.svg" alt="" width="32" height="32" />
+        <span class="wordmark"><strong>Render</strong><span>Lab</span></span>
+      </a>
+      <div class="top-actions">
+        <a class="quiet-link" href="/settings">Sign in</a>
+        <a class="primary-link" href="/create">Open Create</a>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Creative image &amp; video workspace</p>
+        <h1 id="hero-title"><span>Render what</span><span>you imagine.</span></h1>
+        <p class="dek">Create images. Shape them with references. Put them in motion. Keep the thread alive.</p>
+        <div class="hero-actions">
+          <a class="primary-link large" href="/create">Open Create</a>
+          <span class="truth">Closed beta · invitation only</span>
+        </div>
+      </div>
+
+      <div class="matrix-wrap" aria-label="Four creative states arranged as the RenderLab Lab Grid R">
+        <div class="matrix-halo" aria-hidden="true"></div>
+        <div class="matrix-stage" data-pointer-stage="matrix">
+          <article class="cell cell-tl" data-cell="create">
+            <img class="cell-media media-portrait" src="https://images.unsplash.com/photo-1778973810380-46a63ff83d61?auto=format&amp;fit=crop&amp;w=1200&amp;q=82" alt="Cinematic portrait in warm and blue light" />
+            <div class="cell-shade" aria-hidden="true"></div>
+            <div class="cell-label"><span>01</span><strong>Create</strong><small>Image</small></div>
+          </article>
+
+          <article class="cell cell-ur" data-cell="shape">
+            <img class="cell-media media-mountain" src="https://images.unsplash.com/photo-1770802238220-c4db8c2cc4f5?auto=format&amp;fit=crop&amp;w=1400&amp;q=82" alt="Misty mountain range at sunrise" />
+            <div class="cell-shade" aria-hidden="true"></div>
+            <div class="cell-label"><span>02</span><strong>Shape</strong><small>With references</small></div>
+          </article>
+
+          <article class="cell cell-bl" data-cell="motion">
+            <img class="cell-media media-car" src="https://images.unsplash.com/photo-1767272374026-178111631eca?auto=format&amp;fit=crop&amp;w=1400&amp;q=82" alt="Dark performance car on a wet road" />
+            <div class="cell-shade" aria-hidden="true"></div>
+            <div class="cell-label"><span>03</span><strong>Set in motion</strong><small>Video</small></div>
+            <div class="motion-streak" aria-hidden="true"></div>
+          </article>
+
+          <article class="cell cell-br" data-cell="keep">
+            <img class="cell-media media-jellyfish" src="https://images.unsplash.com/photo-1507426592025-e460fda3be31?auto=format&amp;fit=crop&amp;w=1400&amp;q=82" alt="Pink jellyfish floating through deep blue water" />
+            <div class="cell-shade" aria-hidden="true"></div>
+            <div class="cell-label"><span>04</span><strong>Keep</strong><small>And continue</small></div>
+          </article>
+
+          <div class="matrix-axis axis-x" aria-hidden="true"></div>
+          <div class="matrix-axis axis-y" aria-hidden="true"></div>
+          <div class="matrix-status" aria-hidden="true"><span>LIVE CREATIVE THREAD</span><i></i><span>04 STATES</span></div>
+        </div>
+      </div>
+
+      <div class="hero-foot" aria-hidden="true">
+        <span>CREATE IMAGE</span><span>EDIT IMAGE</span><span>CREATE VIDEO</span><span>ANIMATE IMAGE</span>
+      </div>
+    </section>
+  </main>
+  <script src="prototype.js"></script>
+</body>
+</html>
