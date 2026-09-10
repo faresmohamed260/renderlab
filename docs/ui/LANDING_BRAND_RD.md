@@ -1,19 +1,19 @@
 # Landing Brand Experience R&D
 
-**Status:** IN PROGRESS — HERO + SECTIONS 02–04 DIRECTIONALLY APPROVED  
-**Last verified:** 2026-09-11  
-**Parent tracker:** GitHub issue #158  
+**Status:** COMPLETE — FULL SURFACE APPROVED / IMPLEMENTED / MERGED
+**Last verified:** 2026-09-11
+**Parent tracker:** GitHub issue #158
 **Workflow:** `docs/ui/CREATIVE_DEVELOPMENT.md`
 
 ## Scope
-This document records the current accepted visual R&D state for the public RenderLab Landing page. It is a design-state record, not production implementation authorization.
+This document records the accepted visual R&D state for the public RenderLab Landing page and the handoff into the verified production implementation now merged on `main`.
 
 All existing product, route, auth, security, accessibility, exact-head validation, fixture-cleanup, documentation and deployment rules remain authoritative.
 
-Production `/` remains unchanged until the complete Landing surface is reviewed and explicitly approved for implementation.
+The complete Landing surface was explicitly approved before production implementation began. Production deployment remains a separate operation and has not been authorized by this R&D or its implementation closure.
 
 ## Locked identity
-The approved RenderLab Lab Grid modular `R` and wordmark relationship remain locked. Landing R&D must consume the repository-owned identity assets exactly and must not redraw, approximate or reinterpret the mark.
+The approved RenderLab Lab Grid modular `R` and wordmark relationship remain locked. Landing R&D and production implementation consume the repository-owned identity assets exactly and must not redraw, approximate or reinterpret the mark.
 
 ## Section 01 — Hero
 ### A — Lab Matrix
@@ -33,7 +33,7 @@ Accepted properties:
 - a fully static `prefers-reduced-motion` equivalent;
 - exact locked-logo fidelity.
 
-The current photographic imagery is R&D media and is **not** itself a locked production asset set. Final production media may be replaced with RenderLab-owned/generated image/video assets while preserving the accepted composition, density, crop logic, motion intent and creative-state narrative.
+The photographic imagery used during R&D was not itself a locked production asset set. The final implementation replaces that prototype set with the reviewed licensed media recorded in `docs/ui/LANDING_MEDIA_SOURCES.md` while preserving the accepted composition, density, crop logic, motion intent and creative-state narrative.
 
 ### Verified hero evidence
 Accepted rich-media candidate:
@@ -111,7 +111,7 @@ Accepted candidate:
 
 Browser verification covers 1440×900 default and changed-focus states, pointer selection/yield, keyboard focus selection, 390×844 touch layout/selection, reduced motion, six loaded media objects, no document-level horizontal overflow and runtime cleanliness.
 
-The current external R&D photographs are not production assets. Final production media may be replaced with owned/cleared RenderLab media while preserving the accepted composition, crop density, focus/yield behavior and responsive intent.
+The external R&D photographs were prototype media rather than production assets. The final implementation uses the reviewed production set recorded in `docs/ui/LANDING_MEDIA_SOURCES.md` while preserving the accepted composition, crop density, focus/yield behavior and responsive intent.
 
 ## Section 04 — Resolve to Create
 **Status:** DIRECTIONALLY APPROVED by the user on 2026-09-11.
@@ -144,7 +144,7 @@ Accepted candidate:
 
 Browser verification covers desktop Library carry-over, resolved final and reverse-scroll states, exact final modular-R geometry, locked-mark loading, truthful CTA route targets, 390×844 mobile composition, reduced motion, six media loads, no document-level horizontal overflow and runtime cleanliness.
 
-The current external R&D photographs remain prototype media rather than production assets. Final production media may be replaced with owned/cleared RenderLab image/video work while preserving the accepted geometry, crop density, transition intent and closing narrative.
+The external R&D photographs were prototype media rather than production assets. The final implementation uses the reviewed production set recorded in `docs/ui/LANDING_MEDIA_SOURCES.md` while preserving the accepted geometry, crop density, transition intent and closing narrative.
 
 ## Historical alternatives
 The original coded hero comparison in PR #163 explored:
@@ -156,26 +156,42 @@ The user selected A. B and C remain historical exploration evidence and are not 
 
 A v0.2 in PR #164 established the refined Lab Matrix geometry before the rich-media pass. It is superseded by the accepted v0.3 hero for ongoing R&D.
 
-## Complete-surface assembly gate
-All four Landing sections are now directionally approved individually under `CREATIVE_DEVELOPMENT.md`.
+## Complete-surface approval
+All four Landing sections were first approved individually under `CREATIVE_DEVELOPMENT.md`, then assembled into one continuous desktop and 390px Landing prototype for whole-surface review.
 
-The next R&D step is to assemble Sections 01–04 into one continuous desktop and 390px Landing prototype and review the transitions, pacing, repeated motifs, navigation/brand continuity, full-page copy hierarchy, mobile flow, reduced-motion behavior and final CTA in one surface.
+Accepted complete-surface candidate before the user's final geometry clarification:
+- branch: `work/landing-complete-surface-rd-v0.1`
+- draft R&D PR: #173
+- exact head: `78f91321cd5ced1ce4566cf8c563c37e58cd382e`
+- Engineering Quality: `34533941565` — passed
+- Landing Complete Surface R&D: `34533941598` — passed
+- evidence artifact: `10174651739`
+- artifact digest: `sha256:81bf40d58494395dbb82d112d667ce8a5632bfee50b371dbaf7e7105b16fd0a2`
 
-The assembly must preserve the accepted section contracts rather than using full-page integration as an excuse to redesign them. Bounded connective adjustments are allowed only when needed to make the complete page read as one authored sequence, and any material change to an already-approved section must be called out for review.
+The user explicitly approved the complete design for production implementation on 2026-09-11, with one subsequent geometry clarification: the lower-right media module of the Lab Grid `R` must use the canonical quarter-circle / large outer arc from the locked identity rather than a conventional rounded-corner rectangle. `docs/ui/LANDING_IMPLEMENTATION_CONTRACT.md` is authoritative for that clarification and the production handoff.
 
-The complete page must avoid generic interstitial marketing blocks, fabricated claims, excessive repetition of the modular `R`, or motion that becomes exhausting when experienced across the full scroll.
+The complete design therefore resolves to the accepted sequence:
+1. Hero — Lab Matrix;
+2. One creative thread;
+3. Living Library;
+4. Resolve to Create.
 
-Already accepted sections may only be materially changed again if:
-- the user explicitly reopens them;
-- complete-page composition exposes a concrete continuity/responsive/accessibility problem;
-- production feasibility requires a bounded adaptation that preserves the approved visual intent and is reviewed.
+The approval preserves the accepted section contracts, transition pacing, navigation/brand continuity, full-page hierarchy, mobile adaptation, reduced-motion behavior and final invitation-only CTA. It does not authorize unrelated product redesign or deployment.
 
-## Production boundary
-Directional approval of Sections 01–04 does **not** authorize:
-- modifying production `/`;
-- merging experimental prototype code as product implementation;
-- changing routes, auth, backend, schema, security or infrastructure;
-- adding dependencies without the normal dependency review;
-- deploying.
+## Production implementation closure — 2026-09-11
+Production implementation is complete in the repository and merged through PR #174.
 
-The assembled complete Landing must still reach reviewed-design-candidate status and receive explicit user approval before production implementation begins.
+Verified repository state:
+- final implementation head: `a7f94b77bf1be989c0101376aa0404cbb28b34ae`
+- PR #174 squash merge / `main`: `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`
+- pre-merge Release Candidate Matrix `34539565841` — passed
+- pre-merge Brand / Launch Visual artifact `10176777155` (`sha256:249575e790be67219927ccefb6edef00efaf6aedc5694a95f2ed62f4aef48e38`) — browser evidence human-reviewed clean
+- merged-main Release Candidate Matrix `34540955037` — passed, including configured exact-SHA child verification
+- merged-main Brand / Launch Visual `34541065002` — passed
+- merged-main Brand / Launch artifact `10177340818` (`sha256:069aaa3d35febffc9e591f254d7a11e1b5575248bc11ab7846f44b10516b8971`)
+
+The implementation keeps `src/app/page.tsx` as the server redirect boundary and places the interactive surface in `src/features/landing/landing-experience.tsx` with Landing-local styling. It uses existing Motion for React and maintained RenderLab controls/identity; no new animation runtime was added. Production media provenance is recorded in `docs/ui/LANDING_MEDIA_SOURCES.md`.
+
+The final candidate preserves the approved canonical quarter-circle / large-arc lower-right geometry in both Hero and Resolve, route and closed-beta truth, keyboard/touch/reduced-motion behavior, and no-overflow/runtime-cleanliness requirements.
+
+Repository implementation completion is not production rollout. The deployed production source remains the previously recorded UI-071 release until an explicit deployment operation is separately authorized and verified.
