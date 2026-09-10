@@ -1,0 +1,55 @@
+name: Apply UI-071 Correction v6
+
+on:
+  push:
+    branches:
+      - work/post-production-ui-071-shell-drop-alignment
+    paths:
+      - .github/workflows/apply-ui-071-correction-v6.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact baseline and helper-only branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          test "$(git rev-parse origin/main)" = "aca3a787f5e6be0bac1b872f07fb3ca7cb5cabdf"
+          current="$(git diff --name-only origin/main...HEAD | sort)"
+          expected=$'.github/ui071_apply.py\n.github/workflows/apply-ui-071-correction-v3.yml\n.github/workflows/apply-ui-071-correction-v4.yml\n.github/workflows/apply-ui-071-correction-v5.yml\n.github/workflows/apply-ui-071-correction-v6.yml\n.github/workflows/apply-ui-071-correction.yml'
+          test "$current" = "$expected"
+
+      - name: Apply bounded correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .github/ui071_apply.py
+          rm .github/ui071_apply.py \
+             .github/workflows/apply-ui-071-correction.yml \
+             .github/workflows/apply-ui-071-correction-v3.yml \
+             .github/workflows/apply-ui-071-correction-v4.yml \
+             .github/workflows/apply-ui-071-correction-v5.yml \
+             .github/workflows/apply-ui-071-correction-v6.yml
+          git diff --check
+          expected=$'.github/ui071_apply.py\n.github/workflows/apply-ui-071-correction-v3.yml\n.github/workflows/apply-ui-071-correction-v4.yml\n.github/workflows/apply-ui-071-correction-v5.yml\n.github/workflows/apply-ui-071-correction-v6.yml\n.github/workflows/apply-ui-071-correction.yml\ndocs/ui/COMPONENT_CATALOG.md\ndocs/ui/SCREEN_REGISTRY.md\ndocs/ui/UI_DECISIONS.md\ndocs/ui/UI_MIGRATION.md\ndocs/ui/UI_SYSTEM.md\nscripts/verify-create-lifecycle.mjs\nsrc/components/shell/app-shell.tsx\nsrc/features/create/create-workspace.tsx\ntests/ui/kinetic-shell.spec.ts'
+          test "$(git diff --name-only | sort)" = "$expected"
+
+      - name: Commit correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: align desktop shell and Create drop affordance"
+          git push origin HEAD:work/post-production-ui-071-shell-drop-alignment
