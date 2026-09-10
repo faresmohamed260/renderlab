@@ -634,7 +634,7 @@ PR #140 guarded squash-merged as `c71554b692864c84cd1bc9f796255fdde71eae43`. All
 **Consequences:** No schema, account/authorization, generation/provider/worker, R2/storage, route hierarchy or deployment contract changed. Automatic Git → Vercel deployment remains disabled. UI-070 is production-live in exact source `378ea68b5c3087f84e83cc73682de2f919168c0a` at READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp`; `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` remains the preferred rollback anchor. UI-070 does not authorize or imply Phase 23 / Cycle 5.
 
 ### UI-071 — Desktop application chrome is rail-only and Create drop copy aligns as one unit
-**Status:** Accepted / Implemented / Verification Pending
+**Status:** Accepted / Implemented / Verified / Merged / Not production deployed
 **Date:** 2026-09-10
 
 **Decision:** User-directed production review supersedes UI-068's desktop-Create-only top-bar exception. On desktop application routes, the persistent left rail is the shell navigation/context surface and the redundant full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes keep the compact utility header because Settings remains outside the persistent bottom dock.
@@ -643,4 +643,6 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 
 **Guardrails:** No route, navigation destination, account access, media/generation behavior, upload contract, global state, primitive, dependency, schema, storage, worker/provider/routing or deployment contract changes. This is post-production corrective maintenance, not Phase 23 / Cycle 5.
 
-**Verification:** Exact-head UI Shell and configured Create Lifecycle validation plus responsive rendered review are required before this decision is marked verified/merged. Production deployment remains a separate explicit operation.
+**Verification:** Exact candidate `c151b0284a29a469b1e89d5f4cd66c55151d1d01` passed all 14 attached workflows, including UI Shell `34457851423`, configured Create Lifecycle `34457851298`, Library Lifecycle `34457851302`, Activity `34457915816`, Account Identity `34457919313` and live Video Generation `34457851413`. Desktop/mobile shell and configured reference-drop renders were reviewed and accepted; the drop geometry checks and configured fixture cleanup passed. PR #145 guarded squash-merged as `be0d2fa23fd16acbd5202e88ba2a09a7d8eefc20` with accepted tree `56c5b52536b16a04c6c9c07379ad77fbf4a0c0cb`. All four merged-main workflows passed: Engineering Quality `34459101725`, UI Shell `34459101586`, Creative Iteration `34459101541` and Video Generation `34459101760`. Exact candidate runs and review artifact digests are recorded in `UI_MIGRATION.md`.
+
+**Production boundary:** UI-071 is not production deployed. The recorded production source remains `378ea68b5c3087f84e83cc73682de2f919168c0a`; automatic Git deployment remains disabled and rollout requires separate explicit authorization.
