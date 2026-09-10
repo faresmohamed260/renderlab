@@ -25,18 +25,18 @@ const bottomRightMaskPath =
   "M0.078431 0H0.352941A0.647059 0.804878 0 0 1 1 0.804878V1H0.078431Q0 1 0 0.902439V0.097561Q0 0 0.078431 0Z";
 
 const media = {
-  portrait:
-    "https://images.unsplash.com/photo-1778973810380-46a63ff83d61?auto=format&fit=crop&w=1400&q=84",
+  glass:
+    "https://images.unsplash.com/photo-1771029580794-255d3e82680e?auto=format&fit=crop&w=1400&q=84",
   mountain:
-    "https://images.unsplash.com/photo-1770802238220-c4db8c2cc4f5?auto=format&fit=crop&w=1800&q=84",
-  car:
-    "https://images.unsplash.com/photo-1767272374026-178111631eca?auto=format&fit=crop&w=1400&q=84",
+    "https://images.unsplash.com/photo-1773176563345-5e8685906a21?auto=format&fit=crop&w=1800&q=84",
+  ocean:
+    "https://images.unsplash.com/photo-1758280736154-cb3ccd5b4c3e?auto=format&fit=crop&w=1400&q=84",
   jelly:
-    "https://images.unsplash.com/photo-1507426592025-e460fda3be31?auto=format&fit=crop&w=1400&q=84",
+    "https://images.unsplash.com/photo-1760710461795-d6199296eb50?auto=format&fit=crop&w=1400&q=84",
   material:
-    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=82",
-  structure:
-    "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1400&q=82",
+    "https://images.unsplash.com/photo-1741943092501-f892ec133a2c?auto=format&fit=crop&w=1400&q=82",
+  forest:
+    "https://images.unsplash.com/photo-1741061467303-548c673a989e?auto=format&fit=crop&w=1400&q=82",
 } as const;
 
 const threadSteps = [
@@ -56,10 +56,10 @@ const libraryItems = [
     style: { left: "2%", top: "10%", width: "32%", height: "44%" },
   },
   {
-    title: "Portrait reference",
+    title: "Glass reference",
     meta: "Uploaded image · Reusable reference",
     actions: ["Use in Create", "Edit", "Animate"],
-    image: media.portrait,
+    image: media.glass,
     type: "IMAGE / REFERENCE",
     style: { left: "36%", top: "2%", width: "20%", height: "34%" },
   },
@@ -67,7 +67,7 @@ const libraryItems = [
     title: "Motion test",
     meta: "Video · Saved to Library · 00:05",
     actions: ["Open", "Download"],
-    image: media.car,
+    image: media.ocean,
     type: "VIDEO / 00:05",
     style: { left: "58%", top: "13%", width: "38%", height: "35%" },
   },
@@ -88,10 +88,10 @@ const libraryItems = [
     style: { left: "36%", top: "44%", width: "28%", height: "43%" },
   },
   {
-    title: "Structure study",
+    title: "Forest study",
     meta: "Image · Saved to Library",
     actions: ["Use in Create", "Rename", "Download"],
-    image: media.structure,
+    image: media.forest,
     type: "IMAGE / SAVED",
     style: { left: "67%", top: "54%", width: "28%", height: "35%" },
   },
@@ -99,8 +99,8 @@ const libraryItems = [
 
 const resolveTiles = [
   { image: media.mountain, label: "01 · IMAGE", dx: -118, dy: 76, scale: 0.86, rotate: -7 },
-  { image: media.portrait, label: "02 · REFERENCE", dx: 102, dy: -92, scale: 0.74, rotate: 6 },
-  { image: media.car, label: "03 · MOTION", dx: -136, dy: -72, scale: 1.04, rotate: -5 },
+  { image: media.glass, label: "02 · REFERENCE", dx: 102, dy: -92, scale: 0.74, rotate: 6 },
+  { image: media.ocean, label: "03 · MOTION", dx: -136, dy: -72, scale: 1.04, rotate: -5 },
   { image: media.jelly, label: "04 · SAVED", dx: 120, dy: 95, scale: 0.8, rotate: 7 },
 ] as const;
 
@@ -227,9 +227,9 @@ export function LandingExperience() {
               onPointerLeave={() => setHeroPointer({ x: 0, y: 0 })}
               aria-label="Four creative states arranged as the RenderLab Lab Grid R"
             >
-              <HeroCell className={styles.heroTopLeft} image={media.portrait} index="01" title="Create" detail="Image" />
+              <HeroCell className={styles.heroTopLeft} image={media.glass} index="01" title="Create" detail="Image" />
               <HeroCell className={styles.heroUpperRight} image={media.mountain} index="02" title="Shape" detail="With references" />
-              <HeroCell className={styles.heroBottomLeft} image={media.car} index="03" title="Set in motion" detail="Video" motion />
+              <HeroCell className={styles.heroBottomLeft} image={media.ocean} index="03" title="Set in motion" detail="Video" motion />
               <HeroCell className={`${styles.heroBottomRight} ${styles.quarterArc}`} image={media.jelly} index="04" title="Keep" detail="And continue" quarterArc />
               <span className={`${styles.matrixAxis} ${styles.axisX}`} aria-hidden="true" />
               <span className={`${styles.matrixAxis} ${styles.axisY}`} aria-hidden="true" />
@@ -273,11 +273,11 @@ export function LandingExperience() {
                 <img className={styles.threadMedia} src={media.mountain} alt="Misty mountain range carried through one creative workflow" />
                 <span className={styles.threadLight} aria-hidden="true" />
                 <ThreadState index={0} current={threadStep} className={styles.threadCreate} label="01 / CREATE">
-                  <div className={styles.promptBar}><span>A solitary figure above a luminous mountain sea at first light</span><i>↗</i></div>
+                  <div className={styles.promptBar}><span>A luminous mountain lake beneath a storm-softened sky</span><i>↗</i></div>
                 </ThreadState>
                 <ThreadState index={1} current={threadStep} className={styles.threadReference} label="02 / REFERENCES">
                   <div className={styles.referenceStack} aria-hidden="true">
-                    <div><img src={media.portrait} alt="" /></div>
+                    <div><img src={media.glass} alt="" /></div>
                     <div><img src={media.jelly} alt="" /></div>
                     <span>@image1&nbsp;&nbsp; @image2</span>
                   </div>
@@ -399,7 +399,7 @@ export function LandingExperience() {
                 })}
               </div>
               <motion.div className={`${styles.peripheral} ${styles.peripheralA}`} style={{ opacity: 1 - resolveProgress }} aria-hidden="true"><img src={media.material} alt="" /></motion.div>
-              <motion.div className={`${styles.peripheral} ${styles.peripheralB}`} style={{ opacity: 1 - resolveProgress }} aria-hidden="true"><img src={media.structure} alt="" /></motion.div>
+              <motion.div className={`${styles.peripheral} ${styles.peripheralB}`} style={{ opacity: 1 - resolveProgress }} aria-hidden="true"><img src={media.forest} alt="" /></motion.div>
             </div>
             <div className={styles.resolveCaption} aria-hidden="true"><span>CREATE</span><i /><span>SHAPE</span><i /><span>MOTION</span><i /><span>KEEP</span></div>
           </div>
