@@ -1,3 +1,8 @@
+const reviewStyles = document.createElement('link');
+reviewStyles.rel = 'stylesheet';
+reviewStyles.href = 'review-mobile.css';
+document.head.append(reviewStyles);
+
 const params = new URLSearchParams(window.location.search);
 const variant = ['a', 'b', 'c'].includes(params.get('variant')) ? params.get('variant') : 'a';
 document.body.dataset.variant = variant;
