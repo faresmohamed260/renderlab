@@ -1,0 +1,61 @@
+name: Landing Hero A R&D
+
+on:
+  pull_request:
+    paths:
+      - "design/prototypes/landing-hero-a-rd-v0.2/**"
+      - "scripts/verify-landing-hero-a-rd.mjs"
+      - ".github/workflows/landing-hero-a-rd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-landing-hero-a-rd-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify script syntax
+        run: node --check scripts/verify-landing-hero-a-rd.mjs
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start isolated static prototype
+        run: |
+          python3 -m http.server 4173 --directory design/prototypes > /tmp/renderlab-hero-a-rd.log 2>&1 &
+          echo $! > /tmp/renderlab-hero-a-rd.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/landing-hero-a-rd-v0.2/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-hero-a-rd.log
+          exit 1
+      - name: Verify selected Lab Matrix hero
+        run: node scripts/verify-landing-hero-a-rd.mjs
+      - name: Print static-server log on failure
+        if: failure()
+        run: cat /tmp/renderlab-hero-a-rd.log || true
+      - name: Upload selected hero evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-landing-hero-a-rd-v0.2
+          path: artifacts/landing-hero-a-rd-v0.2/*.png
+          if-no-files-found: warn
+          retention-days: 14
