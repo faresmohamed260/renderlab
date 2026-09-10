@@ -1,0 +1,62 @@
+name: Landing Hero A Media R&D
+
+on:
+  pull_request:
+    paths:
+      - "design/brand/landing-hero-a-media-rd-v0.3.md"
+      - "design/prototypes/landing-hero-a-media-rd-v0.3/**"
+      - "scripts/verify-landing-hero-a-media-rd.mjs"
+      - ".github/workflows/landing-hero-a-media-rd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-landing-hero-a-media-rd-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify script syntax
+        run: node --check scripts/verify-landing-hero-a-media-rd.mjs
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start isolated static prototype
+        run: |
+          python3 -m http.server 4173 --directory design/prototypes > /tmp/renderlab-hero-a-media-rd.log 2>&1 &
+          echo $! > /tmp/renderlab-hero-a-media-rd.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/landing-hero-a-media-rd-v0.3/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-hero-a-media-rd.log
+          exit 1
+      - name: Verify rich-media Lab Matrix hero
+        run: node scripts/verify-landing-hero-a-media-rd.mjs
+      - name: Print static-server log on failure
+        if: failure()
+        run: cat /tmp/renderlab-hero-a-media-rd.log || true
+      - name: Upload media R&D evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-landing-hero-a-media-rd-v0.3
+          path: artifacts/landing-hero-a-media-rd-v0.3/*.png
+          if-no-files-found: warn
+          retention-days: 14
