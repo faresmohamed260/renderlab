@@ -25,4 +25,45 @@
     background: rgba(255,255,255,.025);
     backdrop-filter: none;
   }
+
+  .hero-b {
+    align-content: start;
+    padding-top: 486px;
+  }
+
+  .hero-b .aperture-stage {
+    top: 82px;
+    right: 14px;
+    bottom: auto;
+    left: 14px;
+    height: 378px;
+  }
+
+  .hero-b .aperture-stage::after {
+    background: linear-gradient(180deg, rgba(5,7,11,.02), rgba(5,7,11,.16) 72%, rgba(5,7,11,.36));
+  }
+
+  .hero-b .aperture-copy {
+    width: auto;
+    margin: 0;
+    padding: 0 4px;
+  }
+
+  .hero-b .aperture-label {
+    display: none;
+  }
+
+  .hero-b h1 {
+    margin-top: 14px;
+    font-size: clamp(50px, 14.2vw, 70px);
+    line-height: .9;
+  }
+
+  .hero-b .dek {
+    margin-top: 18px;
+  }
+
+  .hero-b .hero-actions {
+    margin-top: 22px;
+  }
 }
