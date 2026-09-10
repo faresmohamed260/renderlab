@@ -1915,7 +1915,7 @@ This is a user-directed post-production Library presentation correction, not Pha
 Production rollout is complete: exact source `378ea68b5c3087f84e83cc73682de2f919168c0a` is live at READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp` / `https://renderlab-fc4hli5nz-faresmohamed260-6733s-projects.vercel.app` and `https://renderlab.faresuniform.uk`. Clean rollout run `34427597654` passed the public/private route smoke with no rollback; `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` remains the preferred rollback anchor. Automatic Git → Vercel deployment remains disabled. No Phase 23 / Cycle 5 work is implied.
 
 ## Post-production UI-071 desktop shell + Create drop alignment — 2026-09-10
-**Status: `IMPLEMENTED / VERIFICATION PENDING / NOT DEPLOYED`.**
+**Status: `COMPLETE / VERIFIED / MERGED / NOT PRODUCTION DEPLOYED`.**
 
 This is user-directed post-production corrective maintenance, not Phase 23 / Cycle 5.
 
@@ -1923,5 +1923,10 @@ This is user-directed post-production corrective maintenance, not Phase 23 / Cyc
 - [x] Keep the compact mobile/narrow utility header so account/Settings access remains available above the Create/Library/Activity dock.
 - [x] Realign the Create drag-only reference overlay as one icon plus a left-aligned two-line title/detail block; preserve the existing durable upload transaction and picker baseline.
 - [x] Add explicit desktop shell assertions for Create, Library, Activity and Settings plus configured geometry assertions/screenshot coverage for the reference-drop copy alignment.
-- [ ] Pass exact-head affected workflows and human-review the desktop shell + configured Create drag-overlay render before merge.
-- [ ] Record guarded merge and merged-main verification. No production deployment is authorized by this correction.
+- [x] Exact candidate `c151b0284a29a469b1e89d5f4cd66c55151d1d01` passed all 14 attached workflows: UI Shell `34457851423`, Engineering Quality `34457851274`, Create Lifecycle `34457851298`, Create Durable Upload `34457851404`, Library Lifecycle `34457851302`, Creative Iteration `34457851422`, Account Ownership `34457851261`, Account/Admin Operations `34457851371`, Generation Admission `34457851249`, Integrated Release `34457851224`, Brand / Launch `34457851402`, Video Generation `34457851413`, plus explicitly dispatched same-head Activity `34457915816` and Account Identity `34457919313`.
+- [x] Rendered review accepted desktop Create, Library, Viewer, Activity, Settings and Admin without the top context bar; mobile Create/Library/Viewer retained the utility header and dock, mobile Settings actions remained reachable above the dock, and reduced-motion Activity retained its readable state hierarchy. The configured Create drop screenshot and geometry checks confirmed first-line icon alignment and left-aligned title/detail, followed by successful durable upload and preserved multi-reference behavior.
+- [x] Primary review artifacts: UI Shell `10144273095` (`sha256:6c5527a0bcdba2fc07322e21bc31b13a87f4deba2e06966fed78762787a3f196`) and Create Lifecycle `10144331208` (`sha256:5e94e884db425e499210b3c4fe0a7879ea2915e3fb8915978aaae52bb66a8771`). Supplemental Library `10144273285`, Account Identity `10144315622`, Activity `10144317711` and Admin `10144293433` renders were reviewed. Configured Create, Library, Account Identity, Activity, Admin and Video fixture cleanup steps passed.
+- [x] PR #145 guarded squash-merged the exact accepted head as `be0d2fa23fd16acbd5202e88ba2a09a7d8eefc20`, preserving tree `56c5b52536b16a04c6c9c07379ad77fbf4a0c0cb`. No implementation correction was required during verification; the net change contains nine intended files and no temporary helpers.
+- [x] All four workflows attached to merged `main` succeeded: Engineering Quality `34459101725`, UI Shell `34459101586`, Creative Iteration `34459101541` and Video Generation `34459101760`. Configured Creative Iteration and Video cleanup also passed. UI-071 repository verification is complete.
+
+No production deployment accompanied this correction. The recorded production source remains `378ea68b5c3087f84e83cc73682de2f919168c0a` at READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp`. Automatic Git deployment remains disabled. No route, schema, account/authorization, storage, worker/provider, dependency or deployment configuration changed; no Phase 23 / Cycle 5 work is implied.
