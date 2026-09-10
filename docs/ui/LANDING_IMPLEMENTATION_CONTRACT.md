@@ -1,7 +1,8 @@
 # Landing Production Implementation Contract
 
-**Status:** EXECUTION-READY — COMPLETE DESIGN APPROVED  
+**Status:** COMPLETE / VERIFIED / MERGED — NOT DEPLOYED  
 **Approved by user:** 2026-09-11  
+**Implementation merged:** PR #174 / `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`  
 **Parent design record:** `docs/ui/LANDING_BRAND_RD.md`  
 **Creative-development workflow:** `docs/ui/CREATIVE_DEVELOPMENT.md`  
 **Parent tracker:** GitHub issue #158
@@ -11,17 +12,42 @@ Implement the explicitly approved complete RenderLab public Landing experience o
 
 This contract is the production handoff required by `CREATIVE_DEVELOPMENT.md` after complete-surface design approval. It does not authorize deployment.
 
+## Verified implementation closure
+The production implementation is complete and merged on `main`.
+
+Final implementation candidate:
+- implementation branch: `work/landing-production-implementation`;
+- PR: #174 — merged;
+- exact implementation head: `a7f94b77bf1be989c0101376aa0404cbb28b34ae`;
+- merge commit on `main`: `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`.
+
+All workflows attached to the final exact implementation head passed:
+- Engineering Quality `34539565814`;
+- Create Durable Upload `34539565867`;
+- Account Ownership `34539565817`;
+- UI Shell Validation `34539565835`;
+- Brand / Launch Visual `34539565857`;
+- Integrated Release `34539565832`;
+- Library Lifecycle Visual `34539565822`;
+- Release Candidate Matrix `34539565841`.
+
+Brand / Launch Visual artifact `10176777155` (`sha256:249575e790be67219927ccefb6edef00efaf6aedc5694a95f2ed62f4aef48e38`) was reviewed against the accepted design. It covers the desktop Hero, creative-thread motion state, Living Library focus, resolved closing state, and 390px mobile surface. The canonical lower-right quarter-circle / large-arc module remained correct after the final production-media replacement.
+
+Merged-main verification also passed Engineering Quality `34540955036` and Integrated Release `34540955056`. The first push-triggered UI Shell run was superseded/cancelled by the repository's workflow orchestration; follow-up exact-main UI Shell `34541063502` passed, and exact-main Brand / Launch Visual `34541065002` passed.
+
+No production deployment was performed. Automatic Git → Vercel deployment remains disabled; rollout remains a separate explicit user-authorized operation.
+
 ## Approved complete-surface evidence
 The complete Landing design was assembled from the four individually approved R&D sections and reviewed as one surface.
 
 Accepted complete-surface candidate before the geometry clarification:
-- branch: `work/landing-complete-surface-rd-v0.1`
-- draft R&D PR: #173
-- exact head: `78f91321cd5ced1ce4566cf8c563c37e58cd382e`
-- Engineering Quality: `34533941565` — passed
-- Landing Complete Surface R&D: `34533941598` — passed
-- evidence artifact: `10174651739`
-- artifact digest: `sha256:81bf40d58494395dbb82d112d667ce8a5632bfee50b371dbaf7e7105b16fd0a2`
+- branch: `work/landing-complete-surface-rd-v0.1`;
+- draft R&D PR: #173;
+- exact head: `78f91321cd5ced1ce4566cf8c563c37e58cd382e`;
+- Engineering Quality: `34533941565` — passed;
+- Landing Complete Surface R&D: `34533941598` — passed;
+- evidence artifact: `10174651739`;
+- artifact digest: `sha256:81bf40d58494395dbb82d112d667ce8a5632bfee50b371dbaf7e7105b16fd0a2`.
 
 The whole-surface browser gate covers desktop Hero, Thread/Motion, Living Library focus, Resolve-to-Create final state, 390px Hero/Thread/Library/Resolve flow, reverse behavior, touch/keyboard selection, reduced motion, route truth, exact locked-mark loading, media loading, no horizontal overflow, and runtime cleanliness.
 
@@ -31,7 +57,7 @@ The user's complete-surface approval includes one explicit visual correction tha
 > The lower-right media module in the Lab Grid `R` must read as the **quarter-circle / large outer arc** version shown in the approved review image, not as a square/rectangular tile with one conventionally rounded corner.
 
 ### Canonical geometry source
-Production must derive this module from the repository-owned locked Lab Grid mark rather than inventing a local radius.
+Production derives this module from the repository-owned locked Lab Grid mark rather than inventing a local radius.
 
 Canonical lower-right mark path from `src/components/brand/renderlab-brand.tsx` / `public/renderlab-mark.svg`:
 
@@ -39,8 +65,8 @@ Canonical lower-right mark path from `src/components/brand/renderlab-brand.tsx` 
 
 Consequences:
 - the large outer arc is part of the identity geometry, not decorative border-radius styling;
-- Hero and Resolve-to-Create instances of the lower-right media module must use the same canonical mask/clip geometry;
-- desktop, mobile, settled, transitional, and reduced-motion states must preserve that silhouette;
+- Hero and Resolve-to-Create instances of the lower-right media module use the same canonical mask/clip geometry;
+- desktop, mobile, settled, transitional, and reduced-motion states preserve that silhouette;
 - any earlier prototype rule that produces a small-radius rounded rectangle is superseded;
 - future repeated Lab Grid media motifs must consume the same geometry rather than creating another approximation.
 
@@ -74,59 +100,46 @@ The production Landing consists of one authored sequence:
    - mobile uses a compact already-resolved composition;
    - `Open Create` and `Sign in` remain the only primary conversion actions.
 
-## Product behavior that must remain unchanged
+## Product behavior that remains unchanged
 - Bare `/` remains public Landing and does not render `AppShell`.
 - Root continuation intent (`source` or `action`) preserves the full query and redirects to `/create`.
 - `Open Create` targets `/create`.
 - `Sign in` targets `/settings`.
 - Closed Beta / invitation-only / no-public-sign-up truth remains explicit.
 - Do not add registration, waitlist, pricing, testimonials, fake metrics, provider/model claims, SLA claims, public admission, analytics marketing cookies, automatic variant/branch/lineage claims, or fabricated generation state.
-- Current metadata, Open Graph route behavior, favicon/app icon identity, and canonical origin behavior remain truthful unless a separately verified branding update is required by this implementation.
+- Current metadata, Open Graph route behavior, favicon/app icon identity, and canonical origin behavior remain truthful unless a separately verified branding update is required.
 
 ## Implementation architecture
-- Keep `src/app/page.tsx` as the server route boundary so continuation-query redirect remains server-owned.
-- Move the interactive approved Landing surface into a bounded Landing client component under `src/features/landing/`.
-- Reuse `RenderLabBrand` / `RenderLabMark` exactly; do not redraw the identity.
-- Reuse maintained `Button` and other approved shared primitives for visible conventional controls.
-- Use the existing Motion for React runtime for bounded pointer/layout/scroll choreography where it fits. No new animation dependency is approved by this contract.
-- Prefer native scrolling. Do not add Lenis, GSAP, Three.js/WebGL, or another runtime unless a concrete production-fidelity blocker is proven and separately reviewed.
-- Keep Landing-specific styling isolated from application surfaces. Do not globally restyle Create, Library, Activity, Settings, Admin, or shared shell behavior as a side effect.
+- `src/app/page.tsx` remains the server route boundary so continuation-query redirect stays server-owned.
+- The interactive approved Landing surface lives in `src/features/landing/landing-experience.tsx` with Landing-only styling in `landing-experience.module.css`.
+- `RenderLabBrand` / `RenderLabMark` are reused exactly; the identity is not redrawn.
+- Maintained `Button` primitives are reused for conventional visible controls.
+- Existing Motion for React provides bounded pointer/layout/scroll choreography; no new animation dependency was added.
+- Native scrolling remains the baseline; Lenis, GSAP, Three.js/WebGL were not added.
+- Landing styling remains isolated from Create, Library, Activity, Settings, Admin, and shared application-shell behavior.
 
 ## Media contract
-The accepted R&D photographs establish crop density, visual energy, color balance, and motion intent, but they are not identity assets.
+The accepted R&D photographs established crop density, visual energy, color balance, and motion intent but were not treated as production identity assets.
 
-Production media must be owned/cleared for the intended use. Replacing a photograph is allowed only when the replacement preserves the approved section hierarchy, media dominance, crop logic, and narrative role. Do not fall back to abstract placeholder geometry.
+The final implementation replaced temporary R&D media with a reviewed Unsplash-licensed nature/abstract set and records exact source/license provenance in `docs/ui/LANDING_MEDIA_SOURCES.md`. The selected set avoids intentional identifiable people and visible brand marks. Future replacement with RenderLab-owned/generated media is allowed only when the approved hierarchy, media dominance, crop logic, narrative role, and documented right-to-use basis are preserved.
 
 ## Accessibility and responsive contract
 - Semantic heading order and navigable links/controls remain intact.
-- Interactive Library media choices must have keyboard focus and visible focus treatment; touch must not depend on hover.
+- Interactive Library media choices support keyboard focus and touch; meaning does not depend on hover.
 - Pointer depth is enhancement only; meaning and action remain complete without it.
-- 390px layout must preserve deliberate composition, readable copy, reachable conversion actions, and no document-level horizontal overflow.
-- `prefers-reduced-motion: reduce` must produce a complete static equivalent with no essential running animation or scroll dependency.
-- Important state changes must not fabricate product progress or availability.
+- 390px layout preserves deliberate composition, readable copy, reachable conversion actions, and no document-level horizontal overflow.
+- `prefers-reduced-motion: reduce` produces a complete static equivalent with no essential running animation or scroll dependency.
+- Important state changes do not fabricate product progress or availability.
 
-## Validation matrix
-Before implementation can be called `APPROVED`:
+## Validation matrix — VERIFIED
+The final implementation satisfied the production contract:
 
-1. Exact implementation head passes Engineering Quality.
-2. Exact implementation head passes the existing Brand / Launch Visual workflow, updated only as needed to assert the newly approved copy/composition instead of obsolete Landing copy.
-3. The Landing browser verifier covers at minimum:
-   - 1440px Hero;
-   - Section 02 Create/References/Motion/Continue progression and reverse behavior;
-   - Section 03 pointer selection, keyboard selection, and narrow/touch selection;
-   - Section 04 pre-resolution, resolved, and reverse states;
-   - 390px whole-page flow;
-   - reduced-motion whole-page behavior;
-   - `Open Create` / `Sign in` targets;
-   - continuation-query redirect preservation;
-   - locked brand fidelity;
-   - canonical lower-right quarter-circle module geometry in Hero and Resolve states;
-   - media load success;
-   - no horizontal overflow;
-   - console/page-error cleanliness.
-4. All other workflows actually attached to the exact head must pass; do not waive existing gates because this is a visual change.
-5. Human fidelity review compares real production-candidate browser evidence to the accepted R&D evidence and this geometry clarification.
-6. Documentation is updated from verified implementation reality only.
+1. Exact implementation head passed Engineering Quality.
+2. Exact implementation head passed the updated Brand / Launch Visual workflow.
+3. Browser verification covered 1440px Hero; Section 02 forward/reverse progression; Section 03 pointer/keyboard/touch selection; Section 04 pre-resolution/resolved/reverse states; 390px whole-page flow; reduced motion; route targets; continuation-query preservation; locked brand fidelity; canonical lower-right quarter-circle geometry; media loading; no horizontal overflow; and runtime cleanliness.
+4. Every workflow attached to the final exact head passed.
+5. Human fidelity review accepted the final production-candidate browser evidence, including the production-media swap and geometry lock.
+6. Final implementation/closure state is recorded in repository documentation.
 
 ## Explicitly out of scope
 - Create/Library/Viewer/Activity/Settings/Admin redesign.
@@ -136,14 +149,13 @@ Before implementation can be called `APPROVED`:
 - New animation/runtime dependency without a separately documented need.
 - Production deployment.
 
-## Exit criteria
-This implementation slice is complete only when:
-- production `/` faithfully implements the approved four-section sequence;
-- the lower-right Lab Grid media module is consistently the canonical quarter-circle/large-arc geometry everywhere it appears;
-- all required exact-head workflows pass;
-- desktop/mobile/reduced-motion and temporal evidence are reviewed clean;
+## Exit criteria — SATISFIED
+- production `/` implementation faithfully implements the approved four-section sequence on `main`;
+- the lower-right Lab Grid media module consistently uses the canonical quarter-circle/large-arc geometry everywhere it appears;
+- all required exact-head workflows passed;
+- desktop/mobile/reduced-motion and temporal evidence were reviewed clean;
 - no material visual drift from the accepted design remains;
-- source-of-truth docs reflect the verified implementation;
-- the implementation PR is merged.
+- source-of-truth Landing docs reflect verified implementation reality;
+- PR #174 is merged.
 
 Deployment remains a separate explicit user-authorized operation after merge.
