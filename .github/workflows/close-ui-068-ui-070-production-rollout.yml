@@ -1,0 +1,142 @@
+name: Close UI-068 through UI-070 Production Rollout Docs
+
+on:
+  push:
+    branches:
+      - docs/ui-068-ui-070-production-rollout-closure
+    paths:
+      - .github/workflows/close-ui-068-ui-070-production-rollout.yml
+
+permissions:
+  contents: write
+
+jobs:
+  close-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard exact baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          test "$(git rev-parse origin/main)" = "378ea68b5c3087f84e83cc73682de2f919168c0a"
+          git merge-base --is-ancestor 378ea68b5c3087f84e83cc73682de2f919168c0a HEAD
+          test "$(git diff --name-only origin/main...HEAD)" = ".github/workflows/close-ui-068-ui-070-production-rollout.yml"
+
+      - name: Update authoritative production record
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          source = "378ea68b5c3087f84e83cc73682de2f919168c0a"
+          deployment = "dpl_DoNm8T21WSano7zoWgGi112sDDqp"
+          deployment_url = "https://renderlab-fc4hli5nz-faresmohamed260-6733s-projects.vercel.app"
+          rollback = "dpl_BpMCWYggKkzf8FuWpb2vLun46r3M"
+          dirty_deployment = "dpl_8pg99Zf6KthBTWKpXCjvuFAZdpKu"
+          dirty_run = "34427437110"
+          clean_run = "34427597654"
+
+          def replace_prefixed_line(path, prefix, replacement):
+              p = Path(path)
+              lines = p.read_text().splitlines()
+              matches = [i for i, line in enumerate(lines) if line.startswith(prefix)]
+              if len(matches) != 1:
+                  raise SystemExit(f"{path}: prefix {prefix!r} matched {len(matches)} lines")
+              lines[matches[0]] = replacement
+              p.write_text("\n".join(lines) + "\n")
+
+          project = "PROJECT.md"
+          replace_prefixed_line(
+              project,
+              "- Authoritative repository source currently deployed is `",
+              f"- Authoritative repository source currently deployed is `{source}`. It includes the verified UI-068 / UI-069 / UI-070 post-production corrections plus their repository closure documentation.",
+          )
+          replace_prefixed_line(
+              project,
+              "- Accepted production application is source `",
+              f"- Accepted production application is source `{source}` at READY deployment `{deployment}` / `{deployment_url}`; `https://renderlab.faresuniform.uk` and the stable Vercel alias serve that deployment. Prior accepted READY deployment `{rollback}` remains the preferred rollback anchor.",
+          )
+          replace_prefixed_line(
+              project,
+              "- Repository `main` additionally includes three verified post-production UI corrections not yet deployed:",
+              f"- Repository `main` and production are aligned through UI-070. UI-068 / PR #138, UI-069 / PR #140 and UI-070 / PR #142 are production-live in exact source `{source}` at READY deployment `{deployment}`. Guarded clean rollout run `{clean_run}` preserved a pristine working tree before and after deploy, passed Landing + `/create` + `/library` + `/activity` + `/settings` smoke, and required no rollback. Automatic Git → Vercel deployment remains disabled.",
+          )
+
+          migration = Path("docs/ui/UI_MIGRATION.md")
+          mlines = migration.read_text().splitlines()
+          headings = {
+              "## Post-production UI-069 Create / Viewer / Library corrective pass — 2026-09-09": "**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.**",
+              "## Post-production UI-070 Library card polish — 2026-09-10": "**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`.**",
+          }
+          for heading, status in headings.items():
+              idx = next((i for i, line in enumerate(mlines) if line == heading), None)
+              if idx is None or idx + 1 >= len(mlines):
+                  raise SystemExit(f"UI_MIGRATION missing {heading}")
+              mlines[idx + 1] = status
+          old_a = "Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`; UI-068 and UI-069 are therefore verified repository changes awaiting a separate explicit production rollout. No Phase 23 / Cycle 5 work is implied."
+          old_b = "Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`. UI-068, UI-069 and UI-070 are verified repository changes outside production until a separate explicit rollout is authorized. No Phase 23 / Cycle 5 work is implied."
+          new_live = f"Production rollout is complete: exact source `{source}` is live at READY deployment `{deployment}` / `{deployment_url}` and `https://renderlab.faresuniform.uk`. Clean rollout run `{clean_run}` passed the public/private route smoke with no rollback; `{rollback}` remains the preferred rollback anchor. Automatic Git → Vercel deployment remains disabled. No Phase 23 / Cycle 5 work is implied."
+          if mlines.count(old_a) != 1 or mlines.count(old_b) != 1:
+              raise SystemExit("UI_MIGRATION expected production paragraphs not found exactly once")
+          mlines[mlines.index(old_a)] = new_live
+          mlines[mlines.index(old_b)] = new_live
+          migration.write_text("\n".join(mlines) + "\n")
+
+          decisions = Path("docs/ui/UI_DECISIONS.md")
+          dlines = decisions.read_text().splitlines()
+          section_updates = {
+              "### UI-068 — Create composer and desktop shell chrome cleanup": (
+                  "**Status:** Accepted / Implemented / Verified / Merged / Production Live",
+                  f"**Consequences:** No generation, media, account, authorization, schema, storage, worker, provider, routing or deployment contract changes. Automatic Git deployment remains disabled. UI-068 is production-live in exact source `{source}` at READY deployment `{deployment}`; `{rollback}` remains the preferred rollback anchor. UI-068 does not authorize Phase 23 / Cycle 5."
+              ),
+              "### UI-069 — Post-production Create / Viewer / Library corrective interaction pass": (
+                  "**Status:** Accepted / Implemented / Verified / Merged / Production Live",
+                  f"**Consequences:** No schema, account/authorization, generation/provider/worker, R2/storage, route hierarchy or deployment contract changes. Automatic Git deployment remains disabled. UI-069 is production-live in exact source `{source}` at READY deployment `{deployment}`; `{rollback}` remains the preferred rollback anchor. UI-069 does not authorize or imply Phase 23 / Cycle 5."
+              ),
+              "### UI-070 — Library media cards are media-first and selection chrome is visually compact": (
+                  "**Status:** Accepted / Implemented / Verified / Merged / Production Live",
+                  f"**Consequences:** No schema, account/authorization, generation/provider/worker, R2/storage, route hierarchy or deployment contract changed. Automatic Git → Vercel deployment remains disabled. UI-070 is production-live in exact source `{source}` at READY deployment `{deployment}`; `{rollback}` remains the preferred rollback anchor. UI-070 does not authorize or imply Phase 23 / Cycle 5."
+              ),
+          }
+          for heading, (status, consequence) in section_updates.items():
+              start = next((i for i, line in enumerate(dlines) if line == heading), None)
+              if start is None:
+                  raise SystemExit(f"UI_DECISIONS missing {heading}")
+              end = next((i for i in range(start + 1, len(dlines)) if dlines[i].startswith("### ")), len(dlines))
+              status_idx = next((i for i in range(start + 1, end) if dlines[i].startswith("**Status:")), None)
+              consequence_idx = next((i for i in range(start + 1, end) if dlines[i].startswith("**Consequences:**")), None)
+              if status_idx is None or consequence_idx is None:
+                  raise SystemExit(f"UI_DECISIONS incomplete section {heading}")
+              dlines[status_idx] = status
+              dlines[consequence_idx] = consequence
+          decisions.write_text("\n".join(dlines) + "\n")
+
+          infrastructure = Path("docs/architecture/INFRASTRUCTURE.md")
+          infra = infrastructure.read_text().rstrip() + "\n\n"
+          heading = "## UI-068 through UI-070 production rollout — 2026-09-10"
+          if heading in infra:
+              raise SystemExit("INFRASTRUCTURE rollout section already exists")
+          infra += f'''{heading}\nThe user explicitly authorized production deployment of the verified repository state. Exact candidate `{source}` contains UI-068, UI-069 and UI-070 plus their repository closure documentation; automatic Git → Vercel deployment remains disabled.\n\nInitial guarded rollout run `{dirty_run}` checked out the exact candidate with a clean pre-deploy tree and created READY deployment `{dirty_deployment}`. Landing plus `/create`, `/library`, `/activity` and `/settings` smoke passed, but Vercel metadata reported `gitDirty=1` because the minimal helper did not prebind the project/team IDs and CLI project-link metadata mutated the runner workspace after the pre-deploy clean check. That deployment was immediately superseded rather than accepted as the definitive release baseline.\n\nCorrective guarded rollout run `{clean_run}` prebound `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID`, checked out exact `{source}`, required a pristine tree before deploy and required the tree to remain pristine after the Vercel CLI returned. Vercel created READY deployment `{deployment}` at `{deployment_url}` with exact Git SHA `{source}` and no dirty-source metadata. Active aliases include `https://renderlab.faresuniform.uk` and the stable Vercel project alias. Landing plus `/create`, `/library`, `/activity` and `/settings` smoke passed and rollback was not required. A bounded post-cutover Vercel runtime-error query found no runtime errors.\n\nPrior accepted production deployment `{rollback}` remains the preferred rollback anchor. The rollout changed no Supabase schema, R2 resource contract, worker/provider/routing configuration, scheduler, `pg_cron` or `pg_net` state. This rollout makes UI-068, UI-069 and UI-070 production-live and does not authorize Phase 23 / Cycle 5.\n'''
+          infrastructure.write_text(infra)
+          PY
+
+          rm .github/workflows/close-ui-068-ui-070-production-rollout.yml
+          git diff --check
+          test "$(git diff --name-only | sort)" = $'.github/workflows/close-ui-068-ui-070-production-rollout.yml\nPROJECT.md\ndocs/architecture/INFRASTRUCTURE.md\ndocs/ui/UI_DECISIONS.md\ndocs/ui/UI_MIGRATION.md'
+
+      - name: Commit closure docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: close UI-068 through UI-070 production rollout"
+          git push origin HEAD:docs/ui-068-ui-070-production-rollout-closure
