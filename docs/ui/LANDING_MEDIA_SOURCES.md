@@ -1,7 +1,7 @@
 # Landing Production Media Sources
 
-**Status:** Production implementation provenance  
-**Verified:** 2026-09-11  
+**Status:** Production implementation provenance
+**Verified:** 2026-09-11
 **Applies to:** the curated media used by the approved public Landing implementation
 
 ## Purpose
@@ -14,8 +14,8 @@ This is a static curated asset choice. RenderLab does not integrate the Unsplash
 ## License boundary
 Unsplash's published license/help guidance permits free commercial and non-commercial use without required attribution. That copyright license does not automatically clear every possible third-party right depicted in an image. RenderLab therefore deliberately avoids identifiable people and brand/logo-dependent imagery in this set.
 
-License reference: https://unsplash.com/license  
-Commercial-use guidance: https://help.unsplash.com/en/articles/2612315-can-i-use-unsplash-images-for-personal-or-commercial-projects  
+License reference: https://unsplash.com/license
+Commercial-use guidance: https://help.unsplash.com/en/articles/2612315-can-i-use-unsplash-images-for-personal-or-commercial-projects
 Releases/trademarks guidance: https://help.unsplash.com/en/articles/2612329-releases-and-trademarks
 
 ## Selected media
