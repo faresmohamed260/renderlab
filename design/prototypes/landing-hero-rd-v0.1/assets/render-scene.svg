@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Stylized cinematic render of a lone explorer crossing a reflective field at blue hour">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#07111d"/>
+      <stop offset=".46" stop-color="#10233a"/>
+      <stop offset=".76" stop-color="#1b3350"/>
+      <stop offset="1" stop-color="#0b1119"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#263d55" stop-opacity=".78"/>
+      <stop offset=".24" stop-color="#162637"/>
+      <stop offset="1" stop-color="#06090e"/>
+    </linearGradient>
+    <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff6c67" stop-opacity=".95"/>
+      <stop offset=".48" stop-color="#da3538" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#7c171e" stop-opacity=".98"/>
+    </linearGradient>
+    <linearGradient id="coatEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff9e92" stop-opacity=".9"/>
+      <stop offset=".55" stop-color="#ff5a58" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#ff5a58" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="horizonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#88d9ff" stop-opacity=".42"/>
+      <stop offset=".48" stop-color="#587fa8" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#2b4057" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#f5f6ff" stop-opacity=".9"/>
+      <stop offset=".36" stop-color="#c8d7ff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#9ab4ef" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur30"><feGaussianBlur stdDeviation="30"/></filter>
+    <filter id="blur16"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="grain" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency=".86" numOctaves="2" seed="8" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 .08"/></feComponentTransfer>
+    </filter>
+    <clipPath id="water"><rect x="0" y="620" width="1600" height="380"/></clipPath>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <ellipse cx="830" cy="585" rx="760" ry="210" fill="url(#horizonGlow)" filter="url(#blur30)"/>
+  <g opacity=".95">
+    <circle cx="1270" cy="205" r="70" fill="url(#moonGlow)" filter="url(#blur16)"/>
+    <circle cx="1270" cy="205" r="41" fill="#e8efff"/>
+    <circle cx="1258" cy="193" r="7" fill="#cad8f3" opacity=".45"/>
+  </g>
+  <path d="M0 590L130 525 240 560 352 500 470 548 610 472 745 538 892 488 1038 548 1195 485 1346 548 1480 510 1600 545V650H0Z" fill="#101925" opacity=".92"/>
+  <path d="M0 625L190 575 330 604 520 560 690 598 860 554 1050 598 1220 560 1390 596 1600 558V682H0Z" fill="#0b121b"/>
+  <g transform="translate(1120 380)">
+    <rect x="0" y="0" width="185" height="290" rx="4" fill="#0b1119"/>
+    <rect x="18" y="20" width="8" height="248" fill="#27394c" opacity=".6"/>
+    <rect x="45" y="20" width="2" height="248" fill="#7ea1c4" opacity=".18"/>
+    <path d="M185 0L222 26V290L185 290Z" fill="#172334"/>
+  </g>
+  <rect y="620" width="1600" height="380" fill="url(#ground)"/>
+  <g opacity=".42">
+    <path d="M0 706C250 660 450 710 700 677S1180 646 1600 702" fill="none" stroke="#6ea5ca" stroke-width="2"/>
+    <path d="M0 770C280 732 525 778 815 744S1300 724 1600 766" fill="none" stroke="#537b9a" stroke-width="1"/>
+  </g>
+  <ellipse cx="760" cy="760" rx="260" ry="35" fill="#75c7f0" opacity=".11" filter="url(#blur16)"/>
+  <g id="figure" transform="translate(735 350)">
+    <ellipse cx="84" cy="62" rx="34" ry="40" fill="#131821"/>
+    <path d="M52 92C66 74 110 73 124 96L158 306C133 332 51 334 20 305Z" fill="url(#coat)"/>
+    <path d="M56 98C77 113 108 106 122 95L128 285C101 297 65 298 38 285Z" fill="url(#coatEdge)" opacity=".58"/>
+    <path d="M44 128L7 248 27 255 70 156Z" fill="#ba272f"/>
+    <path d="M126 126L174 236 156 248 109 160Z" fill="#8e2028"/>
+    <path d="M47 305L34 437 62 438 78 314Z" fill="#151922"/>
+    <path d="M104 310L122 438 151 438 136 302Z" fill="#10151d"/>
+  </g>
+  <g clip-path="url(#water)" opacity=".28" transform="translate(0 1510) scale(1 -1)">
+    <g transform="translate(735 350)">
+      <ellipse cx="84" cy="62" rx="34" ry="40" fill="#131821"/>
+      <path d="M52 92C66 74 110 73 124 96L158 306C133 332 51 334 20 305Z" fill="url(#coat)"/>
+      <path d="M47 305L34 437 62 438 78 314Z" fill="#151922"/>
+      <path d="M104 310L122 438 151 438 136 302Z" fill="#10151d"/>
+    </g>
+  </g>
+  <ellipse cx="820" cy="918" rx="230" ry="22" fill="#e44449" opacity=".16" filter="url(#blur16)"/>
+  <g opacity=".18" filter="url(#grain)"><rect width="1600" height="1000" fill="#fff"/></g>
+  <rect x="1" y="1" width="1598" height="998" fill="none" stroke="#d7e8ff" stroke-opacity=".05"/>
+</svg>

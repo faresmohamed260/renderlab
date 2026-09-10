@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>RenderLab — Landing Hero R&D 0.1</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-variant="a">
+  <main class="prototype-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="RenderLab home">
+        <img class="brand-mark" src="assets/renderlab-mark.svg" alt="" width="32" height="32" />
+        <span class="wordmark"><strong>Render</strong><span>Lab</span></span>
+      </a>
+      <nav class="variant-nav" aria-label="Hero design directions">
+        <a data-variant-link="a" href="?variant=a">A</a>
+        <a data-variant-link="b" href="?variant=b">B</a>
+        <a data-variant-link="c" href="?variant=c">C</a>
+      </nav>
+      <div class="top-actions">
+        <a class="quiet-link" href="/settings">Sign in</a>
+        <a class="primary-link" href="/create">Open Create</a>
+      </div>
+    </header>
+
+    <section class="hero hero-a" data-direction="a" aria-labelledby="hero-a-title">
+      <div class="hero-copy">
+        <p class="eyebrow">A / LAB MATRIX</p>
+        <h1 id="hero-a-title">Render what<br />you imagine.</h1>
+        <p class="dek">Create images. Shape them with references. Put them in motion. Keep the thread alive.</p>
+        <div class="hero-actions">
+          <a class="primary-link large" href="/create">Open Create</a>
+          <span class="truth">Closed beta · invitation only</span>
+        </div>
+      </div>
+      <div class="matrix-wrap" aria-label="Rendered media assembling from modular cells">
+        <div class="matrix-stage" data-pointer-stage="matrix">
+          <div class="matrix-cell cell-one" data-depth="1"><img src="assets/render-scene.svg" alt="" /></div>
+          <div class="matrix-cell cell-two" data-depth="2"><img src="assets/render-scene.svg" alt="" /></div>
+          <div class="matrix-cell cell-three" data-depth="3"><img src="assets/render-scene.svg" alt="" /></div>
+          <div class="matrix-cell cell-four" data-depth="4"><img src="assets/render-scene.svg" alt="" /></div>
+          <div class="matrix-meta"><span>01 / IMAGE</span><span>REFERENCE → RENDER</span></div>
+        </div>
+      </div>
+      <p class="direction-note">One image resolves from four independent lab cells—the same modular logic as the locked R, without turning the logo into wallpaper.</p>
+    </section>
+
+    <section class="hero hero-b" data-direction="b" aria-labelledby="hero-b-title">
+      <div class="aperture-stage" data-pointer-stage="aperture" style="--split: 63%;">
+        <img class="aperture-base" src="assets/render-scene-draft.svg" alt="" />
+        <div class="aperture-final"><img src="assets/render-scene.svg" alt="" /></div>
+        <div class="aperture-line" aria-hidden="true"><span></span></div>
+        <div class="aperture-label left">DRAFT</div>
+        <div class="aperture-label right">RENDER</div>
+      </div>
+      <div class="aperture-copy">
+        <p class="eyebrow">B / RESOLVE APERTURE</p>
+        <h1 id="hero-b-title">Ideas, rendered<br />into reality.</h1>
+        <p class="dek">Move across the frame to resolve the work from first attempt to finished image.</p>
+        <div class="hero-actions">
+          <a class="primary-link large" href="/create">Open Create</a>
+          <a class="quiet-link inline" href="/settings">Sign in</a>
+        </div>
+      </div>
+      <p class="direction-note">The hero is one controllable render surface. Pointer position changes the draft/final boundary; reduced motion settles to a static final-weighted split.</p>
+    </section>
+
+    <section class="hero hero-c" data-direction="c" aria-labelledby="hero-c-title">
+      <div class="instrument-head">
+        <p class="eyebrow">C / CREATIVE INSTRUMENT</p>
+        <h1 id="hero-c-title">Make the<br />next frame.</h1>
+        <p class="dek">The media is the workspace. Controls appear around the work instead of competing with it.</p>
+      </div>
+      <div class="instrument-stage" data-pointer-stage="instrument">
+        <img src="assets/render-scene.svg" alt="" />
+        <div class="frame-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="frame-index">FRAME 001</div>
+        <div class="reference-chip"><span class="reference-thumb"></span><span><strong>@image1</strong><small>Primary reference</small></span></div>
+        <div class="instrument-dock" aria-label="Truthful creative capability preview">
+          <div class="dock-mode"><span class="active">Image</span><span>Video</span></div>
+          <div class="dock-prompt">A lone explorer crossing a reflective field at blue hour…</div>
+          <div class="dock-tools"><span>Reference</span><span>Motion</span><span>Advanced</span></div>
+          <a class="generate-link" href="/create">Generate</a>
+        </div>
+      </div>
+      <div class="instrument-foot"><span>Create Image</span><span>Edit Image</span><span>Create Video</span><span>Animate Image</span></div>
+      <p class="direction-note">The first viewport behaves like a creative instrument: one dominant canvas with compact truthful controls attached to the work, not a dashboard screenshot inside a marketing card.</p>
+    </section>
+  </main>
+  <script src="prototype.js"></script>
+</body>
+</html>
