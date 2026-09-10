@@ -33,126 +33,120 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
+          import re
 
           def replace_once(path, old, new):
               p = Path(path)
               text = p.read_text()
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"{path}: expected one match, found {count}")
+              if text.count(old) != 1:
+                  raise SystemExit(f"{path}: exact token matched {text.count(old)} times: {old[:90]!r}")
               p.write_text(text.replace(old, new, 1))
 
-          app_shell = "src/components/shell/app-shell.tsx"
-          replace_once(
-              app_shell,
-              '''function routeTitle(pathname: string) {
-            if (pathname.startsWith("/create")) return "Create";
-            if (pathname.startsWith("/library")) return "Library";
-            if (pathname.startsWith("/activity")) return "Activity";
-            if (pathname.startsWith("/settings")) return "Settings";
-            if (pathname.startsWith("/admin")) return "Admin";
-            return "Create";
-          }
+          def regex_once(path, pattern, replacement, flags=0):
+              p = Path(path)
+              text = p.read_text()
+              text, count = re.subn(pattern, replacement, text, count=1, flags=flags)
+              if count != 1:
+                  raise SystemExit(f"{path}: regex matched {count} times: {pattern[:110]!r}")
+              p.write_text(text)
 
-          ''',
-              "",
+          app_shell = Path("src/components/shell/app-shell.tsx")
+          shell = app_shell.read_text()
+          shell, count = re.subn(
+              r'function routeTitle\(pathname: string\) \{.*?\n\}\n\n',
+              '',
+              shell,
+              count=1,
+              flags=re.S,
           )
-          replace_once(
-              app_shell,
-              '''  const title = routeTitle(pathname);
-            const section = routeSection(pathname);
-            const hideDesktopTopBar = section === "/create";
-          ''',
-              '''  const section = routeSection(pathname);
-          ''',
+          if count != 1:
+              raise SystemExit(f"app-shell routeTitle matched {count} times")
+          shell = shell.replace(
+              '  const title = routeTitle(pathname);\n  const section = routeSection(pathname);\n  const hideDesktopTopBar = section === "/create";\n',
+              '  const section = routeSection(pathname);\n',
+              1,
           )
-          replace_once(
-              app_shell,
-              '''        <header
-                    className={cn(
-                      "kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:ml-0",
-                      hideDesktopTopBar && "lg:hidden",
-                    )}
-                    data-kinetic-surface="topbar"
-                  >
-          ''',
-              '''        <header
-                    className="kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:hidden"
-                    data-kinetic-surface="topbar"
-                  >
-          ''',
+          if 'hideDesktopTopBar' in shell or 'routeTitle(' in shell or 'const title =' in shell:
+              raise SystemExit("app-shell retained obsolete desktop top-bar state")
+          shell, count = re.subn(
+              r'''className=\{cn\(\s*"kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:ml-0",\s*hideDesktopTopBar && "lg:hidden",\s*\)\}''',
+              'className="kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:hidden"',
+              shell,
+              count=1,
+              flags=re.S,
           )
-          replace_once(
-              app_shell,
-              '''          <div className="hidden items-center gap-2 lg:flex">
-                    <span
-                      aria-hidden="true"
-                      className="size-1.5 rounded-full bg-accent-bright shadow-[0_0_16px_rgba(178,167,255,0.95)]"
-                    />
-                    <h1 className="text-sm font-semibold tracking-[0.01em] text-text/95">{title}</h1>
-                  </div>
+          if count != 1:
+              raise SystemExit(f"app-shell topbar class matched {count} times")
+          shell, count = re.subn(
+              r'\n\s*<div className="hidden items-center gap-2 lg:flex">.*?<h1[^>]*>\{title\}</h1>\s*</div>\n',
+              '\n',
+              shell,
+              count=1,
+              flags=re.S,
+          )
+          if count != 1:
+              raise SystemExit(f"app-shell desktop route title block matched {count} times")
+          app_shell.write_text(shell)
 
-          ''',
-              "",
-          )
+          create_workspace = Path("src/features/create/create-workspace.tsx")
+          create = create_workspace.read_text()
+          old_drop = '''              <div className="flex flex-col items-center gap-2">
+                <span className="flex items-center gap-2 text-sm font-semibold text-text">
+                  <ImagePlus aria-hidden="true" className="size-5 text-accent-bright" />
+                  Drop image to add as reference
+                </span>
+                <span className="text-xs text-text-muted">PNG, JPEG or WebP · up to 25 MB</span>
+              </div>'''
+          new_drop = '''              <div className="flex items-start gap-3" data-create-drop-content="true">
+                <ImagePlus
+                  aria-hidden="true"
+                  className="mt-0.5 size-5 shrink-0 text-accent-bright"
+                  data-create-drop-icon="true"
+                />
+                <div className="flex flex-col items-start gap-0.5 text-left" data-create-drop-copy="true">
+                  <span className="text-sm font-semibold leading-5 text-text" data-create-drop-title="true">
+                    Drop image to add as reference
+                  </span>
+                  <span className="text-xs leading-4 text-text-muted" data-create-drop-detail="true">
+                    PNG, JPEG or WebP · up to 25 MB
+                  </span>
+                </div>
+              </div>'''
+          if create.count(old_drop) != 1:
+              raise SystemExit(f"Create drop composition matched {create.count(old_drop)} times")
+          create_workspace.write_text(create.replace(old_drop, new_drop, 1))
 
-          create_workspace = "src/features/create/create-workspace.tsx"
-          replace_once(
-              create_workspace,
-              '''              <div className="flex flex-col items-center gap-2">
-                        <span className="flex items-center gap-2 text-sm font-semibold text-text">
-                          <ImagePlus aria-hidden="true" className="size-5 text-accent-bright" />
-                          Drop image to add as reference
-                        </span>
-                        <span className="text-xs text-text-muted">PNG, JPEG or WebP · up to 25 MB</span>
-                      </div>
-          ''',
-              '''              <div className="flex items-start gap-3" data-create-drop-content="true">
-                        <ImagePlus
-                          aria-hidden="true"
-                          className="mt-0.5 size-5 shrink-0 text-accent-bright"
-                          data-create-drop-icon="true"
-                        />
-                        <div className="flex flex-col items-start gap-0.5 text-left" data-create-drop-copy="true">
-                          <span className="text-sm font-semibold leading-5 text-text" data-create-drop-title="true">
-                            Drop image to add as reference
-                          </span>
-                          <span className="text-xs leading-4 text-text-muted" data-create-drop-detail="true">
-                            PNG, JPEG or WebP · up to 25 MB
-                          </span>
-                        </div>
-                      </div>
-          ''',
-          )
+          kinetic = Path("tests/ui/kinetic-shell.spec.ts")
+          ktext = kinetic.read_text()
+          pattern = r'test\("Phase 19 renders the kinetic shell across primary desktop sections", async \(\{ page \}\) => \{.*?\n\}\);\n\ntest\("Phase 19 floating mobile dock is inset, readable, and overflow-safe"'
+          replacement = '''test("Kinetic shell keeps desktop app chrome rail-only across application sections", async ({ page }) => {
+            await page.setViewportSize(desktopViewport);
+            await page.goto("/create");
 
-          kinetic_test = "tests/ui/kinetic-shell.spec.ts"
-          replace_once(
-              kinetic_test,
-              'test("Phase 19 renders the kinetic shell across primary desktop sections", async ({ page }) => {',
-              'test("Kinetic shell keeps desktop app chrome rail-only across application sections", async ({ page }) => {',
-          )
-          replace_once(
-              kinetic_test,
-              '''  await expect(shell).toBeVisible();
-            await expect(topbar).toBeVisible();
-            await expectDimensionalSurface(topbar);
-            await expectNoHorizontalOverflow(page);
-          ''',
-              '''  await expect(shell).toBeVisible();
-            await expect(topbar).toBeHidden();
-            await expectNoHorizontalOverflow(page);
-          ''',
-          )
-          replace_once(
-              kinetic_test,
-              '''  await expect(page.getByRole("link", { name: "Activity", exact: true }).first()).toHaveAttribute("aria-current", "page");
+            const shell = page.locator('[data-kinetic-shell="true"]');
+            const rail = page.locator('[data-kinetic-surface="desktop-rail"]');
+            const topbar = page.locator('[data-kinetic-surface="topbar"]');
             await expect(shell).toBeVisible();
+            await expect(rail).toBeVisible();
+            await expect(topbar).toBeHidden();
+            await expectDimensionalSurface(rail);
+            await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute("aria-current", "page");
             await expectNoHorizontalOverflow(page);
             await waitForKineticContent(page);
-            await page.screenshot({ path: "artifacts/phase19-activity-desktop.png", fullPage: true });
-          });
-          ''',
-              '''  await expect(page.getByRole("link", { name: "Activity", exact: true }).first()).toHaveAttribute("aria-current", "page");
+            await page.screenshot({ path: "artifacts/phase19-create-desktop.png", fullPage: true });
+
+            await page.getByRole("link", { name: "Library", exact: true }).click();
+            await expect(page).toHaveURL(/\\/library/);
+            await expect(page.getByRole("link", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
+            await expect(shell).toBeVisible();
+            await expect(topbar).toBeHidden();
+            await expectNoHorizontalOverflow(page);
+            await waitForKineticContent(page);
+            await page.screenshot({ path: "artifacts/phase19-library-desktop.png", fullPage: true });
+
+            await page.getByRole("link", { name: "Activity", exact: true }).first().click();
+            await expect(page).toHaveURL(/\\/activity/);
+            await expect(page.getByRole("link", { name: "Activity", exact: true }).first()).toHaveAttribute("aria-current", "page");
             await expect(shell).toBeVisible();
             await expect(topbar).toBeHidden();
             await expectNoHorizontalOverflow(page);
@@ -167,44 +161,47 @@ jobs:
             await waitForKineticContent(page);
             await page.screenshot({ path: "artifacts/phase19-settings-desktop.png", fullPage: true });
           });
-          ''',
-          )
 
-          lifecycle = "scripts/verify-create-lifecycle.mjs"
-          replace_once(
-              lifecycle,
-              '''  await composer.dispatchEvent("dragenter", { dataTransfer: droppedReferenceData });
-            await page.locator('[data-create-drop-overlay="true"]').waitFor({ state: "visible", timeout: 5_000 });
-            await composer.dispatchEvent("dragover", { dataTransfer: droppedReferenceData });
-          ''',
-              '''  await composer.dispatchEvent("dragenter", { dataTransfer: droppedReferenceData });
-            const dropOverlay = page.locator('[data-create-drop-overlay="true"]');
-            await dropOverlay.waitFor({ state: "visible", timeout: 5_000 });
-            const dropAlignment = await dropOverlay.evaluate((overlay) => {
-              const icon = overlay.querySelector('[data-create-drop-icon="true"]');
-              const copy = overlay.querySelector('[data-create-drop-copy="true"]');
-              const title = overlay.querySelector('[data-create-drop-title="true"]');
-              const detail = overlay.querySelector('[data-create-drop-detail="true"]');
-              if (!icon || !copy || !title || !detail) return null;
-              const iconBox = icon.getBoundingClientRect();
-              const titleBox = title.getBoundingClientRect();
-              const detailBox = detail.getBoundingClientRect();
-              return {
-                iconTop: iconBox.top,
-                titleTop: titleBox.top,
-                titleLeft: titleBox.left,
-                detailLeft: detailBox.left,
-                textAlign: getComputedStyle(copy).textAlign,
-              };
-            });
-            assert(dropAlignment, "Create reference-drop overlay did not expose measurable alignment geometry.");
-            assert(Math.abs(dropAlignment.titleLeft - dropAlignment.detailLeft) <= 1, `Create reference-drop title/detail are not left-aligned: ${JSON.stringify(dropAlignment)}`);
-            assert(["left", "start"].includes(dropAlignment.textAlign), `Create reference-drop copy is not left-aligned: ${JSON.stringify(dropAlignment)}`);
-            assert(Math.abs(dropAlignment.iconTop - dropAlignment.titleTop) <= 4, `Create reference-drop icon is not aligned with the primary copy line: ${JSON.stringify(dropAlignment)}`);
-            await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-reference-drop.png`, fullPage: true });
-            await composer.dispatchEvent("dragover", { dataTransfer: droppedReferenceData });
-          ''',
-          )
+          test("Phase 19 floating mobile dock is inset, readable, and overflow-safe"'''
+          ktext, count = re.subn(pattern, replacement, ktext, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit(f"kinetic desktop test matched {count} times")
+          kinetic.write_text(ktext)
+
+          lifecycle = Path("scripts/verify-create-lifecycle.mjs")
+          ltext = lifecycle.read_text()
+          old_drag = '''  await composer.dispatchEvent("dragenter", { dataTransfer: droppedReferenceData });
+          await page.locator('[data-create-drop-overlay="true"]').waitFor({ state: "visible", timeout: 5_000 });
+          await composer.dispatchEvent("dragover", { dataTransfer: droppedReferenceData });'''
+          new_drag = '''  await composer.dispatchEvent("dragenter", { dataTransfer: droppedReferenceData });
+          const dropOverlay = page.locator('[data-create-drop-overlay="true"]');
+          await dropOverlay.waitFor({ state: "visible", timeout: 5_000 });
+          const dropAlignment = await dropOverlay.evaluate((overlay) => {
+            const icon = overlay.querySelector('[data-create-drop-icon="true"]');
+            const copy = overlay.querySelector('[data-create-drop-copy="true"]');
+            const title = overlay.querySelector('[data-create-drop-title="true"]');
+            const detail = overlay.querySelector('[data-create-drop-detail="true"]');
+            if (!icon || !copy || !title || !detail) return null;
+            const iconBox = icon.getBoundingClientRect();
+            const titleBox = title.getBoundingClientRect();
+            const detailBox = detail.getBoundingClientRect();
+            return {
+              iconTop: iconBox.top,
+              titleTop: titleBox.top,
+              titleLeft: titleBox.left,
+              detailLeft: detailBox.left,
+              textAlign: getComputedStyle(copy).textAlign,
+            };
+          });
+          assert(dropAlignment, "Create reference-drop overlay did not expose measurable alignment geometry.");
+          assert(Math.abs(dropAlignment.titleLeft - dropAlignment.detailLeft) <= 1, `Create reference-drop title/detail are not left-aligned: ${JSON.stringify(dropAlignment)}`);
+          assert(["left", "start"].includes(dropAlignment.textAlign), `Create reference-drop copy is not left-aligned: ${JSON.stringify(dropAlignment)}`);
+          assert(Math.abs(dropAlignment.iconTop - dropAlignment.titleTop) <= 4, `Create reference-drop icon is not aligned with the primary copy line: ${JSON.stringify(dropAlignment)}`);
+          await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-reference-drop.png`, fullPage: true });
+          await composer.dispatchEvent("dragover", { dataTransfer: droppedReferenceData });'''
+          if ltext.count(old_drag) != 1:
+              raise SystemExit(f"Create lifecycle drag sequence matched {ltext.count(old_drag)} times")
+          lifecycle.write_text(ltext.replace(old_drag, new_drag, 1))
 
           replace_once(
               "docs/ui/UI_SYSTEM.md",
@@ -228,8 +225,8 @@ jobs:
           )
           replace_once(
               "docs/ui/COMPONENT_CATALOG.md",
-              '**Post-production UI-068 note:** Desktop `/create` deliberately suppresses AppShell\'s top bar because the desktop rail already provides route context and Activity/Settings navigation. Mobile Create retains the compact utility header because Settings is not a persistent dock destination. Other application routes keep their top bar.\n',
-              '**Post-production UI-068 note:** Desktop `/create` deliberately suppressed AppShell\'s top bar while other application routes retained it; mobile Create retained the compact utility header because Settings is not a persistent dock destination. UI-071 later supersedes the desktop route exception.\n\n**Post-production UI-071 note:** Desktop application routes are rail-only at the shell level: the full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes retain the compact utility header because Settings remains outside the persistent bottom dock.\n',
+              "**Post-production UI-068 note:** Desktop `/create` deliberately suppresses AppShell's top bar because the desktop rail already provides route context and Activity/Settings navigation. Mobile Create retains the compact utility header because Settings is not a persistent dock destination. Other application routes keep their top bar.\n",
+              "**Post-production UI-068 note:** Desktop `/create` deliberately suppressed AppShell's top bar while other application routes retained it; mobile Create retained the compact utility header because Settings is not a persistent dock destination. UI-071 later supersedes the desktop route exception.\n\n**Post-production UI-071 note:** Desktop application routes are rail-only at the shell level: the full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes retain the compact utility header because Settings remains outside the persistent bottom dock.\n",
           )
           replace_once(
               "docs/ui/COMPONENT_CATALOG.md",
