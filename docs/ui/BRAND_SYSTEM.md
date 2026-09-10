@@ -1,6 +1,6 @@
 # RenderLab Brand System Direction
 
-**Status:** Accepted brand-direction baseline; identity artwork is not yet approved  
+**Status:** Brand identity direction selected; production vector artwork not yet finalized  
 **Scope:** brand identity, logo/wordmark, brand expression across Landing, product surfaces, transactional/auth email, and public metadata  
 **Does not authorize:** production asset replacement, product behavior changes, backend/schema/infrastructure changes, dependency adoption, live Auth-template changes, production deployment, or a new product Cycle/Phase by itself
 
@@ -61,7 +61,7 @@ Avoid converging on familiar "AI startup" shorthand as the primary identity:
 - every interaction using the same fade, scale, or hover glow;
 - marketing copy built around vague claims such as "unleash creativity" or "AI magic" without product substance.
 
-The existing simple line-drawn `R` mark is explicitly reopened for redesign. It remains the production mark until a replacement identity passes the design and implementation gates.
+The existing simple line-drawn `R` remains the production mark until the selected replacement identity passes the production-vector, implementation, and validation gates below.
 
 ## Identity system goals
 The identity must work before motion or special effects are added.
@@ -74,10 +74,10 @@ A successful RenderLab identity should include:
 5. **Full brand lockup** — suitable for Landing, email, public metadata, documentation, and larger brand moments.
 6. **Optional motion identity** — an animated reveal/morph may extend the mark on expressive surfaces, but the static identity must stand on its own.
 
-The mark does **not** have to remain an `R` monogram. An `R` may survive only if the concept becomes genuinely distinctive and connected to RenderLab's product idea.
+The selected direction is an `R` monogram only because its modular construction gives the letter a direct and ownable `Render + Lab` concept. A generic letterform remains insufficient.
 
 ## Initial logo exploration territories
-The first identity R&D pass should deliberately explore at least three materially different concepts. These are starting territories, not preselected answers.
+The first identity R&D pass deliberately explored materially different concepts. They were starting territories rather than preselected answers.
 
 ### Territory A — Frame / Portal
 Explore an identity based on a frame, aperture, boundary, or portal through which an idea becomes an image or one visual state becomes another.
@@ -112,10 +112,17 @@ Potential strengths:
 Risk to avoid:
 - infinity-symbol, waveform, or generic SaaS-loop clichés.
 
-Additional territories may be explored when a stronger ownable idea appears. Do not force one of these three if research produces a better concept.
+### Selected direction — Lab Grid / modular R
+The first broad concept board was rejected because its symbols were visually polished but too generic and did not communicate either half of the name strongly enough.
+
+The accepted second-pass direction is a bold `R` constructed from simple modular geometric units. The units should read simultaneously as:
+- **render blocks / pixels / image tiles** assembling into a resolved visual result; and
+- **lab cells / samples / experiment modules** suggesting iteration, testing, recombination, and controlled creative exploration.
+
+This is the selected identity concept. It is not permission to ship the generated exploration board literally. The exact geometry must be redrawn as precise owned vector artwork and pressure-tested before replacing any production identity asset.
 
 ## Logo acceptance requirements
-Before an identity concept can be called accepted, review it in real usage rather than only as a large isolated logo board.
+Before the selected identity can be called production-ready, review it in real usage rather than only as a large isolated logo board.
 
 At minimum show:
 - 16px, 24px, 32px, 64px, and large-display mark behavior;
@@ -129,7 +136,7 @@ At minimum show:
 - static/reduced-motion form;
 - any proposed motion identity over its full start → transition → settled sequence.
 
-Reject concepts that depend on tiny internal detail, delicate gradients, bloom, animation, or a particular background to be recognizable.
+Reject final constructions that depend on tiny internal detail, delicate gradients, bloom, animation, or a particular background to be recognizable.
 
 ## Typography direction
 Typography should feel contemporary, precise, and editorial rather than "sci-fi" for its own sake.
@@ -143,8 +150,10 @@ Default direction:
 
 Settings, Admin, account/recovery, and email remain trust-oriented even if the Landing uses a more expressive display voice.
 
+The second-pass concept board's clean sans-serif treatment is directionally compatible with the selected identity, but exact wordmark weight, spacing, and any bespoke letter edits are not yet locked.
+
 ## Color direction
-The existing cobalt/violet accent is **not sacred**. It may survive, evolve, or be replaced after identity exploration.
+The existing cobalt/violet accent is **not sacred**. It may survive, evolve, or be replaced after identity refinement.
 
 The accepted palette should:
 - give RenderLab a recognizable brand signature without becoming "purple AI app" shorthand;
@@ -153,6 +162,8 @@ The accepted palette should:
 - include disciplined neutral surfaces rather than relying on glow for hierarchy;
 - maintain accessible contrast for functional text and controls;
 - remain meaningful when gradients or effects are unavailable.
+
+The blue/violet/pink treatment shown in the accepted second-pass identity board is an **exploration cue**, not a locked production gradient or palette. The modular `R` must succeed first in monochrome.
 
 Do not finalize a palette in isolation from the logo, typography, Landing concept, and representative product media.
 
@@ -164,7 +175,7 @@ Brand motion should use the same perceptual language as the product:
 - settle cleanly;
 - avoid permanent visual agitation.
 
-Possible identity motion includes a mark resolving from layers, a frame changing state, or a continuous path completing into the mark. This is exploratory, not implementation authorization.
+For the selected modular `R`, the strongest current motion hypothesis is that discrete render/experiment cells resolve into the finished mark, then remain settled. This is an extension of the selected concept, not yet a production animation requirement.
 
 A moving logo is never required for basic recognition. Email, favicon, reduced-motion, low-power, and static contexts must receive a complete non-animated identity.
 
@@ -177,10 +188,12 @@ Brand graphics should:
 - favor a few ownable compositional ideas over a catalog of effects;
 - remain truthful: a marketing demonstration must not imply unsupported product behavior or fabricated generation state.
 
+The modular construction of the selected `R` may inform grids, reveal cells, sampling frames, media assembly, and transition geometry across brand surfaces without repeating the logo as decoration everywhere.
+
 Illustrative geometry, shaders, particles, or 3D/WebGL may be explored on the Landing only when they reinforce the accepted brand idea and meet the North Star's performance/reduced-motion requirements.
 
 ## Landing page role
-The Landing is the highest-expression brand surface and should be redesigned after the identity foundation is accepted.
+The Landing is the highest-expression brand surface and should be redesigned after the production identity foundation is sufficiently defined.
 
 The Landing should:
 - make the product feel advanced before the visitor reads feature copy;
@@ -190,6 +203,8 @@ The Landing should:
 - tell a clear product story from first impression to invitation/sign-in/open-Create action;
 - remain useful, understandable, keyboard-accessible, touch-capable, and complete under reduced motion;
 - preserve truthful closed-beta/access behavior until the product decision changes.
+
+The generated second-pass Landing mockup is **directional context only**. It demonstrates how the selected mark might live in a cinematic dark environment, but its exact composition, copy, palette, controls, and layout are not accepted production design.
 
 The existing Landing implementation remains production-authoritative until a complete replacement concept and kinetic prototype are explicitly approved and implemented through the normal gates.
 
@@ -208,6 +223,8 @@ Email redesign must account for the realities of email clients:
 - maintain readable light/dark behavior where clients transform colors;
 - preserve link visibility and plain-text meaning;
 - verify representative Gmail and Outlook rendering before production acceptance where feasible.
+
+The generated second-pass email mockup is **directional context only**. Its exact layout, CTA styling, colors, and copy are not accepted live Auth-template changes.
 
 ### Auth/security boundary
 Current RenderLab Auth email behavior is part of the existing Supabase/Resend production contract rather than ordinary checked-in React page code. Before changing a live invite, recovery, confirmation, or related Auth template:
@@ -250,14 +267,14 @@ Avoid:
 - technical backend vocabulary in customer-facing brand communication;
 - cleverness that makes an auth/security email less clear.
 
-Exact marketing copy remains a design/copy decision for the Landing phase; this document sets tone rather than locking final headlines.
+Exact marketing copy remains a design/copy decision for the Landing phase; the generated concept-board slogans are not locked product copy.
 
 ## Brand R&D sequence
 The visual program should proceed in this order unless the user explicitly changes it:
 
-1. **Brand Identity R&D 0.1** — audit current identity touchpoints, build reference matrix, explore materially different identity territories, test mark/wordmark/palette/type/motion in context, and obtain explicit human approval.
-2. **Landing Brand Experience R&D** — use the accepted identity to produce the complete desktop/mobile visual concept plus signature temporal prototype.
-3. **Email Brand System R&D** — design representative invitation/recovery/account email patterns using the accepted identity while preserving Auth/security contracts.
+1. **Brand Identity R&D 0.1** — selected concept is now Lab Grid / modular `R`; finish exact vector geometry, monochrome/small-size behavior, wordmark relationship, palette evaluation and optional motion evidence before production identity replacement.
+2. **Landing Brand Experience R&D** — use the selected identity to produce the complete desktop/mobile visual concept plus signature temporal prototype.
+3. **Email Brand System R&D** — design representative invitation/recovery/account email patterns using the selected identity while preserving Auth/security contracts.
 4. **Create Visual R&D** — continue the already-open Create interaction-language task using the accepted brand foundation so its visual language does not bake in a superseded identity.
 5. **Product rollout planning** — only after approved evidence exists, define bounded implementation phases for the agreed surfaces and shared brand primitives.
 
@@ -278,6 +295,17 @@ The first brand task is complete only when all of the following are true:
 - the accepted decision is written back into this file and any affected UI/design-system records;
 - no production asset/template is called changed until implementation and exact-head validation actually prove it.
 
+Current gate state:
+- current-state audit: complete;
+- reference matrix: complete;
+- materially different first-pass concepts: complete;
+- initial cross-surface concept board: complete;
+- selected direction: **Lab Grid / modular R — explicitly approved by the user**;
+- production vector construction and optical pressure tests: still open;
+- final palette/wordmark lockup: still open;
+- optional motion evidence: still open;
+- production implementation: not started.
+
 ## Engineering and release integrity
 Brand work does not lower RenderLab's engineering bar.
 
@@ -297,19 +325,25 @@ When approved brand assets are eventually implemented:
 Passing tests cannot substitute for brand/design fidelity, and brand approval cannot substitute for passing tests.
 
 ## Current decision
-The user has explicitly authorized the **broader visual/branding program** and approved the direction described above.
+The user has explicitly authorized the **broader visual/branding program** and has selected the **Lab Grid modular `R` direction** as RenderLab's identity concept.
+
+The selected mark is a bold `R` built from simple modular geometric units. Its conceptual link is deliberately two-sided:
+- **Render:** discrete image/render blocks resolve into a finished visual whole.
+- **Lab:** the same units read as cells/samples/modules used for experimentation and iteration.
 
 What is approved now:
-- reopening RenderLab's logo/wordmark and visual identity for design exploration;
+- the **Lab Grid / modular `R`** as the selected RenderLab identity concept;
+- the conceptual relationship between modular render blocks and a creative experimentation lab;
+- developing precise owned vector geometry, monochrome/inverted forms, favicon/app icon, wordmark lockup, shell treatment, Landing treatment, email treatment and OG/social treatment from this direction;
 - treating Landing, product, and email as one brand system with different expression levels;
-- making Brand Identity R&D 0.1 the first design step;
 - using the approved North Star's design-before-code, prototype, fidelity, accessibility, and engineering gates.
 
 What is not yet approved:
-- any specific new logo;
-- any specific new palette or font;
-- a replacement Landing design;
-- a replacement email design;
+- exact final vector geometry or production asset files;
+- a locked production palette or new font dependency;
+- the generated board's Landing, product, email, or social mockups as final production layouts;
+- replacement production Landing code;
+- live Auth email-template changes;
 - a production asset/configuration change;
 - a new production dependency;
 - Phase 23/Cycle 5 implementation;
