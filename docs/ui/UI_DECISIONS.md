@@ -632,3 +632,15 @@ PR #140 guarded squash-merged as `c71554b692864c84cd1bc9f796255fdde71eae43`. All
 **Verification:** Exact final PR head `171dd384bd9b18ff82ab0e1dc40d1890e2cd33c1` passed all 16 workflows GitHub attached, including Library History `34417882145`, Engineering Quality `34417882154`, UI Shell `34417882108`, Library Lifecycle `34417882119` and Library Drag Drop `34417882079`. Configured Library History proved the maintained 44×44 checkbox root, 22×22 visual box and metadata integrated inside the media frame. Tree-identical render artifact `10129703554` (`sha256:9d603f1fddbb76f2e25e68fcaf6ae991e700ac0703848d279b72c0c3a7947e06`) was human-reviewed clean at desktop and 390px. PR #142 guarded squash-merged as `152e00f5b805bef0299b14635743d6978160700e`; all three workflows GitHub attached to merged `main` passed: Engineering Quality `34418649510`, UI Shell Validation `34418649507` and Activity Cancel Visual `34418649511`.
 
 **Consequences:** No schema, account/authorization, generation/provider/worker, R2/storage, route hierarchy or deployment contract changed. Automatic Git → Vercel deployment remains disabled. UI-070 is production-live in exact source `378ea68b5c3087f84e83cc73682de2f919168c0a` at READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp`; `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` remains the preferred rollback anchor. UI-070 does not authorize or imply Phase 23 / Cycle 5.
+
+### UI-071 — Desktop application chrome is rail-only and Create drop copy aligns as one unit
+**Status:** Accepted / Implemented / Verification Pending
+**Date:** 2026-09-10
+
+**Decision:** User-directed production review supersedes UI-068's desktop-Create-only top-bar exception. On desktop application routes, the persistent left rail is the shell navigation/context surface and the redundant full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes keep the compact utility header because Settings remains outside the persistent bottom dock.
+
+Create's UI-069 drag-only reference overlay also gets one bounded composition correction: the icon aligns with the primary copy line and the title/detail are one left-aligned two-line text block inside the centered overlay. Drag/drop availability, upload validation, durable upload transaction, keyboard/touch picker baseline and drop lifecycle remain unchanged.
+
+**Guardrails:** No route, navigation destination, account access, media/generation behavior, upload contract, global state, primitive, dependency, schema, storage, worker/provider/routing or deployment contract changes. This is post-production corrective maintenance, not Phase 23 / Cycle 5.
+
+**Verification:** Exact-head UI Shell and configured Create Lifecycle validation plus responsive rendered review are required before this decision is marked verified/merged. Production deployment remains a separate explicit operation.

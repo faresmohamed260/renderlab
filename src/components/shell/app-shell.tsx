@@ -43,15 +43,6 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function routeTitle(pathname: string) {
-  if (pathname.startsWith("/create")) return "Create";
-  if (pathname.startsWith("/library")) return "Library";
-  if (pathname.startsWith("/activity")) return "Activity";
-  if (pathname.startsWith("/settings")) return "Settings";
-  if (pathname.startsWith("/admin")) return "Admin";
-  return "Create";
-}
-
 function routeSection(pathname: string) {
   if (pathname.startsWith("/create")) return "/create";
   if (pathname.startsWith("/library")) return "/library";
@@ -182,9 +173,7 @@ function UtilityIcon({ children, reduceMotion }: { children: ReactNode; reduceMo
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const title = routeTitle(pathname);
   const section = routeSection(pathname);
-  const hideDesktopTopBar = section === "/create";
   const previousSection = useRef(section);
   const reduceMotion = Boolean(useReducedMotion());
 
@@ -238,10 +227,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="relative z-10 min-w-0 flex-1 lg:pl-3">
         <header
-          className={cn(
-            "kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:ml-0",
-            hideDesktopTopBar && "lg:hidden",
-          )}
+          className="kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:hidden"
           data-kinetic-surface="topbar"
         >
           <motion.div
@@ -258,14 +244,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <RenderLabBrand markClassName="size-6" textClassName="text-sm" />
             </Link>
           </motion.div>
-
-          <div className="hidden items-center gap-2 lg:flex">
-            <span
-              aria-hidden="true"
-              className="size-1.5 rounded-full bg-accent-bright shadow-[0_0_16px_rgba(178,167,255,0.95)]"
-            />
-            <h1 className="text-sm font-semibold tracking-[0.01em] text-text/95">{title}</h1>
-          </div>
 
           <div className="ml-auto grid grid-cols-2 place-items-center gap-1 rounded-xl border border-white/[0.07] bg-black/15 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_20px_rgba(129,114,246,0.04)]">
             <UtilityIcon reduceMotion={reduceMotion}>

@@ -1913,3 +1913,15 @@ This is a user-directed post-production Library presentation correction, not Pha
 - [x] PR #142 guarded squash-merged as `152e00f5b805bef0299b14635743d6978160700e`. Every workflow GitHub attached to merged `main` passed: Engineering Quality `34418649510`, UI Shell Validation `34418649507` and Activity Cancel Visual `34418649511`.
 
 Production rollout is complete: exact source `378ea68b5c3087f84e83cc73682de2f919168c0a` is live at READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp` / `https://renderlab-fc4hli5nz-faresmohamed260-6733s-projects.vercel.app` and `https://renderlab.faresuniform.uk`. Clean rollout run `34427597654` passed the public/private route smoke with no rollback; `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` remains the preferred rollback anchor. Automatic Git → Vercel deployment remains disabled. No Phase 23 / Cycle 5 work is implied.
+
+## Post-production UI-071 desktop shell + Create drop alignment — 2026-09-10
+**Status: `IMPLEMENTED / VERIFICATION PENDING / NOT DEPLOYED`.**
+
+This is user-directed post-production corrective maintenance, not Phase 23 / Cycle 5.
+
+- [x] Remove the redundant full-width AppShell top context bar from all desktop application routes while retaining the persistent desktop rail.
+- [x] Keep the compact mobile/narrow utility header so account/Settings access remains available above the Create/Library/Activity dock.
+- [x] Realign the Create drag-only reference overlay as one icon plus a left-aligned two-line title/detail block; preserve the existing durable upload transaction and picker baseline.
+- [x] Add explicit desktop shell assertions for Create, Library, Activity and Settings plus configured geometry assertions/screenshot coverage for the reference-drop copy alignment.
+- [ ] Pass exact-head affected workflows and human-review the desktop shell + configured Create drag-overlay render before merge.
+- [ ] Record guarded merge and merged-main verification. No production deployment is authorized by this correction.
