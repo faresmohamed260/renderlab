@@ -4,6 +4,7 @@ import { chromium } from "@playwright/test";
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const canonicalOrigin = "https://renderlab-lake.vercel.app";
 const artifactDir = "artifacts";
+const lockedMarkPath = "M56 0H88A34 34 0 0 1 122 34V49A34 34 0 0 1 88 83H56Z";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -31,6 +32,29 @@ async function verifyFocus(page, locator, label) {
   assert(hasOutline || hasRing, `${label} has no visible focus treatment.`);
 }
 
+async function verifyLockedBrand(page, label) {
+  const brand = page.locator('[data-renderlab-brand="locked-lab-grid"]').first();
+  await brand.waitFor();
+  const mark = brand.locator('svg[data-renderlab-mark="lab-grid"]');
+  assert(await mark.count() === 1, `${label} does not render the locked Lab Grid mark.`);
+
+  const renderPart = brand.locator('[data-renderlab-wordmark-part="render"]');
+  const labPart = brand.locator('[data-renderlab-wordmark-part="lab"]');
+  assert((await renderPart.textContent()) === "Render", `${label} Render wordmark segment changed.`);
+  assert((await labPart.textContent()) === "Lab", `${label} Lab wordmark segment changed.`);
+
+  const weights = await brand.evaluate((element) => {
+    const render = element.querySelector('[data-renderlab-wordmark-part="render"]');
+    const lab = element.querySelector('[data-renderlab-wordmark-part="lab"]');
+    if (!(render instanceof HTMLElement) || !(lab instanceof HTMLElement)) return null;
+    return {
+      render: Number.parseInt(getComputedStyle(render).fontWeight, 10),
+      lab: Number.parseInt(getComputedStyle(lab).fontWeight, 10),
+    };
+  });
+  assert(weights && weights.render > weights.lab, `${label} no longer preserves Render-bold / Lab-light hierarchy.`);
+}
+
 await mkdir(artifactDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 try {
@@ -39,6 +63,7 @@ try {
   assert(new URL(desktop.url()).pathname === "/", "Bare root did not remain the landing route.");
   await desktop.getByRole("heading", { name: "Create with intent. Keep what matters." }).waitFor();
   assert(await desktop.getByRole("complementary", { name: "Application navigation" }).count() === 0, "Landing unexpectedly rendered AppShell navigation.");
+  await verifyLockedBrand(desktop, "Landing brand");
   const openCreate = desktop.getByRole("link", { name: /Open Create/ }).first();
   const signIn = desktop.getByRole("link", { name: "Sign in", exact: true }).first();
   assert((await openCreate.getAttribute("href")) === "/create", "Landing Open Create CTA does not target /create.");
@@ -59,8 +84,18 @@ try {
   assert(title.includes("RenderLab") && title.includes("Image & video"), `Unexpected landing title: ${title}`);
   const description = await desktop.locator('meta[name="description"]').getAttribute("content");
   assert(description?.includes("Create images and videos"), "Launch metadata description is missing or untruthful.");
+
   const icon = await desktop.request.get(`${baseUrl}/icon.svg`);
   assert(icon.ok(), `Brand icon unavailable: ${icon.status()}`);
+  const iconBody = await icon.text();
+  assert(iconBody.includes(lockedMarkPath), "App icon does not use the locked Lab Grid bowl geometry.");
+  assert(iconBody.includes("#F7C7F1") && iconBody.includes("#73D7FF"), "App icon lost the locked cyan/blue/violet/pink color character.");
+
+  const publicMark = await desktop.request.get(`${baseUrl}/renderlab-mark.svg`);
+  assert(publicMark.ok(), `Public RenderLab mark unavailable: ${publicMark.status()}`);
+  const publicMarkBody = await publicMark.text();
+  assert(publicMarkBody.includes(lockedMarkPath), "Public RenderLab mark does not use the locked Lab Grid geometry.");
+
   const og = desktop.locator('meta[property="og:image"]');
   assert(await og.count() > 0, "Open Graph image metadata is missing.");
   const ogUrl = await og.first().getAttribute("content");
@@ -81,6 +116,7 @@ try {
   assert((await currentCreate.getAttribute("aria-current")) === "page", "Create nav is not active on /create.");
   const shellBrand = create.getByRole("link", { name: "Open Create workspace" }).first();
   assert((await shellBrand.getAttribute("href")) === "/create", "AppShell brand does not return to /create.");
+  await verifyLockedBrand(create, "Application shell brand");
   await create.screenshot({ path: `${artifactDir}/brand-launch-create-shell.png`, fullPage: true });
 
   const legacy = await browser.newPage({ viewport: { width: 1200, height: 900 } });
@@ -99,6 +135,7 @@ try {
   await mobile.getByRole("heading", { name: "Create with intent. Keep what matters." }).waitFor();
   await mobile.getByRole("link", { name: /Open Create/ }).first().waitFor();
   await mobile.getByRole("link", { name: "Sign in", exact: true }).first().waitFor();
+  await verifyLockedBrand(mobile, "Narrow landing brand");
   await assertNoHorizontalOverflow(mobile, "Narrow landing");
   const animations = await mobile.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length);
   assert(animations === 0, `Reduced-motion landing has ${animations} running animation(s).`);
