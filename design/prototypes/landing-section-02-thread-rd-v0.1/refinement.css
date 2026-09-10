@@ -1,0 +1,32 @@
+.steps li { color: #747f8e; }
+.steps small { color: #7f8998; }
+.steps li.is-active small { color: #aab3c0; }
+
+.stage[data-active-step="1"] .reference-card {
+  border-color: rgba(255,255,255,.36);
+  box-shadow: 0 22px 64px rgba(0,0,0,.5), 0 0 34px rgba(115,215,255,.08);
+}
+.stage[data-active-step="1"] .reference-frame { border-color: rgba(115,215,255,.38); }
+.stage[data-active-step="1"] .reference-link { color: #eef3f8; background: rgba(7,10,15,.82); }
+
+.stage[data-active-step="3"] .library-card.back { opacity: .46; }
+.stage[data-active-step="3"] .library-card.mid { opacity: .72; }
+.stage[data-active-step="3"] .library-card.front {
+  border-color: rgba(115,215,255,.62);
+  box-shadow: inset 0 0 0 1px rgba(129,114,246,.13), 0 24px 70px rgba(0,0,0,.44);
+}
+.stage[data-active-step="3"] .saved-chip {
+  border-color: rgba(123,224,181,.28);
+  background: rgba(7,10,15,.82);
+}
+
+@media (max-width: 900px) {
+  h1 { font-size: clamp(40px,11.6vw,48px); line-height: .92; letter-spacing: -.055em; }
+  h1 br { display: initial !important; }
+  .dek { color: #aab3c0; }
+  .steps li { color: #788392; }
+  .steps li.is-active { color: #f2f5f9; }
+  .reference-frame { inset: 14% 8% 14%; }
+  .reference-card { width: 78px; }
+  .library-stack { inset: 14% 8% 14%; }
+}
