@@ -1,0 +1,227 @@
+from pathlib import Path
+import re
+
+
+def replace_once(path: str, old: str, new: str) -> None:
+    p = Path(path)
+    text = p.read_text()
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{path}: expected one exact match, found {count}: {old[:100]!r}")
+    p.write_text(text.replace(old, new, 1))
+
+
+app = Path("src/components/shell/app-shell.tsx")
+text = app.read_text()
+text, count = re.subn(
+    r"function routeTitle\(pathname: string\) \{.*?\n\}\n\n",
+    "",
+    text,
+    count=1,
+    flags=re.S,
+)
+if count != 1:
+    raise SystemExit(f"routeTitle removal matched {count} times")
+old_vars = '  const title = routeTitle(pathname);\n  const section = routeSection(pathname);\n  const hideDesktopTopBar = section === "/create";\n'
+if text.count(old_vars) != 1:
+    raise SystemExit(f"AppShell state block matched {text.count(old_vars)} times")
+text = text.replace(old_vars, '  const section = routeSection(pathname);\n', 1)
+text, count = re.subn(
+    r'className=\{cn\(\s*"kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:ml-0",\s*hideDesktopTopBar && "lg:hidden",\s*\)\}',
+    'className="kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:hidden"',
+    text,
+    count=1,
+    flags=re.S,
+)
+if count != 1:
+    raise SystemExit(f"topbar class replacement matched {count} times")
+text, count = re.subn(
+    r'\n\s*<div className="hidden items-center gap-2 lg:flex">.*?<h1[^>]*>\{title\}</h1>\s*</div>\n',
+    '\n',
+    text,
+    count=1,
+    flags=re.S,
+)
+if count != 1:
+    raise SystemExit(f"desktop route-title block removal matched {count} times")
+if 'hideDesktopTopBar' in text or 'routeTitle(' in text or '{title}' in text:
+    raise SystemExit("AppShell retained obsolete desktop top-bar state after transformation")
+app.write_text(text)
+
+workspace = Path("src/features/create/create-workspace.tsx")
+text = workspace.read_text()
+drop_pattern = r'''<div className="flex flex-col items-center gap-2">\s*<span className="flex items-center gap-2 text-sm font-semibold text-text">\s*<ImagePlus aria-hidden="true" className="size-5 text-accent-bright" />\s*Drop image to add as reference\s*</span>\s*<span className="text-xs text-text-muted">PNG, JPEG or WebP · up to 25 MB</span>\s*</div>'''
+drop_replacement = '''<div className="flex items-start gap-3" data-create-drop-content="true">
+                <ImagePlus
+                  aria-hidden="true"
+                  className="mt-0.5 size-5 shrink-0 text-accent-bright"
+                  data-create-drop-icon="true"
+                />
+                <div className="flex flex-col items-start gap-0.5 text-left" data-create-drop-copy="true">
+                  <span className="text-sm font-semibold leading-5 text-text" data-create-drop-title="true">
+                    Drop image to add as reference
+                  </span>
+                  <span className="text-xs leading-4 text-text-muted" data-create-drop-detail="true">
+                    PNG, JPEG or WebP · up to 25 MB
+                  </span>
+                </div>
+              </div>'''
+text, count = re.subn(drop_pattern, lambda _: drop_replacement, text, count=1, flags=re.S)
+if count != 1:
+    raise SystemExit(f"Create drop composition matched {count} times")
+workspace.write_text(text)
+
+kinetic = Path("tests/ui/kinetic-shell.spec.ts")
+text = kinetic.read_text()
+pattern = r'test\("Phase 19 renders the kinetic shell across primary desktop sections", async \(\{ page \}\) => \{.*?\n\}\);\n\ntest\("Phase 19 floating mobile dock is inset, readable, and overflow-safe"'
+replacement = r'''test("Kinetic shell keeps desktop app chrome rail-only across application sections", async ({ page }) => {
+  await page.setViewportSize(desktopViewport);
+  await page.goto("/create");
+
+  const shell = page.locator('[data-kinetic-shell="true"]');
+  const rail = page.locator('[data-kinetic-surface="desktop-rail"]');
+  const topbar = page.locator('[data-kinetic-surface="topbar"]');
+  await expect(shell).toBeVisible();
+  await expect(rail).toBeVisible();
+  await expect(topbar).toBeHidden();
+  await expectDimensionalSurface(rail);
+  await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute("aria-current", "page");
+  await expectNoHorizontalOverflow(page);
+  await waitForKineticContent(page);
+  await page.screenshot({ path: "artifacts/phase19-create-desktop.png", fullPage: true });
+
+  await page.getByRole("link", { name: "Library", exact: true }).click();
+  await expect(page).toHaveURL(/\/library/);
+  await expect(page.getByRole("link", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(topbar).toBeHidden();
+  await expectNoHorizontalOverflow(page);
+  await waitForKineticContent(page);
+  await page.screenshot({ path: "artifacts/phase19-library-desktop.png", fullPage: true });
+
+  await page.getByRole("link", { name: "Activity", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/activity/);
+  await expect(page.getByRole("link", { name: "Activity", exact: true }).first()).toHaveAttribute("aria-current", "page");
+  await expect(topbar).toBeHidden();
+  await expectNoHorizontalOverflow(page);
+  await waitForKineticContent(page);
+  await page.screenshot({ path: "artifacts/phase19-activity-desktop.png", fullPage: true });
+
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings/);
+  await expect(page.getByRole("link", { name: "Settings", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(topbar).toBeHidden();
+  await expectNoHorizontalOverflow(page);
+  await waitForKineticContent(page);
+  await page.screenshot({ path: "artifacts/phase19-settings-desktop.png", fullPage: true });
+});
+
+test("Phase 19 floating mobile dock is inset, readable, and overflow-safe"'''
+text, count = re.subn(pattern, lambda _: replacement, text, count=1, flags=re.S)
+if count != 1:
+    raise SystemExit(f"desktop kinetic-shell test replacement matched {count} times")
+kinetic.write_text(text)
+
+lifecycle = Path("scripts/verify-create-lifecycle.mjs")
+text = lifecycle.read_text()
+drag_pattern = r'''await composer\.dispatchEvent\("dragenter", \{ dataTransfer: droppedReferenceData \}\);\s*await page\.locator\('\[data-create-drop-overlay="true"\]'\)\.waitFor\(\{ state: "visible", timeout: 5_000 \}\);\s*await composer\.dispatchEvent\("dragover", \{ dataTransfer: droppedReferenceData \}\);'''
+drag_replacement = '''await composer.dispatchEvent("dragenter", { dataTransfer: droppedReferenceData });
+          const dropOverlay = page.locator('[data-create-drop-overlay="true"]');
+          await dropOverlay.waitFor({ state: "visible", timeout: 5_000 });
+          const dropAlignment = await dropOverlay.evaluate((overlay) => {
+            const icon = overlay.querySelector('[data-create-drop-icon="true"]');
+            const copy = overlay.querySelector('[data-create-drop-copy="true"]');
+            const title = overlay.querySelector('[data-create-drop-title="true"]');
+            const detail = overlay.querySelector('[data-create-drop-detail="true"]');
+            if (!icon || !copy || !title || !detail) return null;
+            const iconBox = icon.getBoundingClientRect();
+            const titleBox = title.getBoundingClientRect();
+            const detailBox = detail.getBoundingClientRect();
+            return {
+              iconTop: iconBox.top,
+              titleTop: titleBox.top,
+              titleLeft: titleBox.left,
+              detailLeft: detailBox.left,
+              textAlign: getComputedStyle(copy).textAlign,
+            };
+          });
+          assert(dropAlignment, "Create reference-drop overlay did not expose measurable alignment geometry.");
+          assert(Math.abs(dropAlignment.titleLeft - dropAlignment.detailLeft) <= 1, `Create reference-drop title/detail are not left-aligned: ${JSON.stringify(dropAlignment)}`);
+          assert(["left", "start"].includes(dropAlignment.textAlign), `Create reference-drop copy is not left-aligned: ${JSON.stringify(dropAlignment)}`);
+          assert(Math.abs(dropAlignment.iconTop - dropAlignment.titleTop) <= 4, `Create reference-drop icon is not aligned with the primary copy line: ${JSON.stringify(dropAlignment)}`);
+          await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-reference-drop.png`, fullPage: true });
+          await composer.dispatchEvent("dragover", { dataTransfer: droppedReferenceData });'''
+text, count = re.subn(drag_pattern, lambda _: drag_replacement, text, count=1, flags=re.S)
+if count != 1:
+    raise SystemExit(f"Create lifecycle drag sequence matched {count} times")
+lifecycle.write_text(text)
+
+replace_once(
+    "docs/ui/UI_SYSTEM.md",
+    '- A compact top bar carries route context plus account/activity affordances where it adds information; desktop `/create` deliberately omits it because the persistent rail already supplies Create context plus Activity/Settings navigation.\n',
+    '- Desktop application routes omit the full-width top context bar; the persistent rail supplies route navigation/context plus Activity/Settings access without duplicating chrome. The compact top bar is a mobile/narrow utility surface only.\n',
+)
+replace_once(
+    "docs/ui/UI_SYSTEM.md",
+    '- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings remains reachable through account/utility UI. Mobile `/create` therefore retains the compact utility header even though desktop `/create` omits the redundant top bar.\n',
+    '- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings remains reachable through account/utility UI. The compact utility header remains available on mobile/narrow application routes because Settings is not a persistent dock destination.\n',
+)
+replace_once(
+    "docs/ui/SCREEN_REGISTRY.md",
+    '- compact route-context top bar where useful; desktop Create omits it because the persistent rail already conveys Create/Activity/Settings context, while mobile Create retains the compact utility header for account/Settings access;\n',
+    '- desktop application routes rely on the persistent rail and omit the redundant full-width top context bar; mobile/narrow application routes retain the compact utility header for account/Settings access;\n',
+)
+replace_once(
+    "docs/ui/COMPONENT_CATALOG.md",
+    '**Purpose:** Persistent responsive application chrome: desktop sidebar, compact top bar, mobile bottom navigation, route context and utility navigation.  \n',
+    '**Purpose:** Persistent responsive application chrome: desktop sidebar, mobile/narrow utility header, mobile bottom navigation and utility navigation.\n',
+)
+replace_once(
+    "docs/ui/COMPONENT_CATALOG.md",
+    "**Post-production UI-068 note:** Desktop `/create` deliberately suppresses AppShell's top bar because the desktop rail already provides route context and Activity/Settings navigation. Mobile Create retains the compact utility header because Settings is not a persistent dock destination. Other application routes keep their top bar.\n",
+    "**Post-production UI-068 note:** Desktop `/create` deliberately suppressed AppShell's top bar while other application routes retained it; mobile Create retained the compact utility header because Settings is not a persistent dock destination. UI-071 later supersedes the desktop route exception.\n\n**Post-production UI-071 note:** Desktop application routes are rail-only at the shell level: the full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes retain the compact utility header because Settings remains outside the persistent bottom dock.\n",
+)
+replace_once(
+    "docs/ui/COMPONENT_CATALOG.md",
+    '**Post-production UI-068 note:** `CreateWorkspace` keeps one unified composer focus surface: the bare prompt textarea remains semantically focusable but does not draw an independent inner focus rectangle; the composer `:focus-within` treatment communicates visible focus.\n',
+    '**Post-production UI-068 note:** `CreateWorkspace` keeps one unified composer focus surface: the bare prompt textarea remains semantically focusable but does not draw an independent inner focus rectangle; the composer `:focus-within` treatment communicates visible focus.\n\n**Post-production UI-071 note:** The drag-only reference affordance keeps one centered overlay, but its icon aligns to the first copy line and the title/detail form one left-aligned two-line block instead of independently centered text around the icon.\n',
+)
+
+decisions = Path("docs/ui/UI_DECISIONS.md")
+text = decisions.read_text().rstrip()
+heading = "### UI-071 — Desktop application chrome is rail-only and Create drop copy aligns as one unit"
+if heading in text:
+    raise SystemExit("UI_DECISIONS already contains UI-071")
+section = "\n\n" + "\n".join([
+    heading,
+    "**Status:** Accepted / Implemented / Verification Pending",
+    "**Date:** 2026-09-10",
+    "",
+    "**Decision:** User-directed production review supersedes UI-068's desktop-Create-only top-bar exception. On desktop application routes, the persistent left rail is the shell navigation/context surface and the redundant full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes keep the compact utility header because Settings remains outside the persistent bottom dock.",
+    "",
+    "Create's UI-069 drag-only reference overlay also gets one bounded composition correction: the icon aligns with the primary copy line and the title/detail are one left-aligned two-line text block inside the centered overlay. Drag/drop availability, upload validation, durable upload transaction, keyboard/touch picker baseline and drop lifecycle remain unchanged.",
+    "",
+    "**Guardrails:** No route, navigation destination, account access, media/generation behavior, upload contract, global state, primitive, dependency, schema, storage, worker/provider/routing or deployment contract changes. This is post-production corrective maintenance, not Phase 23 / Cycle 5.",
+    "",
+    "**Verification:** Exact-head UI Shell and configured Create Lifecycle validation plus responsive rendered review are required before this decision is marked verified/merged. Production deployment remains a separate explicit operation.",
+])
+decisions.write_text((text + section).rstrip() + "\n")
+
+migration = Path("docs/ui/UI_MIGRATION.md")
+text = migration.read_text().rstrip()
+heading = "## Post-production UI-071 desktop shell + Create drop alignment — 2026-09-10"
+if heading in text:
+    raise SystemExit("UI_MIGRATION already contains UI-071")
+section = "\n\n" + "\n".join([
+    heading,
+    "**Status: `IMPLEMENTED / VERIFICATION PENDING / NOT DEPLOYED`.**",
+    "",
+    "This is user-directed post-production corrective maintenance, not Phase 23 / Cycle 5.",
+    "",
+    "- [x] Remove the redundant full-width AppShell top context bar from all desktop application routes while retaining the persistent desktop rail.",
+    "- [x] Keep the compact mobile/narrow utility header so account/Settings access remains available above the Create/Library/Activity dock.",
+    "- [x] Realign the Create drag-only reference overlay as one icon plus a left-aligned two-line title/detail block; preserve the existing durable upload transaction and picker baseline.",
+    "- [x] Add explicit desktop shell assertions for Create, Library, Activity and Settings plus configured geometry assertions/screenshot coverage for the reference-drop copy alignment.",
+    "- [ ] Pass exact-head affected workflows and human-review the desktop shell + configured Create drag-overlay render before merge.",
+    "- [ ] Record guarded merge and merged-main verification. No production deployment is authorized by this correction.",
+])
+migration.write_text((text + section).rstrip() + "\n")
