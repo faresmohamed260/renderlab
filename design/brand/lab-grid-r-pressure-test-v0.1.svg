@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" fill="none">
+  <defs>
+    <g id="mark">
+      <rect x="7" y="7" width="22" height="18" rx="3"/>
+      <path d="M34 7h8c8.284 0 15 6.716 15 15s-6.716 15-15 15h-8V25h8a3 3 0 0 0 0-6h-8V7Z"/>
+      <rect x="7" y="30" width="22" height="27" rx="3"/>
+      <path d="M34 42h11.5L58 57H42.5L34 47V42Z"/>
+    </g>
+  </defs>
+
+  <rect width="1200" height="800" fill="#F4F2ED"/>
+  <text x="70" y="76" fill="#101216" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="4">RENDERLAB / BRAND IDENTITY R&amp;D 0.1</text>
+  <text x="70" y="122" fill="#101216" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="650">Lab Grid / modular R — vector geometry draft</text>
+  <text x="70" y="154" fill="#64666D" font-family="Inter, Arial, sans-serif" font-size="16">Monochrome first. Color and motion remain secondary to silhouette and recognition.</text>
+
+  <rect x="70" y="205" width="490" height="340" rx="28" fill="#101216"/>
+  <g transform="translate(122 260) scale(3.9)" fill="#F8F7F3"><use href="#mark"/></g>
+  <text x="122" y="506" fill="#F8F7F3" font-family="Inter, Arial, sans-serif" font-size="52" font-weight="700" letter-spacing="-2">RenderLab</text>
+  <text x="122" y="536" fill="#A7A9B0" font-family="Inter, Arial, sans-serif" font-size="13" letter-spacing="3">RENDER / EXPERIMENT / REFINE</text>
+
+  <rect x="600" y="205" width="530" height="340" rx="28" fill="#FFFFFF" stroke="#D8D5CF"/>
+  <g transform="translate(652 260) scale(3.9)" fill="#101216"><use href="#mark"/></g>
+  <text x="652" y="506" fill="#101216" font-family="Inter, Arial, sans-serif" font-size="52" font-weight="700" letter-spacing="-2">RenderLab</text>
+  <text x="652" y="536" fill="#666970" font-family="Inter, Arial, sans-serif" font-size="13" letter-spacing="3">RENDER / EXPERIMENT / REFINE</text>
+
+  <text x="70" y="608" fill="#101216" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="3">SMALL-SIZE PRESSURE TEST</text>
+  <g fill="#101216">
+    <g transform="translate(72 642) scale(1)"><use href="#mark"/></g>
+    <g transform="translate(180 646) scale(.75)"><use href="#mark"/></g>
+    <g transform="translate(278 650) scale(.5)"><use href="#mark"/></g>
+    <g transform="translate(358 654) scale(.375)"><use href="#mark"/></g>
+    <g transform="translate(425 656) scale(.25)"><use href="#mark"/></g>
+  </g>
+  <text x="78" y="729" fill="#64666D" font-family="Inter, Arial, sans-serif" font-size="13">64</text>
+  <text x="185" y="729" fill="#64666D" font-family="Inter, Arial, sans-serif" font-size="13">48</text>
+  <text x="282" y="729" fill="#64666D" font-family="Inter, Arial, sans-serif" font-size="13">32</text>
+  <text x="361" y="729" fill="#64666D" font-family="Inter, Arial, sans-serif" font-size="13">24</text>
+  <text x="428" y="729" fill="#64666D" font-family="Inter, Arial, sans-serif" font-size="13">16</text>
+
+  <rect x="600" y="620" width="240" height="110" rx="20" fill="#101216"/>
+  <g transform="translate(627 642) scale(.9)" fill="#F8F7F3"><use href="#mark"/></g>
+  <text x="702" y="674" fill="#F8F7F3" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700">RenderLab</text>
+  <text x="702" y="698" fill="#8D9098" font-family="Inter, Arial, sans-serif" font-size="11" letter-spacing="2">APP RAIL</text>
+
+  <rect x="865" y="620" width="265" height="110" rx="20" fill="#FFFFFF" stroke="#D8D5CF"/>
+  <g transform="translate(892 642) scale(.9)" fill="#101216"><use href="#mark"/></g>
+  <text x="967" y="674" fill="#101216" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700">RenderLab</text>
+  <text x="967" y="698" fill="#72747B" font-family="Inter, Arial, sans-serif" font-size="11" letter-spacing="2">EMAIL HEADER</text>
+
+  <text x="70" y="774" fill="#8A8C92" font-family="Inter, Arial, sans-serif" font-size="12">R&amp;D asset only — not a production logo replacement.</text>
+</svg>
