@@ -105,13 +105,15 @@ Before copying/installing an external component:
 **Status:** APPROVED
 **Source:** `src/components/shell/app-shell.tsx`  
 **Origin:** RenderLab composition using approved `Button`, Next.js navigation + Lucide React  
-**Purpose:** Persistent responsive application chrome: desktop sidebar, compact top bar, mobile bottom navigation, route context and utility navigation.  
+**Purpose:** Persistent responsive application chrome: desktop sidebar, mobile/narrow utility header, mobile bottom navigation and utility navigation.
 **Used by:** `src/app/(app)/layout.tsx` for `/create`, Library/Viewer, Activity, Settings and Admin application routes
 **Reuse rules:** Extend this authoritative shell rather than creating page-specific shells.  
 **Do not:** Put Create composer, Library cards, workflows or feature-owned layout into persistent chrome.  
 **Notes:** Production build + Playwright desktop/mobile rendering approved; not locked. UI-052 / PR #73 moved shell ownership from the global root layout to `src/app/(app)/layout.tsx`; merge `46c5daa2866c6758907ee9be219bcb3cb274ca83` preserves the established application composition while public `/` renders without `AppShell`. Final PR head `773251734dbd5c5f32770699a57b1ade653604b5` passed 19/19 affected workflows and merged-main UI Shell `33323421285` passed.
 
-**Post-production UI-068 note:** Desktop `/create` deliberately suppresses AppShell's top bar because the desktop rail already provides route context and Activity/Settings navigation. Mobile Create retains the compact utility header because Settings is not a persistent dock destination. Other application routes keep their top bar.
+**Post-production UI-068 note:** Desktop `/create` deliberately suppressed AppShell's top bar while other application routes retained it; mobile Create retained the compact utility header because Settings is not a persistent dock destination. UI-071 later supersedes the desktop route exception.
+
+**Post-production UI-071 note:** Desktop application routes are rail-only at the shell level: the full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes retain the compact utility header because Settings remains outside the persistent bottom dock.
 
 ### RenderLabBrand
 **Status:** APPROVED
@@ -147,6 +149,8 @@ Before copying/installing an external component:
 **Phase 7A premium interaction evidence:** PR #58 candidate exact head `51c293dad114c98754933ab192b13427a90d9570` adds purposeful Create-owned Motion layout/presence behavior for reference add/remove/reorder, operation/context copy, Image↔Video contextual controls, Advanced field changes and result arrival. Stable alias keys remain the identity boundary. Configured Create Lifecycle `33273370720` verifies `Make primary` produces and settles an actual layout transform and that reduced-motion mode changes remain transform-free; UI Shell `33273370797` covers the reduced-motion browser contract. Artifact `9720784693` was reviewed clean on desktop and narrow layouts.
 
 **Post-production UI-068 note:** `CreateWorkspace` keeps one unified composer focus surface: the bare prompt textarea remains semantically focusable but does not draw an independent inner focus rectangle; the composer `:focus-within` treatment communicates visible focus.
+
+**Post-production UI-071 note:** The drag-only reference affordance keeps one centered overlay, but its icon aligns to the first copy line and the title/detail form one left-aligned two-line block instead of independently centered text around the icon.
 
 ### CreateReferenceMentionMenu
 **Status:** APPROVED

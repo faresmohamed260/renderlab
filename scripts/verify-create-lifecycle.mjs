@@ -404,8 +404,31 @@ try {
     return transfer;
   }, { base64: secondaryReferenceBytes.toString("base64") });
   await composer.dispatchEvent("dragenter", { dataTransfer: droppedReferenceData });
-  await page.locator('[data-create-drop-overlay="true"]').waitFor({ state: "visible", timeout: 5_000 });
-  await composer.dispatchEvent("dragover", { dataTransfer: droppedReferenceData });
+          const dropOverlay = page.locator('[data-create-drop-overlay="true"]');
+          await dropOverlay.waitFor({ state: "visible", timeout: 5_000 });
+          const dropAlignment = await dropOverlay.evaluate((overlay) => {
+            const icon = overlay.querySelector('[data-create-drop-icon="true"]');
+            const copy = overlay.querySelector('[data-create-drop-copy="true"]');
+            const title = overlay.querySelector('[data-create-drop-title="true"]');
+            const detail = overlay.querySelector('[data-create-drop-detail="true"]');
+            if (!icon || !copy || !title || !detail) return null;
+            const iconBox = icon.getBoundingClientRect();
+            const titleBox = title.getBoundingClientRect();
+            const detailBox = detail.getBoundingClientRect();
+            return {
+              iconTop: iconBox.top,
+              titleTop: titleBox.top,
+              titleLeft: titleBox.left,
+              detailLeft: detailBox.left,
+              textAlign: getComputedStyle(copy).textAlign,
+            };
+          });
+          assert(dropAlignment, "Create reference-drop overlay did not expose measurable alignment geometry.");
+          assert(Math.abs(dropAlignment.titleLeft - dropAlignment.detailLeft) <= 1, `Create reference-drop title/detail are not left-aligned: ${JSON.stringify(dropAlignment)}`);
+          assert(["left", "start"].includes(dropAlignment.textAlign), `Create reference-drop copy is not left-aligned: ${JSON.stringify(dropAlignment)}`);
+          assert(Math.abs(dropAlignment.iconTop - dropAlignment.titleTop) <= 4, `Create reference-drop icon is not aligned with the primary copy line: ${JSON.stringify(dropAlignment)}`);
+          await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-reference-drop.png`, fullPage: true });
+          await composer.dispatchEvent("dragover", { dataTransfer: droppedReferenceData });
   await composer.dispatchEvent("drop", { dataTransfer: droppedReferenceData });
   await page.locator('[data-create-drop-overlay="true"]').waitFor({ state: "hidden", timeout: 5_000 });
   await secondTicketPromise;

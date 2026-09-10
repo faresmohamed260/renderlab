@@ -117,14 +117,14 @@ Those belong to their feature surfaces and are designed in the relevant later ph
 - `Create` and `Library` are visually primary destinations.
 - `Activity` and `Settings` remain utility destinations and sit lower in the navigation hierarchy.
 - Main route content occupies the largest possible area; navigation chrome stays narrow.
-- A compact top bar carries route context plus account/activity affordances where it adds information; desktop `/create` deliberately omits it because the persistent rail already supplies Create context plus Activity/Settings navigation.
+- Desktop application routes omit the full-width top context bar; the persistent rail supplies route navigation/context plus Activity/Settings access without duplicating chrome. The compact top bar is a mobile/narrow utility surface only.
 - Idle state should not show a persistent “ready” status pill. Global status becomes more explicit only when a job, failure, degraded state, or other meaningful attention condition exists.
 - The shell must not reserve a permanent settings rail for Create.
 
 ### Mobile / narrow layouts
 - Do not shrink the desktop sidebar into an unusable strip.
 - Primary destinations use compact bottom navigation or an equivalent touch-friendly treatment.
-- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings remains reachable through account/utility UI. Mobile `/create` therefore retains the compact utility header even though desktop `/create` omits the redundant top bar.
+- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings remains reachable through account/utility UI. The compact utility header remains available on mobile/narrow application routes because Settings is not a persistent dock destination.
 - Feature content owns its own responsive controls/sheets.
 - Avoid reproducing the entire desktop chrome vertically.
 

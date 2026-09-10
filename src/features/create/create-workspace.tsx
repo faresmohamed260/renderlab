@@ -894,12 +894,20 @@ export function CreateWorkspace({
               data-create-drop-overlay="true"
               role="status"
             >
-              <div className="flex flex-col items-center gap-2">
-                <span className="flex items-center gap-2 text-sm font-semibold text-text">
-                  <ImagePlus aria-hidden="true" className="size-5 text-accent-bright" />
-                  Drop image to add as reference
-                </span>
-                <span className="text-xs text-text-muted">PNG, JPEG or WebP · up to 25 MB</span>
+              <div className="flex items-start gap-3" data-create-drop-content="true">
+                <ImagePlus
+                  aria-hidden="true"
+                  className="mt-0.5 size-5 shrink-0 text-accent-bright"
+                  data-create-drop-icon="true"
+                />
+                <div className="flex flex-col items-start gap-0.5 text-left" data-create-drop-copy="true">
+                  <span className="text-sm font-semibold leading-5 text-text" data-create-drop-title="true">
+                    Drop image to add as reference
+                  </span>
+                  <span className="text-xs leading-4 text-text-muted" data-create-drop-detail="true">
+                    PNG, JPEG or WebP · up to 25 MB
+                  </span>
+                </div>
               </div>
             </div>
           ) : null}
