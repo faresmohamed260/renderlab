@@ -1,9 +1,9 @@
 # Landing Production Implementation Contract
 
-**Status:** EXECUTION-READY — COMPLETE DESIGN APPROVED  
-**Approved by user:** 2026-09-11  
-**Parent design record:** `docs/ui/LANDING_BRAND_RD.md`  
-**Creative-development workflow:** `docs/ui/CREATIVE_DEVELOPMENT.md`  
+**Status:** COMPLETE / VERIFIED / MERGED — NOT PRODUCTION DEPLOYED
+**Approved by user:** 2026-09-11
+**Parent design record:** `docs/ui/LANDING_BRAND_RD.md`
+**Creative-development workflow:** `docs/ui/CREATIVE_DEVELOPMENT.md`
 **Parent tracker:** GitHub issue #158
 
 ## Purpose
@@ -97,6 +97,8 @@ The accepted R&D photographs establish crop density, visual energy, color balanc
 
 Production media must be owned/cleared for the intended use. Replacing a photograph is allowed only when the replacement preserves the approved section hierarchy, media dominance, crop logic, and narrative role. Do not fall back to abstract placeholder geometry.
 
+The merged implementation uses the reviewed Unsplash-licensed nature/abstract set recorded in `docs/ui/LANDING_MEDIA_SOURCES.md`. That record is the source-of-truth provenance for the current Landing media; the photographs remain replaceable presentation assets rather than locked identity assets.
+
 ## Accessibility and responsive contract
 - Semantic heading order and navigable links/controls remain intact.
 - Interactive Library media choices must have keyboard focus and visible focus treatment; touch must not depend on hover.
@@ -128,6 +130,32 @@ Before implementation can be called `APPROVED`:
 5. Human fidelity review compares real production-candidate browser evidence to the accepted R&D evidence and this geometry clarification.
 6. Documentation is updated from verified implementation reality only.
 
+## Verified implementation closure — 2026-09-11
+The approved Landing sequence is implemented and merged.
+
+Implementation evidence:
+- implementation branch: `work/landing-production-implementation`
+- implementation PR: #174 — squash-merged
+- exact final PR head: `a7f94b77bf1be989c0101376aa0404cbb28b34ae`
+- merged `main` commit: `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`
+- pre-merge Release Candidate Matrix: `34539565841` — passed, including exact-SHA child verification
+- pre-merge release manifest artifact: `10177184256`
+- pre-merge release manifest digest: `sha256:587a9be26b5e1d8ec4e3dbe67cbdebc6068272ef75c208427cafe46bb66f870b`
+- pre-merge Brand / Launch Visual artifact: `10176777155`
+- pre-merge Brand / Launch Visual digest: `sha256:249575e790be67219927ccefb6edef00efaf6aedc5694a95f2ed62f4aef48e38`
+- merged-main Release Candidate Matrix: `34540955037` — passed, including exact-SHA child verification
+- merged-main release manifest artifact: `10177618846`
+- merged-main release manifest digest: `sha256:4ad5a57b87e7bcfe6ddb90bf49d50b4ef0352aae2ba1cf9904c4f717d13ee447`
+- merged-main Brand / Launch Visual: `34541065002` — passed
+- merged-main Brand / Launch Visual artifact: `10177340818`
+- merged-main Brand / Launch Visual digest: `sha256:069aaa3d35febffc9e591f254d7a11e1b5575248bc11ab7846f44b10516b8971`
+
+The final implementation-head browser evidence was human-reviewed across desktop Hero, Thread/Motion, Living Library focus, resolved close, and the 390px whole-page flow. The production-media replacement preserved the approved composition and the canonical lower-right quarter-circle / large-arc geometry in both Hero and Resolve.
+
+One push-triggered merged-main UI Shell run (`34540954991`) was cancelled by the repository's workflow-concurrency orchestration while the release matrix was dispatching its exact-SHA suite. It was replaced at the same merged-main SHA by UI Shell `34541063502`, which passed; the merged-main Release Candidate Matrix subsequently required and passed the configured exact-SHA child set. No merged-main failure remained when the matrix closed.
+
+This closure changes repository state only. Production deployment remains the previously recorded UI-071 release; automatic Git → Vercel deployment remains disabled. PR #174 and this contract do not authorize deployment.
+
 ## Explicitly out of scope
 - Create/Library/Viewer/Activity/Settings/Admin redesign.
 - Product behavior or route changes beyond preserving existing root continuation redirect.
@@ -146,4 +174,4 @@ This implementation slice is complete only when:
 - source-of-truth docs reflect the verified implementation;
 - the implementation PR is merged.
 
-Deployment remains a separate explicit user-authorized operation after merge.
+All implementation and verification criteria above are satisfied in repository `main` at `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`. Deployment remains a separate explicit user-authorized operation after merge.
