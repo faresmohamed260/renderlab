@@ -1900,16 +1900,16 @@ Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` 
 
 
 ## Post-production UI-070 Library card polish — 2026-09-10
-**Status: `ACCEPTED / IMPLEMENTED / VERIFICATION PENDING`.**
+**Status: `COMPLETE / VERIFIED / MERGED`.**
 
 This is a user-directed post-production Library presentation correction, not Phase 23 / Cycle 5.
 
 - [x] Replace the visually oversized card selection control with a centered 22×22 visible checkbox while retaining the maintained 44×44 Checkbox interaction/focus root and unchanged page-scoped selection semantics.
 - [x] Refine Library media cards from a plain media-plus-opaque-footer stack into a media-first full-card tile with a compact floating glass title/kind/date shelf, restrained selected-state accent, and non-overlapping top-right Video identity.
 - [x] Preserve the same card Viewer link, media geometry, grid, title/kind/date data, selection lifecycle, server/URL ownership and reduced-motion behavior; add no card quick actions or new dependency.
-- [ ] Exact-head cheap engineering gates pass.
-- [ ] Configured Library History verifies checkbox/card geometry and emits desktop + 390px selected-card artifacts.
-- [ ] Human rendered review accepts selected/unselected cards at desktop and 390px.
-- [ ] PR exact-head affected workflows pass and merged-main state is verified before marking UI-070 complete.
+- [x] Exact final PR head `171dd384bd9b18ff82ab0e1dc40d1890e2cd33c1` passed all 16 workflows GitHub attached, including Library History `34417882145`, Engineering Quality `34417882154`, UI Shell `34417882108`, Library Lifecycle `34417882119` and Library Drag Drop `34417882079`.
+- [x] Configured Library History proved the maintained 44×44 checkbox interaction root, 22×22 visible checkbox, integrated metadata geometry and desktop + 390px selected-card states.
+- [x] Human rendered review accepted the desktop and 390px selected-card treatment from tree-identical Library History artifact `10129703554` (`sha256:9d603f1fddbb76f2e25e68fcaf6ae991e700ac0703848d279b72c0c3a7947e06`).
+- [x] PR #142 guarded squash-merged as `152e00f5b805bef0299b14635743d6978160700e`. Every workflow GitHub attached to merged `main` passed: Engineering Quality `34418649510`, UI Shell Validation `34418649507` and Activity Cancel Visual `34418649511`.
 
-Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`. UI-068, UI-069 and this UI-070 work remain outside production until a separate explicit rollout is authorized.
+Live production remains exact source `0d584c5dab288ad1e99a7b7c1aac2a2ec12bf814` at READY deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M`. UI-068, UI-069 and UI-070 are verified repository changes outside production until a separate explicit rollout is authorized. No Phase 23 / Cycle 5 work is implied.
