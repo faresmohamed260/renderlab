@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>RenderLab — Landing Section 02 R&D</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <section class="thread" data-thread-section aria-labelledby="thread-title">
+      <div class="thread-sticky">
+        <div class="thread-copy">
+          <p class="eyebrow">One creative thread</p>
+          <h1 id="thread-title">Make it.<br />Shape it.<br />Move it.<br /><span>Keep going.</span></h1>
+          <p class="dek">RenderLab keeps the work in context. Create an image, bring in references, put it in motion, then continue from the result without starting over.</p>
+
+          <ol class="steps" aria-label="Creative workflow">
+            <li data-step-label="0"><span>01</span><strong>Create</strong><small>Start from an idea.</small></li>
+            <li data-step-label="1"><span>02</span><strong>References</strong><small>Shape the same work.</small></li>
+            <li data-step-label="2"><span>03</span><strong>Motion</strong><small>Turn the frame into movement.</small></li>
+            <li data-step-label="3"><span>04</span><strong>Continue</strong><small>Keep it in your Library.</small></li>
+          </ol>
+        </div>
+
+        <div class="stage-wrap" aria-label="One piece of media moving through RenderLab">
+          <div class="stage" data-thread-stage data-active-step="0">
+            <div class="media-shell">
+              <img class="media media-base" src="https://images.unsplash.com/photo-1770802238220-c4db8c2cc4f5?auto=format&amp;fit=crop&amp;w=1800&amp;q=84" alt="Misty mountain range used as the same creative work throughout the sequence" />
+              <div class="media-light" aria-hidden="true"></div>
+
+              <div class="state state-create" data-state="0">
+                <div class="state-index">01 / CREATE</div>
+                <div class="prompt-bar"><span>A solitary figure above a luminous mountain sea at first light</span><i aria-hidden="true">↗</i></div>
+              </div>
+
+              <div class="state state-reference" data-state="1">
+                <div class="state-index">02 / REFERENCES</div>
+                <div class="reference-stack" aria-hidden="true">
+                  <div class="reference-card portrait"><img src="https://images.unsplash.com/photo-1778973810380-46a63ff83d61?auto=format&amp;fit=crop&amp;w=440&amp;q=78" alt="" /></div>
+                  <div class="reference-card jelly"><img src="https://images.unsplash.com/photo-1507426592025-e460fda3be31?auto=format&amp;fit=crop&amp;w=440&amp;q=78" alt="" /></div>
+                  <div class="reference-link"><span>@image1</span><span>@image2</span></div>
+                </div>
+                <div class="reference-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              </div>
+
+              <div class="state state-motion" data-state="2">
+                <div class="state-index">03 / MOTION</div>
+                <div class="motion-path" aria-hidden="true"><i></i><i></i><i></i></div>
+                <div class="timeline" aria-hidden="true"><span>00:00</span><b><i></i></b><span>00:05</span></div>
+              </div>
+
+              <div class="state state-continue" data-state="3">
+                <div class="state-index">04 / LIBRARY</div>
+                <div class="library-stack" aria-hidden="true">
+                  <div class="library-card back"></div>
+                  <div class="library-card mid"></div>
+                  <div class="library-card front"></div>
+                </div>
+                <div class="saved-chip"><i aria-hidden="true"></i><span>Saved to Library</span><small>Ready to continue</small></div>
+              </div>
+            </div>
+
+            <div class="stage-meta" aria-hidden="true">
+              <span>CREATIVE THREAD / 001</span>
+              <span data-stage-caption>CREATE IMAGE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scroll-track" aria-hidden="true">
+        <span data-scroll-marker="0"></span>
+        <span data-scroll-marker="1"></span>
+        <span data-scroll-marker="2"></span>
+        <span data-scroll-marker="3"></span>
+      </div>
+    </section>
+  </main>
+  <script src="prototype.js"></script>
+</body>
+</html>
