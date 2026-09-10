@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>RenderLab — Lab Matrix Hero R&D 0.2</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="RenderLab home">
+        <img class="brand-mark" src="../landing-hero-rd-v0.1/assets/renderlab-mark.svg" alt="" width="32" height="32" />
+        <span class="wordmark"><strong>Render</strong><span>Lab</span></span>
+      </a>
+      <div class="top-actions">
+        <a class="quiet-link" href="/settings">Sign in</a>
+        <a class="primary-link" href="/create">Open Create</a>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Creative image &amp; video workspace</p>
+        <h1 id="hero-title"><span>Render what</span><span>you imagine.</span></h1>
+        <p class="dek">Create images. Shape them with references. Put them in motion. Keep the thread alive.</p>
+        <div class="hero-actions">
+          <a class="primary-link large" href="/create">Open Create</a>
+          <span class="truth">Closed beta · invitation only</span>
+        </div>
+      </div>
+
+      <div class="matrix-wrap" aria-label="One rendered scene resolving through four modular lab cells">
+        <div class="matrix-halo" aria-hidden="true"></div>
+        <div class="matrix-stage" data-pointer-stage="matrix">
+          <div class="cell cell-tl" aria-hidden="true"></div>
+          <div class="cell cell-ur" aria-hidden="true"></div>
+          <div class="cell cell-bl" aria-hidden="true"></div>
+          <div class="cell cell-br" aria-hidden="true"></div>
+          <div class="matrix-readout" aria-hidden="true">
+            <span>01 / IMAGE</span>
+            <span>REFERENCE → RENDER</span>
+          </div>
+          <div class="matrix-axis axis-x" aria-hidden="true"></div>
+          <div class="matrix-axis axis-y" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <div class="hero-foot" aria-hidden="true">
+        <span>CREATE IMAGE</span><span>EDIT IMAGE</span><span>CREATE VIDEO</span><span>ANIMATE IMAGE</span>
+      </div>
+    </section>
+  </main>
+  <script src="prototype.js"></script>
+</body>
+</html>
