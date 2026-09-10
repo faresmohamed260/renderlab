@@ -11,6 +11,7 @@ Before substantial project work, read:
 For frontend/UI work also read the relevant current versions of:
 - `docs/ui/DESIGN_WORKFLOW.md`
 - `docs/ui/UI_SYSTEM.md`
+- `docs/ui/VISUAL_NORTH_STAR.md`
 - `docs/ui/COMPONENT_CATALOG.md`
 - `docs/ui/SCREEN_REGISTRY.md`
 
@@ -59,7 +60,8 @@ RenderLab should support sophisticated and expanding ComfyUI capabilities withou
 - Put advanced/model-specific controls behind progressive disclosure when appropriate.
 - Do not mirror ComfyUI node graphs or technical workflow terminology into the default UI.
 - ComfyUI is the generation engine, not the product interface.
-- The visual-quality target is a premium modern creative application. Maintained primitives/libraries provide accessible mechanics, not a visual ceiling: compose them with deliberate spatial transitions, motion and distinctive RenderLab styling when those choices improve understanding or creative flow. Avoid gratuitous effects, preserve performance, and always honor reduced motion.
+- The visual-quality target is a premium modern creative application. Maintained primitives/libraries provide accessible mechanics, not a visual ceiling: compose them with deliberate spatial transitions, motion and distinctive RenderLab styling when those choices improve understanding or creative flow.
+- Avoid purposeless or unbounded effects, preserve performance, and always honor reduced motion. For an explicitly authorized redesign, physics, glow, pointer response, parallax, canvas/WebGL, morphing, or richer choreography are not blanket-prohibited; evaluate them under `docs/ui/VISUAL_NORTH_STAR.md`, `docs/ui/DESIGN_WORKFLOW.md`, accessibility, performance, and the target surface's expressiveness level.
 
 ## Capability Growth
 Design internal contracts so new workflows, models, media inputs, parameters, outputs, continuation actions, and post-processing capabilities can be added without repeatedly redesigning the application.
@@ -70,6 +72,18 @@ This does not mean exposing every supported capability immediately. Product surf
 Penpot is the default ongoing visual design workspace. The previous Figma file is historical reference only. Follow `docs/ui/DESIGN_WORKFLOW.md` for the design → repository → GitHub render-validation loop.
 
 A design-tool artifact is never more authoritative than the repository. Do not mark UI approved because a design exists; implementation requires responsive rendered verification.
+
+### Authorized Redesign Mode
+Ordinary feature/UI work remains integration-first. A task enters **Authorized Redesign Mode** only when the user explicitly asks to redesign, restyle, modernize, reimagine, or visually elevate a named surface/system.
+
+In Authorized Redesign Mode:
+- read and apply `docs/ui/VISUAL_NORTH_STAR.md` before making visual decisions;
+- the named surface's previous `APPROVED` visual composition, styling, and motion may be reopened, while product behavior, routes, API/data/ownership/security contracts, accessibility, and engineering gates remain authoritative unless separately changed;
+- design and interaction choreography precede production implementation;
+- signature kinetic/morphing/physics behavior requires reviewable motion evidence; static screenshots/SVGs alone cannot approve it;
+- an implementation that is technically green but materially flatter or more generic than the accepted concept/prototype is not complete.
+
+`LOCKED` decisions remain locked unless the user explicitly authorizes changing them.
 
 ## Component Source Policy
 Do **not** build generic UI primitives or sophisticated interaction mechanics from scratch when a suitable, production-appropriate implementation exists in an approved source.
@@ -111,7 +125,7 @@ Before adopting a third-party/copy-owned component, verify:
 - performance and bundle/dependency impact;
 - that its license/usage terms are acceptable;
 - that the component can be brought under RenderLab tokens and visual language;
-- that it is suitable for an application workspace rather than merely visually impressive in a marketing demo.
+- that it is suitable for a production creative workspace rather than merely visually impressive in a marketing demo.
 
 Prefer official documentation/registries for installation and implementation. Do not recreate a library component from memory when its maintained source can be used.
 
@@ -119,6 +133,8 @@ Saga/legacy components do not enter this priority automatically. They are refere
 
 ## Approved UI Is Authoritative
 During the fresh-build foundation phase, the old Saga design is not authoritative. Once a RenderLab component, pattern, or surface is explicitly approved and documented, do not casually redesign it, introduce competing styles, or change its interaction behavior without a product reason or explicit user request.
+
+An explicit user-authorized redesign is the deliberate exception: only the named surface/system's visual composition, styling, and motion are reopened, and the redesign must follow `VISUAL_NORTH_STAR.md` plus the design-before-code and kinetic-evidence gates in `DESIGN_WORKFLOW.md`. Existing product behavior and engineering/security contracts do not become optional merely because the pixels are reopened.
 
 ## Before Creating a Component
 Search in this order:
@@ -179,6 +195,8 @@ Update existing authoritative documentation rather than creating competing sourc
 ## Scope Discipline
 Follow the user's requested scope precisely. Do not redesign, migrate, refactor, deploy, or expand scope merely because it seems useful. Preserve approved RenderLab behavior unless changing it is required.
 
+An explicit visual-redesign request authorizes only the named visual/interaction scope. It does not implicitly authorize new product behavior, routes, state ownership, dependencies, backend/schema/infrastructure changes, or deployment.
+
 ## GitHub Actions Budget Discipline
 Final exact-head validation remains required; Actions quota, budget pressure, or runner unavailability does not waive a repository validation gate.
 
@@ -196,5 +214,7 @@ For frontend changes:
 5. Inspect the rendered result.
 6. Check reused components for regressions.
 7. Confirm documentation reflects verified reality.
+
+For Authorized Redesign Mode, also compare the implementation to the accepted design/prototype. If the work claims kinetic, morphing, physics, scroll choreography, pointer response, or other temporal behavior, review motion evidence including the settled and reduced-motion paths; static screenshots alone are insufficient.
 
 Compilation alone does not mean the UI task is complete.

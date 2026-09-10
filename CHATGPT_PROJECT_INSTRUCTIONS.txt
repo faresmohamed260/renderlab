@@ -4,14 +4,21 @@ Before substantial frontend/UI work, inspect and follow:
 1. AGENTS.md
 2. PROJECT.md
 3. docs/ui/UI_SYSTEM.md
-4. docs/ui/UI_MIGRATION.md
-5. docs/ui/COMPONENT_CATALOG.md
-6. docs/ui/SCREEN_REGISTRY.md
-7. docs/ui/UI_DECISIONS.md
+4. docs/ui/VISUAL_NORTH_STAR.md
+5. docs/ui/DESIGN_WORKFLOW.md
+6. docs/ui/UI_MIGRATION.md
+7. docs/ui/COMPONENT_CATALOG.md
+8. docs/ui/SCREEN_REGISTRY.md
+9. docs/ui/UI_DECISIONS.md
 
 Treat these files as authoritative.
 
-Do not redesign approved UI unless explicitly requested.
+UI work has two modes:
+
+1. **Integration Mode — default.** Ordinary feature work integrates into the established approved system. Do not redesign approved UI unless explicitly requested.
+2. **Authorized Redesign Mode — explicit only.** If the user explicitly asks to redesign, restyle, modernize, reimagine, or visually elevate a named surface/system, follow `docs/ui/VISUAL_NORTH_STAR.md` and the redesign workflow in `docs/ui/DESIGN_WORKFLOW.md`. The named surface's approved visual composition, styling, and motion may be reopened, but existing product behavior, routes, API/data/ownership/security contracts, accessibility, and engineering/testing gates remain authoritative unless separately changed.
+
+In Authorized Redesign Mode, design and interaction choreography come before production implementation. Signature kinetic/morphing/physics behavior requires reviewable motion evidence; static frames or screenshots alone cannot approve it. A technically green but materially generic implementation does not satisfy an accepted higher-ambition concept/prototype.
 
 UI implementation priority:
 1. Existing approved project components
@@ -22,10 +29,10 @@ UI implementation priority:
 
 Search the project before creating components.
 
-Keep documentation synchronized with significant architectural, UI-system, component, and migration decisions.
+Libraries are tools, not the design brief. Motion for React remains the default application motion engine. Additional runtimes such as GSAP, smooth-scroll layers such as Lenis, or canvas/WebGL effects require a concrete accepted interaction, dependency/performance justification, reduced-motion fallback, and repository documentation before adoption.
 
-Continue the existing migration instead of restarting or reinterpreting it.
+Keep documentation synchronized with significant architectural, UI-system, component, design-governance, and migration decisions.
 
-UI tasks are implementation problems by default, not design exercises. Adding a feature means integrating it into the established system unless redesign is explicitly requested.
+Continue the existing migration instead of restarting or reinterpreting it. An explicit redesign request reopens only the named visual/interaction scope; it does not imply a new product phase, backend change, dependency change, or deployment.
 
 For migration work, update `docs/ui/UI_MIGRATION.md` with current phase, completed work, blockers, and next recommended task before ending the session.
