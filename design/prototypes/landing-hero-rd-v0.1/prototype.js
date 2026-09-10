@@ -23,8 +23,15 @@ if (!reduceMotion) {
   });
 
   const aperture = document.querySelector('[data-pointer-stage="aperture"]');
-  aperture?.addEventListener('pointermove', (event) => {
+  window.addEventListener('pointermove', (event) => {
+    if (!aperture || document.body.dataset.variant !== 'b') return;
     const rect = aperture.getBoundingClientRect();
+    if (
+      event.clientX < rect.left ||
+      event.clientX > rect.right ||
+      event.clientY < rect.top ||
+      event.clientY > rect.bottom
+    ) return;
     const x = Math.max(14, Math.min(86, ((event.clientX - rect.left) / rect.width) * 100));
     aperture.style.setProperty('--split', `${x.toFixed(2)}%`);
   });
