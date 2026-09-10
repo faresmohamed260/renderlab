@@ -15,7 +15,7 @@ Production `/` remains unchanged until the complete Landing surface is reviewed 
 ## Locked identity
 The approved RenderLab Lab Grid modular `R` and wordmark relationship remain locked. Landing R&D must consume the repository-owned identity assets exactly and must not redraw, approximate or reinterpret the mark.
 
-## Section 01 — Hero
+## Hero selection
 ### A — Lab Matrix
 **Status:** DIRECTIONALLY APPROVED by the user on 2026-09-10.
 
@@ -35,10 +35,10 @@ Accepted properties:
 
 The current photographic imagery is R&D media and is **not** itself a locked production asset set. Final production media may be replaced with RenderLab-owned/generated image/video assets while preserving the accepted composition, density, crop logic, motion intent and creative-state narrative.
 
-### Verified hero evidence
+## Verified hero evidence
 Accepted rich-media candidate:
 - branch: `work/landing-hero-a-media-rd-v0.3`
-- completed R&D PR: #165, closed without merge
+- draft PR: #165
 - exact head: `cd0de24be0b06edafbffa284c091019faa6841c3`
 - Engineering Quality: `34521959592` — passed
 - Landing Hero A Media R&D: `34521959590` — passed
@@ -50,37 +50,38 @@ Browser verification covers 1440×900, 390×844, four loaded media cells, locked
 ## Section 02 — One creative thread
 **Status:** DIRECTIONALLY APPROVED by the user on 2026-09-10.
 
-Section 02 proves that the Lab Matrix grammar can carry a longer product story rather than working only as a hero treatment.
+The second section extends the approved Lab Matrix hero into concrete product proof by keeping one media object in context across **Create → References → Motion → Continue / Library**.
 
 Accepted properties:
-- the same media object remains the visual anchor while the story progresses through **Create → References → Motion → Continue / Library**;
-- desktop uses a sticky working-media stage with scroll-driven state progression instead of a row of disconnected feature cards;
-- the left narrative and active-step treatment remain concise and subordinate to the media stage;
-- References visibly brings owned source media into the working composition rather than explaining references only in copy;
-- Motion adds temporal treatment and a concise timeline without fabricating generation/runtime state;
-- Continue / Library resolves the same work into durable saved-media context rather than replacing it with unrelated UI;
-- pointer-capable desktop gets bounded stage depth; touch/narrow layouts do not depend on pointer behavior;
-- reverse scrolling returns coherently through earlier creative states;
-- the 390px composition is deliberately adapted rather than scaled from desktop, including readable headline grouping and stronger References/Library states;
-- reduced motion settles to a complete static state without running animation;
-- the section preserves the approved dark restrained canvas, media-first hierarchy, concise sans typography and product truth established by the hero.
+- one sticky working-media stage rather than a generic row of feature cards;
+- one creative object that changes state while the surrounding composition stays spatially coherent;
+- step labels and copy subordinate to the media surface;
+- Create state uses a concise prompt treatment;
+- References state visibly adds owned reference imagery and relationship cues;
+- Motion state adds temporal movement and a restrained timeline/path treatment;
+- Continue / Library state resolves into durable saved-media continuity rather than a dead-end result;
+- reverse scrolling restores earlier states coherently;
+- bounded pointer-depth response on desktop;
+- deliberate 390px composition with corrected headline breaks and stronger state readability;
+- static reduced-motion equivalent;
+- no fabricated provider, progress, pricing, signup or unsupported capability claims.
 
-The first browser pass exposed cramped mobile headline breaks and References/Library states that were too visually subtle. Those were corrected before the accepted candidate; the approval applies to the corrected exact head below, not the earlier pass.
+The accepted section remains design R&D. Its photographic media, exact copy and prototype implementation are not production code and may be replaced during faithful implementation if the approved hierarchy, continuity and interaction intent remain intact.
 
-### Verified Section 02 evidence
+## Verified Section 02 evidence
 Accepted candidate:
 - branch: `work/landing-section-02-thread-rd-v0.1`
-- draft R&D PR: #167
+- draft R&D PR: #167 — intentionally closed without merge after approval
 - exact head: `3aaf1245a90ebcdbd48b817ba906c3f6127d1f41`
 - Engineering Quality: `34524062920` — passed
 - Landing Section 02 Thread R&D: `34524062884` — passed
 - evidence artifact: `10170862843`
 - artifact digest: `sha256:cf5ae1fcfe858cea2fd3658419d871f1b877126f0715507c406231d8e1b29e80`
 
-Browser verification covers desktop Create/References/Motion/Library states, reverse scroll, bounded pointer depth, 390px Create/Motion states, reduced motion, loaded media, no horizontal overflow and runtime cleanliness.
+The first browser pass exposed cramped mobile headline breaks and overly subtle References/Library states. Those were corrected before the accepted exact head above.
 
 ## Historical alternatives
-The original coded hero comparison in PR #163 explored:
+The original coded comparison in PR #163 explored:
 - A — Lab Matrix
 - B — Resolve Aperture
 - C — Creative Instrument
@@ -92,17 +93,15 @@ A v0.2 in PR #164 established the refined Lab Matrix geometry before the rich-me
 ## Continuity rule for remaining Landing R&D
 Continue the Landing section-by-section under `CREATIVE_DEVELOPMENT.md`.
 
-Every remaining section must extend the accepted Lab Matrix / creative-thread grammar rather than introduce a new visual identity. The page should feel like one authored sequence rather than a stack of individually styled marketing blocks.
+Remaining sections must extend the approved Lab Matrix / creative-thread grammar rather than introduce a competing visual identity. New sections should preserve media dominance, continuity between creative states, restrained chrome, deliberate mobile adaptation and meaningful motion. They should avoid generic SaaS feature-card grids and avoid simply repeating the same sticky-scroll mechanic without a new product reason.
 
-The next section should emerge naturally from Section 02's Library resolution and prove breadth, durability or reuse through media-led composition. It must avoid reverting to generic feature cards, fabricated metrics/testimonials, provider/model claims or decorative effects with no product meaning.
-
-Already accepted sections may only be materially changed again if:
-- the user explicitly reopens them;
-- later full-page composition exposes a concrete continuity/responsive/accessibility problem;
-- production feasibility requires a bounded adaptation that preserves the approved visual intent and is reviewed.
+The hero or Section 02 may only be materially changed again if:
+- the user explicitly reopens it;
+- a later full-page composition exposes a concrete continuity/responsive/accessibility problem;
+- production feasibility requires a bounded adaptation, which must preserve the approved visual intent and be reviewed.
 
 ## Production boundary
-Directional approval of Sections 01–02 does **not** authorize:
+Directional approval does **not** authorize:
 - modifying production `/`;
 - merging experimental prototype code as product implementation;
 - changing routes, auth, backend, schema, security or infrastructure;
