@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>RenderLab — Landing Section 03 Living Library R&D</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <section class="living-library" aria-labelledby="library-title">
+      <header class="library-intro">
+        <p class="eyebrow">Living Library</p>
+        <h1 id="library-title">Every result<br /><span>stays alive.</span></h1>
+        <p class="dek">Generated and uploaded media stay useful after the first result. Find the work again, bring it back into Create, and keep moving from what already exists.</p>
+      </header>
+
+      <div class="library-field-wrap">
+        <div class="field-meta" aria-hidden="true">
+          <span>LIBRARY / 006 MEDIA</span>
+          <span>DURABLE CREATIVE WORK</span>
+        </div>
+
+        <div class="library-field" data-library-field data-active="0" aria-label="Reusable RenderLab media examples">
+          <button class="media-card card-0 is-active" type="button" data-card="0" aria-pressed="true"
+            data-title="First light study" data-meta="Image · Saved to Library" data-actions="Edit|Animate|Upscale 2×">
+            <img class="media-image media-mountain" src="https://images.unsplash.com/photo-1770802238220-c4db8c2cc4f5?auto=format&amp;fit=crop&amp;w=1600&amp;q=84" alt="" />
+            <span class="media-shade" aria-hidden="true"></span>
+            <span class="card-index">01</span>
+            <span class="card-type">IMAGE / RESULT</span>
+            <span class="card-name">First light study</span>
+          </button>
+
+          <button class="media-card card-1" type="button" data-card="1" aria-pressed="false"
+            data-title="Portrait reference" data-meta="Uploaded image · Reusable reference" data-actions="Use in Create|Edit|Animate">
+            <img class="media-image media-portrait" src="https://images.unsplash.com/photo-1778973810380-46a63ff83d61?auto=format&amp;fit=crop&amp;w=1100&amp;q=82" alt="" />
+            <span class="media-shade" aria-hidden="true"></span>
+            <span class="card-index">02</span>
+            <span class="card-type">IMAGE / REFERENCE</span>
+            <span class="card-name">Portrait reference</span>
+          </button>
+
+          <button class="media-card card-2" type="button" data-card="2" aria-pressed="false"
+            data-title="Motion test" data-meta="Video · Saved to Library · 00:05" data-actions="Open|Download">
+            <img class="media-image media-car" src="https://images.unsplash.com/photo-1767272374026-178111631eca?auto=format&amp;fit=crop&amp;w=1300&amp;q=82" alt="" />
+            <span class="media-shade" aria-hidden="true"></span>
+            <span class="motion-scan" aria-hidden="true"></span>
+            <span class="card-index">03</span>
+            <span class="card-type">VIDEO / 00:05</span>
+            <span class="card-name">Motion test</span>
+          </button>
+
+          <button class="media-card card-3" type="button" data-card="3" aria-pressed="false"
+            data-title="Atmosphere study" data-meta="Image · Collection: Ideas" data-actions="Edit|Animate|Favorite">
+            <img class="media-image media-jelly" src="https://images.unsplash.com/photo-1507426592025-e460fda3be31?auto=format&amp;fit=crop&amp;w=1200&amp;q=82" alt="" />
+            <span class="media-shade" aria-hidden="true"></span>
+            <span class="card-index">04</span>
+            <span class="card-type">IMAGE / COLLECTION</span>
+            <span class="card-name">Atmosphere study</span>
+          </button>
+
+          <button class="media-card card-4" type="button" data-card="4" aria-pressed="false"
+            data-title="Material study" data-meta="Image · Saved to Library" data-actions="Edit|Upscale 2×|Download">
+            <img class="media-image media-material" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&amp;fit=crop&amp;w=1200&amp;q=82" alt="" />
+            <span class="media-shade" aria-hidden="true"></span>
+            <span class="card-index">05</span>
+            <span class="card-type">IMAGE / SAVED</span>
+            <span class="card-name">Material study</span>
+          </button>
+
+          <button class="media-card card-5" type="button" data-card="5" aria-pressed="false"
+            data-title="Structure study" data-meta="Image · Saved to Library" data-actions="Use in Create|Rename|Download">
+            <img class="media-image media-structure" src="https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&amp;fit=crop&amp;w=1200&amp;q=82" alt="" />
+            <span class="media-shade" aria-hidden="true"></span>
+            <span class="card-index">06</span>
+            <span class="card-type">IMAGE / SAVED</span>
+            <span class="card-name">Structure study</span>
+          </button>
+        </div>
+
+        <aside class="focus-panel" aria-live="polite" aria-label="Selected media context">
+          <div class="focus-thread" aria-hidden="true"><span></span><i></i><span></span><i></i><span></span></div>
+          <p class="focus-kicker">SOURCE <b>→</b> RESULT <b>→</b> CONTINUE</p>
+          <h2 data-focus-title>First light study</h2>
+          <p class="focus-meta" data-focus-meta>Image · Saved to Library</p>
+          <div class="focus-actions" data-focus-actions aria-label="Compatible next actions">
+            <span>Edit</span><span>Animate</span><span>Upscale 2×</span>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="library-truth" aria-hidden="true">
+        <span>SEARCH</span><span>FAVORITES</span><span>COLLECTIONS</span><span>CONTINUE</span>
+      </footer>
+    </section>
+  </main>
+  <script src="prototype.js"></script>
+</body>
+</html>
