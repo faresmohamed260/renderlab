@@ -6,11 +6,11 @@ Create a consistent, reusable, predictable UI system for a professional AI image
 ## Design Direction
 **Simple by default, powerful when needed.** RenderLab is a dark-first creative workspace where generated media is visually dominant and interface chrome stays restrained, tactile, and precise.
 
-Ongoing visual design exploration uses **Penpot** as defined in `docs/ui/DESIGN_WORKFLOW.md`. This repository document remains authoritative for approved design rules.
+Ongoing visual design exploration uses **Penpot** as defined in `docs/ui/DESIGN_WORKFLOW.md`. This repository document remains authoritative for approved design rules. `docs/ui/VISUAL_NORTH_STAR.md` defines the higher visual-ambition and kinetic-approval standard when the user explicitly authorizes redesign of a named surface/system.
 
 The previous Figma file `RenderLab Design System` (`PHqgsDctOsEXX4EFR0SS7i`) is historical reference only. It contains prior Foundation, Application Shell, and Create Experience explorations. Decisions already extracted from those designs and documented in the repository remain valid; future work must not depend on Figma access.
 
-Design-tool explorations are not automatically `APPROVED` or `LOCKED`. They become authoritative only when the corresponding rules are accepted and documented here or in the appropriate repository file, and implemented surfaces still require rendered verification.
+Design-tool explorations are not automatically `APPROVED` or `LOCKED`. They become authoritative only when the corresponding rules are accepted and documented here or in the appropriate repository file, and implemented surfaces still require rendered verification. A static design artifact cannot by itself approve a claimed kinetic/morphing/physics interaction; follow `DESIGN_WORKFLOW.md` for temporal evidence requirements.
 
 ## Design Priorities
 - Generated media first
@@ -28,10 +28,26 @@ RenderLab should feel like a **premium modern creative application**, not a defa
 - Compose approved mechanics with RenderLab-specific hierarchy, spacing, media treatment and spatial continuity.
 - Prefer purposeful layout/shared-element transitions, morphing disclosures, direct-manipulation feedback, reference reordering motion and coherent result/state transitions when they improve understanding.
 - A screen being clean and functional is necessary but not sufficient when the creative workflow would materially benefit from stronger interaction design.
-- Do not add motion/effects just to imitate fashionable AI landing pages. Avoid gratuitous physics, glow, cursor effects, parallax or animation that competes with media/task focus.
+- Do not add motion/effects merely because they are fashionable or available. Physics, glow, cursor response, parallax, canvas/WebGL, shaders, scroll choreography, and similar techniques are **not blanket prohibitions** in an explicitly authorized redesign; they must be justified by the accepted interaction, the target surface's expressiveness level, accessibility/reduced-motion behavior, performance cost, and media/task hierarchy defined in `VISUAL_NORTH_STAR.md`.
 - `prefers-reduced-motion`, keyboard/touch parity, performance and accessibility remain non-negotiable. Every animated interaction needs a clear static/reduced-motion equivalent.
 
-Cycle 4 Phase 20 applied this elevated interaction-quality bar to Create and Phase 21 applied it to Library/Media Viewer; both are complete/verified/merged. Phase 22 is the final Cycle 4 application: Activity, Settings and public Landing must reach the same Kinetic Precision quality while preserving their mature lifecycle, account/security and closed-beta routing contracts, followed by a cross-product cohesion audit.
+Cycle 4 established Kinetic Precision across the product and is complete/verified/merged/live. Its phase-specific effect limits remain historical constraints for those completed phases. A future explicit user-authorized redesign may reopen the named surface's visual composition/motion under `VISUAL_NORTH_STAR.md`; that does not reopen product, security, ownership, route, API, data, or engineering contracts unless separately authorized.
+
+## Surface Expressiveness
+Use the surface-specific ambition levels from `VISUAL_NORTH_STAR.md` when a redesign is explicitly authorized:
+
+| Surface | Level | Default direction |
+|---|---:|---|
+| Landing | 4 / 4 | Highest-expression public showcase; richer choreography/graphics may be explored. |
+| Create | 3 / 4 | Signature creative instrument; strong spatial continuity and tactility. |
+| Library | 3 / 4 | Spatial media workspace; media-object continuity and direct manipulation. |
+| Media Viewer | 3 / 4 | Cinematic inspection/continuation and contextual morphing. |
+| Activity | 2 / 4 | Real-state-driven motion; active states may carry bounded energy. |
+| Application Shell | 2 / 4 | Navigation continuity/tactility subordinate to feature content. |
+| Settings | 1 / 4 | Calm trust/security hierarchy with brief useful transitions. |
+| Admin | 1 / 4 | Operational clarity first. |
+
+These are ceilings and ambition targets for redesign, not requirements to animate every element.
 
 ## Semantic Color Foundation
 Dark theme is the initial product theme. Values below are the initial approved baseline and may be tuned through visual implementation review without changing their semantic roles.
@@ -224,7 +240,9 @@ Good candidates:
 - sheets/popovers/dialogs with coherent origin/destination motion;
 - generation results entering without disruptive layout jumps.
 
-Avoid persistent decorative motion, excessive glow/parallax, distracting cursor effects, or stacking expensive visual effects merely to look modern.
+For a signature redesign, transform before replace when that improves continuity: use geometry, clipping/masking, scale, shared layout, spatial movement, and depth as primary storytelling tools, with opacity as support rather than the whole language. A repeated fade + `translateY`, generic hover scale, or glow-only restyle does not by itself meet the 3/4 or 4/4 expressiveness target.
+
+Avoid persistent decorative motion or expensive effects that compete with media/task focus. Richer effects are allowed only where the accepted redesign justifies them and they degrade cleanly under reduced motion/performance constraints.
 
 Always honor `prefers-reduced-motion`; essential state changes must remain understandable without animation.
 
@@ -308,6 +326,8 @@ An external/copy-owned component must be evaluated before becoming an approved R
 
 Once adopted, record the local component/wrapper, source, purpose, and status in `COMPONENT_CATALOG.md`.
 
+Material additions such as GSAP, Lenis, canvas/WebGL/shader runtimes, or continuous pointer/physics systems are not pre-approved dependencies. They may be proposed only from a concrete accepted interaction/prototype, with dependency/performance rationale and a reduced-motion/static fallback recorded before production adoption.
+
 ## Component Statuses
 - `EXPERIMENTAL` — still being designed
 - `APPROVED` — default implementation; reuse it
@@ -331,8 +351,12 @@ Established actions must behave consistently: model selection, media actions, ex
 11. Record adopted components in `COMPONENT_CATALOG.md`.
 
 ## Default Meaning of UI Tasks
-UI tasks are implementation problems by default, not invitations to invent new component mechanics. “Add X” means integrate X into the established RenderLab system using an approved component/source when possible unless redesign is explicitly requested.
+UI work has two explicit modes:
 
+- **Integration Mode — default:** “Add X” means integrate X into the established RenderLab system using approved components/mechanics without unrelated redesign.
+- **Authorized Redesign Mode — explicit only:** if the user explicitly asks to redesign/restyle/modernize/reimagine/visually elevate a named surface/system, follow `VISUAL_NORTH_STAR.md` and `DESIGN_WORKFLOW.md`. The named surface's approved visual composition/styling/motion may be reopened, but product behavior, routes, API/data/ownership/security contracts, accessibility, and engineering/testing gates remain authoritative unless separately changed.
+
+In Authorized Redesign Mode, design/prototype approval precedes production code for meaningful visual changes, and static screenshots alone cannot approve signature temporal behavior.
 
 ## Cycle 4 visual direction — Kinetic Precision
 Cycle 4 deliberately raises the visual ceiling beyond the earlier restrained application baseline. The product remains media-first and professional, but visible atmosphere, depth and motion are now first-class parts of the RenderLab identity when they support clarity and creative flow.
@@ -365,11 +389,25 @@ Do not stack every layer at maximum intensity on the same element. Avoid broad n
 ### Phase 19 foundation target
 The first implementation of this system belongs to `AppShell` and global semantic tokens. It should visibly change the application canvas, desktop/mobile navigation chrome, active navigation state and top-level route continuity while leaving feature data/behavior untouched. Later Cycle 4 phases extend the same language into Create, Library/Viewer and remaining user-facing surfaces.
 
-
 ### Phase 19 implemented foundation
 The Kinetic Precision foundation is now implemented at the application-shell layer. `globals.css` owns semantic spectral/glass/elevation tokens and a CSS-only low-frequency ambient canvas. `AppShell` owns floating dimensional desktop/mobile chrome, Motion shared-layout selection and tactile press/hover response, plus a deliberately short 220ms top-level route entrance. Continuous ambience uses CSS transforms/opacity; there is no permanent JavaScript animation loop. `prefers-reduced-motion` removes ambience animation and transform-dependent route movement while retaining the full static composition. This visual layer is the baseline for subsequent Cycle 4 feature work; feature content should extend it rather than create a competing atmosphere.
 
 ### Cycle 4 Phase 20 sourcing note
 Phase 20 should first compose the existing RenderLab primitives, Motion for React and Phase 19 Kinetic Precision tokens. Motion Primitives and React Bits are the preferred external mechanic sources when a maintained pattern materially improves the interaction. GSAP, Lenis, Watermelon UI, Kaikei.app and design-review/reference tools suggested for Cycle 4 remain optional evaluation candidates rather than default dependencies. Any actual adoption must satisfy the existing Adoption Requirements and be recorded in `COMPONENT_CATALOG.md`; visual inspiration alone does not justify another runtime or competing component system.
+
 ### Cycle 4 Phase 21 spatial-media target
 Phase 21 applies Kinetic Precision to Library and Media Viewer. The target is a media-first spatial workspace: bounded card depth/tactility, clear static selection, safe card → Viewer perceptual continuity, a dimensional Viewer stage and spatial Compare source choreography. Existing server/URL state, durable media identity and product actions remain outside motion state. True cross-route shared-element motion is optional when safe; matched media geometry plus a bounded Viewer entrance is preferred over brittle navigation interception or global client route/media state. Reduced motion preserves the same hierarchy and comparison/selection meaning without tilt or transform-dependent continuity.
+
+## Post-Cycle-4 Redesign Interpretation
+Cycle 4's completed Phase 19–22 notes above document what was approved and implemented at that time. They are not a permanent global ceiling on future explicitly authorized visual R&D.
+
+When the user starts a new authorized redesign:
+- preserve the completed phase history rather than rewriting it;
+- explicitly identify which named surface visual decisions are reopened;
+- use `VISUAL_NORTH_STAR.md` to set the new ambition and expressiveness ceiling;
+- require reference-driven design, complete concepts, interaction choreography, and temporal prototype evidence before production implementation for signature kinetic behavior;
+- preserve all non-visual product/security/architecture/testing contracts unless separately changed;
+- keep Motion for React as the default application runtime, and justify any additional runtime/effect system from an accepted interaction rather than from trend or novelty;
+- do not mark the redesign complete because builds/tests pass if the implementation materially misses the accepted design/prototype.
+
+This interpretation changes design governance only. It does not itself reopen a surface, create Phase 23/Cycle 5, adopt a dependency, modify product code, or authorize deployment.
