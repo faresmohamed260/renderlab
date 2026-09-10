@@ -1,0 +1,28 @@
+@media (max-width: 900px) {
+  .topbar {
+    grid-template-columns: auto 1fr auto;
+    height: 64px;
+    gap: 10px;
+    padding: 0 16px;
+  }
+
+  .brand {
+    min-width: 32px;
+  }
+
+  .wordmark {
+    display: none;
+  }
+
+  .variant-nav {
+    position: static;
+    order: initial;
+    left: auto;
+    bottom: auto;
+    z-index: auto;
+    justify-self: center;
+    transform: none;
+    background: rgba(255,255,255,.025);
+    backdrop-filter: none;
+  }
+}
