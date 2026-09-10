@@ -1,7 +1,7 @@
 # Landing Brand Experience R&D
 
-**Status:** IN PROGRESS — HERO + SECTIONS 02–03 DIRECTIONALLY APPROVED  
-**Last verified:** 2026-09-10  
+**Status:** IN PROGRESS — HERO + SECTIONS 02–04 DIRECTIONALLY APPROVED  
+**Last verified:** 2026-09-11  
 **Parent tracker:** GitHub issue #158  
 **Workflow:** `docs/ui/CREATIVE_DEVELOPMENT.md`
 
@@ -102,7 +102,7 @@ The user approved the first verified Section 03 review candidate after desktop d
 ### Verified Section 03 evidence
 Accepted candidate:
 - branch: `work/landing-section-03-living-library-rd-v0.1`
-- draft R&D PR: #169
+- completed R&D PR: #169, closed without merge
 - exact head: `a511f44c31ac80b38560b071e307e33a9969179c`
 - Engineering Quality: `34529132725` — passed
 - Landing Section 03 Living Library R&D: `34529132765` — passed
@@ -112,6 +112,39 @@ Accepted candidate:
 Browser verification covers 1440×900 default and changed-focus states, pointer selection/yield, keyboard focus selection, 390×844 touch layout/selection, reduced motion, six loaded media objects, no document-level horizontal overflow and runtime cleanliness.
 
 The current external R&D photographs are not production assets. Final production media may be replaced with owned/cleared RenderLab media while preserving the accepted composition, crop density, focus/yield behavior and responsive intent.
+
+## Section 04 — Resolve to Create
+**Status:** DIRECTIONALLY APPROVED by the user on 2026-09-11.
+
+Section 04 closes the public story by resolving the active Library media back into the modular `R` geometry and then presenting the truthful invitation-only conversion path without dropping into a generic CTA card.
+
+Accepted properties:
+- the closing composition begins from a Living Library carry-over state rather than visually resetting the page;
+- four active media objects converge into the exact modular proportions of the locked Lab Grid `R`, while two peripheral Library objects yield away;
+- the real locked RenderLab mark/wordmark remains a separate repository-owned identity asset and is not redrawn from the media geometry;
+- desktop uses scroll-linked convergence and supports coherent reverse-scroll restoration rather than a one-way decorative animation;
+- the CTA copy remains concise and subordinate to the media resolution, with `Open Create` and `Sign in` as the only primary conversion actions;
+- `Open Create` truthfully targets `/create` and `Sign in` truthfully targets `/settings`;
+- closed-beta / invitation-only / no-public-sign-up truth remains visible, with no pricing, testimonials, fake metrics, provider/model claims or public-admission behavior;
+- mobile does not reproduce the long desktop sticky sequence: it starts with the locked brand, uses an already-resolved compact four-cell media `R`, and keeps both actions fully visible/reachable;
+- reduced motion settles directly to the complete resolved state with no running convergence animation;
+- the section preserves the accepted dark restrained canvas, concise sans typography, media dominance, modular geometry and spatial continuity established by Sections 01–03.
+
+The first verified browser pass was technically green, but mobile put the visual conclusion before the brand. A narrow mobile-only refinement moved the locked identity to the top and compacted the media conclusion without changing the desktop concept. User approval applies to that refined exact head.
+
+### Verified Section 04 evidence
+Accepted candidate:
+- branch: `work/landing-section-04-resolve-to-create-rd-v0.1`
+- draft R&D PR: #171
+- exact head: `36d5b6210feb895143ebefaba49833ad5f4ed9fe`
+- Engineering Quality: `34531640907` — passed
+- Landing Section 04 Resolve to Create R&D: `34531640915` — passed
+- evidence artifact: `10173749429`
+- artifact digest: `sha256:07c1d30561b8e072c3fa72a1be262fc98e1f47073e8029487da977fb5a6a211e`
+
+Browser verification covers desktop Library carry-over, resolved final and reverse-scroll states, exact final modular-R geometry, locked-mark loading, truthful CTA route targets, 390×844 mobile composition, reduced motion, six media loads, no document-level horizontal overflow and runtime cleanliness.
+
+The current external R&D photographs remain prototype media rather than production assets. Final production media may be replaced with owned/cleared RenderLab image/video work while preserving the accepted geometry, crop density, transition intent and closing narrative.
 
 ## Historical alternatives
 The original coded hero comparison in PR #163 explored:
@@ -123,24 +156,26 @@ The user selected A. B and C remain historical exploration evidence and are not 
 
 A v0.2 in PR #164 established the refined Lab Matrix geometry before the rich-media pass. It is superseded by the accepted v0.3 hero for ongoing R&D.
 
-## Continuity rule for remaining Landing R&D
-Continue the Landing section-by-section under `CREATIVE_DEVELOPMENT.md`.
+## Complete-surface assembly gate
+All four Landing sections are now directionally approved individually under `CREATIVE_DEVELOPMENT.md`.
 
-Every remaining section must extend the accepted Lab Matrix / creative-thread / Living Library grammar rather than introduce a new visual identity. The page should feel like one authored sequence rather than a stack of individually styled marketing blocks.
+The next R&D step is to assemble Sections 01–04 into one continuous desktop and 390px Landing prototype and review the transitions, pacing, repeated motifs, navigation/brand continuity, full-page copy hierarchy, mobile flow, reduced-motion behavior and final CTA in one surface.
 
-The next section should close the public story naturally from the durable Library field into the existing invitation-only conversion path. It should preserve media dominance and spatial continuity, make `Open Create` and `Sign in` clear without becoming a generic CTA card, and remain truthful about closed-beta access.
+The assembly must preserve the accepted section contracts rather than using full-page integration as an excuse to redesign them. Bounded connective adjustments are allowed only when needed to make the complete page read as one authored sequence, and any material change to an already-approved section must be called out for review.
+
+The complete page must avoid generic interstitial marketing blocks, fabricated claims, excessive repetition of the modular `R`, or motion that becomes exhausting when experienced across the full scroll.
 
 Already accepted sections may only be materially changed again if:
 - the user explicitly reopens them;
-- later full-page composition exposes a concrete continuity/responsive/accessibility problem;
+- complete-page composition exposes a concrete continuity/responsive/accessibility problem;
 - production feasibility requires a bounded adaptation that preserves the approved visual intent and is reviewed.
 
 ## Production boundary
-Directional approval of Sections 01–03 does **not** authorize:
+Directional approval of Sections 01–04 does **not** authorize:
 - modifying production `/`;
 - merging experimental prototype code as product implementation;
 - changing routes, auth, backend, schema, security or infrastructure;
 - adding dependencies without the normal dependency review;
 - deploying.
 
-The complete Landing must still reach reviewed-design-candidate status and receive explicit user approval before production implementation begins.
+The assembled complete Landing must still reach reviewed-design-candidate status and receive explicit user approval before production implementation begins.
