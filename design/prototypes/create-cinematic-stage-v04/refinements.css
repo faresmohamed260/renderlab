@@ -1,5 +1,7 @@
 /* Cinematic Stage v0.4 — interaction and composition refinements.
    The stage remains dominant; controls may layer over it but must not collapse it. */
+html,body{overflow-x:clip}
+
 .reference-card[data-slot="secondary"] .ref-actions{
   right:-34px;
   top:6px;
