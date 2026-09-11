@@ -26,8 +26,8 @@ test("Library preserves the private signed-out boundary on mobile regardless of 
   await expect(page.getByRole("link", { name: "Open Settings", exact: true })).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search Library" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Oldest first\. Switch to newest first\./ })).toHaveCount(0);
-  await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Library", exact: true }).last()).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("navigation", { name: "Application navigation" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
 
   await page.screenshot({ path: "artifacts/library-mobile-signed-out.png", fullPage: true });
 });

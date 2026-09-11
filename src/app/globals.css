@@ -2015,3 +2015,60 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Phase 23 approved v0.5 final fidelity tune */
+.kinetic-app {
+  background:
+    radial-gradient(circle at 58% 24%, rgb(68 142 188 / 13%), transparent 28%),
+    radial-gradient(circle at 22% 56%, rgb(163 74 47 / 7%), transparent 24%),
+    linear-gradient(180deg, #080b11 0%, #07090e 100%) !important;
+}
+
+.kinetic-app::before {
+  inset: 0 !important;
+  background:
+    radial-gradient(circle at 56% 24%, rgb(50 132 188 / 16%), transparent 30%),
+    radial-gradient(circle at 19% 58%, rgb(170 78 47 / 8%), transparent 25%) !important;
+  filter: blur(74px) !important;
+  opacity: .72 !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.kinetic-app::after {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 2.1%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 2.1%) 1px, transparent 1px) !important;
+  background-size: 64px 64px !important;
+  mask-image: linear-gradient(to bottom, black 0%, rgb(0 0 0 / 88%) 62%, transparent 100%) !important;
+  opacity: .26 !important;
+}
+
+.clear-composer-prompt-label {
+  order: 4;
+}
+
+.clear-create-stack::after {
+  order: 6;
+  display: block;
+  width: min(900px, 100%);
+  margin: 28px auto 0;
+  color: #536174;
+  content: "CREATE IMAGE     ADD REFERENCES     CREATE VIDEO     CONTINUE FROM RESULT";
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 600px) {
+  .clear-create-stack::after {
+    margin-top: 22px;
+    font-size: 8px;
+    line-height: 1.8;
+    white-space: normal;
+    word-spacing: 7px;
+  }
+}

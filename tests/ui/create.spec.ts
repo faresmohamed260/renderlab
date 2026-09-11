@@ -164,13 +164,12 @@ test("mobile Create keeps Generate on its own row and Advanced remains usable", 
 
   await page.getByRole("button", { name: "Open Advanced controls" }).click();
   await expect(page.getByRole("spinbutton", { name: "Seed" })).toBeVisible();
-  const mobileNavigation = page.getByRole("navigation", { name: "Mobile navigation" });
-  await expect(mobileNavigation).toBeVisible();
   const generateAfterOpen = await generate.boundingBox();
-  const navigationBox = await mobileNavigation.boundingBox();
   expect(generateAfterOpen).not.toBeNull();
-  expect(navigationBox).not.toBeNull();
-  expect(generateAfterOpen!.y + generateAfterOpen!.height).toBeLessThan(navigationBox!.y);
+  expect(generateAfterOpen!.width).toBeGreaterThan(300);
+  const mobileMetrics = await page.evaluate(() => ({ innerWidth: window.innerWidth, scrollWidth: document.documentElement.scrollWidth }));
+  expect(mobileMetrics.scrollWidth).toBeLessThanOrEqual(mobileMetrics.innerWidth);
+  await expect(page.getByRole("navigation", { name: "Application navigation" })).toBeVisible();
   await page.screenshot({ path: "artifacts/create-mobile-advanced.png", fullPage: true });
 });
 

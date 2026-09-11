@@ -163,7 +163,7 @@ try {
   assert(await generate.isEnabled(), "Configured Create did not enable Generate with a valid prompt for an authenticated account.");
 
   const imageModel = page.getByRole("button", { name: "Image model FLUX.2 Klein", exact: true });
-  assert((await imageModel.textContent())?.trim() === "FLUX", "Image model trigger did not use the compact FLUX label.");
+  assert((await imageModel.textContent())?.replace(/\s+/g, " ").trim() === "Model FLUX", "Image model trigger did not use the approved Model + FLUX label/value grammar.");
   await imageModel.click();
   assert(
     (await page.getByRole("menuitemradio", { name: /FLUX\.2 Klein/ }).getAttribute("data-state")) === "checked",
@@ -172,7 +172,7 @@ try {
   await page.getByRole("menuitemradio", { name: /Qwen Image Edit/ }).click();
   const qwenModelButton = page.getByRole("button", { name: "Image model Qwen Image Edit", exact: true });
   await qwenModelButton.waitFor({ state: "visible" });
-  assert((await qwenModelButton.textContent())?.trim() === "Qwen", "Image model trigger did not use the compact Qwen label.");
+  assert((await qwenModelButton.textContent())?.replace(/\s+/g, " ").trim() === "Model Qwen", "Image model trigger did not use the approved Model + Qwen label/value grammar.");
   await page.getByRole("button", { name: "Open Advanced controls" }).click();
   await page.getByText("Qwen uses its optimized fixed 4-step image tuning.", { exact: false }).waitFor({ state: "visible" });
   assert(await page.getByLabel("Steps").count() === 0, "Qwen incorrectly exposed configurable Steps.");
