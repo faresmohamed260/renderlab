@@ -258,7 +258,7 @@
     inset: 54px 18px 16px 8px;
   }
 
-  .instrument[data-reference-count="2"] .reference-object[data-slot="primary"] {
+  .instrument[data-reference="1"] .reference-object[data-slot="primary"] {
     right: 64px;
   }
 
