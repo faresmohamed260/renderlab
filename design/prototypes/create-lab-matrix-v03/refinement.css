@@ -248,6 +248,13 @@
     min-height: 980px;
   }
 
+  /* Mobile keeps the quarter-arc identity with a shallower curve so the primary
+     Generate label remains inside the physical hit surface in ordinary and expanded states. */
+  .generate-plane,
+  .generate-plane::before {
+    border-radius: 0 0 0 68%;
+  }
+
   /* The desktop switch minimums are intentionally relaxed on narrow screens so both
      Image and Video remain fully readable inside the bounded Output plane. */
   .mode-switch {
