@@ -634,7 +634,7 @@ PR #140 guarded squash-merged as `c71554b692864c84cd1bc9f796255fdde71eae43`. All
 **Consequences:** No schema, account/authorization, generation/provider/worker, R2/storage, route hierarchy or deployment contract changed. Automatic Git → Vercel deployment remains disabled. UI-070 is production-live in exact source `378ea68b5c3087f84e83cc73682de2f919168c0a` at READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp`; `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` remains the preferred rollback anchor. UI-070 does not authorize or imply Phase 23 / Cycle 5.
 
 ### UI-071 — Desktop application chrome is rail-only and Create drop copy aligns as one unit
-**Status:** Accepted / Implemented / Verified / Merged / Not production deployed
+**Status:** Accepted / Implemented / Verified / Merged / Production Live
 **Date:** 2026-09-10
 
 **Decision:** User-directed production review supersedes UI-068's desktop-Create-only top-bar exception. On desktop application routes, the persistent left rail is the shell navigation/context surface and the redundant full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes keep the compact utility header because Settings remains outside the persistent bottom dock.
@@ -645,4 +645,16 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 
 **Verification:** Exact candidate `c151b0284a29a469b1e89d5f4cd66c55151d1d01` passed all 14 attached workflows, including UI Shell `34457851423`, configured Create Lifecycle `34457851298`, Library Lifecycle `34457851302`, Activity `34457915816`, Account Identity `34457919313` and live Video Generation `34457851413`. Desktop/mobile shell and configured reference-drop renders were reviewed and accepted; the drop geometry checks and configured fixture cleanup passed. PR #145 guarded squash-merged as `be0d2fa23fd16acbd5202e88ba2a09a7d8eefc20` with accepted tree `56c5b52536b16a04c6c9c07379ad77fbf4a0c0cb`. All four merged-main workflows passed: Engineering Quality `34459101725`, UI Shell `34459101586`, Creative Iteration `34459101541` and Video Generation `34459101760`. Exact candidate runs and review artifact digests are recorded in `UI_MIGRATION.md`.
 
-**Production boundary:** UI-071 is not production deployed. The recorded production source remains `378ea68b5c3087f84e83cc73682de2f919168c0a`; automatic Git deployment remains disabled and rollout requires separate explicit authorization.
+**Production boundary:** UI-071 first became production-live in exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5d609a7` at READY deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra`; guarded rollout run `34460364114` passed Landing plus `/create`, `/library`, `/activity` and `/settings` smoke without rollback. UI-071 remains included in the current accepted production application source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, now served with the approved Lab Matrix Landing. Automatic Git → Vercel deployment remains disabled.
+
+### UI-072 — Current production Lab Grid identity is the binding brand authority
+**Status:** Accepted / Implemented / Verified / Production Live
+**Date:** 2026-09-11
+
+**Decision:** The current `RenderLabBrand` implementation and associated production mark/icon assets are the binding settled RenderLab logo/wordmark geometry and spacing. Earlier concept-board imagery, rejected vector experiments and descriptive R&D prose remain historical design evidence; they must not be used to reinterpret, re-vectorize or otherwise alter the accepted production logo when they conflict with the shipped implementation. Changing the settled logo requires the user to explicitly reopen the identity decision.
+
+**Reason:** PR #157 productionized the Lab Grid identity and its exact implementation head passed every workflow GitHub attached. A later documentation interpretation treated older negative-space wording as evidence that the shipped logo needed correction, but the user explicitly confirmed on 2026-09-11 that the logo currently rendered on the production Landing is correct. PR #178 therefore made the accepted deployed implementation the production identity authority and superseded issue #161.
+
+**Consequences:** Reuse `src/components/brand/renderlab-brand.tsx` and the associated current production mark/icon assets rather than reconstructing the logo from older R&D references. The brand system may evolve around this identity, but logo geometry/spacing is locked unless explicitly reopened. This decision changes no product behavior, route, Auth/backend/schema/infrastructure contract or deployment policy.
+
+**Verification:** PR #157 exact head `160fa1c978e71ac25e3d1ab44cbfe658bc985148` passed Integrated Release `34496009188`, Create Lifecycle Visual `34496009231`, Engineering Quality `34496009196`, Brand / Launch Visual `34496009308` and UI Shell Validation `34496009205`. Brand / Launch produced artifact `10159844632` (`sha256:84d546973ceb3bab94d13957de15ff5d1d16bc204606b65d09ebf36b55c7d8af`). PR #157 merged as `b55ce6757ed6c1e2a00e5ca0b5c8a562a4ae7047`. The current accepted production source `0173c4c5ba08360b6352331118abc81978cfa774` serves this identity, and PR #178 merged the user's explicit production-authority clarification as `02b8e730f8a0891e39d1b6f1ca73e3b16f5fe4f9`.

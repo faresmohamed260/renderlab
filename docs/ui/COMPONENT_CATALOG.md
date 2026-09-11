@@ -116,14 +116,14 @@ Before copying/installing an external component:
 **Post-production UI-071 note:** Desktop application routes are rail-only at the shell level: the full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes retain the compact utility header because Settings remains outside the persistent bottom dock.
 
 ### RenderLabBrand
-**Status:** APPROVED
+**Status:** LOCKED
 **Source:** `src/components/brand/renderlab-brand.tsx`
-**Origin:** RenderLab-owned geometric mark/wordmark from the reviewed UI-052 design checkpoint
-**Purpose:** Shared RenderLab identity for landing, shell and small navigation/favicon scales without glow/gradient dependence.
-**Used by:** public Brand / Landing and application `AppShell`; matching vector asset at `public/renderlab-mark.svg`, app icon at `src/app/icon.svg`.
-**Reuse rules:** Reuse the component/mark geometry; marketing destination is `/`, application-shell destination is `/create`; preserve accessible labeling and monochrome legibility.
-**Do not:** Fork unrelated RenderLab logos, substitute generic AI sparkle/glow identity, or couple branding to provider/model/runtime claims.
-**Notes:** UI-052 validated implementation head `8975b7b42b518eea0a462b28528ddd41d90ad986` and final PR head `773251734dbd5c5f32770699a57b1ade653604b5` closed the 19-workflow affected gate. Artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean. PR #73 merged as `46c5daa2866c6758907ee9be219bcb3cb274ca83` and merged-main UI Shell `33323421285` passed.
+**Origin:** RenderLab-owned Lab Grid production identity, productionized by PR #157 and locked to the accepted deployed implementation by UI-072 / PR #178
+**Purpose:** Shared RenderLab identity for Landing, application shell, public metadata and small icon scales using the accepted Lab Grid mark plus continuous `Render` bold / `Lab` light wordmark.
+**Used by:** public Brand / Landing and application `AppShell`; matching production assets include `public/renderlab-mark.svg`, `public/renderlab-mark-color.svg`, `public/renderlab-mark-black.svg`, `public/renderlab-mark-white.svg`, `src/app/icon.svg`, `src/app/opengraph-image.tsx`, and the repository design master `design/brand/lab-grid-r-production-master.svg`.
+**Reuse rules:** Reuse the current component and associated production asset geometry. Marketing destination is `/`; application-shell destination is `/create`. Preserve accessible labeling, current wordmark hierarchy and the shipped mark geometry/spacing. Treat older concept-board prose and rejected vector experiments as historical context only where they do not conflict with the accepted production implementation.
+**Do not:** Re-vectorize or “correct” the current mark from older R&D references, introduce competing RenderLab logos, alter settled geometry/spacing without explicit user authorization, or couple branding to provider/model/runtime claims.
+**Notes:** PR #157 exact head `160fa1c978e71ac25e3d1ab44cbfe658bc985148` passed all five attached workflows: Integrated Release `34496009188`, Create Lifecycle Visual `34496009231`, Engineering Quality `34496009196`, Brand / Launch Visual `34496009308`, and UI Shell Validation `34496009205`. Brand / Launch artifact `10159844632` has digest `sha256:84d546973ceb3bab94d13957de15ff5d1d16bc204606b65d09ebf36b55c7d8af`; PR #157 merged as `b55ce6757ed6c1e2a00e5ca0b5c8a562a4ae7047`. The user explicitly confirmed the current production Landing logo is correct on 2026-09-11; PR #178 merged that authority clarification as `02b8e730f8a0891e39d1b6f1ca73e3b16f5fe4f9`, superseding issue #161 and any conflicting older negative-space interpretation.
 
 ### Collapsible
 **Status:** APPROVED
