@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>RenderLab Library R&D — Spatial Archive v0.1</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body data-direction="index" data-selection="off" data-tab="creatives">
+  <div class="prototype-banner" aria-label="R&D direction selector">
+    <span class="prototype-label">LIBRARY R&D / SPATIAL ARCHIVE v0.1</span>
+    <div class="direction-switch" role="group" aria-label="Design direction">
+      <button type="button" class="direction-button" data-set-direction="index" aria-pressed="true">A · Index Field</button>
+      <button type="button" class="direction-button" data-set-direction="ledger" aria-pressed="false">B · Contact Ledger</button>
+      <button type="button" class="direction-button" data-set-direction="lens" aria-pressed="false">C · Archive Lens</button>
+    </div>
+  </div>
+
+  <div class="app-frame" data-prototype="library-spatial-archive-v01">
+    <aside class="shell-rail" aria-label="Application">
+      <a href="#" class="brand" aria-label="RenderLab home">
+        <span class="brand-mark">R</span><span class="brand-word">RenderLab</span>
+      </a>
+      <nav class="rail-nav" aria-label="Primary">
+        <a href="#" class="rail-link"><span class="rail-icon">＋</span><span>Create</span></a>
+        <a href="#" class="rail-link is-active" aria-current="page"><span class="rail-icon">▦</span><span>Library</span></a>
+      </nav>
+      <nav class="rail-nav rail-nav-bottom" aria-label="Utilities">
+        <a href="#" class="rail-link"><span class="rail-icon">◌</span><span>Activity</span></a>
+        <a href="#" class="rail-link"><span class="rail-icon">⚙</span><span>Settings</span></a>
+      </nav>
+    </aside>
+
+    <header class="mobile-utility">
+      <a href="#" class="mobile-brand"><span class="brand-mark">R</span><span>RenderLab</span></a>
+      <button type="button" class="icon-button" aria-label="Open settings">⚙</button>
+    </header>
+
+    <main class="library-shell">
+      <div class="atmosphere" aria-hidden="true">
+        <span class="orb orb-cool"></span>
+        <span class="orb orb-warm"></span>
+      </div>
+
+      <section class="library-workspace" aria-labelledby="library-title">
+        <header class="library-heading">
+          <div class="heading-copy">
+            <p class="eyebrow">LIBRARY / DURABLE MEDIA</p>
+            <h1 id="library-title">Library</h1>
+            <p class="lede">Find the work worth keeping, then continue from it.</p>
+          </div>
+          <div class="heading-actions">
+            <span class="archive-stat"><strong>84</strong><span>items</span></span>
+            <button type="button" class="button button-secondary upload-button" data-upload-action hidden>Upload</button>
+          </div>
+        </header>
+
+        <section class="command-surface" id="command-surface" data-layout="single-plane" aria-label="Library controls">
+          <div class="discovery-state" id="discovery-state">
+            <div class="section-row">
+              <div class="segmented section-tabs" role="group" aria-label="Library sections">
+                <button type="button" class="segment is-active" data-tab-button="creatives" aria-pressed="true">Creatives</button>
+                <button type="button" class="segment" data-tab-button="uploads" aria-pressed="false">Uploads</button>
+              </div>
+              <div class="kind-filter" role="group" aria-label="Media type">
+                <button type="button" class="text-control is-active" data-kind="all" aria-pressed="true">All</button>
+                <button type="button" class="text-control" data-kind="image" aria-pressed="false">Images</button>
+                <button type="button" class="text-control" data-kind="video" aria-pressed="false">Videos</button>
+              </div>
+            </div>
+
+            <form class="search-lens" role="search" onsubmit="return false;">
+              <span class="search-glyph" aria-hidden="true">⌕</span>
+              <label for="library-search" class="sr-only">Search Library</label>
+              <input id="library-search" type="search" placeholder="Search by name or prompt" />
+              <button type="submit" class="button button-quiet search-submit">Search</button>
+            </form>
+
+            <div class="organization-row">
+              <button type="button" class="button button-quiet contextual-control" aria-pressed="false">☆ Favorites</button>
+              <button type="button" class="button button-quiet contextual-control">Collection · All</button>
+              <button type="button" class="button button-quiet contextual-control">Newest first</button>
+              <button type="button" class="button button-primary select-trigger" id="select-trigger">Select</button>
+            </div>
+          </div>
+
+          <div class="selection-state" id="selection-state" hidden>
+            <div class="selection-copy">
+              <p class="eyebrow">CURRENT PAGE / SELECTION</p>
+              <p class="selection-count" id="selection-count" aria-live="polite">Select media on this page</p>
+            </div>
+            <div class="selection-actions">
+              <button type="button" class="button button-quiet" id="organize-action" disabled>Organize</button>
+              <button type="button" class="button button-quiet" id="select-page">Select page (8)</button>
+              <button type="button" class="button button-quiet" id="cancel-selection">Cancel</button>
+              <button type="button" class="button button-danger" id="delete-action" disabled>Delete</button>
+            </div>
+          </div>
+        </section>
+
+        <div class="archive-divider" aria-hidden="true">
+          <span class="archive-index">01 — 08</span>
+          <span class="archive-label" data-context-label>CREATIVES / NEWEST</span>
+        </div>
+
+        <section class="media-grid" id="media-grid" aria-label="Library media">
+          <article class="media-card" data-card-id="m1">
+            <a href="#viewer" class="media-link" aria-label="Open Desert light study">
+              <div class="media-art art-1"><span class="registration arc-br"></span></div>
+              <div class="media-shelf"><strong>Desert light study</strong><span>Image · Today</span></div>
+            </a>
+            <button type="button" class="selection-target" aria-label="Select Desert light study" aria-pressed="false"><span class="selection-box">✓</span></button>
+          </article>
+          <article class="media-card" data-card-id="m2">
+            <a href="#viewer" class="media-link" aria-label="Open Glass garden">
+              <div class="media-art art-2"><span class="registration arc-tl"></span></div>
+              <div class="media-shelf"><strong>Glass garden</strong><span>Image · Today</span></div>
+            </a>
+            <button type="button" class="selection-target" aria-label="Select Glass garden" aria-pressed="false"><span class="selection-box">✓</span></button>
+          </article>
+          <article class="media-card" data-card-id="m3" data-kind-card="video">
+            <a href="#viewer" class="media-link" aria-label="Open Slow orbit test">
+              <div class="media-art art-3"><span class="video-badge">VIDEO</span><span class="registration arc-br"></span></div>
+              <div class="media-shelf"><strong>Slow orbit test</strong><span>Video · Yesterday</span></div>
+            </a>
+            <button type="button" class="selection-target" aria-label="Select Slow orbit test" aria-pressed="false"><span class="selection-box">✓</span></button>
+          </article>
+          <article class="media-card" data-card-id="m4">
+            <a href="#viewer" class="media-link" aria-label="Open Copper room">
+              <div class="media-art art-4"><span class="registration arc-tl"></span></div>
+              <div class="media-shelf"><strong>Copper room</strong><span>Image · Yesterday</span></div>
+            </a>
+            <button type="button" class="selection-target" aria-label="Select Copper room" aria-pressed="false"><span class="selection-box">✓</span></button>
+          </article>
+          <article class="media-card" data-card-id="m5">
+            <a href="#viewer" class="media-link" aria-label="Open Blue hour study">
+              <div class="media-art art-5"><span class="registration arc-br"></span></div>
+              <div class="media-shelf"><strong>Blue hour study</strong><span>Image · Sep 10</span></div>
+            </a>
+            <button type="button" class="selection-target" aria-label="Select Blue hour study" aria-pressed="false"><span class="selection-box">✓</span></button>
+          </article>
+          <article class="media-card" data-card-id="m6" data-kind-card="video">
+            <a href="#viewer" class="media-link" aria-label="Open Forest motion">
+              <div class="media-art art-6"><span class="video-badge">VIDEO</span><span class="registration arc-tl"></span></div>
+              <div class="media-shelf"><strong>Forest motion</strong><span>Video · Sep 10</span></div>
+            </a>
+            <button type="button" class="selection-target" aria-label="Select Forest motion" aria-pressed="false"><span class="selection-box">✓</span></button>
+          </article>
+          <article class="media-card" data-card-id="m7">
+            <a href="#viewer" class="media-link" aria-label="Open Ceramic forms">
+              <div class="media-art art-7"><span class="registration arc-br"></span></div>
+              <div class="media-shelf"><strong>Ceramic forms</strong><span>Image · Sep 9</span></div>
+            </a>
+            <button type="button" class="selection-target" aria-label="Select Ceramic forms" aria-pressed="false"><span class="selection-box">✓</span></button>
+          </article>
+          <article class="media-card" data-card-id="m8">
+            <a href="#viewer" class="media-link" aria-label="Open Night architecture">
+              <div class="media-art art-8"><span class="registration arc-tl"></span></div>
+              <div class="media-shelf"><strong>Night architecture</strong><span>Image · Sep 9</span></div>
+            </a>
+            <button type="button" class="selection-target" aria-label="Select Night architecture" aria-pressed="false"><span class="selection-box">✓</span></button>
+          </article>
+        </section>
+
+        <footer class="page-footer">
+          <span>Showing 8 of 84</span>
+          <button type="button" class="button button-quiet">Older →</button>
+        </footer>
+      </section>
+    </main>
+
+    <nav class="mobile-dock" aria-label="Mobile navigation">
+      <a href="#"><span>＋</span><small>Create</small></a>
+      <a href="#" class="is-active" aria-current="page"><span>▦</span><small>Library</small></a>
+      <a href="#"><span>◌</span><small>Activity</small></a>
+    </nav>
+  </div>
+
+  <script src="./prototype.js"></script>
+</body>
+</html>
