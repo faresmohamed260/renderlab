@@ -6,6 +6,7 @@ on:
       - work/phase-23-create-fidelity-correction
     paths:
       - scripts/apply-create-v05-fidelity-correction.mjs
+      - scripts/fix-create-v05-materializer.mjs
       - .github/workflows/create-v05-fidelity-materialize.yml
 
 permissions:
@@ -23,6 +24,7 @@ jobs:
 
       - name: Apply fidelity correction
         run: |
+          node scripts/fix-create-v05-materializer.mjs
           node --check scripts/apply-create-v05-fidelity-correction.mjs
           node scripts/apply-create-v05-fidelity-correction.mjs
           git diff --check
