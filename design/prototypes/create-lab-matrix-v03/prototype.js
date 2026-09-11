@@ -277,10 +277,10 @@
   modeButtons.forEach((button) => button.addEventListener('click', () => setMode(button.dataset.mode)));
   referenceObjects.forEach((node) => {
     node.addEventListener('dragstart', (event) => event.preventDefault());
-    node.addEventListener('pointerdown', (event) => {
+    const dragHandle = node.querySelector('[data-reference-drag-handle]');
+    dragHandle.addEventListener('pointerdown', (event) => {
       if (event.pointerType === 'touch' || event.button !== 0 || state.mode !== 'image' || state.refs.length < 2) return;
-      const handle = event.target.closest?.('[data-reference-drag-handle]');
-      if (!node.dataset.alias || !handle || handle.closest('[data-reference-object]') !== node) return;
+      if (!node.dataset.alias) return;
       state.draggedAlias = node.dataset.alias;
       state.dragPointerId = event.pointerId;
       state.dragStartX = event.clientX;
