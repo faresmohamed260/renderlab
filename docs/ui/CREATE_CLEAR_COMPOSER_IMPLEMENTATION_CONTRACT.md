@@ -2,7 +2,7 @@
 
 **Phase:** 23 / Cycle 5
 **Planned UI record:** UI-073
-**Status:** VERIFIED IMPLEMENTATION CANDIDATE / FINAL EXACT-HEAD MATRIX PENDING / MERGE NOT AUTHORIZED
+**Status:** IMPLEMENTATION VERIFIED / MERGE ACCEPTANCE PENDING / MERGE NOT AUTHORIZED
 **Approved by user:** 2026-09-11
 **Implementation tracker:** GitHub issue #184
 **Parent design R&D:** GitHub issue #148 / `design/rd/create-usability-first-v05.md`
@@ -285,7 +285,7 @@ Before Phase 23 can be accepted, compare real production-browser output against 
 
 A green build with a generic restyle is a failure. Conversely, do not move/hide ordinary controls merely to reproduce spectacle not required by the accepted design.
 
-## Verified implementation record before final documentation matrix
+## Verified implementation record
 
 The production candidate has been implemented and human-reviewed without changing the product/backend boundary described above. Evidence already verified on exact head `a44146bf8e51f165b01e348b7c21621207edfc9e` includes:
 
@@ -296,7 +296,9 @@ The production candidate has been implemented and human-reviewed without changin
 
 Human evidence review confirmed the approved desktop/390px/reduced-motion authoring hierarchy, truthful active/result composition, media-first result framing and the Phase 23 mobile correction that keeps Image result continuation actions above the fixed mobile dock.
 
-Five other workflows on that head were audited rather than waived. Generation Admission stopped on trailing whitespace in this contract; UI Shell, Create Durable Upload, Library Lifecycle and Integrated Release reached their relevant application behavior but still asserted superseded pre-Clear-Composer heading/copy. Commit `6e9cb6409ce9029e903f0330e099bbcb83bcbc1f` removes the whitespace and updates only those stale presentation assertions to UI-073 semantics while retaining URL, output, durable identity, upload, ownership, generation, persistence, reference and continuation invariants. A final documentation-complete exact-head matrix is therefore still mandatory before merge acceptance.
+Five other workflows on that earlier head were audited rather than waived. Generation Admission stopped on trailing whitespace in this contract; UI Shell, Create Durable Upload, Library Lifecycle and Integrated Release reached their relevant application behavior but still asserted superseded pre-Clear-Composer heading/copy. Commit `6e9cb6409ce9029e903f0330e099bbcb83bcbc1f` removed the whitespace and updated only those stale presentation assertions to UI-073 semantics while retaining URL, output, durable identity, upload, ownership, generation, persistence, reference and continuation invariants. A later Admin matrix failure was likewise verifier-only: the page legitimately contained more than one pending invitation, so `scripts/verify-admin-operations.mjs` now scopes `Revoke` to the exact fixture invitation row it creates rather than using a page-global strict locator.
+
+Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` preserves the Phase 23 product tree and includes that verifier-only Admin correction. On that exact head, Engineering Quality `34639132519`, Create Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, Account/Admin Operations `34639132466`, Generation Admission `34639132429`, Account Identity `34639132511` after an unchanged transient retry, live Video Generation `34639132462`, Integrated Release `34639132445` and every other directly attached workflow passed. Release Candidate Matrix `34639132431` also passed all 23 exact-SHA child workflows and uploaded manifest artifact `10279433595` (`sha256:f5d7bbbacfef2fc7774ae0737186534a366bc8ca2dda3ad13bf3a42dff7e8142`). Clear Composer Visual artifact `10279122274` has digest `sha256:43ad135150f687989baafa9c3beb17abf264ef2d994128ba8d3ab69789ba1eba`; configured Create Lifecycle artifact `10279462000` has digest `sha256:eaa1d38e4ec260aa3058e5df773a1cb17182df9eac884095d109233b6a4b5d7c`. Implementation is therefore verified; merge and deployment remain separately unauthorized. The documentation-finalized branch head must itself pass the Release Candidate Matrix before merge acceptance, with that final-head run recorded on issue #184 / PR #185 rather than forcing an infinite documentation-only verification loop.
 
 ## Documentation requirements
 
