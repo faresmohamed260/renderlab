@@ -22,7 +22,8 @@
   const state = {
     mode: 'image', refs: [], nextAlias: 1, advanced: false, result: false,
     pointerX: 0, pointerY: 0, targetX: 0, targetY: 0, velocityX: 0, velocityY: 0,
-    draggedAlias: null, running: true,
+    draggedAlias: null, dragPointerId: null, dragStartX: 0, dragStartY: 0,
+    dragTargetAlias: null, dragMoved: false, running: true,
   };
 
   const setStatus = (value) => { status.textContent = value.toUpperCase(); };
@@ -77,11 +78,12 @@
 
     referenceObjects.forEach((node, nodeIndex) => {
       const ref = state.refs.find((item) => item.nodeIndex === nodeIndex);
+      node.draggable = false;
       if (!ref) {
         node.hidden = true;
         node.dataset.slot = 'hidden';
         node.removeAttribute('data-alias');
-        node.draggable = false;
+        node.style.translate = '';
         return;
       }
 
@@ -90,7 +92,6 @@
       node.hidden = false;
       node.dataset.slot = slot;
       node.dataset.alias = ref.alias;
-      node.draggable = state.mode === 'image' && state.refs.length > 1;
       node.setAttribute('aria-label', `${slot === 'primary' ? 'Primary' : 'Secondary'} reference @${ref.alias}: ${ref.label}`);
       node.querySelector('img').src = ref.image;
       node.querySelector('.reference-index').textContent = `@${ref.alias}`;
@@ -222,34 +223,78 @@
     setStatus('AUTHORING');
   }
 
+  function pointerTargetAlias(draggedAlias, clientX, clientY) {
+    for (const ref of state.refs) {
+      if (ref.alias === draggedAlias) continue;
+      const node = activeNode(ref.alias);
+      if (!node) continue;
+      const rect = node.getBoundingClientRect();
+      if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+        return ref.alias;
+      }
+    }
+    return null;
+  }
+
+  function clearPointerExchange(node, pointerId) {
+    if (node?.hasPointerCapture?.(pointerId)) node.releasePointerCapture(pointerId);
+    if (node) {
+      node.style.translate = '';
+      node.classList.remove('dragging');
+    }
+    referenceObjects.forEach((item) => item.classList.remove('drag-target'));
+    state.draggedAlias = null;
+    state.dragPointerId = null;
+    state.dragTargetAlias = null;
+    state.dragMoved = false;
+  }
+
+  function finishPointerExchange(node, event, cancelled = false) {
+    if (state.dragPointerId !== event.pointerId || state.draggedAlias !== node.dataset.alias) return;
+    const alias = state.draggedAlias;
+    const targetAlias = state.dragTargetAlias;
+    const moved = state.dragMoved;
+    clearPointerExchange(node, event.pointerId);
+    if (!cancelled && moved && targetAlias) {
+      moveAliasBefore(alias, targetAlias);
+    } else if (!state.result) {
+      setStatus('AUTHORING');
+    }
+    event.preventDefault();
+  }
+
   addReferenceButtons.forEach((button) => button.addEventListener('click', addReference));
   modeButtons.forEach((button) => button.addEventListener('click', () => setMode(button.dataset.mode)));
   referenceObjects.forEach((node) => {
-    node.addEventListener('dragstart', (event) => {
-      if (!node.draggable || !node.dataset.alias) return event.preventDefault();
+    node.addEventListener('dragstart', (event) => event.preventDefault());
+    node.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'touch' || event.button !== 0 || state.mode !== 'image' || state.refs.length < 2) return;
+      if (!node.dataset.alias || event.target.closest('button')) return;
       state.draggedAlias = node.dataset.alias;
+      state.dragPointerId = event.pointerId;
+      state.dragStartX = event.clientX;
+      state.dragStartY = event.clientY;
+      state.dragTargetAlias = null;
+      state.dragMoved = false;
+      node.setPointerCapture(event.pointerId);
       node.classList.add('dragging');
-      event.dataTransfer?.setData('text/plain', node.dataset.alias);
-      if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-    });
-    node.addEventListener('dragend', () => {
-      state.draggedAlias = null;
-      node.classList.remove('dragging');
-      referenceObjects.forEach((item) => item.classList.remove('drag-target'));
-    });
-    node.addEventListener('dragover', (event) => {
-      if (!state.draggedAlias || state.draggedAlias === node.dataset.alias) return;
+      setStatus('REFERENCE HOLD');
       event.preventDefault();
-      node.classList.add('drag-target');
     });
-    node.addEventListener('dragleave', () => node.classList.remove('drag-target'));
-    node.addEventListener('drop', (event) => {
+    node.addEventListener('pointermove', (event) => {
+      if (state.dragPointerId !== event.pointerId || state.draggedAlias !== node.dataset.alias) return;
+      const dx = event.clientX - state.dragStartX;
+      const dy = event.clientY - state.dragStartY;
+      if (!state.dragMoved && Math.hypot(dx, dy) < 5) return;
+      state.dragMoved = true;
+      node.style.translate = `${dx}px ${dy}px`;
+      state.dragTargetAlias = pointerTargetAlias(state.draggedAlias, event.clientX, event.clientY);
+      referenceObjects.forEach((item) => item.classList.toggle('drag-target', item.dataset.alias === state.dragTargetAlias));
+      setStatus(state.dragTargetAlias ? 'REFERENCE EXCHANGE' : 'REFERENCE DRAG');
       event.preventDefault();
-      node.classList.remove('drag-target');
-      if (!state.draggedAlias || !node.dataset.alias) return;
-      moveAliasBefore(state.draggedAlias, node.dataset.alias);
-      state.draggedAlias = null;
     });
+    node.addEventListener('pointerup', (event) => finishPointerExchange(node, event, false));
+    node.addEventListener('pointercancel', (event) => finishPointerExchange(node, event, true));
     node.querySelector('[data-action="make-primary"]').addEventListener('click', (event) => {
       event.stopPropagation();
       makePrimary(node.dataset.alias);
