@@ -16,6 +16,17 @@
   letter-spacing: .14em;
 }
 
+/* The plane is visual containment, not an interaction target. Let its real controls own
+   hit testing so recessed 2.5D reference actions stay reachable on touch and pointer. */
+.reference-plane {
+  pointer-events: none;
+}
+
+.reference-plane button,
+.reference-plane [data-reference-object] {
+  pointer-events: auto;
+}
+
 .reference-stack {
   position: absolute;
   inset: 0;
