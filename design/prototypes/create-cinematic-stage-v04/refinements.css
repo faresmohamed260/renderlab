@@ -98,7 +98,7 @@
   .inspector-group label{padding:5px 0;gap:4px}
   .value-button{height:30px;font-size:12px}
 
-  /* Mobile result reads as one cinematic caption/action line rather than stacked overlays. */
+  /* Mobile result uses an editorial inset: caption first, commands beneath it. */
   .stage[data-state="result"] .stage-viewport{
     left:0;
     right:0;
@@ -107,20 +107,34 @@
     bottom:auto;
   }
   .stage[data-state="result"] .result-copy{
-    left:18px;
-    bottom:18px;
-    max-width:150px;
+    left:86px;
+    right:18px;
+    bottom:72px;
+    width:auto;
+    max-width:220px;
+  }
+  .stage[data-state="result"] .result-copy small{
+    white-space:normal;
   }
   .stage[data-state="result"] .result-actions{
-    left:auto;
+    left:86px;
     right:14px;
     bottom:18px;
-    gap:4px;
+    justify-content:flex-start;
+    gap:5px;
   }
   .stage[data-state="result"] .result-actions button{
-    padding:0 7px;
+    padding:0 8px;
     min-height:36px;
     font-size:7px;
   }
   .stage[data-state="result"] .composer{left:14px;right:86px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  /* Reduced motion resolves directly to the complete settled state; no inherited temporal delay. */
+  .stage[data-state="result"] .result-copy,
+  .stage[data-state="result"] .result-actions{
+    transition-delay:0ms!important;
+  }
 }
