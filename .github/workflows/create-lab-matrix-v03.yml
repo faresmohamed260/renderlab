@@ -38,6 +38,7 @@ jobs:
           done
           cat /tmp/renderlab-v03-http.log
           exit 1
+      # Pointer evidence exercises the explicit media-body grab surface plus touch/keyboard equivalents.
       - name: Verify kinetic prototype
         env:
           PROTOTYPE_URL: http://127.0.0.1:4173/
