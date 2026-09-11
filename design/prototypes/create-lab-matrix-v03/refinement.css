@@ -265,8 +265,13 @@
     pointer-events: none;
   }
 
+  /* Touch keeps the same visual primary/secondary hierarchy without local Z transforms.
+     The flatter projection makes the explicit 44px action rail a deterministic hit target,
+     while desktop retains the true-Z pointer/drag treatment. */
   .reference-object[data-slot="primary"] {
     inset: 54px 18px 16px 8px;
+    z-index: 5;
+    transform: rotateZ(-.35deg) scale(1);
   }
 
   .instrument[data-reference="1"] .reference-object[data-slot="primary"] {
@@ -275,7 +280,8 @@
 
   .reference-object[data-slot="secondary"] {
     inset: 82px 6px 34px 40%;
-    transform: translateZ(20px) rotateY(-4deg) rotateZ(1.2deg) scale(.94);
+    z-index: 4;
+    transform: rotateZ(1.2deg) scale(.94);
   }
 
   .reference-role {
