@@ -12,6 +12,15 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Validate rendered UI, not only compilation.
 - Keep repository documentation synchronized with verified implementation.
 
+## Current Landing production closure — 2026-09-11
+- [x] Approved four-section Lab Matrix Landing implemented in PR #174 and merged as `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`.
+- [x] Current `main` source `0173c4c5ba08360b6352331118abc81978cfa774` deployed as READY Vercel production deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`.
+- [x] Explicit custom-domain alias run `34547608773` pointed `renderlab.faresuniform.uk` at the new deployment and passed root + `/create` + `/library` + `/activity` + `/settings` smoke.
+- [x] Independent post-rollout Vercel checks found no runtime-error clusters and no error/fatal logs for the new production deployment.
+- [x] Automatic Git → Vercel deployment remains disabled; future production releases still require explicit authorization.
+
+**Landing production status: `APPROVED / PRODUCTION-LIVE`.**
+
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
 - [x] Define RenderLab capability model, progressive-disclosure boundaries and information architecture.
