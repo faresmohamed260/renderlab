@@ -108,7 +108,7 @@ try {
 
   for (const locator of [
     mobilePage.locator('[data-tab-button="creatives"]'),
-    mobilePage.locator('[data-kind="all"]'),
+    mobilePage.locator('button[data-kind="all"]'),
     mobilePage.locator('#select-trigger'),
   ]) {
     const box = await locator.boundingBox();
