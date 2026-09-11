@@ -70,7 +70,16 @@ async function verifyDesktop() {
 
   const result = await page.locator(".result-plane").boundingBox();
   const prompt = await page.locator(".prompt-plane").boundingBox();
+  const resultAdvanced = await page.locator(".advanced-plane").boundingBox();
+  const resultGenerate = await page.locator(".generate-plane").boundingBox();
   if (!result || !prompt || result.width <= prompt.width * 2.2) throw new Error("result did not become visually dominant");
+  if (!resultAdvanced || !resultGenerate) throw new Error("result supporting geometry missing");
+  if (result.y >= prompt.y || result.y + result.height > resultAdvanced.y + 10) {
+    throw new Error("desktop Result geometry was reclaimed by authoring-state selectors");
+  }
+  if (Math.abs(resultAdvanced.y - resultGenerate.y) > 14) {
+    throw new Error("desktop Result supporting controls did not settle on one baseline");
+  }
 
   await page.keyboard.press("Home");
   await page.keyboard.press("Tab");
@@ -146,6 +155,23 @@ async function verifyMobile(reducedMotion = false) {
   await page.waitForTimeout(reducedMotion ? 130 : 2250);
   if (await page.locator(".instrument").getAttribute("data-state") !== "result") throw new Error("mobile result morph failed");
   await frameStage(page, reducedMotion ? "mobile-reduced-result.png" : "mobile-result.png", ".result-plane", 100);
+
+  const mobileResult = await page.locator(".result-plane").boundingBox();
+  const mobilePrompt = await page.locator(".prompt-plane").boundingBox();
+  const mobileReference = await page.locator(".reference-plane").boundingBox();
+  const mobileAdvanced = await page.locator(".advanced-plane").boundingBox();
+  const mobileGenerate = await page.locator(".generate-plane").boundingBox();
+  if (!mobileResult || !mobilePrompt || !mobileReference || !mobileAdvanced || !mobileGenerate) {
+    throw new Error("mobile Result geometry missing");
+  }
+  const firstSupportY = Math.min(mobilePrompt.y, mobileReference.y);
+  if (mobileResult.y >= firstSupportY || mobileResult.y + mobileResult.height > firstSupportY + 20) {
+    throw new Error("mobile Result no longer owns the primary stage");
+  }
+  const lowerSupportY = Math.min(mobileAdvanced.y, mobileGenerate.y);
+  if (firstSupportY >= lowerSupportY || Math.abs(mobileAdvanced.y - mobileGenerate.y) > 14) {
+    throw new Error("mobile Result supporting planes did not settle in reading order");
+  }
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 1) throw new Error(`mobile horizontal overflow ${overflow}px`);
