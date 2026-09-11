@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenderLab Create R&D — Instrument Continuum</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail" aria-label="Prototype navigation">
+      <a class="brand" href="#" aria-label="RenderLab">
+        <img src="../../../public/renderlab-mark-color.svg" alt="" />
+        <span><b>Render</b>Lab</span>
+      </a>
+      <nav>
+        <a class="nav-item active" href="#create" aria-current="page"><span class="nav-dot"></span>Create</a>
+        <a class="nav-item" href="#library">Library</a>
+        <a class="nav-item util" href="#activity">Activity</a>
+        <a class="nav-item" href="#settings">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="stage" id="create">
+      <header class="prototype-meta">
+        <div>
+          <p class="eyebrow">Create interaction R&amp;D · #148</p>
+          <h1>Instrument Continuum</h1>
+        </div>
+        <span class="prototype-badge">Prototype · fixture states</span>
+      </header>
+
+      <section class="context-copy" aria-labelledby="context-title">
+        <p class="context-kicker">One instrument, continuous state</p>
+        <h2 id="context-title">What do you want to create?</h2>
+        <p id="context-support">Describe an idea, then shape it with sources and precision controls.</p>
+      </section>
+
+      <section class="instrument" data-state="image" data-mode="image" aria-label="Create instrument prototype">
+        <div class="instrument-aura" aria-hidden="true"></div>
+        <div class="instrument-grid">
+          <div class="intent-pane">
+            <div class="intent-head">
+              <span class="mode-caption" id="operation-caption">Create image</span>
+              <span class="truth-chip" id="truth-chip">Ready</span>
+            </div>
+
+            <label class="sr-only" for="prompt">Prompt</label>
+            <textarea id="prompt" rows="4">A translucent blue glass sculpture floating above a dark gallery plinth, soft volumetric light, restrained reflections</textarea>
+
+            <div class="source-dock" id="source-dock" aria-label="Attached references"></div>
+
+            <div class="precision-panel" id="precision-panel" hidden>
+              <div class="precision-heading">
+                <div><strong>Precision</strong><span>Reproducibility and contextual output controls.</span></div>
+                <button class="text-action" type="button" id="reset-advanced">Reset</button>
+              </div>
+              <div class="precision-grid">
+                <label>Negative prompt<input value="watermark, text" /></label>
+                <label>Seed<div class="inline-field"><input value="3821049" inputmode="numeric" /><button type="button" aria-label="Randomize seed">↻</button></div></label>
+                <label class="image-advanced">Steps<input value="28" inputmode="numeric" /></label>
+                <label class="image-advanced">Guidance<input value="3.5" inputmode="decimal" /></label>
+                <label class="video-advanced" hidden>Frame rate<select><option>24 fps</option><option>25 fps</option><option>30 fps</option></select></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-pane" id="result-pane" aria-live="polite" aria-label="Generated result">
+            <div class="result-chrome">
+              <div>
+                <span class="result-label">Durable result</span>
+                <strong>Saved to Library</strong>
+              </div>
+              <div class="result-actions">
+                <button type="button">Edit image</button>
+                <button type="button">Animate</button>
+              </div>
+            </div>
+            <div class="result-media" role="img" aria-label="Fixture image: luminous blue glass sphere">
+              <div class="orb-shadow"></div>
+              <div class="glass-orb"></div>
+              <div class="plinth"></div>
+              <span class="fixture-note">R&amp;D media fixture</span>
+            </div>
+          </div>
+        </div>
+
+        <footer class="control-rail">
+          <div class="control-cluster">
+            <button class="icon-button add-source" type="button" id="add-source" aria-label="Add reference">+</button>
+            <div class="mode-switch" role="radiogroup" aria-label="Output type">
+              <span class="mode-lens" aria-hidden="true"></span>
+              <button type="button" role="radio" aria-checked="true" data-mode-option="image">Image</button>
+              <button type="button" role="radio" aria-checked="false" data-mode-option="video">Video</button>
+            </div>
+            <button class="context-control model-control" type="button" id="model-control">FLUX <span>⌄</span></button>
+            <button class="context-control" type="button" id="ratio-control">1:1 <span>⌄</span></button>
+            <button class="context-control video-control" type="button" id="video-control" hidden>480p · 5s <span>⌄</span></button>
+            <button class="icon-button precision-trigger" type="button" id="advanced-trigger" aria-expanded="false" aria-controls="precision-panel" aria-label="Open Advanced controls">•••</button>
+          </div>
+          <button class="generate" type="button" id="generate"><span class="generate-symbol">✦</span><span class="generate-label">Generate</span></button>
+        </footer>
+
+        <div class="lifecycle" id="lifecycle" role="status" aria-live="polite" hidden>
+          <span class="lifecycle-orb" aria-hidden="true"></span>
+          <span id="lifecycle-copy">Generating.</span>
+        </div>
+      </section>
+
+      <div class="review-strip" aria-label="Prototype states">
+        <span>Review:</span>
+        <button data-review-state="image">Image</button>
+        <button data-review-state="video">Video</button>
+        <button data-review-state="references">References</button>
+        <button data-review-state="advanced">Advanced</button>
+        <button data-review-state="generating">Generating</button>
+        <button data-review-state="result">Result</button>
+      </div>
+    </main>
+
+    <nav class="mobile-dock" aria-label="Mobile prototype navigation">
+      <a class="active" href="#create">Create</a>
+      <a href="#library">Library</a>
+      <a href="#activity">Activity</a>
+    </nav>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>
