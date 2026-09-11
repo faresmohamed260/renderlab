@@ -279,7 +279,8 @@
     node.addEventListener('dragstart', (event) => event.preventDefault());
     node.addEventListener('pointerdown', (event) => {
       if (event.pointerType === 'touch' || event.button !== 0 || state.mode !== 'image' || state.refs.length < 2) return;
-      if (!node.dataset.alias || event.target.closest('button')) return;
+      const handle = event.target.closest?.('[data-reference-drag-handle]');
+      if (!node.dataset.alias || !handle || handle.closest('[data-reference-object]') !== node) return;
       state.draggedAlias = node.dataset.alias;
       state.dragPointerId = event.pointerId;
       state.dragStartX = event.clientX;

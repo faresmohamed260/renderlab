@@ -32,13 +32,14 @@ async function assertReferenceOrder(page, expected, label) {
 
 async function pointerReorder(page, sourceAlias, targetAlias) {
   const source = page.locator(`[data-reference-object][data-alias="${sourceAlias}"]`);
+  const handle = source.locator('[data-reference-drag-handle]');
   const target = page.locator(`[data-reference-object][data-alias="${targetAlias}"]`);
-  const sourceBox = await source.boundingBox();
+  const sourceBox = await handle.boundingBox();
   const targetBox = await target.boundingBox();
   if (!sourceBox || !targetBox) throw new Error("pointer reference geometry missing");
 
   const startX = sourceBox.x + sourceBox.width * .5;
-  const startY = sourceBox.y + sourceBox.height * .62;
+  const startY = sourceBox.y + sourceBox.height * .52;
   const endX = targetBox.x + targetBox.width * .36;
   const endY = targetBox.y + targetBox.height * .6;
   await page.mouse.move(startX, startY);
