@@ -1,7 +1,7 @@
 const body = document.body;
-const directionButtons = [...document.querySelectorAll('[data-set-direction]')];
 const tabButtons = [...document.querySelectorAll('[data-tab-button]')];
 const kindButtons = [...document.querySelectorAll('[data-kind]')];
+const mediaCards = [...document.querySelectorAll('.media-card')];
 const discoveryState = document.querySelector('#discovery-state');
 const selectionState = document.querySelector('#selection-state');
 const selectTrigger = document.querySelector('#select-trigger');
@@ -9,26 +9,18 @@ const cancelSelection = document.querySelector('#cancel-selection');
 const selectPage = document.querySelector('#select-page');
 const selectionCount = document.querySelector('#selection-count');
 const selectionTargets = [...document.querySelectorAll('.selection-target')];
-const mediaCards = [...document.querySelectorAll('.media-card')];
 const organizeAction = document.querySelector('#organize-action');
 const deleteAction = document.querySelector('#delete-action');
-const uploadAction = document.querySelector('[data-upload-action]');
-const contextLabel = document.querySelector('[data-context-label]');
+const uploadAction = document.querySelector('#upload-action');
+const contextLabel = document.querySelector('#context-label');
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 const selectedIds = new Set();
 
-function setDirection(direction) {
-  const allowed = new Set(['index', 'ledger', 'lens']);
-  const next = allowed.has(direction) ? direction : 'index';
-  body.dataset.direction = next;
-  document.querySelector('#command-surface').dataset.layout =
-    next === 'index' ? 'single-plane' : next === 'ledger' ? 'ledger' : 'lens';
-  directionButtons.forEach((button) => {
-    button.setAttribute('aria-pressed', String(button.dataset.setDirection === next));
-  });
+function syncQuery(name, value, removeValue = null) {
   const url = new URL(window.location.href);
-  url.searchParams.set('dir', next);
+  if (value === removeValue || value == null) url.searchParams.delete(name);
+  else url.searchParams.set(name, value);
   history.replaceState(null, '', url);
 }
 
@@ -42,30 +34,36 @@ function setTab(tab) {
   });
   uploadAction.hidden = next !== 'uploads';
   contextLabel.textContent = `${next.toUpperCase()} / NEWEST`;
+  syncQuery('tab', next, 'creatives');
 }
 
 function setKind(kind) {
   const next = ['all', 'image', 'video'].includes(kind) ? kind : 'all';
+  body.dataset.kind = next;
   kindButtons.forEach((button) => {
     const active = button.dataset.kind === next;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', String(active));
   });
+  mediaCards.forEach((card) => {
+    card.hidden = next !== 'all' && card.dataset.kindCard !== next;
+  });
+  syncQuery('kind', next, 'all');
 }
 
 function updateSelectionCount() {
+  const visibleCards = mediaCards.filter((card) => !card.hidden);
   const count = selectedIds.size;
-  selectionCount.textContent = count === 0
-    ? 'Select media on this page'
-    : `${count} selected on this page`;
+  selectionCount.textContent = count === 0 ? 'Select media on this page' : `${count} selected on this page`;
   organizeAction.disabled = count === 0;
   deleteAction.disabled = count === 0;
   deleteAction.textContent = count ? `Delete ${count}` : 'Delete';
-  const all = count === mediaCards.length && mediaCards.length > 0;
-  selectPage.textContent = all ? 'Clear page' : `Select page (${mediaCards.length})`;
+  const all = visibleCards.length > 0 && visibleCards.every((card) => selectedIds.has(card.dataset.cardId));
+  selectPage.textContent = all ? 'Clear page' : `Select page (${visibleCards.length})`;
 }
 
 function syncCardSelection(card, selected) {
+  if (!card || card.hidden) return;
   const id = card.dataset.cardId;
   const target = card.querySelector('.selection-target');
   if (selected) selectedIds.add(id);
@@ -77,43 +75,28 @@ function syncCardSelection(card, selected) {
 function enterSelection() {
   body.dataset.selection = 'on';
   discoveryState.hidden = true;
-  discoveryState.style.display = 'none';
   selectionState.hidden = false;
   updateSelectionCount();
-  const url = new URL(window.location.href);
-  url.searchParams.set('select', '1');
-  history.replaceState(null, '', url);
+  syncQuery('select', '1');
 }
 
 function exitSelection() {
   body.dataset.selection = 'off';
   discoveryState.hidden = false;
-  discoveryState.style.removeProperty('display');
   selectionState.hidden = true;
   mediaCards.forEach((card) => syncCardSelection(card, false));
-  const url = new URL(window.location.href);
-  url.searchParams.delete('select');
-  history.replaceState(null, '', url);
+  syncQuery('select', null);
 }
 
-directionButtons.forEach((button) => {
-  button.addEventListener('click', () => setDirection(button.dataset.setDirection));
-});
-
-tabButtons.forEach((button) => {
-  button.addEventListener('click', () => setTab(button.dataset.tabButton));
-});
-
-kindButtons.forEach((button) => {
-  button.addEventListener('click', () => setKind(button.dataset.kind));
-});
-
+tabButtons.forEach((button) => button.addEventListener('click', () => setTab(button.dataset.tabButton)));
+kindButtons.forEach((button) => button.addEventListener('click', () => setKind(button.dataset.kind)));
 selectTrigger.addEventListener('click', enterSelection);
 cancelSelection.addEventListener('click', exitSelection);
 
 selectPage.addEventListener('click', () => {
-  const allSelected = selectedIds.size === mediaCards.length;
-  mediaCards.forEach((card) => syncCardSelection(card, !allSelected));
+  const visibleCards = mediaCards.filter((card) => !card.hidden);
+  const allSelected = visibleCards.length > 0 && visibleCards.every((card) => selectedIds.has(card.dataset.cardId));
+  visibleCards.forEach((card) => syncCardSelection(card, !allSelected));
   updateSelectionCount();
 });
 
@@ -127,15 +110,11 @@ selectionTargets.forEach((target) => {
 
 document.querySelectorAll('.media-link').forEach((link) => {
   link.addEventListener('click', (event) => {
-    if (body.dataset.selection === 'on') {
-      event.preventDefault();
-      const card = link.closest('.media-card');
-      const target = card.querySelector('.selection-target');
-      syncCardSelection(card, target.getAttribute('aria-pressed') !== 'true');
-      updateSelectionCount();
-      return;
-    }
     event.preventDefault();
+    if (body.dataset.selection !== 'on') return;
+    const card = link.closest('.media-card');
+    syncCardSelection(card, card.querySelector('.selection-target').getAttribute('aria-pressed') !== 'true');
+    updateSelectionCount();
   });
 });
 
@@ -153,8 +132,8 @@ mediaCards.forEach((card) => {
     const box = card.getBoundingClientRect();
     const px = (event.clientX - box.left) / box.width;
     const py = (event.clientY - box.top) / box.height;
-    const rx = (0.5 - py) * 3.2;
-    const ry = (px - 0.5) * 4.2;
+    const rx = (0.5 - py) * 2.6;
+    const ry = (px - 0.5) * 3.6;
     link.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateY(-2px)`;
     link.style.setProperty('--spot-x', `${Math.round(px * 100)}%`);
     link.style.setProperty('--spot-y', `${Math.round(py * 100)}%`);
@@ -162,9 +141,8 @@ mediaCards.forEach((card) => {
   card.addEventListener('pointerleave', () => resetTilt(card));
 });
 
-function hydrateFromQuery() {
+function hydrate() {
   const query = new URLSearchParams(window.location.search);
-  setDirection(query.get('dir') || 'index');
   setTab(query.get('tab') || 'creatives');
   setKind(query.get('kind') || 'all');
   if (query.get('select') === '1') {
@@ -175,4 +153,4 @@ function hydrateFromQuery() {
   }
 }
 
-hydrateFromQuery();
+hydrate();
