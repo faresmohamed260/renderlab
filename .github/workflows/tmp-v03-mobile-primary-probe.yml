@@ -1,0 +1,35 @@
+name: Temporary v0.3 Mobile Primary Probe
+
+on:
+  push:
+    branches:
+      - rd/create-premium-workstation-v03
+    paths:
+      - ".github/workflows/tmp-v03-mobile-primary-probe.yml"
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install repository dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Serve prototype
+        run: |
+          python3 -m http.server 4173 --directory design/prototypes/create-lab-matrix-v03 > /tmp/renderlab-v03-http.log 2>&1 &
+          echo $! > /tmp/renderlab-v03-http.pid
+          for i in {1..20}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/renderlab-v03-http.log
+          exit 1
+      - name: Probe mobile Make primary touch target
+        run: node scripts/tmp-v03-mobile-primary-probe.mjs
