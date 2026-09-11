@@ -59,7 +59,7 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current Verified Baseline — 2026-09-11
-- Authoritative repository source currently deployed is `0173c4c5ba08360b6352331118abc81978cfa774`. It contains the approved four-section Lab Matrix Landing plus the previously verified application corrections through UI-071; commits after the Landing implementation merge are documentation-only.
+- Current repository `main` is `d360f60afeca0b6c417ff1c12dec3c7e922c20f7`, the squash merge of PR #185 / Phase 23 Clear Composer v0.5. Exact merged-main Release Candidate Matrix `34645636285` passed all 23 exact-SHA child workflows; manifest artifact `10281164476` has digest `sha256:243bb49e61df0a1f491b0a1fd6b1710bc3045c1afb656e000fb7b0094e252890`. Production has **not** been redeployed for Phase 23 and remains on source `0173c4c5ba08360b6352331118abc81978cfa774` until a separately authorized rollout.
 - Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`.
 - Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`.
 - Accepted production application is source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991` / `https://renderlab-a9ssca2l8-faresmohamed260-6733s-projects.vercel.app`. Explicit alias run `34547608773` moved `https://renderlab.faresuniform.uk` to that deployment and passed root + `/create` + `/library` + `/activity` + `/settings` smoke; independent Vercel checks found no runtime-error clusters and no error/fatal logs after rollout. Prior accepted UI-071 deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra` remains a known-good prior deployment for explicit alias restoration if needed.
