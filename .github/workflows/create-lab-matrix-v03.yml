@@ -38,8 +38,7 @@ jobs:
           done
           cat /tmp/renderlab-v03-http.log
           exit 1
-      # Pointer evidence exercises the explicit media-body grab surface; touch/keyboard evidence
-      # uses explicit controls and verifies visually hidden reference-add affordances cannot intercept input.
+      # Historical verifier only. v0.3 was exact-head validated and then explicitly rejected by the user.
       - name: Verify kinetic prototype
         env:
           PROTOTYPE_URL: http://127.0.0.1:4173/
