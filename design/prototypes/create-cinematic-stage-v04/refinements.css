@@ -19,16 +19,33 @@
 }
 
 @media (max-width:760px){
-  .reference-zone{width:258px}
+  /* Touch is a true 2D strip: stable DOM positions, explicit 44px actions, no depth hit hierarchy. */
+  .reference-zone{width:268px}
+  .reference-card,
+  .stage[data-state="result"] .reference-card{
+    width:104px;
+    z-index:3!important;
+  }
   .reference-card[data-slot="secondary"] .ref-actions{
-    right:-48px;
-    top:2px;
+    left:auto;
+    right:4px;
+    top:3px;
+    flex-direction:row;
     gap:4px;
   }
   .reference-card[data-slot="secondary"] .ref-actions button{
     width:44px;
     height:44px;
     font-size:15px;
+    box-shadow:none;
   }
-  .reference-add-more{left:202px}
+  .reference-card[data-slot="primary"] .ref-actions{
+    right:4px;
+    top:3px;
+  }
+  .reference-card[data-slot="primary"] .ref-actions button{
+    width:44px;
+    height:44px;
+  }
+  .reference-add-more{left:118px}
 }
