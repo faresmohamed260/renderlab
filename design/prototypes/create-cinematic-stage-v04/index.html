@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenderLab · Create Cinematic Stage v0.4</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-rail" aria-label="Prototype application navigation">
+      <div class="brand-lockup">
+        <img src="../../../public/renderlab-mark-color.svg" alt="" />
+        <span>RenderLab</span>
+      </div>
+      <nav class="rail-nav" aria-label="Primary">
+        <button class="rail-item active" type="button" aria-current="page"><i></i><span>Create</span></button>
+        <button class="rail-item" type="button"><i></i><span>Library</span></button>
+        <button class="rail-item" type="button"><i></i><span>Activity</span></button>
+      </nav>
+      <div class="rail-foot"><span>F</span></div>
+    </aside>
+
+    <main class="workspace">
+      <header class="workspace-header">
+        <div>
+          <p>CREATE / CINEMATIC STAGE</p>
+          <h1>Create</h1>
+        </div>
+        <div class="session-meta" aria-label="Prototype state">
+          <span class="state-dot"></span>
+          <span data-state-label>READY</span>
+          <b>SESSION 014</b>
+        </div>
+      </header>
+
+      <section class="stage" data-mode="image" data-state="authoring" data-advanced="closed" data-reference-count="0" aria-label="Create prototype stage">
+        <div class="stage-atmosphere" aria-hidden="true"></div>
+        <div class="stage-grid" aria-hidden="true"></div>
+        <div class="stage-axis axis-x" aria-hidden="true"></div>
+        <div class="stage-axis axis-y" aria-hidden="true"></div>
+        <div class="field-wave" aria-hidden="true"></div>
+
+        <div class="stage-topbar">
+          <div class="mode-cluster">
+            <span class="cluster-label">OUTPUT</span>
+            <div class="mode-switch" role="radiogroup" aria-label="Output type">
+              <button type="button" role="radio" aria-checked="true" data-mode-button="image">Image</button>
+              <button type="button" role="radio" aria-checked="false" data-mode-button="video">Video</button>
+              <span class="mode-indicator" aria-hidden="true"></span>
+            </div>
+          </div>
+          <button class="precision-trigger" type="button" aria-expanded="false" data-action="advanced">
+            <span>Precision</span><i aria-hidden="true">＋</i>
+          </button>
+        </div>
+
+        <div class="reference-zone" aria-label="References">
+          <div class="reference-empty">
+            <button type="button" data-action="add-reference" aria-label="Add reference">
+              <span>＋</span><b>Add reference</b><small>PNG · JPG · WebP</small>
+            </button>
+          </div>
+          <div class="reference-stack" aria-live="polite">
+            <article class="reference-card" data-alias="image1" data-slot="primary" hidden>
+              <div class="ref-media ref-grab"><img src="https://images.unsplash.com/photo-1771029580794-255d3e82680e?auto=format&fit=crop&w=600&q=80" alt="Glass reference fixture" /></div>
+              <div class="ref-meta"><span>@image1</span><small>PRIMARY</small></div>
+              <div class="ref-actions">
+                <button type="button" data-action="make-primary" aria-label="Make @image1 primary">↑</button>
+                <button type="button" data-action="remove-reference" aria-label="Remove @image1">×</button>
+              </div>
+            </article>
+            <article class="reference-card" data-alias="image2" data-slot="secondary" hidden>
+              <div class="ref-media ref-grab"><img src="https://images.unsplash.com/photo-1760710461795-d6199296eb50?auto=format&fit=crop&w=600&q=80" alt="Color reference fixture" /></div>
+              <div class="ref-meta"><span>@image2</span><small>SECONDARY</small></div>
+              <div class="ref-actions">
+                <button type="button" data-action="make-primary" aria-label="Make @image2 primary">↑</button>
+                <button type="button" data-action="remove-reference" aria-label="Remove @image2">×</button>
+              </div>
+            </article>
+          </div>
+          <button class="reference-add-more" type="button" data-action="add-reference" aria-label="Add second reference" hidden>＋</button>
+        </div>
+
+        <div class="stage-viewport" aria-label="Creative stage viewport">
+          <div class="viewport-edge-light" aria-hidden="true"></div>
+          <div class="safe-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="intent-copy">
+            <small>INTENT / <span data-mode-copy>IMAGE</span></small>
+            <strong>Compose the frame.<br/>Keep the work moving.</strong>
+            <p>No result exists yet. The stage is intentionally quiet until generation resolves.</p>
+          </div>
+          <div class="result-media" aria-hidden="true">
+            <img src="https://images.unsplash.com/photo-1773176563345-5e8685906a21?auto=format&fit=crop&w=1800&q=88" alt="" />
+            <span class="result-vignette"></span>
+          </div>
+          <div class="result-copy" aria-live="polite">
+            <small>RESULT / DURABLE FIXTURE</small>
+            <strong>First light study</strong>
+            <span>Result stage · ready to continue</span>
+          </div>
+          <div class="result-actions">
+            <button type="button" data-action="reset">Reset</button>
+            <button type="button">Download</button>
+            <button type="button">Continue</button>
+          </div>
+        </div>
+
+        <aside class="precision-inspector" aria-label="Precision controls">
+          <header>
+            <div><small>PRECISION</small><strong data-inspector-title>Image controls</strong></div>
+            <button type="button" data-action="advanced-close" aria-label="Close precision controls">×</button>
+          </header>
+          <div class="inspector-group">
+            <label>Model <button type="button" class="value-button">FLUX <span>⌄</span></button></label>
+            <label>Frame <button type="button" class="value-button"><span data-frame-value>1:1</span> <span>⌄</span></button></label>
+            <label class="video-only">Resolution <button type="button" class="value-button">1080p <span>⌄</span></button></label>
+            <label class="video-only">Duration <button type="button" class="value-button">5s <span>⌄</span></button></label>
+          </div>
+          <div class="inspector-note"><i></i><span>Controls stay secondary to the stage. Product semantics are fixtures for R&D only.</span></div>
+        </aside>
+
+        <div class="composer">
+          <div class="composer-copy">
+            <small>PROMPT</small>
+            <textarea aria-label="Prompt" rows="2">A translucent pavilion above a misty mountain lake at first light, cinematic atmosphere, quiet reflections</textarea>
+          </div>
+          <div class="composer-meta">
+            <span data-model-meta>FLUX · 1:1</span>
+            <span data-ref-meta>NO REFERENCES</span>
+          </div>
+        </div>
+
+        <button class="generate-actuator" type="button" data-action="generate" aria-label="Generate">
+          <span class="generate-label">Generate</span>
+          <span class="generate-arrow" aria-hidden="true">↗</span>
+          <small data-generate-state>READY</small>
+        </button>
+
+        <div class="stage-footer" aria-hidden="true">
+          <span>RENDERLAB / CREATE</span><span>ONE CREATIVE THREAD</span><span data-footer-mode>IMAGE</span>
+        </div>
+      </section>
+
+      <section class="prototype-notes" aria-label="Prototype notes">
+        <span>R&D PROTOTYPE · NOT PRODUCT TRUTH</span>
+        <span>Pointer depth · reference mass · shared geometry · reduced motion</span>
+      </section>
+    </main>
+  </div>
+  <script src="./prototype.js"></script>
+</body>
+</html>
