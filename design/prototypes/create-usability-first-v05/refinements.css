@@ -16,6 +16,35 @@ input {
   display: none;
 }
 
+/* Landing-derived registration activity: expressive, but never fake progress. */
+.result-stage[data-phase="generating"] .reg-x {
+  transform-origin: 50% 50%;
+  animation: registration-x 1.35s var(--ease-out) infinite alternate;
+}
+
+.result-stage[data-phase="generating"] .reg-y {
+  transform-origin: 50% 50%;
+  animation: registration-y 1.55s var(--ease-out) infinite alternate;
+}
+
+@keyframes registration-x {
+  from { opacity: .28; transform: scaleX(.42); }
+  to { opacity: .9; transform: scaleX(1); }
+}
+
+@keyframes registration-y {
+  from { opacity: .2; transform: scaleY(.48); }
+  to { opacity: .76; transform: scaleY(1); }
+}
+
+.result-stage[data-phase="result"] .result-frame {
+  box-shadow:
+    0 38px 120px rgb(0 0 0 / 44%),
+    -28px 22px 90px rgb(234 116 77 / 4.5%),
+    34px -18px 100px rgb(115 215 255 / 5.5%),
+    inset 0 1px rgb(255 255 255 / 4%);
+}
+
 .result-stage[data-phase="result"] .result-info {
   animation: result-info-in 420ms var(--ease-out) 180ms both;
 }
@@ -23,6 +52,25 @@ input {
 @keyframes result-info-in {
   from { opacity: 0; transform: translateX(8px); }
   to { opacity: 1; transform: translateX(0); }
+}
+
+/* A video result reads as video immediately, without inventing playback. */
+.result-frame[data-kind="video"] .result-registration::after {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 6;
+  padding: 7px 9px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 8px;
+  background: rgb(6 9 13 / 72%);
+  color: rgb(255 255 255 / 74%);
+  content: "VIDEO / 00:05";
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
 }
 
 @media (max-width: 600px) {
@@ -46,10 +94,20 @@ input {
   .result-stage[data-phase="generating"] {
     width: 100%;
   }
+
+  .result-frame[data-kind="video"] .result-registration::after {
+    right: 14px;
+    bottom: 14px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .result-stage[data-phase="result"] .result-info {
+    animation: none;
+  }
+
+  .result-stage[data-phase="generating"] .reg-x,
+  .result-stage[data-phase="generating"] .reg-y {
     animation: none;
   }
 }
