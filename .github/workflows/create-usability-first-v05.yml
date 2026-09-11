@@ -1,0 +1,50 @@
+name: Create Usability-First R&D v0.5
+
+on:
+  push:
+    branches:
+      - rd/create-usability-first-v05
+    paths:
+      - '.github/workflows/create-usability-first-v05.yml'
+      - 'design/rd/create-usability-first-v05.md'
+      - 'design/prototypes/create-usability-first-v05/**'
+      - 'scripts/verify-create-usability-first-v05.mjs'
+  workflow_dispatch:
+
+concurrency:
+  group: create-usability-first-v05-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify v0.5 interaction and evidence
+        run: node scripts/verify-create-usability-first-v05.mjs
+
+      - name: Upload review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-create-usability-first-v05
+          path: artifacts/create-usability-first-v05
+          if-no-files-found: error
+          retention-days: 30
