@@ -1,5 +1,5 @@
-/* Cinematic Stage v0.4 — interaction refinements
-   Essential reference actions must remain reachable even while cards overlap in depth. */
+/* Cinematic Stage v0.4 — interaction and composition refinements.
+   The stage remains dominant; controls may layer over it but must not collapse it. */
 .reference-card[data-slot="secondary"] .ref-actions{
   right:-34px;
   top:6px;
@@ -17,6 +17,31 @@
 .reference-card[data-slot="secondary"] .ref-actions button:focus-visible{
   background:#11161c;
 }
+
+/* Precision is a contextual overlay, not a reason to crush the creative stage. */
+.stage[data-advanced="open"] .precision-inspector{
+  width:286px;
+  top:106px;
+  bottom:172px;
+  background:rgba(8,10,13,.975);
+  box-shadow:-32px 0 72px rgba(0,0,0,.34);
+}
+.stage[data-advanced="open"] .stage-viewport{
+  right:7.5%;
+  filter:brightness(.76) saturate(.84);
+}
+.stage[data-advanced="open"] .composer{right:148px}
+.stage[data-advanced="open"] .generate-actuator{right:0}
+
+/* Result takeover: media becomes the dominant working surface. */
+.stage[data-state="result"] .stage-viewport{
+  left:5.5%;
+  right:3%;
+  top:64px;
+  bottom:108px;
+}
+.stage[data-state="result"] .result-copy{left:64px}
+.stage[data-state="result"] .composer{left:5.5%;right:150px}
 
 @media (max-width:760px){
   /* Touch is a true 2D strip: stable DOM positions, explicit 44px actions, no depth hit hierarchy. */
@@ -48,4 +73,54 @@
     height:44px;
   }
   .reference-add-more{left:118px}
+
+  /* Precision becomes a compact attached tray. The stage remains visible behind it. */
+  .stage[data-advanced="open"] .precision-inspector{
+    left:14px;
+    right:14px;
+    width:auto;
+    height:196px;
+    top:auto;
+    bottom:158px;
+    background:rgba(7,9,12,.985);
+    box-shadow:0 -24px 56px rgba(0,0,0,.32);
+  }
+  .stage[data-advanced="open"] .stage-viewport{
+    left:14px;
+    right:14px;
+    height:470px;
+    filter:brightness(.72) saturate(.82);
+  }
+  .stage[data-advanced="open"] .reference-zone{top:326px}
+  .precision-inspector header{height:54px;padding:13px 16px 10px}
+  .precision-inspector header strong{font-size:14px}
+  .inspector-group{padding:3px 16px 6px;gap:0 14px}
+  .inspector-group label{padding:5px 0;gap:4px}
+  .value-button{height:30px;font-size:12px}
+
+  /* Mobile result reads as one cinematic caption/action line rather than stacked overlays. */
+  .stage[data-state="result"] .stage-viewport{
+    left:0;
+    right:0;
+    top:60px;
+    height:548px;
+    bottom:auto;
+  }
+  .stage[data-state="result"] .result-copy{
+    left:18px;
+    bottom:18px;
+    max-width:150px;
+  }
+  .stage[data-state="result"] .result-actions{
+    left:auto;
+    right:14px;
+    bottom:18px;
+    gap:4px;
+  }
+  .stage[data-state="result"] .result-actions button{
+    padding:0 7px;
+    min-height:36px;
+    font-size:7px;
+  }
+  .stage[data-state="result"] .composer{left:14px;right:86px}
 }

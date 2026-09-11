@@ -61,7 +61,10 @@ await page.getByRole('button', { name: /Precision/ }).click();
 await waitSettle(page);
 assert(await page.getByRole('button', { name: /Precision/ }).getAttribute('aria-expanded') === 'true', 'precision did not open');
 const inspector = await page.locator('.precision-inspector').boundingBox();
+const advancedViewport = await page.locator('.stage-viewport').boundingBox();
 assert(inspector.width > 250, 'desktop inspector did not expand');
+assert(advancedViewport.width > stageBox.width * .74, 'desktop Precision collapsed the creative stage');
+assert(advancedViewport.height > stageBox.height * .55, 'desktop Precision reduced the stage below the intended hierarchy');
 await shot(page, 'desktop-advanced');
 
 await page.keyboard.press('Tab');
@@ -87,7 +90,9 @@ await waitSettle(page, 850);
 await noOverflow(page, 'desktop result');
 await shot(page, 'desktop-result');
 const resultBox = await page.locator('.stage-viewport').boundingBox();
-assert(resultBox.width > stageBox.width * .72, 'result stage is not visually dominant');
+const resultCopyBox = await page.locator('.result-copy').boundingBox();
+assert(resultBox.width > stageBox.width * .86, 'result stage is not visually dominant enough');
+assert(resultCopyBox.x >= resultBox.x + 20, 'desktop result copy is too close to the clipping edge');
 
 await page.close();
 await desktop.close();
@@ -114,7 +119,11 @@ assert((await order(m)).join(',') === 'image2', 'mobile remove failed');
 await m.getByRole('button', { name: /Precision/ }).tap();
 await waitSettle(m, 500);
 const mobileInspector = await m.locator('.precision-inspector').boundingBox();
-assert(mobileInspector.height > 240, 'mobile precision tray did not unfold');
+const mobileAdvancedViewport = await m.locator('.stage-viewport').boundingBox();
+const mobileReferenceZone = await m.locator('.reference-zone').boundingBox();
+assert(mobileInspector.height >= 180 && mobileInspector.height <= 220, `mobile precision tray is not compact: ${mobileInspector.height}`);
+assert(mobileAdvancedViewport.height >= 440, 'mobile Precision obscures too much of the creative stage');
+assert(mobileReferenceZone.y + mobileReferenceZone.height <= mobileInspector.y + 4, 'mobile Precision overlaps the reference strip');
 await noOverflow(m, 'mobile advanced');
 await shot(m, 'mobile-advanced');
 await m.getByRole('button', { name: 'Close precision controls' }).tap();
@@ -125,6 +134,11 @@ assert(await m.locator('.stage').getAttribute('data-state') === 'result', 'mobil
 await waitSettle(m, 550);
 await noOverflow(m, 'mobile result');
 await shot(m, 'mobile-result');
+const mobileResultStage = await m.locator('.stage-viewport').boundingBox();
+const mobileResultCopy = await m.locator('.result-copy').boundingBox();
+const mobileResultActions = await m.locator('.result-actions').boundingBox();
+assert(mobileResultStage.width >= 388, 'mobile result does not own the viewport width');
+assert(mobileResultCopy.x + mobileResultCopy.width + 6 <= mobileResultActions.x, 'mobile result copy/actions overlap');
 await mobile.close();
 
 const reduced = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' });
