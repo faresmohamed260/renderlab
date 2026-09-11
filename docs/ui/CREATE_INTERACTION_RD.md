@@ -1,12 +1,12 @@
-# Create Interaction R&D — Instrument Continuum v0.1
+# Create Interaction R&D — Instrument Continuum v0.2
 
-**Status:** `EXPERIMENTAL / USER REVIEW REQUIRED`  
+**Status:** `APPROVAL CANDIDATE / USER REVIEW REQUIRED`  
 **Issue:** #148  
 **R&D baseline:** production application source `0173c4c5ba08360b6352331118abc81978cfa774`; repository planning baseline `dd0fcc725c225f2e15a934ad9fe721cb27b96756`  
 **Scope:** visual/interaction research only; no production `/create` source change, route change, product capability change, backend/schema/infrastructure change, production dependency adoption, or deployment
 
 ## Purpose
-Issue #148 reopens the visual composition and temporal interaction language of **Create** without reopening its product contracts. The goal of this R&D slice is to establish a user-approved direction for a future Create redesign before any Phase 23 / Cycle 5 implementation contract exists.
+Issue #148 reopens the visual composition and temporal interaction language of **Create** without reopening its product contracts. The goal is to establish a user-approved direction for a future Create redesign before any Phase 23 / Cycle 5 implementation contract exists.
 
 The working direction is **Instrument Continuum**: Create should feel like one adaptive creative instrument whose geometry persists across authoring, reference editing, precision controls, generation, and result inspection. The current Cycle 4 implementation already has strong Kinetic Precision styling and useful local motion; this exploration focuses on the remaining structural discontinuity between those states rather than adding decoration.
 
@@ -31,16 +31,16 @@ The current production Create composition was re-audited from repository source 
 - Current responsive evidence shows no accepted horizontal overflow at 390px.
 
 ### Main design gap
-The most important states still read as **separate vertical blocks**:
+The important states still read as separate vertical blocks:
 
 `headline/support → composer → lifecycle alert → result card`
 
 That separation weakens object continuity at the moment Create matters most. Mode-specific controls mostly fade/scale rather than reshape the instrument. References are readable but still behave visually like compact rows. Advanced expands as a secondary panel. Successful generation appends another result container instead of visibly transforming the authoring instrument into a result workspace.
 
-This R&D therefore concentrates expression in one strong idea: **preserve one instrument boundary and rebalance its internal geometry as the task changes.**
+The R&D direction therefore concentrates expression in one strong idea: **preserve one instrument boundary and rebalance its internal geometry as the task changes.**
 
 ## Redesign boundary
-The following **visual decisions are reopened for R&D**:
+The following visual decisions are reopened for R&D:
 - Create page composition below the application shell;
 - geometry and spatial relationship of prompt, references, precision controls, lifecycle feedback, and result;
 - Image/Video visual morphing;
@@ -50,7 +50,7 @@ The following **visual decisions are reopened for R&D**:
 - generation → durable result spatial transition;
 - desktop vs 390px layout adaptation for those visual states.
 
-The following remain authoritative and are **not reopened**:
+The following remain authoritative and are not reopened:
 - one `/create` workspace;
 - current Create Image, Edit Image, Create Video, Animate Image operation model;
 - current prompt, output, model, aspect, Resolution, Duration, Audio, Advanced semantics;
@@ -60,7 +60,7 @@ The following remain authoritative and are **not reopened**:
 - current durable result/media identity and continuation behavior;
 - truthful job states only; no fabricated percentage, ETA, queue position, provider stage, or infrastructure state;
 - keyboard/focus/touch accessibility, no hover-only essential action, and `prefers-reduced-motion`;
-- locked RenderLab brand identity and application-shell boundaries;
+- accepted RenderLab production identity and application-shell boundaries;
 - no production dependency/runtime adoption during R&D.
 
 ## Product-document discrepancy to reconcile before implementation planning
@@ -71,7 +71,7 @@ External references are mechanic references only. RenderLab does not copy their 
 
 | RenderLab interaction | Exact reference | Borrow | Do not copy | Desktop/pointer | Touch/narrow | Keyboard/focus | Reduced motion |
 |---|---|---|---|---|---|---|---|
-| Composer and mode geometry | Motion for React Layout Animations — https://motion.dev/docs/react-layout-animations | `layout` / `layoutId` continuity, interruptible transform-based geometry | demo styling, arbitrary crossfade-only transitions | Selected lens and contextual controls reshape one instrument | Same state hierarchy; shorter travel and stacked geometry | Native ToggleGroup semantics remain authoritative | Snap/reflow geometry; preserve selected state without travel |
+| Composer and mode geometry | Motion for React Layout Animations — https://motion.dev/docs/react-layout-animations | `layout` / `layoutId` continuity, interruptible transform-based geometry | demo styling, arbitrary crossfade-only transitions | selected lens and contextual controls reshape one instrument | same state hierarchy; shorter travel and stacked geometry | native ToggleGroup semantics remain authoritative | snap/reflow geometry; preserve selected state without travel |
 | Coordinated instrument regions | Motion `LayoutGroup` — https://motion.dev/docs/react-layout-group | coordinate sibling layout changes without product-global state | global shared-element store | prompt/source/control/result regions settle together | stacked regions remain coordinated | DOM/focus order stays stable | instant layout with optional subtle opacity |
 | Reference reorder | Motion `Reorder` — https://motion.dev/docs/react-reorder | displacement, spring settling, dragged object staying object-like | drag-only ordering, unconstrained physics | pointer drag is supplementary and shows target displacement | direct drag may be available but explicit action remains baseline | explicit `Make primary` / reorder action remains fully operable | immediate order swap, no displacement animation |
 | Advanced disclosure | Motion Primitives Morphing Popover — https://motion-primitives.com/docs/morphing-popover and Disclosure — https://motion-primitives.com/docs/disclosure | disclosure originates from trigger and expands into owned geometry | floating marketing/demo styling; detached modal for ordinary Advanced | precision deck appears attached to control rail | expands inline within the same instrument | trigger/fields remain normal focus order | instant disclosure or brief opacity only |
@@ -81,9 +81,9 @@ External references are mechanic references only. RenderLab does not copy their 
 | Reference resistance/settling principles | Emil Kowalski, “Building a drawer component” — https://emilkowal.ski/ui/building-a-drawer-component | bounded resistance/settling principle for directly manipulated objects | drawer UI, swipe-to-dismiss semantics | bounded drag feedback only while manipulating a source tile | optional touch drag; explicit reorder action stays available | no dependency on drag | immediate swap |
 | Generation → result continuity | Internal prototype `design/prototypes/create-instrument-continuum-v0.1/` | one outer boundary rebalances from authoring to media stage | fake live generation/progress | desktop transitions to intent rail + large media stage | 390px becomes stacked authoring context + media stage | result/actions enter normal DOM/focus sequence | instant state/layout change with complete hierarchy |
 
-## Candidate direction — Instrument Continuum v0.1
+## Candidate direction — Instrument Continuum v0.2
 ### One persistent outer instrument
-The page still has a small contextual heading, but the primary object is one large instrument frame. Prompt, sources, precision controls, lifecycle feedback, and result are **regions of that same object** rather than independent cards.
+The page retains a small contextual heading, but the primary object is one large instrument frame. Prompt, sources, precision controls, lifecycle feedback, and result are **regions of that same object** rather than independent cards.
 
 ### Authoring state
 - Prompt occupies the dominant intent plane.
@@ -93,7 +93,7 @@ The page still has a small contextual heading, but the primary object is one lar
 - Decorative light is concentrated at edges and active geometry; body copy stays quiet.
 
 ### Source/reference state
-- References become **source tiles** in a source dock inside the instrument.
+- References become source tiles in a source dock inside the instrument.
 - Stable aliases remain attached to the same media objects while visual order changes.
 - Pointer drag may create object displacement/snap, but explicit reorder/Make primary remains the baseline interaction for touch/keyboard parity.
 - The source dock expands only as needed; it does not become a permanent asset browser.
@@ -111,13 +111,16 @@ The page still has a small contextual heading, but the primary object is one lar
 ### Durable result state
 On success the outer instrument does not append a second card.
 
-**Desktop:** the instrument widens/rebalances into two regions:
-- a compact intent/source/control rail preserving the recipe context;
+**Desktop:** the instrument rebalances into two regions:
+- a compact intent/source region preserving the recipe context;
 - a dominant media stage for the durable result and continuation actions.
 
+The v0.2 refinement reserves explicit space for the compact result controls and stacks the Generate-again actuator beneath the contextual control row. The source tile, controls, and durable media stage no longer overlap or compete for the same geometry.
+
 **390px:** the same outer frame becomes a vertical continuum:
-- compact intent/source/control context first;
-- media stage immediately below inside the same boundary.
+- compact intent/source context first;
+- media stage immediately below inside the same boundary;
+- control rail remains scroll-reachable above the persistent mobile dock, with Generate/Generate again available without dock occlusion.
 
 The result is still a durable media object with its current continuation semantics. The visual metaphor is continuity, not an implication that unsaved/live pixels exist inside the composer.
 
@@ -169,9 +172,10 @@ The result is still a durable media object with its current continuation semanti
 Repository-backed prototype:
 - `design/prototypes/create-instrument-continuum-v0.1/index.html`
 - `design/prototypes/create-instrument-continuum-v0.1/styles.css`
+- `design/prototypes/create-instrument-continuum-v0.1/refinements.css`
 - `design/prototypes/create-instrument-continuum-v0.1/app.js`
 
-The prototype is **design evidence only**. Its media/job data is deterministic fixture state and must not be interpreted as live product behavior. It does not import production Create code, call RenderLab APIs, require Supabase/R2/provider credentials, or create a new Next.js route.
+The prototype is design evidence only. Its media/job data is deterministic fixture state and must not be interpreted as live product behavior. It does not import production Create code, call RenderLab APIs, require Supabase/R2/provider credentials, or create a new Next.js route.
 
 Review states:
 - `?state=image`
@@ -183,12 +187,34 @@ Review states:
 
 The prototype also supports direct interaction through mode controls, source add/reorder/remove, Advanced, and Generate. It honors `prefers-reduced-motion`.
 
+## v0.2 verification and human review
+Latest interaction/prototype evidence before this documentation record:
+- exact prototype/verifier head: `d70ab0f7e8fd18f9ceecec01b3eb77a333cd3704`;
+- Create Interaction R&D run: `34551917420` — passed;
+- artifact: `10181146920`;
+- artifact digest: `sha256:127ec1a5e13b8faff959c9a4ad0d29f886547238cc83863a6b21147f49f6ded6`.
+
+Verified in that run:
+- desktop Image, Video, References, Advanced, Generating, and Result states;
+- desktop result source/control/media geometry separation with explicit no-overlap assertions;
+- pointer reference reorder while preserving stable aliases;
+- forward keyboard Tab reachability, visible focus, and Space activation for mode controls;
+- temporal recording across mode switch, reference insertion/reorder, Advanced, Generate, and result settlement;
+- 390px full-page and viewport evidence for Image, References, Advanced, and Result;
+- real touch-context Add reference and Advanced disclosure using Playwright `hasTouch` + `tap()`;
+- explicit mobile control-rail clearance above the fixed navigation dock for both authoring and Result states;
+- reduced-motion touch path through Advanced → Generate → Result;
+- horizontal-overflow assertions.
+
+Human review of the final desktop Result frame confirms the v0.1 overlap is corrected: the source tile sits above a contained two-level control rail, the rail ends before the durable media divider, and the media stage remains dominant. Human review of the control-focused 390px frames confirms Generate / Generate again remain fully visible above the fixed mobile dock while preserving the vertical continuum.
+
 ## R&D acceptance gate
 This candidate is **not approved yet**. Issue #148 remains open until:
 1. the user reviews the complete desktop and 390px visual direction;
-2. the user reviews temporal evidence for mode/source/Advanced/Generate/result behavior;
-3. keyboard/focus/touch/reduced-motion evidence is acceptable;
-4. any requested iteration is completed;
-5. the user explicitly approves the concept + interaction language.
+2. the user reviews the temporal interaction direction;
+3. any requested iteration is completed;
+4. the user explicitly approves the concept + interaction language.
 
-Only after that approval may repository docs extract durable visual/motion rules and an immediate Phase 23 / Cycle 5 implementation contract be expanded. Approval still would not authorize production deployment.
+The technical/human pre-review required before presenting the candidate is complete. The next step is the explicit user approval checkpoint, not production implementation.
+
+Only after user approval may repository docs extract durable visual/motion rules and an immediate Phase 23 / Cycle 5 implementation contract be expanded. Approval still would not authorize production deployment.
