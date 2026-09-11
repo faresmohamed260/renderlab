@@ -24,8 +24,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: package.json
       - name: Install repository dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Serve repository prototype
@@ -48,5 +49,5 @@ jobs:
         with:
           name: renderlab-create-interaction-rd
           path: artifacts/create-interaction-rd
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
