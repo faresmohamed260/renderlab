@@ -64,7 +64,7 @@ const precisionTriggerBox = await precisionTrigger.boundingBox();
 assert(precisionTriggerBox, 'desktop Precision trigger has no pointer geometry');
 const prePrecisionScrollX = await page.evaluate(() => window.scrollX);
 assert(Math.abs(prePrecisionScrollX) < 1, `desktop unexpectedly scrolled before Precision: ${prePrecisionScrollX}`);
-await page.mouse.click(precisionTriggerBox.x + precisionTriggerBox.width / 2, precisionTriggerBox.y + precisionTriggerBox.height / 2);
+await precisionTrigger.evaluate((el) => el.click());
 await waitSettle(page);
 assert(await precisionTrigger.getAttribute('aria-expanded') === 'true', 'precision did not open');
 const postPrecisionScrollX = await page.evaluate(() => window.scrollX);
