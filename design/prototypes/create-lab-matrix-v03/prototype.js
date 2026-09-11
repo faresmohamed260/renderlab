@@ -223,15 +223,24 @@
     setStatus('AUTHORING');
   }
 
-  function pointerTargetAlias(draggedAlias, clientX, clientY) {
+  function rectOverlapRatio(a, b) {
+    const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+    const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+    const overlap = width * height;
+    const smaller = Math.min(a.width * a.height, b.width * b.height);
+    return smaller > 0 ? overlap / smaller : 0;
+  }
+
+  function pointerTargetAlias(draggedAlias, draggedNode, clientX, clientY) {
+    const draggedRect = draggedNode?.getBoundingClientRect();
     for (const ref of state.refs) {
       if (ref.alias === draggedAlias) continue;
       const node = activeNode(ref.alias);
       if (!node) continue;
       const rect = node.getBoundingClientRect();
-      if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-        return ref.alias;
-      }
+      const withinSnapZone = clientX >= rect.left - 12 && clientX <= rect.right + 12 && clientY >= rect.top - 12 && clientY <= rect.bottom + 12;
+      const meaningfulOverlap = draggedRect ? rectOverlapRatio(draggedRect, rect) >= .12 : false;
+      if (withinSnapZone || meaningfulOverlap) return ref.alias;
     }
     return null;
   }
@@ -249,9 +258,10 @@
     state.dragMoved = false;
   }
 
-  function finishPointerExchange(node, event, cancelled = false) {
-    if (state.dragPointerId !== event.pointerId || state.draggedAlias !== node.dataset.alias) return;
+  function finishPointerExchange(event, cancelled = false) {
+    if (state.dragPointerId !== event.pointerId || !state.draggedAlias) return;
     const alias = state.draggedAlias;
+    const node = activeNode(alias);
     const targetAlias = state.dragTargetAlias;
     const moved = state.dragMoved;
     clearPointerExchange(node, event.pointerId);
@@ -276,25 +286,11 @@
       state.dragStartY = event.clientY;
       state.dragTargetAlias = null;
       state.dragMoved = false;
-      node.setPointerCapture(event.pointerId);
+      node.setPointerCapture?.(event.pointerId);
       node.classList.add('dragging');
       setStatus('REFERENCE HOLD');
       event.preventDefault();
     });
-    node.addEventListener('pointermove', (event) => {
-      if (state.dragPointerId !== event.pointerId || state.draggedAlias !== node.dataset.alias) return;
-      const dx = event.clientX - state.dragStartX;
-      const dy = event.clientY - state.dragStartY;
-      if (!state.dragMoved && Math.hypot(dx, dy) < 5) return;
-      state.dragMoved = true;
-      node.style.translate = `${dx}px ${dy}px`;
-      state.dragTargetAlias = pointerTargetAlias(state.draggedAlias, event.clientX, event.clientY);
-      referenceObjects.forEach((item) => item.classList.toggle('drag-target', item.dataset.alias === state.dragTargetAlias));
-      setStatus(state.dragTargetAlias ? 'REFERENCE EXCHANGE' : 'REFERENCE DRAG');
-      event.preventDefault();
-    });
-    node.addEventListener('pointerup', (event) => finishPointerExchange(node, event, false));
-    node.addEventListener('pointercancel', (event) => finishPointerExchange(node, event, true));
     node.querySelector('[data-action="make-primary"]').addEventListener('click', (event) => {
       event.stopPropagation();
       makePrimary(node.dataset.alias);
@@ -304,13 +300,25 @@
       removeReference(node.dataset.alias);
     });
   });
-  document.querySelector('[data-action="advanced"]').addEventListener('click', toggleAdvanced);
-  document.querySelector('[data-action="generate"]').addEventListener('click', generate);
-  document.querySelector('[data-action="reset"]').addEventListener('click', () => reset(true));
 
-  shell.addEventListener('pointermove', (event) => {
+  window.addEventListener('pointermove', (event) => {
+    if (state.dragPointerId === event.pointerId && state.draggedAlias) {
+      const node = activeNode(state.draggedAlias);
+      if (!node) return;
+      const dx = event.clientX - state.dragStartX;
+      const dy = event.clientY - state.dragStartY;
+      if (!state.dragMoved && Math.hypot(dx, dy) < 5) return;
+      state.dragMoved = true;
+      node.style.translate = `${dx}px ${dy}px`;
+      state.dragTargetAlias = pointerTargetAlias(state.draggedAlias, node, event.clientX, event.clientY);
+      referenceObjects.forEach((item) => item.classList.toggle('drag-target', item.dataset.alias === state.dragTargetAlias));
+      setStatus(state.dragTargetAlias ? 'REFERENCE EXCHANGE' : 'REFERENCE DRAG');
+      event.preventDefault();
+      return;
+    }
+
     if (reduceMotion || event.pointerType === 'touch') return;
-    if (event.target.closest('button, textarea, a, [data-reference-object]')) {
+    if (event.target instanceof Element && event.target.closest('button, textarea, a, [data-reference-object]')) {
       state.targetX = 0;
       state.targetY = 0;
       return;
@@ -318,8 +326,19 @@
     const rect = shell.getBoundingClientRect();
     state.targetX = ((event.clientX - rect.left) / rect.width - .5) * 2;
     state.targetY = ((event.clientY - rect.top) / rect.height - .5) * 2;
+  }, { passive: false });
+  window.addEventListener('pointerup', (event) => finishPointerExchange(event, false));
+  window.addEventListener('pointercancel', (event) => finishPointerExchange(event, true));
+
+  document.querySelector('[data-action="advanced"]').addEventListener('click', toggleAdvanced);
+  document.querySelector('[data-action="generate"]').addEventListener('click', generate);
+  document.querySelector('[data-action="reset"]').addEventListener('click', () => reset(true));
+  shell.addEventListener('pointerleave', () => {
+    if (!state.draggedAlias) {
+      state.targetX = 0;
+      state.targetY = 0;
+    }
   });
-  shell.addEventListener('pointerleave', () => { state.targetX = 0; state.targetY = 0; });
 
   function tick() {
     if (!state.running) return;

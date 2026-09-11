@@ -39,12 +39,17 @@ async function pointerReorder(page, sourceAlias, targetAlias) {
 
   const startX = sourceBox.x + sourceBox.width * .5;
   const startY = sourceBox.y + sourceBox.height * .62;
-  const endX = targetBox.x + targetBox.width * .28;
-  const endY = targetBox.y + targetBox.height * .62;
+  const endX = targetBox.x + targetBox.width * .36;
+  const endY = targetBox.y + targetBox.height * .6;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
+  await page.waitForTimeout(80);
+  if (!(await source.evaluate((el) => el.classList.contains("dragging")))) {
+    await page.mouse.up();
+    throw new Error("pointer reference exchange never entered hold state");
+  }
   await page.mouse.move(endX, endY, { steps: 18 });
-  await page.waitForTimeout(120);
+  await page.waitForTimeout(140);
   if (!(await target.evaluate((el) => el.classList.contains("drag-target")))) {
     await page.mouse.up();
     throw new Error("pointer reference exchange never acquired sibling target");
