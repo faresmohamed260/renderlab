@@ -17,7 +17,13 @@
   const generateButton = document.querySelector('#generate-button');
   const resultStage = document.querySelector('#result-stage');
   const resultFrame = document.querySelector('#result-frame');
-  const resultSource = document.querySelector('#result-source');
+  const resultImage = document.querySelector('#result-image');
+  const resultKindLabel = document.querySelector('.result-meta-block .eyebrow');
+  const resultTitle = document.querySelector('.result-meta-block h2');
+  const resultSummary = document.querySelector('.result-meta-block > p:last-child');
+  const resultSpecValues = [...document.querySelectorAll('.result-specs dd')];
+  const [resultModel, resultRatio, resultSource] = resultSpecValues;
+  const resultActionButtons = [...document.querySelectorAll('[data-result-action]')];
   const notice = document.querySelector('#notice');
   const ratioChip = document.querySelector('[data-setting="ratio"] strong');
   const modelChip = document.querySelector('[data-setting="model"] strong');
@@ -45,6 +51,7 @@
 
   const state = {
     mode: 'image',
+    resultKind: 'image',
     references: [],
     advanced: false,
     phase: 'idle',
@@ -173,6 +180,26 @@
     advancedTrigger.querySelector('strong').textContent = open ? '−' : '＋';
   }
 
+  function setResultPresentation(kind) {
+    state.resultKind = kind;
+    resultStage.dataset.kind = kind;
+    resultFrame.dataset.kind = kind;
+    const isImage = kind === 'image';
+
+    resultKindLabel.textContent = isImage ? 'RESULT / IMAGE' : 'RESULT / VIDEO';
+    resultTitle.textContent = isImage ? 'First light study' : 'Morning mist motion';
+    resultSummary.textContent = isImage
+      ? 'Generated from this composer. Keep going without rebuilding the request.'
+      : 'Generated video saved to your Library. Adjust the same request below or open it from Library.';
+    resultModel.textContent = isImage ? 'FLUX' : 'REDGraft LTX';
+    resultRatio.textContent = ratioChip.textContent;
+    resultImage.alt = isImage ? 'Generated image result' : 'Generated video poster frame';
+
+    resultActionButtons.forEach((button) => {
+      button.hidden = !isImage;
+    });
+  }
+
   function resetResult() {
     state.phase = 'idle';
     resultStage.dataset.phase = 'idle';
@@ -183,13 +210,19 @@
 
   function showResult() {
     state.phase = 'result';
+    setResultPresentation(state.resultKind);
     resultStage.dataset.phase = 'result';
     workspace.classList.remove('generating');
     workspace.classList.add('has-result');
     generateButton.disabled = false;
     generateButton.textContent = 'Generate';
     resultSource.textContent = state.references.length ? `${state.references.length} reference${state.references.length > 1 ? 's' : ''}` : 'Prompt only';
-    setNotice('Result ready. Continue from it or adjust the same request below.', 'success');
+    setNotice(
+      state.resultKind === 'image'
+        ? 'Image ready. Continue from it or adjust the same request below.'
+        : 'Video ready. It is saved to Library; adjust the same request below if you want another pass.',
+      'success',
+    );
   }
 
   function generate() {
@@ -200,6 +233,8 @@
     }
 
     state.phase = 'generating';
+    state.resultKind = state.mode;
+    setResultPresentation(state.resultKind);
     resultStage.dataset.phase = 'generating';
     workspace.classList.add('has-result', 'generating');
     generateButton.disabled = true;
@@ -210,6 +245,8 @@
   }
 
   function continueFromResult(action) {
+    if (state.resultKind !== 'image') return;
+
     if (action === 'animate') {
       state.references = [{ ...generatedReference }];
       normalizeAliases();
@@ -256,7 +293,7 @@
     event.preventDefault();
     generate();
   });
-  document.querySelectorAll('[data-result-action]').forEach((button) => {
+  resultActionButtons.forEach((button) => {
     button.addEventListener('click', () => continueFromResult(button.dataset.resultAction));
   });
 
@@ -272,5 +309,6 @@
   });
 
   setMode('image', { force: true });
+  setResultPresentation('image');
   renderReferences();
 })();
