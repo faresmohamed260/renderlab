@@ -1,8 +1,15 @@
 # RenderLab Brand System Direction
 
-**Status:** `LOCKED` visual identity reference; production implementation pending  
+**Status:** `LOCKED / PRODUCTION-LIVE` visual identity; the current deployed Landing mark/wordmark is the accepted production reference
 **Scope:** brand identity, logo/wordmark, brand expression across Landing, product surfaces, transactional/auth email, and public metadata  
 **Does not authorize:** production asset replacement, product behavior changes, backend/schema/infrastructure changes, dependency adoption, live Auth-template changes, production deployment, or a new product Cycle/Phase by itself
+
+## Production identity authority — 2026-09-11
+The user explicitly confirmed that the **current logo rendered on the production Landing is correct**. That confirmation supersedes the earlier interpretation that opened issue #161.
+
+For current and future work, the accepted production implementation — centered on `src/components/brand/renderlab-brand.tsx` and the associated current mark/icon assets as shipped in production source `0173c4c5ba08360b6352331118abc81978cfa774` — is the binding geometry/spacing authority for the settled RenderLab identity. The earlier WebP concept board and descriptive R&D prose remain useful historical design context, but they must **not** be used to reinterpret, re-vectorize, separate, or otherwise alter the accepted production logo where they conflict with the shipped implementation.
+
+In particular, any older statement in this document requiring different inter-module negative-space gaps or another geometry correction is superseded by this production acceptance. Do not open or perform logo-geometry correction work unless the user explicitly reopens the identity decision. Issue #161 is superseded by this clarification.
 
 ## Purpose
 RenderLab must feel like one coherent premium creative brand across the product, public site, identity, and communication surfaces. The brand cannot be treated as a logo placed on top of an otherwise generic AI application.

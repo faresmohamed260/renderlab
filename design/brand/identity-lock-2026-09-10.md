@@ -1,9 +1,16 @@
 # RenderLab Identity Lock — 2026-09-10
 
-**Status:** `LOCKED` visual identity reference — production implementation pending  
+**Status:** `LOCKED / PRODUCTION-LIVE` — current deployed implementation accepted as the binding production identity
 **Authority:** `docs/ui/BRAND_SYSTEM.md` + this lock record  
 **Task:** #151  
 **User approval:** explicit — “yep that's it, lock it down and don't mess it up”
+
+## Production authority correction — 2026-09-11
+The user explicitly confirmed that the **logo currently rendered on the production Landing is correct**. The accepted deployed implementation therefore controls the settled production geometry and spacing.
+
+The current `RenderLabBrand` implementation and associated production mark/icon assets, as shipped in production source `0173c4c5ba08360b6352331118abc81978cfa774`, are the binding implementation reference. The concept-board WebP and the remaining geometry prose below are preserved as design-history evidence; where any older description implies that the current deployed mark should be changed — including by introducing different negative-space separation between modules — this 2026-09-11 correction takes precedence.
+
+Do not re-vectorize, “fix,” or otherwise alter the current logo geometry from older R&D references unless the user explicitly reopens the identity decision. Issue #161 is superseded by this clarification.
 
 ## Canonical visual reference
 
