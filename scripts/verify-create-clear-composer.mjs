@@ -82,7 +82,7 @@ try {
   await page.screenshot({ path: `${artifactDir}/desktop-image-authoring.png`, fullPage: true });
 
   await page.getByRole("button", { name: "Open Advanced controls", exact: true }).click();
-  await page.getByLabel("Seed").waitFor({ state: "visible" });
+  await page.getByRole("spinbutton", { name: "Seed", exact: true }).waitFor({ state: "visible" });
   assert(await page.getByRole("textbox", { name: "Prompt" }).isVisible(), "Advanced disclosure displaced the Prompt.");
   assert(await page.getByRole("button", { name: "Generate", exact: true }).isVisible(), "Advanced disclosure displaced Generate.");
   await page.screenshot({ path: `${artifactDir}/desktop-image-advanced.png`, fullPage: true });
