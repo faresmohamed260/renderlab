@@ -1,10 +1,12 @@
 # Create usability-first R&D v0.5
 
-Status: **R&D / HUMAN REVIEW REQUIRED / NOT APPROVED**
+Status: **ACTIVE R&D / HUMAN REVIEW REQUIRED / NOT APPROVED**
 
 Issue: #148
 
 Branch: `rd/create-usability-first-v05`
+
+Production authorization: **none**
 
 ## Why this reset exists
 
@@ -13,6 +15,8 @@ v0.3 and v0.4 were rejected in human review because they made the Create workflo
 > A first-time user must understand how to create an image or video before RenderLab asks them to appreciate its motion system.
 
 The production Create contracts remain authoritative. This prototype does not change product semantics, API contracts, route behavior, generation capabilities, reference limits, or deployment state.
+
+v0.4 is now archived explicitly as rejected R&D in `design/rd/create-cinematic-stage-v04.md`; PR #182 is closed unmerged. Do not revive v0.4 as the active direction unless the user explicitly reopens it.
 
 ## Two-source design model
 
@@ -38,6 +42,8 @@ Observed common pattern:
 6. review the result;
 7. reuse the result as the next input instead of starting over.
 
+These products define **interaction expectations only**. They do not define RenderLab's visual identity.
+
 ### RenderLab visual identity comes from the approved Landing
 
 The production Landing on `main` is the visual source of truth. Create should inherit:
@@ -54,6 +60,8 @@ The production Landing on `main` is the visual source of truth. Create should in
 - the approved `RenderLabBrand` asset unchanged.
 
 The Landing already describes the product journey as **Create → References → Motion → Continue**. The Create redesign should make that journey operational rather than inventing a competing metaphor.
+
+**Hard coherence rule:** comparable products may inform where controls live and how tasks are named; the approved Landing defines what the RenderLab product looks and feels like.
 
 ## Chosen v0.5 direction — Clear Composer
 
@@ -132,6 +140,60 @@ Mobile is not a compressed desktop panel:
 - Advanced expands inline;
 - Result stacks media → metadata/actions → composer with no transformed hit-testing hierarchy.
 
+## Current implementation / evidence state — 2026-09-11
+
+### Repository state
+
+- `main` verified at the start of this reset: `dd0fcc725c225f2e15a934ad9fe721cb27b96756`.
+- Active branch: `rd/create-usability-first-v05`.
+- Initial prototype commit: `1b6a0a1dad20da67b482c2ce3746d5a08ff1022a`.
+- Workflow-alignment commit: `cdf463ac2d5aad61877caf68a53890feae410dcd`.
+- The branch contains isolated R&D only: prototype HTML/CSS/JS, R&D design record, verifier, and dedicated GitHub Actions workflow. Production `/create` remains untouched.
+
+### Workflow run 1
+
+- Run: `34606061038` / **Create Usability-First R&D v0.5** run #1.
+- Result: **FAIL before browser execution**.
+- Cause: workflow setup incorrectly used npm caching / `npm ci` even though this repository intentionally has no committed lockfile.
+- Resolution: aligned the R&D workflow with repository convention: Node 24 + `npm install --no-audit --no-fund`.
+- This was infrastructure-only and is not design evidence.
+
+### Workflow run 2
+
+- Exact tested head: `cdf463ac2d5aad61877caf68a53890feae410dcd`.
+- Run: `34606190328` / run #2.
+- Browser setup: **PASS**.
+- Interaction/evidence verifier: **FAIL** on one real accessibility gate: `mobile remove target >= 44px`.
+- Artifact upload: **PASS**.
+- Artifact: `10266791593` — `renderlab-create-usability-first-v05`.
+- Artifact digest: `sha256:60ba4ce5fd33b13874d5392d55a4b3aec56e39192652fd187616f89d8e34eb1d`.
+- The failing assertion must be fixed in the prototype. Do **not** weaken or remove the 44px gate.
+
+### Partial human visual review of run 2
+
+The failed run still produced enough evidence to review the early composition.
+
+**Desktop authoring:**
+- materially clearer than v0.3/v0.4;
+- first-use sequence is legible without explanation: Image/Video → Add reference → Prompt → Model/Ratio/Advanced → Generate;
+- Generate has conventional high-contrast affordance and does not rely on the quarter-arc geometry;
+- Landing coherence is visible through the near-black canvas, restrained grid, blue/orange atmosphere, compressed heading, technical labels, and sparse 1px framing rather than through unusual control shapes.
+
+**390px authoring:**
+- mode switch, Add reference, prompt, essential settings, and full-width Generate are immediately visible;
+- composition reads as a usable creative form rather than a miniature desktop spatial experiment;
+- the run exposed a genuine touch-target defect on reference Remove that must be corrected before acceptance.
+
+**Desktop result / continuation:**
+- result media is dominant and continuation actions are named explicitly;
+- the composer remains directly available below the result;
+- Animate continuation visibly switches the composer to Video and binds the result/current source as a `Start image`, matching the intended interaction grammar;
+- this state is not yet approved; complete mobile/result/reduced-motion evidence is still required after the touch-target fix.
+
+### Current status
+
+**v0.5 is NOT an approval candidate yet.** The concept direction is retained, but validation is incomplete. No PR should be opened for approval and no production implementation contract should be expanded until the remaining verifier defect is fixed and the complete evidence set receives human review.
+
 ## Prototype acceptance gates
 
 Before this can be shown as an approval candidate, evidence must prove:
@@ -149,6 +211,18 @@ Before this can be shown as an approval candidate, evidence must prove:
 - no accepted horizontal overflow;
 - reduced motion reaches complete states without delayed essential controls;
 - media-only pointer depth has bounded motion and cannot shift controls.
+
+## Next work — exact handoff sequence
+
+1. Re-verify current `main`, `rd/create-usability-first-v05`, issue #148, and any new branch workflow runs before editing.
+2. Read `AGENTS.md`, `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/UI_DECISIONS.md`, `docs/ui/DESIGN_WORKFLOW.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/VISUAL_NORTH_STAR.md`, `docs/ui/COMPONENT_CATALOG.md`, `docs/ui/SCREEN_REGISTRY.md`, and this file.
+3. Inspect the v0.5 prototype/verifier/workflow at the current branch head. Do not infer current code from this handoff text.
+4. Fix the mobile reference **Remove** target so its actual rendered hit area is at least 44×44px. Preserve the flat/non-overlapping mobile reference treatment.
+5. Rerun the complete exact-head v0.5 workflow. Do not weaken the touch-target assertion.
+6. If green, download and visually review the complete evidence: desktop authoring/references/Video/Advanced/generating/result/continuation, 390px authoring/references/Video/Advanced/result, reduced motion, focus/overflow, and temporal recording.
+7. Judge usability before spectacle: a first-time user should know what to do without explanation. If not, correct the information hierarchy before adding richer motion.
+8. Judge visual coherence against the approved Landing: competitors define interaction grammar; Landing defines RenderLab appearance. Do not copy competitor styling.
+9. Only after the complete evidence is strong should the branch be promoted to a reviewed candidate and a draft review PR be opened. User approval remains mandatory before any production `/create` implementation contract.
 
 ## Scope boundary
 
