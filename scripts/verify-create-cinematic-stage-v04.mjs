@@ -55,6 +55,8 @@ await shot(page, 'desktop-reference-removed');
 await page.getByRole('radio', { name: 'Video' }).click();
 await waitSettle(page);
 assert(await page.getByRole('radio', { name: 'Video' }).getAttribute('aria-checked') === 'true', 'video mode not selected');
+const videoViewport = await page.locator('.stage-viewport').boundingBox();
+const videoComposer = await page.locator('.composer').boundingBox();
 await shot(page, 'desktop-video');
 
 await page.getByRole('button', { name: /Precision/ }).click();
@@ -62,9 +64,14 @@ await waitSettle(page);
 assert(await page.getByRole('button', { name: /Precision/ }).getAttribute('aria-expanded') === 'true', 'precision did not open');
 const inspector = await page.locator('.precision-inspector').boundingBox();
 const advancedViewport = await page.locator('.stage-viewport').boundingBox();
+const advancedComposer = await page.locator('.composer').boundingBox();
+const advancedIntent = await page.locator('.intent-copy').boundingBox();
 assert(inspector.width > 250, 'desktop inspector did not expand');
 assert(advancedViewport.width > stageBox.width * .74, 'desktop Precision collapsed the creative stage');
 assert(advancedViewport.height > stageBox.height * .55, 'desktop Precision reduced the stage below the intended hierarchy');
+assert(Math.abs(advancedViewport.x - videoViewport.x) <= 2, `desktop Precision shifted the stage origin: ${videoViewport.x} -> ${advancedViewport.x}`);
+assert(Math.abs(advancedComposer.x - videoComposer.x) <= 2, `desktop Precision shifted the composer origin: ${videoComposer.x} -> ${advancedComposer.x}`);
+assert(advancedIntent.x >= advancedViewport.x + advancedViewport.width * .08, 'desktop Precision clips intent copy against the stage edge');
 await shot(page, 'desktop-advanced');
 
 await page.keyboard.press('Tab');

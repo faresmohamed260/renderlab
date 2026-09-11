@@ -18,7 +18,7 @@
   background:#11161c;
 }
 
-/* Precision is a contextual overlay, not a reason to crush the creative stage. */
+/* Precision is a contextual overlay, not a reason to crush or shift the creative stage. */
 .stage[data-advanced="open"] .precision-inspector{
   width:286px;
   top:106px;
@@ -27,10 +27,14 @@
   box-shadow:-32px 0 72px rgba(0,0,0,.34);
 }
 .stage[data-advanced="open"] .stage-viewport{
+  left:11.5%;
   right:7.5%;
   filter:brightness(.76) saturate(.84);
 }
-.stage[data-advanced="open"] .composer{right:148px}
+.stage[data-advanced="open"] .composer{
+  left:11.5%;
+  right:148px;
+}
 .stage[data-advanced="open"] .generate-actuator{right:0}
 
 /* Result takeover: media becomes the dominant working surface. */
