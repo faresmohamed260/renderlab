@@ -1,0 +1,62 @@
+name: Phase 23 Refresh Create Verifier
+
+on:
+  push:
+    branches:
+      - work/phase-23-create-clear-composer
+    paths:
+      - .github/workflows/phase23-refresh-create-verifier.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update approved presentation assertions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/verify-create-lifecycle.mjs')
+          text = path.read_text()
+          replacements = {
+            '  await edit.click();\n  await page.getByRole("heading", { name: "Edit an image" }).waitFor({ state: "visible", timeout: 30_000 });\n  await page.getByText("Editing this image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });\n':
+            '  await edit.click();\n  await page.getByRole("heading", { name: "Create an image" }).waitFor({ state: "visible", timeout: 30_000 });\n  await page.getByText("Primary image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });\n',
+            '  await page.getByRole("radio", { name: "Video", exact: true }).click();\n  await page.getByRole("heading", { name: "Animate an image" }).waitFor({ state: "visible", timeout: 30_000 });\n  assert(await page.getByRole("radio", { name: "Video", exact: true }).isChecked(), "Video did not become available after returning to one reference.");\n':
+            '  await page.getByRole("radio", { name: "Video", exact: true }).click();\n  await page.getByRole("heading", { name: "Create a video" }).waitFor({ state: "visible", timeout: 30_000 });\n  await page.getByText("Start image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });\n  assert(await page.getByRole("radio", { name: "Video", exact: true }).isChecked(), "Video did not become available after returning to one reference.");\n',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'expected one verifier match, found {text.count(old)}')
+              text = text.replace(old, new, 1)
+          initial_anchor = '  const prompt = page.getByRole("textbox", { name: "Prompt" });\n  await prompt.waitFor({ state: "visible", timeout: 30_000 });\n'
+          initial_new = initial_anchor + '  await page.getByRole("heading", { name: "Create an image" }).waitFor({ state: "visible", timeout: 30_000 });\n  assert(await page.getByRole("radio", { name: "Image", exact: true }).isChecked(), "Clear Composer did not initialize in Image mode.");\n  assert(await page.getByRole("button", { name: "Add reference", exact: true }).isVisible(), "Clear Composer did not expose the labelled Add reference action.");\n'
+          if text.count(initial_anchor) != 1:
+              raise SystemExit('initial composer anchor not unique')
+          text = text.replace(initial_anchor, initial_new, 1)
+          active_anchor = '  await activeLifecycle.waitFor({ state: "visible", timeout: 10_000 });\n'
+          active_new = active_anchor + '  const activeStageBox = await activeLifecycle.boundingBox();\n  const activeComposerBox = await page.locator(\'[data-create-layout="clear-composer"]\').boundingBox();\n  assert(activeStageBox && activeComposerBox && activeStageBox.y < activeComposerBox.y, "Active generation stage did not appear above the persistent composer.");\n'
+          if text.count(active_anchor) != 1:
+              raise SystemExit('active stage anchor not unique')
+          text = text.replace(active_anchor, active_new, 1)
+          result_anchor = '  const edit = page.getByRole("button", { name: "Edit", exact: true });\n'
+          result_new = '  const resultMedia = page.locator("[data-create-result-media]");\n  const resultMediaBox = await resultMedia.boundingBox();\n  const resultComposerBox = await page.locator(\'[data-create-layout="clear-composer"]\').boundingBox();\n  assert(resultMediaBox && resultComposerBox && resultMediaBox.y < resultComposerBox.y, "Persisted result media did not lead the persistent composer.");\n  const edit = page.getByRole("button", { name: "Edit", exact: true });\n'
+          if text.count(result_anchor) != 1:
+              raise SystemExit('result anchor not unique')
+          text = text.replace(result_anchor, result_new, 1)
+          path.write_text(text)
+          PY
+      - name: Commit verifier alignment
+        run: |
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git rm .github/workflows/phase23-refresh-create-verifier.yml
+          git add scripts/verify-create-lifecycle.mjs
+          git diff --cached --check
+          git commit -m "Phase 23: align Create lifecycle verifier"
+          git push origin HEAD:work/phase-23-create-clear-composer
