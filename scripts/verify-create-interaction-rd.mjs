@@ -49,6 +49,29 @@ async function screenshotState(page, state, name, { fullPage = true, focusInstru
   await page.screenshot({ path: path.join(out, `${name}.png`), fullPage });
 }
 
+async function positionControlRailAboveDock(page, label) {
+  const rail = page.locator('.control-rail');
+  await rail.scrollIntoViewIfNeeded();
+  await page.evaluate(() => {
+    const controlRail = document.querySelector('.control-rail');
+    const dock = document.querySelector('.mobile-dock');
+    if (!controlRail || !dock) return;
+    const railRect = controlRail.getBoundingClientRect();
+    const dockRect = dock.getBoundingClientRect();
+    const overlap = railRect.bottom - dockRect.top + 16;
+    if (overlap > 0) window.scrollBy(0, overlap);
+  });
+  await page.waitForTimeout(80);
+  const geometry = await page.evaluate(() => {
+    const controlRail = document.querySelector('.control-rail')?.getBoundingClientRect();
+    const dock = document.querySelector('.mobile-dock')?.getBoundingClientRect();
+    if (!controlRail || !dock) return null;
+    return { railBottom: controlRail.bottom, dockTop: dock.top };
+  });
+  assert(geometry, `${label}: mobile control/dock geometry could not be measured.`);
+  assert(geometry.railBottom + 8 <= geometry.dockTop, `${label}: fixed mobile dock occludes the Create controls.`);
+}
+
 const browser = await chromium.launch({ headless: true });
 try {
   const desktop = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -120,27 +143,45 @@ try {
   await motionPage.waitForTimeout(700);
   await recordContext.close();
 
-  const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  const mobile = await mobileContext.newPage();
   for (const state of ['image', 'references', 'advanced', 'result']) {
     await screenshotState(mobile, state, `mobile-${state}`);
     await screenshotState(mobile, state, `mobile-${state}-viewport`, { fullPage: false, focusInstrument: true });
   }
 
-  const reduced = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await mobile.goto(`${base}${route}?state=image`, { waitUntil: 'networkidle' });
+  await mobile.getByRole('button', { name: 'Add reference' }).tap();
+  assert(await mobile.locator('.source-tile').count() === 1, 'Touch Add reference did not insert a source tile.');
+  await mobile.getByRole('button', { name: /Open Advanced controls/ }).tap();
+  assert(await mobile.locator('#precision-panel').isVisible(), 'Touch Advanced disclosure did not open.');
+
+  await mobile.goto(`${base}${route}?state=image`, { waitUntil: 'networkidle' });
+  await positionControlRailAboveDock(mobile, 'mobile image');
+  await mobile.screenshot({ path: path.join(out, 'mobile-image-controls-viewport.png'), fullPage: false });
+
+  await mobile.goto(`${base}${route}?state=result`, { waitUntil: 'networkidle' });
+  await positionControlRailAboveDock(mobile, 'mobile result');
+  await mobile.screenshot({ path: path.join(out, 'mobile-result-controls-viewport.png'), fullPage: false });
+  await mobileContext.close();
+
+  const reducedContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  const reduced = await reducedContext.newPage();
   await reduced.emulateMedia({ reducedMotion: 'reduce' });
   await reduced.goto(`${base}${route}?state=references`, { waitUntil: 'networkidle' });
-  await reduced.getByRole('button', { name: /Open Advanced controls/ }).click();
-  await reduced.locator('#generate').click();
+  await reduced.getByRole('button', { name: /Open Advanced controls/ }).tap();
+  await reduced.locator('#generate').tap();
   await reduced.waitForTimeout(1600);
-  assert((await reduced.locator('.instrument').getAttribute('data-state')) === 'result', 'Reduced-motion path did not reach result fixture state.');
+  assert((await reduced.locator('.instrument').getAttribute('data-state')) === 'result', 'Reduced-motion touch path did not reach result fixture state.');
   const motionCss = await reduced.locator('.instrument').evaluate((element) => getComputedStyle(element).transitionDuration);
   await assertNoOverflow(reduced, 'mobile reduced result');
   await reduced.locator('.instrument').scrollIntoViewIfNeeded();
   await reduced.evaluate(() => window.scrollBy(0, -96));
   await reduced.screenshot({ path: path.join(out, 'mobile-result-reduced.png'), fullPage: false });
   assert(motionCss !== undefined, 'Reduced-motion computed style could not be read.');
+  await reducedContext.close();
 
-  console.log('Create interaction R&D verified: desktop/mobile states, result geometry separation, pointer reorder, keyboard activation/focus, reduced-motion path, and temporal capture passed.');
+  console.log('Create interaction R&D verified: desktop/mobile states, result geometry separation, pointer reorder, keyboard activation/focus, touch add/disclosure, mobile dock clearance, reduced-motion touch path, and temporal capture passed.');
 } finally {
   await browser.close();
 }
