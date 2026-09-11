@@ -132,6 +132,8 @@ await m.getByRole('button', { name: 'Generate' }).tap();
 await m.waitForTimeout(1600);
 assert(await m.locator('.stage').getAttribute('data-state') === 'result', 'mobile result state missing');
 await waitSettle(m, 1200);
+await m.evaluate(() => window.scrollTo(0, 0));
+await waitSettle(m, 80);
 await noOverflow(m, 'mobile result');
 const mobileResultStage = await m.locator('.stage-viewport').boundingBox();
 const mobileResultCopy = await m.locator('.result-copy').boundingBox();
@@ -140,8 +142,11 @@ const mobileActionState = await m.locator('.result-actions').evaluate((el) => ({
 const continueBox = await m.getByRole('button', { name: 'Continue' }).boundingBox();
 assert(mobileResultStage.width >= 388, 'mobile result does not own the viewport width');
 assert(mobileActionState.opacity > .95 && mobileActionState.visibility === 'visible', 'mobile result actions are not visibly settled');
+assert(mobileResultCopy.x >= mobileResultStage.x + 48, `mobile result caption is too close to the clipping edge: ${mobileResultCopy.x} vs ${mobileResultStage.x}`);
+assert(mobileResultCopy.x + mobileResultCopy.width <= mobileResultStage.x + mobileResultStage.width - 14, 'mobile result caption exceeds the media stage');
+assert(mobileResultActions.x >= mobileResultStage.x + 48, 'mobile result action rail is too close to the clipping edge');
 assert(continueBox.x >= mobileResultStage.x && continueBox.x + continueBox.width <= mobileResultStage.x + mobileResultStage.width, 'mobile Continue action is outside the result stage');
-assert(mobileResultCopy.x + mobileResultCopy.width + 6 <= mobileResultActions.x, 'mobile result copy/actions overlap');
+assert(mobileResultCopy.y + mobileResultCopy.height + 8 <= mobileResultActions.y, 'mobile result caption/action rail overlap vertically');
 await shot(m, 'mobile-result');
 await mobile.close();
 
@@ -156,7 +161,16 @@ await r.getByRole('button', { name: 'Close precision controls' }).tap();
 await r.getByRole('button', { name: 'Generate' }).tap();
 await r.waitForTimeout(220);
 assert(await r.locator('.stage').getAttribute('data-state') === 'result', 'reduced-motion result did not resolve');
+await r.evaluate(() => window.scrollTo(0, 0));
+await waitSettle(r, 40);
 await noOverflow(r, 'mobile reduced result');
+const reducedStage = await r.locator('.stage-viewport').boundingBox();
+const reducedCopy = await r.locator('.result-copy').boundingBox();
+const reducedActions = await r.locator('.result-actions').boundingBox();
+const reducedResultState = await r.locator('.result-actions').evaluate((el) => ({ opacity: Number(getComputedStyle(el).opacity), visibility: getComputedStyle(el).visibility }));
+assert(reducedResultState.opacity > .95 && reducedResultState.visibility === 'visible', 'reduced-motion result actions retain a delayed reveal');
+assert(reducedCopy.x >= reducedStage.x + 48, 'reduced-motion result caption is clipped at the stage edge');
+assert(reducedCopy.y + reducedCopy.height + 8 <= reducedActions.y, 'reduced-motion caption/action rail overlap');
 await shot(r, 'mobile-reduced-result');
 await reduced.close();
 
