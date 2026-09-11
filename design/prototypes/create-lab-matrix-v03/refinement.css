@@ -49,6 +49,14 @@
   touch-action: pan-y;
 }
 
+.reference-object[data-slot="secondary"] .reference-drag-surface {
+  inset: 54px -2px 0 auto;
+  width: 44px;
+  border-left: 1px solid rgb(115 215 255 / 18%);
+  background: linear-gradient(90deg, transparent, rgb(115 215 255 / 6%));
+  box-shadow: inset -1px 0 rgb(115 215 255 / 20%);
+}
+
 .reference-object.dragging .reference-drag-surface {
   cursor: grabbing;
 }
@@ -230,6 +238,10 @@
     left: 14px;
     bottom: 14px;
     width: 92px;
+  }
+
+  .reference-drag-surface {
+    pointer-events: none;
   }
 
   .reference-object[data-slot="primary"] {
