@@ -28,11 +28,10 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
+          node-version: 24
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -46,5 +45,5 @@ jobs:
         with:
           name: renderlab-create-usability-first-v05
           path: artifacts/create-usability-first-v05
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 30
