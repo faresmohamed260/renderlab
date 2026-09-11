@@ -29,7 +29,15 @@
 .stage[data-advanced="open"] .stage-viewport{
   left:11.5%;
   right:7.5%;
-  filter:brightness(.76) saturate(.84);
+  filter:none;
+}
+.stage[data-advanced="open"] .stage-viewport::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:4;
+  pointer-events:none;
+  background:rgba(4,6,9,.22);
 }
 .stage[data-advanced="open"] .composer{
   left:11.5%;
@@ -95,6 +103,7 @@
     height:470px;
     filter:brightness(.72) saturate(.82);
   }
+  .stage[data-advanced="open"] .stage-viewport::after{display:none}
   .stage[data-advanced="open"] .reference-zone{top:326px}
   .precision-inspector header{height:54px;padding:13px 16px 10px}
   .precision-inspector header strong{font-size:14px}
