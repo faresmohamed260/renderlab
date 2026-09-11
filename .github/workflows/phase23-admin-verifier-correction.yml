@@ -1,0 +1,54 @@
+name: Phase 23 Admin verifier correction
+
+on:
+  push:
+    branches:
+      - work/phase-23-create-clear-composer
+    paths:
+      - .github/workflows/phase23-admin-verifier-correction.yml
+
+permissions:
+  contents: write
+
+jobs:
+  correct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-23-create-clear-composer
+          fetch-depth: 0
+
+      - name: Scope Admin invitation revoke assertion and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          verifier = Path("scripts/verify-admin-operations.mjs")
+          text = verifier.read_text()
+          old = '  await page.getByRole("button", { name: "Revoke", exact: true }).click();\n'
+          new = '''  const invitationRow = page.getByText(outsider.email, { exact: true }).locator("..").locator("..");
+          const revokeInvitationButton = invitationRow.getByRole("button", { name: "Revoke", exact: true });
+          assert((await revokeInvitationButton.count()) === 1, "Expected exactly one Revoke action for the test invitation.");
+          await revokeInvitationButton.click();
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f"Expected exactly one Admin Revoke target, found {text.count(old)}")
+          verifier.write_text(text.replace(old, new, 1))
+
+          helper = Path(".github/workflows/phase23-admin-verifier-correction.yml")
+          helper.unlink()
+          PY
+
+          node --check scripts/verify-admin-operations.mjs
+          git diff --check
+          git diff -- scripts/verify-admin-operations.mjs .github/workflows/phase23-admin-verifier-correction.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-admin-operations.mjs .github/workflows/phase23-admin-verifier-correction.yml
+          git commit -m "test: scope Admin invitation revoke verification"
+          git push origin HEAD:work/phase-23-create-clear-composer
