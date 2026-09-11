@@ -1,0 +1,84 @@
+name: Brand Production Authority Reconcile
+
+"on":
+  push:
+    branches:
+      - docs/brand-production-authority-reconcile
+    paths:
+      - .github/workflows/brand-production-authority-reconcile.yml
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout docs branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/brand-production-authority-reconcile
+
+      - name: Reconcile brand production authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          brand = "docs/ui/BRAND_SYSTEM.md"
+          replace_once(
+              brand,
+              "**Status:** `LOCKED` visual identity reference; production implementation pending  ",
+              "**Status:** `LOCKED / PRODUCTION-LIVE` visual identity; the current deployed Landing mark/wordmark is the accepted production reference  ",
+          )
+          anchor = "**Does not authorize:** production asset replacement, product behavior changes, backend/schema/infrastructure changes, dependency adoption, live Auth-template changes, production deployment, or a new product Cycle/Phase by itself\n"
+          block = anchor + "\n## Production identity authority — 2026-09-11\nThe user explicitly confirmed that the **current logo rendered on the production Landing is correct**. That confirmation supersedes the earlier interpretation that opened issue #161.\n\nFor current and future work, the accepted production implementation — centered on `src/components/brand/renderlab-brand.tsx` and the associated current mark/icon assets as shipped in production source `0173c4c5ba08360b6352331118abc81978cfa774` — is the binding geometry/spacing authority for the settled RenderLab identity. The earlier WebP concept board and descriptive R&D prose remain useful historical design context, but they must **not** be used to reinterpret, re-vectorize, separate, or otherwise alter the accepted production logo where they conflict with the shipped implementation.\n\nIn particular, any older statement in this document requiring different inter-module negative-space gaps or another geometry correction is superseded by this production acceptance. Do not open or perform logo-geometry correction work unless the user explicitly reopens the identity decision. Issue #161 is superseded by this clarification.\n"
+          p = Path(brand)
+          text = p.read_text()
+          if "## Production identity authority — 2026-09-11" in text:
+              raise SystemExit("BRAND_SYSTEM.md: authority block already exists")
+          if text.count(anchor) != 1:
+              raise SystemExit(f"BRAND_SYSTEM.md: expected one anchor, found {text.count(anchor)}")
+          p.write_text(text.replace(anchor, block, 1))
+
+          lock = "design/brand/identity-lock-2026-09-10.md"
+          replace_once(
+              lock,
+              "**Status:** `LOCKED` visual identity reference — production implementation pending  ",
+              "**Status:** `LOCKED / PRODUCTION-LIVE` — current deployed implementation accepted as the binding production identity  ",
+          )
+          lock_anchor = "**User approval:** explicit — “yep that's it, lock it down and don't mess it up”\n"
+          lock_block = lock_anchor + "\n## Production authority correction — 2026-09-11\nThe user explicitly confirmed that the **logo currently rendered on the production Landing is correct**. The accepted deployed implementation therefore controls the settled production geometry and spacing.\n\nThe current `RenderLabBrand` implementation and associated production mark/icon assets, as shipped in production source `0173c4c5ba08360b6352331118abc81978cfa774`, are the binding implementation reference. The concept-board WebP and the remaining geometry prose below are preserved as design-history evidence; where any older description implies that the current deployed mark should be changed — including by introducing different negative-space separation between modules — this 2026-09-11 correction takes precedence.\n\nDo not re-vectorize, “fix,” or otherwise alter the current logo geometry from older R&D references unless the user explicitly reopens the identity decision. Issue #161 is superseded by this clarification.\n"
+          p = Path(lock)
+          text = p.read_text()
+          if "## Production authority correction — 2026-09-11" in text:
+              raise SystemExit("identity lock: authority correction already exists")
+          if text.count(lock_anchor) != 1:
+              raise SystemExit(f"identity lock: expected one anchor, found {text.count(lock_anchor)}")
+          p.write_text(text.replace(lock_anchor, lock_block, 1))
+          PY
+
+          rm .github/workflows/brand-production-authority-reconcile.yml
+          git diff --check
+          git status --short
+
+      - name: Commit docs-only reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git add docs/ui/BRAND_SYSTEM.md design/brand/identity-lock-2026-09-10.md .github/workflows/brand-production-authority-reconcile.yml
+          git diff --cached --check
+          git commit -m "docs: lock current production logo authority"
+          git push origin HEAD:docs/brand-production-authority-reconcile
