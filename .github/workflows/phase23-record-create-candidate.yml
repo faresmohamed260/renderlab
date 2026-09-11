@@ -1,0 +1,34 @@
+name: Phase 23 Record Create Candidate
+
+on:
+  push:
+    branches:
+      - work/phase-23-create-clear-composer
+    paths:
+      - .github/workflows/phase23-record-create-candidate.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Record verified candidate state
+        run: python3 scripts/phase23-record-create-candidate.py
+
+      - name: Commit candidate documentation
+        run: |
+          git config user.name "Fares Mohamed"
+          git config user.email "121525183+faresmohamed260@users.noreply.github.com"
+          git rm .github/workflows/phase23-record-create-candidate.yml scripts/phase23-record-create-candidate.py
+          git add docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md
+          git diff --cached --check
+          git commit -m "Phase 23: record verified Clear Composer candidate"
+          git push origin HEAD:work/phase-23-create-clear-composer
