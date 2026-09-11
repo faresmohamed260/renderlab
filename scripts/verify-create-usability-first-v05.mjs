@@ -112,12 +112,15 @@ try {
   await page.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'generating');
   assert.equal(await page.locator('#composer').isVisible(), true, 'composer remains visible while generating');
   assert.match(await page.locator('#generate-button').textContent(), /Generating/);
+  assert.equal(await page.locator('#result-info').isVisible(), false, 'continuation actions must stay hidden until a truthful result exists');
   await screenshot(page, 'desktop-generating');
 
   await page.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'result', null, { timeout: 5000 });
+  await page.waitForTimeout(1050);
   assert.equal(await page.locator('[data-result-action="animate"]').isVisible(), true);
   assert.equal(await page.locator('[data-result-action="edit"]').isVisible(), true);
   assert.equal(await page.locator('[data-result-action="reference"]').isVisible(), true);
+  assert.ok(Number(await page.locator('#result-image').evaluate((el) => getComputedStyle(el).opacity)) > 0.95, 'desktop result image should be visually settled');
   await screenshot(page, 'desktop-result');
 
   const beforeTilt = await page.locator('#result-frame').evaluate((el) => getComputedStyle(el).transform);
@@ -166,10 +169,12 @@ try {
   const removeBox = await mobilePage.locator('[data-ref-action="remove"]').boundingBox();
   assert.ok(removeBox && removeBox.height >= 44, 'mobile remove target >= 44px');
   await mobilePage.locator('[data-mode="video"]').tap();
+  await mobilePage.waitForTimeout(220);
   assert.match(await mobilePage.locator('[data-reference-index="0"]').textContent(), /Start image/);
   await screenshot(mobilePage, 'mobile-video');
 
   await mobilePage.locator('#advanced-trigger').tap();
+  await mobilePage.waitForTimeout(220);
   assert.equal(await mobilePage.locator('#advanced-panel').isVisible(), true);
   await assertNoOverflow(mobilePage, 'mobile advanced');
   await screenshot(mobilePage, 'mobile-advanced');
@@ -177,10 +182,12 @@ try {
   await mobilePage.locator('#prompt').fill('Slow push-in, light wind and drifting fog.');
   await mobilePage.locator('#generate-button').tap();
   await mobilePage.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'result', null, { timeout: 5000 });
+  await mobilePage.waitForTimeout(1050);
   for (const selector of ['[data-result-action="animate"]', '[data-result-action="edit"]', '[data-result-action="reference"]']) {
     const box = await mobilePage.locator(selector).boundingBox();
     assert.ok(box && box.height >= 44, `mobile ${selector} target >= 44px`);
   }
+  assert.ok(Number(await mobilePage.locator('#result-image').evaluate((el) => getComputedStyle(el).opacity)) > 0.95, 'mobile result image should be visually settled');
   await assertNoOverflow(mobilePage, 'mobile result');
   await screenshot(mobilePage, 'mobile-result');
   await mobile.close();
