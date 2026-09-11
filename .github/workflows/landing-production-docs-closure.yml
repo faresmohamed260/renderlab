@@ -35,12 +35,7 @@ jobs:
                   raise SystemExit(f"{path}: expected one match, found {count}: {old[:100]!r}")
               p.write_text(text.replace(old, new, 1))
 
-          # PROJECT.md — current production baseline.
-          replace_once(
-              "PROJECT.md",
-              "## Current Verified Baseline — 2026-09-10",
-              "## Current Verified Baseline — 2026-09-11",
-          )
+          replace_once("PROJECT.md", "## Current Verified Baseline — 2026-09-10", "## Current Verified Baseline — 2026-09-11")
           replace_once(
               "PROJECT.md",
               "- Authoritative repository source currently deployed is `a1f3cdcf095c9088fe3c2c0eebafaf52b5d609a7`. It includes the verified UI-068 / UI-069 / UI-070 / UI-071 post-production corrections plus their repository closure documentation.",
@@ -62,7 +57,6 @@ jobs:
               "UI-071 remains included in current production source `0173c4c5ba08360b6352331118abc81978cfa774`, now served with the Lab Matrix Landing from READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; its original guarded production rollout evidence remains run `34460364114`.",
           )
 
-          # SCREEN_REGISTRY.md — current Landing production status/evidence.
           replace_once(
               "docs/ui/SCREEN_REGISTRY.md",
               "**Status:** APPROVED — Lab Matrix redesign merged on `main`; deployment remains separate",
@@ -74,28 +68,27 @@ jobs:
               "PR #175 records the repository closure. Production rollout on 2026-09-11 deployed current `main` source `0173c4c5ba08360b6352331118abc81978cfa774` as READY Vercel deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; explicit alias run `34547608773` then moved `renderlab.faresuniform.uk` to that deployment and passed root plus `/create`, `/library`, `/activity` and `/settings` smoke. Independent Vercel post-rollout checks found no runtime-error clusters and no error/fatal logs. `PROJECT.md` remains authoritative for the current production pointer.",
           )
 
-          # UI_MIGRATION.md — concise current production closure before historical phase chronology.
           migration = Path("docs/ui/UI_MIGRATION.md")
           text = migration.read_text()
           marker = "## Phase 0 — Product & Capability Baseline"
           if marker not in text:
               raise SystemExit("UI_MIGRATION.md: Phase 0 marker missing")
-          block = """## Current Landing production closure — 2026-09-11
-- [x] Approved four-section Lab Matrix Landing implemented in PR #174 and merged as `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`.
-- [x] Current `main` source `0173c4c5ba08360b6352331118abc81978cfa774` deployed as READY Vercel production deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`.
-- [x] Explicit custom-domain alias run `34547608773` pointed `renderlab.faresuniform.uk` at the new deployment and passed root + `/create` + `/library` + `/activity` + `/settings` smoke.
-- [x] Independent post-rollout Vercel checks found no runtime-error clusters and no error/fatal logs for the new production deployment.
-- [x] Automatic Git → Vercel deployment remains disabled; future production releases still require explicit authorization.
-
-**Landing production status: `APPROVED / PRODUCTION-LIVE`.**
-
-"""
-          if "## Current Landing production closure — 2026-09-11" not in text:
-              migration.write_text(text.replace(marker, block + marker, 1))
-          else:
+          block = "\n".join([
+              "## Current Landing production closure — 2026-09-11",
+              "- [x] Approved four-section Lab Matrix Landing implemented in PR #174 and merged as `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`.",
+              "- [x] Current `main` source `0173c4c5ba08360b6352331118abc81978cfa774` deployed as READY Vercel production deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`.",
+              "- [x] Explicit custom-domain alias run `34547608773` pointed `renderlab.faresuniform.uk` at the new deployment and passed root + `/create` + `/library` + `/activity` + `/settings` smoke.",
+              "- [x] Independent post-rollout Vercel checks found no runtime-error clusters and no error/fatal logs for the new production deployment.",
+              "- [x] Automatic Git → Vercel deployment remains disabled; future production releases still require explicit authorization.",
+              "",
+              "**Landing production status: `APPROVED / PRODUCTION-LIVE`.**",
+              "",
+              "",
+          ])
+          if "## Current Landing production closure — 2026-09-11" in text:
               raise SystemExit("UI_MIGRATION.md: closure block already present unexpectedly")
+          migration.write_text(text.replace(marker, block + marker, 1))
 
-          # INFRASTRUCTURE.md — persist the custom-domain alias behavior discovered during rollout.
           infra = Path("docs/architecture/INFRASTRUCTURE.md")
           text = infra.read_text()
           anchor = "Vercel is the production deployment target, but Git pushes are **not** deployment authorization. Repository `vercel.json` sets `git.deploymentEnabled=false`, so GitHub development/merge activity does not automatically create Vercel deployments. An explicit deployment action is required."
