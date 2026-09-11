@@ -246,7 +246,6 @@
   }
 
   function clearPointerExchange(node, pointerId) {
-    if (node?.hasPointerCapture?.(pointerId)) node.releasePointerCapture(pointerId);
     if (node) {
       node.style.translate = '';
       node.classList.remove('dragging');
@@ -287,7 +286,6 @@
       state.dragStartY = event.clientY;
       state.dragTargetAlias = null;
       state.dragMoved = false;
-      node.setPointerCapture?.(event.pointerId);
       node.classList.add('dragging');
       setStatus('REFERENCE HOLD');
       event.preventDefault();
