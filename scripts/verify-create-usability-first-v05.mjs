@@ -45,6 +45,11 @@ async function screenshot(page, name) {
   await page.screenshot({ path: `${outDir}/${name}.png`, fullPage: true });
 }
 
+async function waitForResult(page) {
+  await page.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'result', null, { timeout: 5000 });
+  await page.waitForTimeout(1050);
+}
+
 await waitForServer();
 const browser = await chromium.launch({ headless: true });
 
@@ -86,17 +91,7 @@ try {
   await page.locator('[data-mode="video"]').click();
   assert.equal(await page.locator('[data-mode="image"]').getAttribute('aria-pressed'), 'true', 'Video must not accept two references');
   assert.match(await page.locator('#notice').textContent(), /Remove one reference/);
-
   await page.locator('[data-reference-index="1"] [data-ref-action="remove"]').click();
-  await page.locator('[data-mode="video"]').click();
-  assert.equal(await page.locator('[data-mode="video"]').getAttribute('aria-pressed'), 'true');
-  assert.match(await page.locator('#create-title').textContent(), /Create a video/);
-  assert.match(await page.locator('[data-reference-index="0"]').textContent(), /Start image/);
-  assert.equal(await page.locator('#video-settings-chip').isVisible(), true);
-  const generateVideo = await page.locator('#generate-button').boundingBox();
-  assert.ok(generateVideo, 'desktop video generate box');
-  assert.ok(near(generateInitial.x, generateVideo.x, 24), 'Generate should stay in the same control zone across modes');
-  await screenshot(page, 'desktop-video');
 
   await page.locator('#advanced-trigger').click();
   assert.equal(await page.locator('#advanced-panel').isVisible(), true);
@@ -105,23 +100,27 @@ try {
   const promptBox = await page.locator('#prompt').boundingBox();
   const advancedBox = await page.locator('#advanced-panel').boundingBox();
   assert.ok(promptBox && advancedBox && advancedBox.y >= promptBox.y + promptBox.height - 2, 'Advanced must expand below prompt');
-  await screenshot(page, 'desktop-advanced');
+  await screenshot(page, 'desktop-image-advanced');
+  await page.locator('#advanced-trigger').click();
 
-  await page.locator('#prompt').fill('Slow cinematic dolly forward through morning mist, subtle wind in the trees.');
+  await page.locator('#prompt').fill('Quiet mountain valley at first light, soft mist and layered ridgelines.');
   await page.locator('#generate-button').click();
   await page.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'generating');
+  assert.equal(await page.locator('#result-stage').getAttribute('data-kind'), 'image');
   assert.equal(await page.locator('#composer').isVisible(), true, 'composer remains visible while generating');
   assert.match(await page.locator('#generate-button').textContent(), /Generating/);
   assert.equal(await page.locator('#result-info').isVisible(), false, 'continuation actions must stay hidden until a truthful result exists');
-  await screenshot(page, 'desktop-generating');
+  await screenshot(page, 'desktop-image-generating');
 
-  await page.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'result', null, { timeout: 5000 });
-  await page.waitForTimeout(1050);
-  assert.equal(await page.locator('[data-result-action="animate"]').isVisible(), true);
-  assert.equal(await page.locator('[data-result-action="edit"]').isVisible(), true);
-  assert.equal(await page.locator('[data-result-action="reference"]').isVisible(), true);
-  assert.ok(Number(await page.locator('#result-image').evaluate((el) => getComputedStyle(el).opacity)) > 0.95, 'desktop result image should be visually settled');
-  await screenshot(page, 'desktop-result');
+  await waitForResult(page);
+  assert.equal(await page.locator('#result-stage').getAttribute('data-kind'), 'image');
+  assert.match(await page.locator('.result-meta-block .eyebrow').textContent(), /RESULT \/ IMAGE/);
+  assert.match(await page.locator('.result-specs dd').nth(0).textContent(), /FLUX/);
+  for (const selector of ['[data-result-action="animate"]', '[data-result-action="edit"]', '[data-result-action="reference"]']) {
+    assert.equal(await page.locator(selector).isVisible(), true, `${selector} should be available for image result`);
+  }
+  assert.ok(Number(await page.locator('#result-image').evaluate((el) => getComputedStyle(el).opacity)) > 0.95, 'desktop image result should be visually settled');
+  await screenshot(page, 'desktop-image-result');
 
   const beforeTilt = await page.locator('#result-frame').evaluate((el) => getComputedStyle(el).transform);
   const frameBox = await page.locator('#result-frame').boundingBox();
@@ -135,11 +134,38 @@ try {
 
   await page.locator('[data-result-action="animate"]').click();
   assert.equal(await page.locator('[data-mode="video"]').getAttribute('aria-pressed'), 'true');
+  assert.match(await page.locator('#create-title').textContent(), /Create a video/);
   assert.match(await page.locator('[data-reference-index="0"]').textContent(), /Start image/);
   assert.match(await page.locator('[data-reference-index="0"]').textContent(), /First light study/);
   assert.match(await page.locator('#notice').textContent(), /Describe the motion/);
   assert.equal(await page.locator('#result-stage').getAttribute('data-phase'), 'idle');
+  assert.equal(await page.locator('#video-settings-chip').isVisible(), true);
+  const generateVideo = await page.locator('#generate-button').boundingBox();
+  assert.ok(generateVideo, 'desktop video generate box');
+  assert.ok(near(generateInitial.x, generateVideo.x, 24), 'Generate should stay in the same control zone across modes');
   await screenshot(page, 'desktop-continue-animate');
+
+  await page.locator('#advanced-trigger').click();
+  assert.equal(await page.locator('#advanced-panel').isVisible(), true);
+  await screenshot(page, 'desktop-video-advanced');
+  await page.locator('#advanced-trigger').click();
+
+  await page.locator('#prompt').fill('Slow cinematic dolly forward through morning mist, subtle wind in the trees.');
+  await page.locator('#generate-button').click();
+  await page.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'generating');
+  assert.equal(await page.locator('#result-stage').getAttribute('data-kind'), 'video');
+  assert.equal(await page.locator('#result-info').isVisible(), false, 'video continuation panel stays hidden until result exists');
+  await screenshot(page, 'desktop-video-generating');
+
+  await waitForResult(page);
+  assert.equal(await page.locator('#result-stage').getAttribute('data-kind'), 'video');
+  assert.match(await page.locator('.result-meta-block .eyebrow').textContent(), /RESULT \/ VIDEO/);
+  assert.match(await page.locator('.result-specs dd').nth(0).textContent(), /REDGraft LTX/);
+  for (const selector of ['[data-result-action="animate"]', '[data-result-action="edit"]', '[data-result-action="reference"]', '[data-result-action="upscale"]']) {
+    assert.equal(await page.locator(selector).isVisible(), false, `${selector} must not be offered for video result`);
+  }
+  assert.ok(Number(await page.locator('#result-image').evaluate((el) => getComputedStyle(el).opacity)) > 0.95, 'desktop video poster should be visually settled');
+  await screenshot(page, 'desktop-video-result');
 
   await page.locator('#prompt').focus();
   const focusOutline = await page.locator('#prompt').evaluate((el) => getComputedStyle(el).outlineStyle);
@@ -177,19 +203,33 @@ try {
   await mobilePage.waitForTimeout(220);
   assert.equal(await mobilePage.locator('#advanced-panel').isVisible(), true);
   await assertNoOverflow(mobilePage, 'mobile advanced');
-  await screenshot(mobilePage, 'mobile-advanced');
+  await screenshot(mobilePage, 'mobile-video-advanced');
+  await mobilePage.locator('#advanced-trigger').tap();
 
   await mobilePage.locator('#prompt').fill('Slow push-in, light wind and drifting fog.');
   await mobilePage.locator('#generate-button').tap();
-  await mobilePage.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'result', null, { timeout: 5000 });
-  await mobilePage.waitForTimeout(1050);
+  await waitForResult(mobilePage);
+  assert.equal(await mobilePage.locator('#result-stage').getAttribute('data-kind'), 'video');
+  assert.match(await mobilePage.locator('.result-meta-block .eyebrow').textContent(), /RESULT \/ VIDEO/);
+  for (const selector of ['[data-result-action="animate"]', '[data-result-action="edit"]', '[data-result-action="reference"]']) {
+    assert.equal(await mobilePage.locator(selector).isVisible(), false, `mobile ${selector} hidden for video result`);
+  }
+  assert.ok(Number(await mobilePage.locator('#result-image').evaluate((el) => getComputedStyle(el).opacity)) > 0.95, 'mobile video poster should be visually settled');
+  await assertNoOverflow(mobilePage, 'mobile video result');
+  await screenshot(mobilePage, 'mobile-video-result');
+
+  await mobilePage.reload({ waitUntil: 'domcontentloaded' });
+  await mobilePage.locator('#prompt').fill('Quiet mountain valley at first light.');
+  await mobilePage.locator('#generate-button').tap();
+  await waitForResult(mobilePage);
+  assert.equal(await mobilePage.locator('#result-stage').getAttribute('data-kind'), 'image');
+  assert.match(await mobilePage.locator('.result-meta-block .eyebrow').textContent(), /RESULT \/ IMAGE/);
   for (const selector of ['[data-result-action="animate"]', '[data-result-action="edit"]', '[data-result-action="reference"]']) {
     const box = await mobilePage.locator(selector).boundingBox();
     assert.ok(box && box.height >= 44, `mobile ${selector} target >= 44px`);
   }
-  assert.ok(Number(await mobilePage.locator('#result-image').evaluate((el) => getComputedStyle(el).opacity)) > 0.95, 'mobile result image should be visually settled');
-  await assertNoOverflow(mobilePage, 'mobile result');
-  await screenshot(mobilePage, 'mobile-result');
+  await assertNoOverflow(mobilePage, 'mobile image result');
+  await screenshot(mobilePage, 'mobile-image-result');
   await mobile.close();
 
   const reduced = await browser.newContext({
@@ -203,9 +243,10 @@ try {
   await reducedPage.locator('#prompt').fill('Quiet mountain valley at first light.');
   await reducedPage.locator('#generate-button').tap();
   await reducedPage.waitForFunction(() => document.querySelector('#result-stage')?.getAttribute('data-phase') === 'result', null, { timeout: 2000 });
-  assert.equal(await reducedPage.locator('[data-result-action="animate"]').isVisible(), true, 'reduced motion must reach complete result');
+  assert.equal(await reducedPage.locator('#result-stage').getAttribute('data-kind'), 'image');
+  assert.equal(await reducedPage.locator('[data-result-action="animate"]').isVisible(), true, 'reduced motion must reach complete image result');
   await assertNoOverflow(reducedPage, 'reduced motion result');
-  await screenshot(reducedPage, 'mobile-reduced-result');
+  await screenshot(reducedPage, 'mobile-reduced-image-result');
   await reduced.close();
 
   console.log('Create usability-first v0.5 verification passed.');
