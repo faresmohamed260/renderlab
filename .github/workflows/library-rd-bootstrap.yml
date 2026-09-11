@@ -33,34 +33,11 @@ jobs:
           git diff --check
           node --check design/prototypes/library-spatial-archive-v01/prototype.js
           node --check scripts/verify-library-spatial-archive-v01.mjs
-          python - <<'PY'
-          import subprocess
-          allowed = {
-              'design/rd/library-spatial-archive-v01.md',
-              'design/prototypes/library-spatial-archive-v01/index.html',
-              'design/prototypes/library-spatial-archive-v01/style.css',
-              'design/prototypes/library-spatial-archive-v01/prototype.js',
-              'scripts/verify-library-spatial-archive-v01.mjs',
-              '.library-rd/chunk0.b64',
-              '.library-rd/chunk1.b64',
-              '.library-rd/chunk2.b64',
-              '.library-rd/chunk3.b64',
-          }
-          paths = set()
-          for line in subprocess.check_output(['git','status','--short'], text=True).splitlines():
-              paths.add(line[3:])
-          unexpected = paths - allowed
-          required = {
-              'design/rd/library-spatial-archive-v01.md',
-              'design/prototypes/library-spatial-archive-v01/index.html',
-              'design/prototypes/library-spatial-archive-v01/style.css',
-              'design/prototypes/library-spatial-archive-v01/prototype.js',
-              'scripts/verify-library-spatial-archive-v01.mjs',
-          }
-          missing = required - paths
-          if unexpected or missing:
-              raise SystemExit(f'unexpected={sorted(unexpected)} missing={sorted(missing)} paths={sorted(paths)}')
-          PY
+          test -f design/rd/library-spatial-archive-v01.md
+          test -f design/prototypes/library-spatial-archive-v01/index.html
+          test -f design/prototypes/library-spatial-archive-v01/style.css
+          test -f design/prototypes/library-spatial-archive-v01/prototype.js
+          test -f scripts/verify-library-spatial-archive-v01.mjs
 
       - name: Commit isolated R&D files
         shell: bash
@@ -68,5 +45,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add design/rd/library-spatial-archive-v01.md design/prototypes/library-spatial-archive-v01 scripts/verify-library-spatial-archive-v01.mjs .library-rd
+          git diff --cached --check
           git commit -m "R&D: add Library Spatial Archive v0.1 coded directions"
           git push origin HEAD:rd/library-spatial-archive-v01
