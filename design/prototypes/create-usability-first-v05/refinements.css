@@ -1,4 +1,30 @@
-/* v0.5 interaction refinements: keep touch actions explicit and stable. */
+/* v0.5 interaction refinements: keep familiar controls stable and reserve expression for media. */
+button,
+a,
+textarea,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Do not expose continuation controls before a truthful result exists. */
+.result-stage[data-phase="generating"] {
+  width: min(900px, 100%);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.result-stage[data-phase="generating"] .result-info {
+  display: none;
+}
+
+.result-stage[data-phase="result"] .result-info {
+  animation: result-info-in 420ms var(--ease-out) 180ms both;
+}
+
+@keyframes result-info-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 @media (max-width: 600px) {
   .reference-chip {
     min-height: 64px;
@@ -15,5 +41,15 @@
     min-height: 48px;
     height: 48px;
     padding-inline: 10px;
+  }
+
+  .result-stage[data-phase="generating"] {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-stage[data-phase="result"] .result-info {
+    animation: none;
   }
 }
