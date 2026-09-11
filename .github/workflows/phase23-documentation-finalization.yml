@@ -1,0 +1,104 @@
+name: Phase 23 documentation finalization
+
+on:
+  push:
+    branches:
+      - work/phase-23-create-clear-composer
+    paths:
+      - .github/workflows/phase23-documentation-finalization.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-23-create-clear-composer
+          fetch-depth: 0
+
+      - name: Synchronize verified Phase 23 records and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one occurrence, found {count}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          def sub_once(path, pattern, replacement):
+              p = Path(path)
+              text = p.read_text()
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one regex match, found {count}: {pattern!r}")
+              p.write_text(updated)
+
+          replace_once(
+              "docs/ui/UI_MIGRATION.md",
+              "- [ ] Final documentation-complete exact-head workflow matrix must pass before merge acceptance.\n",
+              "- [x] Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Release Candidate Matrix `34639132431` with all 23 exact-SHA child workflows successful; manifest artifact `10279433595`, digest `sha256:f5d7bbbacfef2fc7774ae0737186534a366bc8ca2dda3ad13bf3a42dff7e8142`. The same head passed Clear Composer Visual `34639132478` (artifact `10279122274`, digest `sha256:43ad135150f687989baafa9c3beb17abf264ef2d994128ba8d3ab69789ba1eba`), configured Create Lifecycle `34639132510` (artifact `10279462000`, digest `sha256:eaa1d38e4ec260aa3058e5df773a1cb17182df9eac884095d109233b6a4b5d7c`) and corrected Account/Admin Operations `34639132466`.\n- Merge acceptance on any later documentation-finalized branch head remains conditioned on that exact head passing Release Candidate Matrix; record that self-referential final-head evidence on issue #184 / PR #185 rather than creating another documentation-only verification head.\n",
+          )
+          replace_once(
+              "docs/ui/UI_MIGRATION.md",
+              "**Phase 23 status: `VERIFIED IMPLEMENTATION CANDIDATE / FINAL EXACT-HEAD MATRIX PENDING / NOT MERGED / NOT DEPLOYED`.**",
+              "**Phase 23 status: `IMPLEMENTATION VERIFIED / MERGE ACCEPTANCE PENDING / NOT MERGED / NOT DEPLOYED`.**",
+          )
+
+          sub_once(
+              "docs/ui/UI_DECISIONS.md",
+              r"^\*\*Evidence:\*\* user-approved design record `design/rd/create-usability-first-v05\.md`; implementation contract `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT\.md`; draft PR #185\..*$",
+              "**Evidence:** user-approved design record `design/rd/create-usability-first-v05.md`; implementation contract `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; draft PR #185. Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Engineering Quality `34639132519`, Create Clear Composer Visual `34639132478` with artifact `10279122274` (`sha256:43ad135150f687989baafa9c3beb17abf264ef2d994128ba8d3ab69789ba1eba`), configured Create Lifecycle `34639132510` with artifact `10279462000` (`sha256:eaa1d38e4ec260aa3058e5df773a1cb17182df9eac884095d109233b6a4b5d7c`), corrected Account/Admin Operations `34639132466`, and Release Candidate Matrix `34639132431` with all 23 exact-SHA child workflows successful; matrix manifest artifact `10279433595` (`sha256:f5d7bbbacfef2fc7774ae0737186534a366bc8ca2dda3ad13bf3a42dff7e8142`). Merge to `main` and production deployment remain separately explicit.",
+          )
+
+          sub_once(
+              "docs/ui/SCREEN_REGISTRY.md",
+              r"^\*\*Phase 23 / UI-073 verified candidate:\*\*.*$",
+              "**Phase 23 / UI-073 verified candidate:** The approved Clear Composer keeps one stable `Create an image` / `Create a video` workspace heading, promotes the maintained Image/Video choice, labels Add reference / Start image, names attached roles Primary image / Reference image / Start image, keeps prompt and Generate visually dominant, and places truthful generation/media-first result composition above the persistent composer. The production candidate retains existing model/aspect/video/Advanced controls, durable upload identity, `@imageN` aliases, one-source Video/two-source Image limits, native video playback and capability-derived continuation. Landing-derived 64px Lab Matrix registration, cool/warm atmosphere, precise rules and quarter-arc media framing are Create-owned presentation; depth remains media-only. On 390px, stage/result context compacts and continuation actions stay above the fixed mobile dock. Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Engineering Quality `34639132519`, Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, corrected Account/Admin Operations `34639132466` and Release Candidate Matrix `34639132431` with 23/23 exact-SHA children successful. Draft PR #185 remains pre-merge; current `main` Create remains production authority until an explicitly authorized merge.",
+          )
+
+          sub_once(
+              "docs/ui/COMPONENT_CATALOG.md",
+              r"^\*\*Phase 23 / UI-073 Clear Composer candidate:\*\*.*$",
+              "**Phase 23 / UI-073 Clear Composer candidate:** `CreateWorkspace` remains the single authoritative Create surface; no parallel workspace or generic composer primitive was introduced. The production candidate promotes the maintained Image/Video ToggleGroup, labelled durable reference/Start-image action, explicit media roles, dominant prompt, conventional essential settings/Advanced/Generate, truthful generation stage and media-first durable result. It keeps existing state/functions for upload, polling, persistence, aliases and continuation, and continues to use Motion for React only for bounded Create-owned layout/media transitions with reduced-motion equivalence. Result-stage styling is scoped to Create in `globals.css`; ordinary controls do not parallax. Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Engineering Quality `34639132519`, Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, corrected Account/Admin Operations `34639132466` and Release Candidate Matrix `34639132431` with all 23 exact-SHA children successful. No new reusable primitive, architecture boundary or animation runtime was introduced; merge remains separately explicit.",
+          )
+
+          replace_once(
+              "docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md",
+              "**Status:** VERIFIED IMPLEMENTATION CANDIDATE / FINAL EXACT-HEAD MATRIX PENDING / MERGE NOT AUTHORIZED",
+              "**Status:** IMPLEMENTATION VERIFIED / MERGE ACCEPTANCE PENDING / MERGE NOT AUTHORIZED",
+          )
+          replace_once(
+              "docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md",
+              "## Verified implementation record before final documentation matrix",
+              "## Verified implementation record",
+          )
+          sub_once(
+              "docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md",
+              r"^Five other workflows on that head were audited rather than waived\..*$",
+              "Five other workflows on that earlier head were audited rather than waived. Generation Admission stopped on trailing whitespace in this contract; UI Shell, Create Durable Upload, Library Lifecycle and Integrated Release reached their relevant application behavior but still asserted superseded pre-Clear-Composer heading/copy. Commit `6e9cb6409ce9029e903f0330e099bbcb83bcbc1f` removed the whitespace and updated only those stale presentation assertions to UI-073 semantics while retaining URL, output, durable identity, upload, ownership, generation, persistence, reference and continuation invariants. A later Admin matrix failure was likewise verifier-only: the page legitimately contained more than one pending invitation, so `scripts/verify-admin-operations.mjs` now scopes `Revoke` to the exact fixture invitation row it creates rather than using a page-global strict locator.\n\nFinal implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` preserves the Phase 23 product tree and includes that verifier-only Admin correction. On that exact head, Engineering Quality `34639132519`, Create Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, Account/Admin Operations `34639132466`, Generation Admission `34639132429`, Account Identity `34639132511` after an unchanged transient retry, live Video Generation `34639132462`, Integrated Release `34639132445` and every other directly attached workflow passed. Release Candidate Matrix `34639132431` also passed all 23 exact-SHA child workflows and uploaded manifest artifact `10279433595` (`sha256:f5d7bbbacfef2fc7774ae0737186534a366bc8ca2dda3ad13bf3a42dff7e8142`). Clear Composer Visual artifact `10279122274` has digest `sha256:43ad135150f687989baafa9c3beb17abf264ef2d994128ba8d3ab69789ba1eba`; configured Create Lifecycle artifact `10279462000` has digest `sha256:eaa1d38e4ec260aa3058e5df773a1cb17182df9eac884095d109233b6a4b5d7c`. Implementation is therefore verified; merge and deployment remain separately unauthorized. The documentation-finalized branch head must itself pass the Release Candidate Matrix before merge acceptance, with that final-head run recorded on issue #184 / PR #185 rather than forcing an infinite documentation-only verification loop.",
+          )
+
+          helper = Path(".github/workflows/phase23-documentation-finalization.yml")
+          helper.unlink()
+          PY
+
+          git diff --check
+          node --check scripts/verify-admin-operations.mjs
+          git diff -- docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md .github/workflows/phase23-documentation-finalization.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md .github/workflows/phase23-documentation-finalization.yml
+          git commit -m "docs: record verified Phase 23 candidate"
+          git push origin HEAD:work/phase-23-create-clear-composer
