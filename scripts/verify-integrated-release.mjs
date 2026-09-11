@@ -459,8 +459,8 @@ try {
     (url) => url.pathname === "/create" && url.searchParams.get("source") === assetId && url.searchParams.get("action") === "edit-image",
     { timeout: 30_000 },
   );
-  await page.getByRole("heading", { name: "Edit an image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByText("Editing this image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Create an image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("Primary image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
   const retryJobId = await createFailedRetryJob(owner.id, assetId);
   await page.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });

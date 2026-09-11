@@ -59,8 +59,7 @@ async function assertCompactCreateControlRow(page, label) {
       overflow: row.scrollWidth - row.clientWidth,
     };
   });
-  assert(metrics.count >= 5, `${label} did not expose the expected compact primary controls: ${JSON.stringify(metrics)}`);
-  assert(metrics.flexWrap === "nowrap", `${label} primary controls are not constrained to one row: ${JSON.stringify(metrics)}`);
+  assert(metrics.count >= 3, `${label} did not expose the expected essential Clear Composer controls: ${JSON.stringify(metrics)}`);
   assert(metrics.overflow <= 2, `${label} primary controls overflowed horizontally: ${JSON.stringify(metrics)}`);
 }
 
@@ -155,6 +154,9 @@ try {
 
   const prompt = page.getByRole("textbox", { name: "Prompt" });
   await prompt.waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Create an image" }).waitFor({ state: "visible", timeout: 30_000 });
+  assert(await page.getByRole("radio", { name: "Image", exact: true }).isChecked(), "Clear Composer did not initialize in Image mode.");
+  assert(await page.getByRole("button", { name: "Add reference", exact: true }).isVisible(), "Clear Composer did not expose the labelled Add reference action.");
   await prompt.fill("A clean studio photograph of a matte cobalt-blue sphere centered on a warm gray background, soft even light, no text");
 
   const generate = page.getByRole("button", { name: "Generate", exact: true });
@@ -308,6 +310,9 @@ try {
   jobId = submissionPayload.job.id;
   const activeLifecycle = page.locator("[data-create-lifecycle-state]");
   await activeLifecycle.waitFor({ state: "visible", timeout: 10_000 });
+  const activeStageBox = await activeLifecycle.boundingBox();
+  const activeComposerBox = await page.locator('[data-create-layout="clear-composer"]').boundingBox();
+  assert(activeStageBox && activeComposerBox && activeStageBox.y < activeComposerBox.y, "Active generation stage did not appear above the persistent composer.");
   const activeLifecycleState = await activeLifecycle.getAttribute("data-create-lifecycle-state");
   assert(
     ["queued", "preparing", "running", "persisting"].includes(activeLifecycleState),
@@ -350,6 +355,10 @@ try {
     { timeout: 60_000 },
   );
 
+  const resultMedia = page.locator("[data-create-result-media]");
+  const resultMediaBox = await resultMedia.boundingBox();
+  const resultComposerBox = await page.locator('[data-create-layout="clear-composer"]').boundingBox();
+  assert(resultMediaBox && resultComposerBox && resultMediaBox.y < resultComposerBox.y, "Persisted result media did not lead the persistent composer.");
   const edit = page.getByRole("button", { name: "Edit", exact: true });
   const animate = page.getByRole("button", { name: "Animate", exact: true });
   assert(await edit.isVisible(), "Persisted image result did not expose the Edit continuation action.");
@@ -361,11 +370,21 @@ try {
   await page.setViewportSize(mobileViewport);
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
+  const mobileDock = page.locator('[data-kinetic-surface="mobile-dock"]');
+  const resultActions = page.locator('[data-create-result-info="true"] button');
+  const dockBox = await mobileDock.boundingBox();
+  const actionBoxes = await resultActions.evaluateAll((buttons) => buttons.map((button) => {
+    const rect = button.getBoundingClientRect();
+    return { top: rect.top, bottom: rect.bottom };
+  }));
+  assert(dockBox && actionBoxes.length > 0, "Could not measure mobile result actions against the fixed dock.");
+  const lowestActionBottom = Math.max(...actionBoxes.map((box) => box.bottom));
+  assert(lowestActionBottom <= dockBox.y - 8, `Mobile result actions were obscured by the fixed dock: actions=${JSON.stringify(actionBoxes)} dock=${JSON.stringify(dockBox)}`);
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-result.png`, fullPage: true });
 
   await edit.click();
-  await page.getByRole("heading", { name: "Edit an image" }).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByText("Editing this image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Create an image" }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("Primary image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   const referencePreview = page.getByRole("img", { name: "Reference preview" });
   await referencePreview.waitFor({ state: "visible", timeout: 60_000 });
   await page.waitForFunction(
@@ -567,7 +586,8 @@ try {
   assert(await generateAfterReorder.isEnabled(), "Generate did not recover after the unresolved @image1 mention was removed.");
 
   await page.getByRole("radio", { name: "Video", exact: true }).click();
-  await page.getByRole("heading", { name: "Animate an image" }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Create a video" }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("Start image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   assert(await page.getByRole("radio", { name: "Video", exact: true }).isChecked(), "Video did not become available after returning to one reference.");
   assert(await page.getByRole("button", { name: "Mention @image2" }).isVisible(), "Remaining @image2 identity was lost when switching to Video.");
 

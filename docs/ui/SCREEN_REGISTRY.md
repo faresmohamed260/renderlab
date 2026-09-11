@@ -54,6 +54,7 @@ Approved behavior:
 **Implementation:** `src/features/create/create-workspace.tsx`  
 **Supporting:** `src/features/create/create-advanced-panel.tsx`  
 **Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
+**Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; draft PR #185 is a verified pre-merge production candidate and is not yet the `main`/production surface.
 
 **Purpose:** Start and continue creative operations from one task-oriented workspace.
 
@@ -88,6 +89,8 @@ Approved behavior:
 **UI-030 evidence:** exact implementation head `49f08013dc428d8d390a1bd803b10886f853cd82` passed Create Lifecycle `33131090243`, Generation Integration `33131090251`, Video Generation Integration `33131090262` and Account Ownership `33131090207`. Desktop/mobile generated-result artifacts were visually reviewed without unintended Create hierarchy drift.
 
 **UI-036 / PR #37 audio evidence:** final exact head `5178ef95ab63e816925c66a3305c9c255708886e` passed all eight affected gates, including Create Lifecycle `33239584685`, Video Generation `33239584671`, Generation Integration `33239584676` and UI Shell `33239584665`. Audio OFF is verified for Create Video, Audio ON for Animate Image, persisted request parameters retain the choice, Image requests reject the Video-only field, and the mobile essential-control row keeps Audio/duration/Advanced/Generate reachable. PR #37 merged as `713e8a6940c25fd0dc82994507537fe1a0d06b42`; merged-`main` Generation `33239701484`, UI Shell `33239701487`, and Video Generation `33239701476` passed.
+
+**Phase 23 / UI-073 verified candidate:** The approved Clear Composer keeps one stable `Create an image` / `Create a video` workspace heading, promotes the maintained Image/Video choice, labels Add reference / Start image, names attached roles Primary image / Reference image / Start image, keeps prompt and Generate visually dominant, and places truthful generation/media-first result composition above the persistent composer. The production candidate retains existing model/aspect/video/Advanced controls, durable upload identity, `@imageN` aliases, one-source Video/two-source Image limits, native video playback and capability-derived continuation. Landing-derived 64px Lab Matrix registration, cool/warm atmosphere, precise rules and quarter-arc media framing are Create-owned presentation; depth remains media-only. On 390px, stage/result context compacts and continuation actions stay above the fixed mobile dock. Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Engineering Quality `34639132519`, Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, corrected Account/Admin Operations `34639132466` and Release Candidate Matrix `34639132431` with 23/23 exact-SHA children successful. Draft PR #185 remains pre-merge; current `main` Create remains production authority until an explicitly authorized merge.
 
 **Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 

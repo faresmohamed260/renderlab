@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenderLab Create R&D v0.5</title>
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./refinements.css" />
+</head>
+<body>
+  <div class="page-shell" data-prototype="create-usability-first-v05">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="RenderLab home">
+        <img src="../../../public/renderlab-mark-color.svg" alt="" />
+        <span>RenderLab</span>
+      </a>
+      <nav class="topnav" aria-label="Primary">
+        <a href="#">Library</a>
+        <span class="beta">CLOSED BETA</span>
+      </nav>
+    </header>
+
+    <main class="workspace" id="workspace">
+      <div class="lab-grid" aria-hidden="true"></div>
+      <div class="atmosphere" aria-hidden="true"></div>
+
+      <section class="context-block" aria-labelledby="create-title">
+        <p class="eyebrow" id="mode-eyebrow">CREATE / IMAGE</p>
+        <h1 id="create-title">Create an image</h1>
+        <p id="create-support">Describe what you want. Add references if you have them, then generate.</p>
+      </section>
+
+      <section class="result-stage" id="result-stage" data-phase="idle" aria-live="polite">
+        <div class="result-frame" id="result-frame" tabindex="-1">
+          <div class="result-registration" aria-hidden="true">
+            <span class="reg-x"></span><span class="reg-y"></span><span class="reg-arc"></span>
+          </div>
+          <div class="generating-state" id="generating-state">
+            <span class="generating-kicker">RENDERLAB / GENERATION</span>
+            <strong>Generating…</strong>
+            <small>Your prompt, references and settings stay attached below.</small>
+          </div>
+          <img
+            id="result-image"
+            class="result-image"
+            src="https://images.unsplash.com/photo-1773176563345-5e8685906a21?auto=format&fit=crop&w=1800&q=84"
+            alt="Generated mountain landscape"
+          />
+        </div>
+        <aside class="result-info" id="result-info">
+          <div class="result-meta-block">
+            <p class="eyebrow">RESULT / IMAGE</p>
+            <h2>First light study</h2>
+            <p>Generated from this composer. Keep going without rebuilding the request.</p>
+          </div>
+          <dl class="result-specs">
+            <div><dt>Model</dt><dd>FLUX</dd></div>
+            <div><dt>Ratio</dt><dd>1:1</dd></div>
+            <div><dt>Source</dt><dd id="result-source">Prompt only</dd></div>
+          </dl>
+          <div class="result-actions" aria-label="Continue from result">
+            <button type="button" class="result-action primary" data-result-action="animate">Animate</button>
+            <button type="button" class="result-action" data-result-action="edit">Edit</button>
+            <button type="button" class="result-action" data-result-action="reference">Use as reference</button>
+            <button type="button" class="result-action" data-result-action="upscale">Upscale 2×</button>
+          </div>
+        </aside>
+      </section>
+
+      <section class="composer-zone" aria-label="Create composer">
+        <div class="mode-switch" role="group" aria-label="Create mode">
+          <button type="button" class="mode-button active" data-mode="image" aria-pressed="true">Image</button>
+          <button type="button" class="mode-button" data-mode="video" aria-pressed="false">Video</button>
+          <span class="mode-highlight" aria-hidden="true"></span>
+        </div>
+
+        <form class="composer" id="composer">
+          <div class="reference-bar" id="reference-bar">
+            <div class="reference-empty" id="reference-empty">
+              <button type="button" class="reference-add" id="reference-add">
+                <span aria-hidden="true">＋</span><span id="reference-add-label">Add reference</span>
+              </button>
+              <p id="reference-help">Optional · up to two images</p>
+            </div>
+            <div class="reference-list" id="reference-list" aria-label="Attached references"></div>
+          </div>
+
+          <label class="prompt-label" for="prompt">Prompt</label>
+          <textarea id="prompt" rows="4" placeholder="Describe what you want to create…"></textarea>
+
+          <div class="composer-footer">
+            <div class="essential-settings" id="essential-settings" aria-label="Essential settings">
+              <button type="button" class="setting-chip" data-setting="model"><span>Model</span><strong>FLUX</strong></button>
+              <button type="button" class="setting-chip" data-setting="ratio"><span>Ratio</span><strong>1:1</strong></button>
+              <button type="button" class="setting-chip" id="video-settings-chip" data-setting="video"><span>Video</span><strong>720p · 5s</strong></button>
+              <button type="button" class="setting-chip advanced-trigger" id="advanced-trigger" aria-expanded="false"><span>Advanced</span><strong>＋</strong></button>
+            </div>
+            <button type="submit" class="generate-button" id="generate-button">Generate</button>
+          </div>
+
+          <div class="advanced-panel" id="advanced-panel" hidden>
+            <div class="advanced-head"><span>ADVANCED</span><small>Secondary controls</small></div>
+            <label>Seed<input type="number" value="42" /></label>
+            <label>Steps<input type="number" value="28" /></label>
+            <label>Guidance<input type="number" value="4" step="0.5" /></label>
+          </div>
+        </form>
+
+        <p class="notice" id="notice" role="status" aria-live="polite"></p>
+      </section>
+
+      <footer class="workflow-foot" aria-hidden="true">
+        <span>CREATE IMAGE</span><span>ADD REFERENCES</span><span>CREATE VIDEO</span><span>CONTINUE FROM RESULT</span>
+      </footer>
+    </main>
+  </div>
+  <script src="./prototype.js"></script>
+</body>
+</html>

@@ -305,8 +305,8 @@ try {
 
   await edit.click();
   await page.waitForURL((url) => url.pathname === "/create" && url.searchParams.get("source") === assetId && url.searchParams.get("action") === "edit-image", { timeout: 30_000 });
-  await page.getByRole("heading", { name: "Edit an image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByText("Editing this image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Create an image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("Primary image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByRole("radiogroup", { name: "Output type", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   const imageOutput = page.getByRole("radio", { name: "Image", exact: true });
   await imageOutput.waitFor({ state: "visible", timeout: 30_000 });
