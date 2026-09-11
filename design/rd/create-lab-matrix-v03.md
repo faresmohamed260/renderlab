@@ -1,167 +1,57 @@
 # Create Lab Matrix Kinetic R&D v0.3
 
-**Status:** EXPERIMENTAL / USER-DIRECTION-ALIGNED / NOT APPROVED  
+**Status:** REJECTED BY USER / HISTORICAL R&D ONLY  
 **Issue:** #148  
 **Production authorization:** none
 
-## Why this exists
+## Outcome
 
-Instrument Continuum v0.2 was technically validated but rejected by the user because it read as premium AI/SaaS rather than the intended high-value professional creative product. A subsequent exploration also drifted into a new sci-fi/workstation aesthetic and was rejected.
+This direction is **not approved** and must not be used as a Phase 23 / Cycle 5 implementation basis.
 
-The corrected direction is explicit:
+The user rejected the complete v0.3 candidate on 2026-09-11 after exact-head validation and human review. The underlying effect vocabulary remains valid—Lab Matrix DNA, motion, physics, 2.5D depth and morphing—but the composition over-literalized the Landing geometry and read as a panel study rather than a high-end media-first creative instrument.
 
-> The approved production Lab Matrix Landing is the visual DNA. Create should use the same design pattern, then add physics, morphing, 2.5D depth, graphics and animation.
+Do not merge this branch into production. Preserve it only as evidence of what was tested and what not to repeat.
 
-Animation is first-class design behavior, not after-the-fact polish. This prototype tests that statement directly and remains isolated from production `/create`.
+## Why it was rejected
 
-## Authoritative references
+- Too many geometric planes competed with the actual creative work.
+- The interface treated Lab Matrix geometry as UI boxes instead of using it as composition, framing and motion language.
+- Media was not dominant enough during authoring.
+- Typography and controls often became too small in order to fit the panel architecture.
+- The visual wow factor came from structural novelty rather than a cinematic creative moment.
+- Mobile inherited too much of the desktop spatial metaphor instead of being designed as a first-class narrow workflow.
+- Physics and 3D were visible as features of the prototype instead of being invisible forces that make the product feel expensive.
 
-| Create interaction | Exact reference | Borrow | Do not copy / change | Desktop pointer | 390px / touch | Keyboard / focus | Reduced motion |
-|---|---|---|---|---|---|---|---|
-| Overall spatial field | `src/features/landing/landing-experience.tsx` + `src/features/landing/landing-experience.module.css` | Production Lab Matrix darkness, asymmetric planes, quarter-arc geometry, grid/axes, sparse blue/orange atmosphere, grain, large type and technical metadata | Do not turn Create into a Landing page, marketing composition, decorative scene, or a competing brand skin | Bounded perspective and independent plane response around non-control field areas | Same composition without cursor dependence | Controls remain ordinary reachable semantic controls | Static endpoint composition; no pointer field |
-| Image ↔ Video mode morph | `docs/ui/VISUAL_NORTH_STAR.md` + UI-015 in `docs/ui/UI_DECISIONS.md` | Transform existing geometry before replacing it; output media remains the primary explicit choice | Do not expose backend workflow taxonomy or invent a second workspace | Existing planes resize/reposition with shared spatial continuity | Same geometry reallocates within one narrow stage | Image/Video remains a radiogroup | Same start/end layouts resolve effectively immediately |
-| Reference insertion | `docs/ui/VISUAL_NORTH_STAR.md` + UI-016 in `docs/ui/UI_DECISIONS.md` | Object-like entry, mass, bounded overshoot, settling, and clear reference identity | Do not fabricate upload/generation state or create a new reference semantic model | Object enters from the field edge and damps into a depth slot | Object enters into the same stack; no hover dependency | Add reference is a normal button; reference objects receive visible focus | Object appears directly in its settled slot |
-| Reference reorder/removal | UI-016 + rejected historical PR #180 mechanic at `rd/create-interaction-language` / `d30da646ee2e390e1e277e9e3a7e192895fbedd2` | Stable `@imageN` aliases, pointer drag reorder, deterministic `Make primary` equivalent, removable references, motion that preserves object identity | Borrow the mechanic only. Do **not** borrow Instrument Continuum v0.2 glass/pill/card visual language; it was explicitly rejected | Press the bounded media-body grab surface below object actions, then drag onto the sibling object to exchange primary/secondary depth slots and settle | `Make primary` is the deterministic touch equivalent; remove remains explicit | `Make primary` and Remove are real buttons; aliases remain stable | Reorder/removal resolve directly to final order without travel/overshoot |
-| Advanced disclosure | `docs/ui/VISUAL_NORTH_STAR.md` + `docs/ui/DESIGN_WORKFLOW.md` | Disclosure grows from owned geometry and reallocates surrounding space | Do not add a detached settings form or modal-like second surface | Advanced borrows width from adjacent field geometry | Reference and Advanced stay independently reachable with no overlap | Trigger owns `aria-expanded` and visible focus | Open/closed geometry resolves immediately |
-| Generate actuation | Production Landing quarter-arc grammar + UI-019 in `docs/ui/UI_DECISIONS.md` | Deliberate high-importance actuator, brief compression/energy, clear response | No fake percentage, ETA, queue position, provider stage, worker state or completion | Bounded field energy reinforces one user action | Same actuator remains touch reachable | Normal button/focus semantics | No looping energy; state advances directly |
-| Generation → Result continuity | `docs/ui/VISUAL_NORTH_STAR.md` + UI-019 | Media-first takeover; latent media plane becomes dominant Result while authoring controls settle into support | Do not append a generic result card or imply completion before durable Result truth | Result owns the stage after actuation | Result is first in reading/visual order; copy/actions must not collide | Result actions remain reachable after transition | Same final hierarchy with no spatial travel |
+## Preserved lessons
 
-The rejected PR #180 is retained only as a mechanical research source for reference ordering accessibility. It is not visual authority and is not implementation authorization.
+Keep these principles for the next R&D pass:
 
-## Visual DNA preserved from the production Landing
+- production Lab Matrix Landing remains the visual DNA;
+- user media and result must be the visual hero;
+- animation is first-class behavior;
+- references preserve stable `@imageN` identity and explicit touch/keyboard alternatives;
+- important transitions should preserve object continuity;
+- reduced motion resolves to the same truthful endpoints;
+- no product truth may be fabricated;
+- mobile must be composed independently, not merely compressed.
 
-- dark restrained field;
-- asymmetric media planes;
-- sparse electric-blue and warm-orange atmosphere;
-- faint 64px grid and long registration axes;
-- oversized tight typography plus tiny technical metadata;
-- grain/noise;
-- mixed straight, shallow-radius and quarter-arc geometry;
-- media-first composition;
-- shallow perspective and independent plane displacement.
+## Next direction
 
-## Interaction choreography
+Issue #148 continues with **Create Cinematic Stage v0.4** on a fresh R&D branch from current `main`.
 
-### Pointer depth
-**Origin:** settled Lab Matrix field.  
-**Transformation:** non-control pointer movement slightly biases the instrument and each plane according to bounded depth.  
-**Response:** nearer planes move more; controls themselves cause the field to yield back toward neutral so they never become evasive.  
-**Settled:** pointer exit or control targeting returns the field to neutral.  
-**Interruption/reversal:** target direction may reverse continuously without restarting an entrance animation.  
-**Reduced motion / touch:** no cursor field; the same Z hierarchy remains as static geometry.
+The selected thesis is:
 
-### Reference insertion
-**Origin:** empty reference plane or one-object stack.  
-**Transformation:** the new object enters from a lateral/depth offset with momentum, crosses its slot slightly, then damps into place.  
-**Response:** reference count and surrounding authoring geometry update with the object.  
-**Settled:** one object occupies the primary slot; two objects form a bounded primary/secondary depth stack.  
-**Interruption/reversal:** removal may occur after settle; no uncontrolled looping physics.  
-**Reduced motion:** object appears directly in the final slot.
+> RenderLab Create should feel like a cinematic creative stage with a restrained control perimeter. The Lab Matrix becomes framing, depth, registration graphics and motion—not a collection of panels. A dominant adaptive media stage owns the composition; prompt, references and precision controls attach to its edges and transform around it.
 
-### Reference reorder/removal
-**Origin:** two stable aliased reference objects.  
-**Transformation:** pointer press begins only from the media-body grab surface below the action strip; drag or `Make primary` then exchanges primary/secondary slots while both objects preserve identity and trade depth, inset and emphasis. Removal exits one object and lets the survivor settle into primary.  
-**Response:** technical role labels and accessible names update to the new order while aliases do not change.  
-**Settled:** primary is visually dominant; secondary remains legible and independently removable.  
-**Interruption/reversal:** another reorder may reverse the exchange after settle.  
-**Reduced motion:** roles/order change without travel.
+Directional research inputs include the production RenderLab Landing, the 2026 Krea redesign principle of removing controls that get in the way of making, and Spline's viewport-first editor hierarchy. These are behavioral/compositional references only, not visual templates.
 
-### Image ↔ Video
-**Origin:** current authoring geometry.  
-**Transformation:** existing mode, prompt, reference, Advanced and actuator planes change proportion and position; they are not replaced by a new screen.  
-**Response:** mode readout changes and Video limits the reference set to the supported one-source concept.  
-**Settled:** same Create field, new output geometry.  
-**Interruption/reversal:** selecting Image reverses to Image proportions.  
-**Reduced motion:** proportions resolve immediately.
+## Historical verification
 
-### Advanced
-**Origin:** compact Advanced plane.  
-**Transformation:** Advanced expands by borrowing field area; Generate compresses rather than being covered.  
-**Response:** trigger remains spatially attached to the expanded controls.  
-**Settled:** reference and Advanced planes do not collide, including at 390px.  
-**Interruption/reversal:** trigger folds the plane back into compact geometry.  
-**Reduced motion:** same open/closed layouts with no travel.
+The final v0.3 candidate was exact-head verified before rejection:
+- PR #181 (draft, rejected; must not merge)
+- final R&D head `cd143204b6084f267ab5fe4f5289940a2d4c5ca2`
+- Create Lab Matrix Kinetic R&D run `34594348597` — PASS
+- artifact `10262080052`
+- digest `sha256:12335c3c92c7258a8a5c29e21b1a2920c021364cd029977da6486020a35fb877`
 
-### Generate → Result
-**Origin:** authoring field with prompt/reference context.  
-**Transformation:** Generate briefly energizes the field; after the deterministic prototype delay, the latent Result plane becomes the dominant media stage and all authoring planes settle into support positions.  
-**Response:** status becomes `RESULT`; no intermediate fake percentage or provider stage is shown.  
-**Settled:** Result owns the primary visual stage, including at 390px; Result copy appears only in the truthful Result state.  
-**Interruption/reversal:** Reset returns to authoring; Generate-again treatment is visual R&D only.  
-**Reduced motion:** energy/travel collapses and Result resolves immediately to the same final hierarchy.
-
-## Effect definitions
-
-### 2.5D depth
-Existing planes gain bounded Z hierarchy and pointer-responsive parallax. This is not decorative 3D object rendering. Depth is communicated through occlusion, displacement, perspective, edge light and different response rates.
-
-### Object physics
-References use a deliberately bounded physical vocabulary:
-- momentum on entry;
-- displacement and depth exchange during reorder;
-- overshoot followed by damping/settling;
-- stable snap targets;
-- no permanent free-floating loops.
-
-### Morphing
-Important states preserve object identity. Image ↔ Video, Advanced closed ↔ open, authoring ↔ Result and reference reorder reallocate the same geometry instead of swapping unrelated panels.
-
-### Animation
-Animation is part of the interaction specification:
-- pointer field subtly biases depth on pointer-capable devices;
-- references enter, reorder and leave with object continuity;
-- Image ↔ Video changes plane proportions and positions;
-- Advanced unfolds by borrowing area from adjacent planes;
-- Generate briefly compresses/energizes the field;
-- Result expands from an existing latent media plane while authoring controls settle into supporting positions.
-
-No animation may fabricate queue progress, provider stages, ETA, completion percentage, availability, authorization or other product truth.
-
-### Graphics
-Registration axes, crop marks, technical labels and sparse energy lines extend the Landing's existing graphic instrumentation. They are functional cues, not a new HUD theme.
-
-### Reduced motion
-The exact same start/end layouts remain. Spatial travel, overshoot, looping energy and perspective response collapse to effectively instant state resolution.
-
-## Prototype states to verify
-
-1. Image authoring / no reference.
-2. First reference enters and settles.
-3. Second reference enters; stable aliases remain visible.
-4. Pointer reorder exchanges primary/secondary slots from the explicit media-body grab surface.
-5. Keyboard/touch `Make primary` reaches the same order semantics.
-6. Reference removal settles the survivor.
-7. Image → Video shared-geometry morph.
-8. Advanced unfolds from the instrument.
-9. Generate actuation.
-10. Result geometry expansion.
-11. 390px equivalents.
-12. Keyboard focus.
-13. Reduced-motion equivalents.
-14. No horizontal overflow or copy/action collisions.
-
-## Verified v0.3 approval candidate — 2026-09-11
-
-**Status:** human pre-review clean / awaiting explicit user approval.  
-**Exact candidate head:** `054776f1a50125af6de6be0fa86abaf9f5bf5b19`  
-**Create Lab Matrix Kinetic R&D run:** `34593883218` — PASS  
-**Evidence artifact:** `10261366791`  
-**Artifact digest:** `sha256:6686c632f9d47cb9707afb1263e99b01726b44b3960534d8d2deb6e35e672645`
-
-The exact-head verifier and human artifact review cover:
-- desktop Image authoring, first/two-reference states, pointer reorder, deterministic `Make primary`, removal, Video morph, Advanced expansion, actuation and Result takeover;
-- 390px touch reference insertion/reorder/removal, Image/Video readability, Advanced/reference separation, Generate reachability, Result-first reading order, copy/action clearance and no horizontal overflow;
-- keyboard-visible focus and semantic Image/Video radio behavior;
-- reduced-motion authoring/reference/Advanced/Result states with the same settled hierarchy and no required travel/overshoot;
-- temporal desktop evidence showing bounded pointer depth, reference entry/exchange/removal, shared-geometry mode morph, Advanced reallocation, actuation and Result ownership.
-
-Human review also caught and corrected defects that passed earlier automated assertions:
-- the invisible initial Add-reference control no longer intercepts 390px touch actions after a reference exists;
-- narrow Output geometry now keeps both Image and Video fully readable;
-- the mobile quarter-arc actuator uses a shallower 68% curve so the visible Generate label remains inside the physical action surface in ordinary, reference-pair, Advanced and Result states.
-
-This checkpoint is **not approval**. Issue #148 remains open until the user explicitly accepts the complete visual concept and interaction language. No Phase 23 / Cycle 5 production implementation, production dependency adoption or deployment is authorized by this evidence.
-
-## Important constraint
-
-This prototype is design evidence only. It does not change `src/features/create`, production dependencies, routes, backend behavior, Auth, ownership, storage, generation contracts or deployment. User approval of the complete v0.3 concept + temporal interaction language is still required before any Phase 23 / Cycle 5 implementation contract may be expanded.
+Passing verification did not make the visual direction acceptable. This is an explicit example of RenderLab's design-fidelity gate: technically correct and visually coherent is not sufficient when the user rejects the design direction.
