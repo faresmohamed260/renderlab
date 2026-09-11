@@ -1,0 +1,52 @@
+name: Create Cinematic Stage R&D
+
+on:
+  push:
+    branches:
+      - rd/create-cinematic-stage-v04
+    paths:
+      - "design/prototypes/create-cinematic-stage-v04/**"
+      - "design/rd/create-cinematic-stage-v04.md"
+      - "scripts/verify-create-cinematic-stage-v04.mjs"
+      - ".github/workflows/create-cinematic-stage-v04.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: create-cinematic-stage-v04-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prototype-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install repository dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Serve prototype
+        run: |
+          python3 -m http.server 4173 --directory design/prototypes/create-cinematic-stage-v04 > /tmp/renderlab-v04-http.log 2>&1 &
+          echo $! > /tmp/renderlab-v04-http.pid
+          for i in {1..20}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/renderlab-v04-http.log
+          exit 1
+      - name: Verify cinematic stage prototype
+        env:
+          PROTOTYPE_URL: http://127.0.0.1:4173/
+          EVIDENCE_DIR: artifacts/create-cinematic-stage-v04
+        run: node scripts/verify-create-cinematic-stage-v04.mjs
+      - name: Upload R&D evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-create-cinematic-stage-v04
+          path: artifacts/create-cinematic-stage-v04
+          if-no-files-found: error
+          retention-days: 14
