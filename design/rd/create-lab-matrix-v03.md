@@ -140,6 +140,28 @@ The exact same start/end layouts remain. Spatial travel, overshoot, looping ener
 13. Reduced-motion equivalents.
 14. No horizontal overflow or copy/action collisions.
 
+## Verified v0.3 approval candidate — 2026-09-11
+
+**Status:** human pre-review clean / awaiting explicit user approval.  
+**Exact candidate head:** `054776f1a50125af6de6be0fa86abaf9f5bf5b19`  
+**Create Lab Matrix Kinetic R&D run:** `34593883218` — PASS  
+**Evidence artifact:** `10261366791`  
+**Artifact digest:** `sha256:6686c632f9d47cb9707afb1263e99b01726b44b3960534d8d2deb6e35e672645`
+
+The exact-head verifier and human artifact review cover:
+- desktop Image authoring, first/two-reference states, pointer reorder, deterministic `Make primary`, removal, Video morph, Advanced expansion, actuation and Result takeover;
+- 390px touch reference insertion/reorder/removal, Image/Video readability, Advanced/reference separation, Generate reachability, Result-first reading order, copy/action clearance and no horizontal overflow;
+- keyboard-visible focus and semantic Image/Video radio behavior;
+- reduced-motion authoring/reference/Advanced/Result states with the same settled hierarchy and no required travel/overshoot;
+- temporal desktop evidence showing bounded pointer depth, reference entry/exchange/removal, shared-geometry mode morph, Advanced reallocation, actuation and Result ownership.
+
+Human review also caught and corrected defects that passed earlier automated assertions:
+- the invisible initial Add-reference control no longer intercepts 390px touch actions after a reference exists;
+- narrow Output geometry now keeps both Image and Video fully readable;
+- the mobile quarter-arc actuator uses a shallower 68% curve so the visible Generate label remains inside the physical action surface in ordinary, reference-pair, Advanced and Result states.
+
+This checkpoint is **not approval**. Issue #148 remains open until the user explicitly accepts the complete visual concept and interaction language. No Phase 23 / Cycle 5 production implementation, production dependency adoption or deployment is authorized by this evidence.
+
 ## Important constraint
 
 This prototype is design evidence only. It does not change `src/features/create`, production dependencies, routes, backend behavior, Auth, ownership, storage, generation contracts or deployment. User approval of the complete v0.3 concept + temporal interaction language is still required before any Phase 23 / Cycle 5 implementation contract may be expanded.
