@@ -12,7 +12,7 @@ Tracks approved product surfaces and actual route/status/component composition.
 ## Initial Information Architecture
 Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextual: **Media Viewer**.
 
-Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051. UI-052's public **Brand/Landing** at `/` and authoritative Create workspace at `/create` are merged on `main` through PR #73 / `46c5daa2866c6758907ee9be219bcb3cb274ca83`. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.
+Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051. The public **Brand / Landing** remains `/` and the authoritative Create workspace remains `/create`; UI-052 established that route boundary in PR #73, while the current approved four-section Lab Matrix Landing redesign is merged through PR #174 / `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.
 
 ## Application Shell
 **Status:** APPROVED  
@@ -32,17 +32,21 @@ Approved behavior:
 
 ### Brand / Landing
 **Route:** `/`
-**Status:** APPROVED and merged on `main`
-**Implementation:** `src/app/page.tsx`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`
-**Design artifacts:** `design/penpot/brand-launch-v0.1-desktop.svg`, `design/penpot/brand-launch-v0.1-mobile.svg`
+**Status:** APPROVED — Lab Matrix redesign merged on `main`; deployment remains separate
+**Implementation:** `src/app/page.tsx`, `src/features/landing/landing-experience.tsx`, `src/features/landing/landing-experience.module.css`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`
+**Design / implementation authority:** `docs/ui/LANDING_BRAND_RD.md`, `docs/ui/LANDING_IMPLEMENTATION_CONTRACT.md`, `docs/ui/LANDING_MEDIA_SOURCES.md`
 
 **Purpose:** Public product home for verified RenderLab capability and truthful invitation-only Closed Beta access without application-shell chrome or public self-admission.
 
-**Verified behavior:** `/` renders without `AppShell`; `/create` and application routes use the `(app)` shell; Open Create → `/create`; Sign in → `/settings`; legacy root continuation preserves the complete query into `/create`; only verified operations/reuse/recovery are claimed; forbidden public-signup/pricing/testimonial/fake-metric/provider/SLA claims remain absent.
+**Approved composition:** one continuous four-section sequence — **Hero / Lab Matrix → One creative thread → Living Library → Resolve to Create**. The page uses the locked Lab Grid identity as the visual grammar, keeps media dominant, supports bounded pointer/scroll choreography on capable desktop input, deliberately adapts the composition for 390px/touch, and provides a complete static `prefers-reduced-motion` equivalent.
 
-**Approval evidence:** validated implementation head `8975b7b42b518eea0a462b28528ddd41d90ad986` and final PR head `773251734dbd5c5f32770699a57b1ade653604b5` each closed the 19-workflow affected gate; artifact `9734984885` (`sha256:8d9929fb5f6d85da4710184ec7bbe756f782593f58525ec2ae660729ad3b32a9`) was human-reviewed clean at 1440×1100, 390×844, `/create` shell and legacy-continuation states. PR #73 merged as `46c5daa2866c6758907ee9be219bcb3cb274ca83` and merged-main UI Shell `33323421285` passed.
+**Verified behavior:** `/` renders without `AppShell`; `/create` and application routes use the `(app)` shell; `Open Create` → `/create`; `Sign in` → `/settings`; legacy root continuation preserves the complete query into `/create`; Closed Beta / invitation-only / no-public-sign-up truth remains explicit; forbidden pricing/testimonial/fake-metric/provider/model/SLA/public-admission claims remain absent. The implementation uses the existing Motion for React runtime, maintained `Button` primitives and locked `RenderLabBrand`; no GSAP, Lenis, Three.js/WebGL or new animation runtime was added.
 
-**Do not change:** Do not add public registration/waitlist, pricing/testimonials/fake metrics, provider/model claims, analytics marketing cookies, decorative heavy motion or application-shell marketing chrome without a new explicit decision.
+**Locked geometry:** the Hero and Resolve lower-right Lab Grid media module is the canonical **quarter-circle / large outer arc**, not a rounded rectangle. Its repository-owned source path is `M75 91H89A33 33 0 0 1 122 124V132H75Q71 132 71 128V95Q71 91 75 91Z`, shared through the Landing mask and test-enforced by Brand / Launch Visual. The locked RenderLab logo/wordmark must not be reinterpreted.
+
+**Approval evidence:** final exact implementation head `a7f94b77bf1be989c0101376aa0404cbb28b34ae` passed all eight attached workflows: Engineering Quality `34539565814`, Create Durable Upload `34539565867`, Account Ownership `34539565817`, UI Shell `34539565835`, Brand / Launch Visual `34539565857`, Integrated Release `34539565832`, Library Lifecycle `34539565822`, and Release Candidate Matrix `34539565841`. Brand / Launch artifact `10176777155` (`sha256:249575e790be67219927ccefb6edef00efaf6aedc5694a95f2ed62f4aef48e38`) was reviewed clean. PR #174 merged as `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`; merged-main Engineering Quality `34540955036`, Integrated Release `34540955056`, exact-main UI Shell `34541063502` and exact-main Brand / Launch Visual `34541065002` passed. PR #175 records the repository closure. No deployment was part of the Landing approval/merge operation; current production state remains authoritative in `PROJECT.md`.
+
+**Do not change:** Do not alter the locked mark/wordmark or canonical quarter-circle geometry; materially reinterpret the accepted four-section visual grammar; add public registration/waitlist, pricing/testimonials/fake metrics, provider/model/SLA claims, analytics marketing cookies, fabricated generation state or public-admission behavior without a new explicit decision and the normal design/validation gates.
 
 ### Create
 **Route:** `/create`
@@ -185,7 +189,7 @@ Approved behavior:
 - UI-032 adds one contextual `Collections` disclosure below Favorites; it lists only the verified owner's collections, supports create-and-add plus idempotent membership toggles with pressed state, and keeps Rename/Download plus continuation hierarchy unchanged.
 - UI-033 adds one visually secondary permanent `Delete` action beneath existing durable actions. Confirmation uses the maintained AlertDialog primitive; successful deletion tombstones first, removes collection/upload links, purges R2 content/thumbnail, preserves generation-history IDs and returns to Library. Tombstoned media is not reusable as a new generation input.
 - UI-030 requires a verified account for private Viewer state; the asset is loaded by owner and foreign IDs collapse to normal not-found behavior. Signed-out access renders the compact sign-in state rather than exposing private media.
-- UI-056 adds eligible successful-history `Reuse settings` and conditional `Compare source` without changing the default Viewer. Comparison appears only when the producing owner-scoped job resolves an active same-owner durable primary `media-asset`; temporary/deleted/foreign/no-source history fails closed. Wide layouts keep Result primary at roughly 60/40 with contained truthful media geometry; narrow layouts place a full-width Result first and a compact contextual Source card immediately below. Source exposes only `Open source` to its ordinary Viewer. Prompt, Details, Continue, Actions and result video playback controls remain result-owned; active comparison exits through `Close comparison`. No new route or durable comparison state is introduced.
+- UI-056 adds eligible successful-history `Reuse settings` and conditional durable Viewer `Compare source` without changing the default Viewer. Comparison appears only when the producing owner-scoped job resolves an active same-owner durable primary `media-asset`; temporary/deleted/foreign/no-source history fails closed. Wide layouts keep Result primary at roughly 60/40 with contained truthful media geometry; narrow layouts place a full-width Result first and a compact contextual Source card immediately below. Source exposes only `Open source` to its ordinary Viewer. Prompt, Details, Continue, Actions and result video playback controls remain result-owned; active comparison exits through `Close comparison`. No new route or durable comparison state is introduced.
 
 **UI-056 Reuse / Compare approval evidence:** exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed Creative Iteration `33964679539` plus all 26 affected workflows. Artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) was independently hash-checked and human-reviewed clean across Image→Image and Image→Video desktop/narrow comparison. Configured Chromium separately verified keyboard activation, reduced-motion, native result-video controls, `Open source`, no horizontal overflow, ineligible fail-closed behavior and exact cleanup. No corrective Viewer implementation change was required.
 
@@ -221,7 +225,7 @@ Approved behavior:
 
 **Retry evidence:** UI-050 exact code/test head `ab33e146ccaa7770f3dd66146708f01933cc0173`; Activity `33279062575`; final artifact `9722428767` reviewed clean. Phase 10C preserved Retry through shared transactional admission.
 
-**Cancel evidence:** UI-055 exact implementation head `9cd0528ff50ef55a3ad3e09080980a71234af096`. Activity Cancel Visual `33939690827` passed confirmation, Escape dismissal, intermediate `Cancelling`, final `Cancelled`, no-repeat Cancel, desktop 1440×1000, narrow 390×844 and reduced-motion states. The visually identical artifact `9960993664` (`sha256:caa369b98b444f968538584a340739cc5dadf7c4a34eb529b42fc3fbf6bbf699`) was human-reviewed clean. Generation Cancellation `33939690824` verified the serialized lifecycle and real FLUX/REDGraft provider mapping with zero durable late output.
+**Cancel evidence:** UI-055 exact implementation head `9cd0528ff50ef55a3ad3e09080980a71234af096`. Activity Cancel Visual `33939690827` passed confirmation, Escape dismissal, intermediate `Cancelling`, final `Cancelled`, no-repeat Cancel, desktop 1440×1000, narrow 390×844 and reduced-motion states. The visually identical artifact `9960993664` (`sha256:caa369b98b444f968538584a340739cc5dadf7c4a34eb529b42fc3fbf6bbf699`) was human-reviewed clean. Generation Cancellation `33939690824` verified the serialized lifecycle and real FLUX/REDgraft provider mapping with zero durable late output.
 
 **Run Again evidence:** UI-056 exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115`; Creative Iteration `33964679539` verified succeeded-only eligibility, current-valid reconstruction, distinct immutable attempts, current admission denial, provider/execution-metadata isolation, responsive Activity rendering and exact cleanup. The earlier Phase 16 recipe/Activity artifact `9967633913` was reviewed clean.
 
@@ -275,21 +279,12 @@ Approved behavior:
 
 **Do not change:** Do not turn Admin into a shared-Supabase user browser, cloud/provider console, arbitrary feature-flag framework or generic internal dashboard. Do not expose provider identity/credentials, raw errors, other applications' users or destructive account/data deletion. Keep global/account controls typed and bounded; generation reservations remain server-only operational state rather than a browser/admin reservation console.
 
-### Brand / Landing — Phase 11 target
-**Target route:** `/`
-**Status:** PLANNED — UI-052 contract accepted; implementation not started
-**Current repository reality:** `/` still serves the approved Create workspace until Phase 11 implementation merges.
+### Brand / Landing — Phase 11 route migration (historical)
+**Status:** COMPLETE / SUPERSEDED by the current Brand / Landing entry above.
 
-**Purpose:** Public product home for RenderLab identity, verified creative capability and closed-beta entry into the application.
+Phase 11 / UI-052 established the route split later retained by the Lab Matrix redesign: public `/` renders outside `AppShell`, authoritative Create lives at `/create`, `Open Create` targets `/create`, `Sign in` targets `/settings`, and legacy root `source` / `action` intent redirects to `/create` with the full query preserved before ordinary server validation. PR #73 merged that migration as `46c5daa2866c6758907ee9be219bcb3cb274ca83`.
 
-**Locked target behavior:**
-- marketing surface renders outside `AppShell` while sharing RenderLab global tokens/theme;
-- primary `Open Create` → `/create`; account `Sign in` → `/settings`;
-- concise truthful product proof for Create/Edit Image, Create/Animate Video, durable reference/Library reuse and Activity/recovery continuity;
-- no public signup/waitlist, pricing, testimonials, fabricated metrics, provider/model claims or unverified capability;
-- desktop+narrow design checkpoint precedes implementation; final surface requires responsive/accessibility/reduced-motion browser review.
-
-**Related route migration:** Create remains `APPROVED` at current `/` until implementation. Phase 11 will move that same authoritative Create surface to `/create`, update the application shell accordingly and preserve legacy `/?source=...&action=...` continuation intent through a same-origin redirect to `/create` before existing server validation.
+The old pre-implementation state in which `/` still served Create is historical only and must not be used as current repository reality. The current Landing implementation and approval evidence are recorded in the primary Brand / Landing entry above and in `docs/ui/LANDING_BRAND_RD.md` / `docs/ui/LANDING_IMPLEMENTATION_CONTRACT.md`.
 
 ## Creation Experience Resolution
 - Prompt + Image → Create Image.
@@ -356,7 +351,9 @@ Create, Library/Viewer, Activity, Settings and Admin continue using their existi
 ## Cycle 4 Phase 22 screen extensions — VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING
 
 ### Brand / Landing — Kinetic Precision public expression
-The approved `/` product home now uses the reviewed Phase 22 Kinetic Precision hero and dimensional product-preview composition from `design/penpot/phase22-landing-kinetic-v0.1.svg` / `phase22-system-cohesion-v0.1.md`. `Open Create` still targets `/create`, `Sign in` still targets `/settings`, legacy root continuation remains intact, and invitation-only Closed Beta truth remains explicit. The preview is labeled as a static illustration and does not imply live generation state. No public signup/pricing/testimonial/fake-metric/provider/model/SLA or marketing-analytics expansion is approved.
+**Historical visual state:** this Phase 22 Landing treatment was later superseded by the current approved Lab Matrix redesign in PR #174. Its route/access/product-truth constraints remain relevant historical evidence; its visual composition is not the current Landing specification.
+
+The approved `/` product home at this phase used the reviewed Phase 22 Kinetic Precision hero and dimensional product-preview composition from `design/penpot/phase22-landing-kinetic-v0.1.svg` / `phase22-system-cohesion-v0.1.md`. `Open Create` still targeted `/create`, `Sign in` still targeted `/settings`, legacy root continuation remained intact, and invitation-only Closed Beta truth remained explicit. The preview was labeled as a static illustration and did not imply live generation state. No public signup/pricing/testimonial/fake-metric/provider/model/SLA or marketing-analytics expansion was approved.
 
 ### Activity — Kinetic Precision lifecycle hierarchy
 `/activity` keeps server-owned account-private generation history, ordering, pagination and observational auto-refresh while presenting persisted lifecycle status with stronger dimensional hierarchy. Running/queued/saving/completed/failed/cancelled meaning remains textual and action eligibility stays separate: successful current-valid history may View result / Run again, failed current-valid history may Retry, and active eligible work may Cancel. Raw provider/worker detail and fabricated percent/ETA/queue/SLA state remain forbidden. 390px includes dedicated bottom clearance for the floating dock, and reduced motion uses static lifecycle meaning.
