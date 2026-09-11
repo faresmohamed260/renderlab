@@ -812,7 +812,10 @@ export function CreateWorkspace({
   }
 
   return (
-    <section className="clear-create-workspace mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-7xl flex-col px-4 pb-24 pt-10 sm:px-8 sm:pt-16 lg:pb-16 lg:pt-24">
+    <section
+      className="clear-create-workspace mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-7xl flex-col px-4 pb-24 pt-10 sm:px-8 sm:pt-16 lg:pb-16 lg:pt-24"
+      data-create-has-stage={jobActive || resultLoading || Boolean(resultAsset) ? "true" : "false"}
+    >
       <div className="clear-create-stack mx-auto w-full max-w-6xl">
         <AnimatePresence initial={false} mode="wait">
           <motion.div

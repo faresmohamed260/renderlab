@@ -1546,7 +1546,34 @@ a {
     left: 0.75rem;
     font-size: 0.44rem;
   }
+
+  .clear-create-workspace[data-create-has-stage="true"] {
+    padding-top: 0.75rem;
+  }
+
+  .clear-create-workspace[data-create-has-stage="true"] .clear-create-context {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .clear-create-workspace[data-create-has-stage="true"] .clear-create-context > p {
+    display: none;
+  }
+
+  .clear-create-workspace[data-create-has-stage="true"] .clear-create-context h2 {
+    min-height: 0;
+    font-size: 1.85rem !important;
+    line-height: 1;
+  }
+
+  .clear-create-workspace[data-create-has-stage="true"] .clear-create-context::after {
+    margin-top: 0.55rem;
+  }
+
+  .clear-create-workspace[data-create-has-stage="true"] .clear-create-result-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
+
 
 @keyframes clear-create-registration {
   from { opacity: 0.28; transform: scale(0.64); }

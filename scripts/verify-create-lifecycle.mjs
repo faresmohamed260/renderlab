@@ -370,6 +370,16 @@ try {
   await page.setViewportSize(mobileViewport);
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
+  const mobileDock = page.locator('[data-kinetic-surface="mobile-dock"]');
+  const resultActions = page.locator('[data-create-result-info="true"] button');
+  const dockBox = await mobileDock.boundingBox();
+  const actionBoxes = await resultActions.evaluateAll((buttons) => buttons.map((button) => {
+    const rect = button.getBoundingClientRect();
+    return { top: rect.top, bottom: rect.bottom };
+  }));
+  assert(dockBox && actionBoxes.length > 0, "Could not measure mobile result actions against the fixed dock.");
+  const lowestActionBottom = Math.max(...actionBoxes.map((box) => box.bottom));
+  assert(lowestActionBottom <= dockBox.y - 8, `Mobile result actions were obscured by the fixed dock: actions=${JSON.stringify(actionBoxes)} dock=${JSON.stringify(dockBox)}`);
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-result.png`, fullPage: true });
 
   await edit.click();
