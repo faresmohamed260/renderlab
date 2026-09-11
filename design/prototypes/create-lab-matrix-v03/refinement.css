@@ -1,4 +1,5 @@
-/* v0.3 review corrections: true bounded Z-depth, collision-free disclosures, mobile geometry. */
+/* v0.3 review corrections: true bounded Z-depth, collision-free disclosures,
+   reference-object exchange, terminal Result ownership, and mobile geometry. */
 
 .plane[data-depth="0.25"] { transform: translateZ(7px); }
 .plane[data-depth="0.35"] { transform: translateZ(10px); }
@@ -7,6 +8,143 @@
 .plane[data-depth="0.9"] { transform: translateZ(25px); }
 .plane[data-depth="1.2"] { transform: translateZ(34px); }
 
+/* References are durable-looking objects in one bounded field, not a second card grid. */
+.reference-count {
+  color: rgb(255 255 255 / 28%);
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: .14em;
+}
+
+.reference-stack {
+  position: absolute;
+  inset: 0;
+}
+
+.reference-object[hidden] {
+  display: none !important;
+}
+
+.reference-object {
+  cursor: grab;
+  will-change: inset, transform, opacity, filter;
+  transition:
+    inset 560ms cubic-bezier(.18,.88,.22,1.08),
+    transform 560ms cubic-bezier(.18,.88,.22,1.08),
+    filter 420ms ease,
+    opacity 220ms ease,
+    box-shadow 260ms ease;
+}
+
+.reference-object:active {
+  cursor: grabbing;
+}
+
+.reference-object img {
+  pointer-events: none;
+}
+
+.reference-object[data-slot="primary"] {
+  inset: 58px 40px 18px 14px;
+  z-index: 3;
+  transform: translateZ(54px) rotateY(-1.2deg) rotateZ(-.35deg) scale(1);
+  filter: saturate(.96) brightness(1);
+  box-shadow: 0 22px 58px rgb(0 0 0 / 34%);
+}
+
+.reference-object[data-slot="secondary"] {
+  inset: 84px 10px 38px 48%;
+  z-index: 4;
+  transform: translateZ(28px) rotateY(-5deg) rotateZ(1.4deg) scale(.95);
+  filter: saturate(.78) brightness(.78);
+  box-shadow: 0 18px 46px rgb(0 0 0 / 32%);
+}
+
+.reference-object.dragging {
+  opacity: .62 !important;
+  filter: saturate(.7) brightness(.9);
+}
+
+.reference-object.drag-target {
+  box-shadow:
+    0 0 0 1px rgb(115 215 255 / 58%),
+    0 22px 64px rgb(0 0 0 / 42%),
+    0 0 34px rgb(115 215 255 / 10%);
+}
+
+.reference-role {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  padding: 4px 6px;
+  background: rgb(3 6 10 / 66%);
+  color: rgb(255 255 255 / 62%);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .15em;
+}
+
+.reference-actions {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 7;
+  display: flex;
+  gap: 5px;
+}
+
+.reference-actions button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 17%);
+  border-radius: 50%;
+  background: rgb(3 6 10 / 76%);
+  color: #dbe4ef;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.reference-actions .reference-primary[hidden] {
+  display: none;
+}
+
+.reference-add-more {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 9;
+  display: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgb(115 215 255 / 28%);
+  border-radius: 50%;
+  background: rgb(5 9 14 / 82%);
+  color: #9cdfff;
+  cursor: pointer;
+  font-size: 22px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 34%);
+}
+
+.instrument[data-mode="image"][data-reference-count="1"] .reference-add-more {
+  display: grid;
+}
+
+.instrument[data-state="result"] .reference-actions,
+.instrument[data-state="result"] .reference-add-more {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-reference-object]:focus-visible {
+  outline: 2px solid rgb(115 215 255 / 80%);
+  outline-offset: 4px;
+}
+
+/* Advanced borrows space from the field but its trigger never collides with controls. */
 .instrument[data-advanced="open"] .advanced-trigger {
   inset: 0 0 auto;
   height: 70px;
@@ -15,6 +153,19 @@
 .instrument[data-advanced="open"] .advanced-content {
   top: 76px;
   bottom: 18px;
+}
+
+/* The latent Result plane may hint at media, but Result copy appears only when truthful state resolves. */
+.result-copy {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 280ms ease 420ms, transform 460ms var(--ease-out) 340ms;
+  pointer-events: none;
+}
+
+.instrument[data-state="result"] .result-copy {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Result is the terminal geometry owner. Mode/reference/Advanced selectors may reshape
@@ -71,6 +222,39 @@
     width: 92px;
   }
 
+  .reference-object[data-slot="primary"] {
+    inset: 54px 18px 16px 8px;
+  }
+
+  .reference-object[data-slot="secondary"] {
+    inset: 82px 6px 34px 40%;
+    transform: translateZ(20px) rotateY(-4deg) rotateZ(1.2deg) scale(.94);
+  }
+
+  .reference-role {
+    top: 7px;
+    left: 7px;
+    padding: 3px 5px;
+    font-size: 6px;
+  }
+
+  .reference-actions {
+    top: 5px;
+    right: 5px;
+    gap: 3px;
+  }
+
+  .reference-actions button {
+    width: 44px;
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .reference-index {
+    left: 8px;
+    bottom: 8px;
+  }
+
   .instrument[data-advanced="open"] .reference-plane {
     left: 0;
     top: 420px;
@@ -79,7 +263,7 @@
   }
 
   .instrument[data-advanced="open"] .reference-object {
-    inset: 54px 10px 16px;
+    inset: 54px 8px 16px;
   }
 
   .instrument[data-advanced="open"] .advanced-plane,
@@ -126,6 +310,42 @@
     border-radius: 6px 34% 34% 6px;
   }
 
+  .instrument[data-state="result"] .result-head small {
+    display: none;
+  }
+
+  .instrument[data-state="result"] .result-copy {
+    right: 18px;
+    bottom: 80px;
+    left: 18px;
+    gap: 4px;
+  }
+
+  .instrument[data-state="result"] .result-copy strong {
+    max-width: 245px;
+    font-size: 13px;
+    line-height: 1.15;
+  }
+
+  .instrument[data-state="result"] .result-copy span {
+    max-width: 225px;
+    font-size: 8px;
+    line-height: 1.35;
+  }
+
+  .instrument[data-state="result"] .result-actions {
+    right: auto;
+    bottom: 18px;
+    left: 18px;
+    gap: 6px;
+  }
+
+  .instrument[data-state="result"] .result-actions button {
+    min-height: 44px;
+    padding: 0 9px;
+    font-size: 7.5px;
+  }
+
   .instrument[data-state="result"][data-mode] .prompt-plane {
     left: 0;
     top: 568px;
@@ -152,5 +372,12 @@
     top: 820px;
     width: 49%;
     height: 74px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-copy,
+  .result-actions {
+    transition-delay: 0ms !important;
   }
 }

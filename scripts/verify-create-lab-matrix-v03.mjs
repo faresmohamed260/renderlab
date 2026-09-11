@@ -19,6 +19,17 @@ async function frameStage(page, filename, target = ".instrument-shell", offset =
   await page.screenshot({ path: path.join(out, filename), fullPage: false });
 }
 
+async function referenceOrder(page) {
+  return page.evaluate(() => window.__renderlabPrototype?.getReferenceOrder?.() ?? []);
+}
+
+async function assertReferenceOrder(page, expected, label) {
+  const actual = await referenceOrder(page);
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(`${label}: expected ${expected.join(",")}, got ${actual.join(",")}`);
+  }
+}
+
 async function verifyDesktop() {
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
@@ -26,6 +37,9 @@ async function verifyDesktop() {
   await page.goto(baseURL, { waitUntil: "networkidle" });
   await page.screenshot({ path: path.join(out, "desktop-overview.png"), fullPage: true });
   await frameStage(page, "desktop-authoring.png");
+
+  const latentCopyOpacity = Number(await page.locator(".result-copy").evaluate((el) => getComputedStyle(el).opacity));
+  if (latentCopyOpacity > .02) throw new Error("latent Result copy leaks into authoring state");
 
   const shell = page.locator(".instrument-shell");
   const box = await shell.boundingBox();
@@ -39,11 +53,33 @@ async function verifyDesktop() {
   await page.mouse.move(box.x + box.width * .5, box.y + box.height * .5);
   await page.waitForTimeout(1000);
 
-  await page.getByRole("button", { name: /Add reference/i }).click();
-  await page.waitForTimeout(1200);
+  await page.getByRole("button", { name: /^Add reference$/i }).click();
+  await page.waitForTimeout(900);
+  await assertReferenceOrder(page, ["image1"], "first reference insertion");
   await frameStage(page, "desktop-reference.png");
-  const refBox = await page.locator(".reference-object").boundingBox();
-  if (!refBox || refBox.width < 100) throw new Error("reference did not settle into usable geometry");
+
+  await page.getByRole("button", { name: /Add second reference/i }).click();
+  await page.waitForTimeout(950);
+  await assertReferenceOrder(page, ["image1", "image2"], "second reference insertion");
+  if (await page.locator(".instrument").getAttribute("data-reference-count") !== "2") throw new Error("reference pair state missing");
+  await frameStage(page, "desktop-reference-pair.png");
+
+  const second = page.locator('[data-reference-object][data-alias="image2"]');
+  const first = page.locator('[data-reference-object][data-alias="image1"]');
+  await second.dragTo(first);
+  await page.waitForTimeout(800);
+  await assertReferenceOrder(page, ["image2", "image1"], "pointer reference reorder");
+  await frameStage(page, "desktop-reference-reordered.png");
+
+  await page.getByRole("button", { name: "Make @image1 primary" }).click();
+  await page.waitForTimeout(700);
+  await assertReferenceOrder(page, ["image1", "image2"], "keyboard-accessible reference reorder");
+
+  await page.getByRole("button", { name: "Remove @image2" }).click();
+  await page.waitForTimeout(750);
+  await assertReferenceOrder(page, ["image1"], "reference removal");
+  if (await page.locator(".instrument").getAttribute("data-reference-count") !== "1") throw new Error("reference removal did not settle count");
+  await frameStage(page, "desktop-reference-removed.png");
 
   await page.getByRole("radio", { name: "Video" }).click();
   await page.waitForTimeout(850);
@@ -80,10 +116,12 @@ async function verifyDesktop() {
   if (Math.abs(resultAdvanced.y - resultGenerate.y) > 14) {
     throw new Error("desktop Result supporting controls did not settle on one baseline");
   }
+  const resultCopyOpacity = Number(await page.locator(".result-copy").evaluate((el) => getComputedStyle(el).opacity));
+  if (resultCopyOpacity < .95) throw new Error("Result copy did not resolve with truthful Result state");
 
   await page.keyboard.press("Home");
   await page.keyboard.press("Tab");
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 16; i++) {
     const focusVisible = await page.evaluate(() => document.activeElement?.matches(":focus-visible") ?? false);
     if (focusVisible) break;
     await page.keyboard.press("Tab");
@@ -115,8 +153,18 @@ async function recordDesktopMotion() {
   await page.waitForTimeout(650);
   await page.mouse.move(box.x + box.width * .5, box.y + box.height * .5, { steps: 12 });
   await page.waitForTimeout(800);
-  await page.getByRole("button", { name: /Add reference/i }).click();
-  await page.waitForTimeout(1450);
+
+  await page.getByRole("button", { name: /^Add reference$/i }).click();
+  await page.waitForTimeout(1050);
+  await page.getByRole("button", { name: /Add second reference/i }).click();
+  await page.waitForTimeout(1100);
+  await page.locator('[data-reference-object][data-alias="image2"]').dragTo(page.locator('[data-reference-object][data-alias="image1"]'));
+  await page.waitForTimeout(1000);
+  await page.getByRole("button", { name: "Make @image1 primary" }).click();
+  await page.waitForTimeout(850);
+  await page.getByRole("button", { name: "Remove @image2" }).click();
+  await page.waitForTimeout(850);
+
   await page.getByRole("radio", { name: "Video" }).click();
   await page.waitForTimeout(1050);
   await page.getByRole("button", { name: /Advanced/i }).click();
@@ -140,8 +188,23 @@ async function verifyMobile(reducedMotion = false) {
   await page.goto(baseURL, { waitUntil: "networkidle" });
   await frameStage(page, reducedMotion ? "mobile-reduced-authoring.png" : "mobile-authoring.png", ".instrument-shell", 72);
 
-  await page.getByRole("button", { name: /Add reference/i }).tap();
-  await page.waitForTimeout(reducedMotion ? 80 : 1150);
+  const latentCopyOpacity = Number(await page.locator(".result-copy").evaluate((el) => getComputedStyle(el).opacity));
+  if (latentCopyOpacity > .02) throw new Error("mobile latent Result copy leaks into authoring state");
+
+  await page.getByRole("button", { name: /^Add reference$/i }).tap();
+  await page.waitForTimeout(reducedMotion ? 80 : 850);
+  await page.getByRole("button", { name: /Add second reference/i }).tap();
+  await page.waitForTimeout(reducedMotion ? 80 : 850);
+  await assertReferenceOrder(page, ["image1", "image2"], "mobile reference pair insertion");
+  await frameStage(page, reducedMotion ? "mobile-reduced-reference-pair.png" : "mobile-reference-pair.png", ".reference-plane", 140);
+
+  await page.getByRole("button", { name: "Make @image2 primary" }).tap();
+  await page.waitForTimeout(reducedMotion ? 80 : 650);
+  await assertReferenceOrder(page, ["image2", "image1"], "mobile touch reference reorder");
+  await page.getByRole("button", { name: "Remove @image1" }).tap();
+  await page.waitForTimeout(reducedMotion ? 80 : 650);
+  await assertReferenceOrder(page, ["image2"], "mobile touch reference removal");
+
   await page.getByRole("radio", { name: "Video" }).tap();
   await page.waitForTimeout(reducedMotion ? 80 : 820);
   await page.getByRole("button", { name: /Advanced/i }).tap();
@@ -161,7 +224,9 @@ async function verifyMobile(reducedMotion = false) {
   const mobileReference = await page.locator(".reference-plane").boundingBox();
   const mobileAdvanced = await page.locator(".advanced-plane").boundingBox();
   const mobileGenerate = await page.locator(".generate-plane").boundingBox();
-  if (!mobileResult || !mobilePrompt || !mobileReference || !mobileAdvanced || !mobileGenerate) {
+  const mobileCopy = await page.locator(".result-copy").boundingBox();
+  const mobileActions = await page.locator(".result-actions").boundingBox();
+  if (!mobileResult || !mobilePrompt || !mobileReference || !mobileAdvanced || !mobileGenerate || !mobileCopy || !mobileActions) {
     throw new Error("mobile Result geometry missing");
   }
   const firstSupportY = Math.min(mobilePrompt.y, mobileReference.y);
@@ -171,6 +236,14 @@ async function verifyMobile(reducedMotion = false) {
   const lowerSupportY = Math.min(mobileAdvanced.y, mobileGenerate.y);
   if (firstSupportY >= lowerSupportY || Math.abs(mobileAdvanced.y - mobileGenerate.y) > 14) {
     throw new Error("mobile Result supporting planes did not settle in reading order");
+  }
+  if (mobileCopy.y + mobileCopy.height > mobileActions.y - 8) {
+    throw new Error("mobile Result copy collides with action row");
+  }
+  const mobileCopyOpacity = Number(await page.locator(".result-copy").evaluate((el) => getComputedStyle(el).opacity));
+  const mobileActionOpacity = Number(await page.locator(".result-actions").evaluate((el) => getComputedStyle(el).opacity));
+  if (mobileCopyOpacity < .95 || mobileActionOpacity < .95) {
+    throw new Error(reducedMotion ? "reduced-motion Result content did not resolve immediately" : "mobile Result content did not resolve");
   }
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

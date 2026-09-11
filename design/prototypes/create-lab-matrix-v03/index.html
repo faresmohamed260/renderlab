@@ -38,7 +38,7 @@
       <div class="field-light field-light-blue" aria-hidden="true"></div>
       <div class="field-light field-light-warm" aria-hidden="true"></div>
 
-      <div class="instrument" data-mode="image" data-state="authoring" data-advanced="closed" data-reference="0">
+      <div class="instrument" data-mode="image" data-state="authoring" data-advanced="closed" data-reference="0" data-reference-count="0">
         <div class="plane mode-plane" data-depth="0.35">
           <div class="plane-label"><span>01</span><strong>OUTPUT</strong></div>
           <div class="mode-switch" role="radiogroup" aria-label="Output kind">
@@ -56,19 +56,38 @@
         </div>
 
         <div class="plane reference-plane" data-depth="0.9">
-          <div class="plane-label"><span>03</span><strong>REFERENCES</strong></div>
+          <div class="plane-label"><span>03</span><strong>REFERENCES</strong><small class="reference-count">0 / 2</small></div>
           <div class="reference-empty">
-            <button type="button" class="reference-add" data-action="reference">
+            <button type="button" class="reference-add" data-action="reference-add">
               <span class="plus">+</span>
               <span><b>Add reference</b><small>Object enters the field</small></span>
             </button>
           </div>
-          <div class="reference-object" aria-hidden="true">
-            <img src="https://images.unsplash.com/photo-1771029580794-255d3e82680e?auto=format&fit=crop&w=900&q=84" alt="" />
-            <span class="reference-index">@image1</span>
-            <button type="button" class="reference-remove" data-action="reference-remove" aria-label="Remove reference">×</button>
-            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+
+          <div class="reference-stack" aria-live="polite">
+            <article class="reference-object reference-object-a" data-reference-object data-slot="hidden" hidden tabindex="0" draggable="false">
+              <img src="https://images.unsplash.com/photo-1771029580794-255d3e82680e?auto=format&fit=crop&w=900&q=84" alt="" />
+              <span class="reference-role">PRIMARY</span>
+              <span class="reference-index">@image1</span>
+              <div class="reference-actions">
+                <button type="button" class="reference-primary" data-action="make-primary" aria-label="Make reference primary">↑</button>
+                <button type="button" class="reference-remove" data-action="reference-remove" aria-label="Remove reference">×</button>
+              </div>
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            </article>
+            <article class="reference-object reference-object-b" data-reference-object data-slot="hidden" hidden tabindex="0" draggable="false">
+              <img src="https://images.unsplash.com/photo-1773176563345-5e8685906a21?auto=format&fit=crop&w=900&q=84" alt="" />
+              <span class="reference-role">SECONDARY</span>
+              <span class="reference-index">@image2</span>
+              <div class="reference-actions">
+                <button type="button" class="reference-primary" data-action="make-primary" aria-label="Make reference primary">↑</button>
+                <button type="button" class="reference-remove" data-action="reference-remove" aria-label="Remove reference">×</button>
+              </div>
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            </article>
           </div>
+
+          <button type="button" class="reference-add-more" data-action="reference-add" aria-label="Add second reference">+</button>
         </div>
 
         <div class="plane advanced-plane" data-depth="0.25">
@@ -118,7 +137,7 @@
         <span>POINTER FIELD</span>
         <span>OBJECT MASS</span>
         <span>SHARED GEOMETRY</span>
-        <span>SPRING SETTLE</span>
+        <span>DAMPED SETTLE</span>
       </aside>
     </section>
 
@@ -129,7 +148,7 @@
       </div>
       <ol>
         <li><span>01</span><b>Depth</b><small>Pointer input bends the same Lab Matrix planes through restrained perspective.</small></li>
-        <li><span>02</span><b>Physics</b><small>References enter with momentum, displace nearby planes, overshoot once, then settle.</small></li>
+        <li><span>02</span><b>Physics</b><small>References enter with momentum, exchange depth when reordered, then damp into their slots.</small></li>
         <li><span>03</span><b>Morph</b><small>Image → Video and Advanced reallocate existing geometry instead of swapping panels.</small></li>
         <li><span>04</span><b>Actuation</b><small>Generate compresses the field briefly, then releases into truthful result geometry.</small></li>
         <li><span>05</span><b>Reduced motion</b><small>The same start/end composition remains, without travel, inertia, or looping movement.</small></li>
