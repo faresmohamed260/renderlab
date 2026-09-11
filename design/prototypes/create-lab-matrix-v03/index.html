@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenderLab Create — Lab Matrix Kinetic R&D v0.3</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="page" data-prototype="create-lab-matrix-v03">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="RenderLab home">
+        <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>RenderLab</span>
+      </a>
+      <div class="prototype-label">CREATE R&amp;D / LAB MATRIX KINETIC / V0.3</div>
+      <nav aria-label="Prototype controls">
+        <button type="button" class="text-button" data-action="reset">Reset</button>
+      </nav>
+    </header>
+
+    <section class="intro" aria-labelledby="title">
+      <div>
+        <p class="eyebrow">Creative instrument study</p>
+        <h1 id="title">Create, with<br><span>physical continuity.</span></h1>
+      </div>
+      <p class="intro-copy">
+        Existing Lab Matrix DNA, made functional: media planes with depth, references with mass,
+        geometry that morphs between tasks, and animation that explains where the work goes.
+      </p>
+    </section>
+
+    <section class="instrument-shell" aria-label="Animated Create interaction prototype">
+      <div class="axis axis-x" aria-hidden="true"></div>
+      <div class="axis axis-y" aria-hidden="true"></div>
+      <div class="stage-grid" aria-hidden="true"></div>
+      <div class="field-light field-light-blue" aria-hidden="true"></div>
+      <div class="field-light field-light-warm" aria-hidden="true"></div>
+
+      <div class="instrument" data-mode="image" data-state="authoring" data-advanced="closed" data-reference="0">
+        <div class="plane mode-plane" data-depth="0.35">
+          <div class="plane-label"><span>01</span><strong>OUTPUT</strong></div>
+          <div class="mode-switch" role="radiogroup" aria-label="Output kind">
+            <button type="button" role="radio" aria-checked="true" data-mode="image">Image</button>
+            <button type="button" role="radio" aria-checked="false" data-mode="video">Video</button>
+          </div>
+          <div class="mode-readout"><span>CREATE IMAGE</span><i></i><small>01 / STILL</small></div>
+        </div>
+
+        <div class="plane prompt-plane" data-depth="0.6">
+          <div class="plane-label"><span>02</span><strong>INTENT</strong></div>
+          <label for="prompt">Prompt</label>
+          <textarea id="prompt" rows="4">A luminous mountain lake beneath a storm-softened sky, cinematic depth, soft atmospheric light</textarea>
+          <div class="prompt-meta"><span>FLUX</span><span>16:9</span><span>1 IMAGE</span></div>
+        </div>
+
+        <div class="plane reference-plane" data-depth="0.9">
+          <div class="plane-label"><span>03</span><strong>REFERENCES</strong></div>
+          <div class="reference-empty">
+            <button type="button" class="reference-add" data-action="reference">
+              <span class="plus">+</span>
+              <span><b>Add reference</b><small>Object enters the field</small></span>
+            </button>
+          </div>
+          <div class="reference-object" aria-hidden="true">
+            <img src="https://images.unsplash.com/photo-1771029580794-255d3e82680e?auto=format&fit=crop&w=900&q=84" alt="" />
+            <span class="reference-index">@image1</span>
+            <button type="button" class="reference-remove" data-action="reference-remove" aria-label="Remove reference">×</button>
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          </div>
+        </div>
+
+        <div class="plane advanced-plane" data-depth="0.25">
+          <button type="button" class="advanced-trigger" data-action="advanced" aria-expanded="false">
+            <span><small>04</small><b>Advanced</b></span>
+            <span class="advanced-arrow">↘</span>
+          </button>
+          <div class="advanced-content">
+            <div class="advanced-row"><span>Guidance</span><b>7.5</b><i style="--value:72%"></i></div>
+            <div class="advanced-row"><span>Prompt influence</span><b>0.42</b><i style="--value:42%"></i></div>
+            <div class="advanced-row"><span>Seed</span><b>742918</b><i style="--value:58%"></i></div>
+          </div>
+        </div>
+
+        <button type="button" class="plane generate-plane quarter-arc" data-action="generate" data-depth="1.2">
+          <span class="generate-index">05 / ACTUATE</span>
+          <span class="generate-core">
+            <b>Generate</b>
+            <i class="generate-arrow">↗</i>
+          </span>
+          <span class="generate-truth">Prototype transition · no fake progress</span>
+        </button>
+
+        <div class="plane result-plane" data-depth="0.75" aria-live="polite">
+          <img src="https://images.unsplash.com/photo-1773176563345-5e8685906a21?auto=format&fit=crop&w=1800&q=88" alt="Misty mountain landscape result concept" />
+          <div class="result-shade"></div>
+          <div class="result-head"><span>RESULT / DURABLE</span><small>1536 × 1024</small></div>
+          <div class="result-copy">
+            <strong>The same field becomes the result.</strong>
+            <span>Prompt and references settle into supporting planes.</span>
+          </div>
+          <div class="result-actions">
+            <button type="button">Use as reference</button>
+            <button type="button">Generate again</button>
+          </div>
+        </div>
+
+        <div class="energy-line" aria-hidden="true"><i></i></div>
+        <div class="registration r1" aria-hidden="true"></div>
+        <div class="registration r2" aria-hidden="true"></div>
+        <div class="status-line" aria-hidden="true">
+          <span>LAB MATRIX / CREATE</span><i></i><span class="status-value">AUTHORING</span>
+        </div>
+      </div>
+
+      <aside class="interaction-notes">
+        <span>POINTER FIELD</span>
+        <span>OBJECT MASS</span>
+        <span>SHARED GEOMETRY</span>
+        <span>SPRING SETTLE</span>
+      </aside>
+    </section>
+
+    <section class="motion-spec" aria-labelledby="motion-title">
+      <div>
+        <p class="eyebrow">Motion language</p>
+        <h2 id="motion-title">Animation should explain<br><span>the geometry.</span></h2>
+      </div>
+      <ol>
+        <li><span>01</span><b>Depth</b><small>Pointer input bends the same Lab Matrix planes through restrained perspective.</small></li>
+        <li><span>02</span><b>Physics</b><small>References enter with momentum, displace nearby planes, overshoot once, then settle.</small></li>
+        <li><span>03</span><b>Morph</b><small>Image → Video and Advanced reallocate existing geometry instead of swapping panels.</small></li>
+        <li><span>04</span><b>Actuation</b><small>Generate compresses the field briefly, then releases into truthful result geometry.</small></li>
+        <li><span>05</span><b>Reduced motion</b><small>The same start/end composition remains, without travel, inertia, or looping movement.</small></li>
+      </ol>
+    </section>
+  </main>
+  <script src="./prototype.js"></script>
+</body>
+</html>

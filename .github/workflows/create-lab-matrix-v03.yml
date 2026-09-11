@@ -1,0 +1,52 @@
+name: Create Lab Matrix Kinetic R&D
+
+on:
+  push:
+    branches:
+      - rd/create-premium-workstation-v03
+    paths:
+      - "design/prototypes/create-lab-matrix-v03/**"
+      - "design/rd/create-lab-matrix-v03.md"
+      - "scripts/verify-create-lab-matrix-v03.mjs"
+      - ".github/workflows/create-lab-matrix-v03.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: create-lab-matrix-v03-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prototype-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install repository dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Serve prototype
+        run: |
+          python3 -m http.server 4173 --directory design/prototypes/create-lab-matrix-v03 > /tmp/renderlab-v03-http.log 2>&1 &
+          echo $! > /tmp/renderlab-v03-http.pid
+          for i in {1..20}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/renderlab-v03-http.log
+          exit 1
+      - name: Verify kinetic prototype
+        env:
+          PROTOTYPE_URL: http://127.0.0.1:4173/
+          EVIDENCE_DIR: artifacts/create-lab-matrix-v03
+        run: node scripts/verify-create-lab-matrix-v03.mjs
+      - name: Upload R&D evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-create-lab-matrix-v03
+          path: artifacts/create-lab-matrix-v03
+          if-no-files-found: error
+          retention-days: 14
