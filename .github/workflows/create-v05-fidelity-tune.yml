@@ -1,0 +1,36 @@
+name: Create v0.5 Fidelity Tune
+
+on:
+  push:
+    branches:
+      - work/phase-23-create-fidelity-correction
+    paths:
+      - scripts/apply-create-v05-fidelity-tune.mjs
+      - .github/workflows/create-v05-fidelity-tune.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Apply fidelity tune
+        run: |
+          node --check scripts/apply-create-v05-fidelity-tune.mjs
+          node scripts/apply-create-v05-fidelity-tune.mjs
+          git diff --check
+
+      - name: Commit tuned product and assertions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/globals.css scripts/verify-create-lifecycle.mjs tests/ui/create.spec.ts tests/ui/library.spec.ts tests/ui/shell.spec.ts tests/ui/kinetic-shell.spec.ts
+          git commit -m "fix(ui): tune Create v0.5 fidelity and presentation checks"
+          git push origin HEAD:work/phase-23-create-fidelity-correction
