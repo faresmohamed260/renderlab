@@ -18,7 +18,8 @@
   background:#11161c;
 }
 
-/* Precision is a contextual overlay, not a reason to crush or shift the creative stage. */
+/* Precision is a contextual overlay, not a reason to crush or shift the creative stage.
+   Entering Precision intentionally locks the live 3D camera to a stable working plane. */
 .stage[data-advanced="open"] .precision-inspector{
   width:286px;
   top:106px;
@@ -30,6 +31,7 @@
   left:11.5%;
   right:7.5%;
   filter:none;
+  transform:none;
 }
 .stage[data-advanced="open"] .stage-viewport::after{
   content:"";
