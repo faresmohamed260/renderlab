@@ -30,6 +30,28 @@ async function assertReferenceOrder(page, expected, label) {
   }
 }
 
+async function pointerReorder(page, sourceAlias, targetAlias) {
+  const source = page.locator(`[data-reference-object][data-alias="${sourceAlias}"]`);
+  const target = page.locator(`[data-reference-object][data-alias="${targetAlias}"]`);
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  if (!sourceBox || !targetBox) throw new Error("pointer reference geometry missing");
+
+  const startX = sourceBox.x + sourceBox.width * .5;
+  const startY = sourceBox.y + sourceBox.height * .62;
+  const endX = targetBox.x + targetBox.width * .28;
+  const endY = targetBox.y + targetBox.height * .62;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(endX, endY, { steps: 18 });
+  await page.waitForTimeout(120);
+  if (!(await target.evaluate((el) => el.classList.contains("drag-target")))) {
+    await page.mouse.up();
+    throw new Error("pointer reference exchange never acquired sibling target");
+  }
+  await page.mouse.up();
+}
+
 async function verifyDesktop() {
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
@@ -64,9 +86,7 @@ async function verifyDesktop() {
   if (await page.locator(".instrument").getAttribute("data-reference-count") !== "2") throw new Error("reference pair state missing");
   await frameStage(page, "desktop-reference-pair.png");
 
-  const second = page.locator('[data-reference-object][data-alias="image2"]');
-  const first = page.locator('[data-reference-object][data-alias="image1"]');
-  await second.dragTo(first);
+  await pointerReorder(page, "image2", "image1");
   await page.waitForTimeout(800);
   await assertReferenceOrder(page, ["image2", "image1"], "pointer reference reorder");
   await frameStage(page, "desktop-reference-reordered.png");
@@ -158,7 +178,7 @@ async function recordDesktopMotion() {
   await page.waitForTimeout(1050);
   await page.getByRole("button", { name: /Add second reference/i }).click();
   await page.waitForTimeout(1100);
-  await page.locator('[data-reference-object][data-alias="image2"]').dragTo(page.locator('[data-reference-object][data-alias="image1"]'));
+  await pointerReorder(page, "image2", "image1");
   await page.waitForTimeout(1000);
   await page.getByRole("button", { name: "Make @image1 primary" }).click();
   await page.waitForTimeout(850);
