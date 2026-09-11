@@ -1,0 +1,49 @@
+name: Library Spatial Archive R&D v0.1
+
+on:
+  push:
+    branches:
+      - rd/library-spatial-archive-v01
+    paths:
+      - '.github/workflows/library-spatial-archive-v01.yml'
+      - 'design/rd/library-spatial-archive-v01.md'
+      - 'design/prototypes/library-spatial-archive-v01/**'
+      - 'scripts/verify-library-spatial-archive-v01.mjs'
+  workflow_dispatch:
+
+concurrency:
+  group: library-spatial-archive-v01-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify Library R&D interaction and evidence
+        run: node scripts/verify-library-spatial-archive-v01.mjs
+
+      - name: Upload review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-library-spatial-archive-v01
+          path: artifacts/library-spatial-archive-v01
+          if-no-files-found: ignore
+          retention-days: 30
