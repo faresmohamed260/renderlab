@@ -1,0 +1,19 @@
+/* v0.5 interaction refinements: keep touch actions explicit and stable. */
+@media (max-width: 600px) {
+  .reference-chip {
+    min-height: 64px;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+  }
+
+  .reference-controls {
+    align-items: stretch;
+  }
+
+  .reference-control {
+    min-width: 48px;
+    width: auto;
+    min-height: 48px;
+    height: 48px;
+    padding-inline: 10px;
+  }
+}
