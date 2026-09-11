@@ -21,6 +21,19 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 **Landing production status: `APPROVED / PRODUCTION-LIVE`.**
 
+## Phase 23 — Create Clear Composer v0.5 candidate — 2026-09-11
+- [x] User-approved Clear Composer v0.5 R&D direction recorded at `703bc5dbcc8e3b6a9236f08a8a62a87238e59bed`; isolated R&D PR #183 closed unmerged intentionally.
+- [x] Production implementation is tracked by issue #184 and draft PR #185 on `work/phase-23-create-clear-composer`; no schema, provider/worker, routing, auth/admission, ownership, storage or deployment contract is changed.
+- [x] Production Create now promotes Image/Video intent, labelled Add reference / Start image semantics, Primary/Reference/Start roles, dominant prompt, visible Advanced and stable Generate while preserving existing durable upload/generation/continuation behavior.
+- [x] Truthful generation and media-first result composition use the Landing-derived Lab Matrix language; ordinary controls remain conventional and native video playback keeps real controls.
+- [x] Human review of exact-head `a44146bf8e51f165b01e348b7c21621207edfc9e` evidence confirmed desktop/390px/reduced-motion authoring fidelity and the corrected 390px result actions remain above the fixed mobile dock.
+- [x] Exact-head `a44146b...` Engineering Quality `34622973715`, Create Clear Composer Visual `34622973510` and Create Lifecycle Visual `34622973690` passed; visual artifact `10272409290` digest `sha256:119887f24e8b9e82c9a143d64ea0ed04432657d6af8d45ae9f65a7d6dd0c53ac`, lifecycle artifact `10273068411` digest `sha256:939765825c24e4aa976a318e203785356a2e05c90f6a9b0bc4e5ac7178797a87`.
+- [x] Five remaining `a44146b...` failures were audited as stale pre-Clear-Composer presentation assertions or contract whitespace, not product behavior; correction commit `6e9cb6409ce9029e903f0330e099bbcb83bcbc1f` aligns those verifiers while preserving their substantive product invariants.
+- [ ] Final documentation-complete exact-head workflow matrix must pass before merge acceptance.
+- [ ] Merge to `main` remains separately explicit. Production deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
+
+**Phase 23 status: `VERIFIED IMPLEMENTATION CANDIDATE / FINAL EXACT-HEAD MATRIX PENDING / NOT MERGED / NOT DEPLOYED`.**
+
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
 - [x] Define RenderLab capability model, progressive-disclosure boundaries and information architecture.
