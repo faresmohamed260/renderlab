@@ -24,6 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/close-stale-brand-ui-issues.py
+          python -c 'from pathlib import Path; [p.write_text(p.read_text().rstrip() + "\n") for p in map(Path, ["docs/ui/UI_DECISIONS.md", "docs/ui/COMPONENT_CATALOG.md"])]'
           rm scripts/close-stale-brand-ui-issues.py
           rm .github/workflows/close-stale-brand-ui-issues.yml
           git diff --check
