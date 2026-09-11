@@ -569,7 +569,10 @@ try {
   assert(!mobileOverflow, "Narrow Admin layout has horizontal clipping.");
   await page.screenshot({ path: `${artifactDir}/admin-operations-mobile.png`, fullPage: true });
 
-  await page.getByRole("button", { name: "Revoke", exact: true }).click();
+  const invitationRow = page.getByText(outsider.email, { exact: true }).locator("..").locator("..");
+const revokeInvitationButton = invitationRow.getByRole("button", { name: "Revoke", exact: true });
+assert((await revokeInvitationButton.count()) === 1, "Expected exactly one Revoke action for the test invitation.");
+await revokeInvitationButton.click();
   await page.getByText("Invitation revoked.", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await adminContext.close();
 
