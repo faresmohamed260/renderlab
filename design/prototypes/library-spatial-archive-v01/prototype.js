@@ -77,6 +77,7 @@ function syncCardSelection(card, selected) {
 function enterSelection() {
   body.dataset.selection = 'on';
   discoveryState.hidden = true;
+  discoveryState.style.display = 'none';
   selectionState.hidden = false;
   updateSelectionCount();
   const url = new URL(window.location.href);
@@ -87,6 +88,7 @@ function enterSelection() {
 function exitSelection() {
   body.dataset.selection = 'off';
   discoveryState.hidden = false;
+  discoveryState.style.removeProperty('display');
   selectionState.hidden = true;
   mediaCards.forEach((card) => syncCardSelection(card, false));
   const url = new URL(window.location.href);
