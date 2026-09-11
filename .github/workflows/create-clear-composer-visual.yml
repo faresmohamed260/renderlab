@@ -14,6 +14,8 @@ on:
 permissions:
   contents: read
 
+# Keep only the newest evidence run for a moving PR head; acceptance still requires
+# every workflow attached to the final exact head to pass.
 concurrency:
   group: create-clear-composer-visual-${{ github.ref }}
   cancel-in-progress: true
