@@ -1,0 +1,46 @@
+/* v0.2 review refinements: keep the result rail inside the intent region and capture mobile as a viewport experience. */
+@media (min-width: 821px) {
+  .instrument[data-state="result"] .instrument-grid {
+    grid-template-columns: minmax(390px, 40%) minmax(0, 1fr);
+  }
+
+  .instrument[data-state="result"] .intent-pane {
+    padding-right: 24px;
+    padding-bottom: 118px;
+  }
+
+  .instrument[data-state="result"] .source-dock {
+    align-content: flex-start;
+  }
+
+  .instrument[data-state="result"] .control-rail {
+    width: calc(40% - 32px);
+    margin: -104px auto 16px 16px;
+    z-index: 3;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    background: rgba(5, 7, 12, .76);
+  }
+
+  .instrument[data-state="result"] .control-cluster {
+    width: 100%;
+    gap: 4px;
+  }
+
+  .instrument[data-state="result"] .control-rail button {
+    padding-inline: 7px;
+  }
+
+  .instrument[data-state="result"] .generate {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+  }
+}
+
+@media (max-width: 820px) {
+  .instrument[data-state="result"] .fixture-note {
+    bottom: 82px;
+  }
+}
