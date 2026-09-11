@@ -93,7 +93,7 @@ try {
   await motionPage.waitForTimeout(420);
   await motionPage.getByRole('button', { name: /Open Advanced controls/ }).click();
   await motionPage.waitForTimeout(450);
-  await motionPage.getByRole('button', { name: 'Generate', exact: true }).click();
+  await motionPage.locator('#generate').click();
   await motionPage.waitForTimeout(1900);
   assert((await motionPage.locator('.instrument').getAttribute('data-state')) === 'result', 'Generate demo did not settle in result state.');
   await motionPage.waitForTimeout(700);
@@ -108,7 +108,7 @@ try {
   await reduced.emulateMedia({ reducedMotion: 'reduce' });
   await reduced.goto(`${base}${route}?state=references`, { waitUntil: 'networkidle' });
   await reduced.getByRole('button', { name: /Open Advanced controls/ }).click();
-  await reduced.getByRole('button', { name: 'Generate', exact: true }).click();
+  await reduced.locator('#generate').click();
   await reduced.waitForTimeout(1600);
   assert((await reduced.locator('.instrument').getAttribute('data-state')) === 'result', 'Reduced-motion path did not reach result fixture state.');
   const motionCss = await reduced.locator('.instrument').evaluate((element) => getComputedStyle(element).transitionDuration);
