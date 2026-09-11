@@ -69,6 +69,10 @@
   box-shadow: 0 22px 58px rgb(0 0 0 / 34%);
 }
 
+.instrument[data-reference-count="2"] .reference-object[data-slot="primary"] {
+  right: 58px;
+}
+
 .reference-object[data-slot="secondary"] {
   inset: 84px 10px 38px 48%;
   z-index: 4;
@@ -109,6 +113,11 @@
   z-index: 7;
   display: flex;
   gap: 5px;
+}
+
+.reference-object[data-slot="secondary"] .reference-actions {
+  right: -2px;
+  flex-direction: column;
 }
 
 .reference-actions button {
@@ -248,6 +257,10 @@
     inset: 54px 18px 16px 8px;
   }
 
+  .instrument[data-reference-count="2"] .reference-object[data-slot="primary"] {
+    right: 64px;
+  }
+
   .reference-object[data-slot="secondary"] {
     inset: 82px 6px 34px 40%;
     transform: translateZ(20px) rotateY(-4deg) rotateZ(1.2deg) scale(.94);
@@ -264,6 +277,10 @@
     top: 5px;
     right: 5px;
     gap: 3px;
+  }
+
+  .reference-object[data-slot="secondary"] .reference-actions {
+    right: -2px;
   }
 
   .reference-actions button {
