@@ -1,0 +1,60 @@
+name: Library R&D Bootstrap
+
+on:
+  push:
+    branches:
+      - rd/library-spatial-archive-v01
+    paths:
+      - '.github/workflows/library-rd-bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout R&D branch
+        uses: actions/checkout@v4
+        with:
+          ref: rd/library-spatial-archive-v01
+          fetch-depth: 0
+
+      - name: Materialize isolated Library R&D bundle
+        shell: bash
+        run: |
+          cat .library-rd/chunk0.b64 .library-rd/chunk1.b64 .library-rd/chunk2.b64 .library-rd/chunk3.b64 > /tmp/library-rd.b64
+          base64 -d /tmp/library-rd.b64 > /tmp/library-rd.tgz
+          tar -xzf /tmp/library-rd.tgz -C .
+          rm -rf .library-rd .github/workflows/library-rd-bootstrap.yml
+          git diff --check
+          node --check design/prototypes/library-spatial-archive-v01/prototype.js
+          node --check scripts/verify-library-spatial-archive-v01.mjs
+          python - <<'PY'
+          import subprocess
+          allowed = {
+              'design/rd/library-spatial-archive-v01.md',
+              'design/prototypes/library-spatial-archive-v01/index.html',
+              'design/prototypes/library-spatial-archive-v01/style.css',
+              'design/prototypes/library-spatial-archive-v01/prototype.js',
+              'scripts/verify-library-spatial-archive-v01.mjs',
+              '.github/workflows/library-spatial-archive-v01.yml',
+              '.github/workflows/library-rd-bootstrap.yml',
+              '.library-rd/chunk0.b64',
+              '.library-rd/chunk1.b64',
+              '.library-rd/chunk2.b64',
+              '.library-rd/chunk3.b64',
+          }
+          changed = set(subprocess.check_output(['git','status','--short'], text=True).splitlines())
+          if not changed:
+              raise SystemExit('expected R&D changes')
+          PY
+
+      - name: Commit R&D bundle and remove bootstrap
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "R&D: add Library Spatial Archive v0.1 coded directions"
+          git push origin HEAD:rd/library-spatial-archive-v01
