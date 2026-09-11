@@ -248,14 +248,27 @@
     min-height: 980px;
   }
 
+  /* The desktop switch minimums are intentionally relaxed on narrow screens so both
+     Image and Video remain fully readable inside the bounded Output plane. */
+  .mode-switch {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .mode-switch button {
+    min-width: 0;
+    flex: 1 1 0;
+    padding: 0 8px;
+  }
+
   .generate-core {
-    right: 14px;
+    right: 12px;
     bottom: 24px;
-    gap: 8px;
+    gap: 7px;
   }
 
   .generate-core b {
-    font-size: 20px;
+    font-size: 16px;
   }
 
   .generate-arrow {
@@ -353,8 +366,15 @@
   }
 
   .instrument[data-advanced="open"] .generate-core {
-    right: 12px;
+    right: 10px;
     bottom: 12px;
+    gap: 5px;
+  }
+
+  .instrument[data-advanced="open"] .generate-core b {
+    display: inline;
+    font-size: 11px;
+    letter-spacing: -.02em;
   }
 
   .instrument[data-advanced="open"] .generate-arrow {
