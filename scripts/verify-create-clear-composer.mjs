@@ -45,6 +45,17 @@ async function composerGeometry(page) {
   });
 }
 
+async function settledModeControl(page) {
+  await page.waitForFunction(
+    () => document.querySelectorAll('[data-create-motion="mode-control"]').length === 1,
+    undefined,
+    { timeout: 10_000 },
+  );
+  const control = page.locator('[data-create-motion="mode-control"]');
+  await control.waitFor({ state: "visible", timeout: 10_000 });
+  return control;
+}
+
 await mkdir(artifactDir, { recursive: true });
 await mkdir(`${artifactDir}/video`, { recursive: true });
 
@@ -99,17 +110,13 @@ try {
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await imageMode.click();
-  await page.waitForTimeout(100);
-  const imageModeControl = page.locator('[data-create-motion="mode-control"]');
-  await imageModeControl.waitFor({ state: "visible" });
+  const imageModeControl = await settledModeControl(page);
   assert(
     (await imageModeControl.evaluate((element) => getComputedStyle(element).transform)) === "none",
     "Reduced-motion Image mode control still applied a transform.",
   );
   await videoMode.click();
-  await page.waitForTimeout(100);
-  const videoModeControl = page.locator('[data-create-motion="mode-control"]');
-  await videoModeControl.waitFor({ state: "visible" });
+  const videoModeControl = await settledModeControl(page);
   assert(
     (await videoModeControl.evaluate((element) => getComputedStyle(element).transform)) === "none",
     "Reduced-motion Video mode control still applied a transform.",
