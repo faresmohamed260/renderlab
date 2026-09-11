@@ -1598,3 +1598,420 @@ a {
     transform: none;
   }
 }
+
+
+/* Phase 23 approved v0.5 fidelity correction */
+.clear-create-workspace {
+  min-height: calc(100dvh - 72px);
+  max-width: 1440px !important;
+  padding: 52px 48px 42px !important;
+}
+
+.clear-create-stack {
+  max-width: 1120px !important;
+}
+
+.clear-create-context {
+  width: min(900px, 100%);
+  margin: 0 auto 28px !important;
+}
+
+.clear-create-eyebrow {
+  margin: 0;
+  color: #8f99aa;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+.clear-create-heading {
+  min-height: 0 !important;
+  margin: 15px 0 0;
+  font-size: clamp(42px, 5.1vw, 72px) !important;
+  line-height: .97 !important;
+  letter-spacing: -.058em !important;
+}
+
+.clear-create-supporting {
+  max-width: 650px !important;
+  margin: 16px 0 0 !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+}
+
+.clear-create-context::after {
+  width: min(420px, 56vw) !important;
+  margin-top: 20px !important;
+}
+
+.clear-composer-mode {
+  order: 1;
+  width: min(900px, 100%);
+  margin: 0 auto 10px !important;
+}
+
+.clear-composer-mode [role="radiogroup"] {
+  width: 214px !important;
+  height: 44px;
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  padding: 3px !important;
+  background: rgb(9 14 20 / 88%) !important;
+}
+
+.clear-composer-mode [role="radio"] {
+  min-height: 36px !important;
+  border-radius: 9px !important;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.clear-create-composer {
+  order: 2;
+  width: min(900px, 100%) !important;
+  padding: 0 !important;
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, rgb(14 20 29 / 96%), rgb(9 14 20 / 96%)) !important;
+}
+
+.clear-composer-reference-bar {
+  min-height: 62px !important;
+  padding: 12px 14px 4px !important;
+}
+
+.clear-composer-reference-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 !important;
+  padding: 0 14px 4px;
+}
+
+.clear-create-composer .kinetic-reference {
+  min-width: 246px;
+  min-height: 58px;
+  margin: 0 !important;
+  border-radius: 12px !important;
+}
+
+.clear-composer-prompt-label {
+  padding: 8px 16px 0;
+  color: #778395;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.clear-composer-prompt {
+  min-height: 120px !important;
+  resize: vertical;
+  padding: 10px 16px 17px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  font-size: 18px !important;
+  line-height: 1.55 !important;
+}
+
+.clear-composer-footer {
+  margin: 0 !important;
+  padding: 10px 12px 12px !important;
+  border: 0 !important;
+  border-top: 1px solid rgb(255 255 255 / 7%) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.clear-composer-settings {
+  gap: 6px !important;
+  padding: 0 !important;
+}
+
+.clear-composer-settings button {
+  min-height: 38px;
+  border-radius: 9px;
+}
+
+.clear-setting-label {
+  color: #788596;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.clear-composer-settings strong {
+  color: #cbd2db;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.clear-create-composer .kinetic-generate {
+  min-width: 132px;
+  min-height: 44px;
+  border-radius: 12px;
+  background: #f4f6f8 !important;
+  color: #070a0e !important;
+}
+
+.clear-create-advanced {
+  margin: 0 !important;
+  border-inline: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 0 !important;
+  background: rgb(6 10 15 / 40%) !important;
+  box-shadow: none !important;
+}
+
+.clear-create-advanced > div:first-child {
+  margin-bottom: 12px !important;
+}
+
+.clear-create-advanced-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.clear-create-advanced-copy {
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.clear-create-support-alert {
+  order: 4;
+  width: min(900px, 100%);
+  margin-inline: auto;
+}
+
+.clear-create-stage,
+.clear-create-result-loading,
+.clear-create-result {
+  order: 1;
+  margin-top: 0 !important;
+  margin-bottom: 24px !important;
+}
+
+.clear-create-stage[data-active="true"] {
+  width: min(900px, 100%) !important;
+  min-height: 480px !important;
+}
+
+.clear-create-result {
+  width: min(1120px, 100%) !important;
+  grid-template-columns: minmax(0, 1fr) 278px !important;
+  gap: 14px !important;
+}
+
+.clear-create-result-media {
+  min-height: 480px !important;
+  border-radius: 18px !important;
+}
+
+.clear-create-result-info {
+  min-height: 480px;
+  padding: 20px !important;
+  border-radius: 4px 18px 18px 4px !important;
+}
+
+.clear-result-kicker {
+  margin: 0;
+  color: #7c8797;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .17em;
+}
+
+.clear-result-meta-block h3 {
+  margin: 13px 0 0;
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+
+.clear-result-meta-block > p:last-child {
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.clear-result-specs {
+  margin: 24px 0;
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+
+.clear-result-specs div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+.clear-result-specs dt {
+  color: #727d8c;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.clear-result-specs dd {
+  margin: 0;
+  color: #c4cbd4;
+  font-size: 11px;
+}
+
+.clear-create-result-actions {
+  margin-top: auto !important;
+  gap: 8px !important;
+}
+
+.clear-create-result-actions > * {
+  min-height: 44px;
+  justify-content: flex-start !important;
+  border-radius: 10px;
+}
+
+.clear-create-workspace[data-create-has-stage="true"] .clear-create-context {
+  margin-bottom: 20px !important;
+}
+
+.clear-create-workspace[data-create-has-stage="true"] .clear-create-heading {
+  font-size: clamp(32px, 3.2vw, 48px) !important;
+}
+
+.clear-create-workspace[data-create-has-stage="true"] .clear-composer-mode {
+  order: 2;
+}
+
+.clear-create-workspace[data-create-has-stage="true"] .clear-create-composer {
+  order: 3;
+}
+
+@media (max-width: 900px) {
+  .clear-create-workspace {
+    padding-inline: 28px !important;
+  }
+
+  .clear-create-result {
+    grid-template-columns: 1fr !important;
+  }
+
+  .clear-create-result-info {
+    min-height: 0;
+    border-radius: 15px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .clear-create-workspace {
+    min-height: calc(100dvh - 64px);
+    padding: 28px 14px 28px !important;
+  }
+
+  .clear-create-context {
+    margin-bottom: 18px !important;
+  }
+
+  .clear-create-heading {
+    margin-top: 12px;
+    font-size: 42px !important;
+  }
+
+  .clear-create-supporting {
+    font-size: 14px !important;
+  }
+
+  .clear-composer-mode {
+    width: min(900px, 100%);
+  }
+
+  .clear-composer-mode [role="radiogroup"] {
+    width: 100% !important;
+    height: 48px;
+  }
+
+  .clear-composer-mode [role="radio"] {
+    min-height: 40px !important;
+  }
+
+  .clear-create-composer {
+    border-radius: 18px !important;
+  }
+
+  .clear-composer-reference-bar {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+    padding: 10px 10px 2px !important;
+  }
+
+  .clear-composer-reference-trigger {
+    width: 100%;
+    min-height: 44px !important;
+    justify-content: center;
+  }
+
+  .clear-composer-reference-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    padding: 0 10px 2px;
+  }
+
+  .clear-create-composer .kinetic-reference {
+    width: 100%;
+    min-width: 0;
+    min-height: 64px;
+  }
+
+  .clear-composer-prompt-label {
+    padding-inline: 13px;
+  }
+
+  .clear-composer-prompt {
+    min-height: 132px !important;
+    padding-inline: 13px !important;
+    font-size: 17px !important;
+  }
+
+  .clear-composer-footer {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .clear-composer-settings {
+    width: 100%;
+  }
+
+  .clear-composer-settings button {
+    min-height: 44px !important;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .clear-create-composer .kinetic-generate {
+    width: 100%;
+    min-height: 50px;
+  }
+
+  .clear-create-stage[data-active="true"] {
+    min-height: 340px !important;
+  }
+
+  .clear-create-result-media {
+    min-height: 340px !important;
+    border-radius: 15px !important;
+    transform: none !important;
+  }
+
+  .clear-create-workspace[data-create-has-stage="true"] .clear-create-context {
+    display: none;
+  }
+
+  .clear-create-result-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -110,13 +110,11 @@ export function CreateAdvancedPanel({
   const transition = reduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
   return (
-    <CollapsibleContent className="kinetic-precision-deck mt-3 overflow-hidden rounded-2xl border p-4 sm:p-5">
+    <CollapsibleContent className="clear-create-advanced kinetic-precision-deck overflow-hidden border-t px-3 py-3 sm:px-4 sm:py-3.5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-text">Advanced</p>
-          <p className="mt-1 text-xs leading-5 text-text-muted">
-            Reproducibility and contextual output controls. Defaults stay safe unless you change them.
-          </p>
+          <p className="clear-create-advanced-title text-text">Advanced</p>
+          <p className="clear-create-advanced-copy text-text-muted">Secondary controls</p>
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onReset} className="shrink-0">
           <RotateCcw aria-hidden="true" data-icon="inline-start" />
