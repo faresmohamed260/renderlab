@@ -16,15 +16,23 @@
   letter-spacing: .14em;
 }
 
-/* The plane is visual containment, not an interaction target. Let its real controls own
-   hit testing so recessed 2.5D reference actions stay reachable on touch and pointer. */
+/* The plane is visual containment, not an interaction target. Only live reference
+   objects and explicit add controls participate in hit testing. */
 .reference-plane {
   pointer-events: none;
 }
 
-.reference-plane button,
-.reference-plane [data-reference-object] {
+.reference-plane [data-reference-object],
+.reference-add-more {
   pointer-events: auto;
+}
+
+.instrument[data-reference="0"] .reference-add {
+  pointer-events: auto;
+}
+
+.instrument[data-reference="1"] .reference-add {
+  pointer-events: none;
 }
 
 .reference-stack {
