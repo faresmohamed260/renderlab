@@ -163,7 +163,8 @@ try {
   assert(assetRow?.thumbnail_storage_key?.endsWith(`/${asset.id}.webp`), "Create durable upload did not persist its deterministic thumbnail key.");
   await writeFile(fixturePath, JSON.stringify({ uploadId, assetId: asset.id, storageKey: session.storage_key }), "utf8");
 
-  await page.getByText("Editing this image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Create an image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("Primary image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByRole("textbox", { name: "Prompt" }).fill("Keep the subject, change the lighting to soft blue hour");
 
   let submittedBody = null;

@@ -49,7 +49,7 @@ test("Create rejects malformed Library continuation URLs without losing the defa
   expect(new URL(page.url()).searchParams.get("source")).toBe("not-a-media-id");
   expect(new URL(page.url()).searchParams.get("action")).toBe("edit-image");
 
-  await expect(page.getByRole("heading", { name: /What do you want to (create|explore|transform|imagine)\?/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create an image", exact: true })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "That continuation link is invalid." })).toBeVisible();
   await expect(page.getByRole("radiogroup", { name: "Output type" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "Image", exact: true })).toBeChecked();
@@ -63,7 +63,7 @@ test("Create requires sign-in before resolving a valid-looking private continuat
   expect(new URL(page.url()).searchParams.get("source")).toBe("00000000-0000-4000-8000-000000000000");
   expect(new URL(page.url()).searchParams.get("action")).toBe("edit-image");
 
-  await expect(page.getByRole("heading", { name: /What do you want to (create|explore|transform|imagine)\?/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create an image", exact: true })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "Sign in from Settings to continue from private RenderLab media." })).toBeVisible();
 });
 

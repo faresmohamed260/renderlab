@@ -3,11 +3,11 @@ import { expect, test } from "@playwright/test";
 const desktopViewport = { width: 1440, height: 1024 };
 const mobileViewport = { width: 390, height: 844 };
 
-test("Create exposes the reviewed minimal image composer", async ({ page }) => {
+test("Create exposes the approved Clear Composer image authoring", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/create");
 
-  await expect(page.getByRole("heading", { name: /What do you want to (create|explore|transform|imagine)\?/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create an image", exact: true })).toBeVisible();
   const prompt = page.getByRole("textbox", { name: "Prompt" });
   const composer = page.locator('[data-create-instrument="true"]');
   await expect(prompt).toBeVisible();
@@ -103,9 +103,9 @@ test("Create honors reduced motion for contextual mode transitions", async ({ pa
   await expect(modeControl).toBeVisible();
   await expect(modeControl).toHaveCSS("transform", "none");
   await expect(page.locator('[data-create-motion="context"]')).toHaveCSS("transform", "none");
-  await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create an image", exact: true })).toBeVisible();
   await page.waitForTimeout(4500);
-  await expect(page.getByRole("heading", { name: "What do you want to create?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create an image", exact: true })).toBeVisible();
 });
 
 test("Advanced controls use progressive disclosure and preserve per-output drafts", async ({ page }) => {
@@ -114,7 +114,6 @@ test("Advanced controls use progressive disclosure and preserve per-output draft
 
   await page.getByRole("button", { name: "Open Advanced controls" }).click();
   await expect(page.getByRole("button", { name: "Close Advanced controls" })).toBeVisible();
-  await expect(page.getByText("Advanced", { exact: true })).toBeVisible();
   const seedInput = page.getByRole("spinbutton", { name: "Seed" });
   await expect(seedInput).toHaveValue("42");
   const randomizeSeed = page.getByRole("button", { name: "Randomize seed", exact: true });
@@ -164,7 +163,6 @@ test("mobile Create keeps Generate on its own row and Advanced remains usable", 
   expect(box!.width).toBeGreaterThan(300);
 
   await page.getByRole("button", { name: "Open Advanced controls" }).click();
-  await expect(page.getByText("Advanced", { exact: true })).toBeVisible();
   await expect(page.getByRole("spinbutton", { name: "Seed" })).toBeVisible();
   const mobileNavigation = page.getByRole("navigation", { name: "Mobile navigation" });
   await expect(mobileNavigation).toBeVisible();
