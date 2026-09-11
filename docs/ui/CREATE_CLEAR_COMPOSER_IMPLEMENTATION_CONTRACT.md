@@ -2,7 +2,7 @@
 
 **Phase:** 23 / Cycle 5  
 **Planned UI record:** UI-073  
-**Status:** AUTHORIZED FOR IMPLEMENTATION / NOT STARTED  
+**Status:** IMPLEMENTATION IN PROGRESS / MERGE NOT AUTHORIZED
 **Approved by user:** 2026-09-11  
 **Implementation tracker:** GitHub issue #184  
 **Parent design R&D:** GitHub issue #148 / `design/rd/create-usability-first-v05.md`  

@@ -100,12 +100,6 @@ const imageModelTriggerLabels: Record<ImageGenerationModel, string> = {
   "flux2-klein-9b": "FLUX",
   "qwen-image-edit-2511": "Qwen",
 };
-const rotatingCreateHeadlines = [
-  "What do you want to create?",
-  "What do you want to explore?",
-  "What do you want to transform?",
-  "What do you want to imagine?",
-] as const;
 
 function ImageModelMenu({
   value,
@@ -359,7 +353,6 @@ export function CreateWorkspace({
     initialRecipe ? nextRecipeReferenceNumber(initialRecipe) : initialContinuation ? 2 : 1,
   );
   const [referenceMentionOpen, setReferenceMentionOpen] = useState(false);
-  const [createHeadlineIndex, setCreateHeadlineIndex] = useState(0);
   const [mentionMenuAnchorAlias, setMentionMenuAnchorAlias] = useState<GenerationInputAlias | null>(() =>
     initialRecipe?.references[0]?.alias ?? (initialContinuation ? generationInputAlias(1) : null),
   );
@@ -503,31 +496,16 @@ export function CreateWorkspace({
     && !referenceUploading
     && references.length < maxReferences;
 
-  useEffect(() => {
-    if (reduceMotion || hasReference || outputKind !== "image") {
-      setCreateHeadlineIndex(0);
-      return;
-    }
-    const intervalId = window.setInterval(() => {
-      setCreateHeadlineIndex((current) => (current + 1) % rotatingCreateHeadlines.length);
-    }, 4200);
-    return () => window.clearInterval(intervalId);
-  }, [hasReference, outputKind, reduceMotion]);
-
-  const heading = hasReference
-    ? outputKind === "image"
-      ? "Edit an image"
-      : "Animate an image"
-    : outputKind === "image"
-      ? rotatingCreateHeadlines[createHeadlineIndex]
-      : "Create a video";
-  const supportingText = hasReference
-    ? references.length > 1
-      ? "Your references set the creative context. The first image controls the primary edit geometry."
-      : "Your reference sets the creative context automatically."
-    : outputKind === "image"
-      ? "Start with an idea. Add a reference only when you need one."
-      : "Only the essentials stay visible. More control is available when you ask for it.";
+  const heading = outputKind === "image" ? "Create an image" : "Create a video";
+  const supportingText = outputKind === "image"
+    ? hasReference
+      ? references.length > 1
+        ? "Shape the result with a primary image and one supporting reference."
+        : "Shape the result from your primary image, then describe the change you want."
+      : "Describe what you want. Add references if you have them, then generate."
+    : hasReference
+      ? "Use the Start image as the first frame, then describe the motion or shot you want."
+      : "Describe the motion or shot you want. Add a Start image only when it helps.";
   const createContextKey = `${outputKind}:${hasReference ? references.length : 0}`;
 
   const unresolvedReferenceAliases = useMemo(
@@ -834,13 +812,13 @@ export function CreateWorkspace({
   }
 
   return (
-    <section className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-5xl flex-col px-4 pb-24 pt-12 sm:px-8 sm:pt-20 lg:pb-12 lg:pt-36">
-      <div className="mx-auto w-full max-w-3xl">
+    <section className="clear-create-workspace mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-7xl flex-col px-4 pb-24 pt-10 sm:px-8 sm:pt-16 lg:pb-16 lg:pt-24">
+      <div className="clear-create-stack mx-auto w-full max-w-6xl">
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={createContextKey}
             data-create-motion="context"
-            className="mb-8 sm:mb-12"
+            className="clear-create-context mb-8 sm:mb-10"
             initial={reduceMotion ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
@@ -848,28 +826,10 @@ export function CreateWorkspace({
           >
             <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-bright/80">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-accent-bright shadow-[0_0_14px_rgba(178,167,255,0.8)]" />
-              <span>
-                {outputKind === "image"
-                  ? hasReference ? "Image edit" : "Image synthesis"
-                  : hasReference ? "Image animation" : "Video synthesis"}
-              </span>
+              <span>{outputKind === "image" ? "Create / Image" : "Create / Video"}</span>
             </div>
-            <h2 className="min-h-[4.75rem] text-[30px] font-semibold tracking-[-0.035em] text-text sm:min-h-[2.75rem] sm:text-[34px]">
-              {!hasReference && outputKind === "image" ? (
-                <AnimatePresence initial={false} mode="wait">
-                  <motion.span
-                    key={createHeadlineIndex}
-                    className="block"
-                    aria-live="polite"
-                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
-                    transition={reduceMotion ? { duration: 0 } : { duration: 0.24, ease: "easeOut" }}
-                  >
-                    {heading}
-                  </motion.span>
-                </AnimatePresence>
-              ) : heading}
+            <h2 className="min-h-[3.25rem] text-[38px] font-semibold tracking-[-0.05em] text-text sm:text-[48px] lg:text-[56px]">
+              {heading}
             </h2>
             <p className="mt-2 max-w-2xl text-[15px] leading-6 text-text-muted">{supportingText}</p>
           </motion.div>
@@ -878,8 +838,9 @@ export function CreateWorkspace({
         <form
           onSubmit={submit}
           noValidate
-          className="kinetic-composer relative isolate overflow-hidden rounded-[24px] border p-3 sm:p-4"
+          className="clear-create-composer kinetic-composer relative isolate overflow-hidden rounded-[22px] border p-3 sm:p-4"
           data-create-instrument="true"
+          data-create-layout="clear-composer"
           data-create-mode={outputKind}
           data-create-drop-active={referenceDragActive ? "true" : "false"}
           onDragEnter={handleReferenceDragEnter}
@@ -911,6 +872,85 @@ export function CreateWorkspace({
               </div>
             </div>
           ) : null}
+          <div className="clear-composer-mode" data-create-mode-switch="true">
+            <ToggleGroup
+              type="single"
+              value={outputKind}
+              aria-label="Output type"
+              onValueChange={(value) => {
+                if (!value) return;
+                const kind = value as OutputKind;
+                if (references.length > maxGenerationInputsForOutput(kind)) {
+                  setError("Video uses one source image. Remove one reference before switching to Video.");
+                  return;
+                }
+                setOutputKind(kind);
+                setError(null);
+              }}
+              size="sm"
+              className="relative isolate shrink-0 overflow-hidden rounded-lg border border-white/[0.06] bg-black/20 p-0.5"
+            >
+              <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
+                {outputKind === "image" ? (
+                  <motion.span
+                    layoutId="create-output-mode-highlight"
+                    aria-hidden="true"
+                    className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(129,114,246,0.32),rgba(115,215,255,0.12))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(129,114,246,0.14)]"
+                    transition={reduceMotion ? { duration: 0 } : createMotionSpring}
+                  />
+                ) : null}
+                <span className="relative z-10">Image</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
+                {outputKind === "video" ? (
+                  <motion.span
+                    layoutId="create-output-mode-highlight"
+                    aria-hidden="true"
+                    className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(115,215,255,0.2),rgba(129,114,246,0.28))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(115,215,255,0.12)]"
+                    transition={reduceMotion ? { duration: 0 } : createMotionSpring}
+                  />
+                ) : null}
+                <span className="relative z-10">Video</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
+          <div className="clear-composer-reference-bar" data-create-reference-bar="true">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="clear-composer-reference-trigger"
+              disabled={
+                !accountAvailable
+                || !mediaUploadAvailable
+                || referenceUploading
+                || (references.length >= maxReferences && !(outputKind === "video" && references.length === 1))
+              }
+              onClick={() => chooseReferenceFile(outputKind === "video" && references[0] ? references[0].alias : null)}
+              aria-label={outputKind === "video" ? (references.length ? "Replace Start image" : "Start image") : "Add reference"}
+              title={
+                !accountAvailable
+                  ? "Sign in to add a private reference image."
+                  : !mediaUploadAvailable
+                    ? "Reference upload storage is not configured in this environment."
+                    : outputKind === "video" && references.length
+                      ? "Replace the Start image"
+                      : references.length >= maxReferences
+                        ? "Image supports up to two references."
+                        : outputKind === "video"
+                          ? "Add an optional Start image"
+                          : "Add a reference image"
+              }
+            >
+              {referenceUploading ? <Spinner data-icon="inline-start" /> : <Plus aria-hidden="true" data-icon="inline-start" />}
+              <span>{outputKind === "video" ? (references.length ? "Replace Start image" : "Start image") : "Add reference"}</span>
+            </Button>
+            <span className="clear-composer-reference-help">
+              {outputKind === "image" ? "Optional · up to two images" : "Optional · one image"}
+            </span>
+          </div>
+
           <Textarea
             ref={promptInputRef}
             id="create-prompt"
@@ -925,11 +965,11 @@ export function CreateWorkspace({
                   ? "Describe what you want to create…"
                   : "Describe the video you want to create…"
             }
-            className="min-h-36 px-2 py-2 text-[17px] leading-7 placeholder:text-text-muted/55 sm:min-h-32 sm:text-[18px]"
+            className="clear-composer-prompt min-h-36 px-2 py-2 text-[17px] leading-7 placeholder:text-text-muted/55 sm:min-h-32 sm:text-[18px]"
           />
 
           {references.length ? (
-            <div className="mb-3 space-y-2" aria-label="Attached references">
+            <div className="clear-composer-reference-list mb-3 space-y-2" data-create-reference-list="true" aria-label="Attached references">
               <AnimatePresence initial={false} mode="popLayout">
                 {references.map((reference, index) => (
                   <motion.div
@@ -953,12 +993,10 @@ export function CreateWorkspace({
                   <div className="min-w-32 flex-1 sm:min-w-0">
                     <p className="truncate text-sm font-semibold text-text">
                       {outputKind === "video"
-                        ? "Animating this image"
-                        : references.length === 1
-                          ? "Editing this image"
-                          : index === 0
-                            ? "Primary image"
-                            : "Reference image"}
+                        ? "Start image"
+                        : index === 0
+                          ? "Primary image"
+                          : "Reference image"}
                     </p>
                     <p className="truncate text-xs text-text-muted">{reference.label}</p>
                   </div>
@@ -1014,9 +1052,9 @@ export function CreateWorkspace({
             </div>
           ) : null}
 
-          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+          <Collapsible className="clear-composer-controls" open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <div className="kinetic-control-deck mt-3 flex flex-col gap-2 rounded-2xl border px-1 py-1.5 sm:flex-row sm:items-center sm:p-1.5">
-              <div data-create-primary-controls className="flex min-w-0 flex-1 flex-nowrap items-center gap-0.5 pb-1 sm:gap-2 sm:pb-0">
+              <div data-create-primary-controls className="clear-composer-settings flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:pb-0">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -1028,74 +1066,8 @@ export function CreateWorkspace({
                     if (file) void uploadReference(file, referenceUploadTargetAlias);
                   }}
                 />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="xs"
-                  className="size-8 !px-0"
-                  disabled={
-                    !accountAvailable
-                    || !mediaUploadAvailable
-                    || referenceUploading
-                    || references.length >= maxReferences
-                  }
-                  onClick={() => chooseReferenceFile(null)}
-                  aria-label="Add reference"
-                  title={
-                    !accountAvailable
-                      ? "Sign in to add a private reference image."
-                      : !mediaUploadAvailable
-                        ? "Reference upload storage is not configured in this environment."
-                        : references.length >= maxReferences
-                          ? outputKind === "image"
-                            ? "Image supports up to two references."
-                            : "Video supports one source image."
-                          : "Add a reference image"
-                  }
-                >
-                  {referenceUploading ? <Spinner /> : <Plus aria-hidden="true" />}
-                </Button>
 
-                <ToggleGroup
-                  type="single"
-                  value={outputKind}
-                  aria-label="Output type"
-                  onValueChange={(value) => {
-                    if (!value) return;
-                    const kind = value as OutputKind;
-                    if (references.length > maxGenerationInputsForOutput(kind)) {
-                      setError("Video uses one source image. Remove one reference before switching to Video.");
-                      return;
-                    }
-                    setOutputKind(kind);
-                    setError(null);
-                  }}
-                  size="sm"
-                  className="relative isolate shrink-0 overflow-hidden rounded-lg border border-white/[0.06] bg-black/20 p-0.5"
-                >
-                  <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
-                    {outputKind === "image" ? (
-                      <motion.span
-                        layoutId="create-output-mode-highlight"
-                        aria-hidden="true"
-                        className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(129,114,246,0.32),rgba(115,215,255,0.12))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(129,114,246,0.14)]"
-                        transition={reduceMotion ? { duration: 0 } : createMotionSpring}
-                      />
-                    ) : null}
-                    <span className="relative z-10">Image</span>
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
-                    {outputKind === "video" ? (
-                      <motion.span
-                        layoutId="create-output-mode-highlight"
-                        aria-hidden="true"
-                        className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(115,215,255,0.2),rgba(129,114,246,0.28))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(115,215,255,0.12)]"
-                        transition={reduceMotion ? { duration: 0 } : createMotionSpring}
-                      />
-                    ) : null}
-                    <span className="relative z-10">Video</span>
-                  </ToggleGroupItem>
-                </ToggleGroup>
+
 
                 <AnimatePresence initial={false} mode="wait">
                   {outputKind === "image" ? (
@@ -1164,9 +1136,10 @@ export function CreateWorkspace({
                     aria-pressed={advancedOpen}
                     aria-label={advancedOpen ? "Close Advanced controls" : "Open Advanced controls"}
                     title="Advanced generation controls"
-                    className={`size-8 !px-0${advancedOpen ? " bg-surface-3" : ""}`}
+                    className={`clear-composer-advanced-trigger min-h-10 gap-2 px-3${advancedOpen ? " bg-surface-3" : ""}`}
                   >
-                    <MoreHorizontal aria-hidden="true" />
+                    <span>Advanced</span>
+                    <MoreHorizontal aria-hidden="true" className="size-4" />
                   </Button>
                 </CollapsibleTrigger>
               </div>
@@ -1234,16 +1207,20 @@ export function CreateWorkspace({
           </Alert>
         ) : null}
 
-        {statusText ? (
+        {statusText && (jobActive || job?.status === "failed" || job?.status === "cancelled") ? (
           <Alert
-            className="kinetic-lifecycle relative mt-4 overflow-hidden"
+            className="clear-create-stage kinetic-lifecycle relative mt-6 overflow-hidden"
             role="status"
             data-create-lifecycle-state={job?.status}
             data-active={jobActive ? "true" : "false"}
           >
-            <AlertDescription className="relative z-10 flex items-center gap-3">
+            <AlertDescription className="clear-create-stage-content relative z-10 flex items-center gap-3">
               <span aria-hidden="true" className="kinetic-lifecycle-orb shrink-0" />
-              <span>{statusText}</span>
+              <span className="clear-create-stage-copy">
+                <span aria-hidden="true" className="clear-create-stage-kicker">RENDERLAB / GENERATION</span>
+                <strong>{statusText}</strong>
+                {jobActive ? <small>Your prompt, references, and settings stay attached below.</small> : null}
+              </span>
             </AlertDescription>
           </Alert>
         ) : null}
@@ -1253,7 +1230,7 @@ export function CreateWorkspace({
             <motion.div
               key="result-loading"
               data-create-motion="result"
-              className="kinetic-result mt-8 flex min-h-64 items-center justify-center rounded-[20px] border text-sm text-text-muted"
+              className="clear-create-result-loading kinetic-result mt-6 flex min-h-64 items-center justify-center rounded-[18px] border text-sm text-text-muted"
               role="status"
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1267,20 +1244,21 @@ export function CreateWorkspace({
             <motion.article
               key={resultAsset.id}
               data-create-motion="result"
-              className="kinetic-result mt-8 overflow-hidden rounded-[20px] border"
+              className="clear-create-result kinetic-result mt-6 overflow-hidden border"
+              data-create-result-kind={resultAsset.kind}
               aria-label="Generated result"
               initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.995 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
               transition={contextTransition}
             >
-              <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="clear-create-result-info flex flex-col gap-3 border border-border px-4 py-4" data-create-result-info="true">
                 <div>
                   <p className="text-sm font-semibold text-text">Generated result</p>
                   <p className="text-xs text-text-muted">Saved to your RenderLab media library.</p>
                 </div>
                 {continuationActions.length ? (
-                  <div className="flex items-center gap-2" aria-label="Continue from result">
+                  <div className="clear-create-result-actions flex items-center gap-2" aria-label="Continue from result">
                     {continuationActions.map((action) => (
                       <Button
                         key={action.id}
@@ -1294,15 +1272,15 @@ export function CreateWorkspace({
                   </div>
                 ) : null}
               </div>
-              <div className="bg-surface-2">
+              <div className="clear-create-result-media bg-surface-2" data-create-result-media={resultAsset.kind}>
                 {resultAsset.kind === "image" ? (
-                  <img src={resultAsset.contentUrl} alt="Generated result" className="max-h-[70vh] w-full object-contain" />
+                  <img src={resultAsset.contentUrl} alt="Generated result" className="clear-create-result-asset max-h-[70vh] w-full object-contain" />
                 ) : (
                   <video
                     src={resultAsset.contentUrl}
                     controls
                     playsInline
-                    className="max-h-[70vh] w-full"
+                    className="clear-create-result-asset max-h-[70vh] w-full"
                     aria-label="Generated video"
                   />
                 )}

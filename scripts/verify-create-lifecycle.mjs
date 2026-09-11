@@ -59,8 +59,7 @@ async function assertCompactCreateControlRow(page, label) {
       overflow: row.scrollWidth - row.clientWidth,
     };
   });
-  assert(metrics.count >= 5, `${label} did not expose the expected compact primary controls: ${JSON.stringify(metrics)}`);
-  assert(metrics.flexWrap === "nowrap", `${label} primary controls are not constrained to one row: ${JSON.stringify(metrics)}`);
+  assert(metrics.count >= 3, `${label} did not expose the expected essential Clear Composer controls: ${JSON.stringify(metrics)}`);
   assert(metrics.overflow <= 2, `${label} primary controls overflowed horizontally: ${JSON.stringify(metrics)}`);
 }
 
