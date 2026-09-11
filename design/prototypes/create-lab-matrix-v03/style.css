@@ -127,7 +127,7 @@ button { color: inherit; }
 .reference-add small { display:block; margin-top:5px; color:#657183; font-size:9px; }
 .reference-object {
   position:absolute; inset:58px 18px 18px; opacity:0; transform:translate3d(-92px,38px,60px) rotateY(-13deg) rotateZ(-5deg) scale(.82);
-  transform-origin:50% 50%; transition:opacity 180ms ease;
+  transform-origin:50% 50%; transition:opacity 180ms ease; pointer-events:none;
 }
 .reference-object img { width:100%; height:100%; object-fit:cover; filter:saturate(.93) contrast(1.05); }
 .reference-index { position:absolute; left:12px; bottom:12px; color:#fff; font-size:8px; letter-spacing:.15em; text-shadow:0 1px 12px #000; }
@@ -201,7 +201,7 @@ button { color: inherit; }
 .motion-spec li small { color:#8f99aa; font-size:12px; line-height:1.6; }
 
 .instrument[data-reference="1"] .reference-empty { opacity:0; pointer-events:none; }
-.instrument[data-reference="1"] .reference-object { opacity:1; }
+.instrument[data-reference="1"] .reference-object { opacity:1; pointer-events:auto; }
 .instrument[data-reference="1"] .reference-plane { height:350px; }
 .instrument[data-reference="1"] .advanced-plane { top:338px; }
 .instrument[data-reference="1"] .result-plane { top:478px; }

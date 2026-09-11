@@ -92,6 +92,11 @@
 
   shell.addEventListener('pointermove', (event) => {
     if (reduceMotion || event.pointerType === 'touch') return;
+    if (event.target.closest('button, textarea, a')) {
+      state.targetX = 0;
+      state.targetY = 0;
+      return;
+    }
     const rect = shell.getBoundingClientRect();
     state.targetX = ((event.clientX - rect.left) / rect.width - .5) * 2;
     state.targetY = ((event.clientY - rect.top) / rect.height - .5) * 2;
@@ -101,8 +106,8 @@
   function tick() {
     if (!state.running) return;
     if (!reduceMotion) {
-      const stiffness = .045;
-      const damping = .82;
+      const stiffness = .072;
+      const damping = .74;
       state.velocityX = (state.velocityX + (state.targetX - state.pointerX) * stiffness) * damping;
       state.velocityY = (state.velocityY + (state.targetY - state.pointerY) * stiffness) * damping;
       state.pointerX += state.velocityX;

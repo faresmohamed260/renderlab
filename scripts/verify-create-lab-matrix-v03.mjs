@@ -23,6 +23,8 @@ async function verifyDesktop() {
   await page.waitForTimeout(700);
   const transform = await page.locator(".instrument").evaluate((el) => getComputedStyle(el).transform);
   if (transform === "none") throw new Error("pointer field did not create perspective transform");
+  await page.mouse.move(box.x + box.width * .5, box.y + box.height * .5);
+  await page.waitForTimeout(1000);
 
   await page.getByRole("button", { name: /Add reference/i }).click();
   await page.waitForTimeout(1200);
