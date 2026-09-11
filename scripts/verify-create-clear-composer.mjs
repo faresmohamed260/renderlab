@@ -69,7 +69,7 @@ try {
   const videoMode = page.getByRole("radio", { name: "Video", exact: true });
   assert(await imageMode.isChecked(), "Clear Composer did not initialize in Image mode.");
   assert(await page.getByRole("button", { name: "Add reference", exact: true }).isVisible(), "Image authoring did not expose labelled Add reference.");
-  assert(await page.getByRole("textbox", { name: "Prompt" }).isVisible(), "Image authoring did not expose the Prompt.");
+  assert(await page.getByRole("textbox", { name: "Prompt", exact: true }).isVisible(), "Image authoring did not expose the Prompt.");
   assert(await page.getByRole("button", { name: "Generate", exact: true }).isVisible(), "Image authoring did not expose Generate.");
 
   const desktopGeometry = await composerGeometry(page);
@@ -83,7 +83,7 @@ try {
 
   await page.getByRole("button", { name: "Open Advanced controls", exact: true }).click();
   await page.getByRole("spinbutton", { name: "Seed", exact: true }).waitFor({ state: "visible" });
-  assert(await page.getByRole("textbox", { name: "Prompt" }).isVisible(), "Advanced disclosure displaced the Prompt.");
+  assert(await page.getByRole("textbox", { name: "Prompt", exact: true }).isVisible(), "Advanced disclosure displaced the Prompt.");
   assert(await page.getByRole("button", { name: "Generate", exact: true }).isVisible(), "Advanced disclosure displaced Generate.");
   await page.screenshot({ path: `${artifactDir}/desktop-image-advanced.png`, fullPage: true });
   await page.getByRole("button", { name: "Close Advanced controls", exact: true }).click();
