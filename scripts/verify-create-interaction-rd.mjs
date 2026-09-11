@@ -20,13 +20,24 @@ async function assertNoOverflow(page, label) {
   assert(result.scrollWidth <= result.clientWidth + 1, `${label} horizontal overflow: ${result.scrollWidth} > ${result.clientWidth}`);
 }
 
-async function assertFocusVisible(page, locator, label) {
-  await locator.focus();
+async function assertKeyboardFocusVisible(page, locator, label) {
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
+  let reached = false;
+  for (let i = 0; i < 60; i += 1) {
+    await page.keyboard.press('Tab');
+    if (await locator.evaluate((element) => element === document.activeElement)) {
+      reached = true;
+      break;
+    }
+  }
+  assert(reached, `${label} was not reachable by keyboard Tab navigation.`);
   const focus = await locator.evaluate((element) => {
     const style = getComputedStyle(element);
     return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
   });
-  assert(focus.outlineStyle !== 'none' && Number.parseFloat(focus.outlineWidth) > 0, `${label} has no visible focus outline.`);
+  assert(focus.outlineStyle !== 'none' && Number.parseFloat(focus.outlineWidth) > 0, `${label} has no visible keyboard focus outline.`);
 }
 
 async function screenshotState(page, state, name) {
@@ -57,12 +68,12 @@ try {
 
   const imageMode = desktop.getByRole('radio', { name: 'Image' });
   const videoMode = desktop.getByRole('radio', { name: 'Video' });
-  await assertFocusVisible(desktop, imageMode, 'Image mode');
+  await assertKeyboardFocusVisible(desktop, imageMode, 'Image mode');
   await videoMode.focus();
   await videoMode.press('Space');
   assert(await videoMode.getAttribute('aria-checked') === 'true', 'Keyboard Space did not activate Video mode.');
-  await assertFocusVisible(desktop, desktop.getByRole('button', { name: 'Add reference' }), 'Add reference');
-  await assertFocusVisible(desktop, desktop.getByRole('button', { name: /Advanced controls/ }), 'Advanced trigger');
+  await assertKeyboardFocusVisible(desktop, desktop.getByRole('button', { name: 'Add reference' }), 'Add reference');
+  await assertKeyboardFocusVisible(desktop, desktop.getByRole('button', { name: /Advanced controls/ }), 'Advanced trigger');
 
   const recordContext = await browser.newContext({
     viewport: { width: 1440, height: 900 },
