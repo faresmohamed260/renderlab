@@ -42,7 +42,7 @@ async function verifyDesktop() {
   if (await page.locator(".instrument").getAttribute("data-advanced") !== "open") throw new Error("advanced unfold failed");
   await page.screenshot({ path: path.join(out, "desktop-advanced.png"), fullPage: true });
 
-  await page.getByRole("button", { name: /Generate/i }).click();
+  await page.locator('[data-action="generate"]').click();
   await page.waitForTimeout(350);
   if (!(await page.locator(".instrument").evaluate((el) => el.classList.contains("is-charging")))) throw new Error("actuation state missing");
   await page.screenshot({ path: path.join(out, "desktop-actuate.png"), fullPage: true });
@@ -91,7 +91,7 @@ async function verifyMobile(reducedMotion = false) {
   await page.waitForTimeout(reducedMotion ? 80 : 820);
   await page.screenshot({ path: path.join(out, reducedMotion ? "mobile-reduced-advanced.png" : "mobile-advanced.png"), fullPage: true });
 
-  await page.getByRole("button", { name: /Generate/i }).tap();
+  await page.locator('[data-action="generate"]').tap();
   await page.waitForTimeout(reducedMotion ? 130 : 1350);
   if (await page.locator(".instrument").getAttribute("data-state") !== "result") throw new Error("mobile result morph failed");
   await page.screenshot({ path: path.join(out, reducedMotion ? "mobile-reduced-result.png" : "mobile-result.png"), fullPage: true });
