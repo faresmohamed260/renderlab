@@ -32,7 +32,7 @@ async function setState(page, { concept = 'register', view = 'image', compare = 
     if (panel) window.viewerPrototype.openPanel(panel);
     else window.viewerPrototype.closePanel();
   }, { concept, view, compare, panel });
-  await page.waitForTimeout(30);
+  await page.waitForTimeout(430);
 }
 
 async function verifyBase(page, label) {

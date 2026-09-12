@@ -199,6 +199,8 @@ button { color: inherit; }
 .result-frame { z-index: 2; transform-origin: center; }
 .source-frame {
   z-index: 1;
+  grid-column: 1;
+  grid-row: 1;
   visibility: hidden;
   opacity: 0;
   clip-path: inset(0 100% 0 0 round 14px);
@@ -331,7 +333,8 @@ button { color: inherit; }
 
 /* Compare: shared truth across concepts */
 body[data-compare="on"] .stage-grid { grid-template-columns: minmax(0, 1.55fr) minmax(260px, .75fr); }
-body[data-compare="on"] .source-frame { visibility: visible; opacity: 1; clip-path: inset(0 0 0 0 round 14px); transform: translateX(0) scale(1); transition-delay: 0s; }
+body[data-compare="off"] .source-frame { pointer-events: none; }
+body[data-compare="on"] .source-frame { grid-column: 2; grid-row: 1; visibility: visible; opacity: 1; clip-path: inset(0 0 0 0 round 14px); transform: translateX(0) scale(1); transition-delay: 0s; }
 body[data-compare="on"] .result-frame { transform: translateZ(0); }
 
 /* Concept A — Media Register */
@@ -471,6 +474,7 @@ body[data-view="video"] .context-meta span:nth-child(3)::after { content: "1080P
     grid-template-rows: minmax(360px, 52vh) minmax(260px, 38vh);
     gap: 10px;
   }
+  body[data-compare="on"] .source-frame { grid-column: 1; grid-row: 2; }
   body[data-concept="fold"][data-compare="on"] .result-frame { transform: none; border-radius: 14px; }
   body[data-concept="fold"][data-compare="on"] .source-frame { margin: 0; border-radius: 14px; transform: translateY(-12px); clip-path: inset(100% 0 0 0 round 14px); }
   body[data-concept="fold"][data-compare="on"] .source-frame { transform: translateY(0); clip-path: inset(0 0 0 0 round 14px); }
