@@ -12,6 +12,7 @@ export function LibrarySortToggle({
   newestHref: string;
   oldestHref: string;
 }) {
+  // UI-075 changes Gallery Rail presentation only; chronological sort remains URL/link-owned.
   const nextHref = sort === "newest" ? oldestHref : newestHref;
   const label = sort === "oldest" ? "Oldest first" : "Newest first";
   const nextLabel = sort === "oldest" ? "newest" : "oldest";
