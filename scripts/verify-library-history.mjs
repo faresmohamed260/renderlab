@@ -230,10 +230,13 @@ try {
 
   const olderCard = page.locator(`a[href="/library/${older.id}"]`);
   const cardBox = await olderCard.boundingBox();
-  const frameBox = await olderCard.locator(".kinetic-media-frame").boundingBox();
-  assert(cardBox && frameBox && Math.abs(cardBox.height - frameBox.height) <= 2.1, `Library media card metadata is still consuming a separate footer row: ${JSON.stringify({ cardBox, frameBox })}`);
-  const metadataPosition = await olderCard.locator(".kinetic-media-meta").evaluate((node) => getComputedStyle(node).position);
-  assert(metadataPosition === "absolute", `Library media metadata is not integrated over the media frame: ${metadataPosition}`);
+  const frameBox = await olderCard.locator('[data-library-media-frame="true"]').boundingBox();
+  const metadata = olderCard.locator('[data-library-media-meta="true"]');
+  const metadataBox = await metadata.boundingBox();
+  assert(cardBox && frameBox && metadataBox, "Library Gallery Rail card geometry could not be measured.");
+  assert(metadataBox.y >= frameBox.y + frameBox.height - 2, `Library Gallery Rail metadata is not attached below the media frame: ${JSON.stringify({ cardBox, frameBox, metadataBox })}`);
+  const titleFontSize = await metadata.locator("strong").evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize));
+  assert(titleFontSize >= 11, `Library Gallery Rail title metadata became decorative microtype: ${titleFontSize}px`);
   await page.screenshot({ path: `${artifactDir}/library-history-desktop-selected-card.png`, fullPage: true });
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
 

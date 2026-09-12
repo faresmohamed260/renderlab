@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, FolderOpen, ImageIcon, Search, Star, Video } from "lucide-react";
+import { ArrowLeft, ArrowRight, FolderOpen, ImageIcon, Search, Star, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import { LibraryDropUploadSurface } from "@/features/library/library-drop-upload
 import { LibraryNavigationLink } from "@/features/library/library-navigation-link";
 import { LibrarySortToggle } from "@/features/library/library-sort-toggle";
 import { LibraryUploadButton } from "@/features/library/library-upload-button";
+import styles from "@/features/library/library-gallery.module.css";
 import {
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
   type MediaAssetListKind,
@@ -174,21 +175,130 @@ export function LibraryView({
     String(offset),
   ].join(":");
 
+  const sourceControls = (
+    <nav className={styles.sourceSwitch} aria-label="Library sections">
+      {tabs.map((section) => {
+        const active = tab === section.value;
+        return (
+          <Button key={section.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
+            <LibraryNavigationLink
+              href={libraryHref(section.value, kind, searchQuery, sort, favoriteOnly, selectedCollectionId)}
+              aria-current={active ? "page" : undefined}
+            >
+              {section.label}
+            </LibraryNavigationLink>
+          </Button>
+        );
+      })}
+    </nav>
+  );
+
+  const searchControls = (
+    <form action="/library" method="get" role="search" className={styles.searchForm}>
+      {tab === "uploads" ? <input type="hidden" name="tab" value="uploads" /> : null}
+      {kind !== "all" ? <input type="hidden" name="kind" value={kind} /> : null}
+      {sort !== "newest" ? <input type="hidden" name="sort" value={sort} /> : null}
+      {favoriteOnly ? <input type="hidden" name="favorite" value="true" /> : null}
+      {selectedCollectionId ? <input type="hidden" name="collection" value={selectedCollectionId} /> : null}
+      <Button type="submit" variant="ghost" size="icon-lg" className={styles.searchSubmit} aria-label="Search Library">
+        <Search aria-hidden="true" size={17} />
+      </Button>
+      <label className={styles.searchLabel}>
+        <span className="sr-only">Search Library</span>
+        <Input
+          type="search"
+          name="q"
+          defaultValue={searchQuery ?? ""}
+          maxLength={MEDIA_ASSET_SEARCH_MAX_LENGTH}
+          placeholder="Search Library"
+          className={styles.searchInput}
+        />
+      </label>
+      {searchQuery ? (
+        <Button asChild variant="ghost" size="icon-lg" className={styles.clearSearch}>
+          <Link
+            href={libraryHref(tab, kind, null, sort, favoriteOnly, selectedCollectionId)}
+            aria-label="Clear Library search"
+          >
+            <X aria-hidden="true" size={17} />
+          </Link>
+        </Button>
+      ) : null}
+    </form>
+  );
+
+  const filterControls = (
+    <div className={styles.filterRow} aria-label="Library filters">
+      <nav className={styles.kindSwitch} aria-label="Library media type">
+        {filters.map((filter) => {
+          const active = kind === filter.value;
+          return (
+            <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
+              <LibraryNavigationLink
+                href={libraryHref(tab, filter.value, searchQuery, sort, favoriteOnly, selectedCollectionId)}
+                aria-current={active ? "page" : undefined}
+              >
+                {filter.label}
+              </LibraryNavigationLink>
+            </Button>
+          );
+        })}
+      </nav>
+      <span className={styles.filterDivider} aria-hidden="true" />
+      <Button asChild variant={favoriteOnly ? "secondary" : "ghost"} size="sm" className="shrink-0">
+        <LibraryNavigationLink href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
+          <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
+          Favorites
+        </LibraryNavigationLink>
+      </Button>
+      {collectionsAvailable ? (
+        <LibraryCollectionMenu
+          collections={collections}
+          selectedCollectionId={selectedCollectionId}
+          allHref={libraryHref(tab, kind, searchQuery, sort, favoriteOnly, null)}
+          collectionHrefs={collectionHrefs}
+        />
+      ) : null}
+      <div className={styles.sortWrap}>
+        <LibrarySortToggle
+          sort={sort}
+          newestHref={libraryHref(tab, kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
+          oldestHref={libraryHref(tab, kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}
+        />
+      </div>
+    </div>
+  );
+
+  const uploadAction = accountAvailable && uploadAvailable && tab === "uploads"
+    ? <LibraryUploadButton />
+    : null;
+
+  const staticCommandRail = (
+    <div className={styles.commandSurface} data-library-gallery-rail="true" data-selection="off">
+      <div className={styles.defaultControls}>
+        <div className={styles.sourceCell}>{sourceControls}</div>
+        <div className={styles.searchCell}>{searchControls}</div>
+        <div className={styles.actionCell}>{uploadAction}</div>
+        <div className={styles.filterCell}>{filterControls}</div>
+      </div>
+    </div>
+  );
+
+  const mediaContextLabel = `${sectionTitle.toUpperCase()} / ${sort === "oldest" ? "OLDEST" : "NEWEST"}`;
+
   return (
     <LibraryDropUploadSurface enabled={accountAvailable && uploadAvailable && tab === "uploads"}>
-      <section className="kinetic-media-workspace mx-auto w-full max-w-[1240px] px-4 pb-28 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-text">Library</h2>
-            <p className="mt-2 max-w-xl text-[15px] text-text-muted">
-              Browse durable media and continue from the work you want to keep.
-            </p>
-          </div>
-          {accountAvailable && uploadAvailable && tab === "uploads" ? <LibraryUploadButton /> : null}
+      <section className={`${styles.workspace} mx-auto w-full max-w-[1440px] px-4 pb-28 pt-6 sm:px-8 sm:pb-16 sm:pt-8 lg:px-12 lg:pt-9`}>
+        <div className={styles.contextBlock}>
+          <p className={styles.eyebrow}>LIBRARY / MEDIA INDEX</p>
+          <h2 className={styles.title}>Library</h2>
+          <p className={styles.support}>
+            Browse, find and organize durable work without putting controls ahead of the work itself.
+          </p>
         </div>
 
         {!accountAvailable ? (
-          <Empty className="mt-8 min-h-72 rounded-xl border border-dashed border-border bg-surface-1 px-6">
+          <Empty className={`${styles.emptyState} min-h-72 rounded-xl border border-dashed border-border bg-surface-1 px-6`}>
             <EmptyHeader>
               <EmptyMedia><ImageIcon aria-hidden="true" /></EmptyMedia>
               <EmptyTitle>Sign in to use Library</EmptyTitle>
@@ -204,99 +314,16 @@ export function LibraryView({
           </Empty>
         ) : (
           <>
-            <nav className="kinetic-media-tabs mt-8 inline-flex rounded-xl border border-border p-1" aria-label="Library sections">
-              {tabs.map((section) => {
-                const active = tab === section.value;
-                return (
-                  <Button key={section.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
-                    <LibraryNavigationLink
-                      href={libraryHref(section.value, kind, searchQuery, sort, favoriteOnly, selectedCollectionId)}
-                      aria-current={active ? "page" : undefined}
-                    >
-                      {section.label}
-                    </LibraryNavigationLink>
-                  </Button>
-                );
-              })}
-            </nav>
-
-            <div className="kinetic-media-toolbar mt-5 flex flex-col items-stretch gap-3 rounded-2xl border border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-              <nav className="grid w-full grid-cols-3 rounded-lg bg-surface-2 p-1 sm:flex sm:w-auto" aria-label="Library media type">
-                {filters.map((filter) => {
-                  const active = kind === filter.value;
-                  return (
-                    <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm" className="w-full sm:w-auto">
-                      <LibraryNavigationLink
-                        href={libraryHref(tab, filter.value, searchQuery, sort, favoriteOnly, selectedCollectionId)}
-                        aria-current={active ? "page" : undefined}
-                      >
-                        {filter.label}
-                      </LibraryNavigationLink>
-                    </Button>
-                  );
-                })}
-              </nav>
-              <div className="grid w-full grid-cols-2 items-center gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
-                <Button asChild variant={favoriteOnly ? "secondary" : "outline"} size="sm" className="w-full self-center sm:w-auto">
-                  <LibraryNavigationLink href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
-                    <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
-                    Favorites
-                  </LibraryNavigationLink>
-                </Button>
-                {collectionsAvailable ? (
-                  <LibraryCollectionMenu
-                    collections={collections}
-                    selectedCollectionId={selectedCollectionId}
-                    allHref={libraryHref(tab, kind, searchQuery, sort, favoriteOnly, null)}
-                    collectionHrefs={collectionHrefs}
-                  />
-                ) : null}
-                <LibrarySortToggle
-                  sort={sort}
-                  newestHref={libraryHref(tab, kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
-                  oldestHref={libraryHref(tab, kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}
-                />
-              </div>
-            </div>
-
-            <form action="/library" method="get" role="search" className="kinetic-media-search mt-4 flex w-full max-w-xl items-center gap-2 rounded-2xl border border-border p-2">
-              {tab === "uploads" ? <input type="hidden" name="tab" value="uploads" /> : null}
-              {kind !== "all" ? <input type="hidden" name="kind" value={kind} /> : null}
-              {sort !== "newest" ? <input type="hidden" name="sort" value={sort} /> : null}
-              {favoriteOnly ? <input type="hidden" name="favorite" value="true" /> : null}
-              {selectedCollectionId ? <input type="hidden" name="collection" value={selectedCollectionId} /> : null}
-              <label className="relative min-w-0 flex-1">
-                <span className="sr-only">Search Library</span>
-                <Search
-                  aria-hidden="true"
-                  size={17}
-                  className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-text-muted"
-                />
-                <Input
-                  type="search"
-                  name="q"
-                  defaultValue={searchQuery ?? ""}
-                  maxLength={MEDIA_ASSET_SEARCH_MAX_LENGTH}
-                  placeholder="Search by name or prompt"
-                  className="pl-10"
-                />
-              </label>
-              <Button type="submit" variant="outline">Search</Button>
-              {searchQuery ? (
-                <Button asChild variant="ghost">
-                  <Link href={libraryHref(tab, kind, null, sort, favoriteOnly, selectedCollectionId)}>Clear</Link>
-                </Button>
-              ) : null}
-            </form>
+            {!available || items.length === 0 ? staticCommandRail : null}
 
             {!available ? (
-              <Alert className="mt-8" role="status">
+              <Alert className={styles.unavailableState} role="status">
                 <AlertDescription className="text-text-muted">
                   Library media is not connected in this environment yet.
                 </AlertDescription>
               </Alert>
             ) : items.length === 0 ? (
-              <Empty className="mt-8 min-h-72 rounded-xl border border-dashed border-border bg-surface-1 px-6">
+              <Empty className={`${styles.emptyState} min-h-72 rounded-xl border border-dashed border-border bg-surface-1 px-6`}>
                 <EmptyHeader>
                   <EmptyMedia>
                     {collectionMissing || selectedCollectionName ? (
@@ -326,7 +353,17 @@ export function LibraryView({
               </Empty>
             ) : (
               <>
-                <LibraryBatchSelection key={batchSelectionKey} items={items} collections={collections} />
+                <LibraryBatchSelection
+                  key={batchSelectionKey}
+                  items={items}
+                  collections={collections}
+                  sourceControls={sourceControls}
+                  searchControls={searchControls}
+                  filterControls={filterControls}
+                  uploadAction={uploadAction}
+                  mediaContextLabel={mediaContextLabel}
+                  dropHint={tab === "uploads" ? "Drop files anywhere to upload" : null}
+                />
 
                 {(offset > 0 || hasMore) ? (
                   <nav className="mt-8 flex items-center justify-between gap-3" aria-label="Library pages">
