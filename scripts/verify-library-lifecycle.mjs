@@ -233,7 +233,17 @@ try {
   await cardImage.waitFor({ state: "visible", timeout: 30_000 });
   assert((await cardImage.getAttribute("src")) === completionPayload.asset.thumbnailUrl, "Library card did not render the durable thumbnail route.");
   const cardMetrics = await imageMetrics(cardImage, "Uploaded Library card image");
-  assertRatio(cardMetrics, fixtureWidth / fixtureHeight, "Uploaded Library card image");
+  const cardFrame = card.locator('[data-library-media-frame="true"]');
+  const cardFrameBox = await cardFrame.boundingBox();
+  assert(cardFrameBox, "Uploaded Library card media frame could not be measured.");
+  const cardFrameRatio = cardFrameBox.width / cardFrameBox.height;
+  assert(cardFrameRatio > 1.10 && cardFrameRatio < 1.16, `Uploaded Library Gallery Rail frame ratio ${cardFrameRatio.toFixed(3)} did not match UI-075.`);
+  assert(
+    Math.abs(cardMetrics.renderedWidth - cardFrameBox.width) < 1
+      && Math.abs(cardMetrics.renderedHeight - cardFrameBox.height) < 1,
+    `Uploaded Library image does not fill its Gallery Rail media frame: ${JSON.stringify({ cardMetrics, cardFrameBox })}`,
+  );
+  assert(cardMetrics.objectFit === "cover", `Uploaded Library Gallery Rail image object-fit changed: ${cardMetrics.objectFit}`);
 
   await page.getByRole("link", { name: "Creatives", exact: true }).click();
   await page.waitForURL((url) => url.pathname === "/library" && !url.searchParams.has("tab"), { timeout: 30_000 });
