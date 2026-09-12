@@ -1,0 +1,64 @@
+name: Fix Media Viewer v0.2 mobile action names
+
+on:
+  push:
+    branches:
+      - rd/media-viewer-register-fold-v02
+    paths:
+      - '.github/workflows/tmp-media-viewer-v02-a11y-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout R&D branch
+        uses: actions/checkout@v4
+        with:
+          ref: rd/media-viewer-register-fold-v02
+          fetch-depth: 0
+
+      - name: Add explicit mobile-safe accessible names and tighten verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          index = Path('design/prototypes/media-viewer-register-fold-v02/index.html')
+          text = index.read_text()
+          text = text.replace('<button type="button" aria-pressed="false">☆ <span>Favorite</span></button>', '<button type="button" aria-label="Favorite" aria-pressed="false">☆ <span>Favorite</span></button>')
+          text = text.replace('<button type="button">↓ <span>Download</span></button>', '<button type="button" aria-label="Download">↓ <span>Download</span></button>')
+          index.write_text(text)
+
+          verifier = Path('scripts/verify-media-viewer-register-fold-v02.mjs')
+          script = verifier.read_text()
+          old = '''  assert.equal(await page.locator('.quick-actions button').count(), 2, `${label}: Favorite and Download remain quick actions`);\n  const quick = (await page.locator('.quick-actions').innerText()).replace(/\\s+/g, ' ').trim();\n  assert.match(quick, /Favorite/);\n  assert.match(quick, /Download/);\n'''
+          new = '''  assert.equal(await page.locator('.quick-actions button').count(), 2, `${label}: Favorite and Download remain quick actions`);\n  assert.equal(await page.getByRole('button', { name: 'Favorite', exact: true }).count(), 1, `${label}: Favorite quick action has an explicit accessible name`);\n  assert.equal(await page.getByRole('button', { name: 'Download', exact: true }).count(), 1, `${label}: Download quick action has an explicit accessible name`);\n'''
+          if old not in script:
+              raise SystemExit('expected verifier block not found')
+          verifier.write_text(script.replace(old, new))
+          PY
+
+      - name: Verify bounded correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'aria-label="Favorite"' design/prototypes/media-viewer-register-fold-v02/index.html
+          grep -q 'aria-label="Download"' design/prototypes/media-viewer-register-fold-v02/index.html
+          grep -q "getByRole('button', { name: 'Favorite', exact: true })" scripts/verify-media-viewer-register-fold-v02.mjs
+          grep -q "getByRole('button', { name: 'Download', exact: true })" scripts/verify-media-viewer-register-fold-v02.mjs
+          git diff --check
+
+      - name: Commit correction and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add design/prototypes/media-viewer-register-fold-v02/index.html scripts/verify-media-viewer-register-fold-v02.mjs
+          git rm .github/workflows/tmp-media-viewer-v02-a11y-fix.yml
+          git commit -m 'Fix Viewer v0.2 mobile action accessibility'
+          git push origin HEAD:rd/media-viewer-register-fold-v02
