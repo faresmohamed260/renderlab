@@ -2,12 +2,13 @@
 
 **Phase:** 23 / Cycle 5
 **Planned UI record:** UI-073
-**Status:** COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
+**Status:** REOPENED FOR VISUAL FIDELITY CORRECTION / CORRECTION IMPLEMENTATION VERIFIED / MERGE ACCEPTANCE PENDING / NOT DEPLOYED
 **Approved by user:** 2026-09-11
 **Implementation tracker:** GitHub issue #184
 **Parent design R&D:** GitHub issue #148 / `design/rd/create-usability-first-v05.md`
 **Design review checkpoint:** draft PR #183 — review-only, never the production implementation merge vehicle
 **Implementation branch:** `work/phase-23-create-clear-composer`
+**Fidelity-correction branch:** `work/phase-23-create-fidelity-correction` / draft PR #188
 
 ## Purpose
 
@@ -347,3 +348,23 @@ Phase 23 is complete only when:
 - the final production implementation candidate is explicitly accepted for merge.
 
 Deployment is not part of this phase exit unless separately authorized.
+
+## Fidelity correction reopening — 2026-09-12
+
+Direct user comparison against the approved v0.5 artifact reopened this contract after the first merged Phase 23 implementation proved functionally correct but materially drifted from the accepted visual composition. The approved evidence did not change: prototype/code head `6237f59351d2cd7b397881f617a483d62d9bf438`, run `34613720083`, artifact `10269841181`, digest `sha256:3d3eec07dc2ff4924deb2ce6739bca420fba88e816665af34c4289ed45aae1c0` remain the binding visual authority.
+
+Issue #184 is reopened. Draft PR #188 / `work/phase-23-create-fidelity-correction` is the correction vehicle. Library R&D #187 is paused until Create fidelity is accepted.
+
+The correction restores the approved compact horizontal application header instead of the merged desktop rail/mobile dock geometry; the 900px Create authoring column and 1120px result composition; Image/Video selection above the composer; visible `PROMPT` labelling; reference-before-prompt order; a flat essential-settings footer with visible setting label/value grammar; a conventional high-contrast stable Generate action; Advanced attached flush to the composer; and the detailed asymmetric media-first result rail. Existing generation, upload, account/admission, ownership, durable-media, native-video, capability and continuation contracts remain unchanged. No schema, provider/worker, R2/storage, route hierarchy or deployment change is part of the correction.
+
+Exact implementation/test head `ca27de9dd329a6c66cb24006ec9578889b518c94` passed every workflow GitHub attached directly to that head (16/16): Engineering Quality `34664359993`, Create Clear Composer Visual `34664359922`, Brand / Launch Visual `34664359945`, Account Ownership `34664359898`, Create Durable Upload `34664359959`, UI Shell `34664359939`, Account Identity `34664359917`, Activity Cancel `34664359942`, Library Lifecycle `34664359936`, Activity Visual `34664359996`, Account/Admin Operations `34664359952`, Create Lifecycle `34664359900`, Creative Iteration `34664359937`, Generation Admission `34664359906`, Integrated Release `34664359982`, and Video Generation Integration `34664359904`.
+
+Current browser evidence:
+- Create Clear Composer Visual artifact `10288233834` — `sha256:56d10d1f5a11450475abb5a9b8ad35824772ca1e72916039a78b8c1aa3eca975`;
+- configured Create Lifecycle artifact `10287909397` — `sha256:0c6fb106c1d4cd78b3a2d646434f8c5e65c2d0ca2b67361bf8e9c126e3d7c286`.
+
+The prior two Create Lifecycle attempts failed only after real generation submission, provider reconciliation and durable persistence had succeeded. Both timed out on a stale post-Edit wait for the large `Create an image` heading. The correction verifier does not weaken continuation semantics: `ca27de9...` replaces that presentation-only wait with the actual invariant checks that Edit continuation remains in Image mode, exposes `Primary image`, and resolves the durable `Reference preview`. No product code was changed to turn that red check green.
+
+This documentation synchronization intentionally advances the branch beyond `ca27de9...`. Therefore the next session must treat the resulting documentation-final head as a new exact candidate: confirm the normal PR-attached workflows and Release Candidate Matrix policy required by repository reality before declaring merge readiness. Do not borrow `ca27de9...` success as proof for a later code/doc head.
+
+Merge and deployment remain separate guarded operations. PR #188 stays draft/open/unmerged until explicit merge authorization and exact-head acceptance. Production remains source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled.

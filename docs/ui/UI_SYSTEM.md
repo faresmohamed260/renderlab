@@ -110,6 +110,11 @@ Do not build a card-within-card-within-card visual hierarchy. Group by spacing, 
 ## Application Shell Direction
 The shell structure originated in the historical Figma v0.2 exploration and has since been implemented, remotely built, and responsive-render reviewed. The repository implementation/documentation is now authoritative; the old design file is only supporting history. The shell is `APPROVED`, not `LOCKED`.
 
+### Phase 23 fidelity-correction shell candidate
+UI-074 / PR #188 reopens only the shell **presentation geometry** needed to match the explicitly approved Clear Composer v0.5 evidence. The accepted correction candidate uses one fixed compact horizontal application header on desktop and narrow layouts, with Brand → Create, Library, Activity and Settings/account access; it has no persistent desktop left rail and no fixed mobile bottom dock. Route/content ownership, navigation destinations, prefetch/refresh behavior, account semantics and the shell/feature boundary remain unchanged.
+
+Until PR #188 is explicitly merged, the UI-071 rail/mobile-dock bullets below still describe current merged `main`/production reality. If the correction merges, UI-074 supersedes those geometry bullets and this candidate becomes the active shell baseline. Do not infer merge or deployment from this documentation update.
+
 ### Shell/feature boundary
 The persistent application shell owns:
 - global/product navigation;

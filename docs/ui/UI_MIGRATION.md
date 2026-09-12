@@ -36,6 +36,17 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 **Phase 23 status: `IMPLEMENTATION VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
+## Phase 23 fidelity correction reopening — 2026-09-12
+- [x] Direct user fidelity review rejected the first merged Phase 23 pixels as materially divergent from the approved v0.5 artifact; issue #184 is reopened and the approved v0.5 evidence remains authoritative.
+- [x] Draft PR #188 / `work/phase-23-create-fidelity-correction` restores the approved horizontal shell and Clear Composer composition without changing product/backend/security/data contracts.
+- [x] Exact implementation/test head `ca27de9dd329a6c66cb24006ec9578889b518c94` passed all 16 directly attached workflows. Create Clear Composer Visual `34664359922` produced artifact `10288233834` (`sha256:56d10d1f5a11450475abb5a9b8ad35824772ca1e72916039a78b8c1aa3eca975`); configured Create Lifecycle `34664359900` produced artifact `10287909397` (`sha256:0c6fb106c1d4cd78b3a2d646434f8c5e65c2d0ca2b67361bf8e9c126e3d7c286`).
+- [x] Repeated pre-fix Create Lifecycle failure was isolated to the stale post-Edit `Create an image` heading wait after real generation and durable persistence had already succeeded. The final verifier asserts the actual continuation invariants: Image mode, `Primary image`, and a loaded durable reference preview.
+- [x] Production remains unchanged; Library R&D #187 remains paused pending Create fidelity closure.
+- [ ] Re-run/confirm the normal exact-head acceptance on the documentation-final PR head before declaring PR #188 merge-ready.
+- [ ] Merge only after explicit user authorization; deployment remains a separate explicit operation.
+
+**Phase 23 correction status: `FIDELITY CORRECTION IMPLEMENTATION VERIFIED / DOCUMENTATION SYNCHRONIZED / EXACT-HEAD MERGE ACCEPTANCE PENDING / NOT MERGED / NOT DEPLOYED`.**
+
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
 - [x] Define RenderLab capability model, progressive-disclosure boundaries and information architecture.
