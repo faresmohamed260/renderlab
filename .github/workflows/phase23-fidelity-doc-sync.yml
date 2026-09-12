@@ -1,0 +1,170 @@
+name: Phase 23 Fidelity Documentation Sync
+
+on:
+  push:
+    branches:
+      - work/phase-23-create-fidelity-correction
+    paths:
+      - .github/workflows/phase23-fidelity-doc-sync.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase23-fidelity-doc-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout correction branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-23-create-fidelity-correction
+          fetch-depth: 0
+
+      - name: Synchronize source-of-truth documentation
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          VERIFIED_HEAD = "ca27de9dd329a6c66cb24006ec9578889b518c94"
+          MAIN = "240ac42e45ec3f6110ed7b9f0682d96d59a448c0"
+          VISUAL_RUN = "34664359922"
+          VISUAL_ARTIFACT = "10288233834"
+          VISUAL_DIGEST = "sha256:56d10d1f5a11450475abb5a9b8ad35824772ca1e72916039a78b8c1aa3eca975"
+          LIFECYCLE_RUN = "34664359900"
+          LIFECYCLE_ARTIFACT = "10287909397"
+          LIFECYCLE_DIGEST = "sha256:0c6fb106c1d4cd78b3a2d646434f8c5e65c2d0ca2b67361bf8e9c126e3d7c286"
+
+          def read(path):
+              return Path(path).read_text()
+
+          def write(path, text):
+              Path(path).write_text(text)
+
+          def insert_before(path, marker, block):
+              text = read(path)
+              if block.strip() in text:
+                  return
+              if marker not in text:
+                  raise SystemExit(f"marker not found in {path}: {marker!r}")
+              write(path, text.replace(marker, block + "\n\n" + marker, 1))
+
+          def insert_after(path, marker, block):
+              text = read(path)
+              if block.strip() in text:
+                  return
+              if marker not in text:
+                  raise SystemExit(f"marker not found in {path}: {marker!r}")
+              write(path, text.replace(marker, marker + "\n\n" + block, 1))
+
+          project_block = f'''## Phase 23 Create fidelity correction — 2026-09-12
+          - Direct user comparison against the explicitly approved Clear Composer v0.5 evidence reopened issue #184 after the first merged Phase 23 implementation proved functionally correct but materially drifted from the approved composition. The design authority remains prototype/code head `6237f59351d2cd7b397881f617a483d62d9bf438`, R&D run `34613720083`, artifact `10269841181` (`sha256:3d3eec07dc2ff4924deb2ce6739bca420fba88e816665af34c4289ed45aae1c0`).
+          - Current authoritative repository `main` is `{MAIN}`. Fidelity correction work is isolated on `work/phase-23-create-fidelity-correction` in draft PR #188; Library redesign R&D #187 is paused until this correction closes.
+          - Verified correction implementation head `{VERIFIED_HEAD}` restores the approved compact horizontal application header, 900px authoring / 1120px result composition, Image/Video-above-composer order, visible `PROMPT` labelling, reference-before-prompt grammar, flat essential-settings footer, visible setting label/value grammar, stable high-contrast Generate, composer-attached Advanced and detailed asymmetric media-first result rail. The correction changes no schema, worker/provider, routing, auth/admission, ownership, durable-media, storage or deployment contract.
+          - All 16 workflows GitHub attached directly to `{VERIFIED_HEAD[:7]}...` passed, including Engineering Quality `34664359993`, Create Clear Composer Visual `{VISUAL_RUN}`, configured Create Lifecycle `{LIFECYCLE_RUN}`, UI Shell `34664359939`, Integrated Release `34664359982`, Generation Admission `34664359906` and Video Generation Integration `34664359904`. Clear Composer artifact `{VISUAL_ARTIFACT}` has digest `{VISUAL_DIGEST}`; lifecycle artifact `{LIFECYCLE_ARTIFACT}` has digest `{LIFECYCLE_DIGEST}`.
+          - The immediately prior lifecycle red was audited as a stale post-Edit presentation assertion: real generation submission, provider reconciliation and durable persistence completed successfully, then the verifier waited on a large heading that is not the continuation invariant. `{VERIFIED_HEAD[:7]}...` changes only that assertion to require Image mode, `Primary image` and the durable reference preview; no product behavior was changed to manufacture a green result.
+          - PR #188 remains **draft / open / unmerged**. This documentation synchronization advances the branch beyond the verified implementation head, so the documentation-final exact head must itself complete the repository's normal exact-head acceptance before merge readiness is claimed. Merge remains separately explicit; production deployment remains separately explicit and unauthorized.
+          - Production is unchanged at source `0173c4c5ba08360b6352331118abc81978cfa774`, READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, served at `renderlab.faresuniform.uk`. Automatic Git → Vercel deployment remains disabled.'''
+          project_block = "\n".join(line.strip() if line.startswith("          ") else line for line in project_block.splitlines())
+          insert_before("PROJECT.md", "## Current Verified Baseline — 2026-09-11", project_block)
+
+          migration_block = f'''## Phase 23 fidelity correction reopening — 2026-09-12
+          - [x] Direct user fidelity review rejected the first merged Phase 23 pixels as materially divergent from the approved v0.5 artifact; issue #184 is reopened and the approved v0.5 evidence remains authoritative.
+          - [x] Draft PR #188 / `work/phase-23-create-fidelity-correction` restores the approved horizontal shell and Clear Composer composition without changing product/backend/security/data contracts.
+          - [x] Exact implementation/test head `{VERIFIED_HEAD}` passed all 16 directly attached workflows. Create Clear Composer Visual `{VISUAL_RUN}` produced artifact `{VISUAL_ARTIFACT}` (`{VISUAL_DIGEST}`); configured Create Lifecycle `{LIFECYCLE_RUN}` produced artifact `{LIFECYCLE_ARTIFACT}` (`{LIFECYCLE_DIGEST}`).
+          - [x] Repeated pre-fix Create Lifecycle failure was isolated to the stale post-Edit `Create an image` heading wait after real generation and durable persistence had already succeeded. The final verifier asserts the actual continuation invariants: Image mode, `Primary image`, and a loaded durable reference preview.
+          - [x] Production remains unchanged; Library R&D #187 remains paused pending Create fidelity closure.
+          - [ ] Re-run/confirm the normal exact-head acceptance on the documentation-final PR head before declaring PR #188 merge-ready.
+          - [ ] Merge only after explicit user authorization; deployment remains a separate explicit operation.
+
+          **Phase 23 correction status: `FIDELITY CORRECTION IMPLEMENTATION VERIFIED / DOCUMENTATION SYNCHRONIZED / EXACT-HEAD MERGE ACCEPTANCE PENDING / NOT MERGED / NOT DEPLOYED`.**'''
+          migration_block = "\n".join(line.strip() if line.startswith("          ") else line for line in migration_block.splitlines())
+          insert_before("docs/ui/UI_MIGRATION.md", "## Phase 0 — Product & Capability Baseline", migration_block)
+
+          decision_block = f'''### UI-074 — Approved Create fidelity requires compact horizontal application chrome
+          **Status:** Accepted correction direction / implementation verified / merge pending  
+          **Date:** 2026-09-12  
+          **Decision:** Direct user fidelity review of the first merged UI-073 implementation reaffirms the approved Clear Composer v0.5 artifact as the visual authority and accepts the correction candidate's compact horizontal application header across application routes. The fidelity target has no persistent desktop left rail and no fixed mobile bottom dock; Create uses the approved 900px authoring / 1120px result composition, reference-before-prompt grammar, visible Prompt and setting labels, flat settings footer, stable Generate, attached Advanced and asymmetric media-first result rail.  
+          **Reason:** The first merged Phase 23 implementation preserved product behavior but materially diverged from the explicitly approved v0.5 composition. Fidelity QA is a separate acceptance gate under `DESIGN_WORKFLOW.md`; technically green output does not override explicit visual approval.  
+          **Consequences:** PR #188 may change shell presentation and Create composition only. Navigation destinations, route hierarchy, account access, generation/upload/media contracts, schema, provider/worker routing, storage, ownership, admission and deployment policy remain unchanged. The compact horizontal header must preserve Create/Library/Activity/Settings reachability at desktop and narrow widths, keyboard/touch semantics and reduced-motion equivalence. This decision supersedes UI-071's rail/mobile-dock visual geometry **only when the accepted correction is merged**; current `main` and production remain governed by their existing merged/deployed state until then.  
+          **Verification:** correction implementation head `{VERIFIED_HEAD}` passed all 16 directly attached workflows, including Engineering Quality `34664359993`, UI Shell `34664359939`, Create Clear Composer Visual `{VISUAL_RUN}` and configured Create Lifecycle `{LIFECYCLE_RUN}`. Visual artifact `{VISUAL_ARTIFACT}` (`{VISUAL_DIGEST}`) and lifecycle artifact `{LIFECYCLE_ARTIFACT}` (`{LIFECYCLE_DIGEST}`) are the current production-browser evidence. PR #188 remains draft/unmerged; documentation-final exact-head acceptance and explicit merge authorization are still required. Production remains unchanged.'''
+          decision_block = "\n".join(line.strip() if line.startswith("          ") else line for line in decision_block.splitlines())
+          p = Path("docs/ui/UI_DECISIONS.md")
+          t = p.read_text()
+          if "### UI-074 — Approved Create fidelity requires compact horizontal application chrome" not in t:
+              p.write_text(t.rstrip() + "\n\n" + decision_block + "\n")
+
+          system_block = '''### Phase 23 fidelity-correction shell candidate
+          UI-074 / PR #188 reopens only the shell **presentation geometry** needed to match the explicitly approved Clear Composer v0.5 evidence. The accepted correction candidate uses one fixed compact horizontal application header on desktop and narrow layouts, with Brand → Create, Library, Activity and Settings/account access; it has no persistent desktop left rail and no fixed mobile bottom dock. Route/content ownership, navigation destinations, prefetch/refresh behavior, account semantics and the shell/feature boundary remain unchanged.
+
+          Until PR #188 is explicitly merged, the UI-071 rail/mobile-dock bullets below still describe current merged `main`/production reality. If the correction merges, UI-074 supersedes those geometry bullets and this candidate becomes the active shell baseline. Do not infer merge or deployment from this documentation update.'''
+          system_block = "\n".join(line.strip() if line.startswith("          ") else line for line in system_block.splitlines())
+          insert_before("docs/ui/UI_SYSTEM.md", "### Shell/feature boundary", system_block)
+
+          registry_shell = f'''**Phase 23 fidelity-correction candidate — merge pending:** UI-074 / draft PR #188 restores the approved compact horizontal application header across application routes and removes the persistent desktop rail / fixed mobile dock from the candidate tree. Navigation destinations and shell/feature ownership are unchanged. Exact implementation head `{VERIFIED_HEAD}` passed UI Shell `34664359939`, Brand / Launch `34664359945`, Account Identity `34664359917` and the rest of its 16 directly attached workflows. Current merged `main`/production remain unchanged until explicit merge/deployment operations occur.'''
+          registry_shell = registry_shell.strip()
+          insert_after("docs/ui/SCREEN_REGISTRY.md", "`APPROVED` does not mean `LOCKED`.", registry_shell)
+
+          registry_create = f'''**Phase 23 fidelity correction reopening — 2026-09-12:** Direct user comparison rejected the first merged Phase 23 composition as visually divergent from the approved v0.5 evidence, so issue #184 is reopened and draft PR #188 is the current correction vehicle. The candidate restores the approved 900px authoring / 1120px result widths, mode-before-composer order, visible `PROMPT`, reference-before-prompt grammar, flat labelled settings footer, stable Generate, attached Advanced and asymmetric media-first result rail while preserving all existing Create product contracts. Exact implementation head `{VERIFIED_HEAD}` passed all 16 directly attached workflows, including Create Clear Composer Visual `{VISUAL_RUN}` / artifact `{VISUAL_ARTIFACT}` (`{VISUAL_DIGEST}`) and configured Create Lifecycle `{LIFECYCLE_RUN}` / artifact `{LIFECYCLE_ARTIFACT}` (`{LIFECYCLE_DIGEST}`). The docs-final exact head still requires normal acceptance; PR #188 is draft/unmerged and production is unchanged.'''
+          registry_create = registry_create.strip()
+          insert_before("docs/ui/SCREEN_REGISTRY.md", "**Do not change:** Do not turn Create into a generic ComfyUI form", registry_create)
+
+          catalog_shell = f'''**Phase 23 / UI-074 fidelity-correction candidate:** Draft PR #188 changes AppShell presentation to the approved compact horizontal header on both desktop and narrow layouts, with Brand/Create, Library, Activity and Settings/account access and no desktop rail or mobile dock. It reuses the existing `AppShell`, `Button`, `RenderLabBrand`, Next.js navigation, Lucide and Motion stack; no new shell primitive, route, navigation destination or client data store is introduced. Exact implementation head `{VERIFIED_HEAD}` passed UI Shell `34664359939` and all other directly attached workflows. The candidate supersedes UI-071 geometry only after an explicit merge; production is unchanged.'''
+          catalog_shell = catalog_shell.strip()
+          insert_after("docs/ui/COMPONENT_CATALOG.md", "**Post-production UI-071 note:** Desktop application routes are rail-only at the shell level: the full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes retain the compact utility header because Settings remains outside the persistent bottom dock.", catalog_shell)
+
+          catalog_create = f'''**Phase 23 fidelity-correction candidate:** Direct user fidelity review reopened the merged UI-073 pixels without reopening Create product semantics. PR #188 keeps `CreateWorkspace` as the single authoritative feature owner and restores the approved v0.5 composition through Create-owned markup/CSS plus `src/app/create-clear-composer.css`; that stylesheet is a scoped presentation layer, **not** a reusable primitive. Exact implementation head `{VERIFIED_HEAD}` passed all 16 attached workflows, including Clear Composer Visual `{VISUAL_RUN}` and configured Create Lifecycle `{LIFECYCLE_RUN}`. The candidate adds no generic component, architecture boundary, product capability or animation runtime; docs-final exact-head acceptance and explicit merge remain pending.'''
+          catalog_create = catalog_create.strip()
+          insert_before("docs/ui/COMPONENT_CATALOG.md", "**Phase 7A premium interaction evidence:**", catalog_create)
+
+          contract_path = Path("docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md")
+          contract = contract_path.read_text()
+          contract = contract.replace(
+              "**Status:** COMPLETE / VERIFIED / MERGED / NOT DEPLOYED",
+              "**Status:** REOPENED FOR VISUAL FIDELITY CORRECTION / CORRECTION IMPLEMENTATION VERIFIED / MERGE ACCEPTANCE PENDING / NOT DEPLOYED",
+              1,
+          )
+          branch_marker = "**Implementation branch:** `work/phase-23-create-clear-composer`"
+          branch_add = branch_marker + "\n**Fidelity-correction branch:** `work/phase-23-create-fidelity-correction` / draft PR #188"
+          if "**Fidelity-correction branch:**" not in contract:
+              contract = contract.replace(branch_marker, branch_add, 1)
+          correction_section = f'''## Fidelity correction reopening — 2026-09-12
+
+          Direct user comparison against the approved v0.5 artifact reopened this contract after the first merged Phase 23 implementation proved functionally correct but materially drifted from the accepted visual composition. The approved evidence did not change: prototype/code head `6237f59351d2cd7b397881f617a483d62d9bf438`, run `34613720083`, artifact `10269841181`, digest `sha256:3d3eec07dc2ff4924deb2ce6739bca420fba88e816665af34c4289ed45aae1c0` remain the binding visual authority.
+
+          Issue #184 is reopened. Draft PR #188 / `work/phase-23-create-fidelity-correction` is the correction vehicle. Library R&D #187 is paused until Create fidelity is accepted.
+
+          The correction restores the approved compact horizontal application header instead of the merged desktop rail/mobile dock geometry; the 900px Create authoring column and 1120px result composition; Image/Video selection above the composer; visible `PROMPT` labelling; reference-before-prompt order; a flat essential-settings footer with visible setting label/value grammar; a conventional high-contrast stable Generate action; Advanced attached flush to the composer; and the detailed asymmetric media-first result rail. Existing generation, upload, account/admission, ownership, durable-media, native-video, capability and continuation contracts remain unchanged. No schema, provider/worker, R2/storage, route hierarchy or deployment change is part of the correction.
+
+          Exact implementation/test head `{VERIFIED_HEAD}` passed every workflow GitHub attached directly to that head (16/16): Engineering Quality `34664359993`, Create Clear Composer Visual `{VISUAL_RUN}`, Brand / Launch Visual `34664359945`, Account Ownership `34664359898`, Create Durable Upload `34664359959`, UI Shell `34664359939`, Account Identity `34664359917`, Activity Cancel `34664359942`, Library Lifecycle `34664359936`, Activity Visual `34664359996`, Account/Admin Operations `34664359952`, Create Lifecycle `{LIFECYCLE_RUN}`, Creative Iteration `34664359937`, Generation Admission `34664359906`, Integrated Release `34664359982`, and Video Generation Integration `34664359904`.
+
+          Current browser evidence:
+          - Create Clear Composer Visual artifact `{VISUAL_ARTIFACT}` — `{VISUAL_DIGEST}`;
+          - configured Create Lifecycle artifact `{LIFECYCLE_ARTIFACT}` — `{LIFECYCLE_DIGEST}`.
+
+          The prior two Create Lifecycle attempts failed only after real generation submission, provider reconciliation and durable persistence had succeeded. Both timed out on a stale post-Edit wait for the large `Create an image` heading. The correction verifier does not weaken continuation semantics: `{VERIFIED_HEAD[:7]}...` replaces that presentation-only wait with the actual invariant checks that Edit continuation remains in Image mode, exposes `Primary image`, and resolves the durable `Reference preview`. No product code was changed to turn that red check green.
+
+          This documentation synchronization intentionally advances the branch beyond `{VERIFIED_HEAD[:7]}...`. Therefore the next session must treat the resulting documentation-final head as a new exact candidate: confirm the normal PR-attached workflows and Release Candidate Matrix policy required by repository reality before declaring merge readiness. Do not borrow `{VERIFIED_HEAD[:7]}...` success as proof for a later code/doc head.
+
+          Merge and deployment remain separate guarded operations. PR #188 stays draft/open/unmerged until explicit merge authorization and exact-head acceptance. Production remains source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled.'''
+          correction_section = "\n".join(line.strip() if line.startswith("          ") else line for line in correction_section.splitlines())
+          if "## Fidelity correction reopening — 2026-09-12" not in contract:
+              contract = contract.rstrip() + "\n\n" + correction_section + "\n"
+          contract_path.write_text(contract)
+          PY
+
+      - name: Commit synchronized documentation and remove helper
+        shell: bash
+        run: |
+          rm .github/workflows/phase23-fidelity-doc-sync.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/UI_SYSTEM.md docs/ui/SCREEN_REGISTRY.md docs/ui/COMPONENT_CATALOG.md docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md .github/workflows/phase23-fidelity-doc-sync.yml
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m "docs: record Phase 23 fidelity correction state"
+          git push origin HEAD:work/phase-23-create-fidelity-correction
