@@ -1,0 +1,150 @@
+name: Phase 25 Corrective Batch
+
+on:
+  push:
+    branches:
+      - work/phase-25-media-viewer-register-fold
+    paths:
+      - .github/workflows/phase25-corrective-batch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-25-media-viewer-register-fold
+          fetch-depth: 0
+
+      - name: Apply bounded UI-076 corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, expected=1):
+              p = Path(path)
+              text = p.read_text()
+              actual = text.count(old)
+              if actual != expected:
+                  raise SystemExit(f"{path}: expected {expected} occurrences, found {actual}: {old[:120]!r}")
+              p.write_text(text.replace(old, new))
+
+          replace(
+              "src/features/library/media-viewer-actions.tsx",
+              'aria-label={saving ? "Saving favorite" : favorite ? "Remove from favorites" : "Favorite"}',
+              'aria-label={saving ? "Saving favorite" : favorite ? "Favorited" : "Favorite"}',
+          )
+          replace(
+              "src/features/library/media-viewer-actions.tsx",
+              'aria-label="Download media"',
+              'aria-label="Download"',
+          )
+
+          replace(
+              "scripts/verify-media-rename.mjs",
+              '''  await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+          await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+          await page.getByRole("button", { name: "Rename", exact: true }).click();''',
+              '''  await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+          await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+          await page.getByRole("button", { name: "Manage", exact: true }).click();
+          await page.getByRole("button", { name: "Rename", exact: true }).click();''',
+          )
+          replace(
+              "scripts/verify-media-rename.mjs",
+              '''  await page.goto(`${baseUrl}/library/${uploaded.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+          await page.getByRole("heading", { name: uploadedInitialDisplayName, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+          await page.getByRole("button", { name: "Rename", exact: true }).click();''',
+              '''  await page.goto(`${baseUrl}/library/${uploaded.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+          await page.getByRole("heading", { name: uploadedInitialDisplayName, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+          await page.getByRole("button", { name: "Manage", exact: true }).click();
+          await page.getByRole("button", { name: "Rename", exact: true }).click();''',
+          )
+
+          replace(
+              "scripts/verify-library-collections.mjs",
+              '''  await page.goto(`${baseUrl}/library/${encodeURIComponent(collectionAsset.id)}`, { waitUntil: "networkidle", timeout: 60_000 });
+          const collectionsButton = page.getByRole("button", { name: /Collections/ });''',
+              '''  await page.goto(`${baseUrl}/library/${encodeURIComponent(collectionAsset.id)}`, { waitUntil: "networkidle", timeout: 60_000 });
+          await page.getByRole("button", { name: "Manage", exact: true }).click();
+          const collectionsButton = page.getByRole("button", { name: /Collections/ });''',
+          )
+
+          replace(
+              "scripts/verify-library-lifecycle.mjs",
+              '''  const viewerImage = page.getByRole("img", { name: fixtureDisplayName });
+          await viewerImage.waitFor({ state: "visible", timeout: 30_000 });
+          const viewerMetrics = await imageMetrics(viewerImage, "Uploaded Media Viewer image");
+          assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Uploaded Media Viewer image");
+          await page.getByText(/^uploaded image$/i).waitFor({ state: "visible", timeout: 30_000 });''',
+              '''  const viewerImage = page.getByRole("img", { name: fixtureDisplayName });
+          await viewerImage.waitFor({ state: "visible", timeout: 30_000 });
+          const viewerMetrics = await imageMetrics(viewerImage, "Uploaded Media Viewer image");
+          assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Uploaded Media Viewer image");
+          await page.getByRole("button", { name: "Details", exact: true }).click();
+          await page.getByText(/^uploaded image$/i).waitFor({ state: "visible", timeout: 30_000 });''',
+          )
+          replace(
+              "scripts/verify-library-lifecycle.mjs",
+              '''    const stage = document.getElementById("media-viewer-comparison")?.getBoundingClientRect() || null;
+              const rail = document.querySelector(".kinetic-viewer-rail")?.getBoundingClientRect() || null;
+              return {
+                innerWidth: window.innerWidth,
+                scrollWidth: document.documentElement.scrollWidth,
+                layoutLeft: layoutBox.left,
+                layoutRight: layoutBox.right,
+                stageLeft: stage?.left ?? null,
+                stageRight: stage?.right ?? null,
+                railLeft: rail?.left ?? null,
+                railRight: rail?.right ?? null,
+              };''',
+              '''    const stage = document.getElementById("media-viewer-comparison")?.getBoundingClientRect() || null;
+              const register = document.querySelector("[data-viewer-register]")?.getBoundingClientRect() || null;
+              return {
+                innerWidth: window.innerWidth,
+                scrollWidth: document.documentElement.scrollWidth,
+                layoutLeft: layoutBox.left,
+                layoutRight: layoutBox.right,
+                stageLeft: stage?.left ?? null,
+                stageRight: stage?.right ?? null,
+                registerLeft: register?.left ?? null,
+                registerRight: register?.right ?? null,
+              };''',
+          )
+          replace(
+              "scripts/verify-library-lifecycle.mjs",
+              '''  assert(viewerLayoutMetrics.railLeft !== null && viewerLayoutMetrics.railLeft >= 0 && viewerLayoutMetrics.railRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer rail escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);''',
+              '''  assert(viewerLayoutMetrics.registerLeft !== null && viewerLayoutMetrics.registerLeft >= 0 && viewerLayoutMetrics.registerRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer register escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);''',
+          )
+
+          replace(
+              "scripts/verify-creative-iteration.mjs",
+              '''  await page.getByText("Result", { exact: true }).waitFor({ state: "visible" });
+          await page.getByText("Source", { exact: true }).waitFor({ state: "visible" });''',
+              '''  await page.getByText(/^result$/i).waitFor({ state: "visible" });
+          await page.getByText(/^source$/i).waitFor({ state: "visible" });''',
+          )
+
+          replace(
+              "scripts/verify-image-upscale.mjs",
+              'await page.getByText("Source", { exact: true }).first().waitFor({ state: "visible" });',
+              'await page.getByText(/^source$/i).first().waitFor({ state: "visible" });',
+          )
+
+          Path(".github/workflows/phase25-corrective-batch.yml").unlink()
+          PY
+
+      - name: Commit corrective head
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Align Phase 25 regressions with UI-076"
+          git push origin HEAD:work/phase-25-media-viewer-register-fold
