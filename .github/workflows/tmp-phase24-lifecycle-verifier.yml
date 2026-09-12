@@ -1,0 +1,44 @@
+name: Apply Gallery Rail lifecycle verifier correction
+
+on:
+  push:
+    branches:
+      - work/phase-24-library-gallery-rail
+    paths:
+      - .github/workflows/tmp-phase24-lifecycle-verifier.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-24-library-gallery-rail
+          fetch-depth: 0
+
+      - name: Replace superseded 4:3 card assertion
+        shell: bash
+        run: |
+          python -c 'from pathlib import Path; p=Path("scripts/verify-library-lifecycle.mjs"); t=p.read_text(encoding="utf-8"); old="  assertRatio(cardMetrics, fixtureWidth / fixtureHeight, \"Uploaded Library card image\");"; new="""  const cardFrame = card.locator(\"[data-library-media-frame=\\\"true\\\"]\");
+  const cardFrameBox = await cardFrame.boundingBox();
+  assert(cardFrameBox, \"Uploaded Library card media frame could not be measured.\");
+  const cardFrameRatio = cardFrameBox.width / cardFrameBox.height;
+  assert(cardFrameRatio > 1.10 && cardFrameRatio < 1.16, `Uploaded Library Gallery Rail frame ratio ${cardFrameRatio.toFixed(3)} did not match UI-075.`);
+  assert(Math.abs(cardMetrics.renderedWidth - cardFrameBox.width) < 1 && Math.abs(cardMetrics.renderedHeight - cardFrameBox.height) < 1, `Uploaded Library image does not fill its Gallery Rail media frame: ${JSON.stringify({ cardMetrics, cardFrameBox })}`);
+  assert(cardMetrics.objectFit === \"cover\", `Uploaded Library Gallery Rail image object-fit changed: ${cardMetrics.objectFit}`);"""; assert t.count(old)==1, f"expected one stale card ratio assertion, found {t.count(old)}"; p.write_text(t.replace(old,new,1),encoding="utf-8")'
+          node --check scripts/verify-library-lifecycle.mjs
+          git diff --check
+
+      - name: Commit verifier correction and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-phase24-lifecycle-verifier.yml
+          git add scripts/verify-library-lifecycle.mjs
+          git commit -m "Align Library lifecycle verifier with Gallery Rail"
+          git push origin HEAD:work/phase-24-library-gallery-rail
