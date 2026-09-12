@@ -387,8 +387,11 @@ try {
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-result.png`, fullPage: true });
 
   await edit.click();
-  await page.getByRole("heading", { name: "Create an image" }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Primary image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  assert(
+    await page.getByRole("radio", { name: "Image", exact: true }).isChecked(),
+    "Edit continuation did not remain in Image mode.",
+  );
   const referencePreview = page.getByRole("img", { name: "Reference preview" });
   await referencePreview.waitFor({ state: "visible", timeout: 60_000 });
   await page.waitForFunction(
