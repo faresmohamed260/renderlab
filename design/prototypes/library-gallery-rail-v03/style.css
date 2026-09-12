@@ -97,7 +97,7 @@ a { text-decoration: none; }
 .search-icon { color: #778395; font-size: 15px; }
 .search-box input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 13px; }
 .search-box input::placeholder { color: #6e7a8c; }
-.clear-search { display: none; width: 44px; padding: 0; color: #98a3b2; font-size: 19px; font-weight: 400; }
+.clear-search { display: none; flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 0; color: #98a3b2; font-size: 19px; font-weight: 400; }
 body[data-state="search"] .clear-search { display: inline-grid; place-items: center; }
 .command-actions { justify-content: flex-end; gap: 6px; }
 .select-button { min-width: 68px; padding: 0 12px; border: 1px solid var(--line); }
