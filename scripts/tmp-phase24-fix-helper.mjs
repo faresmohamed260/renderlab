@@ -13,7 +13,7 @@ const ui075Heading = "### UI-075 — Library Gallery Rail makes discovery compac
 const ui075Start = decisions.indexOf(ui075Heading);
 if (ui075Start < 0) throw new Error("docs/ui/UI_DECISIONS.md: UI-075 heading not found");
 const ui075Replacement = \`### UI-075 — Library Gallery Rail makes discovery compact and selection an in-place workspace mode
-**Status:** Accepted / implemented / verified / merged  
+**Status:** Accepted / implemented / verified / merged
 **Date:** 2026-09-12
 
 **Decision:** The user-approved Gallery Rail v0.3 direction is the authoritative production composition for \\\`/library\\\`. Library keeps the UI-074 compact horizontal application header, compresses route context, promotes search into the primary retrieval field, consolidates source/filter/organization controls into one compact command rail, and keeps the media field visually dominant. Current-page selection transforms that same command rail in place into selection summary/actions; it does not introduce a generic floating batch toolbar over media.
