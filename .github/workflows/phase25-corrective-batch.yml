@@ -31,7 +31,7 @@ jobs:
               text = p.read_text()
               actual = text.count(old)
               if actual != expected:
-                  raise SystemExit(f"{path}: expected {expected} occurrences, found {actual}: {old[:120]!r}")
+                  raise SystemExit(f"{path}: expected {expected} occurrences, found {actual}: {old!r}")
               p.write_text(text.replace(old, new))
 
           replace(
@@ -45,95 +45,62 @@ jobs:
               'aria-label="Download"',
           )
 
+          generated_heading = '  await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });'
           replace(
               "scripts/verify-media-rename.mjs",
-              '''  await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "networkidle", timeout: 60_000 });
-          await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-          await page.getByRole("button", { name: "Rename", exact: true }).click();''',
-              '''  await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "networkidle", timeout: 60_000 });
-          await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-          await page.getByRole("button", { name: "Manage", exact: true }).click();
-          await page.getByRole("button", { name: "Rename", exact: true }).click();''',
+              generated_heading,
+              generated_heading + '\n  await page.getByRole("button", { name: "Manage", exact: true }).click();',
           )
+          uploaded_heading = '  await page.getByRole("heading", { name: uploadedInitialDisplayName, exact: true }).waitFor({ state: "visible", timeout: 30_000 });'
           replace(
               "scripts/verify-media-rename.mjs",
-              '''  await page.goto(`${baseUrl}/library/${uploaded.id}`, { waitUntil: "networkidle", timeout: 60_000 });
-          await page.getByRole("heading", { name: uploadedInitialDisplayName, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-          await page.getByRole("button", { name: "Rename", exact: true }).click();''',
-              '''  await page.goto(`${baseUrl}/library/${uploaded.id}`, { waitUntil: "networkidle", timeout: 60_000 });
-          await page.getByRole("heading", { name: uploadedInitialDisplayName, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-          await page.getByRole("button", { name: "Manage", exact: true }).click();
-          await page.getByRole("button", { name: "Rename", exact: true }).click();''',
+              uploaded_heading,
+              uploaded_heading + '\n  await page.getByRole("button", { name: "Manage", exact: true }).click();',
           )
 
+          collections_goto = '  await page.goto(`${baseUrl}/library/${encodeURIComponent(collectionAsset.id)}`, { waitUntil: "networkidle", timeout: 60_000 });'
           replace(
               "scripts/verify-library-collections.mjs",
-              '''  await page.goto(`${baseUrl}/library/${encodeURIComponent(collectionAsset.id)}`, { waitUntil: "networkidle", timeout: 60_000 });
-          const collectionsButton = page.getByRole("button", { name: /Collections/ });''',
-              '''  await page.goto(`${baseUrl}/library/${encodeURIComponent(collectionAsset.id)}`, { waitUntil: "networkidle", timeout: 60_000 });
-          await page.getByRole("button", { name: "Manage", exact: true }).click();
-          const collectionsButton = page.getByRole("button", { name: /Collections/ });''',
+              collections_goto,
+              collections_goto + '\n  await page.getByRole("button", { name: "Manage", exact: true }).click();',
           )
 
+          viewer_ratio = '  assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Uploaded Media Viewer image");'
           replace(
               "scripts/verify-library-lifecycle.mjs",
-              '''  const viewerImage = page.getByRole("img", { name: fixtureDisplayName });
-          await viewerImage.waitFor({ state: "visible", timeout: 30_000 });
-          const viewerMetrics = await imageMetrics(viewerImage, "Uploaded Media Viewer image");
-          assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Uploaded Media Viewer image");
-          await page.getByText(/^uploaded image$/i).waitFor({ state: "visible", timeout: 30_000 });''',
-              '''  const viewerImage = page.getByRole("img", { name: fixtureDisplayName });
-          await viewerImage.waitFor({ state: "visible", timeout: 30_000 });
-          const viewerMetrics = await imageMetrics(viewerImage, "Uploaded Media Viewer image");
-          assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Uploaded Media Viewer image");
-          await page.getByRole("button", { name: "Details", exact: true }).click();
-          await page.getByText(/^uploaded image$/i).waitFor({ state: "visible", timeout: 30_000 });''',
+              viewer_ratio,
+              viewer_ratio + '\n  await page.getByRole("button", { name: "Details", exact: true }).click();',
           )
           replace(
               "scripts/verify-library-lifecycle.mjs",
-              '''    const stage = document.getElementById("media-viewer-comparison")?.getBoundingClientRect() || null;
-              const rail = document.querySelector(".kinetic-viewer-rail")?.getBoundingClientRect() || null;
-              return {
-                innerWidth: window.innerWidth,
-                scrollWidth: document.documentElement.scrollWidth,
-                layoutLeft: layoutBox.left,
-                layoutRight: layoutBox.right,
-                stageLeft: stage?.left ?? null,
-                stageRight: stage?.right ?? null,
-                railLeft: rail?.left ?? null,
-                railRight: rail?.right ?? null,
-              };''',
-              '''    const stage = document.getElementById("media-viewer-comparison")?.getBoundingClientRect() || null;
-              const register = document.querySelector("[data-viewer-register]")?.getBoundingClientRect() || null;
-              return {
-                innerWidth: window.innerWidth,
-                scrollWidth: document.documentElement.scrollWidth,
-                layoutLeft: layoutBox.left,
-                layoutRight: layoutBox.right,
-                stageLeft: stage?.left ?? null,
-                stageRight: stage?.right ?? null,
-                registerLeft: register?.left ?? null,
-                registerRight: register?.right ?? null,
-              };''',
+              '    const rail = document.querySelector(".kinetic-viewer-rail")?.getBoundingClientRect() || null;',
+              '    const register = document.querySelector("[data-viewer-register]")?.getBoundingClientRect() || null;',
           )
           replace(
               "scripts/verify-library-lifecycle.mjs",
-              '''  assert(viewerLayoutMetrics.railLeft !== null && viewerLayoutMetrics.railLeft >= 0 && viewerLayoutMetrics.railRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer rail escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);''',
-              '''  assert(viewerLayoutMetrics.registerLeft !== null && viewerLayoutMetrics.registerLeft >= 0 && viewerLayoutMetrics.registerRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer register escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);''',
+              '      railLeft: rail?.left ?? null,\n      railRight: rail?.right ?? null,',
+              '      registerLeft: register?.left ?? null,\n      registerRight: register?.right ?? null,',
+          )
+          replace(
+              "scripts/verify-library-lifecycle.mjs",
+              '  assert(viewerLayoutMetrics.railLeft !== null && viewerLayoutMetrics.railLeft >= 0 && viewerLayoutMetrics.railRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer rail escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);',
+              '  assert(viewerLayoutMetrics.registerLeft !== null && viewerLayoutMetrics.registerLeft >= 0 && viewerLayoutMetrics.registerRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer register escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);',
           )
 
           replace(
               "scripts/verify-creative-iteration.mjs",
-              '''  await page.getByText("Result", { exact: true }).waitFor({ state: "visible" });
-          await page.getByText("Source", { exact: true }).waitFor({ state: "visible" });''',
-              '''  await page.getByText(/^result$/i).waitFor({ state: "visible" });
-          await page.getByText(/^source$/i).waitFor({ state: "visible" });''',
+              '  await page.getByText("Result", { exact: true }).waitFor({ state: "visible" });',
+              '  await page.getByText(/^result$/i).waitFor({ state: "visible" });',
           )
-
+          replace(
+              "scripts/verify-creative-iteration.mjs",
+              '  await page.getByText("Source", { exact: true }).waitFor({ state: "visible" });',
+              '  await page.getByText(/^source$/i).waitFor({ state: "visible" });',
+          )
           replace(
               "scripts/verify-image-upscale.mjs",
-              'await page.getByText("Source", { exact: true }).first().waitFor({ state: "visible" });',
-              'await page.getByText(/^source$/i).first().waitFor({ state: "visible" });',
+              '    await page.getByText("Source", { exact: true }).first().waitFor({ state: "visible" });',
+              '    await page.getByText(/^source$/i).first().waitFor({ state: "visible" });',
           )
 
           Path(".github/workflows/phase25-corrective-batch.yml").unlink()
