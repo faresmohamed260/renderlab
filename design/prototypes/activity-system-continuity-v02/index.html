@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenderLab — Activity system continuity v0.2</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body data-mode="full" data-live="on">
+  <div class="review-tools" data-review-tools>
+    <span>PHASE 26 · V0.2</span>
+    <button type="button" data-mode-button="full">Full</button>
+    <button type="button" data-mode-button="loading">Loading</button>
+    <button type="button" data-mode-button="empty">Empty</button>
+    <button type="button" data-mode-button="settled">Settled</button>
+  </div>
+
+  <div class="page-shell">
+    <header class="topbar" aria-label="Application header">
+      <a class="brand" href="#" aria-label="RenderLab home">
+        <img src="../../../public/renderlab-mark-color.svg" alt="" width="28" height="28" />
+        <span>RenderLab</span>
+      </a>
+      <nav class="topnav" aria-label="Primary">
+        <a href="#">Create</a>
+        <a href="#">Library</a>
+        <a class="active" href="#" aria-current="page">Activity</a>
+        <a href="#">Settings</a>
+        <span class="beta">CLOSED BETA</span>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <div class="lab-grid" aria-hidden="true"></div>
+      <div class="atmosphere" aria-hidden="true"></div>
+
+      <section class="context-block" aria-labelledby="activity-title">
+        <p class="eyebrow">ACTIVITY / GENERATION LOG</p>
+        <div class="title-row">
+          <div>
+            <h1 id="activity-title">Activity</h1>
+            <p class="support">Recent generations and their real lifecycle state. Newest first.</p>
+          </div>
+          <div class="live-summary" data-live-summary>
+            <span class="live-dot" aria-hidden="true"></span>
+            <strong>LIVE</strong>
+            <small>refreshing active work</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="activity-stage" aria-live="polite">
+        <div class="stage-registration" aria-hidden="true"><span>RL / ACTIVITY</span><span>NEWEST FIRST</span></div>
+
+        <div class="loading-view" data-loading-view hidden>
+          <div class="loading-matrix">
+            <div class="loading-cell primary"><i></i><i></i><i></i></div>
+            <div class="loading-cell"><i></i><i></i></div>
+            <div class="loading-cell"><i></i><i></i></div>
+          </div>
+          <div class="loading-register"><i></i><i></i><i></i><i></i></div>
+          <p>Loading activity…</p>
+        </div>
+
+        <div class="empty-view" data-empty-view hidden>
+          <div class="empty-arc" aria-hidden="true"></div>
+          <div class="empty-copy">
+            <p class="micro">RL / 00</p>
+            <h2>No activity yet</h2>
+            <p>Your generation history will appear here after you start a render.</p>
+            <a class="button primary" href="#">Open Create</a>
+          </div>
+        </div>
+
+        <div class="activity-content" data-activity-content>
+          <div class="latest-matrix" aria-label="Three newest generation jobs">
+            <article class="job-sheet primary-job is-active" id="primary-job" data-status="running" data-job="01">
+              <div class="sheet-glow" aria-hidden="true"></div>
+              <div class="sheet-arc" aria-hidden="true"></div>
+              <div class="job-index"><span>RL / 01</span><time datetime="2026-09-12T21:38:00Z">00:38</time></div>
+              <div class="job-state-row">
+                <span class="state-mark" aria-hidden="true"></span>
+                <span class="state-label" data-primary-status>Running</span>
+                <span class="state-note" data-primary-note>Active</span>
+              </div>
+              <div class="job-copy">
+                <h2>Editorial portrait in diffuse cobalt light</h2>
+                <p>Image · 4:5</p>
+              </div>
+              <div class="job-footer">
+                <span class="truth-note">Real state only · no percentage or ETA</span>
+                <div class="job-actions" data-primary-actions>
+                  <button class="button quiet" type="button" data-cancel-trigger>Cancel</button>
+                </div>
+              </div>
+              <div class="inline-confirm" data-cancel-confirm hidden>
+                <div><strong>Cancel this generation?</strong><span>The job stays in Activity while cancellation is being requested.</span></div>
+                <div class="confirm-actions"><button class="button quiet" type="button" data-cancel-dismiss>Keep running</button><button class="button danger" type="button" data-cancel-confirm-action>Cancel generation</button></div>
+              </div>
+              <p class="fault-note" data-primary-fault hidden>This generation could not be completed. Retry creates a new attempt using the current product contract.</p>
+            </article>
+
+            <article class="job-sheet secondary-job is-terminal" data-status="succeeded" data-job="02">
+              <div class="job-index"><span>RL / 02</span><time>00:19</time></div>
+              <div class="job-state-row"><span class="state-mark" aria-hidden="true"></span><span class="state-label">Succeeded</span><span class="state-note">Complete</span></div>
+              <div class="job-copy"><h2>Brutalist gallery with winter daylight</h2><p>Image · 3:2</p></div>
+              <div class="job-actions"><a class="button primary" href="#">View result</a><button class="button quiet" type="button">Run again</button></div>
+            </article>
+
+            <article class="job-sheet secondary-job is-terminal is-failed" data-status="failed" data-job="03">
+              <div class="job-index"><span>RL / 03</span><time>00:11</time></div>
+              <div class="job-state-row"><span class="state-mark" aria-hidden="true"></span><span class="state-label">Failed</span><span class="state-note">Needs action</span></div>
+              <div class="job-copy"><h2>Portrait study with translucent fabric</h2><p>Image · 4:5</p></div>
+              <p class="fault-note">This generation could not be completed. Retry creates a new attempt using the current product contract.</p>
+              <div class="job-actions"><button class="button quiet" type="button">Retry</button></div>
+            </article>
+          </div>
+
+          <section class="history-register" aria-labelledby="history-title">
+            <div class="register-head">
+              <div><p class="micro">04—08 / RECENT HISTORY</p><h2 id="history-title">Continue down the log.</h2></div>
+              <p>Same account-private job history, still newest first.</p>
+            </div>
+            <ol class="register-list" start="4">
+              <li class="register-row is-active" data-status="persisting">
+                <span class="register-number">04</span><time>00:09</time>
+                <div class="register-state"><span class="state-mark" aria-hidden="true"></span><strong>Persisting</strong></div>
+                <div class="register-copy"><strong>Chrome architecture study at blue hour</strong><span>Image · 16:9</span></div>
+                <div class="register-action"></div>
+              </li>
+              <li class="register-row is-active" data-status="cancelling">
+                <span class="register-number">05</span><time>00:07</time>
+                <div class="register-state"><span class="state-mark" aria-hidden="true"></span><strong>Cancelling</strong></div>
+                <div class="register-copy"><strong>Monochrome product still life, hard rim light</strong><span>Image · 1:1</span></div>
+                <div class="register-action"></div>
+              </li>
+              <li class="register-row is-active" data-status="preparing">
+                <span class="register-number">06</span><time>00:05</time>
+                <div class="register-state"><span class="state-mark" aria-hidden="true"></span><strong>Preparing</strong></div>
+                <div class="register-copy"><strong>Long-exposure tram line through rain</strong><span>Video · 16:9 · 10 sec</span></div>
+                <div class="register-action"><button class="button quiet" type="button">Cancel</button></div>
+              </li>
+              <li class="register-row is-active" data-status="queued">
+                <span class="register-number">07</span><time>00:03</time>
+                <div class="register-state"><span class="state-mark" aria-hidden="true"></span><strong>Queued</strong></div>
+                <div class="register-copy"><strong>Warm glass pavilion beside black water</strong><span>Image · 3:2</span></div>
+                <div class="register-action"><button class="button quiet" type="button">Cancel</button></div>
+              </li>
+              <li class="register-row is-terminal" data-status="cancelled">
+                <span class="register-number">08</span><time>Yesterday</time>
+                <div class="register-state"><span class="state-mark" aria-hidden="true"></span><strong>Cancelled</strong></div>
+                <div class="register-copy"><strong>Night market in sodium-orange rain</strong><span>Video · 9:16 · 10 sec</span></div>
+                <div class="register-action"></div>
+              </li>
+            </ol>
+            <nav class="pagination" aria-label="Activity pages"><button class="button quiet" type="button" disabled>Previous</button><span>Page 1</span><button class="button quiet" type="button">Older</button></nav>
+          </section>
+        </div>
+      </section>
+
+      <p class="workspace-foot">ACTIVITY IS ACCOUNT-PRIVATE · PROVIDER / WORKER / STORAGE IDENTITY STAYS INTERNAL</p>
+    </main>
+  </div>
+  <script src="./prototype.js"></script>
+</body>
+</html>
