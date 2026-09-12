@@ -726,8 +726,8 @@ try {
   await compareButton.focus();
   await page.keyboard.press("Enter");
   await page.getByRole("button", { name: "Close comparison", exact: true }).waitFor({ state: "visible" });
-  await page.getByText("Result", { exact: true }).waitFor({ state: "visible" });
-  await page.getByText("Source", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText(/^result$/i).waitFor({ state: "visible" });
+  await page.getByText(/^source$/i).waitFor({ state: "visible" });
   const openSource = page.getByRole("link", { name: "Open source", exact: true });
   assert((await openSource.getAttribute("href")) === `/library/${activeInput.id}`, "Comparison source did not link to its ordinary Viewer.");
   assert(await page.locator('#media-viewer-comparison img[src*="/api/media/assets/"]').count() >= 2, "Image comparison did not render both durable product images.");
@@ -862,7 +862,7 @@ try {
   await videoCompareButton.waitFor({ state: "visible", timeout: 30_000 });
   await videoCompareButton.click();
   await page.getByText("Result video", { exact: true }).waitFor({ state: "visible" });
-  await page.getByText("Source", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText(/^source$/i).waitFor({ state: "visible" });
   assert(await page.locator('#media-viewer-comparison video[controls]').count() === 1, "Image→Video comparison did not preserve result video controls.");
   assert((await page.getByRole("link", { name: "Open source", exact: true }).getAttribute("href")) === `/library/${activeInput.id}`, "Image→Video comparison resolved the wrong durable source.");
   await page.screenshot({ path: `${artifactDir}/phase16-viewer-compare-video-desktop.png`, fullPage: true });

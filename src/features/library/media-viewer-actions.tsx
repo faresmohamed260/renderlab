@@ -69,7 +69,7 @@ export function MediaViewerQuickActions({
         onClick={toggleFavorite}
         disabled={saving}
         aria-pressed={favorite}
-        aria-label={saving ? "Saving favorite" : favorite ? "Remove from favorites" : "Favorite"}
+        aria-label={saving ? "Saving favorite" : favorite ? "Favorited" : "Favorite"}
         className="h-11 min-w-11 px-3 sm:min-w-0"
       >
         {saving ? (
@@ -82,7 +82,7 @@ export function MediaViewerQuickActions({
       <Button asChild variant="secondary" className="h-11 min-w-11 px-3 sm:min-w-0">
         <a
           href={`/api/media/assets/${encodeURIComponent(assetId)}/download`}
-          aria-label="Download media"
+          aria-label="Download"
         >
           <Download aria-hidden="true" />
           <span className="hidden sm:inline">Download</span>

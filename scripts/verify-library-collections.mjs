@@ -338,6 +338,7 @@ try {
   await routeLocalAppRequestsWithAccount(page, baseUrl, owner);
 
   await page.goto(`${baseUrl}/library/${encodeURIComponent(collectionAsset.id)}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.getByRole("button", { name: "Manage", exact: true }).click();
   const collectionsButton = page.getByRole("button", { name: /Collections/ });
   await collectionsButton.waitFor({ state: "visible", timeout: 30_000 });
   await collectionsButton.click();
