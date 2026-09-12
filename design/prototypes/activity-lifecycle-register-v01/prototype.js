@@ -49,8 +49,6 @@
   function renderActions(status) {
     if (status === 'running' || status === 'preparing' || status === 'queued') {
       primaryActions.innerHTML = button('Cancel', 'data-cancel-trigger');
-    } else if (status === 'cancelling') {
-      primaryActions.innerHTML = '<button class="button quiet" type="button" disabled>Cancelling…</button>';
     } else if (status === 'succeeded') {
       primaryActions.innerHTML = '<a class="button primary" href="#">View result</a>' + button('Run again');
     } else if (status === 'failed') {
