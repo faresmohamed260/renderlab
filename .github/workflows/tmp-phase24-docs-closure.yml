@@ -46,7 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/tmp-phase24-docs-closure.yml scripts/tmp-phase24-docs-closure.mjs scripts/tmp-phase24-fix-helper.mjs
+          git rm -f .github/workflows/tmp-phase24-docs-closure.yml scripts/tmp-phase24-docs-closure.mjs scripts/tmp-phase24-fix-helper.mjs
           git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md docs/ui/UI_SYSTEM.md
           git diff --cached --check
           git commit -m "Record Phase 24 Library Gallery Rail closure"
