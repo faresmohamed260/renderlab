@@ -66,6 +66,22 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 **Phase 24 boundary preserved:** no schema/API/provider/worker/R2/auth/admission/ownership/capability/routing/deployment contract changed. Creatives/Uploads, search/filter/sort/organization, durable identity, Viewer activation and current-page batch semantics remain product-truthful and server/URL-owned where previously defined.
 
+## Active full-product redesign roadmap — after Phase 24
+**Status: `IN PROGRESS`.** Phase 24 completes the Library slice only; the full UI/UX redesign is not complete.
+
+The coherent design authority carried forward is the current locked Lab Grid identity + approved Lab Matrix Landing + Clear Composer/UI-074 + Gallery Rail/UI-075. Remaining redesign work must reuse that family—editorial hierarchy, technical microtype, Lab Matrix registration, restrained cool/warm atmosphere, compact horizontal shell, media-first composition, obvious ordinary controls and bounded meaningful motion—rather than introducing independent visual systems per screen.
+
+- [x] Landing redesign — approved / production-live.
+- [x] Create redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
+- [x] Library redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
+- [ ] **Phase 25 Media Viewer redesign — ACTIVE R&D (#196).** Audit current desktop/390px image/video/Compare/Upscale/action states; build interaction references; explore 3+ same-family compositions; prototype signature Library→Viewer / Compare / Viewer→Create continuity; obtain explicit user approval before a production implementation contract.
+- [ ] **Phase 26 Activity redesign — ROADMAP ONLY.** Expand only after Phase 25 produces verified evidence.
+- [ ] **Phase 27 Settings/account-security redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
+- [ ] **Phase 28 Admin redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
+- [ ] **Phase 29 whole-product cohesion pass — ROADMAP ONLY.** Final cross-surface audit before the redesign program may be called complete.
+
+UI-074 already establishes the shared application-shell geometry; shell changes during later slices should be cohesion corrections only unless a separate explicit redesign decision reopens that system. None of this roadmap authorizes backend/schema/security/product-contract changes or production deployment.
+
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
 - [x] Define RenderLab capability model, progressive-disclosure boundaries and information architecture.
