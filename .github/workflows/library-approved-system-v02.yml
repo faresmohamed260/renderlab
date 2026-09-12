@@ -1,0 +1,49 @@
+name: Library Approved System R&D v0.2
+
+on:
+  push:
+    branches:
+      - rd/library-approved-system-v02
+    paths:
+      - '.github/workflows/library-approved-system-v02.yml'
+      - 'design/rd/library-approved-system-v02.md'
+      - 'design/prototypes/library-approved-system-v02/**'
+      - 'scripts/verify-library-approved-system-v02.mjs'
+  workflow_dispatch:
+
+concurrency:
+  group: library-approved-system-v02-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify three Library concepts and review evidence
+        run: node scripts/verify-library-approved-system-v02.mjs
+
+      - name: Upload review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-library-approved-system-v02
+          path: artifacts/library-approved-system-v02
+          if-no-files-found: ignore
+          retention-days: 30

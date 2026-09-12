@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenderLab Library R&D v0.2</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body data-prototype="library-approved-system-v02" data-concept="gallery" data-state="default" data-selection="off">
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="RenderLab home">
+        <img src="../../../public/renderlab-mark-color.svg" alt="" />
+        <span>RenderLab</span>
+      </a>
+      <nav class="topnav" aria-label="Primary">
+        <a href="#" class="active">Library</a>
+        <a href="#">Create</a>
+        <span class="beta">CLOSED BETA</span>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <div class="lab-grid" aria-hidden="true"></div>
+      <div class="atmosphere" aria-hidden="true"></div>
+
+      <section class="context-block" aria-labelledby="library-title">
+        <div>
+          <p class="eyebrow">LIBRARY / MEDIA INDEX</p>
+          <h1 id="library-title">Library</h1>
+          <p class="support">Browse, find and organize durable work without putting controls ahead of the work itself.</p>
+        </div>
+        <div class="context-stat" aria-label="Library summary">
+          <span>VISIBLE</span><strong>24</strong><small>media assets</small>
+        </div>
+      </section>
+
+      <div class="library-layout">
+        <section class="command-surface" id="command-surface" aria-label="Library controls">
+          <div class="source-line">
+            <div class="source-switch" role="group" aria-label="Library source">
+              <button id="creatives-tab" data-tab="creatives" class="source-button active" type="button" aria-pressed="true">Creatives</button>
+              <button id="uploads-tab" data-tab="uploads" class="source-button" type="button" aria-pressed="false">Uploads</button>
+            </div>
+            <button id="upload-action" class="upload-button" type="button">Upload</button>
+          </div>
+
+          <label class="search-box" for="library-search">
+            <span aria-hidden="true">⌕</span>
+            <input id="library-search" type="search" placeholder="Search library" autocomplete="off" />
+            <kbd>⌘ K</kbd>
+          </label>
+
+          <div class="filter-line" aria-label="Media filters">
+            <div class="kind-switch" role="group" aria-label="Media type">
+              <button type="button" class="filter-button active" data-kind="all" aria-pressed="true">All</button>
+              <button type="button" class="filter-button" data-kind="images" aria-pressed="false">Images</button>
+              <button type="button" class="filter-button" data-kind="videos" aria-pressed="false">Videos</button>
+            </div>
+            <button class="quiet-button" id="favorites-filter" type="button">Favorites</button>
+            <button class="quiet-button" id="collections-filter" type="button">Collections</button>
+            <button class="sort-button" type="button">Newest ↓</button>
+          </div>
+
+          <div class="active-query" id="active-query" aria-live="polite">
+            <span>SEARCH</span><strong>“architecture”</strong><button type="button" id="clear-search">Clear</button>
+          </div>
+
+          <div class="command-foot">
+            <div class="view-note">
+              <span id="context-label">CREATIVES / RECENT</span>
+              <small id="context-help">Generated work · newest first</small>
+            </div>
+            <button id="select-trigger" class="select-button" type="button">Select</button>
+          </div>
+        </section>
+
+        <section class="media-field" aria-label="Library media">
+          <div class="media-field-head">
+            <div><span class="eyebrow">MEDIA / RECENT</span><strong id="media-count">24 items</strong></div>
+            <p id="drop-note">Drop files anywhere to upload</p>
+          </div>
+
+          <div class="media-grid" id="media-grid">
+            <article class="media-card" data-asset="1">
+              <button class="selection-target" type="button" aria-label="Select Alpine study"><span></span></button>
+              <a class="media-link" href="#viewer-1" aria-label="Open Alpine study">
+                <div class="media-visual visual-a"><span class="media-reg">RL / 01</span></div>
+                <div class="media-meta"><strong>Alpine study</strong><span>IMAGE · 2048 × 2048</span><time>2m</time></div>
+              </a>
+            </article>
+            <article class="media-card" data-asset="2">
+              <button class="selection-target" type="button" aria-label="Select Amber corridor"><span></span></button>
+              <a class="media-link" href="#viewer-2" aria-label="Open Amber corridor">
+                <div class="media-visual visual-b"><span class="media-reg">RL / 02</span><i>VIDEO · 00:05</i></div>
+                <div class="media-meta"><strong>Amber corridor</strong><span>VIDEO · 1080P</span><time>7m</time></div>
+              </a>
+            </article>
+            <article class="media-card" data-asset="3">
+              <button class="selection-target" type="button" aria-label="Select Glass habitat"><span></span></button>
+              <a class="media-link" href="#viewer-3" aria-label="Open Glass habitat">
+                <div class="media-visual visual-c"><span class="media-reg">RL / 03</span></div>
+                <div class="media-meta"><strong>Glass habitat</strong><span>IMAGE · 1536 × 2048</span><time>14m</time></div>
+              </a>
+            </article>
+            <article class="media-card" data-asset="4">
+              <button class="selection-target" type="button" aria-label="Select Night volume"><span></span></button>
+              <a class="media-link" href="#viewer-4" aria-label="Open Night volume">
+                <div class="media-visual visual-d"><span class="media-reg">RL / 04</span></div>
+                <div class="media-meta"><strong>Night volume</strong><span>IMAGE · 2048 × 1365</span><time>22m</time></div>
+              </a>
+            </article>
+            <article class="media-card" data-asset="5">
+              <button class="selection-target" type="button" aria-label="Select Pale monument"><span></span></button>
+              <a class="media-link" href="#viewer-5" aria-label="Open Pale monument">
+                <div class="media-visual visual-e"><span class="media-reg">RL / 05</span></div>
+                <div class="media-meta"><strong>Pale monument</strong><span>IMAGE · 2048 × 2048</span><time>31m</time></div>
+              </a>
+            </article>
+            <article class="media-card" data-asset="6">
+              <button class="selection-target" type="button" aria-label="Select Signal field"><span></span></button>
+              <a class="media-link" href="#viewer-6" aria-label="Open Signal field">
+                <div class="media-visual visual-f"><span class="media-reg">RL / 06</span><i>VIDEO · 00:08</i></div>
+                <div class="media-meta"><strong>Signal field</strong><span>VIDEO · 720P</span><time>44m</time></div>
+              </a>
+            </article>
+            <article class="media-card" data-asset="7">
+              <button class="selection-target" type="button" aria-label="Select Soft machine"><span></span></button>
+              <a class="media-link" href="#viewer-7" aria-label="Open Soft machine">
+                <div class="media-visual visual-g"><span class="media-reg">RL / 07</span></div>
+                <div class="media-meta"><strong>Soft machine</strong><span>IMAGE · 1792 × 1024</span><time>1h</time></div>
+              </a>
+            </article>
+            <article class="media-card" data-asset="8">
+              <button class="selection-target" type="button" aria-label="Select Orange room"><span></span></button>
+              <a class="media-link" href="#viewer-8" aria-label="Open Orange room">
+                <div class="media-visual visual-h"><span class="media-reg">RL / 08</span></div>
+                <div class="media-meta"><strong>Orange room</strong><span>IMAGE · 1536 × 2048</span><time>1h</time></div>
+              </a>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <aside class="selection-bar" id="selection-bar" aria-label="Selected media actions" aria-live="polite">
+        <div><span class="eyebrow">SELECTION</span><strong id="selection-count">0 selected</strong></div>
+        <div class="selection-actions">
+          <button id="select-all" type="button">Select page</button>
+          <button id="organize-action" type="button">Organize</button>
+          <button id="delete-action" class="danger" type="button">Delete</button>
+          <button id="cancel-selection" type="button">Cancel</button>
+        </div>
+      </aside>
+
+      <footer class="prototype-foot" aria-hidden="true">
+        <span id="concept-label">GALLERY RAIL</span><span>R&D / UI-075 STUDY</span><span>PRODUCT CONTRACTS LOCKED</span>
+      </footer>
+    </main>
+  </div>
+  <script src="./prototype.js"></script>
+</body>
+</html>
