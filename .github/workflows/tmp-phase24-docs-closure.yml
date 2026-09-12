@@ -22,6 +22,7 @@ jobs:
 
       - name: Apply verified Phase 24 closure
         run: |
+          node scripts/tmp-phase24-fix-helper.mjs
           node scripts/tmp-phase24-docs-closure.mjs
           git diff --check
 
@@ -35,15 +36,17 @@ jobs:
             docs/ui/UI_MIGRATION.md \
             docs/ui/UI_SYSTEM.md \
             | sort)
-          actual=$(git diff --name-only | grep -v '^$' | sort)
-          test "$actual" = "$expected"
+          actual_docs=$(git diff --name-only | grep -E '^(PROJECT.md|docs/ui/(SCREEN_REGISTRY|UI_DECISIONS|UI_MIGRATION|UI_SYSTEM)\.md)$' | sort)
+          test "$actual_docs" = "$expected"
+          unexpected=$(git diff --name-only | grep -Ev '^(PROJECT.md|docs/ui/(SCREEN_REGISTRY|UI_DECISIONS|UI_MIGRATION|UI_SYSTEM)\.md|scripts/tmp-phase24-docs-closure\.mjs)$' || true)
+          test -z "$unexpected"
 
       - name: Commit closure and remove helpers
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/tmp-phase24-docs-closure.yml scripts/tmp-phase24-docs-closure.mjs
+          git rm .github/workflows/tmp-phase24-docs-closure.yml scripts/tmp-phase24-docs-closure.mjs scripts/tmp-phase24-fix-helper.mjs
           git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md docs/ui/UI_SYSTEM.md
           git diff --cached --check
           git commit -m "Record Phase 24 Library Gallery Rail closure"
