@@ -221,6 +221,7 @@ try {
 
   await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("button", { name: "Manage", exact: true }).click();
   await page.getByRole("button", { name: "Rename", exact: true }).click();
   const generatedNameInput = page.getByLabel("Media name", { exact: true });
   await generatedNameInput.waitFor({ state: "visible", timeout: 30_000 });
@@ -246,6 +247,7 @@ try {
 
   await page.goto(`${baseUrl}/library/${uploaded.id}`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("heading", { name: uploadedInitialDisplayName, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("button", { name: "Manage", exact: true }).click();
   await page.getByRole("button", { name: "Rename", exact: true }).click();
   const uploadedNameInput = page.getByLabel("Media name", { exact: true });
   await uploadedNameInput.fill("  旅行   Cover   画像  ");

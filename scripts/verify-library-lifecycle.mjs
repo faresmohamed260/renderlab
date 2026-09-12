@@ -270,9 +270,12 @@ try {
   await viewerImage.waitFor({ state: "visible", timeout: 30_000 });
   const viewerMetrics = await imageMetrics(viewerImage, "Uploaded Media Viewer image");
   assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Uploaded Media Viewer image");
-  await page.getByText(/^uploaded image$/i).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByText("Upload", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByText(fixtureFilename, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("button", { name: "Details", exact: true }).click();
+  const detailsPanel = page.locator("#media-viewer-register-panel");
+  await detailsPanel.getByRole("heading", { name: "DETAILS", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await detailsPanel.getByText("Image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await detailsPanel.getByText("Upload", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await detailsPanel.getByText(fixtureFilename, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
   const edit = page.getByRole("link", { name: "Edit", exact: true });
   const animate = page.getByRole("link", { name: "Animate", exact: true });
@@ -287,10 +290,12 @@ try {
   await page.setViewportSize(intermediateViewport);
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
-  const viewerLayoutMetrics = await page.locator(".kinetic-viewer-layout").evaluate((layout) => {
+  const viewerLayoutMetrics = await page.locator("[data-viewer-register]").evaluate((registerElement) => {
+    const layout = registerElement.parentElement;
+    if (!layout) throw new Error("Viewer register has no containing Viewer object.");
     const layoutBox = layout.getBoundingClientRect();
     const stage = document.getElementById("media-viewer-comparison")?.getBoundingClientRect() || null;
-    const rail = document.querySelector(".kinetic-viewer-rail")?.getBoundingClientRect() || null;
+    const register = document.querySelector("[data-viewer-register]")?.getBoundingClientRect() || null;
     return {
       innerWidth: window.innerWidth,
       scrollWidth: document.documentElement.scrollWidth,
@@ -298,14 +303,14 @@ try {
       layoutRight: layoutBox.right,
       stageLeft: stage?.left ?? null,
       stageRight: stage?.right ?? null,
-      railLeft: rail?.left ?? null,
-      railRight: rail?.right ?? null,
+      registerLeft: register?.left ?? null,
+      registerRight: register?.right ?? null,
     };
   });
   assert(viewerLayoutMetrics.scrollWidth <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer overflowed horizontally: ${JSON.stringify(viewerLayoutMetrics)}`);
   assert(viewerLayoutMetrics.layoutLeft >= 0 && viewerLayoutMetrics.layoutRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer layout escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);
   assert(viewerLayoutMetrics.stageLeft !== null && viewerLayoutMetrics.stageLeft >= 0 && viewerLayoutMetrics.stageRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer media stage escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);
-  assert(viewerLayoutMetrics.railLeft !== null && viewerLayoutMetrics.railLeft >= 0 && viewerLayoutMetrics.railRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer rail escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);
+  assert(viewerLayoutMetrics.registerLeft !== null && viewerLayoutMetrics.registerLeft >= 0 && viewerLayoutMetrics.registerRight <= viewerLayoutMetrics.innerWidth, `Intermediate Viewer register escaped the viewport: ${JSON.stringify(viewerLayoutMetrics)}`);
   await page.screenshot({ path: `${artifactDir}/library-lifecycle-intermediate-viewer.png`, fullPage: true });
 
   await page.setViewportSize(mobileViewport);

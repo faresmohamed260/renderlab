@@ -269,7 +269,7 @@ async function verifyMock(account, foreignAccount) {
     await compare.waitFor({ state: "visible", timeout: 30_000 });
     assert((await page.getByText("Reuse settings", { exact: true }).count()) === 0, "Succeeded Upscale incorrectly exposed Reuse Settings.");
     await compare.click();
-    await page.getByText("Source", { exact: true }).first().waitFor({ state: "visible" });
+    await page.getByText(/^source$/i).first().waitFor({ state: "visible" });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), "Upscale result comparison overflowed desktop Viewer.");
     await page.screenshot({ path: `${artifactDir}/phase18f-upscale-result-compare-desktop.png`, fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });

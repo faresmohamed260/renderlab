@@ -344,6 +344,7 @@ try {
 
   await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.getByRole("heading", { name: "RenderLab Delete Generated", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("button", { name: "Manage", exact: true }).click();
   await page.getByRole("button", { name: "Delete", exact: true }).click();
   const dialog = page.getByRole("alertdialog");
   await dialog.getByRole("heading", { name: "Delete media?", exact: true }).waitFor({ state: "visible", timeout: 10_000 });

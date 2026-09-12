@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   createContext,
   useContext,
   useMemo,
   useState,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import { Button } from "@/components/ui/button";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
+import styles from "@/features/library/media-viewer.module.css";
 
 const comparisonRegionId = "media-viewer-comparison";
 
@@ -46,7 +48,7 @@ function ResultMedia({ asset, title }: { asset: PublicMediaAsset; title: string 
       <img
         src={asset.contentUrl}
         alt={title}
-        className="kinetic-viewer-media max-h-[78vh] max-w-full rounded-xl object-contain"
+        className={`${styles.resultMedia} kinetic-viewer-media`}
       />
     );
   }
@@ -57,7 +59,7 @@ function ResultMedia({ asset, title }: { asset: PublicMediaAsset; title: string 
       poster={asset.thumbnailUrl || undefined}
       controls
       playsInline
-      className="kinetic-viewer-media max-h-[78vh] max-w-full rounded-xl"
+      className={`${styles.resultMedia} kinetic-viewer-media`}
       aria-label={title}
     />
   );
@@ -76,84 +78,122 @@ export function MediaViewerMediaStage({
 }) {
   const { open } = useComparison();
   const reduceMotion = useReducedMotion();
-  const transition = reduceMotion
-    ? { duration: 0 }
-    : { duration: 0.32, ease: "easeOut" as const };
 
-  if (!source || !open) {
-    return (
-      <motion.div
-        id={comparisonRegionId}
-        className="kinetic-viewer-stage flex min-h-[52vh] w-full min-w-0 items-center justify-center overflow-hidden rounded-2xl border border-border p-2 sm:p-4 lg:min-h-[70vh]"
-        initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.992 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={transition}
-      >
-        <ResultMedia asset={asset} title={title} />
-      </motion.div>
-    );
+  function resetDepth(element: HTMLElement) {
+    element.style.removeProperty("--viewer-rx");
+    element.style.removeProperty("--viewer-ry");
   }
 
+  function handlePointerMove(event: ReactPointerEvent<HTMLElement>) {
+    if (reduceMotion || open || asset.kind !== "image" || event.pointerType === "touch") return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const nx = Math.max(-1, Math.min(1, ((event.clientX - rect.left) / rect.width - 0.5) * 2));
+    const ny = Math.max(-1, Math.min(1, ((event.clientY - rect.top) / rect.height - 0.5) * 2));
+    event.currentTarget.style.setProperty("--viewer-rx", `${(-ny * 0.7).toFixed(2)}deg`);
+    event.currentTarget.style.setProperty("--viewer-ry", `${(nx * 0.9).toFixed(2)}deg`);
+  }
+
+  const layoutTransition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.36, ease: [0.2, 0.8, 0.2, 1] as const };
+
+  const sourceTransition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.36, ease: [0.2, 0.8, 0.2, 1] as const };
+
   return (
-    <motion.div
+    <div
       id={comparisonRegionId}
-      className="kinetic-compare-stage grid min-w-0 gap-3 lg:grid-cols-[minmax(220px,2fr)_minmax(0,3fr)] lg:items-stretch"
-      aria-label="Source and result comparison"
-      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={transition}
+      className={styles.stageGrid}
+      data-compare={Boolean(source && open)}
+      aria-label={source && open ? "Source and result comparison" : "Media result"}
     >
-      <motion.div
+      <motion.figure
         layout={!reduceMotion}
-        className="kinetic-compare-result order-1 flex min-h-[52vh] min-w-0 flex-col rounded-2xl border border-accent/50 p-2 sm:p-4 lg:order-2 lg:min-h-[70vh]"
-        transition={transition}
+        className={`${styles.mediaFrame} ${styles.resultFrame}`}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={(event) => resetDepth(event.currentTarget)}
+        onPointerCancel={(event) => resetDepth(event.currentTarget)}
+        animate={reduceMotion || open || asset.kind !== "image"
+          ? { rotateX: 0, rotateY: 0 }
+          : {
+              rotateX: "var(--viewer-rx, 0deg)",
+              rotateY: "var(--viewer-ry, 0deg)",
+            }}
+        transition={layoutTransition}
       >
-        <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-[0.08em] text-text">
-          {asset.kind === "video" ? "Result video" : "Result"}
-        </p>
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-surface-2 p-2 sm:p-3">
+        <div className={styles.mediaWell}>
           <ResultMedia asset={asset} title={title} />
         </div>
-      </motion.div>
+        <figcaption className={styles.frameLabel}>
+          <strong>RESULT</strong>
+          <span>{title}</span>
+        </figcaption>
+      </motion.figure>
 
-      <motion.div
-        layout={!reduceMotion}
-        className="kinetic-compare-source order-2 min-w-0 rounded-2xl border border-border p-3 lg:order-1 lg:flex lg:min-h-[70vh] lg:flex-col lg:p-4"
-        initial={reduceMotion ? false : { opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={transition}
-      >
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">Source</p>
-        <div className="mt-2 grid grid-cols-[112px_minmax(0,1fr)] items-center gap-3 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:items-stretch lg:justify-center">
-          <div className="flex h-24 items-center justify-center overflow-hidden rounded-xl bg-surface-2 p-1.5 lg:h-auto lg:min-h-0 lg:flex-1 lg:p-2">
-            <img
-              src={source.contentUrl}
-              alt={sourceTitle || "Source image"}
-              className="max-h-full max-w-full rounded-lg object-contain"
-            />
-          </div>
-          <div className="min-w-0 lg:pt-3">
-            <p className="line-clamp-2 text-sm text-text">{sourceTitle || "Source image"}</p>
-            <Button asChild variant="secondary" size="sm" className="mt-2">
-              <Link href={`/library/${encodeURIComponent(source.id)}`}>Open source</Link>
-            </Button>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
+      <AnimatePresence initial={false}>
+        {source && open ? (
+          <motion.figure
+            key={source.id}
+            layout={!reduceMotion}
+            className={`${styles.mediaFrame} ${styles.sourceFrame}`}
+            initial={reduceMotion ? false : {
+              opacity: 0,
+              x: -30,
+              scale: 0.985,
+              clipPath: "inset(0 100% 0 0 round 14px)",
+            }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              scale: 1,
+              clipPath: "inset(0 0 0 0 round 14px)",
+            }}
+            exit={reduceMotion ? { opacity: 0 } : {
+              opacity: 0,
+              x: -24,
+              scale: 0.99,
+              clipPath: "inset(0 100% 0 0 round 14px)",
+            }}
+            transition={sourceTransition}
+          >
+            <div className={styles.mediaWell}>
+              <img
+                src={source.contentUrl}
+                alt={sourceTitle || "Source image"}
+                className={styles.sourceMedia}
+              />
+            </div>
+            <figcaption className={`${styles.frameLabel} ${styles.sourceLabel}`}>
+              <div>
+                <strong>SOURCE</strong>
+                <span>{sourceTitle || "Source image"}</span>
+              </div>
+              <Link
+                href={`/library/${encodeURIComponent(source.id)}`}
+                className={styles.sourceLink}
+              >
+                Open source
+              </Link>
+            </figcaption>
+          </motion.figure>
+        ) : null}
+      </AnimatePresence>
+    </div>
   );
 }
 
-export function MediaViewerCompareButton() {
+export function MediaViewerCompareButton({ className }: { className?: string }) {
   const { enabled, open, setOpen } = useComparison();
   if (!enabled) return null;
 
   return (
     <Button
       type="button"
-      variant="secondary"
-      size="lg"
-      className="w-full"
+      variant="ghost"
+      size="sm"
+      className={className}
       aria-expanded={open}
       aria-controls={comparisonRegionId}
       onClick={() => setOpen(!open)}
