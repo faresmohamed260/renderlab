@@ -271,9 +271,11 @@ try {
   const viewerMetrics = await imageMetrics(viewerImage, "Uploaded Media Viewer image");
   assertRatio(viewerMetrics, fixtureWidth / fixtureHeight, "Uploaded Media Viewer image");
   await page.getByRole("button", { name: "Details", exact: true }).click();
-  await page.getByText(/^uploaded image$/i).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByText("Upload", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByText(fixtureFilename, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  const detailsPanel = page.locator("#media-viewer-register-panel");
+  await detailsPanel.getByRole("heading", { name: "DETAILS", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await detailsPanel.getByText("Image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await detailsPanel.getByText("Upload", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await detailsPanel.getByText(fixtureFilename, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
   const edit = page.getByRole("link", { name: "Edit", exact: true });
   const animate = page.getByRole("link", { name: "Animate", exact: true });

@@ -862,7 +862,7 @@ try {
   const videoCompareButton = page.getByRole("button", { name: "Compare source", exact: true });
   await videoCompareButton.waitFor({ state: "visible", timeout: 30_000 });
   await videoCompareButton.click();
-  await page.getByText("Result video", { exact: true }).waitFor({ state: "visible" });
+  await page.locator("#media-viewer-comparison").getByText("RESULT", { exact: true }).waitFor({ state: "visible" });
   await page.getByText(/^source$/i).waitFor({ state: "visible" });
   assert(await page.locator('#media-viewer-comparison video[controls]').count() === 1, "Image→Video comparison did not preserve result video controls.");
   assert((await page.getByRole("link", { name: "Open source", exact: true }).getAttribute("href")) === `/library/${activeInput.id}`, "Image→Video comparison resolved the wrong durable source.");
