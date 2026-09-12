@@ -19,6 +19,18 @@ jobs:
         with:
           ref: work/phase-25-media-viewer-closure
           fetch-depth: 0
+      - name: Normalize temporary updater formatting
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/phase25-closure-docs.py')
+          text = path.read_text()
+          old = "'**Status:** Accepted / user-approved / implemented / verified / merged / merged-main verified  '"
+          new = "'**Status:** Accepted / user-approved / implemented / verified / merged / merged-main verified'"
+          if text.count(old) != 1:
+              raise SystemExit('expected one UI-076 status replacement')
+          path.write_text(text.replace(old, new, 1))
+          PY
       - name: Apply verified closure docs
         run: python scripts/phase25-closure-docs.py
       - name: Validate documentation diff
