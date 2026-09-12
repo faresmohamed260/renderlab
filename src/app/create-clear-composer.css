@@ -12,6 +12,14 @@
   text-rendering: auto;
 }
 
+.clear-create-workspace .clear-create-eyebrow {
+  line-height: normal;
+}
+
+.clear-create-workspace .clear-composer-prompt {
+  min-height: 135px !important;
+}
+
 .clear-create-workspace .clear-composer-reference-trigger {
   min-height: 44px !important;
   gap: 7px;
@@ -32,4 +40,10 @@
 .clear-create-workspace .clear-composer-reference-trigger:disabled {
   border-color: rgb(255 255 255 / 10%) !important;
   background: #111822 !important;
+}
+
+@media (max-width: 600px) {
+  .clear-create-workspace .clear-composer-prompt {
+    min-height: 132px !important;
+  }
 }
