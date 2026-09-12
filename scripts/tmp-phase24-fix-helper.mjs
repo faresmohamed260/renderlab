@@ -11,7 +11,7 @@ const replacement = `const decisionsPath = "docs/ui/UI_DECISIONS.md";
 let decisions = await read(decisionsPath);
 const ui075Heading = "### UI-075 — Library Gallery Rail makes discovery compact and selection an in-place workspace mode";
 const ui075Start = decisions.indexOf(ui075Heading);
-if (ui075Start < 0) throw new Error(\`${decisionsPath}: UI-075 heading not found\`);
+if (ui075Start < 0) throw new Error("docs/ui/UI_DECISIONS.md: UI-075 heading not found");
 const ui075Replacement = \`### UI-075 — Library Gallery Rail makes discovery compact and selection an in-place workspace mode
 **Status:** Accepted / implemented / verified / merged  
 **Date:** 2026-09-12
@@ -26,7 +26,7 @@ const ui075Replacement = \`### UI-075 — Library Gallery Rail makes discovery c
 
 **Verification:** accepted design authority remains R&D head \\\`ba842e919305e07262ae95c81b3c2063a455b54d\\\`, run \\\`34689164957\\\`, artifact \\\`10296866215\\\` (\\\`sha256:db81c13f34514022f01a9e8998de4c0622ee946e316d02655c70477db1a87d95\\\`). Production PR #194 definitive head \\\`d0a6f66937986ace109e301913f17410a8e95548\\\` passed the complete fresh 13-workflow attached set. Human review accepted History artifact \\\`10298855903\\\`, Batch Actions artifact \\\`10298746267\\\` and Drag Drop artifact \\\`10299387838\\\`. PR #194 squash-merged as \\\`af88b93dcb4fcbca502b42f9ea1186192af48a6a\\\`; the two workflows GitHub attached to merged main both passed: Engineering Quality \\\`34699439085\\\` and UI Shell Validation \\\`34699439083\\\`. Production deployment remains unauthorized and unchanged.
 \`;
-decisions = \\\`${decisions.slice(0, ui075Start)}${ui075Replacement.trimEnd()}\\\\n\\\`;
+decisions = decisions.slice(0, ui075Start) + ui075Replacement.trimEnd() + "\\n";
 await write(decisionsPath, decisions);`;
 text = `${text.slice(0, start)}${replacement}${text.slice(endIndex)}`;
 await writeFile(path, text, "utf8");
