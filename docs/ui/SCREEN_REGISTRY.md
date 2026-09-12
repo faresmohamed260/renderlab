@@ -172,11 +172,13 @@ Approved behavior:
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** APPROVED — Media Viewer base + Download + Rename + Favorites + Collections v0.1 / UI-032 + Delete v0.1 / UI-033 + Reuse Settings / Compare source / UI-056 + Image Upscale 2× / UI-058
-**Implementation:** `src/features/library/media-viewer.tsx`, `src/features/library/media-viewer-comparison.tsx`, `src/features/library/media-viewer-upscale-action.tsx`
+**Status:** APPROVED — UI-076 Media Register + Source Fold v0.2 / Phase 25 merged and merged-main verified, plus existing Viewer behavior contracts
+**Implementation:** `src/features/library/media-viewer.tsx`, `src/features/library/media-viewer-comparison.tsx`, `src/features/library/media-viewer-register.tsx`, `src/features/library/media-viewer.module.css`, `src/features/library/media-viewer-upscale-action.tsx`
 **Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
 **Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts` (GET/PATCH/DELETE), `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/app/api/media/collections/route.ts`, collection membership route, `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-collections.ts`
-**Design artifacts:** `design/penpot/media-viewer-v0.1.svg`, `design/penpot/media-viewer-v0.2-compare-source.md`
+**Design authority:** historical `design/penpot/media-viewer-v0.1.svg`, `design/penpot/media-viewer-v0.2-compare-source.md`; current UI-076 authority is approved R&D `design/rd/media-viewer-register-fold-v02.md` at `639aef25e57e166be8d8b3d226b3e83930e05a25` plus `docs/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md`
+
+**UI-076 / Phase 25 closure — 2026-09-13:** The old permanent Viewer sidebar is replaced by the approved Media Register + Source Fold v0.2 system. Quick actions own Favorite/Download; Manage owns Collections/Rename/Delete; Prompt/Details/Manage/Compare stay attached to the local register; Source Fold keeps Result primary, reveals Source horizontally on wide layouts and stacks Result→Source on narrow layouts; native video, continuation, Reuse Settings, Upscale, ownership and durable-media contracts remain intact. Exact implementation head `3e468ad0abd4f7b6645e86e298ce53a3a8ecf034` passed the full affected acceptance set; dedicated Viewer run `34717466185` / artifact `10304951419` (`sha256:d551006acffa260e8bbd83e25c2b156204a4391f1f9b1abcfc4e58aa0cc28e04`) was human-reviewed faithful. PR #200 merged as `b672c711f885092c5e92c42824078e7bd5bc691e`; all six merged-main workflows passed. Production remains unchanged pending separately authorized deployment.
 
 **Approved behavior:**
 - deep-linked durable asset route;
