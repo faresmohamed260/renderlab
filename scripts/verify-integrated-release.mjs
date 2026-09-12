@@ -465,7 +465,7 @@ try {
   const retryJobId = await createFailedRetryJob(owner.id, assetId);
   await page.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByText(generatedPrompt, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  const retryRow = page.locator("li").filter({ hasText: retryPrompt }).filter({ hasText: "Sanitized Phase 12 recovery fixture failure." }).first();
+  const retryRow = page.locator('li[data-activity-status="failed"]').filter({ hasText: retryPrompt }).first();
   await retryRow.waitFor({ state: "visible", timeout: 30_000 });
   const retryButton = retryRow.getByRole("button", { name: "Retry", exact: true });
   await retryButton.waitFor({ state: "visible", timeout: 30_000 });
