@@ -92,7 +92,7 @@ function ActivityActions({ item }: { item: PublicGenerationActivity }) {
             asChild
             variant="secondary"
             size="sm"
-            className="min-h-11 bg-text px-4 text-canvas hover:bg-white hover:text-canvas"
+            className="min-h-11 bg-[#f1f4f6] px-4 !text-[#070a0e] hover:bg-white hover:!text-[#070a0e]"
           >
             <Link href={`/library/${encodeURIComponent(item.outputAssetIds[0])}`}>View result</Link>
           </Button>
