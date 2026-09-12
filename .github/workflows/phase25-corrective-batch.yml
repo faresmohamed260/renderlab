@@ -96,6 +96,7 @@ jobs:
               "scripts/verify-creative-iteration.mjs",
               '  await page.getByText("Source", { exact: true }).waitFor({ state: "visible" });',
               '  await page.getByText(/^source$/i).waitFor({ state: "visible" });',
+              expected=2,
           )
           replace(
               "scripts/verify-image-upscale.mjs",
