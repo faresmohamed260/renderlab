@@ -1,14 +1,49 @@
 import assert from 'node:assert/strict';
-import { mkdir, writeFile } from 'node:fs/promises';
+import http from 'node:http';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 
 const root = process.cwd();
-const prototypePath = path.join(root, 'design/prototypes/activity-lifecycle-register-v01/index.html');
-const baseUrl = pathToFileURL(prototypePath).href;
 const artifactDir = path.join(root, 'artifacts/activity-lifecycle-register-v01');
 await mkdir(artifactDir, { recursive: true });
+
+const mime = new Map([
+  ['.html', 'text/html; charset=utf-8'],
+  ['.css', 'text/css; charset=utf-8'],
+  ['.js', 'text/javascript; charset=utf-8'],
+  ['.svg', 'image/svg+xml'],
+  ['.png', 'image/png'],
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.webp', 'image/webp'],
+]);
+
+const server = http.createServer(async (request, response) => {
+  try {
+    const requestUrl = new URL(request.url || '/', 'http://127.0.0.1');
+    const relative = decodeURIComponent(requestUrl.pathname).replace(/^\/+/, '');
+    const filePath = path.resolve(root, relative || 'index.html');
+    if (!filePath.startsWith(`${root}${path.sep}`) && filePath !== root) {
+      response.writeHead(403).end('Forbidden');
+      return;
+    }
+    const data = await readFile(filePath);
+    response.writeHead(200, {
+      'content-type': mime.get(path.extname(filePath).toLowerCase()) || 'application/octet-stream',
+      'cache-control': 'no-store',
+    });
+    response.end(data);
+  } catch {
+    response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+    response.end('Not found');
+  }
+});
+
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+const address = server.address();
+assert.ok(address && typeof address === 'object');
+const baseUrl = `http://127.0.0.1:${address.port}/design/prototypes/activity-lifecycle-register-v01/index.html`;
 
 const evidence = {
   prototype: 'activity-lifecycle-register-v01',
@@ -42,8 +77,8 @@ async function noOverflow(page, label) {
 
 async function gotoPrototype(page, { concept = 'register', mode = 'full', clean = true } = {}) {
   const url = `${baseUrl}?concept=${concept}&mode=${mode}${clean ? '&clean=1' : ''}`;
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(90);
+  await page.goto(url, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(80);
 }
 
 async function verifyConcept(page, concept, viewportLabel) {
@@ -66,7 +101,6 @@ async function keyboardReach(page, text, maxTabs = 60) {
       text: document.activeElement?.textContent?.trim() || '',
       visible: document.activeElement?.matches?.(':focus-visible') || false,
       outline: document.activeElement ? getComputedStyle(document.activeElement).outlineStyle : 'none',
-      width: document.activeElement ? getComputedStyle(document.activeElement).outlineWidth : '0px',
     }));
     if (current.text === text) return current;
   }
@@ -85,9 +119,10 @@ const browser = await chromium.launch({ headless: true });
 try {
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 }, hasTouch: false });
   const page = await desktop.newPage();
-  const consoleErrors = [];
-  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
-  page.on('pageerror', (error) => consoleErrors.push(error.message));
+  const desktopErrors = [];
+  page.on('console', (message) => { if (message.type() === 'error') desktopErrors.push(`console: ${message.text()}`); });
+  page.on('pageerror', (error) => desktopErrors.push(`page: ${error.message}`));
+  page.on('requestfailed', (request) => desktopErrors.push(`request: ${request.url()} ${request.failure()?.errorText || ''}`));
 
   for (const concept of ['register', 'ledger', 'fold']) {
     await verifyConcept(page, concept, 'desktop');
@@ -96,11 +131,11 @@ try {
   await gotoPrototype(page, { concept: 'register' });
   await verifyAllLifecycleLabels(page);
   assert.equal(await page.locator('[data-live-register]').isVisible(), true, 'register: live indicator shown with active jobs');
-  assert.equal(await page.locator('text=View result').count() > 0, true, 'register: result navigation visible');
-  assert.equal(await page.locator('text=Run again').count() > 0, true, 'register: Run Again visible');
-  assert.equal(await page.locator('text=Retry').count() > 0, true, 'register: Retry visible');
-  assert.equal(await page.locator('text=Cancel').count() > 0, true, 'register: Cancel visible');
-  assert.equal(await page.locator('.fault-note').filter({ visible: true }).count().catch(() => 0) >= 0, true);
+  assert.ok(await page.getByText('View result', { exact: true }).count(), 'register: result navigation visible');
+  assert.ok(await page.getByText('Run again', { exact: true }).count(), 'register: Run Again visible');
+  assert.ok(await page.getByText('Retry', { exact: true }).count(), 'register: Retry visible');
+  assert.ok(await page.getByText('Cancel', { exact: true }).count(), 'register: Cancel visible');
+  assert.ok(await page.locator('.job-register[data-status="failed"] .fault-note').isVisible(), 'register: sanitized failed-row guidance visible');
   pass('register: distinct result / Run Again / Retry / Cancel affordances present');
 
   await page.evaluate(() => window.activityPrototype.setLifecycle('failed'));
@@ -111,7 +146,7 @@ try {
   pass('register: failed state and local guidance');
 
   await page.evaluate(() => window.activityPrototype.setLifecycle('running', { settle: false }));
-  await page.locator('[data-cancel-trigger]').first().click();
+  await page.locator('#primary-job [data-cancel-trigger]').click();
   assert.equal(await page.locator('[data-cancel-confirm]').isVisible(), true, 'register: cancellation confirmation is local');
   await screenshot(page, 'desktop-register-cancel-confirm');
   await page.locator('[data-cancel-confirm-action]').click();
@@ -155,29 +190,30 @@ try {
   assert.notEqual(focused.outline, 'none', 'desktop: focused Cancel has visible outline');
   pass('desktop: keyboard reach + visible focus');
 
-  assert.deepEqual(consoleErrors, [], `desktop: browser errors ${consoleErrors.join(' | ')}`);
-  pass('desktop: no console/page errors');
+  assert.deepEqual(desktopErrors, [], `desktop: browser errors ${desktopErrors.join(' | ')}`);
+  pass('desktop: no console/page/request errors');
   await desktop.close();
 
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const mobilePage = await mobile.newPage();
   const mobileErrors = [];
-  mobilePage.on('console', (message) => { if (message.type() === 'error') mobileErrors.push(message.text()); });
-  mobilePage.on('pageerror', (error) => mobileErrors.push(error.message));
+  mobilePage.on('console', (message) => { if (message.type() === 'error') mobileErrors.push(`console: ${message.text()}`); });
+  mobilePage.on('pageerror', (error) => mobileErrors.push(`page: ${error.message}`));
+  mobilePage.on('requestfailed', (request) => mobileErrors.push(`request: ${request.url()} ${request.failure()?.errorText || ''}`));
 
-  await verifyConcept(mobilePage, 'register', 'mobile');
-  await verifyConcept(mobilePage, 'ledger', 'mobile');
-  await verifyConcept(mobilePage, 'fold', 'mobile');
+  for (const concept of ['register', 'ledger', 'fold']) {
+    await verifyConcept(mobilePage, concept, 'mobile');
+  }
   await gotoPrototype(mobilePage, { concept: 'register' });
 
-  for (const selector of ['[data-cancel-trigger]', '.job-register[data-status="succeeded"] .button', '.job-register[data-status="failed"] .button', '.pagination .button:not(:disabled)']) {
+  for (const selector of ['#primary-job [data-cancel-trigger]', '.job-register[data-status="succeeded"] .button', '.job-register[data-status="failed"] .button', '.pagination .button:not(:disabled)']) {
     const box = await mobilePage.locator(selector).first().boundingBox();
     assert.ok(box && box.height >= 44, `mobile: ${selector} effective height >=44px`);
   }
   pass('mobile: primary actions have >=44px effective height');
   await noOverflow(mobilePage, 'mobile-register-actions');
 
-  await mobilePage.locator('[data-cancel-trigger]').first().click();
+  await mobilePage.locator('#primary-job [data-cancel-trigger]').click();
   await screenshot(mobilePage, 'mobile-register-cancel-confirm');
   await noOverflow(mobilePage, 'mobile-register-cancel-confirm');
   assert.deepEqual(mobileErrors, [], `mobile: browser errors ${mobileErrors.join(' | ')}`);
@@ -194,10 +230,7 @@ try {
     const rail = row.querySelector('.rail-marker');
     const rowStyle = getComputedStyle(row);
     const railStyle = getComputedStyle(rail);
-    return {
-      rowTransition: rowStyle.transitionDuration,
-      railAnimation: railStyle.animationDuration,
-    };
+    return { rowTransition: rowStyle.transitionDuration, railAnimation: railStyle.animationDuration };
   });
   const parseMax = (value) => Math.max(...value.split(',').map((raw) => {
     const text = raw.trim();
@@ -214,4 +247,5 @@ try {
   console.log(`Activity Lifecycle Register R&D v0.1 passed ${evidence.checks.length} checks with ${evidence.screenshots.length} screenshots.`);
 } finally {
   await browser.close();
+  await new Promise((resolve) => server.close(resolve));
 }
