@@ -1,31 +1,47 @@
-# Media Viewer Continuity v0.1 — browser review notes
+# Media Viewer Register + Source Fold v0.2 — browser review notes
 
-## Run 1 — `34700991675`
+## Inherited v0.1 lessons
 
-Exact head: `3fe0a396f49a35d7fcd204d85ba9dd6a971cda67`  
-Artifact: `10300352553`  
-Digest: `sha256:104d04036e180d8f5745aa4978e9b566d4803ae21d2729141a3c080ab57a56f2`
+The focused candidate inherits the validated corrections from Media Viewer Continuity v0.1:
 
-### What worked
+- hidden Source shares Result's grid cell in the default state and no longer creates a dead second row;
+- Source moves beside Result only for desktop Compare and below Result only for narrow Compare;
+- settled-state verification waits for bounded transitions while separate 0/60/180/360ms evidence captures Source Fold choreography;
+- compact experimental Spine controls had explicit accessible names during v0.1 evaluation;
+- first-viewport composition was tightened so the attached continuation register begins inside the normal desktop viewport.
 
-- The UI-074 compact horizontal header and Gallery Rail technical/atmospheric language read as the same RenderLab family rather than a new theme.
-- Media Register comparison made Result clearly primary and Source contextual.
-- The attached continuation register is a stronger direction than the current production-style boxed 304px sidebar.
-- Inspection Spine was visually distinct without becoming a second application sidebar.
+The v0.1 final exact head `5cbdc0cd8fad7be4817b6231e36cea7c86518169` passed run `34701563072`; artifact `10300423225`, digest `sha256:c338752da47573b9dd3e1ac5be1d6dc06919727cf1df22df4c5078ef50fec653`.
 
-### What failed / required correction
+## Focused v0.2 run 1 — `34703619884`
 
-1. In the default single-media state, the hidden Source frame still occupied an implicit second CSS-grid row. This created a large empty stage under Result and pushed the attached continuation register too low in the first viewport.
-2. The verifier changed disclosure / comparison state and captured only 30ms later. That meant the Spine compare geometry assertion and details screenshots were reading intentional transition frames as though they were settled states.
-3. The Spine prototype used single-letter visible triggers without accessible names. Compactness must not become cryptic interaction semantics.
+Exact head: `4b83953cc07a1b68dd9404ed43602fa46466d24b`
 
-### Refinement applied
+The run reached the focused browser verifier and failed during the mobile action-ownership check. The failure exposed a real prototype accessibility gap rather than a visual-composition regression.
 
-Commit `2182195ab3a5199fb087472782597f78bf532c7c`:
+At the 390px breakpoint, Favorite and Download intentionally collapse to icon-only 44×44 controls by hiding their visible text spans. The prototype did not provide explicit accessible names, so action identity was not robust in that icon-only state.
 
-- keeps hidden Source in Result's grid cell so it no longer consumes default layout space;
-- moves Source to column 2 only in desktop Compare and row 2 only in narrow Compare;
-- waits for the bounded transition to settle before state/fidelity assertions while preserving the separate 0/60/180/360ms temporal sequence;
-- gives Spine Prompt / Details / Manage / Compare explicit accessible names.
+## Correction
 
-The next exact-head browser pass must verify the corrected first-viewport hierarchy before any concept ranking is treated as review-ready.
+The focused prototype now gives those two icon-only-capable controls explicit accessible names:
+
+- `Favorite`
+- `Download`
+
+The verifier now requires those accessible names directly. It does **not** weaken the design or accessibility gate.
+
+Still required unchanged:
+
+- at least 44×44 mobile quick-action targets;
+- singular action ownership: Favorite/Download quick, Collections/Rename/Delete under Manage;
+- first-viewport continuation register;
+- Result-primary / Source-secondary desktop comparison;
+- vertical Result→Source mobile comparison;
+- Source-only `Open source` action;
+- keyboard-reachable Compare with visible focus;
+- media-local pointer depth with stationary controls;
+- no horizontal overflow;
+- touch-static behavior;
+- reduced-motion depth removal and near-zero Source Fold transition duration;
+- 0/60/180/360ms Source Fold evidence.
+
+This remains R&D only and does not authorize production Viewer changes, product/API/security/data changes, dependency adoption or deployment.
