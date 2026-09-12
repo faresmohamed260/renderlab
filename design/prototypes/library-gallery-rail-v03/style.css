@@ -114,7 +114,7 @@ body[data-state="uploads"] .upload-button { display: inline-flex; align-items: c
 .sort-button { margin-left: auto; }
 
 .selection-mode {
-  z-index: 3; display: flex; min-height: 110px; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 16px;
+  z-index: 3; display: flex; min-height: 110px; align-items: center; justify-content: flex-start; gap: 18px; padding: 14px 16px;
   visibility: hidden; pointer-events: none; opacity: 0; transform: translateX(14px); clip-path: inset(20% 2% 20% 76% round 12px);
   background: linear-gradient(90deg, rgb(12 20 29 / 98%), rgb(10 15 23 / 98%));
   transition: opacity 180ms ease, transform 320ms var(--ease), clip-path 320ms var(--ease), visibility 0s 320ms;
@@ -122,7 +122,7 @@ body[data-state="uploads"] .upload-button { display: inline-flex; align-items: c
 .selection-summary { display: grid; gap: 3px; min-width: 132px; }
 .selection-summary strong { font-size: 17px; font-weight: 620; letter-spacing: -.02em; }
 .selection-summary small { color: var(--muted-2); font-size: 10px; }
-.selection-actions { gap: 4px; }
+.selection-actions { gap: 4px; margin-left: 8px; padding-left: 22px; border-left: 1px solid var(--line); }
 .selection-actions button { padding: 0 13px; border: 1px solid transparent; }
 .selection-actions button:hover { color: #edf1f4; background: rgb(255 255 255 / 5%); }
 .selection-actions .danger { color: #f0a48e; }
@@ -210,7 +210,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .selection-summary { grid-template-columns: auto auto 1fr; align-items: baseline; gap: 8px; min-width: 0; }
   .selection-summary strong { font-size: 15px; }
   .selection-summary small { text-align: right; }
-  .selection-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+  .selection-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; margin-left: 0; padding-left: 0; border-left: 0; }
   .selection-actions button { min-width: 0; padding: 0 5px; font-size: 10px; }
 
   .media-field-head { min-height: 30px; margin-bottom: 7px; }
