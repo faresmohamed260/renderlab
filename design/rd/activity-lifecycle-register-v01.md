@@ -1,6 +1,6 @@
 # Activity Lifecycle Register v0.1 — Phase 26 R&D
 
-**Status:** EXPERIMENTAL / DESIGN STUDY — NOT APPROVED  
+**Status:** EXPERIMENTAL / CANDIDATE FOR USER REVIEW — NOT APPROVED  
 **Tracker:** issue #202  
 **Branch:** `rd/activity-lifecycle-register-v01`  
 **Authoritative starting main:** `639e84b5198a7b566eb18b3d34cf52b327249fc4`  
@@ -136,9 +136,9 @@ A vertical Lab Matrix spine anchors status markers and timestamps. Summary block
 
 ## v0.1 recommendation
 
-Prototype all three, but carry **Lifecycle Register** deepest first. It has the clearest inheritance path: Gallery Rail establishes registered chronological/media scanning, and Media Register establishes attached contextual information. Activity can extend that grammar into state/history without pretending a job is media, without adding a dashboard-card system and without raising expressiveness above 2/4.
+Carry **Lifecycle Register** forward for user review. It has the clearest inheritance path: Gallery Rail establishes registered chronological/media scanning, and Media Register establishes attached contextual information. Activity can extend that grammar into state/history without pretending a job is media, without adding a dashboard-card system and without raising expressiveness above 2/4.
 
-State Ledger remains the density pressure-test. Event Fold remains the editorial/motion pressure-test.
+State Ledger remains the density pressure-test but visually approaches Admin/operations-table territory. Event Fold remains the editorial/motion pressure-test but spends too much vertical space and reads more expressive than this 2/4 surface needs.
 
 ## Choreography hypotheses for Lifecycle Register
 
@@ -156,17 +156,42 @@ A real transition into `succeeded`, `failed` or `cancelled` receives one bounded
 
 ### Cancel
 
-Cancel opens a local confirmation fold. Confirming locks conflicting actions and only advances the row as product state changes to `Cancelling`. `Cancelled` uses the same row geometry; no removal or reordering is implied. Reduced motion uses no transforms.
+Cancel opens a local confirmation fold. Confirming locks conflicting actions and only advances the row as product state changes to `Cancelling`. `Cancelled` uses the same row geometry; no removal or reordering is implied. Reduced motion uses no transforms. `Cancelling` is state, not a disabled pseudo-action, so the action area is empty while cancellation is in flight.
 
 ### Retry / Run Again
 
-Both remain ordinary buttons. In-flight feedback is local. Accepted requests produce distinct jobs through existing server behavior; the historical row must never animate into the new job or imply mutation of the previous attempt.
+Both remain ordinary buttons. In-flight feedback is local. Accepted requests produce distinct jobs through existing server behavior; the historical row must never animate into the new job or imply mutation of the previous attempt. Failed guidance therefore avoids promising identical historical settings or seed replay.
 
 ## Prototype requirements
 
-The isolated prototype must demonstrate the current-family UI-074 header context; all three concept topologies; Lifecycle Register at desktop and 390px; loading and empty; all eight lifecycle states; View result, Run Again, Retry and Cancel; local sanitized failure guidance; Cancel confirmation → cancelling → cancelled continuity; running → succeeded terminal settling without fake progress; keyboard focus; >=44px touch targets; no body horizontal overflow; reduced-motion equivalents; and no dependency on provider/worker/admin metadata.
+The isolated prototype demonstrates the current-family UI-074 header context; all three concept topologies; Lifecycle Register at desktop and 390px; loading and empty; all eight lifecycle states; View result, Run Again, Retry and Cancel; local sanitized failure guidance; Cancel confirmation → cancelling → cancelled continuity; running → succeeded terminal settling without fake progress; keyboard focus; >=44px touch targets; no body horizontal overflow; reduced-motion equivalents; and no dependency on provider/worker/admin metadata.
 
-The prototype uses synthetic representative job content only. It is not product state and does not authorize new data fields.
+The prototype uses synthetic representative job content only. It is not product state and does not authorize new data fields. The candidate intentionally omits model/provider labels because Activity does not need execution identity to communicate job history truthfully.
+
+## R&D evidence and human critique
+
+### Current implementation baseline
+
+The unchanged current product implementation was built and exercised through the existing configured Activity verifier on R&D run `34721455735`, exact head `17c43b78ef498ef78c858736012a2d861378b72d`. The run passed its configured privacy, sanitized-error, owner-scoped result-link, deleted-output, pagination, Retry and cleanup checks and captured desktop plus ~390px evidence. Artifact `10306925677` has GitHub digest `sha256:2f6511fe714ed81fe7fa31913537e30eb5b2fac453e5c66d7cab4b0cec8a0db5`.
+
+Visual review confirms the current Activity behavior is sound, but its rounded per-job cards, repeated status pills, boxed errors and separate automatic-update banner form a dashboard-card grammar that no longer matches Gallery Rail / Media Register. On narrow screens the same structure becomes a long sequence of isolated rounded blocks.
+
+### First concept verification
+
+The initial repository-backed concept verifier passed R&D run `34721422350` on exact prototype head `bb037274f09715c0c78d345821cea4c8481e540a`. Artifact `10306791068` has GitHub digest `sha256:c0669a72a46b0420df6cdbf4a03df59b617d79dee50cd6659819f99ce534bbab` and contains desktop/390px views of all three concepts plus loading, empty, failure, cancellation, terminal-settle and reduced-motion evidence. The verifier covered all eight truthful lifecycle states, distinct actions, keyboard focus, >=44px touch targets, no horizontal overflow and collapsed reduced-motion timing.
+
+### Human critique and corrective refinement
+
+Direct evidence comparison favors **Lifecycle Register**. It turns the history into one continuous scanning field while preserving ordinary actions and real-state hierarchy; the leading lifecycle rail gives active work enough truthful energy without implying progress quantity. State Ledger is useful as a density benchmark but reads too close to an Admin table. Event Fold is visually authored but too vertically loose/expressive for Activity's 2/4 target.
+
+The review also identified and corrected four R&D-only details before user presentation:
+
+- synthetic model labels were removed so the candidate does not invent or overexpose execution identity;
+- `Cancelling` no longer appears as a disabled pseudo-action because it is already the truthful row state;
+- failed guidance now says `Retry when you’re ready` rather than implying exact settings/seed replay;
+- cancellation confirmation uses the product term `Cancel` consistently.
+
+The final candidate-head workflow remains the automated gate after these refinements. Exact final run metadata is recorded on issue #202 after GitHub completes the candidate-head verification.
 
 ## Acceptance gate
 
@@ -177,11 +202,11 @@ Automation makes the direction reviewable; it does not approve it.
 - [x] Locked behavior separated from reopened presentation.
 - [x] Interaction-reference matrix recorded.
 - [x] Three materially different same-family concepts defined.
-- [ ] Repository-backed interactive prototype captured at desktop and 390px.
-- [ ] All lifecycle/action/error/loading/empty states evidenced.
-- [ ] Keyboard/touch/no-overflow/reduced-motion evidence passed.
-- [ ] Temporal running→terminal and cancellation evidence captured.
-- [ ] Human visual critique completed.
+- [x] Repository-backed interactive prototype captured at desktop and 390px.
+- [x] All lifecycle/action/error/loading/empty states evidenced.
+- [x] Keyboard/touch/no-overflow/reduced-motion evidence passed.
+- [x] Temporal running→terminal and cancellation evidence captured.
+- [x] Human visual critique completed and corrective R&D refinement applied.
 - [ ] User explicitly approves a complete Activity direction.
 
 Only after explicit approval may a separate implementation decision/contract be proposed before production Activity code changes.
