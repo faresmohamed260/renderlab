@@ -1,0 +1,93 @@
+name: Activity Current Baseline R&D
+
+on:
+  push:
+    branches:
+      - rd/activity-lifecycle-register-v01
+    paths:
+      - '.github/workflows/activity-current-baseline-rd.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: activity-current-baseline-rd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_GENERATION_BACKEND_URL: http://127.0.0.1:3010
+      RENDERLAB_GENERATION_BACKEND_TOKEN: renderlab-activity-retry-ci-token
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: 'true'
+      RENDERLAB_ACTIVITY_ARTIFACT_DIR: artifacts/activity-current-baseline
+
+    steps:
+      - name: Checkout exact R&D head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Validate configured account secret
+        shell: bash
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is not configured for RenderLab."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build unchanged product source
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start configured application
+        shell: bash
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
+          echo $! > /tmp/renderlab-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/activity > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-next.log || true
+          exit 1
+
+      - name: Capture and verify current Activity implementation
+        run: node scripts/verify-activity.mjs
+
+      - name: Cleanup configured Activity fixtures
+        if: always()
+        run: node scripts/verify-activity.mjs --cleanup-only
+
+      - name: Print server log on failure
+        if: failure()
+        run: cat /tmp/renderlab-next.log || true
+
+      - name: Upload current Activity baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-activity-current-baseline-rd
+          path: artifacts/activity-current-baseline
+          if-no-files-found: warn
+          retention-days: 30
