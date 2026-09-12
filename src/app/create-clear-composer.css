@@ -42,8 +42,75 @@
   background: #111822 !important;
 }
 
+/*
+ * Keep the truthful generating state visually tied to the approved v0.5
+ * registration frame. These are decoration-only layers; lifecycle text and
+ * status semantics remain owned by the existing Alert content.
+ */
+.clear-create-workspace .clear-create-stage[data-active="true"] {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 53px, rgb(115 215 255 / 18%) 54px, transparent 55px),
+    radial-gradient(circle at calc(100% - 30px) 30px, transparent 0 45px, rgb(234 116 77 / 28%) 46px, transparent 47px),
+    linear-gradient(90deg, transparent 49.92%, rgb(255 255 255 / 3.2%) 50%, transparent 50.08%),
+    linear-gradient(transparent 49.92%, rgb(255 255 255 / 3%) 50%, transparent 50.08%),
+    radial-gradient(circle at 76% 18%, rgb(115 215 255 / 9%), transparent 28%),
+    radial-gradient(circle at 19% 82%, rgb(234 116 77 / 6%), transparent 25%),
+    #080d14 !important;
+}
+
+.clear-create-workspace .clear-create-stage[data-active="true"]::before {
+  inset: 7% !important;
+  z-index: 1;
+  background:
+    linear-gradient(rgb(115 215 255 / 30%), rgb(115 215 255 / 30%)) left top / 54px 1px no-repeat,
+    linear-gradient(rgb(115 215 255 / 30%), rgb(115 215 255 / 30%)) left top / 1px 54px no-repeat,
+    linear-gradient(90deg, transparent, rgb(115 215 255 / 24%), transparent) 50% 50% / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent, rgb(115 215 255 / 20%), transparent) 50% 50% / 1px 100% no-repeat !important;
+  opacity: 0.92;
+}
+
+.clear-create-workspace .clear-create-stage[data-active="true"]::after {
+  right: -52px !important;
+  bottom: -52px !important;
+  z-index: 1;
+  width: 220px !important;
+  height: 220px !important;
+  border-top: 1px solid rgb(234 116 77 / 36%) !important;
+  border-left: 1px solid rgb(115 215 255 / 42%) !important;
+  border-radius: 100% 0 0 !important;
+  background: radial-gradient(circle at 100% 100%, rgb(115 215 255 / 8%), transparent 62%) !important;
+  box-shadow: 0 0 88px rgb(115 215 255 / 9%) !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.clear-create-workspace .clear-create-result-actions > button:first-child {
+  border-color: rgb(255 255 255 / 74%) !important;
+  background: #f4f6f8 !important;
+  color: #070a0e !important;
+  box-shadow: inset 0 1px rgb(255 255 255 / 86%), 0 10px 26px rgb(0 0 0 / 22%) !important;
+}
+
+.clear-create-workspace .clear-create-result-actions > button:first-child:hover:not(:disabled) {
+  background: #ffffff !important;
+  color: #05070a !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clear-create-workspace .clear-create-stage[data-active="true"]::before {
+    animation: none !important;
+  }
+}
+
 @media (max-width: 600px) {
   .clear-create-workspace .clear-composer-prompt {
     min-height: 132px !important;
+  }
+
+  .clear-create-workspace .clear-create-stage[data-active="true"]::after {
+    right: -64px !important;
+    bottom: -64px !important;
+    width: 190px !important;
+    height: 190px !important;
   }
 }
