@@ -290,7 +290,9 @@ try {
   await page.setViewportSize(intermediateViewport);
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
-  const viewerLayoutMetrics = await page.locator(".kinetic-viewer-layout").evaluate((layout) => {
+  const viewerLayoutMetrics = await page.locator("[data-viewer-register]").evaluate((registerElement) => {
+    const layout = registerElement.parentElement;
+    if (!layout) throw new Error("Viewer register has no containing Viewer object.");
     const layoutBox = layout.getBoundingClientRect();
     const stage = document.getElementById("media-viewer-comparison")?.getBoundingClientRect() || null;
     const register = document.querySelector("[data-viewer-register]")?.getBoundingClientRect() || null;
