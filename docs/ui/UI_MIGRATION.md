@@ -66,16 +66,31 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 **Phase 24 boundary preserved:** no schema/API/provider/worker/R2/auth/admission/ownership/capability/routing/deployment contract changed. Creatives/Uploads, search/filter/sort/organization, durable identity, Viewer activation and current-page batch semantics remain product-truthful and server/URL-owned where previously defined.
 
-## Active full-product redesign roadmap — after Phase 24
+## Phase 25 — Media Viewer Register + Source Fold closure — 2026-09-12
+**Status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
+
+- [x] User-approved design authority: issue #196, exact R&D head `639aef25e57e166be8d8b3d226b3e83930e05a25`, run `34703774288`, artifact `10300577421`, digest `sha256:06cade2dc2e9ce51dc871971530fa9641a7c1ef0cc0271e19763fcebfa8ca2b0`.
+- [x] UI-076 implementation contract merged before production code in PR #199 / `a5db944acdefad7b9fcbbedd9d6b521b5a28c576`.
+- [x] PR #200 implemented the registered media-first Viewer, attached continuation register, local Prompt/Details/Manage disclosures, Favorite/Download quick actions, Manage-owned Collections/Rename/Delete, Result-primary Source Fold, narrow Result→Source stacking, reduced-motion equivalence and bounded image-only pointer depth without changing product/backend/security/data contracts.
+- [x] Definitive exact implementation head `3e468ad0abd4f7b6645e86e298ce53a3a8ecf034` passed Engineering `34717466149`, Search `34717466145`, Download `34717466273`, Favorites `34717466126`, History `34717466189`, Collections `34717466254`, Rename `34717466210`, Ownership `34717466209`, Shell `34717466157`, Media Delete `34717466203`, Lifecycle `34717466215`, Upscale Viewer `34717466198`, Viewer Register Fold `34717466185`, Batch Delete `34717466200`, Creative Iteration `34717466236`, Image Upscale `34717466222`, Brand / Launch `34717466191`, Integrated Release `34717466228`, and fresh same-head Drag Drop `34718085004`.
+- [x] Final Viewer evidence artifact `10304951419` (`sha256:d551006acffa260e8bbd83e25c2b156204a4391f1f9b1abcfc4e58aa0cc28e04`) was human-reviewed clean across desktop, 390px, disclosures, Source Fold temporal states, narrow comparison and reduced motion.
+- [x] Presentation-only verifier migrations aligned stale pre-UI-076 locators with the approved composition while preserving product/security assertions; the final Lifecycle and Drag Drop gates executed fully and passed.
+- [x] PR #200 squash-merged as `b672c711f885092c5e92c42824078e7bd5bc691e`.
+- [x] Every workflow GitHub actually attached to merged `main` passed: Creative Iteration `34718303019`, Media Viewer Register Fold Visual `34718302986`, Engineering Quality `34718303036`, Upscale Viewer Visual `34718303044`, Image Upscale Integration `34718302998`, and UI Shell Validation `34718302987`.
+- [ ] Production deployment remains separately explicit. Production is still source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled.
+
+**Phase 25 boundary preserved:** `/library/[assetId]`, owner-scoped durable identity, native video, Favorite/Collections/Rename/Download/Delete, capability-derived continuation, Reuse settings, Compare source, Upscale 2×, routing, schema, provider/worker, R2/storage, auth/admission and deployment contracts remain product-truthful and unchanged.
+
+## Active full-product redesign roadmap — after Phase 25
 **Status: `IN PROGRESS`.** Phase 24 completes the Library slice only; the full UI/UX redesign is not complete.
 
-The coherent design authority carried forward is the current locked Lab Grid identity + approved Lab Matrix Landing + Clear Composer/UI-074 + Gallery Rail/UI-075. Remaining redesign work must reuse that family—editorial hierarchy, technical microtype, Lab Matrix registration, restrained cool/warm atmosphere, compact horizontal shell, media-first composition, obvious ordinary controls and bounded meaningful motion—rather than introducing independent visual systems per screen.
+The coherent design authority carried forward is the current locked Lab Grid identity + approved Lab Matrix Landing + Clear Composer/UI-074 + Gallery Rail/UI-075 + Media Register/Source Fold UI-076. Remaining redesign work must reuse that family—editorial hierarchy, technical microtype, Lab Matrix registration, restrained cool/warm atmosphere, compact horizontal shell, media-first composition, obvious ordinary controls and bounded meaningful motion—rather than introducing independent visual systems per screen.
 
 - [x] Landing redesign — approved / production-live.
 - [x] Create redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
 - [x] Library redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
-- [ ] **Phase 25 Media Viewer redesign — ACTIVE R&D (#196).** Audit current desktop/390px image/video/Compare/Upscale/action states; build interaction references; explore 3+ same-family compositions; prototype signature Library→Viewer / Compare / Viewer→Create continuity; obtain explicit user approval before a production implementation contract.
-- [ ] **Phase 26 Activity redesign — ROADMAP ONLY.** Expand only after Phase 25 produces verified evidence.
+- [x] **Phase 25 Media Viewer redesign — USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED.** UI-076 Media Register + Source Fold v0.2 is authoritative.
+- [ ] **Phase 26 Activity redesign — NEXT R&D SLICE.** Audit real lifecycle/history states and explore the same-family 2/4-expressiveness interaction language before any implementation contract or production code.
 - [ ] **Phase 27 Settings/account-security redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
 - [ ] **Phase 28 Admin redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
 - [ ] **Phase 29 whole-product cohesion pass — ROADMAP ONLY.** Final cross-surface audit before the redesign program may be called complete.
