@@ -326,7 +326,7 @@ try {
   const detailsButton = page.getByRole("button", { name: "Details", exact: true });
   await detailsButton.click();
   await page.getByRole("heading", { name: "DETAILS", exact: true }).waitFor({ state: "visible" });
-  await page.getByText("1200 × 800", { exact: true }).waitFor({ state: "visible" });
+  await page.getByLabel("DETAILS", { exact: true }).getByText("1200 × 800", { exact: true }).waitFor({ state: "visible" });
   await shot(page, "phase25-viewer-details-desktop");
   await closeRegisterPanel(page, "Details");
 
