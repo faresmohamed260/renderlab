@@ -70,8 +70,11 @@
 }
 
 .clear-create-workspace .clear-create-stage[data-active="true"]::after {
+  inset-block: auto !important;
+  top: auto !important;
   right: -52px !important;
   bottom: -52px !important;
+  left: auto !important;
   z-index: 1;
   width: 220px !important;
   height: 220px !important;
@@ -82,6 +85,7 @@
   box-shadow: 0 0 88px rgb(115 215 255 / 9%) !important;
   opacity: 1 !important;
   transform: none !important;
+  animation: none !important;
 }
 
 .clear-create-workspace .clear-create-result-actions > button:first-child {
