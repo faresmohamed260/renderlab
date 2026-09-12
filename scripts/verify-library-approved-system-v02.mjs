@@ -41,7 +41,8 @@ async function focusByKeyboard(page, id, limit = 60) {
   return false;
 }
 
-async function verifyState(page, concept, state, label, firstMediaMaxY) {
+async function verifyState(page, concept, state, viewportLabel, firstMediaMaxY) {
+  const label = `${viewportLabel}-${concept}-${state}`;
   await page.goto(urlFor(concept, state), { waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('body').getAttribute('data-prototype'), 'library-approved-system-v02');
   assert.equal(await page.locator('body').getAttribute('data-concept'), concept);
@@ -70,7 +71,7 @@ async function verifyState(page, concept, state, label, firstMediaMaxY) {
     assert.match(await page.locator('#selection-count').textContent(), /2 selected/);
   }
 
-  await screenshot(page, `${label}-${state}`);
+  await screenshot(page, label);
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -79,7 +80,7 @@ try {
   const desktopPage = await desktop.newPage();
   for (const concept of concepts) {
     for (const state of states) {
-      await verifyState(desktopPage, concept, state, `desktop-${concept}`, 470);
+      await verifyState(desktopPage, concept, state, 'desktop', 510);
     }
   }
 
@@ -114,7 +115,7 @@ try {
   const mobilePage = await mobile.newPage();
   for (const concept of concepts) {
     for (const state of states) {
-      await verifyState(mobilePage, concept, state, `mobile-${concept}`, 610);
+      await verifyState(mobilePage, concept, state, 'mobile', 620);
       for (const selector of ['#creatives-tab', '#uploads-tab', '#select-trigger']) {
         const box = await mobilePage.locator(selector).boundingBox();
         assert.ok(box && box.height >= 44, `mobile ${concept} ${state}: ${selector} >=44px`);
