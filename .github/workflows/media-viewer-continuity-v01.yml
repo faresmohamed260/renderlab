@@ -1,0 +1,49 @@
+name: Media Viewer Continuity R&D v0.1
+
+on:
+  push:
+    branches:
+      - rd/media-viewer-continuity-v01
+    paths:
+      - '.github/workflows/media-viewer-continuity-v01.yml'
+      - 'design/rd/media-viewer-continuity-v01.md'
+      - 'design/prototypes/media-viewer-continuity-v01/**'
+      - 'scripts/verify-media-viewer-continuity-v01.mjs'
+  workflow_dispatch:
+
+concurrency:
+  group: media-viewer-continuity-v01-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify Media Viewer concepts and evidence
+        run: node scripts/verify-media-viewer-continuity-v01.mjs
+
+      - name: Upload review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-media-viewer-continuity-v01
+          path: artifacts/media-viewer-continuity-v01
+          if-no-files-found: ignore
+          retention-days: 30
