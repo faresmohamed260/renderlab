@@ -48,6 +48,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - [ ] Production deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
 
 **Phase 23 correction status: `VISUALLY APPROVED / IMPLEMENTATION EXACT-HEAD VERIFIED / MERGE AUTHORIZED / DOCUMENTATION-FINAL EXACT-HEAD ACCEPTANCE PENDING / NOT DEPLOYED`.**
+
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
 - [x] Define RenderLab capability model, progressive-disclosure boundaries and information architecture.
@@ -117,7 +118,7 @@ This is foundation maintenance, not a product redesign or new Phase 4 media capa
 - [x] Credential-free run `33034606323` passed.
 - [x] Configured R2/Supabase lifecycle `33034606396` passed with responsive render review and cleanup.
 
-**Library v0.1 status: `APPROVED`.**
+**Library v0.1 status: `APPROVED`.**  
 **Media Viewer v0.1 status: `APPROVED`.**
 
 ### Persistent uploads — merged PR #9
@@ -1500,8 +1501,8 @@ No visual approval state changed in this phase. User-facing Cancel and broader s
 
 
 ## Cycle 3 Phase 15 — Generation Control & Maintenance
-**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
-**Decision:** UI-055.
+**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**  
+**Decision:** UI-055.  
 **Execution contract:** `PROJECT.md` Phase 15.
 
 Verified planning baseline on `main` `aa633175d4f8ec278f3ad9181d0a0105d9328163` (tree-identical to Phase 14 closure `c26b1f3e6db092fc2244db812f391298bd468e93`):
