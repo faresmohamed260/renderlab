@@ -78,6 +78,26 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - PR #194 squash-merged to `main` as `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. GitHub attached exactly two push workflows to that merge SHA and both passed: Engineering Quality `34699439085` and UI Shell Validation `34699439083`.
 - Phase 24 repository implementation is therefore user-approved, exact-head verified, merged and merged-main verified. Production remains unchanged at source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled and no Phase 24 deployment is authorized.
 
+## UI/UX redesign program — continuation roadmap — 2026-09-12
+**Status: ACTIVE — Landing, Create and Library completed; remaining product surfaces still require redesign.**
+
+Phase 24 closed the approved Library Gallery Rail slice; it did **not** close the broader RenderLab UI/UX redesign program. The redesign must continue as one coherent system derived from the locked Lab Grid identity, approved Lab Matrix Landing, Clear Composer / UI-074 application language and Gallery Rail / UI-075 media language.
+
+Completed redesign slices:
+- **Landing:** approved Lab Matrix public experience, production-live.
+- **Create:** approved Clear Composer v0.5 plus UI-074 fidelity correction, merged and verified, not yet deployed.
+- **Library:** approved Gallery Rail v0.3 / UI-075, merged and verified, not yet deployed.
+- **Application shell:** UI-074 compact horizontal header is the current shared shell geometry and should be maintained/cohered rather than restarted as a competing navigation system.
+
+Remaining redesign roadmap, under progressive phase planning:
+1. **Phase 25 — Media Viewer:** ACTIVE R&D in issue #196. Extend Gallery Rail media-object continuity into a cinematic inspection/continuation workspace while preserving all current Viewer product/security/capability contracts. Viewer remains a 3/4-expressiveness surface.
+2. **Phase 26 — Activity:** roadmap only until Phase 25 evidence closes. Bring real generation lifecycle/history states into the same authored system at 2/4 expressiveness without weakening Retry / Run Again / Cancel truth or operational clarity.
+3. **Phase 27 — Settings / account-security flows:** roadmap only. Apply the shared typography, spacing, shell and trust language at 1/4 expressiveness across signed-out, signed-in, access-status, password and recovery states.
+4. **Phase 28 — Admin:** roadmap only. Apply the coherent system to the privileged operational surface at 1/4 expressiveness while preserving dense clarity and authorization boundaries.
+5. **Phase 29 — whole-product cohesion pass:** roadmap only. Audit the completed system end-to-end for shell/navigation continuity, typography, spacing, responsive behavior, empty/loading/error states, focus/touch semantics, reduced motion and cross-surface transitions before calling the redesign program complete.
+
+Only the immediate Phase 25 R&D slice may be expanded now; later phases remain roadmap-level until predecessor evidence exists. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled.
+
 ## Current Verified Baseline — 2026-09-12
 - The verified repository application baseline is Phase 24 / PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`; Gallery Rail v0.3 is user-approved, exact-head verified and merged-main verified. Production remains the separately approved source `0173c4c5ba08360b6352331118abc81978cfa774`; no production deployment followed the Phase 24 repository merge.
 - Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`.
