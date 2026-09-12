@@ -25,17 +25,18 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import textwrap
 
           path = Path('docs/ui/UI_DECISIONS.md')
           text = path.read_text()
-
           marker = '### UI-076 — Media Viewer uses an attached Media Register and Result-primary Source Fold'
           if marker not in text:
               raise SystemExit('UI-076 marker not found')
 
           prefix, _ = text.split(marker, 1)
-          tail = '''### UI-076 — Media Viewer uses an attached Media Register and Result-primary Source Fold
-          **Status:** Accepted / user-approved / implemented / verified / merged / merged-main verified  
+          tail = '''
+          ### UI-076 — Media Viewer uses an attached Media Register and Result-primary Source Fold
+          **Status:** Accepted / user-approved / implemented / verified / merged / merged-main verified
           **Date:** 2026-09-12
 
           **Decision:** `/library/[assetId]` adopts the user-approved **Media Register + Source Fold v0.2** composition for Phase 25. The durable asset becomes the Viewer workspace rather than content beside a permanent property sidebar. A registered media stage remains visually dominant; capability-derived continuation lives in an attached register immediately below it; Prompt, Details, Manage and Compare are local disclosures from the same attached geometry. Favorite and Download are singular quick actions, while Collections, Rename and permanent Delete live in Manage. Compare Source uses a Result-primary Source Fold transformation: desktop reallocates the same stage so Result remains materially primary and Source reveals contextually; narrow layouts keep Result first and place Source below it. Fine-pointer depth is bounded to the single Result media object; controls remain stationary; touch and reduced motion use complete static equivalents.
@@ -49,7 +50,7 @@ jobs:
           **Implementation verification:** UI-076 plus `docs/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md` merged before production work through PR #199 as `a5db944acdefad7b9fcbbedd9d6b521b5a28c576`. PR #200 implemented the accepted composition. Exact implementation head `3e468ad0abd4f7b6645e86e298ce53a3a8ecf034` passed the complete affected acceptance set; dedicated Viewer run `34717466185` produced artifact `10304951419`, digest `sha256:d551006acffa260e8bbd83e25c2b156204a4391f1f9b1abcfc4e58aa0cc28e04`, and human review accepted desktop, 390px, disclosures, native video, Result-primary Compare, temporal Source Fold, reversal and reduced-motion fidelity. PR #200 merged as `b672c711f885092c5e92c42824078e7bd5bc691e`; all six workflows attached to merged main passed. Production deployment remains separately explicit.
 
           ### UI-077 — Activity uses a chronological Job Matrix with an attached History Register
-          **Status:** Accepted / user-approved design; implementation pending  
+          **Status:** Accepted / user-approved design; implementation pending
           **Date:** 2026-09-13
 
           **Decision:** `/activity` adopts the user-approved **Job Matrix + History Register v0.2** composition for Phase 26. Activity remains one account-private newest-first generation-history surface, but its presentation becomes one registered RenderLab work object: the three newest visible jobs form an asymmetric `01 / 02 / 03` Lab Matrix and remaining visible jobs continue directly beneath in an attached chronological History Register. The dominant newest cell communicates recency only; size never represents progress, priority, queue position or expected completion.
@@ -64,11 +65,7 @@ jobs:
 
           **Implementation gate:** `docs/ui/ACTIVITY_JOB_MATRIX_IMPLEMENTATION_CONTRACT.md` must be merged before production Activity source changes. Functional QA and fidelity QA remain separate: a technically green implementation still fails if it materially returns to isolated rounded cards/status-pill-led hierarchy, becomes an Admin ledger, fabricates progress, breaks the `01 / 02 / 03` → attached-register chronology, or diverges from the accepted desktop/390px/temporal/reduced-motion evidence. Production deployment remains separately explicit.
           '''
-
-          # Remove indentation introduced by the YAML block while preserving markdown.
-          import textwrap
-          tail = textwrap.dedent(tail)
-          path.write_text(prefix + tail)
+          path.write_text(prefix + textwrap.dedent(tail).lstrip())
           PY
 
           git diff --check
