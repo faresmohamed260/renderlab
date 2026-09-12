@@ -19,16 +19,16 @@ Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps
 **Implementation:** `src/components/shell/app-shell.tsx`
 
 Approved behavior:
-- compact persistent desktop left navigation;
-- Create/Library primary, Activity/Settings secondary;
-- desktop application routes rely on the persistent rail and omit the redundant full-width top context bar; mobile/narrow application routes retain the compact utility header for account/Settings access;
+- compact fixed horizontal application header across desktop and narrow layouts;
+- RenderLab/Create identity at the left with Library plus Activity/Settings-account access at the right;
+- no persistent desktop left rail and no fixed mobile bottom dock under UI-074;
 - feature surfaces own route content, not the shell;
-- narrow layouts use bottom navigation for primary destinations;
-- touch-friendly semantic navigation.
+- navigation destinations and route hierarchy remain unchanged;
+- keyboard/touch-friendly semantic navigation with reduced-motion equivalence.
 
 `APPROVED` does not mean `LOCKED`.
 
-**Phase 23 fidelity correction — user-approved / merge authorized:** UI-074 / PR #188 restores the approved compact horizontal application header across application routes and removes the persistent desktop rail / fixed mobile dock from the accepted candidate tree. Navigation destinations and shell/feature ownership are unchanged. User-approved exact implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed UI Shell `34680601708`, Brand / Launch `34680601653`, Account Identity `34680601778` and the complete 16-workflow attached suite. Current merged `main`/production remain unchanged until the guarded merge/deployment operations occur.
+**Phase 23 / UI-074 fidelity correction — merged / verified:** PR #188 restored the approved compact horizontal application header across application routes and removed the persistent desktop rail / fixed mobile dock. User-approved implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` and documentation-final head `b6a2590875432ba75c28db9e0f4b465133e1873c` passed their complete attached suites; PR #188 squash-merged as `3f0d21ed55554b3c48791d35dd17cb6005212076`. Merged-main UI Shell `34684825448` passed. Production remains unchanged until a separately authorized deployment.
 
 ## Screens
 
@@ -56,7 +56,7 @@ Approved behavior:
 **Implementation:** `src/features/create/create-workspace.tsx`  
 **Supporting:** `src/features/create/create-advanced-panel.tsx`  
 **Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
-**Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; PR #185 is merged to `main` as `d360f60afeca0b6c417ff1c12dec3c7e922c20f7` and Clear Composer is now the repository-authoritative Create surface. Production remains on the prior deployed source until a separately authorized rollout.
+**Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; fidelity correction PR #188 is merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076` and the corrected Clear Composer/UI-074 shell is the repository-authoritative Create surface. Production remains on the prior deployed source until a separately authorized rollout.
 
 **Purpose:** Start and continue creative operations from one task-oriented workspace.
 
@@ -94,7 +94,7 @@ Approved behavior:
 
 **Phase 23 / UI-073 verified candidate:** The approved Clear Composer keeps one stable `Create an image` / `Create a video` workspace heading, promotes the maintained Image/Video choice, labels Add reference / Start image, names attached roles Primary image / Reference image / Start image, keeps prompt and Generate visually dominant, and places truthful generation/media-first result composition above the persistent composer. The production candidate retains existing model/aspect/video/Advanced controls, durable upload identity, `@imageN` aliases, one-source Video/two-source Image limits, native video playback and capability-derived continuation. Landing-derived 64px Lab Matrix registration, cool/warm atmosphere, precise rules and quarter-arc media framing are Create-owned presentation; depth remains media-only. On 390px, stage/result context compacts and continuation actions stay above the fixed mobile dock. Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Engineering Quality `34639132519`, Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, corrected Account/Admin Operations `34639132466` and Release Candidate Matrix `34639132431` with 23/23 exact-SHA children successful. PR #185 squash-merged as `d360f60afeca0b6c417ff1c12dec3c7e922c20f7` from final exact head `428cbd025d9f314f5b8d1582fd6911f1abd5094b`; merged-main Release Candidate Matrix `34645636285` passed all 23 exact-SHA children. Repository `main` now carries Clear Composer, while production remains on the prior deployed source until an explicitly authorized rollout.
 
-**Phase 23 fidelity correction — user-approved / merge authorized, 2026-09-12:** Direct user comparison rejected the first merged Phase 23 composition as visually divergent from the approved v0.5 evidence, so issue #184 was reopened and PR #188 became the correction vehicle. The accepted candidate restores the approved 900px authoring / 1120px result widths, mode-before-composer order, visible `PROMPT`, reference-before-prompt grammar, flat labelled settings footer, stable high-contrast Generate, attached Advanced, truthful registration-framed generating stage and asymmetric media-first result rail while preserving all existing Create product contracts. Exact head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed all 16 directly attached workflows. Create Clear Composer Visual `34680601776` produced artifact `10293387664` (`sha256:e4937a16a2fed2bc160634c73c60322b0748ff3eb5d166b44cbc33f894a92915`); configured Create Lifecycle `34680601698` produced artifact `10293653778` (`sha256:ba13fc48dcf4d823575b041455d902e48040d2cd554892c0b5b508ee80e88624`). Direct user review approved the real corrected desktop generating/result and mobile result renders on 2026-09-12. Merge is authorized after documentation-final exact-head acceptance; production remains unchanged and deployment remains separately explicit.
+**Phase 23 fidelity correction closure — 2026-09-12:** PR #188 restored the approved 900px authoring / 1120px result widths, mode-before-composer order, visible `PROMPT`, reference-before-prompt grammar, flat labelled settings footer, stable high-contrast Generate, attached Advanced, truthful registration-framed generating stage and asymmetric media-first result rail while preserving all Create product contracts. User-approved implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` produced accepted artifacts `10293387664` and `10293653778`; documentation-final head `b6a2590875432ba75c28db9e0f4b465133e1873c` passed all 16 attached workflows. PR #188 squash-merged as `3f0d21ed55554b3c48791d35dd17cb6005212076`, and all five merged-main workflows passed, including unchanged Creative Iteration retry after a transient Supabase 504. Production remains unchanged and deployment remains separately explicit.
 
 **Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 
