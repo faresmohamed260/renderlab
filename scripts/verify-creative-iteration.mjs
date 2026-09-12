@@ -736,6 +736,7 @@ try {
 
   await page.getByRole("button", { name: "Close comparison", exact: true }).click();
   await compareButton.waitFor({ state: "visible" });
+  await openSource.waitFor({ state: "detached", timeout: 2_000 });
   assert((await page.getByRole("link", { name: "Open source", exact: true }).count()) === 0, "Closing comparison did not restore the default Viewer.");
 
   await page.goto(`${baseUrl}/library/${upscaleCompareResultId}`, { waitUntil: "networkidle", timeout: 60_000 });
