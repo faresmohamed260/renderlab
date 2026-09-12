@@ -50,7 +50,7 @@ export function LibraryCollectionMenu({
     <div className="flex min-w-0 flex-col items-stretch sm:items-end">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={selected ? "secondary" : "outline"} size="sm" className="w-full max-w-none sm:w-auto sm:max-w-56">
+          <Button variant={selected ? "secondary" : "outline"} size="sm" className="min-h-11 w-full max-w-none sm:w-auto sm:max-w-56">
             <FolderOpen aria-hidden="true" data-icon="inline-start" />
             <span className="truncate">{selected?.name ?? "Collections"}</span>
           </Button>
