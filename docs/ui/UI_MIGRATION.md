@@ -50,21 +50,21 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 **Phase 23 correction status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
-## Phase 24 — Library Gallery Rail v0.3
-**Status: `USER-APPROVED DESIGN / IMPLEMENTATION CONTRACT / IMPLEMENTATION NOT STARTED`.**
+## Phase 24 — Library Gallery Rail v0.3 closure — 2026-09-12
+**Status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
 - [x] Restarted Library R&D from merged UI-074 Create/Landing visual authority rather than the rejected pre-approval Library direction.
-- [x] Audited the current rendered Library and identified stacked command chrome as the primary hierarchy problem.
-- [x] Produced and browser-verified three materially different concepts across desktop/390px default, Uploads, search and selection states.
-- [x] Re-reviewed the concepts impartially and refined the strongest direction into Gallery Rail v0.3, correcting title density, search hierarchy, metadata legibility, selection choreography and a real 390px search-clear touch-target defect.
-- [x] Final R&D head `ba842e919305e07262ae95c81b3c2063a455b54d` passed run `34689164957`; artifact `10296866215`, digest `sha256:db81c13f34514022f01a9e8998de4c0622ee946e316d02655c70477db1a87d95`.
-- [x] User explicitly approved Gallery Rail v0.3 on 2026-09-12; approval is recorded on issue #191.
-- [x] UI-075 and `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md` define the bounded Phase 24 production slice; implementation is tracked by #192.
-- [ ] Production `/library` implementation has not started under this contract yet.
-- [ ] Production deployment is not authorized; automatic Git → Vercel deployment remains disabled.
+- [x] Final Gallery Rail v0.3 design authority remains R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, run `34689164957`, artifact `10296866215`, digest `sha256:db81c13f34514022f01a9e8998de4c0622ee946e316d02655c70477db1a87d95`; user approval is recorded on #191.
+- [x] UI-075 and `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md` were merged before implementation under PR #193 / `275cf0535ceb444652b6c61af3ce4a72a319ad17`.
+- [x] PR #194 implemented one compact Gallery Rail, first-class search, media-first cards, in-place current-page selection mode, real Organize/Delete integration, bounded media-local pointer depth, static touch behavior and reduced-motion equivalence while preserving URL/server state and every locked Library product/security contract.
+- [x] Definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548` passed the fresh complete 13-workflow attached set: Engineering `34699147928`, Ownership `34699147963`, Shell `34699147960`, Integrated Release `34699147916`, Brand/Launch `34699147993`, Search `34699148010`, Lifecycle `34699147921`, History `34699147952`, Favorites `34699147991`, Collections `34699148071`, Batch Delete `34699147966`, Media Delete `34699147951`, and Drag Drop `34699148008`.
+- [x] Human fidelity review accepted History artifact `10298855903` (`sha256:f832cc248f6f88a4caefe6867b12e972b49c08c4b998ab36e5f538d78f7c36d2`), Batch Actions artifact `10298746267` (`sha256:363c76df628f3d75b0c9a80a3a54b00c9d029c2dd757647afe56a60c6f835f12`) and Drag Drop artifact `10299387838` (`sha256:158f374852709351880767c6780bcc62dd1a87c2fadca8e52a73d06412b92655`) against the approved v0.3 direction across desktop, 390px, temporal selection and reduced-motion states.
+- [x] Presentation verifier migrations were bounded to the approved redesign: Search uses the new accessible name, History captures settled mobile selection, and Lifecycle validates Gallery Rail frame fill while Viewer retains source-ratio verification. Existing behavior/security assertions remain intact.
+- [x] PR #194 squash-merged as `af88b93dcb4fcbca502b42f9ea1186192af48a6a`.
+- [x] Every workflow GitHub actually attached to merged `main` passed: Engineering Quality `34699439085` and UI Shell Validation `34699439083`.
+- [ ] Production deployment remains separately explicit. Production is still source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled.
 
-**Phase 24 boundary:** preserve every current Library URL/server, durable-media, upload, selection/batch, account/ownership, Viewer-link, API/schema/storage/provider and deployment contract. Gallery Rail is a presentation/feature-local interaction redesign, not a product-model migration.
-
+**Phase 24 boundary preserved:** no schema/API/provider/worker/R2/auth/admission/ownership/capability/routing/deployment contract changed. Creatives/Uploads, search/filter/sort/organization, durable identity, Viewer activation and current-page batch semantics remain product-truthful and server/URL-owned where previously defined.
 
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.

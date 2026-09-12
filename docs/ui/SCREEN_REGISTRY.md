@@ -100,7 +100,7 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED — Library base + Favorites / UI-031 + Collections / UI-032 + UI-033 tombstone filtering + Library Batch Delete / UI-034 + Phase 8 Collection Management and Page-scoped Batch Organization / UI-049
+**Status:** APPROVED — Gallery Rail v0.3 / UI-075 with existing durable-media discovery, upload, Favorites, Collections, Delete and page-scoped batch organization contracts
 **Implementation:** `src/features/library/library-view.tsx`  
 **Collection management:** `src/features/library/library-collection-menu.tsx`, `src/features/library/library-collection-manager.tsx`
 **Batch selection:** `src/features/library/library-batch-selection.tsx`
@@ -109,7 +109,7 @@ Approved behavior:
 **Shared browser upload transaction:** `src/features/library/library-upload-client.ts`  
 **Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `src/server/media/media-collections.ts`, `GET /api/media/assets`, `POST /api/media/assets/batch-delete`, `POST /api/media/assets/batch-favorite`, `GET|POST /api/media/collections`, `PATCH|DELETE /api/media/collections/[collectionId]`, single-asset collection membership routes, `POST /api/media/collections/[collectionId]/items/batch`, media-upload ticket/completion routes
 **Approved design artifacts:** `design/penpot/library-v0.1.svg`, `design/penpot/library-v0.2-upload.svg`
-**Phase 24 redesign:** USER-APPROVED DESIGN / IMPLEMENTATION PENDING. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; implementation tracker: #192.
+**Phase 24 redesign:** APPROVED / IMPLEMENTED / VERIFIED / MERGED / NOT DEPLOYED. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548`; PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. The fresh 13-workflow exact-head acceptance set and both workflows attached to merged main passed; production remains on the prior deployed source until separately authorized.
 
 **Purpose:** Find, inspect, reuse and continue from durable RenderLab media. Library is a reusable creative-asset workspace, not merely generation history.
 
@@ -166,7 +166,7 @@ Approved behavior:
 
 **Current extension:** UI-030 owner scoping is live and database enforcement is complete. Favorites v0.1 / UI-031, Collections v0.1 / UI-032, single-asset Durable Media Delete v0.1 / UI-033, Library Batch Delete v0.1 / UI-034 and Phase 8 Library organization / UI-049 are approved. Selection deliberately remains current-page only; Delete and organization remain bounded best-effort per item with explicit target states for reversible organization.
 
-**Phase 24 visual direction:** Gallery Rail v0.3 may replace the current stacked Library command composition and the UI-070 card presentation only to the extent defined by UI-075. It must preserve maintained 44×44 / 22×22 selection geometry, card→Viewer activation, URL/server-owned discovery, current-page batch semantics, Uploads-only upload/drop and all ownership/security contracts.
+**Phase 24 Gallery Rail closure:** Gallery Rail v0.3 now replaces the former stacked Library command composition under UI-075. Search is first-class, retrieval/organization controls share one compact rail, selection morphs that rail in place, media remains dominant, and card metadata is attached/legible. The implementation preserves maintained 44×44 / 22×22 selection geometry, card→Viewer activation, URL/server-owned discovery, current-page batch semantics, Uploads-only upload/drop and all ownership/security contracts. Exact implementation head `d0a6f66937986ace109e301913f17410a8e95548` passed the fresh 13-workflow suite; PR #194 merged as `af88b93dcb4fcbca502b42f9ea1186192af48a6a`, and merged-main Engineering Quality `34699439085` plus UI Shell `34699439083` passed.
 
 **Do not change:** Do not couple Library to legacy `studio_*` or expose temporary `generation_sources` as durable media. UI-060's approved Creatives/Uploads sections are origin-scoped views over the same durable media identity; do not split them into parallel asset stores or add a third section without an explicit product contract. Do not turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
