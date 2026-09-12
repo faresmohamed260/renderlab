@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenderLab Media Viewer Register + Source Fold R&D v0.2</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body data-prototype="media-viewer-register-fold-v02" data-concept="fold" data-view="image" data-details="off" data-compare="off">
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="RenderLab home">
+        <img src="../../../public/renderlab-mark-color.svg" alt="" />
+        <span>RenderLab</span>
+      </a>
+      <nav class="topnav" aria-label="Primary">
+        <a href="#">Create</a>
+        <a href="#" class="active">Library</a>
+        <a href="#">Activity</a>
+        <a href="#">Settings</a>
+        <span class="beta">CLOSED BETA</span>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <div class="lab-grid" aria-hidden="true"></div>
+      <div class="atmosphere atmosphere-cool" aria-hidden="true"></div>
+      <div class="atmosphere atmosphere-warm" aria-hidden="true"></div>
+
+      <aside class="prototype-controls" aria-label="R&D prototype controls">
+        <div class="control-group">
+          <span class="control-label">CONCEPT</span>
+          <button type="button" class="control-button active" data-concept-button="register">A · Register</button>
+          <button type="button" class="control-button" data-concept-button="spine">B · Spine</button>
+          <button type="button" class="control-button" data-concept-button="fold">C · Fold</button>
+        </div>
+        <div class="control-group">
+          <span class="control-label">MEDIA</span>
+          <button type="button" class="control-button active" data-view-button="image">Image</button>
+          <button type="button" class="control-button" data-view-button="video">Video</button>
+        </div>
+      </aside>
+
+      <section class="viewer-context" aria-labelledby="viewer-title">
+        <div class="viewer-return-row">
+          <a href="#library" class="return-link" aria-label="Back to Library">
+            <span aria-hidden="true">←</span>
+            <span>Library</span>
+          </a>
+          <span class="context-rule" aria-hidden="true"></span>
+          <p class="eyebrow">VIEWER / MEDIA OBJECT</p>
+        </div>
+        <div class="context-title-line">
+          <div>
+            <h1 id="viewer-title">Alpine study</h1>
+            <p class="context-meta"><span>CREATIVE</span><span>IMAGE</span><span>2048 × 2048</span><span>12 SEP 2026</span></p>
+          </div>
+          <div class="quick-actions" aria-label="Quick media actions">
+            <button type="button" aria-pressed="false">☆ <span>Favorite</span></button>
+            <button type="button">↓ <span>Download</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="viewer-object" id="viewer-object" aria-label="Media Viewer concept">
+        <div class="stage-shell">
+          <div class="stage-registration" aria-hidden="true">
+            <span class="reg reg-tl">RL / VIEW</span>
+            <span class="reg reg-tr">RESULT / 01</span>
+            <span class="reg reg-bl">2048 / 2048</span>
+            <span class="reg reg-br">12.09.26</span>
+            <i class="corner-arc"></i>
+          </div>
+
+          <div class="stage-grid" id="stage-grid">
+            <figure class="media-frame result-frame" id="result-frame">
+              <div class="media-visual image-visual" id="image-visual" role="img" aria-label="Representative Alpine study image">
+                <div class="visual-horizon"></div>
+                <div class="visual-sun"></div>
+                <div class="visual-mass mass-a"></div>
+                <div class="visual-mass mass-b"></div>
+                <div class="visual-scan" aria-hidden="true"></div>
+              </div>
+              <div class="video-visual" id="video-visual" aria-label="Representative Alpine study video preview">
+                <div class="visual-horizon"></div>
+                <div class="visual-sun"></div>
+                <div class="visual-mass mass-a"></div>
+                <div class="visual-mass mass-b"></div>
+                <div class="video-controls" aria-label="Native video controls represented in prototype">
+                  <button type="button" aria-label="Play video">▶</button>
+                  <span class="video-track"><i></i></span>
+                  <span class="video-time">0:00 / 0:08</span>
+                  <button type="button" aria-label="Mute video">⌁</button>
+                  <button type="button" aria-label="Fullscreen video">⛶</button>
+                </div>
+              </div>
+              <figcaption class="frame-label">
+                <strong>RESULT</strong>
+                <span>Alpine study</span>
+              </figcaption>
+            </figure>
+
+            <figure class="media-frame source-frame" id="source-frame" aria-hidden="true">
+              <div class="source-visual" role="img" aria-label="Representative source image">
+                <div class="source-line"></div>
+                <div class="source-block source-block-a"></div>
+                <div class="source-block source-block-b"></div>
+              </div>
+              <figcaption class="frame-label source-label">
+                <div><strong>SOURCE</strong><span>Primary image</span></div>
+                <a href="#source-viewer">Open source</a>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="register-shell" id="register-shell">
+          <div class="register-primary">
+            <div class="register-copy">
+              <span class="eyebrow">CONTINUE FROM MEDIA</span>
+              <strong>Keep the result in motion.</strong>
+              <p>Use the current durable asset as the starting point for the next creative step.</p>
+            </div>
+            <div class="continue-actions" aria-label="Continue from media">
+              <a class="primary-action" href="#edit">Edit image</a>
+              <a href="#animate">Animate</a>
+              <button type="button">Reuse settings</button>
+              <button type="button">Upscale 2×</button>
+            </div>
+          </div>
+
+          <div class="mode-strip" id="mode-strip" aria-label="Viewer information and actions">
+            <button type="button" id="prompt-trigger" data-panel="prompt" aria-expanded="false">Prompt</button>
+            <button type="button" id="details-trigger" data-panel="details" aria-expanded="false">Details</button>
+            <button type="button" id="manage-trigger" data-panel="manage" aria-expanded="false">Manage</button>
+            <button type="button" id="compare-trigger" class="compare-trigger" aria-pressed="false">Compare source</button>
+          </div>
+
+          <div class="detail-panel" id="detail-panel" aria-hidden="true">
+            <section data-panel-content="prompt">
+              <p class="eyebrow">PROMPT</p>
+              <p class="prompt-copy">A high alpine observatory carved from pale stone, diffuse winter light, quiet atmosphere, wide architectural photography.</p>
+            </section>
+            <section data-panel-content="details">
+              <p class="eyebrow">DETAILS</p>
+              <dl class="detail-grid">
+                <div><dt>Type</dt><dd>Image</dd></div>
+                <div><dt>Source</dt><dd>Creative</dd></div>
+                <div><dt>Size</dt><dd>2048 × 2048</dd></div>
+                <div><dt>Created</dt><dd>12 Sep 2026</dd></div>
+              </dl>
+            </section>
+            <section data-panel-content="manage">
+              <p class="eyebrow">MANAGE</p>
+              <div class="manage-actions">
+                <button type="button">Collections</button>
+                <button type="button">Rename</button>
+                <button type="button" class="danger">Delete</button>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="inspection-spine" id="inspection-spine" aria-label="Inspection spine">
+          <span class="spine-label">INSPECT</span>
+          <button type="button" data-spine-panel="prompt" aria-label="Prompt">P</button>
+          <button type="button" data-spine-panel="details" aria-label="Details">D</button>
+          <button type="button" data-spine-panel="manage" aria-label="Manage">M</button>
+          <button type="button" data-spine-compare="true" aria-label="Compare source">S</button>
+        </div>
+      </section>
+
+      <footer class="prototype-foot" aria-hidden="true">
+        <span>MEDIA VIEWER REGISTER + SOURCE FOLD / V0.2</span>
+        <span>PHASE 25 R&D / ISSUE 196</span>
+        <span>PRODUCT CONTRACTS LOCKED</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="./prototype.js"></script>
+</body>
+</html>
