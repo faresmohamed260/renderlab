@@ -1,0 +1,46 @@
+name: Phase 26 Integrated Failed Row Patch
+
+on:
+  push:
+    branches:
+      - work/phase-26-activity-job-matrix
+    paths:
+      - .github/workflows/phase26-integrated-failed-row-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-26-activity-job-matrix
+          fetch-depth: 0
+
+      - name: Anchor retry row to failed lifecycle state
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/verify-integrated-release.mjs')
+          text = path.read_text()
+          old = '  const retryRow = page.locator("li").filter({ hasText: retryPrompt }).filter({ hasText: "Sanitized Phase 12 recovery fixture failure." }).first();\n'
+          new = '  const retryRow = page.locator(\'li[data-activity-status="failed"]\').filter({ hasText: retryPrompt }).first();\n'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one prior retry locator, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+          node --check scripts/verify-integrated-release.mjs
+
+      - name: Commit verifier fix
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/verify-integrated-release.mjs
+          git commit -m 'Anchor Integrated Retry to failed Activity row'
+          git push origin HEAD:work/phase-26-activity-job-matrix
