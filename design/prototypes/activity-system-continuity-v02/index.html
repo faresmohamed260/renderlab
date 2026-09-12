@@ -17,17 +17,22 @@
 
   <div class="page-shell">
     <header class="topbar" aria-label="Application header">
-      <a class="brand" href="#" aria-label="RenderLab home">
-        <img src="../../../public/renderlab-mark-color.svg" alt="" width="28" height="28" />
-        <span>RenderLab</span>
-      </a>
-      <nav class="topnav" aria-label="Primary">
-        <a href="#">Create</a>
-        <a href="#">Library</a>
-        <a class="active" href="#" aria-current="page">Activity</a>
-        <a href="#">Settings</a>
-        <span class="beta">CLOSED BETA</span>
-      </nav>
+      <div class="topbar-inner">
+        <a class="brand" href="#" aria-label="Open Create workspace">
+          <img src="../../../public/renderlab-mark-color.svg" alt="" width="28" height="28" />
+          <span>RenderLab</span>
+        </a>
+        <nav class="topnav" aria-label="Application navigation">
+          <a class="library-link" href="#">Library</a>
+          <a class="nav-icon active" href="#" aria-label="Open activity" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </a>
+          <a class="nav-icon" href="#" aria-label="Open settings and account">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M18 21a6 6 0 0 0-12 0"/><circle cx="12" cy="12" r="10"/></svg>
+          </a>
+          <span class="beta">CLOSED BETA</span>
+        </nav>
+      </div>
     </header>
 
     <main class="workspace">
@@ -39,12 +44,12 @@
         <div class="title-row">
           <div>
             <h1 id="activity-title">Activity</h1>
-            <p class="support">Recent generations and their real lifecycle state. Newest first.</p>
+            <p class="support">Generation history, newest first. Active work updates automatically.</p>
           </div>
           <div class="live-summary" data-live-summary>
             <span class="live-dot" aria-hidden="true"></span>
             <strong>LIVE</strong>
-            <small>refreshing active work</small>
+            <small>updating active work</small>
           </div>
         </div>
       </section>
@@ -88,16 +93,15 @@
                 <p>Image · 4:5</p>
               </div>
               <div class="job-footer">
-                <span class="truth-note">Real state only · no percentage or ETA</span>
                 <div class="job-actions" data-primary-actions>
                   <button class="button quiet" type="button" data-cancel-trigger>Cancel</button>
                 </div>
               </div>
               <div class="inline-confirm" data-cancel-confirm hidden>
-                <div><strong>Cancel this generation?</strong><span>The job stays in Activity while cancellation is being requested.</span></div>
+                <div><strong>Cancel this generation?</strong><span>The job remains in Activity while cancellation is requested.</span></div>
                 <div class="confirm-actions"><button class="button quiet" type="button" data-cancel-dismiss>Keep running</button><button class="button danger" type="button" data-cancel-confirm-action>Cancel generation</button></div>
               </div>
-              <p class="fault-note" data-primary-fault hidden>This generation could not be completed. Retry creates a new attempt using the current product contract.</p>
+              <p class="fault-note" data-primary-fault hidden>This generation could not be completed. Retry starts a new attempt.</p>
             </article>
 
             <article class="job-sheet secondary-job is-terminal" data-status="succeeded" data-job="02">
@@ -111,15 +115,15 @@
               <div class="job-index"><span>RL / 03</span><time>00:11</time></div>
               <div class="job-state-row"><span class="state-mark" aria-hidden="true"></span><span class="state-label">Failed</span><span class="state-note">Needs action</span></div>
               <div class="job-copy"><h2>Portrait study with translucent fabric</h2><p>Image · 4:5</p></div>
-              <p class="fault-note">This generation could not be completed. Retry creates a new attempt using the current product contract.</p>
+              <p class="fault-note">This generation could not be completed. Retry starts a new attempt.</p>
               <div class="job-actions"><button class="button quiet" type="button">Retry</button></div>
             </article>
           </div>
 
           <section class="history-register" aria-labelledby="history-title">
             <div class="register-head">
-              <div><p class="micro">04—08 / RECENT HISTORY</p><h2 id="history-title">Continue down the log.</h2></div>
-              <p>Same account-private job history, still newest first.</p>
+              <div><p class="micro">04—08 / OLDER JOBS</p><h2 id="history-title">Recent history</h2></div>
+              <p>NEWEST FIRST</p>
             </div>
             <ol class="register-list" start="4">
               <li class="register-row is-active" data-status="persisting">
@@ -157,8 +161,6 @@
           </section>
         </div>
       </section>
-
-      <p class="workspace-foot">ACTIVITY IS ACCOUNT-PRIVATE · PROVIDER / WORKER / STORAGE IDENTITY STAYS INTERNAL</p>
     </main>
   </div>
   <script src="./prototype.js"></script>
