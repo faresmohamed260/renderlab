@@ -1,0 +1,391 @@
+name: Prepare Phase 25 Viewer implementation contract
+
+on:
+  push:
+    branches:
+      - plan/phase-25-media-viewer-register-fold
+    paths:
+      - .github/workflows/tmp-phase25-viewer-contract.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout planning branch
+        uses: actions/checkout@v4
+        with:
+          ref: plan/phase-25-media-viewer-register-fold
+          fetch-depth: 0
+      - name: Write UI-076 and Phase 25 contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! grep -q '^### UI-076 — Media Viewer uses an attached Media Register and Result-primary Source Fold$' docs/ui/UI_DECISIONS.md; then
+            cat >> docs/ui/UI_DECISIONS.md <<'EOF'
+
+### UI-076 — Media Viewer uses an attached Media Register and Result-primary Source Fold
+**Status:** Accepted / user-approved design; implementation pending
+**Date:** 2026-09-12
+
+**Decision:** `/library/[assetId]` adopts the user-approved **Media Register + Source Fold v0.2** composition for Phase 25. The durable asset becomes the Viewer workspace rather than content beside a permanent property sidebar. A registered media stage remains visually dominant; capability-derived continuation lives in an attached register immediately below it; Prompt, Details, Manage and Compare are local disclosures from the same attached geometry. Favorite and Download are singular quick actions, while Collections, Rename and permanent Delete live in Manage. Compare Source uses a Result-primary Source Fold transformation: desktop reallocates the same stage so Result remains materially primary and Source reveals contextually; narrow layouts keep Result first and place Source below it. Fine-pointer depth is bounded to the single Result media object; controls remain stationary; touch and reduced motion use complete static equivalents.
+
+**Design authority:** R&D issue #196 is completed. The binding prototype/design authority is exact R&D head `639aef25e57e166be8d8b3d226b3e83930e05a25`, focused verifier run `34703774288`, artifact `10300577421`, digest `sha256:06cade2dc2e9ce51dc871971530fa9641a7c1ef0cc0271e19763fcebfa8ca2b0`, and `design/rd/media-viewer-register-fold-v02.md` on that R&D branch. The user explicitly approved this direction on 2026-09-12.
+
+**Product/security boundary:** UI-076 changes presentation only. `/library/[assetId]`, opaque owner-scoped durable media identity, owner/tombstone fail-closed behavior, truthful image/video geometry, native video controls, Favorite, Collections, Rename, Download, Delete, capability-derived Edit/Animate continuation, current-valid Reuse settings, server-derived Compare source, Result-primary/Source-contextual semantics, Source-only `Open source`, and eligible Upscale 2× admission/lifecycle semantics remain authoritative. No new durable compare state, global media/router store, client-owned authorization, route, schema, API, provider/worker, R2/storage, auth/admission, ownership, capability or deployment contract is approved.
+
+**Interaction/accessibility boundary:** Ordinary controls continue to use the maintained primitive layer. Essential actions cannot depend on hover. Icon-only quick actions require explicit accessible names and at least 44×44 effective touch targets where practical. Prompt/Details/Manage return to the same stage geometry when dismissed. Source Fold must be keyboard reachable, reversible, no-overflow, and complete under `prefers-reduced-motion`; reduced motion skips spatial transforms but preserves the full settled Result/Source relationship. A second animation runtime is not approved; existing Motion for React plus CSS and RenderLab primitives are sufficient unless a later explicit decision proves otherwise.
+
+**Implementation gate:** `docs/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md` must be merged before production Viewer code changes. Functional QA and fidelity QA remain separate: build/tests may pass while the implementation still fails if it materially reverts to a sidebar/dashboard composition, flattens Source Fold into an unrelated card fade, duplicates action ownership, obscures native video controls, or diverges from the accepted desktop/390px/temporal/reduced-motion evidence. Production deployment remains separately explicit.
+EOF
+          fi
+
+          cat > docs/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md <<'EOF'
+# Phase 25 — Media Viewer Register + Source Fold Implementation Contract
+
+**Status:** EXECUTION CONTRACT — implementation authorized after merge; deployment not authorized  
+**Tracker:** issue #198  
+**Design R&D:** issue #196 — completed  
+**Planning baseline:** `main` `0305875688550364a04d0bc7af12e048ef955a7c`  
+**Decision:** UI-076  
+
+## Goal
+
+Implement the user-approved **Media Register + Source Fold v0.2** redesign on `/library/[assetId]` so the Viewer reads as the expanded inspection/continuation state of Gallery Rail media while preserving every mature Viewer product, security, ownership, capability and lifecycle contract.
+
+This phase is a presentation and interaction redesign. It is not a media-model, routing, backend, storage or capability phase.
+
+## User value
+
+The current Viewer is functionally mature but visually organized as a large media stage beside a conventional permanent information/action rail. Phase 25 should make the durable asset itself the workspace:
+
+- media remains the immediate center of gravity;
+- continuation is clearly attached to the current result;
+- prompt/details/management stay available without permanently competing with media;
+- Compare communicates the Result/Source relationship spatially rather than spawning an unrelated second card;
+- narrow/touch users receive the same hierarchy without desktop chrome serialized ahead of the asset;
+- the Viewer visibly continues the approved Landing → Create → Gallery Rail family instead of reading as an older product surface.
+
+## Verified starting state
+
+Repository authority at planning start:
+
+- `main`: `0305875688550364a04d0bc7af12e048ef955a7c`;
+- UI-074: compact horizontal application header; no persistent desktop rail; no fixed mobile dock;
+- UI-075: Gallery Rail v0.3 is approved, implemented, verified and merged;
+- current Viewer implementation: `src/features/library/media-viewer.tsx` with a media/Compare stage beside a roughly 304px permanent Prompt/Details/Continue/Actions rail;
+- comparison implementation: `src/features/library/media-viewer-comparison.tsx` with truthful Result/Source geometry, Result ownership, Source-only `Open source`, native result-video controls, keyboard activation and reduced motion;
+- action implementation: `src/features/library/media-viewer-actions.tsx` with owner-scoped Favorite, Collections, Rename, Download and permanent Delete semantics;
+- eligible Upscale 2× remains `src/features/library/media-viewer-upscale-action.tsx` with server-derived eligibility/admission truth;
+- production remains separately deployed at source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment is disabled.
+
+## Binding design authority
+
+The Phase 25 design gate is closed and user-approved.
+
+Binding evidence:
+
+- design direction: **Media Register + Source Fold v0.2**;
+- R&D branch exact head: `639aef25e57e166be8d8b3d226b3e83930e05a25`;
+- design record: `design/rd/media-viewer-register-fold-v02.md` on that R&D head;
+- focused browser run: `34703774288` — success;
+- review artifact: `10300577421`;
+- artifact digest: `sha256:06cade2dc2e9ce51dc871971530fa9641a7c1ef0cc0271e19763fcebfa8ca2b0`;
+- reviewed states: 1440px default image, Prompt, Details, Manage, Compare, video, reduced-motion Compare; 390px default, Details, Manage, Compare; Source Fold temporal 0/60/180/360ms;
+- explicit user approval: 2026-09-12.
+
+The implementation must be compared against that evidence. Earlier Viewer visuals, Phase 21 spatial-media artifacts and v0.1 concept alternatives are historical references only where they do not conflict with v0.2.
+
+## In scope
+
+### 1. Viewer composition
+
+Replace the permanent two-column Viewer sidebar composition with the approved registered media object:
+
+- compact Library/Viewer context and truthful title/media facts above the stage;
+- one media-dominant registered stage using the established Lab Matrix/grid/technical-microtype family;
+- no persistent second application/sidebar inspector;
+- attached register immediately below the media stage;
+- first desktop viewport must contain the beginning of the continuation register at the accepted 1440×1000 reference size rather than spending the viewport on decorative empty stage height.
+
+### 2. Continuation register
+
+Keep continuation capability-derived and truthful while changing its hierarchy:
+
+- current Edit/Animate actions continue to come from `continuationActionsForMedia`;
+- current-valid `Reuse settings` remains server-derived;
+- Upscale 2× remains server-derived and retains existing admission/lifecycle behavior;
+- no action is rendered to match the prototype when production truth says it is unavailable;
+- representative image state may visually prioritize the first capability-derived continuation, matching the approved candidate without hard-coding unsupported capability.
+
+### 3. Singular action ownership
+
+The production composition must not duplicate actions across regions.
+
+- quick actions: **Favorite**, **Download**;
+- Manage disclosure: **Collections**, **Rename**, **Delete**;
+- continuation register: Edit/Animate/Reuse settings/Upscale only when eligible;
+- Source frame: **Open source** only;
+- Compare control: **Compare source / Close comparison** only when eligible.
+
+Existing action product semantics, API calls, error states and mutation ownership remain unchanged.
+
+### 4. Local disclosures
+
+Prompt, Details and Manage become local disclosures from the attached register/strip:
+
+- disclosures remain in Viewer document flow;
+- media remains visible and primary;
+- opening/closing a disclosure does not change durable product state;
+- dismissal returns to the same stage geometry;
+- Rename keeps its accessible inline edit semantics within the Manage region;
+- Delete keeps maintained AlertDialog confirmation and current permanent-delete copy/behavior;
+- collection controls keep their current owner-scoped behavior.
+
+Use existing maintained primitives/mechanics before introducing new generic UI.
+
+### 5. Source Fold Compare
+
+Implement the accepted signature Compare choreography with existing product truth:
+
+Desktop:
+
+1. default Result is one dominant registered media sheet;
+2. Compare activation reallocates the same stage;
+3. Result remains materially primary in settled geometry;
+4. Source reveals from the media relationship using bounded clipping/translation/layout motion;
+5. Source exposes only `Open source`;
+6. closing reverses to the exact single-result geometry without an exiting Source panel lingering after closed state.
+
+Narrow/touch:
+
+- Result remains first and full-width;
+- Source follows below Result;
+- no side-by-side squeeze;
+- no hover/pointer gesture is needed for Compare.
+
+Reduced motion:
+
+- skip spatial unfolding transforms;
+- immediately present/remove the complete settled Result/Source layout;
+- hierarchy and controls remain identical in meaning.
+
+### 6. Media-local pointer depth
+
+The default single Result may use the same bounded pointer-capable depth grammar established by Gallery Rail:
+
+- Result/media object only;
+- no movement of shell/register/ordinary controls;
+- ignore touch input;
+- disable while Compare is active;
+- reset cleanly on pointer leave/interruption;
+- `prefers-reduced-motion` disables the transform entirely;
+- depth is optional if implementation evidence shows it degrades real image/video usability; Source Fold fidelity is higher priority.
+
+### 7. Image/video truth
+
+- preserve source aspect ratios using contain behavior;
+- do not crop/stretch media merely to match prototype art;
+- result video retains real native controls and keyboard/touch playback behavior;
+- source remains image-only under current Compare eligibility;
+- Viewer media URLs/IDs continue to come from current product contracts.
+
+## Explicitly out of scope
+
+- new Viewer route, modal-only Viewer or route interception requirement;
+- literal cross-route shared-element state requiring a global media/router store;
+- new durable comparison state;
+- new media capability, versioning, zoom history, editor, crop, restore or arbitrary upscale factor;
+- changes to Library card activation or Gallery Rail product state;
+- changes to Create continuation URLs/product intent;
+- schema or database migration;
+- API contract change;
+- provider/worker/failover change;
+- R2/storage contract change;
+- auth/admission/ownership/authorization change;
+- generation lifecycle change;
+- new animation runtime, GSAP, Lenis, WebGL/canvas/shader layer;
+- shell redesign;
+- production deployment.
+
+## Architecture and state ownership
+
+Preserve the existing architecture:
+
+- `/library/[assetId]` server route continues to owner-load and validate the durable asset and server-derived eligibility;
+- `MediaViewer` receives the same asset, collection, recipe, Compare source and Upscale eligibility inputs;
+- browser presentation state may own only local disclosure/Compare/pointer-motion state;
+- authorization and capability truth remain server-derived;
+- no global state store is introduced;
+- opaque asset IDs remain product identity;
+- storage/provider identity stays internal.
+
+Production implementation may reorganize the Viewer into feature-local components where that improves clarity, but it must not create a competing generic UI system. If no new reusable cross-feature component is introduced, `COMPONENT_CATALOG.md` should remain unchanged.
+
+## Component and dependency policy
+
+Use, in order:
+
+1. existing RenderLab Viewer/actions/components;
+2. existing maintained primitives under `src/components/ui`;
+3. existing Motion for React dependency for layout/presence/pointer-safe choreography;
+4. feature-local composition/CSS.
+
+No dependency addition is expected or authorized. Raw visible native buttons/inputs/selects/textarea remain prohibited in feature code under UI-026; native `<video controls>` is the platform media control and remains required.
+
+## Data / backend / infrastructure implications
+
+None expected.
+
+- no migration;
+- no new environment variable;
+- no Supabase/R2 change;
+- no worker/provider deployment;
+- no API route change;
+- no lifecycle/admission change.
+
+Any implementation discovery that genuinely requires one of these changes stops this phase and requires a new explicit decision rather than silently expanding scope.
+
+## Security / ownership implications
+
+Existing boundaries remain mandatory:
+
+- signed-out Viewer stays protected by current account behavior;
+- foreign/deleted/tombstoned media fail closed;
+- Compare source remains active + same-owner + durable + server-resolved;
+- Source does not inherit Result actions;
+- Favorite/Collections/Rename/Download/Delete remain owner-scoped through current product APIs;
+- continuation/recipe/Upscale eligibility remains server-revalidated;
+- no raw storage/provider identifiers appear in presentation.
+
+## Validation matrix
+
+### Static / engineering
+
+At the exact candidate head:
+
+- `npm run build`;
+- `npm run verify:ui-purity`;
+- relevant unit/static checks already included by Engineering Quality;
+- TypeScript/lint/build gates required by repository workflows.
+
+### Existing product regressions
+
+At minimum, run every Viewer/Library/Create/security workflow GitHub attaches because of the changed files. The expected substantive set includes, where path filters apply:
+
+- Engineering Quality;
+- UI Shell Validation;
+- Creative Iteration / configured Viewer Compare + continuation;
+- Library Lifecycle;
+- Media Download Visual;
+- Media Rename Visual;
+- Library Favorites;
+- Library Collections;
+- Media Delete Visual;
+- Account Ownership;
+- Upscale Viewer Visual;
+- Integrated Release / Release Candidate Matrix if GitHub attaches them.
+
+Do not weaken product/security assertions to accommodate presentation. Presentation locators may migrate only to the accepted UI-076 semantics while preserving the behavior being tested.
+
+### Dedicated Phase 25 visual/fidelity evidence
+
+The implementation must produce reviewable real-browser evidence from the production Viewer implementation, not the prototype, covering:
+
+Desktop 1440×1000:
+
+- default generated image;
+- generated/result video with real native controls visible;
+- Prompt disclosure;
+- Details disclosure;
+- Manage disclosure including current action/error geometry where practical;
+- eligible Compare settled state;
+- reduced-motion Compare settled state.
+
+Narrow 390×844:
+
+- default image;
+- Details;
+- Manage;
+- eligible Compare with Result first / Source below;
+- no body/document horizontal overflow;
+- quick actions remain accessible and at least 44×44 effective targets where practical.
+
+Temporal Source Fold:
+
+- 0ms;
+- approximately 60ms;
+- approximately 180ms;
+- settled approximately 360ms;
+- closing/reversal should be checked sufficiently to ensure Source does not linger after closed state.
+
+Pointer/touch:
+
+- fine-pointer depth remains bounded/media-local if implemented;
+- attached register/control geometry remains stationary;
+- touch path is fully usable without hover/pointer depth.
+
+### Fidelity comparison
+
+Human review must compare real implementation evidence against accepted artifact `10300577421` for:
+
+- shell continuity;
+- first-viewport hierarchy;
+- title/context density;
+- stage proportions;
+- attached register geometry;
+- action ownership;
+- disclosure origin/settled composition;
+- Result-primary Source Fold layout;
+- Source-only action ownership;
+- timing/transform character;
+- desktop vs 390px behavior;
+- reduced-motion equivalence.
+
+A technically green candidate that restores the old 304px sidebar, turns Compare into two unrelated cards, duplicates actions, or materially flattens the accepted composition fails Phase 25 fidelity.
+
+## Documentation outputs
+
+After verified implementation:
+
+- `PROJECT.md` — Phase 25 closure + production pointer unchanged;
+- `docs/ui/UI_MIGRATION.md` — exact-head/merged-main/fidelity evidence and Phase 26 handoff;
+- `docs/ui/UI_DECISIONS.md` — UI-076 status/evidence updated from design-approved to implemented/verified/merged;
+- `docs/ui/SCREEN_REGISTRY.md` — Media Viewer composition/status/design authority updated;
+- `docs/ui/UI_SYSTEM.md` only if Phase 25 establishes a genuinely reusable system rule beyond the already documented Viewer 3/4-expressiveness/media-continuity guidance;
+- `docs/ui/COMPONENT_CATALOG.md` only if a genuinely reusable component/mechanic is added.
+
+Do not write implementation completion evidence before the corresponding repository/workflow/rendered reality exists.
+
+## Exit criteria
+
+Phase 25 implementation is complete only when:
+
+1. this contract and UI-076 are merged before production source changes;
+2. production Viewer source implements the approved Media Register + Source Fold direction;
+3. no out-of-scope product/backend/security/data/dependency change is introduced;
+4. exact-head required/attached workflows pass;
+5. real desktop + 390px + video + disclosure + Compare + temporal + reduced-motion evidence is human-reviewed for fidelity;
+6. any stale presentation verifier is corrected without weakening its product/security invariant;
+7. implementation PR is merged;
+8. every workflow GitHub actually attaches to merged `main` is accounted for and successful before closure is claimed;
+9. repository documentation reflects verified reality;
+10. issue #198 is closed only after those gates are complete;
+11. production remains unchanged unless the user separately authorizes deployment.
+
+## Next-phase dependency
+
+Phase 26 Activity remains roadmap-only until Phase 25 closes from verified merged reality. Phase 25 must update the roadmap/handoff from what actually shipped to `main`; later planning must not assume prototype-only behavior.
+EOF
+
+          rm .github/workflows/tmp-phase25-viewer-contract.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/ui/UI_DECISIONS.md docs/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md .github/workflows/tmp-phase25-viewer-contract.yml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Plan Phase 25 Media Viewer implementation"
+          git push origin HEAD:plan/phase-25-media-viewer-register-fold
