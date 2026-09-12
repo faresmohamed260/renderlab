@@ -1,0 +1,35 @@
+/*
+ * Phase 23 Create Clear Composer fidelity corrections.
+ *
+ * Keep these overrides scoped to the Create workspace. The approved v0.5
+ * prototype intentionally used a narrower fallback stack than the wider
+ * application shell, and its reference trigger used the prototype's exact
+ * thin outlined treatment. Import after globals.css so these approved values
+ * win without changing typography or controls elsewhere in the product.
+ */
+.clear-create-workspace {
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-rendering: auto;
+}
+
+.clear-create-workspace .clear-composer-reference-trigger {
+  min-height: 44px !important;
+  gap: 7px;
+  padding: 0 13px !important;
+  border: 1px solid rgb(255 255 255 / 10%) !important;
+  border-radius: 10px !important;
+  background: #111822 !important;
+  box-shadow: none !important;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.clear-create-workspace .clear-composer-reference-trigger:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 24%) !important;
+  background: #151d28 !important;
+}
+
+.clear-create-workspace .clear-composer-reference-trigger:disabled {
+  border-color: rgb(255 255 255 / 10%) !important;
+  background: #111822 !important;
+}
