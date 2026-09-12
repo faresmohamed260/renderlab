@@ -31,6 +31,7 @@ jobs:
       - name: Apply Gallery Rail implementation
         run: |
           python scripts/tmp_phase24_library_apply.py
+          sed -i 's/toggleSelection(asset.id, checked === true)/toggleAsset(asset.id, checked === true)/' src/features/library/library-batch-selection.tsx
           git diff --check
 
       - name: Install dependencies
