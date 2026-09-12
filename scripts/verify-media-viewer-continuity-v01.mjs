@@ -33,6 +33,7 @@ async function setState(page, { concept = 'register', view = 'image', compare = 
     else window.viewerPrototype.closePanel();
   }, { concept, view, compare, panel });
   await page.waitForTimeout(430);
+  await page.evaluate(() => window.scrollTo(0, 0));
 }
 
 async function verifyBase(page, label) {
@@ -59,12 +60,18 @@ async function verifyConcept(page, concept, viewportLabel) {
     assert.equal(await page.locator('#mode-strip').isVisible(), true, `${label}: attached mode strip visible`);
   }
 
+  const registerBox = await page.locator('#register-shell').boundingBox();
+  assert.ok(registerBox, `${label}: attached register has geometry`);
+  const viewportHeight = await page.evaluate(() => window.innerHeight);
+  assert.ok(registerBox.y < viewportHeight, `${label}: continuation register begins in the first viewport (y=${registerBox.y}, h=${viewportHeight})`);
   await screenshot(page, `${label}-default`);
 
   await setState(page, { concept, panel: 'details' });
   assert.equal(await page.locator('#detail-panel').getAttribute('aria-hidden'), 'false', `${label}: details disclose from attached viewer controls`);
   assert.equal(await page.locator('[data-panel-content="details"]').isVisible(), true, `${label}: details content visible`);
   await noOverflow(page, `${label}-details`);
+  await page.locator('#detail-panel').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(60);
   await screenshot(page, `${label}-details`);
 
   await setState(page, { concept, compare: true });
@@ -99,6 +106,7 @@ try {
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 }, hasTouch: false });
   const page = await desktop.newPage();
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('.prototype-controls').evaluate((element) => { element.style.display = 'none'; });
 
   for (const concept of ['register', 'spine', 'fold']) {
     await verifyConcept(page, concept, 'desktop');
@@ -140,6 +148,7 @@ try {
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const mobilePage = await mobile.newPage();
   await mobilePage.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await mobilePage.locator('.prototype-controls').evaluate((element) => { element.style.display = 'none'; });
 
   for (const concept of ['register', 'spine', 'fold']) {
     await verifyConcept(mobilePage, concept, 'mobile');
@@ -156,6 +165,7 @@ try {
   const reduced = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce', hasTouch: false });
   const reducedPage = await reduced.newPage();
   await reducedPage.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await reducedPage.locator('.prototype-controls').evaluate((element) => { element.style.display = 'none'; });
   await setState(reducedPage, { concept: 'fold' });
   const reducedBox = await reducedPage.locator('#result-frame').boundingBox();
   assert.ok(reducedBox, 'reduced: result frame exists');
