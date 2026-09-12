@@ -27,18 +27,82 @@ import {
   type RenameMediaAssetResponse,
 } from "@/lib/api/media-assets-contract";
 
-export function MediaViewerActions({
+export function MediaViewerQuickActions({
+  assetId,
+  isFavorite,
+}: {
+  assetId: string;
+  isFavorite: boolean;
+}) {
+  const router = useRouter();
+  const [favorite, setFavorite] = useState(isFavorite);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggleFavorite() {
+    if (saving) return;
+    const nextFavorite = !favorite;
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/media/assets/${encodeURIComponent(assetId)}/favorite`, {
+        method: nextFavorite ? "PUT" : "DELETE",
+      });
+      const payload = await response.json().catch(() => null) as FavoriteMediaAssetResponse | null;
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload && !payload.ok ? payload.error.message : "Favorite state could not be updated.");
+      }
+      setFavorite(payload.asset.isFavorite);
+      router.refresh();
+    } catch (favoriteError) {
+      setError(favoriteError instanceof Error ? favoriteError.message : "Favorite state could not be updated.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex min-w-0 flex-wrap justify-end gap-2">
+      <Button
+        type="button"
+        variant={favorite ? "secondary" : "outline"}
+        onClick={toggleFavorite}
+        disabled={saving}
+        aria-pressed={favorite}
+        aria-label={saving ? "Saving favorite" : favorite ? "Remove from favorites" : "Favorite"}
+        className="h-11 min-w-11 px-3 sm:min-w-0"
+      >
+        {saving ? (
+          <Spinner />
+        ) : (
+          <Star aria-hidden="true" className={favorite ? "fill-current" : undefined} />
+        )}
+        <span className="hidden sm:inline">{saving ? "Saving…" : favorite ? "Favorited" : "Favorite"}</span>
+      </Button>
+      <Button asChild variant="secondary" className="h-11 min-w-11 px-3 sm:min-w-0">
+        <a
+          href={`/api/media/assets/${encodeURIComponent(assetId)}/download`}
+          aria-label="Download media"
+        >
+          <Download aria-hidden="true" />
+          <span className="hidden sm:inline">Download</span>
+        </a>
+      </Button>
+      {error ? <p role="alert" className="basis-full text-right text-xs text-danger">{error}</p> : null}
+    </div>
+  );
+}
+
+export function MediaViewerManageActions({
   assetId,
   displayName,
   fallbackTitle,
-  isFavorite,
   collections,
   collectionsAvailable,
 }: {
   assetId: string;
   displayName: string | null;
   fallbackTitle: string;
-  isFavorite: boolean;
   collections: PublicMediaCollection[];
   collectionsAvailable: boolean;
 }) {
@@ -49,9 +113,6 @@ export function MediaViewerActions({
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(displayName ?? "");
   const [error, setError] = useState<string | null>(null);
-  const [favorite, setFavorite] = useState(isFavorite);
-  const [favoriteSaving, setFavoriteSaving] = useState(false);
-  const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -67,30 +128,6 @@ export function MediaViewerActions({
     setDraft(displayName ?? "");
     setError(null);
     setEditing(false);
-  }
-
-  async function toggleFavorite() {
-    if (favoriteSaving) return;
-    const nextFavorite = !favorite;
-    setFavoriteSaving(true);
-    setFavoriteError(null);
-    try {
-      const response = await fetch(`/api/media/assets/${encodeURIComponent(assetId)}/favorite`, {
-        method: nextFavorite ? "PUT" : "DELETE",
-      });
-      const payload = await response.json().catch(() => null) as FavoriteMediaAssetResponse | null;
-      if (!response.ok || !payload?.ok) {
-        throw new Error(payload && !payload.ok ? payload.error.message : "Favorite state could not be updated.");
-      }
-      setFavorite(payload.asset.isFavorite);
-      router.refresh();
-    } catch (favoriteUpdateError) {
-      setFavoriteError(
-        favoriteUpdateError instanceof Error ? favoriteUpdateError.message : "Favorite state could not be updated.",
-      );
-    } finally {
-      setFavoriteSaving(false);
-    }
   }
 
   async function submitRename(event: FormEvent<HTMLFormElement>) {
@@ -144,31 +181,7 @@ export function MediaViewerActions({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <Button
-        type="button"
-        variant={favorite ? "secondary" : "outline"}
-        size="lg"
-        onClick={toggleFavorite}
-        disabled={favoriteSaving}
-        aria-pressed={favorite}
-        className="col-span-2 w-full"
-      >
-        {favoriteSaving ? (
-          <Spinner data-icon="inline-start" />
-        ) : (
-          <Star
-            aria-hidden="true"
-            data-icon="inline-start"
-            className={favorite ? "fill-current" : undefined}
-          />
-        )}
-        {favoriteSaving ? "Saving…" : favorite ? "Favorited" : "Favorite"}
-      </Button>
-      {favoriteError ? (
-        <p role="alert" className="col-span-2 text-xs text-danger">{favoriteError}</p>
-      ) : null}
-
+    <div className="grid min-w-0 gap-3 sm:grid-cols-2">
       <MediaViewerCollections assetId={assetId} collections={collections} available={collectionsAvailable} />
 
       <Button
@@ -183,18 +196,12 @@ export function MediaViewerActions({
         <Pencil aria-hidden="true" data-icon="inline-start" />
         Rename
       </Button>
-      <Button asChild variant="secondary" size="lg" className="w-full">
-        <a href={`/api/media/assets/${encodeURIComponent(assetId)}/download`}>
-          <Download aria-hidden="true" data-icon="inline-start" />
-          Download
-        </a>
-      </Button>
 
       {editing ? (
         <form
           id={panelId}
           onSubmit={submitRename}
-          className="col-span-2 rounded-lg border border-border bg-surface-2 p-3"
+          className="rounded-xl border border-border bg-surface-2 p-3 sm:col-span-2"
         >
           <Field data-invalid={Boolean(error)}>
             <FieldLabel htmlFor={inputId} className="text-text">Media name</FieldLabel>
@@ -236,7 +243,7 @@ export function MediaViewerActions({
             type="button"
             variant="ghost"
             size="lg"
-            className="col-span-2 w-full text-danger hover:text-danger"
+            className="w-full text-danger hover:text-danger sm:col-span-2"
           >
             <Trash2 aria-hidden="true" data-icon="inline-start" />
             Delete
