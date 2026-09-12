@@ -68,9 +68,8 @@ async function keyboardReach(page, selector, maxTabs = 90) {
 
 async function assertActionOwnership(page, label) {
   assert.equal(await page.locator('.quick-actions button').count(), 2, `${label}: Favorite and Download remain quick actions`);
-  const quick = (await page.locator('.quick-actions').innerText()).replace(/\s+/g, ' ').trim();
-  assert.match(quick, /Favorite/);
-  assert.match(quick, /Download/);
+  assert.equal(await page.getByRole('button', { name: 'Favorite', exact: true }).count(), 1, `${label}: Favorite quick action has an explicit accessible name`);
+  assert.equal(await page.getByRole('button', { name: 'Download', exact: true }).count(), 1, `${label}: Download quick action has an explicit accessible name`);
 
   await setState(page, { panel: 'manage' });
   const manage = (await page.locator('[data-panel-content="manage"]').innerText()).replace(/\s+/g, ' ').trim();
