@@ -15,7 +15,7 @@ Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextua
 Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051. The public **Brand / Landing** remains `/` and the authoritative Create workspace remains `/create`; UI-052 established that route boundary in PR #73, while the current approved four-section Lab Matrix Landing redesign is merged through PR #174 / `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.
 
 ## Application Shell
-**Status:** APPROVED  
+**Status:** APPROVED
 **Implementation:** `src/components/shell/app-shell.tsx`
 
 Approved behavior:
@@ -28,7 +28,7 @@ Approved behavior:
 
 `APPROVED` does not mean `LOCKED`.
 
-**Phase 23 fidelity-correction candidate — merge pending:** UI-074 / draft PR #188 restores the approved compact horizontal application header across application routes and removes the persistent desktop rail / fixed mobile dock from the candidate tree. Navigation destinations and shell/feature ownership are unchanged. Exact implementation head `ca27de9dd329a6c66cb24006ec9578889b518c94` passed UI Shell `34664359939`, Brand / Launch `34664359945`, Account Identity `34664359917` and the rest of its 16 directly attached workflows. Current merged `main`/production remain unchanged until explicit merge/deployment operations occur.
+**Phase 23 fidelity correction — user-approved / merge authorized:** UI-074 / PR #188 restores the approved compact horizontal application header across application routes and removes the persistent desktop rail / fixed mobile dock from the accepted candidate tree. Navigation destinations and shell/feature ownership are unchanged. User-approved exact implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed UI Shell `34680601708`, Brand / Launch `34680601653`, Account Identity `34680601778` and the complete 16-workflow attached suite. Current merged `main`/production remain unchanged until the guarded merge/deployment operations occur.
 
 ## Screens
 
@@ -52,9 +52,9 @@ Approved behavior:
 
 ### Create
 **Route:** `/create`
-**Status:** APPROVED  
-**Implementation:** `src/features/create/create-workspace.tsx`  
-**Supporting:** `src/features/create/create-advanced-panel.tsx`  
+**Status:** APPROVED
+**Implementation:** `src/features/create/create-workspace.tsx`
+**Supporting:** `src/features/create/create-advanced-panel.tsx`
 **Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
 **Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; PR #185 is merged to `main` as `d360f60afeca0b6c417ff1c12dec3c7e922c20f7` and Clear Composer is now the repository-authoritative Create surface. Production remains on the prior deployed source until a separately authorized rollout.
 
@@ -94,19 +94,19 @@ Approved behavior:
 
 **Phase 23 / UI-073 verified candidate:** The approved Clear Composer keeps one stable `Create an image` / `Create a video` workspace heading, promotes the maintained Image/Video choice, labels Add reference / Start image, names attached roles Primary image / Reference image / Start image, keeps prompt and Generate visually dominant, and places truthful generation/media-first result composition above the persistent composer. The production candidate retains existing model/aspect/video/Advanced controls, durable upload identity, `@imageN` aliases, one-source Video/two-source Image limits, native video playback and capability-derived continuation. Landing-derived 64px Lab Matrix registration, cool/warm atmosphere, precise rules and quarter-arc media framing are Create-owned presentation; depth remains media-only. On 390px, stage/result context compacts and continuation actions stay above the fixed mobile dock. Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Engineering Quality `34639132519`, Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, corrected Account/Admin Operations `34639132466` and Release Candidate Matrix `34639132431` with 23/23 exact-SHA children successful. PR #185 squash-merged as `d360f60afeca0b6c417ff1c12dec3c7e922c20f7` from final exact head `428cbd025d9f314f5b8d1582fd6911f1abd5094b`; merged-main Release Candidate Matrix `34645636285` passed all 23 exact-SHA children. Repository `main` now carries Clear Composer, while production remains on the prior deployed source until an explicitly authorized rollout.
 
-**Phase 23 fidelity correction reopening — 2026-09-12:** Direct user comparison rejected the first merged Phase 23 composition as visually divergent from the approved v0.5 evidence, so issue #184 is reopened and draft PR #188 is the current correction vehicle. The candidate restores the approved 900px authoring / 1120px result widths, mode-before-composer order, visible `PROMPT`, reference-before-prompt grammar, flat labelled settings footer, stable Generate, attached Advanced and asymmetric media-first result rail while preserving all existing Create product contracts. Exact implementation head `ca27de9dd329a6c66cb24006ec9578889b518c94` passed all 16 directly attached workflows, including Create Clear Composer Visual `34664359922` / artifact `10288233834` (`sha256:56d10d1f5a11450475abb5a9b8ad35824772ca1e72916039a78b8c1aa3eca975`) and configured Create Lifecycle `34664359900` / artifact `10287909397` (`sha256:0c6fb106c1d4cd78b3a2d646434f8c5e65c2d0ca2b67361bf8e9c126e3d7c286`). The docs-final exact head still requires normal acceptance; PR #188 is draft/unmerged and production is unchanged.
+**Phase 23 fidelity correction — user-approved / merge authorized, 2026-09-12:** Direct user comparison rejected the first merged Phase 23 composition as visually divergent from the approved v0.5 evidence, so issue #184 was reopened and PR #188 became the correction vehicle. The accepted candidate restores the approved 900px authoring / 1120px result widths, mode-before-composer order, visible `PROMPT`, reference-before-prompt grammar, flat labelled settings footer, stable high-contrast Generate, attached Advanced, truthful registration-framed generating stage and asymmetric media-first result rail while preserving all existing Create product contracts. Exact head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed all 16 directly attached workflows. Create Clear Composer Visual `34680601776` produced artifact `10293387664` (`sha256:e4937a16a2fed2bc160634c73c60322b0748ff3eb5d166b44cbc33f894a92915`); configured Create Lifecycle `34680601698` produced artifact `10293653778` (`sha256:ba13fc48dcf4d823575b041455d902e48040d2cd554892c0b5b508ee80e88624`). Direct user review approved the real corrected desktop generating/result and mobile result renders on 2026-09-12. Merge is authorized after documentation-final exact-head acceptance; production remains unchanged and deployment remains separately explicit.
 
 **Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 
 ### Library
-**Route:** `/library`  
+**Route:** `/library`
 **Status:** APPROVED — Library base + Favorites / UI-031 + Collections / UI-032 + UI-033 tombstone filtering + Library Batch Delete / UI-034 + Phase 8 Collection Management and Page-scoped Batch Organization / UI-049
-**Implementation:** `src/features/library/library-view.tsx`  
+**Implementation:** `src/features/library/library-view.tsx`
 **Collection management:** `src/features/library/library-collection-menu.tsx`, `src/features/library/library-collection-manager.tsx`
 **Batch selection:** `src/features/library/library-batch-selection.tsx`
 **Sort control:** `src/features/library/library-sort-toggle.tsx`
-**Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`  
-**Shared browser upload transaction:** `src/features/library/library-upload-client.ts`  
+**Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`
+**Shared browser upload transaction:** `src/features/library/library-upload-client.ts`
 **Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `src/server/media/media-collections.ts`, `GET /api/media/assets`, `POST /api/media/assets/batch-delete`, `POST /api/media/assets/batch-favorite`, `GET|POST /api/media/collections`, `PATCH|DELETE /api/media/collections/[collectionId]`, single-asset collection membership routes, `POST /api/media/collections/[collectionId]/items/batch`, media-upload ticket/completion routes
 **Approved design artifacts:** `design/penpot/library-v0.1.svg`, `design/penpot/library-v0.2-upload.svg`
 
@@ -168,10 +168,10 @@ Approved behavior:
 **Do not change:** Do not couple Library to legacy `studio_*` or expose temporary `generation_sources` as durable media. UI-060's approved Creatives/Uploads sections are origin-scoped views over the same durable media identity; do not split them into parallel asset stores or add a third section without an explicit product contract. Do not turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
 ### Media Viewer
-**Route:** `/library/[assetId]`  
+**Route:** `/library/[assetId]`
 **Status:** APPROVED — Media Viewer base + Download + Rename + Favorites + Collections v0.1 / UI-032 + Delete v0.1 / UI-033 + Reuse Settings / Compare source / UI-056 + Image Upscale 2× / UI-058
 **Implementation:** `src/features/library/media-viewer.tsx`, `src/features/library/media-viewer-comparison.tsx`, `src/features/library/media-viewer-upscale-action.tsx`
-**Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
+**Viewer actions:** `src/features/library/media-viewer-actions.tsx`
 **Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts` (GET/PATCH/DELETE), `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/app/api/media/collections/route.ts`, collection membership route, `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-collections.ts`
 **Design artifacts:** `design/penpot/media-viewer-v0.1.svg`, `design/penpot/media-viewer-v0.2-compare-source.md`
 
@@ -222,7 +222,7 @@ Approved behavior:
 **Do not change:** Provider/worker/R2 identity stays internal. Viewer continuation and recipe reuse remain capability/current-validation derived. Favorite/Collections/Download/Rename remain contextual product actions; UI-033 Delete follows its explicit tombstone/purge contract; UI-056 Source stays contextual and exposes only its ordinary Viewer link. Do not expose raw R2 keys/signed URLs as durable product links, revive unavailable historical sources, or infer collection management/batch actions from the single-asset Viewer/comparison context.
 
 ### Activity
-**Route:** `/activity`  
+**Route:** `/activity`
 **Status:** APPROVED — Activity v0.1 / UI-035 + failed-job Retry / UI-050 + native Cancel / UI-055 + successful Run Again / UI-056 + Upscale lifecycle/recovery summary / UI-058
 **Implementation:** `src/app/(app)/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`, `src/features/activity/activity-retry-button.tsx`, `src/features/activity/activity-cancel-button.tsx`, `src/features/activity/activity-run-again-button.tsx`
 **Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/lib/api/generation-retry-contract.ts`, `src/lib/api/generation-cancel-contract.ts`, `src/lib/api/generation-run-again-contract.ts`, `src/server/generation/generation-activity.ts`, `src/server/generation/retry-generation.ts`, `src/server/generation/run-again-generation.ts`, `src/server/generation/cancel-generation.ts`, `POST /api/generation/jobs/[jobId]/retry`, `POST /api/generation/jobs/[jobId]/run-again`, `POST /api/generation/jobs/[jobId]/cancel`, server-owned reconciliation
@@ -239,7 +239,7 @@ Approved behavior:
 **Do not change:** Activity remains a utility/history surface, not a worker/provider administration console. Keep failed Retry, successful Run Again and active Cancel eligibility distinct; do not add in-row recipe editing, provider replay/identity, or a shell-global client job store.
 
 ### Settings
-**Route:** `/settings`  
+**Route:** `/settings`
 **Status:** APPROVED — Account Identity Foundation / UI-029 + Phase 10A/10B account/admin integration / UI-051
 **Implementation:** `src/app/(app)/settings/page.tsx`
 **Account surface:** `src/features/account/account-settings.tsx`; password security: `src/features/account/account-password-form.tsx`

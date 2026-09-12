@@ -37,16 +37,17 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 **Phase 23 status: `IMPLEMENTATION VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
 ## Phase 23 fidelity correction reopening — 2026-09-12
-- [x] Direct user fidelity review rejected the first merged Phase 23 pixels as materially divergent from the approved v0.5 artifact; issue #184 is reopened and the approved v0.5 evidence remains authoritative.
-- [x] Draft PR #188 / `work/phase-23-create-fidelity-correction` restores the approved horizontal shell and Clear Composer composition without changing product/backend/security/data contracts.
-- [x] Exact implementation/test head `ca27de9dd329a6c66cb24006ec9578889b518c94` passed all 16 directly attached workflows. Create Clear Composer Visual `34664359922` produced artifact `10288233834` (`sha256:56d10d1f5a11450475abb5a9b8ad35824772ca1e72916039a78b8c1aa3eca975`); configured Create Lifecycle `34664359900` produced artifact `10287909397` (`sha256:0c6fb106c1d4cd78b3a2d646434f8c5e65c2d0ca2b67361bf8e9c126e3d7c286`).
-- [x] Repeated pre-fix Create Lifecycle failure was isolated to the stale post-Edit `Create an image` heading wait after real generation and durable persistence had already succeeded. The final verifier asserts the actual continuation invariants: Image mode, `Primary image`, and a loaded durable reference preview.
-- [x] Production remains unchanged; Library R&D #187 remains paused pending Create fidelity closure.
-- [ ] Re-run/confirm the normal exact-head acceptance on the documentation-final PR head before declaring PR #188 merge-ready.
-- [ ] Merge only after explicit user authorization; deployment remains a separate explicit operation.
+- [x] Direct user fidelity review rejected the first merged Phase 23 pixels as materially divergent from the approved v0.5 artifact; issue #184 remains the tracker and the approved v0.5 evidence remains authoritative.
+- [x] PR #188 / `work/phase-23-create-fidelity-correction` restores the approved horizontal shell and Clear Composer composition without changing product/backend/security/data contracts.
+- [x] User-approved exact implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed all 16 directly attached workflows, including Engineering Quality `34680601598`, UI Shell `34680601708`, Create Clear Composer Visual `34680601776`, configured Create Lifecycle `34680601698`, Integrated Release `34680601834`, Generation Admission `34680601611`, Account Ownership `34680601582` and Video Generation Integration `34680601661`.
+- [x] Create Clear Composer Visual artifact `10293387664` has digest `sha256:e4937a16a2fed2bc160634c73c60322b0748ff3eb5d166b44cbc33f894a92915`; configured Create Lifecycle artifact `10293653778` has digest `sha256:ba13fc48dcf4d823575b041455d902e48040d2cd554892c0b5b508ee80e88624`.
+- [x] The repeated pre-fix lifecycle failure was isolated to the stale post-Edit heading wait after real generation and durable persistence had already succeeded. The verifier now asserts Image mode, `Primary image`, and the loaded durable reference preview; product/security invariants remain intact.
+- [x] Direct user review approved the real corrected desktop generating/result and mobile result appearance on 2026-09-12.
+- [x] Production remains unchanged; Library R&D #187 remains paused pending merge closure.
+- [x] Merge is explicitly authorized after the documentation-final exact head passes the normal attached workflow set.
+- [ ] Production deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
 
-**Phase 23 correction status: `FIDELITY CORRECTION IMPLEMENTATION VERIFIED / DOCUMENTATION SYNCHRONIZED / EXACT-HEAD MERGE ACCEPTANCE PENDING / NOT MERGED / NOT DEPLOYED`.**
-
+**Phase 23 correction status: `VISUALLY APPROVED / IMPLEMENTATION EXACT-HEAD VERIFIED / MERGE AUTHORIZED / DOCUMENTATION-FINAL EXACT-HEAD ACCEPTANCE PENDING / NOT DEPLOYED`.**
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
 - [x] Define RenderLab capability model, progressive-disclosure boundaries and information architecture.
@@ -116,7 +117,7 @@ This is foundation maintenance, not a product redesign or new Phase 4 media capa
 - [x] Credential-free run `33034606323` passed.
 - [x] Configured R2/Supabase lifecycle `33034606396` passed with responsive render review and cleanup.
 
-**Library v0.1 status: `APPROVED`.**  
+**Library v0.1 status: `APPROVED`.**
 **Media Viewer v0.1 status: `APPROVED`.**
 
 ### Persistent uploads — merged PR #9
@@ -1499,8 +1500,8 @@ No visual approval state changed in this phase. User-facing Cancel and broader s
 
 
 ## Cycle 3 Phase 15 — Generation Control & Maintenance
-**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**  
-**Decision:** UI-055.  
+**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**
+**Decision:** UI-055.
 **Execution contract:** `PROJECT.md` Phase 15.
 
 Verified planning baseline on `main` `aa633175d4f8ec278f3ad9181d0a0105d9328163` (tree-identical to Phase 14 closure `c26b1f3e6db092fc2244db812f391298bd468e93`):

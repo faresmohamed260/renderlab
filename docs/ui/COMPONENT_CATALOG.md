@@ -9,38 +9,38 @@ Authoritative index of reusable RenderLab UI components and approved external co
 Search these before implementing reusable interaction mechanics from scratch.
 
 ### shadcn/ui + Radix
-**Role:** Foundational accessible application primitives.  
-**Uses:** buttons, inputs, selects, dialogs, sheets, menus, popovers, tabs, tooltips, forms, toggles, navigation/disclosure primitives.  
+**Role:** Foundational accessible application primitives.
+**Uses:** buttons, inputs, selects, dialogs, sheets, menus, popovers, tabs, tooltips, forms, toggles, navigation/disclosure primitives.
 **Policy:** First external stop for conventional UI; normalize styling to RenderLab tokens.
 
 ### Motion for React
-**Role:** Core motion/gesture engine.  
-**Uses:** layout transitions, springs, gestures, drag, shared-layout transitions and motion orchestration.  
+**Role:** Core motion/gesture engine.
+**Uses:** layout transitions, springs, gestures, drag, shared-layout transitions and motion orchestration.
 **Policy:** Prefer established patterns; respect reduced motion and avoid decorative motion without product value.
 **Adopted:** RenderLab pins `motion@13.1.1`. Phase 7A uses `motion/react` only inside Create-owned interaction composition for spatial continuity and reduced-motion-safe presence/layout transitions; no global animation store or generic wrapper layer is introduced.
 
 ### Motion Primitives
-**Role:** Reusable motion-first application components.  
+**Role:** Reusable motion-first application components.
 **Uses:** morphing dialogs/popovers, transition panels, magnetic/spatial interactions, animated toolbars and related mechanics.
 
 ### Aceternity UI
-**Role:** Modern React/Tailwind/Motion interaction registry.  
+**Role:** Modern React/Tailwind/Motion interaction registry.
 **Policy:** Prefer application-relevant mechanics; do not import marketing-heavy decoration wholesale.
 
 ### Magic UI
-**Role:** Animated React/Tailwind/Motion components.  
+**Role:** Animated React/Tailwind/Motion components.
 **Policy:** Use selectively for application feedback/hierarchy rather than decorative spectacle.
 
 ### React Bits
-**Role:** Creative/experimental React interaction components.  
+**Role:** Creative/experimental React interaction components.
 **Policy:** Use when it materially improves a creative-tool interaction; review accessibility, performance and touch behavior.
 
 ### Lucide React
-**Role:** Initial application icon source.  
+**Role:** Initial application icon source.
 **Policy:** Use a consistent Lucide line-icon family unless an approved product-specific asset exists.
 
 ### Additional shadcn registries
-**Role:** Discovery layer for maintained shadcn-compatible implementations.  
+**Role:** Discovery layer for maintained shadcn-compatible implementations.
 **Policy:** Registry presence does not automatically approve a component; review quality, accessibility, licensing, maintenance and dependency cost first.
 
 ## External Source Search Order
@@ -71,12 +71,12 @@ Before copying/installing an external component:
 
 ### Maintained UI Primitive Layer
 **Status:** APPROVED
-**Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`  
-**Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics  
+**Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`
+**Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics
 **Current primitives:** Alert, AlertDialog, Button, Checkbox, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.
 **Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/Collections/selection/empty state, Media Viewer and Viewer Favorite/Collections/Rename/Download/Delete actions.
-**Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
-**Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
+**Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.
+**Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.
 **Notes:** UI-026. `npm run verify:ui-purity` is the CI enforcement gate. The refactor preserved the approved surface design while centralizing control mechanics. During verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics, and UI-027 originally added the maintained Radix Dropdown Menu for Library ordering; user-directed UI-066 later replaces that interaction with a direct maintained Button/Link toggle while URL/server ordering stays authoritative.
 
 ### AlertDialog
@@ -103,19 +103,19 @@ Before copying/installing an external component:
 
 ### AppShell
 **Status:** APPROVED
-**Source:** `src/components/shell/app-shell.tsx`  
-**Origin:** RenderLab composition using approved `Button`, Next.js navigation + Lucide React  
+**Source:** `src/components/shell/app-shell.tsx`
+**Origin:** RenderLab composition using approved `Button`, Next.js navigation + Lucide React
 **Purpose:** Persistent responsive application chrome: desktop sidebar, mobile/narrow utility header, mobile bottom navigation and utility navigation.
 **Used by:** `src/app/(app)/layout.tsx` for `/create`, Library/Viewer, Activity, Settings and Admin application routes
-**Reuse rules:** Extend this authoritative shell rather than creating page-specific shells.  
-**Do not:** Put Create composer, Library cards, workflows or feature-owned layout into persistent chrome.  
+**Reuse rules:** Extend this authoritative shell rather than creating page-specific shells.
+**Do not:** Put Create composer, Library cards, workflows or feature-owned layout into persistent chrome.
 **Notes:** Production build + Playwright desktop/mobile rendering approved; not locked. UI-052 / PR #73 moved shell ownership from the global root layout to `src/app/(app)/layout.tsx`; merge `46c5daa2866c6758907ee9be219bcb3cb274ca83` preserves the established application composition while public `/` renders without `AppShell`. Final PR head `773251734dbd5c5f32770699a57b1ade653604b5` passed 19/19 affected workflows and merged-main UI Shell `33323421285` passed.
 
 **Post-production UI-068 note:** Desktop `/create` deliberately suppressed AppShell's top bar while other application routes retained it; mobile Create retained the compact utility header because Settings is not a persistent dock destination. UI-071 later supersedes the desktop route exception.
 
 **Post-production UI-071 note:** Desktop application routes are rail-only at the shell level: the full-width top context bar is omitted across Create, Library/Viewer, Activity, Settings and Admin. Mobile/narrow application routes retain the compact utility header because Settings remains outside the persistent bottom dock.
 
-**Phase 23 / UI-074 fidelity-correction candidate:** Draft PR #188 changes AppShell presentation to the approved compact horizontal header on both desktop and narrow layouts, with Brand/Create, Library, Activity and Settings/account access and no desktop rail or mobile dock. It reuses the existing `AppShell`, `Button`, `RenderLabBrand`, Next.js navigation, Lucide and Motion stack; no new shell primitive, route, navigation destination or client data store is introduced. Exact implementation head `ca27de9dd329a6c66cb24006ec9578889b518c94` passed UI Shell `34664359939` and all other directly attached workflows. The candidate supersedes UI-071 geometry only after an explicit merge; production is unchanged.
+**Phase 23 / UI-074 fidelity correction:** PR #188 changes AppShell presentation to the approved compact horizontal header on both desktop and narrow layouts, with Brand/Create, Library, Activity and Settings/account access and no desktop rail or mobile dock. It reuses the existing `AppShell`, `Button`, `RenderLabBrand`, Next.js navigation, Lucide and Motion stack; no new shell primitive, route, navigation destination or client data store is introduced. User-approved exact implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed UI Shell `34680601708` and all other directly attached workflows. The correction supersedes UI-071 geometry after merge; production remains unchanged until separately deployed.
 
 ### RenderLabBrand
 **Status:** LOCKED
@@ -129,21 +129,21 @@ Before copying/installing an external component:
 
 ### Collapsible
 **Status:** APPROVED
-**Source:** `src/components/ui/collapsible.tsx`  
-**Origin:** shadcn/Radix Collapsible wrapper through `radix-ui`  
-**Purpose:** Generic accessible disclosure primitive.  
-**Used by:** Create Advanced  
-**Reuse rules:** Reuse for ordinary disclosure; keep feature state/copy outside the primitive.  
+**Source:** `src/components/ui/collapsible.tsx`
+**Origin:** shadcn/Radix Collapsible wrapper through `radix-ui`
+**Purpose:** Generic accessible disclosure primitive.
+**Used by:** Create Advanced
+**Reuse rules:** Reuse for ordinary disclosure; keep feature state/copy outside the primitive.
 **Notes:** Adopted through PR #6 and normalized into the maintained primitive foundation through PR #13.
 
 ### CreateWorkspace
 **Status:** APPROVED
-**Source:** `src/features/create/create-workspace.tsx`  
-**Purpose:** Authoritative task-oriented Create experience: prompt, Image/Video intent, references, typed generation, truthful runtime state, durable results, continuation and Advanced disclosure.  
-**Variants:** Create Image, Edit Image, Create Video, Animate Image; responsive desktop/mobile.  
+**Source:** `src/features/create/create-workspace.tsx`
+**Purpose:** Authoritative task-oriented Create experience: prompt, Image/Video intent, references, typed generation, truthful runtime state, durable results, continuation and Advanced disclosure.
+**Variants:** Create Image, Edit Image, Create Video, Animate Image; responsive desktop/mobile.
 **Dependencies:** RenderLab generation/media contracts, shared persistent browser media-upload client, capabilities, React client state, Motion for React, Lucide, maintained Button/Textarea/ToggleGroup/DropdownMenu/Alert/Spinner/Collapsible primitives.
-**Reuse rules:** Extend or deliberately extract reusable subcomponents rather than creating competing Create surfaces.  
-**Do not:** Expose worker/storage IDs, fabricate progress or push technical worker controls into default UI.  
+**Reuse rules:** Extend or deliberately extract reusable subcomponents rather than creating competing Create surfaces.
+**Do not:** Expose worker/storage IDs, fabricate progress or push technical worker controls into default UI.
 **Notes:** All four native operations verified; complete configured browser lifecycle `33031817744`. Image/Video intent is an accessible required single-choice Radix radiogroup. Phase 7A PR #47 adds the maintained Dropdown Menu geometry selector, source-backed `Original` intent for Edit/Animate and curated fixed-ratio expansion; exact head `789358e8a276ab54d8eeae7e4b7dcb64c2c4c60f` passed responsive Create Lifecycle `33258831638` and live image/video geometry verification `33258831654` / `33258831636` before merge as `de50efe6ba462ec604ea2cace741e11904a62425`. Phase 7A PR #49 de-crowds the composer using the existing maintained DropdownMenu/ToggleGroup/Collapsible/Button mechanics: exact head `d52db83efb2af056e2e1598b54b988794ff19ab1` passed UI Shell `33261129925`, Create Lifecycle `33261129910`, Library Lifecycle `33261129917`, Account Ownership `33261129909`, Create Durable Upload `33261129940`, and Video Generation `33261129918` before merge as `d324d7c8a520052d3c4bdc81f5f6c11edbdf50ee`. PR #51 adds stable `@imageN` reference identity/prompt addressing without a new generic primitive: `CreateReferenceMentionMenu` composes the existing maintained Button + Radix DropdownMenu mechanics and exact head `c8fbe9d733eb9b983b209da995b2f9865808f66a` passed the nine affected gates plus desktop/narrow artifact review before merge as `7afe257b069e74d322d8f83c1a0868a30acd3686`. Phase 7B PR #53 extends this same Create-owned reference composition to UI-046's two-image maximum: second durable reference, stable replace/remove/reorder semantics, `Make primary`, multi-reference mention selection, and an explicit one-source Video limit. Exact validation head `acf3f8e792c2b895a9999cca24060a1c33484463` passed all nine affected gates including configured Create Lifecycle `33266025789`; desktop/narrow artifacts were reviewed after responsive action wrapping kept role labels readable. PR #53 merged as `0286b18802fc3d766d9d09e2ba8ed9a494eabd08`. UI-048 / Phase 7D extends the same Create-owned compact Video settings composition with exact `480p`/`720p`/`1080p`/`2K` Resolution, a `resolution · duration` trigger, default 480p and Resolution → Duration → Audio → Advanced ordering. Exact code/test head `594ad7eb39a9d5eec1d2f0283ac6e327f86129b3` passed UI Shell `33270777087`, Create Lifecycle `33270777086`, Video Generation `33270777081` and every other affected gate. Responsive review found and fixed narrow DropdownMenu clipping by using Radix available-height scrolling/collision padding; no new generic primitive was added. Do not create a competing generic autocomplete or model picker.
 
 **Post-Cycle 3 UI-061 correction:** `CreateWorkspace` keeps the same maintained Collapsible/Button/DropdownMenu mechanics but exposes Advanced through one dedicated compact trigger in both Image and Video. The Video settings menu now owns Resolution / Duration / Audio only. The narrow primary-control row uses compact approved control sizes plus short visible `FLUX` / `Qwen` model labels while preserving full accessible names/menu labels; Generate remains the separate narrow primary action. No new generic primitive is introduced.
@@ -158,6 +158,8 @@ Before copying/installing an external component:
 
 **Post-production UI-071 note:** The drag-only reference affordance keeps one centered overlay, but its icon aligns to the first copy line and the title/detail form one left-aligned two-line block instead of independently centered text around the icon.
 
+**Phase 23 / UI-074 fidelity correction:** `CreateWorkspace` remains the single authoritative Create surface while PR #188 restores the approved v0.5 composition: 900px authoring / 1120px result geometry, mode switch above the composer, reference-before-Prompt grammar, flat labelled settings footer, high-contrast Generate, composer-attached Advanced, truthful registration-framed generating state and asymmetric media-first result rail. Continuation remains capability-derived and existing upload/polling/persistence/alias/native-video/security contracts are unchanged. User-approved exact head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed all 16 attached workflows; accepted browser evidence is Clear Composer artifact `10293387664` (`sha256:e4937a16a2fed2bc160634c73c60322b0748ff3eb5d166b44cbc33f894a92915`) and configured lifecycle artifact `10293653778` (`sha256:ba13fc48dcf4d823575b041455d902e48040d2cd554892c0b5b508ee80e88624`). Merge is authorized after documentation-final exact-head acceptance; production remains unchanged.
+
 ### CreateReferenceMentionMenu
 **Status:** APPROVED
 **Source:** `src/features/create/create-reference-mention-menu.tsx`
@@ -171,8 +173,8 @@ Before copying/installing an external component:
 
 ### CreateAdvancedPanel
 **Status:** APPROVED
-**Source:** `src/features/create/create-advanced-panel.tsx`  
-**Purpose:** Advanced generation controls without turning the default composer into a technical form.  
+**Source:** `src/features/create/create-advanced-panel.tsx`
+**Purpose:** Advanced generation controls without turning the default composer into a technical form.
 **Current fields:** Image — negative prompt, seed with Randomize, Steps, Guidance. Video — negative prompt, seed with Randomize, Frame rate. Video Steps/Guidance are deliberately absent and server-rejected under UI-048.
 **Dependencies:** capability definitions, Motion for React, maintained Field/Input/Textarea/NativeSelect/Button primitives, Lucide, Collapsible.
 **Do not:** Add provider/worker identifiers or unverified workflow parameters.
@@ -224,24 +226,24 @@ Before copying/installing an external component:
 
 ### LibraryUploadButton
 **Status:** APPROVED
-**Source:** `src/features/library/library-upload-button.tsx`  
-**Origin:** RenderLab feature composition using maintained Button/Spinner plus the browser native file chooser  
-**Purpose:** Keyboard/touch/mobile baseline for one persistent Library image upload.  
-**Used by:** `LibraryView` only.  
-**Dependencies:** feature-owned `uploadLibraryFile`, native hidden file input, Next.js router refresh.  
+**Source:** `src/features/library/library-upload-button.tsx`
+**Origin:** RenderLab feature composition using maintained Button/Spinner plus the browser native file chooser
+**Purpose:** Keyboard/touch/mobile baseline for one persistent Library image upload.
+**Used by:** `LibraryView` only.
+**Dependencies:** feature-owned `uploadLibraryFile`, native hidden file input, Next.js router refresh.
 **Reuse rules:** Keep picker interaction Library-owned while persistent upload transport is shared through the product browser media-upload client. `library-upload-client.ts` owns Library-specific validation/copy and delegates the ticket/R2/completion transaction rather than duplicating it.
-**Do not:** Replace the native file chooser plumbing with a bespoke visible raw control or introduce a second upload data contract.  
+**Do not:** Replace the native file chooser plumbing with a bespoke visible raw control or introduce a second upload data contract.
 **Notes:** UI-022 + UI-028. Existing picker lifecycle remained green after the shared upload transaction extraction.
 
 ### LibraryDropUploadSurface
 **Status:** APPROVED
-**Source:** `src/features/library/library-drop-upload-surface.tsx`  
-**Origin:** RenderLab feature composition using browser DragEvent/DataTransfer semantics, maintained Spinner, Lucide and the existing persistent upload transaction  
-**Purpose:** Optional desktop drag/drop path for adding one compatible image to Library without adding a permanent dropzone.  
-**Used by:** `LibraryView` only.  
-**Dependencies:** `library-upload-client.ts`, Next.js router refresh, UI-022 persistent upload APIs.  
-**Reuse rules:** Keep it Library-owned while only Library has this drag-to-persist interaction. Generic drag/drop abstraction is not justified by a single feature need.  
-**Do not:** Turn it into a global dropzone framework, accept batch uploads implicitly, hide the ordinary Upload button, or create a parallel storage/upload contract.  
+**Source:** `src/features/library/library-drop-upload-surface.tsx`
+**Origin:** RenderLab feature composition using browser DragEvent/DataTransfer semantics, maintained Spinner, Lucide and the existing persistent upload transaction
+**Purpose:** Optional desktop drag/drop path for adding one compatible image to Library without adding a permanent dropzone.
+**Used by:** `LibraryView` only.
+**Dependencies:** `library-upload-client.ts`, Next.js router refresh, UI-022 persistent upload APIs.
+**Reuse rules:** Keep it Library-owned while only Library has this drag-to-persist interaction. Generic drag/drop abstraction is not justified by a single feature need.
+**Do not:** Turn it into a global dropzone framework, accept batch uploads implicitly, hide the ordinary Upload button, or create a parallel storage/upload contract.
 **Notes:** UI-028. The drag affordance exists only while a file drag is active; multi-file drops are rejected before network upload. Configured run `33102672468` verified exact one-ticket/one-completion/one-session/one-asset/one-card behavior plus responsive screenshots and cleanup.
 
 ### PersistentBrowserMediaUpload
@@ -257,10 +259,10 @@ Before copying/installing an external component:
 
 ### LibraryUploadClient
 **Status:** APPROVED
-**Source:** `src/features/library/library-upload-client.ts`  
+**Source:** `src/features/library/library-upload-client.ts`
 **Origin:** Library-specific validation wrapper over `PersistentBrowserMediaUpload`
 **Purpose:** Library picker/drop validation and copy while delegating the persistent ticket/R2/completion transaction to the shared product helper.
-**Used by:** `LibraryUploadButton`, `LibraryDropUploadSurface`.  
+**Used by:** `LibraryUploadButton`, `LibraryDropUploadSurface`.
 **Dependencies:** `media-upload-contract`, `src/lib/browser/media-upload-client.ts`.
 **Reuse rules:** Keep Library-specific behavior here; reuse the lower-level persistent upload helper when another feature creates the same durable media identity.
 **Do not:** Duplicate the persistent transaction, expose R2 credentials/storage keys, or bypass server completion verification.
@@ -268,12 +270,12 @@ Before copying/installing an external component:
 
 ### LibrarySortMenu
 **Status:** APPROVED
-**Source:** `src/features/library/library-sort-menu.tsx`  
-**Origin:** RenderLab feature composition using the maintained shadcn/Radix Dropdown Menu + Button primitives  
-**Purpose:** Compact Library-owned Newest/Oldest navigation without moving media ordering into client state.  
-**Used by:** `LibraryView` only.  
-**Dependencies:** URL-owned `sort`, `kind`, `q`; Next.js router navigation; maintained DropdownMenu radio items.  
-**Reuse rules:** Keep it feature-owned while ordering is a Library-specific navigation contract. Generic DropdownMenu mechanics belong in `src/components/ui/dropdown-menu.tsx`.  
+**Source:** `src/features/library/library-sort-menu.tsx`
+**Origin:** RenderLab feature composition using the maintained shadcn/Radix Dropdown Menu + Button primitives
+**Purpose:** Compact Library-owned Newest/Oldest navigation without moving media ordering into client state.
+**Used by:** `LibraryView` only.
+**Dependencies:** URL-owned `sort`, `kind`, `q`; Next.js router navigation; maintained DropdownMenu radio items.
+**Reuse rules:** Keep it feature-owned while ordering is a Library-specific navigation contract. Generic DropdownMenu mechanics belong in `src/components/ui/dropdown-menu.tsx`.
 **Do not:** Expand it into a Saga-style filter framework, add unsupported model/date/collection filters, or persist organization state client-side.
 **Notes:** UI-027. Configured Library History Visual proved Newest/Oldest selection, composed URL state, deterministic API order and responsive rendering.
 
@@ -356,10 +358,10 @@ Before copying/installing an external component:
 **Notes:** UI-032 final configured run `33210501106` verified create/add/remove persistence, same-owner isolation, pressed-state accessibility, responsive rendering and exact cleanup; PR #24 is merged and approved.
 
 ### RoutePlaceholder
-**Status:** EXPERIMENTAL  
-**Source:** `src/components/shell/route-placeholder.tsx`  
-**Purpose:** Temporary route placeholder for Activity/Settings while validating/replacing feature surfaces.  
-**Reuse rules:** Temporary validation helper only.  
+**Status:** EXPERIMENTAL
+**Source:** `src/components/shell/route-placeholder.tsx`
+**Purpose:** Temporary route placeholder for Activity/Settings while validating/replacing feature surfaces.
+**Reuse rules:** Temporary validation helper only.
 **Do not:** Promote into final feature UI or a generic empty-state pattern.
 
 Do not treat examples, registry listings, Saga components, or desired concepts as proof that a RenderLab component exists.
