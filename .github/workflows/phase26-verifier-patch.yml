@@ -1,0 +1,66 @@
+name: Phase 26 Activity Verifier Patch
+
+on:
+  push:
+    branches:
+      - work/phase-26-activity-job-matrix
+    paths:
+      - .github/workflows/phase26-verifier-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-26-activity-job-matrix
+          fetch-depth: 0
+
+      - name: Migrate Activity presentation assertions
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/verify-activity.mjs')
+          text = path.read_text()
+
+          old_heading = '  await page.locator("h2").filter({ hasText: /^Activity$/ }).waitFor({ state: "visible", timeout: 30_000 });\n'
+          new_heading = '''  await page.getByRole("heading", { name: "Activity", level: 1 }).waitFor({ state: "visible", timeout: 30_000 });
+  assert(await page.locator('[data-activity-system="job-matrix"]').count() === 1, "Activity did not render the approved Job Matrix system root.");
+  assert(await page.locator('[data-activity-stage]').count() === 1, "Activity did not render one registered Activity stage.");
+  const matrixJobs = page.locator('[data-activity-matrix] > li');
+  assert(await matrixJobs.count() === 3, "Activity did not register exactly the three newest visible jobs in the Job Matrix.");
+  assert(await matrixJobs.nth(0).getByText("Nebula active study", { exact: true }).count() === 1, "Activity Job Matrix did not keep the newest job in position 01.");
+  assert(await matrixJobs.nth(1).getByText("Golden result study", { exact: true }).count() === 1, "Activity Job Matrix did not keep the second-newest job in position 02.");
+  assert(await matrixJobs.nth(2).getByText("2× upscale", { exact: true }).count() === 1, "Activity Job Matrix did not keep the third-newest job in position 03.");
+  assert(await page.locator('[data-activity-register]').count() === 1, "Activity did not continue remaining visible jobs in the attached History Register.");
+'''
+          if old_heading not in text:
+              raise SystemExit('old Activity heading assertion not found')
+          text = text.replace(old_heading, new_heading, 1)
+
+          old_live = '  await page.getByText("Updates automatically while generation work is active.", { exact: true }).waitFor({ state: "visible" });\n'
+          new_live = '  await page.locator(\'[data-activity-live="true"]\').waitFor({ state: "visible" });\n'
+          if old_live not in text:
+              raise SystemExit('old Activity live-refresh assertion not found')
+          text = text.replace(old_live, new_live, 1)
+
+          path.write_text(text)
+          PY
+
+          git diff --check
+          node --check scripts/verify-activity.mjs
+
+      - name: Commit verifier migration
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/verify-activity.mjs
+          git commit -m 'Migrate Activity verifier to UI-077 structure'
+          git push origin HEAD:work/phase-26-activity-job-matrix
