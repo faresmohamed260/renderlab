@@ -22,11 +22,7 @@ async function screenshot(page, name) {
 }
 
 async function noOverflow(page, label) {
-  const result = await page.evaluate(() => ({
-    viewport: document.documentElement.clientWidth,
-    body: document.body.scrollWidth,
-    html: document.documentElement.scrollWidth,
-  }));
+  const result = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, body: document.body.scrollWidth, html: document.documentElement.scrollWidth }));
   assert.ok(result.body <= result.viewport + 1, `${label}: body overflow ${JSON.stringify(result)}`);
   assert.ok(result.html <= result.viewport + 1, `${label}: html overflow ${JSON.stringify(result)}`);
 }
@@ -56,9 +52,10 @@ async function verifyState(page, concept, state, viewportLabel, firstMediaMaxY) 
   assert.ok(firstCardBox, `${label}: first card exists`);
   assert.ok(firstCardBox.y < firstMediaMaxY, `${label}: first media begins at y=${firstCardBox.y}, expected < ${firstMediaMaxY}`);
 
-  const uploadVisible = await page.locator('#upload-action').isVisible();
-  assert.equal(uploadVisible, state === 'uploads', `${label}: Upload action truthfully scoped`);
-  assert.equal(await page.locator('#active-query').isVisible(), state === 'search', `${label}: active query truthfully scoped`);
+  assert.equal(await page.locator('#upload-action').isVisible(), state === 'uploads', `${label}: Upload action truthfully scoped`);
+  const explicitQueryRowExpected = state === 'search' && concept !== 'index';
+  assert.equal(await page.locator('#active-query').isVisible(), explicitQueryRowExpected, `${label}: query treatment matches concept`);
+  if (state === 'search') assert.ok((await page.locator('#library-search').inputValue()).length > 0, `${label}: active search remains visible in search field`);
   assert.equal(await page.locator('#selection-bar').isVisible(), state === 'selection', `${label}: selection actions contextual only`);
 
   if (state === 'selection') {
@@ -78,11 +75,7 @@ const browser = await chromium.launch({ headless: true });
 try {
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 }, hasTouch: false });
   const desktopPage = await desktop.newPage();
-  for (const concept of concepts) {
-    for (const state of states) {
-      await verifyState(desktopPage, concept, state, 'desktop', 510);
-    }
-  }
+  for (const concept of concepts) for (const state of states) await verifyState(desktopPage, concept, state, 'desktop', 510);
 
   await desktopPage.goto(urlFor('gallery', 'default'), { waitUntil: 'domcontentloaded' });
   const commandBefore = await desktopPage.locator('#command-surface').evaluate((element) => getComputedStyle(element).transform);

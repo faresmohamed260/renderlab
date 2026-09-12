@@ -54,11 +54,19 @@ function setSelection(enabled) {
   updateSelectionCount();
 }
 
+function syncQueryPresentation(state) {
+  const searching = state === 'search';
+  searchInput.value = searching ? 'architecture' : '';
+  // Index Strip deliberately keeps active-search state inside the search field itself.
+  // Adding a second query row would recreate the stacked command chrome this concept is testing against.
+  activeQuery.style.display = searching && concept === 'index' ? 'none' : '';
+}
+
 function setState(state) {
   body.dataset.state = state;
   setSelection(state === 'selection');
   setSource(state === 'uploads' ? 'uploads' : 'creatives');
-  searchInput.value = state === 'search' ? 'architecture' : '';
+  syncQueryPresentation(state);
   if (state === 'selection') {
     [0, 1].forEach((index) => {
       cards[index].classList.add('selected');
@@ -80,6 +88,7 @@ clearSearch.addEventListener('click', () => setState('default'));
 searchInput.addEventListener('input', () => {
   const hasQuery = searchInput.value.trim().length > 0;
   body.dataset.state = hasQuery ? 'search' : 'default';
+  activeQuery.style.display = hasQuery && concept === 'index' ? 'none' : '';
 });
 
 document.querySelectorAll('[data-kind]').forEach((button) => {
@@ -93,6 +102,7 @@ document.querySelectorAll('[data-kind]').forEach((button) => {
       body.dataset.state = 'search';
       searchInput.value = button.dataset.kind;
       activeQuery.querySelector('strong').textContent = `“${button.dataset.kind}”`;
+      activeQuery.style.display = concept === 'index' ? 'none' : '';
     }
   });
 });
