@@ -1,0 +1,47 @@
+name: Phase 25 Fix Lifecycle Layout Locator
+
+on:
+  push:
+    branches:
+      - work/phase-25-media-viewer-register-fold
+    paths:
+      - .github/workflows/phase25-fix-lifecycle-layout-locator.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-25-media-viewer-register-fold
+          fetch-depth: 0
+      - name: Replace stale Viewer layout locator
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/verify-library-lifecycle.mjs')
+          text = path.read_text()
+          old = '''  const viewerLayoutMetrics = await page.locator(".kinetic-viewer-layout").evaluate((layout) => {\n    const layoutBox = layout.getBoundingClientRect();'''
+          new = '''  const viewerLayoutMetrics = await page.locator("[data-viewer-register]").evaluate((registerElement) => {\n    const layout = registerElement.parentElement;\n    if (!layout) throw new Error("Viewer register has no containing Viewer object.");\n    const layoutBox = layout.getBoundingClientRect();'''
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'expected exactly one stale layout locator, found {count}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          node --check scripts/verify-library-lifecycle.mjs
+          git diff --check
+          git diff -- scripts/verify-library-lifecycle.mjs
+      - name: Commit verifier-only locator migration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-library-lifecycle.mjs
+          git commit -m "Align Library lifecycle layout check with UI-076"
+          git push origin HEAD:work/phase-25-media-viewer-register-fold
