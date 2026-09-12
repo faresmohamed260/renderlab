@@ -1,0 +1,87 @@
+name: Phase 25 Fix Temporal Evidence
+
+on:
+  push:
+    branches:
+      - work/phase-25-media-viewer-register-fold
+    paths:
+      - .github/workflows/phase25-fix-temporal-evidence.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-25-media-viewer-register-fold
+          fetch-depth: 0
+
+      - name: Make Source Fold temporal evidence continuous and deterministic
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/verify-media-viewer-register-fold.mjs")
+          text = path.read_text()
+
+          start_marker = 'async function captureCompareAt(page, delayMs, suffix) {'
+          end_marker = 'async function cleanupFixture() {'
+          start = text.find(start_marker)
+          end = text.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit(f"Could not find temporal helper range: start={start}, end={end}")
+          replacement = '''async function temporalShot(page, name) {
+            await noOverflow(page, name);
+            return page.screenshot({ path: `${artifactDir}/${name}.png`, fullPage: false });
+          }
+
+          '''
+          text = text[:start] + replacement + text[end:]
+
+          calls_start_marker = '  await captureCompareAt(page, 0, "t000");'
+          calls_end_marker = '  await captureCompareAt(page, 360, "t360");'
+          calls_start = text.find(calls_start_marker)
+          calls_end = text.find(calls_end_marker, calls_start)
+          if calls_start < 0 or calls_end < 0:
+              raise SystemExit(f"Could not find temporal capture call range: start={calls_start}, end={calls_end}")
+          calls_end += len(calls_end_marker)
+          calls_replacement = '''  await ensureComparisonClosed(page);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            const temporalFrames = [];
+            temporalFrames.push(await temporalShot(page, "phase25-viewer-compare-t000-desktop"));
+            const temporalCompare = page.getByRole("button", { name: "Compare source", exact: true });
+            await temporalCompare.click();
+            await wait(60);
+            temporalFrames.push(await temporalShot(page, "phase25-viewer-compare-t060-desktop"));
+            await wait(120);
+            temporalFrames.push(await temporalShot(page, "phase25-viewer-compare-t180-desktop"));
+            await wait(180);
+            temporalFrames.push(await temporalShot(page, "phase25-viewer-compare-t360-desktop"));
+            await page.getByRole("link", { name: "Open source", exact: true }).waitFor({ state: "visible" });
+            const uniqueTemporalFrames = temporalFrames.filter(
+              (frame, index, frames) => frames.findIndex((candidate) => candidate.equals(frame)) === index,
+            );
+            assert(
+              uniqueTemporalFrames.length >= 3,
+              `Source Fold temporal evidence collapsed to ${uniqueTemporalFrames.length} unique frame(s); expected at least 3 across t000/t060/t180/t360.`,
+            );'''
+          text = text[:calls_start] + calls_replacement + text[calls_end:]
+          path.write_text(text)
+          PY
+          node --check scripts/verify-media-viewer-register-fold.mjs
+          git diff --check
+
+      - name: Commit verifier-only correction
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-media-viewer-register-fold.mjs
+          git diff --cached --check
+          git commit -m "Fix Phase 25 temporal evidence capture"
+          git push origin HEAD:work/phase-25-media-viewer-register-fold
