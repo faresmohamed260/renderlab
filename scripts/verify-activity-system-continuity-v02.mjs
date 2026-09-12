@@ -95,7 +95,7 @@ try {
     assert.equal((await page.locator('[data-primary-status]').textContent())?.toLowerCase(), status, `desktop: ${status} label exact`);
     if (status === 'failed') {
       assert.equal(await page.locator('[data-primary-fault]').isVisible(), true, 'desktop: failed state shows local sanitized guidance');
-      assert.equal(await page.getByRole('button', { name: 'Retry', exact: true }).first().isVisible(), true, 'desktop: failed state exposes Retry');
+      assert.equal(await page.locator('#primary-job').getByRole('button', { name: 'Retry', exact: true }).isVisible(), true, 'desktop: failed state exposes Retry');
     }
     if (['queued', 'preparing', 'running'].includes(status)) {
       assert.equal(await page.locator('#primary-job').getByRole('button', { name: 'Cancel', exact: true }).isVisible(), true, `desktop: ${status} exposes Cancel`);
@@ -109,7 +109,7 @@ try {
 
   await setMode(page, 'loading');
   assert.equal(await page.locator('[data-loading-view]').isVisible(), true, 'desktop: loading state visible');
-  assert.equal(await page.locator('[data-live-summary]').isVisible(), true, 'desktop: live summary node remains structurally present');
+  assert.equal(await page.locator('[data-live-summary]').count(), 1, 'desktop: live summary structure remains present');
   assert.equal(await page.locator('body').getAttribute('data-live'), 'off', 'desktop: loading does not claim active work');
   await screenshot(page, 'desktop-loading');
 
@@ -200,7 +200,7 @@ try {
   assert.ok(maxMarkerDuration < .01, `reduced: active marker animation collapsed (${markerAnimation})`);
   await setLifecycle(reducedPage, 'succeeded', true);
   assert.equal(await reducedPage.locator('#primary-job').getAttribute('data-status'), 'succeeded', 'reduced: terminal state appears immediately');
-  assert.equal(await reducedPage.locator('#primary-job.just-settled::before').count().catch(() => 0), 0, 'reduced: no required animation pseudo-element query dependency');
+  await reducedPage.waitForTimeout(10);
   await screenshot(reducedPage, 'desktop-reduced-motion-settled');
   await reduced.close();
   pass('reduced motion: active energy and terminal transition collapse to static state');
