@@ -87,16 +87,17 @@ Completed redesign slices:
 - **Landing:** approved Lab Matrix public experience, production-live.
 - **Create:** approved Clear Composer v0.5 plus UI-074 fidelity correction, merged and verified, not yet deployed.
 - **Library:** approved Gallery Rail v0.3 / UI-075, merged and verified, not yet deployed.
+- **Media Viewer:** approved Media Register + Source Fold v0.2 / UI-076, merged and merged-main verified, not yet deployed.
 - **Application shell:** UI-074 compact horizontal header is the current shared shell geometry and should be maintained/cohered rather than restarted as a competing navigation system.
 
 Remaining redesign roadmap, under progressive phase planning:
 1. **Phase 25 — Media Viewer:** USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED. Media Register + Source Fold v0.2 is now the repository-authoritative Viewer composition under UI-076. Viewer remains a 3/4-expressiveness surface.
-2. **Phase 26 — Activity:** roadmap only until Phase 25 evidence closes. Bring real generation lifecycle/history states into the same authored system at 2/4 expressiveness without weakening Retry / Run Again / Cancel truth or operational clarity.
+2. **Phase 26 — Activity:** NEXT / ACTIVE R&D. Phase 25 evidence is closed; audit the current Activity desktop/390px real-state lifecycle, then develop same-family concepts at 2/4 expressiveness without weakening Retry / Run Again / Cancel truth or operational clarity. No production Activity implementation should begin before explicit design approval and an implementation contract.
 3. **Phase 27 — Settings / account-security flows:** roadmap only. Apply the shared typography, spacing, shell and trust language at 1/4 expressiveness across signed-out, signed-in, access-status, password and recovery states.
 4. **Phase 28 — Admin:** roadmap only. Apply the coherent system to the privileged operational surface at 1/4 expressiveness while preserving dense clarity and authorization boundaries.
 5. **Phase 29 — whole-product cohesion pass:** roadmap only. Audit the completed system end-to-end for shell/navigation continuity, typography, spacing, responsive behavior, empty/loading/error states, focus/touch semantics, reduced motion and cross-surface transitions before calling the redesign program complete.
 
-Only the immediate Phase 25 R&D slice may be expanded now; later phases remain roadmap-level until predecessor evidence exists. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled.
+Phase 25 is closed. The next session may expand only the immediate Phase 26 Activity R&D slice; Phases 27–29 remain roadmap-level until predecessor evidence exists. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled.
 
 ## Phase 25 Media Viewer Register + Source Fold closure — 2026-09-13
 - User approved **Media Register + Source Fold v0.2** from R&D head `639aef25e57e166be8d8b3d226b3e83930e05a25`; design run `34703774288`, artifact `10300577421`, digest `sha256:06cade2dc2e9ce51dc871971530fa9641a7c1ef0cc0271e19763fcebfa8ca2b0`.

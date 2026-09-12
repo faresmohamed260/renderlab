@@ -77,8 +77,8 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - [x] All six workflows GitHub actually attached to the merge SHA passed: Engineering `34718303036`, UI Shell `34718302987`, Upscale Viewer `34718303044`, Viewer Register Fold `34718302986`, Image Upscale `34718302998`, Creative Iteration `34718303019`.
 - [x] Production remains unchanged; deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
 
-## Active full-product redesign roadmap — after Phase 24
-**Status: `IN PROGRESS`.** Phase 24 completes the Library slice only; the full UI/UX redesign is not complete.
+## Active full-product redesign roadmap — after Phase 25
+**Status: `IN PROGRESS`.** Phase 25 completes the Media Viewer slice only; the full UI/UX redesign is not complete.
 
 The coherent design authority carried forward is the current locked Lab Grid identity + approved Lab Matrix Landing + Clear Composer/UI-074 + Gallery Rail/UI-075. Remaining redesign work must reuse that family—editorial hierarchy, technical microtype, Lab Matrix registration, restrained cool/warm atmosphere, compact horizontal shell, media-first composition, obvious ordinary controls and bounded meaningful motion—rather than introducing independent visual systems per screen.
 
@@ -86,7 +86,7 @@ The coherent design authority carried forward is the current locked Lab Grid ide
 - [x] Create redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
 - [x] Library redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
 - [x] **Phase 25 Media Viewer redesign — COMPLETE / VERIFIED / MERGED / NOT DEPLOYED.** Media Register + Source Fold v0.2 is user-approved, exact-head verified, merged as `b672c711f885092c5e92c42824078e7bd5bc691e`, and all six workflows attached to merged `main` passed.
-- [ ] **Phase 26 Activity redesign — ROADMAP ONLY.** Expand only after Phase 25 produces verified evidence.
+- [ ] **Phase 26 Activity redesign — NEXT / ACTIVE R&D.** Phase 25 verified evidence is closed. Audit current Activity desktop/390px real job states, Retry / Run Again / Cancel, loading/empty/error behavior and real-state-driven motion; develop same-family concepts and obtain explicit design approval before any production implementation contract.
 - [ ] **Phase 27 Settings/account-security redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
 - [ ] **Phase 28 Admin redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
 - [ ] **Phase 29 whole-product cohesion pass — ROADMAP ONLY.** Final cross-surface audit before the redesign program may be called complete.
