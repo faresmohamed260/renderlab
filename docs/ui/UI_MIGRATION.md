@@ -66,6 +66,17 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 **Phase 24 boundary preserved:** no schema/API/provider/worker/R2/auth/admission/ownership/capability/routing/deployment contract changed. Creatives/Uploads, search/filter/sort/organization, durable identity, Viewer activation and current-page batch semantics remain product-truthful and server/URL-owned where previously defined.
 
+## Phase 25 — Media Viewer Register + Source Fold closure — 2026-09-13
+**Status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
+
+- [x] R&D issue #196 converged on **Media Register + Source Fold v0.2**; user approval is recorded against exact R&D head `639aef25e57e166be8d8b3d226b3e83930e05a25`, run `34703774288`, artifact `10300577421`, digest `sha256:06cade2dc2e9ce51dc871971530fa9641a7c1ef0cc0271e19763fcebfa8ca2b0`.
+- [x] UI-076 and `docs/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md` merged first through PR #199 / `a5db944acdefad7b9fcbbedd9d6b521b5a28c576`.
+- [x] Exact implementation head `3e468ad0abd4f7b6645e86e298ce53a3a8ecf034` passed the complete affected acceptance set. Dedicated Viewer evidence run `34717466185` produced artifact `10304951419` (`sha256:d551006acffa260e8bbd83e25c2b156204a4391f1f9b1abcfc4e58aa0cc28e04`) and was human-reviewed faithful to v0.2 across desktop, 390px, image/video, disclosures, temporal Compare, reversal and reduced motion.
+- [x] Presentation verifier corrections remained bounded to UI-076 locators/disclosures/timing evidence; behavior/security assertions were not weakened.
+- [x] PR #200 merged to `main` as `b672c711f885092c5e92c42824078e7bd5bc691e`.
+- [x] All six workflows GitHub actually attached to the merge SHA passed: Engineering `34718303036`, UI Shell `34718302987`, Upscale Viewer `34718303044`, Viewer Register Fold `34718302986`, Image Upscale `34718302998`, Creative Iteration `34718303019`.
+- [x] Production remains unchanged; deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
+
 ## Active full-product redesign roadmap — after Phase 24
 **Status: `IN PROGRESS`.** Phase 24 completes the Library slice only; the full UI/UX redesign is not complete.
 
@@ -74,7 +85,7 @@ The coherent design authority carried forward is the current locked Lab Grid ide
 - [x] Landing redesign — approved / production-live.
 - [x] Create redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
 - [x] Library redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
-- [ ] **Phase 25 Media Viewer redesign — ACTIVE R&D (#196).** Audit current desktop/390px image/video/Compare/Upscale/action states; build interaction references; explore 3+ same-family compositions; prototype signature Library→Viewer / Compare / Viewer→Create continuity; obtain explicit user approval before a production implementation contract.
+- [x] **Phase 25 Media Viewer redesign — COMPLETE / VERIFIED / MERGED / NOT DEPLOYED.** Media Register + Source Fold v0.2 is user-approved, exact-head verified, merged as `b672c711f885092c5e92c42824078e7bd5bc691e`, and all six workflows attached to merged `main` passed.
 - [ ] **Phase 26 Activity redesign — ROADMAP ONLY.** Expand only after Phase 25 produces verified evidence.
 - [ ] **Phase 27 Settings/account-security redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
 - [ ] **Phase 28 Admin redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
