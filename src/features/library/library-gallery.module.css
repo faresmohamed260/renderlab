@@ -1,0 +1,701 @@
+.workspace {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+
+.workspace::before {
+  position: absolute;
+  inset: 0 -6% auto;
+  z-index: -2;
+  height: 34rem;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 1.45%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 1.45%) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to right, transparent, #000 16%, #000 84%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.workspace::after {
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  z-index: -1;
+  width: min(74rem, 88vw);
+  height: 31rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 78% 18%, rgb(115 215 255 / 10%), transparent 31%),
+    radial-gradient(circle at 18% 74%, rgb(234 116 77 / 6%), transparent 29%),
+    radial-gradient(circle at 50% 50%, rgb(129 114 246 / 4%), transparent 60%);
+  filter: blur(52px);
+  transform: translateX(-50%);
+  content: "";
+  pointer-events: none;
+}
+
+.contextBlock {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0.875rem;
+}
+
+.eyebrow,
+.mediaEyebrow,
+.selectionEyebrow {
+  margin: 0;
+  color: #929dab;
+  font-size: 0.5625rem;
+  font-weight: 760;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0.4375rem 0 0;
+  color: var(--color-text);
+  font-size: clamp(2.625rem, 3.8vw, 3.25rem);
+  font-weight: 600;
+  letter-spacing: -0.052em;
+  line-height: 1;
+}
+
+.support {
+  max-width: 39rem;
+  margin: 0.5rem 0 0;
+  color: #98a3b2;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.commandSurface {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 2.6%), transparent 28%),
+    linear-gradient(116deg, rgb(129 114 246 / 3%), transparent 46%, rgb(115 215 255 / 2%)),
+    rgb(9 14 20 / 91%);
+  box-shadow: inset 0 1px rgb(255 255 255 / 4%), 0 16px 44px rgb(0 0 0 / 17%);
+  backdrop-filter: blur(18px) saturate(124%);
+  -webkit-backdrop-filter: blur(18px) saturate(124%);
+}
+
+.commandSurface::after {
+  position: absolute;
+  top: -1.5rem;
+  right: -1.5rem;
+  width: 3.875rem;
+  height: 3.875rem;
+  border-top: 1px solid rgb(234 116 77 / 17%);
+  border-right: 1px solid rgb(115 215 255 / 18%);
+  border-radius: 0 100% 0 0;
+  content: "";
+  pointer-events: none;
+}
+
+.defaultControls,
+.selectionMode {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.defaultControls {
+  display: grid;
+  grid-template-columns: auto minmax(17.5rem, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 0.4375rem 0.75rem;
+  align-items: center;
+  min-height: 6.875rem;
+  padding: 0.5rem 0.625rem;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 150ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
+}
+
+.sourceCell {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.searchCell {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.actionCell {
+  grid-column: 3;
+  grid-row: 1;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+.filterCell {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  padding-top: 0.375rem;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+}
+
+.sourceSwitch,
+.kindSwitch,
+.filterRow {
+  display: flex;
+  align-items: center;
+}
+
+.sourceSwitch {
+  gap: 0.125rem;
+  padding: 0.125rem;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 0.625rem;
+  background: rgb(255 255 255 / 2.5%);
+}
+
+.sourceSwitch :global([data-slot="button"]),
+.filterRow :global([data-slot="button"]),
+.actionCell :global([data-slot="button"]) {
+  min-height: 2.75rem;
+}
+
+.sourceSwitch :global([data-slot="button"]) {
+  padding-inline: 0.875rem;
+}
+
+.searchForm {
+  display: flex;
+  min-width: 0;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.125rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 0.625rem;
+  background: #0c131c;
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.searchForm:focus-within {
+  border-color: rgb(115 215 255 / 34%);
+  background: #0e1621;
+  box-shadow: inset 0 0 0 1px rgb(115 215 255 / 5%);
+}
+
+.searchSubmit,
+.clearSearch {
+  flex: 0 0 2.75rem;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: 0.5rem;
+}
+
+.searchSubmit {
+  color: #7b8797;
+}
+
+.clearSearch {
+  color: #a7b0bc;
+}
+
+.searchLabel {
+  min-width: 0;
+  flex: 1;
+}
+
+.searchInput {
+  min-height: 2.625rem;
+  border: 0;
+  background: transparent;
+  padding-inline: 0.375rem;
+  box-shadow: none;
+  font-size: 0.8125rem;
+}
+
+.searchInput:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.filterRow {
+  min-width: 0;
+  gap: 0.1875rem;
+}
+
+.kindSwitch {
+  flex: none;
+  gap: 0.125rem;
+}
+
+.filterDivider {
+  width: 1px;
+  height: 1.125rem;
+  margin-inline: 0.25rem;
+  flex: none;
+  background: rgb(255 255 255 / 10%);
+}
+
+.filterRow > :global(a),
+.filterRow > :global(button),
+.filterRow > :global(div) {
+  flex-shrink: 0;
+}
+
+.sortWrap {
+  margin-left: auto;
+  flex: none;
+}
+
+.selectionMode {
+  z-index: 3;
+  display: flex;
+  min-height: 6.875rem;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(0.875rem);
+  clip-path: inset(20% 2% 20% 72% round 0.75rem);
+  background: linear-gradient(90deg, rgb(12 20 29 / 98%), rgb(10 15 23 / 98%));
+  transition: opacity 180ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1), clip-path 320ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s 320ms;
+}
+
+.commandSurface[data-selection="on"] .defaultControls {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.985);
+  transition: opacity 140ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s 140ms;
+}
+
+.commandSurface[data-selection="on"] .selectionMode {
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateX(0);
+  clip-path: inset(0 round 0.875rem);
+  transition: opacity 180ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1), clip-path 320ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
+}
+
+.selectionMain {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 1rem;
+}
+
+.selectionSummary {
+  display: grid;
+  min-width: 8.5rem;
+  gap: 0.125rem;
+  padding-right: 1rem;
+  border-right: 1px solid rgb(255 255 255 / 9%);
+}
+
+.selectionSummary strong {
+  color: var(--color-text);
+  font-size: 1.0625rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+}
+
+.selectionSummary small {
+  color: #6f7b8c;
+  font-size: 0.625rem;
+}
+
+.selectionActions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.selectionActions :global([data-slot="button"]) {
+  min-height: 2.75rem;
+}
+
+.organizeContent {
+  flex-basis: 100%;
+  width: 100%;
+}
+
+.organizeDeck {
+  margin-top: 0.625rem;
+  padding: 0.875rem;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 0 0 0.75rem 0.75rem;
+  background: rgb(255 255 255 / 2.2%);
+}
+
+.feedback {
+  margin-top: 0.625rem;
+}
+
+.mediaHead {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 2.125rem;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.25rem 0 0.5625rem;
+}
+
+.mediaContext {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.625rem;
+}
+
+.mediaContext strong {
+  color: #cbd2da;
+  font-size: 0.6875rem;
+  font-weight: 620;
+}
+
+.dropNote {
+  margin: 0;
+  color: #7d8998;
+  font-size: 0.625rem;
+}
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.cardShell {
+  --gallery-rx: 0deg;
+  --gallery-ry: 0deg;
+  --gallery-spot-x: 50%;
+  --gallery-spot-y: 50%;
+  position: relative;
+  min-width: 0;
+}
+
+.cardLink {
+  position: relative;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 0.75rem;
+  background: #0b1017;
+  transform: none;
+  transform-style: preserve-3d;
+  transition: border-color 170ms ease, transform 230ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 230ms ease;
+}
+
+.cardLink:focus-visible {
+  outline: 2px solid var(--color-accent-bright);
+  outline-offset: 2px;
+}
+
+.cardShell[data-selected="true"] .cardLink {
+  border-color: rgb(115 215 255 / 60%);
+  box-shadow: 0 0 0 1px rgb(115 215 255 / 19%), 0 20px 44px rgb(0 0 0 / 22%);
+}
+
+.mediaFrame {
+  position: relative;
+  aspect-ratio: 1.13 / 1;
+  overflow: hidden;
+  background: var(--color-surface-2);
+  isolation: isolate;
+}
+
+.mediaFrame::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    radial-gradient(circle at var(--gallery-spot-x) var(--gallery-spot-y), rgb(255 255 255 / 9%), transparent 27%),
+    linear-gradient(180deg, transparent 60%, rgb(3 6 9 / 34%));
+  opacity: 0.72;
+  transition: opacity 180ms ease;
+  content: "";
+  pointer-events: none;
+}
+
+.mediaMeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.5rem;
+  padding: 0.625rem 0.6875rem 0.6875rem;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+  background: rgb(9 14 20 / 96%);
+}
+
+.mediaMeta strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mediaMeta span {
+  grid-column: 1;
+  color: #7e8999;
+  font-size: 0.625rem;
+  font-weight: 620;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mediaMeta time {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #7e8999;
+  font-size: 0.625rem;
+}
+
+.selectionCheckboxWrap {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  z-index: 10;
+}
+
+.emptyState,
+.unavailableState {
+  margin-top: 0.75rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cardShell:hover .cardLink,
+  .cardShell[data-pointer="active"] .cardLink {
+    border-color: rgb(255 255 255 / 19%);
+    transform: perspective(900px) rotateX(var(--gallery-rx)) rotateY(var(--gallery-ry)) translateY(-2px);
+    box-shadow: 0 24px 58px rgb(0 0 0 / 26%);
+  }
+
+  .cardShell:hover .mediaFrame::after,
+  .cardShell[data-pointer="active"] .mediaFrame::after {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 640px) {
+  .mediaGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .mediaGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace::before {
+    background-size: 48px 48px;
+    opacity: 0.8;
+  }
+
+  .workspace::after {
+    top: -1rem;
+    width: 94vw;
+    height: 25rem;
+  }
+
+  .contextBlock {
+    margin-bottom: 0.6875rem;
+  }
+
+  .title {
+    margin-top: 0.3125rem;
+    font-size: 2.375rem;
+  }
+
+  .support {
+    max-width: 20rem;
+    margin-top: 0.4375rem;
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .defaultControls {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    gap: 0.375rem 0.5rem;
+    min-height: 9.125rem;
+    padding: 0.5rem;
+  }
+
+  .sourceCell {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .actionCell {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .searchCell {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .filterCell {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    overflow: hidden;
+    padding-top: 0.3125rem;
+  }
+
+  .sourceSwitch {
+    width: 100%;
+  }
+
+  .sourceSwitch :global([data-slot="button"]) {
+    min-width: 4.625rem;
+    flex: 1;
+    padding-inline: 0.625rem;
+  }
+
+  .filterRow {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filterRow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filterDivider {
+    display: none;
+  }
+
+  .sortWrap {
+    margin-left: 0;
+  }
+
+  .selectionMode {
+    min-height: 9.125rem;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem;
+    clip-path: inset(16% 2% 60% 54% round 0.6875rem);
+  }
+
+  .selectionMain {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .selectionSummary {
+    grid-template-columns: auto auto 1fr;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .selectionSummary small {
+    text-align: right;
+  }
+
+  .selectionActions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.1875rem;
+  }
+
+  .selectionActions :global([data-slot="button"]) {
+    min-width: 0;
+    padding-inline: 0.3125rem;
+    font-size: 0.625rem;
+  }
+
+  .mediaHead {
+    min-height: 1.875rem;
+    margin-bottom: 0.4375rem;
+  }
+
+  .mediaContext {
+    gap: 0.4375rem;
+  }
+
+  .dropNote {
+    max-width: 9rem;
+    text-align: right;
+    line-height: 1.25;
+  }
+
+  .mediaGrid {
+    gap: 0.5625rem;
+  }
+
+  .mediaFrame {
+    aspect-ratio: 1 / 1.04;
+  }
+
+  .mediaMeta {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.5rem 0.5625rem 0.5625rem;
+  }
+
+  .mediaMeta strong {
+    font-size: 0.6875rem;
+  }
+
+  .mediaMeta span {
+    font-size: 0.5625rem;
+  }
+
+  .mediaMeta time {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .actionCell > :global(div) :global([data-slot="button"]),
+  .actionCell > :global([data-slot="button"]) {
+    min-height: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .defaultControls,
+  .selectionMode,
+  .cardLink,
+  .mediaFrame::after {
+    transition-duration: 0.001ms !important;
+  }
+
+  .cardShell:hover .cardLink,
+  .cardShell[data-pointer="active"] .cardLink {
+    transform: none !important;
+  }
+
+  .mediaFrame::after {
+    opacity: 0.72 !important;
+  }
+}

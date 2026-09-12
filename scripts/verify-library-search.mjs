@@ -237,7 +237,7 @@ try {
   assert(await cardForAsset(page, generated.id).count() === 0, "Uploads tab rendered a generated fixture.");
 
   await searchbox.fill("画像.png");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByRole("button", { name: "Search Library", exact: true }).click();
   await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("tab") === "uploads" && url.searchParams.get("q") === "画像.png", { timeout: 30_000 });
   const uploadedCard = cardForAsset(page, uploaded.id);
   await uploadedCard.waitFor({ state: "visible", timeout: 30_000 });
@@ -245,7 +245,7 @@ try {
   assert(await cardForAsset(page, generated.id).count() === 0, "Browser filename search rendered the current unrelated generated fixture.");
 
   await searchbox.fill("not-present-in-renderlab");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByRole("button", { name: "Search Library", exact: true }).click();
   await page.waitForURL((url) => url.pathname === "/library" && url.searchParams.get("tab") === "uploads" && url.searchParams.get("q") === "not-present-in-renderlab", { timeout: 30_000 });
   await page.getByRole("heading", { name: "No uploads match “not-present-in-renderlab”", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   const clearSearch = page.getByRole("link", { name: "Clear search", exact: true });

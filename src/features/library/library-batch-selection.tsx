@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { CheckSquare2, FolderOpen, Minus, Plus, Star, Trash2, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -22,6 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Field, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
+import styles from "@/features/library/library-gallery.module.css";
 import type {
   BatchDeleteMediaAssetsResponse,
   BatchFavoriteMediaAssetsResponse,
@@ -97,9 +99,21 @@ function itemCountLabel(count: number) {
 export function LibraryBatchSelection({
   items,
   collections,
+  sourceControls,
+  searchControls,
+  filterControls,
+  uploadAction,
+  mediaContextLabel,
+  dropHint,
 }: {
   items: PublicMediaAsset[];
   collections: PublicMediaCollection[];
+  sourceControls: ReactNode;
+  searchControls: ReactNode;
+  filterControls: ReactNode;
+  uploadAction: ReactNode;
+  mediaContextLabel: string;
+  dropHint: string | null;
 }) {
   const router = useRouter();
   const collectionSelectId = useId();
@@ -285,38 +299,85 @@ export function LibraryBatchSelection({
     }
   }
 
+  function updateCardPointer(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "touch") return;
+    const node = event.currentTarget;
+    const rect = node.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    const y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+    node.style.setProperty("--gallery-rx", `${((0.5 - y) * 2.6).toFixed(2)}deg`);
+    node.style.setProperty("--gallery-ry", `${((x - 0.5) * 3.2).toFixed(2)}deg`);
+    node.style.setProperty("--gallery-spot-x", `${(x * 100).toFixed(1)}%`);
+    node.style.setProperty("--gallery-spot-y", `${(y * 100).toFixed(1)}%`);
+    node.dataset.pointer = "active";
+  }
+
+  function clearCardPointer(event: ReactPointerEvent<HTMLDivElement>) {
+    const node = event.currentTarget;
+    node.style.removeProperty("--gallery-rx");
+    node.style.removeProperty("--gallery-ry");
+    node.style.removeProperty("--gallery-spot-x");
+    node.style.removeProperty("--gallery-spot-y");
+    delete node.dataset.pointer;
+  }
+
   return (
     <>
-      <div className="mt-5 flex min-h-10 flex-wrap items-center justify-between gap-3">
-        {selectionMode ? (
-          <Collapsible
-            open={organizeOpen}
-            onOpenChange={(open) => {
-              if (busy) return;
-              setOrganizationError(null);
-              setOrganizeOpen(open);
-            }}
-            className="kinetic-selection-deck flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-border px-3 py-2.5 sm:px-4"
-            aria-busy={busy}
-          >
-            <p className="text-sm font-medium text-text" role="status" aria-live="polite">
-              {selectedCount === 0 ? "Select media on this page" : `${selectedCount} selected on this page`}
-            </p>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+      <div
+        className={styles.commandSurface}
+        data-library-gallery-rail="true"
+        data-selection={selectionMode ? "on" : "off"}
+      >
+        <div
+          className={styles.defaultControls}
+          data-library-default-controls="true"
+          aria-hidden={selectionMode ? "true" : undefined}
+        >
+          <div className={styles.sourceCell}>{sourceControls}</div>
+          <div className={styles.searchCell}>{searchControls}</div>
+          <div className={styles.actionCell}>
+            {uploadAction}
+            <Button type="button" variant="ghost" size="sm" onClick={enterSelectionMode}>
+              <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
+              Select
+            </Button>
+          </div>
+          <div className={styles.filterCell}>{filterControls}</div>
+        </div>
+
+        <Collapsible
+          open={organizeOpen}
+          onOpenChange={(open) => {
+            if (busy || !selectionMode) return;
+            setOrganizationError(null);
+            setOrganizeOpen(open);
+          }}
+          className={styles.selectionMode}
+          data-library-selection-mode="true"
+          aria-busy={busy}
+          aria-hidden={selectionMode ? undefined : "true"}
+        >
+          <div className={styles.selectionMain}>
+            <div className={styles.selectionSummary}>
+              <span className={styles.selectionEyebrow}>SELECTION</span>
+              <strong role="status" aria-live="polite">
+                {selectedCount === 0 ? "Select media on this page" : `${selectedCount} selected on this page`}
+              </strong>
+              <small>{itemCountLabel(visibleItems.length)} visible</small>
+            </div>
+
+            <div className={styles.selectionActions}>
+              <Button type="button" variant="ghost" size="sm" onClick={togglePageSelection} disabled={busy}>
+                <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
+                {allSelected ? "Clear page" : `Select page (${visibleItems.length})`}
+              </Button>
               <CollapsibleTrigger asChild>
                 <Button type="button" variant={organizeOpen ? "secondary" : "ghost"} size="sm" disabled={selectedCount === 0 || busy}>
                   <FolderOpen aria-hidden="true" data-icon="inline-start" />
                   Organize
                 </Button>
               </CollapsibleTrigger>
-              <Button type="button" variant="ghost" size="sm" onClick={togglePageSelection} disabled={busy}>
-                <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-                {allSelected ? "Clear page" : `Select page (${visibleItems.length})`}
-              </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={cancelSelection} disabled={busy}>
-                <X aria-hidden="true" data-icon="inline-start" />
-                Cancel
-              </Button>
               <AlertDialog
                 open={dialogOpen}
                 onOpenChange={(open) => {
@@ -356,116 +417,123 @@ export function LibraryBatchSelection({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              <Button type="button" variant="ghost" size="sm" onClick={cancelSelection} disabled={busy}>
+                <X aria-hidden="true" data-icon="inline-start" />
+                Cancel
+              </Button>
             </div>
-
-            <CollapsibleContent className="basis-full pt-1">
-              <div className="mt-2 grid gap-4 rounded-lg border border-border bg-surface-2/60 p-3 md:grid-cols-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-text">Favorites</p>
-                  <p className="mt-1 text-xs leading-5 text-text-muted">Set one explicit Favorite state for every selected item.</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void setSelectedFavorite(true)}>
-                      {organizingAction === "favorite" ? <Spinner data-icon="inline-start" /> : <Star aria-hidden="true" data-icon="inline-start" />}
-                      Favorite selected
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void setSelectedFavorite(false)}>
-                      {organizingAction === "unfavorite" ? <Spinner data-icon="inline-start" /> : <Star aria-hidden="true" data-icon="inline-start" />}
-                      Unfavorite selected
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-text">Collection</p>
-                  {collections.length > 0 ? (
-                    <>
-                      <Field className="mt-2 max-w-sm">
-                        <FieldLabel htmlFor={collectionSelectId}>Collection</FieldLabel>
-                        <NativeSelect
-                          id={collectionSelectId}
-                          size="sm"
-                          value={organizeCollectionId}
-                          onChange={(event) => {
-                            setOrganizationError(null);
-                            setOrganizeCollectionId(event.target.value);
-                          }}
-                          disabled={busy}
-                        >
-                          <NativeSelectOption value="">Choose a collection</NativeSelectOption>
-                          {collections.map((collection) => (
-                            <NativeSelectOption key={collection.id} value={collection.id}>{collection.name}</NativeSelectOption>
-                          ))}
-                        </NativeSelect>
-                      </Field>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Button type="button" variant="outline" size="sm" disabled={!selectedCollection || busy} onClick={() => void setSelectedCollectionMembership(true)}>
-                          {organizingAction === "add-collection" ? <Spinner data-icon="inline-start" /> : <Plus aria-hidden="true" data-icon="inline-start" />}
-                          Add selected
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" disabled={!selectedCollection || busy} onClick={() => void setSelectedCollectionMembership(false)}>
-                          {organizingAction === "remove-collection" ? <Spinner data-icon="inline-start" /> : <Minus aria-hidden="true" data-icon="inline-start" />}
-                          Remove selected
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="mt-1 text-xs leading-5 text-text-muted">Create a collection from Manage collections above before adding selected media.</p>
-                  )}
-                </div>
-                {organizationError ? <p role="alert" className="md:col-span-2 text-sm text-danger">{organizationError}</p> : null}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        ) : (
-          <div className="ml-auto">
-            <Button type="button" variant="ghost" size="sm" onClick={enterSelectionMode}>
-              <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-              Select
-            </Button>
           </div>
-        )}
+
+          <CollapsibleContent className={styles.organizeContent}>
+            <div className={`${styles.organizeDeck} grid gap-4 md:grid-cols-2`}>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-text">Favorites</p>
+                <p className="mt-1 text-xs leading-5 text-text-muted">Set one explicit Favorite state for every selected item.</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void setSelectedFavorite(true)}>
+                    {organizingAction === "favorite" ? <Spinner data-icon="inline-start" /> : <Star aria-hidden="true" data-icon="inline-start" />}
+                    Favorite selected
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void setSelectedFavorite(false)}>
+                    {organizingAction === "unfavorite" ? <Spinner data-icon="inline-start" /> : <Star aria-hidden="true" data-icon="inline-start" />}
+                    Unfavorite selected
+                  </Button>
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-text">Collection</p>
+                {collections.length > 0 ? (
+                  <>
+                    <Field className="mt-2 max-w-sm">
+                      <FieldLabel htmlFor={collectionSelectId}>Collection</FieldLabel>
+                      <NativeSelect
+                        id={collectionSelectId}
+                        size="sm"
+                        value={organizeCollectionId}
+                        onChange={(event) => {
+                          setOrganizationError(null);
+                          setOrganizeCollectionId(event.target.value);
+                        }}
+                        disabled={busy}
+                      >
+                        <NativeSelectOption value="">Choose a collection</NativeSelectOption>
+                        {collections.map((collection) => (
+                          <NativeSelectOption key={collection.id} value={collection.id}>{collection.name}</NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                    </Field>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button type="button" variant="outline" size="sm" disabled={!selectedCollection || busy} onClick={() => void setSelectedCollectionMembership(true)}>
+                        {organizingAction === "add-collection" ? <Spinner data-icon="inline-start" /> : <Plus aria-hidden="true" data-icon="inline-start" />}
+                        Add selected
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" disabled={!selectedCollection || busy} onClick={() => void setSelectedCollectionMembership(false)}>
+                        {organizingAction === "remove-collection" ? <Spinner data-icon="inline-start" /> : <Minus aria-hidden="true" data-icon="inline-start" />}
+                        Remove selected
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-1 text-xs leading-5 text-text-muted">Create a collection from Manage collections above before adding selected media.</p>
+                )}
+              </div>
+              {organizationError ? <p role="alert" className="md:col-span-2 text-sm text-danger">{organizationError}</p> : null}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {feedback ? (
-        <Alert variant={feedback.variant} className="mt-3" role="status">
+        <Alert variant={feedback.variant} className={styles.feedback} role="status">
           <AlertDescription>{feedback.message}</AlertDescription>
         </Alert>
       ) : null}
 
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:mt-4 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+      <div className={styles.mediaHead} data-library-media-head="true">
+        <div className={styles.mediaContext}>
+          <span className={styles.mediaEyebrow}>{mediaContextLabel}</span>
+          <strong>{selectionMode ? `${selectedCount} of ${visibleItems.length} selected` : itemCountLabel(visibleItems.length)}</strong>
+        </div>
+        {dropHint ? <p className={styles.dropNote}>{dropHint}</p> : null}
+      </div>
+
+      <div className={styles.mediaGrid} data-library-media-grid="true">
         {visibleItems.map((asset) => {
           const title = assetTitle(asset);
           const selected = selectedIds.has(asset.id);
           return (
-            <div key={asset.id} className="relative min-w-0">
+            <div
+              key={asset.id}
+              className={styles.cardShell}
+              data-selected={selected ? "true" : "false"}
+              onPointerMove={updateCardPointer}
+              onPointerLeave={clearCardPointer}
+            >
               <Link
                 href={`/library/${encodeURIComponent(asset.id)}`}
-                className={`kinetic-media-card group block min-w-0 overflow-hidden rounded-2xl border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  selected ? "border-accent" : "border-border"
-                }`}
+                className={styles.cardLink}
                 data-selected={selected ? "true" : "false"}
                 aria-label={`Open ${title}`}
               >
-                <div className="kinetic-media-frame aspect-[4/3] overflow-hidden bg-surface-2">
+                <div className={styles.mediaFrame} data-library-media-frame="true">
                   <MediaPreview asset={asset} />
-                  <div className="kinetic-media-meta absolute inset-x-2 bottom-2 z-[3] rounded-xl px-3 py-2.5">
-                    <p className="truncate text-[13px] font-semibold tracking-[-0.01em] text-text drop-shadow-sm">{title}</p>
-                    <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-text-muted">
-                      <span>{asset.kind === "image" ? "Image" : "Video"}</span>
-                      <span aria-hidden="true">·</span>
-                      <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
-                    </p>
-                  </div>
+                </div>
+                <div className={styles.mediaMeta} data-library-media-meta="true">
+                  <strong title={title}>{title}</strong>
+                  <span>{asset.kind}</span>
+                  <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
                 </div>
               </Link>
+
               {selectionMode ? (
-                <div className="absolute left-1.5 top-1.5 z-10">
+                <div className={styles.selectionCheckboxWrap}>
                   <Checkbox
                     className="kinetic-selection-checkbox size-11"
-                    checked={selected}
-                    onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
                     aria-label={`Select ${title}`}
+                    checked={selected}
                     disabled={busy}
+                    onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
                   />
                 </div>
               ) : null}

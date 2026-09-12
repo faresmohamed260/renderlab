@@ -215,7 +215,28 @@ try {
   const oldestOrder = await orderedFixtureHrefs(page, [older.id, newer.id]);
   assert(oldestOrder[0] === `/library/${older.id}` && oldestOrder[1] === `/library/${newer.id}`, `Browser oldest-first order was incorrect: ${JSON.stringify(oldestOrder)}`);
 
+  const desktopOverflow = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    body: document.body.scrollWidth,
+    html: document.documentElement.scrollWidth,
+  }));
+  assert(desktopOverflow.body <= desktopOverflow.viewport + 1 && desktopOverflow.html <= desktopOverflow.viewport + 1, `Library Gallery Rail overflows desktop: ${JSON.stringify(desktopOverflow)}`);
+  const desktopFirstCard = await page.locator('[data-library-media-grid="true"] > div').first().boundingBox();
+  assert(desktopFirstCard && desktopFirstCard.y < 455, `Library Gallery Rail media begins too low on desktop: ${JSON.stringify(desktopFirstCard)}`);
+  const desktopRailBefore = await page.locator('[data-library-gallery-rail="true"]').boundingBox();
+  assert(desktopRailBefore, "Could not measure Library Gallery Rail before selection.");
+  await page.screenshot({ path: `${artifactDir}/library-history-desktop-selection-t000.png`, fullPage: false });
+
   await page.getByRole("button", { name: "Select", exact: true }).click();
+  await page.waitForTimeout(60);
+  await page.screenshot({ path: `${artifactDir}/library-history-desktop-selection-t060.png`, fullPage: false });
+  await page.waitForTimeout(120);
+  await page.screenshot({ path: `${artifactDir}/library-history-desktop-selection-t180.png`, fullPage: false });
+  await page.waitForTimeout(180);
+  await page.screenshot({ path: `${artifactDir}/library-history-desktop-selection-t360.png`, fullPage: false });
+  const desktopSelectionMode = await page.locator('[data-library-selection-mode="true"]').boundingBox();
+  assert(desktopSelectionMode && Math.abs(desktopSelectionMode.y - desktopRailBefore.y) <= 2, `Library selection mode did not settle in the command-rail origin: ${JSON.stringify({ desktopRailBefore, desktopSelectionMode })}`);
+
   const olderCheckbox = page.getByRole("checkbox", { name: `Select ${token} Older`, exact: true });
   await olderCheckbox.waitFor({ state: "visible", timeout: 30_000 });
   const checkboxHitBox = await olderCheckbox.boundingBox();
@@ -230,10 +251,13 @@ try {
 
   const olderCard = page.locator(`a[href="/library/${older.id}"]`);
   const cardBox = await olderCard.boundingBox();
-  const frameBox = await olderCard.locator(".kinetic-media-frame").boundingBox();
-  assert(cardBox && frameBox && Math.abs(cardBox.height - frameBox.height) <= 2.1, `Library media card metadata is still consuming a separate footer row: ${JSON.stringify({ cardBox, frameBox })}`);
-  const metadataPosition = await olderCard.locator(".kinetic-media-meta").evaluate((node) => getComputedStyle(node).position);
-  assert(metadataPosition === "absolute", `Library media metadata is not integrated over the media frame: ${metadataPosition}`);
+  const frameBox = await olderCard.locator('[data-library-media-frame="true"]').boundingBox();
+  const metadata = olderCard.locator('[data-library-media-meta="true"]');
+  const metadataBox = await metadata.boundingBox();
+  assert(cardBox && frameBox && metadataBox, "Library Gallery Rail card geometry could not be measured.");
+  assert(metadataBox.y >= frameBox.y + frameBox.height - 2, `Library Gallery Rail metadata is not attached below the media frame: ${JSON.stringify({ cardBox, frameBox, metadataBox })}`);
+  const titleFontSize = await metadata.locator("strong").evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize));
+  assert(titleFontSize >= 11, `Library Gallery Rail title metadata became decorative microtype: ${titleFontSize}px`);
   await page.screenshot({ path: `${artifactDir}/library-history-desktop-selected-card.png`, fullPage: true });
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
 
@@ -260,11 +284,69 @@ try {
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
   assert(await page.getByRole("link", { name: /^Newest first\. Switch to oldest first\.$/ }).isVisible(), "Library history sort toggle is not visible on mobile.");
+  const mobileOverflow = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    body: document.body.scrollWidth,
+    html: document.documentElement.scrollWidth,
+  }));
+  assert(mobileOverflow.body <= mobileOverflow.viewport + 1 && mobileOverflow.html <= mobileOverflow.viewport + 1, `Library Gallery Rail overflows mobile: ${JSON.stringify(mobileOverflow)}`);
+  const mobileFirstCard = await page.locator('[data-library-media-grid="true"] > div').first().boundingBox();
+  assert(mobileFirstCard && mobileFirstCard.y < 545, `Library Gallery Rail media begins too low on mobile: ${JSON.stringify(mobileFirstCard)}`);
+  const mobileClear = page.getByRole("link", { name: "Clear Library search", exact: true });
+  const mobileClearBox = await mobileClear.boundingBox();
+  assert(mobileClearBox && mobileClearBox.width >= 44 && mobileClearBox.height >= 44, `Library mobile search-clear target is below 44px: ${JSON.stringify(mobileClearBox)}`);
+  const mobileSelect = page.getByRole("button", { name: "Select", exact: true });
+  const mobileSelectBox = await mobileSelect.boundingBox();
+  assert(mobileSelectBox && mobileSelectBox.height >= 44, `Library mobile Select target is below 44px: ${JSON.stringify(mobileSelectBox)}`);
   await page.screenshot({ path: `${artifactDir}/library-history-mobile-newest.png`, fullPage: true });
-  await page.getByRole("button", { name: "Select", exact: true }).click();
+  await mobileSelect.click();
+  await page.waitForTimeout(360);
+  const mobileRailSettled = await page.evaluate(() => {
+    const rail = document.querySelector("[data-library-gallery-rail=\"true\"]");
+    const defaults = rail?.querySelector("[data-library-default-controls=\"true\"]");
+    const selection = rail?.querySelector("[data-library-selection-mode=\"true\"]");
+    if (!defaults || !selection) return null;
+    const defaultStyle = getComputedStyle(defaults);
+    const selectionStyle = getComputedStyle(selection);
+    return {
+      defaultVisibility: defaultStyle.visibility,
+      defaultOpacity: Number.parseFloat(defaultStyle.opacity),
+      selectionVisibility: selectionStyle.visibility,
+      selectionOpacity: Number.parseFloat(selectionStyle.opacity),
+    };
+  });
+  assert(
+    mobileRailSettled
+      && mobileRailSettled.defaultVisibility === `hidden`
+      && mobileRailSettled.defaultOpacity < 0.01
+      && mobileRailSettled.selectionVisibility === `visible`
+      && mobileRailSettled.selectionOpacity > 0.99,
+    `Library mobile selection rail did not settle cleanly: ${JSON.stringify(mobileRailSettled)}`,
+  );
   const mobileCheckbox = page.getByRole("checkbox").first();
+  const mobileCheckboxBox = await mobileCheckbox.boundingBox();
+  assert(mobileCheckboxBox && mobileCheckboxBox.width >= 43 && mobileCheckboxBox.height >= 43, `Library mobile selection target is too small: ${JSON.stringify(mobileCheckboxBox)}`);
   await mobileCheckbox.click();
   await page.screenshot({ path: `${artifactDir}/library-history-mobile-selected-card.png`, fullPage: true });
+
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(`${baseUrl}/library?q=${query}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  const reducedCard = page.locator(`a[href="/library/${newer.id}"]`);
+  const reducedCardBox = await reducedCard.boundingBox();
+  assert(reducedCardBox, "Could not measure Library card for reduced-motion verification.");
+  await page.mouse.move(reducedCardBox.x + reducedCardBox.width * 0.78, reducedCardBox.y + reducedCardBox.height * 0.25);
+  await page.waitForTimeout(50);
+  const reducedTransform = await reducedCard.evaluate((node) => getComputedStyle(node).transform);
+  assert(reducedTransform === "none", `Reduced motion did not disable Gallery Rail card depth: ${reducedTransform}`);
+  await page.getByRole("button", { name: "Select", exact: true }).click();
+  const reducedDurations = await page.locator('[data-library-selection-mode="true"]').evaluate((node) => getComputedStyle(node).transitionDuration);
+  const reducedMaxSeconds = Math.max(...reducedDurations.split(",").map((value) => {
+    const trimmed = value.trim();
+    return trimmed.endsWith("ms") ? Number.parseFloat(trimmed) / 1000 : Number.parseFloat(trimmed);
+  }));
+  assert(reducedMaxSeconds < 0.01, `Reduced motion left a material Library selection transition: ${reducedDurations}`);
+  await page.screenshot({ path: `${artifactDir}/library-history-desktop-reduced-motion-selection.png`, fullPage: false });
 
   const ownerRowsResponse = await supabase(`media_assets?id=in.(${older.id},${newer.id})&select=id,owner_id`);
   assert(ownerRowsResponse.ok, `Could not inspect Library history owners (${ownerRowsResponse.status}).`);
