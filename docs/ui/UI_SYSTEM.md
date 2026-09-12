@@ -108,17 +108,14 @@ Prefer separation through tonal surfaces and borders before shadows. Shadows sho
 Do not build a card-within-card-within-card visual hierarchy. Group by spacing, alignment, and surface changes first. Within Create's unified composer, the bare prompt textarea does not draw its own focus rectangle; the composer's `:focus-within` border/glow is the visible focus boundary while textarea semantics and keyboard focus remain intact.
 
 ## Application Shell Direction
-The shell structure originated in the historical Figma v0.2 exploration and has since been implemented, remotely built, and responsive-render reviewed. The repository implementation/documentation is now authoritative; the old design file is only supporting history. The shell is `APPROVED`, not `LOCKED`.
+The repository implementation is authoritative. UI-074 / PR #188 established the current application-shell geometry: one compact horizontal application header across desktop and narrow layouts, with no persistent desktop left rail and no fixed mobile bottom dock. The shell is `APPROVED`, not `LOCKED`.
 
-### Phase 23 fidelity-correction shell candidate
-UI-074 / PR #188 reopens only the shell **presentation geometry** needed to match the explicitly approved Clear Composer v0.5 evidence. The accepted correction candidate uses one fixed compact horizontal application header on desktop and narrow layouts, with Brand → Create, Library, Activity and Settings/account access; it has no persistent desktop left rail and no fixed mobile bottom dock. Route/content ownership, navigation destinations, prefetch/refresh behavior, account semantics and the shell/feature boundary remain unchanged.
-
-Until PR #188 is explicitly merged, the UI-071 rail/mobile-dock bullets below still describe current merged `main`/production reality. If the correction merges, UI-074 supersedes those geometry bullets and this candidate becomes the active shell baseline. Do not infer merge or deployment from this documentation update.
+The header owns product/global navigation, account access, lightweight Activity/global-attention access and the route-content boundary. Create, Library, Activity, Settings and Admin continue to use the same route hierarchy and access rules; UI-074 changed presentation geometry only. Phase 24 / UI-075 does not alter shell ownership—it composes the approved Gallery Rail inside Library feature content.
 
 ### Shell/feature boundary
 The persistent application shell owns:
 - global/product navigation;
-- page/route context in compact chrome where useful;
+- compact product/route context where useful without duplicating feature headings;
 - account access;
 - lightweight access to Activity/global generation attention state;
 - the route-content region.
@@ -128,37 +125,34 @@ The shell does **not** own:
 - operation/model controls;
 - references/uploads;
 - generation results;
-- Library grids/cards;
+- Library grids/cards or Gallery Rail controls;
 - feature-specific toolbars or settings.
 
-Those belong to their feature surfaces and are designed in the relevant later phase. The first historical shell exploration mixed shell and Create UI; the v0.2 refinement corrected that boundary before implementation.
+Those belong to their feature surfaces. Do not reintroduce page-specific shells, a permanent Create settings rail, or duplicate route chrome.
 
 ### Desktop
-- Persistent compact left navigation.
-- `Create` and `Library` are visually primary destinations.
-- `Activity` and `Settings` remain utility destinations and sit lower in the navigation hierarchy.
-- Main route content occupies the largest possible area; navigation chrome stays narrow.
-- Desktop application routes omit the full-width top context bar; the persistent rail supplies route navigation/context plus Activity/Settings access without duplicating chrome. The compact top bar is a mobile/narrow utility surface only.
-- Idle state should not show a persistent “ready” status pill. Global status becomes more explicit only when a job, failure, degraded state, or other meaningful attention condition exists.
-- The shell must not reserve a permanent settings rail for Create.
+- Use one compact horizontal application header; do not restore a persistent desktop left rail.
+- RenderLab/Create identity anchors the left side; Library, Activity and Settings/account access remain available in the established horizontal navigation hierarchy.
+- Create and Library remain the primary product destinations; Activity and Settings remain utility destinations without requiring a second navigation surface.
+- Main route content occupies the largest possible area and begins below the compact header; feature surfaces own their own context and controls.
+- Avoid a redundant full-width route context bar when the feature already supplies its page context.
+- Idle state should not show a persistent “ready” status pill. Global status becomes explicit only when a job, failure, degraded state or other meaningful attention condition exists.
 
 ### Mobile / narrow layouts
-- Do not shrink the desktop sidebar into an unusable strip.
-- Primary destinations use compact bottom navigation or an equivalent touch-friendly treatment.
-- `Create`, `Library`, and `Activity` are the initial visible mobile destinations; Settings remains reachable through account/utility UI. The compact utility header remains available on mobile/narrow application routes because Settings is not a persistent dock destination.
-- Feature content owns its own responsive controls/sheets.
-- Avoid reproducing the entire desktop chrome vertically.
+- Keep the same compact horizontal header model rather than introducing a separate bottom-dock navigation product.
+- Do not add a fixed mobile bottom dock; Create, Library, Activity and Settings/account access remain reachable through the responsive header/utility composition.
+- Preserve at least 44×44 effective touch targets for ordinary interactive controls where practical.
+- Feature content owns its responsive controls, sheets/disclosures and safe-area spacing.
+- Avoid reproducing desktop chrome vertically or hiding essential navigation behind hover-only behavior.
 
-### Shell density targets from the historical v0.2 design and verified implementation
-These are design targets, not immutable constants:
-- desktop sidebar: approximately 200–216px
-- compact top bar: approximately 52–56px
-- primary nav item height: approximately 40px with at least 44px effective touch target where relevant
-- application chrome gaps: approximately 12–16px
-- mobile top bar: approximately 56px
-- mobile bottom navigation: approximately 56–64px plus device safe-area handling
+### Shell density targets
+These are current design targets rather than immutable constants:
+- compact application header: approximately 52–56px;
+- primary navigation/control hit area: at least 44px effective touch height where practical;
+- application chrome gaps: approximately 12–16px;
+- no reserved desktop sidebar width and no fixed mobile bottom-navigation height.
 
-Implementation may tune these values after rendered review while preserving the hierarchy and boundary above.
+Implementation may tune these values after rendered review while preserving the horizontal-header hierarchy, feature boundary, keyboard/touch semantics and reduced-motion equivalence.
 
 ## Maintained Primitive Foundation
 UI-026 makes the maintained primitive layer an implementation contract rather than a suggestion.
