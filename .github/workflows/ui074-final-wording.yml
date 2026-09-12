@@ -1,0 +1,33 @@
+name: UI-074 Final Wording
+
+on:
+  push:
+    branches:
+      - docs/ui074-main-wording
+    paths:
+      - .github/workflows/ui074-final-wording.yml
+
+permissions:
+  contents: write
+
+jobs:
+  correct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: docs/ui074-main-wording
+      - name: Correct durable baseline wording
+        shell: bash
+        run: |
+          python -c 'from pathlib import Path; p=Path("PROJECT.md"); s=p.read_text(); old="- Current repository `main` is `3f0d21ed55554b3c48791d35dd17cb6005212076`, the squash merge of PR #188 / UI-074 Create fidelity correction. The correction is user-approved, exact-head verified and merged-main verified. Production is still the separately approved source `0173c4c5ba08360b6352331118abc81978cfa774`; no production deployment followed this merge."; new="- The verified application implementation baseline is PR #188 merge `3f0d21ed55554b3c48791d35dd17cb6005212076`; repository documentation closure PR #189 is also merged. The correction is user-approved, exact-head verified and merged-main verified. Production is still the separately approved source `0173c4c5ba08360b6352331118abc81978cfa774`; no production deployment followed these repository merges."; assert old in s, "expected baseline sentence not found"; p.write_text(s.replace(old,new,1))'
+          rm .github/workflows/ui074-final-wording.yml
+      - name: Commit correction and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md .github/workflows/ui074-final-wording.yml
+          git commit -m "Fix UI-074 durable baseline wording"
+          git push origin HEAD:docs/ui074-main-wording
