@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ImagePlus, MoreHorizontal, Plus, Sparkles, Volume2, X } from "lucide-react";
+import { ChevronDown, ImagePlus, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -119,7 +119,8 @@ function ImageModelMenu({
           aria-label={`Image model ${selected.label}`}
           className="shrink-0 gap-1 !px-1.5"
         >
-          <span>{imageModelTriggerLabels[value]}</span>
+          <span className="clear-setting-label">Model</span>
+          <strong>{imageModelTriggerLabels[value]}</strong>
           <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
@@ -169,7 +170,8 @@ function AspectRatioMenu({
           aria-label={`Aspect ratio ${value === "original" ? "Original" : value}`}
           className="shrink-0 gap-1 !px-1.5"
         >
-          {value === "original" ? "Original" : value}
+          <span className="clear-setting-label">Ratio</span>
+          <strong>{value === "original" ? "Original" : value}</strong>
           <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
@@ -219,7 +221,8 @@ function VideoSettingsMenu({
           aria-label={`Video settings. Resolution ${resolution}. Duration ${durationSeconds} seconds. Audio ${audioEnabled ? "on" : "off"}`}
           className="shrink-0 gap-1 !px-1.5"
         >
-          <span>{resolution}·{durationSeconds}s</span>
+          <span className="clear-setting-label">Video</span>
+          <strong>{resolution} · {durationSeconds}s</strong>
           <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
@@ -813,35 +816,75 @@ export function CreateWorkspace({
 
   return (
     <section
-      className="clear-create-workspace mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-7xl flex-col px-4 pb-24 pt-10 sm:px-8 sm:pt-16 lg:pb-16 lg:pt-24"
+      className="clear-create-workspace mx-auto flex w-full flex-col"
       data-create-has-stage={jobActive || resultLoading || Boolean(resultAsset) ? "true" : "false"}
     >
-      <div className="clear-create-stack mx-auto w-full max-w-6xl">
+      <div className="clear-create-stack mx-auto w-full">
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={createContextKey}
             data-create-motion="context"
-            className="clear-create-context mb-8 sm:mb-10"
+            className="clear-create-context"
             initial={reduceMotion ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
             transition={contextTransition}
           >
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-bright/80">
-              <span aria-hidden="true" className="size-1.5 rounded-full bg-accent-bright shadow-[0_0_14px_rgba(178,167,255,0.8)]" />
-              <span>{outputKind === "image" ? "Create / Image" : "Create / Video"}</span>
-            </div>
-            <h2 className="min-h-[3.25rem] text-[38px] font-semibold tracking-[-0.05em] text-text sm:text-[48px] lg:text-[56px]">
+            <p className="clear-create-eyebrow">{outputKind === "image" ? "Create / Image" : "Create / Video"}</p>
+            <h2 className="clear-create-heading font-semibold text-text">
               {heading}
             </h2>
-            <p className="mt-2 max-w-2xl text-[15px] leading-6 text-text-muted">{supportingText}</p>
+            <p className="clear-create-supporting text-text-muted">{supportingText}</p>
           </motion.div>
         </AnimatePresence>
+
+        <div className="clear-composer-mode" data-create-mode-switch="true">
+          <ToggleGroup
+            type="single"
+            value={outputKind}
+            aria-label="Output type"
+            onValueChange={(value) => {
+              if (!value) return;
+              const kind = value as OutputKind;
+              if (references.length > maxGenerationInputsForOutput(kind)) {
+                setError("Video uses one source image. Remove one reference before switching to Video.");
+                return;
+              }
+              setOutputKind(kind);
+              setError(null);
+            }}
+            size="sm"
+            className="relative isolate shrink-0 overflow-hidden rounded-lg border border-white/[0.06] bg-black/20 p-0.5"
+          >
+            <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
+              {outputKind === "image" ? (
+                <motion.span
+                  layoutId="create-output-mode-highlight"
+                  aria-hidden="true"
+                  className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(129,114,246,0.32),rgba(115,215,255,0.12))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(129,114,246,0.14)]"
+                  transition={reduceMotion ? { duration: 0 } : createMotionSpring}
+                />
+              ) : null}
+              <span className="relative z-10">Image</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
+              {outputKind === "video" ? (
+                <motion.span
+                  layoutId="create-output-mode-highlight"
+                  aria-hidden="true"
+                  className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(115,215,255,0.2),rgba(129,114,246,0.28))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(115,215,255,0.12)]"
+                  transition={reduceMotion ? { duration: 0 } : createMotionSpring}
+                />
+              ) : null}
+              <span className="relative z-10">Video</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
 
         <form
           onSubmit={submit}
           noValidate
-          className="clear-create-composer kinetic-composer relative isolate overflow-hidden rounded-[22px] border p-3 sm:p-4"
+          className="clear-create-composer kinetic-composer relative isolate overflow-hidden rounded-[22px] border"
           data-create-instrument="true"
           data-create-layout="clear-composer"
           data-create-mode={outputKind}
@@ -875,49 +918,6 @@ export function CreateWorkspace({
               </div>
             </div>
           ) : null}
-          <div className="clear-composer-mode" data-create-mode-switch="true">
-            <ToggleGroup
-              type="single"
-              value={outputKind}
-              aria-label="Output type"
-              onValueChange={(value) => {
-                if (!value) return;
-                const kind = value as OutputKind;
-                if (references.length > maxGenerationInputsForOutput(kind)) {
-                  setError("Video uses one source image. Remove one reference before switching to Video.");
-                  return;
-                }
-                setOutputKind(kind);
-                setError(null);
-              }}
-              size="sm"
-              className="relative isolate shrink-0 overflow-hidden rounded-lg border border-white/[0.06] bg-black/20 p-0.5"
-            >
-              <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
-                {outputKind === "image" ? (
-                  <motion.span
-                    layoutId="create-output-mode-highlight"
-                    aria-hidden="true"
-                    className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(129,114,246,0.32),rgba(115,215,255,0.12))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(129,114,246,0.14)]"
-                    transition={reduceMotion ? { duration: 0 } : createMotionSpring}
-                  />
-                ) : null}
-                <span className="relative z-10">Image</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
-                {outputKind === "video" ? (
-                  <motion.span
-                    layoutId="create-output-mode-highlight"
-                    aria-hidden="true"
-                    className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(115,215,255,0.2),rgba(129,114,246,0.28))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(115,215,255,0.12)]"
-                    transition={reduceMotion ? { duration: 0 } : createMotionSpring}
-                  />
-                ) : null}
-                <span className="relative z-10">Video</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-
           <div className="clear-composer-reference-bar" data-create-reference-bar="true">
             <Button
               type="button"
@@ -953,23 +953,6 @@ export function CreateWorkspace({
               {outputKind === "image" ? "Optional · up to two images" : "Optional · one image"}
             </span>
           </div>
-
-          <Textarea
-            ref={promptInputRef}
-            id="create-prompt"
-            variant="bare"
-            value={prompt}
-            onChange={handlePromptChange}
-            onSelect={(event) => rememberPromptSelection(event.currentTarget)}
-            placeholder={
-              hasReference
-                ? "Describe the change or result you want…"
-                : outputKind === "image"
-                  ? "Describe what you want to create…"
-                  : "Describe the video you want to create…"
-            }
-            className="clear-composer-prompt min-h-36 px-2 py-2 text-[17px] leading-7 placeholder:text-text-muted/55 sm:min-h-32 sm:text-[18px]"
-          />
 
           {references.length ? (
             <div className="clear-composer-reference-list mb-3 space-y-2" data-create-reference-list="true" aria-label="Attached references">
@@ -1055,8 +1038,26 @@ export function CreateWorkspace({
             </div>
           ) : null}
 
+          <div className="clear-composer-prompt-label">Prompt</div>
+          <Textarea
+            ref={promptInputRef}
+            id="create-prompt"
+            variant="bare"
+            value={prompt}
+            onChange={handlePromptChange}
+            onSelect={(event) => rememberPromptSelection(event.currentTarget)}
+            placeholder={
+              hasReference
+                ? "Describe the change or result you want…"
+                : outputKind === "image"
+                  ? "Describe what you want to create…"
+                  : "Describe the video you want to create…"
+            }
+            className="clear-composer-prompt placeholder:text-text-muted/55"
+          />
+
           <Collapsible className="clear-composer-controls" open={advancedOpen} onOpenChange={setAdvancedOpen}>
-            <div className="kinetic-control-deck mt-3 flex flex-col gap-2 rounded-2xl border px-1 py-1.5 sm:flex-row sm:items-center sm:p-1.5">
+            <div className="clear-composer-footer kinetic-control-deck flex flex-col gap-2 border-t sm:flex-row sm:items-center">
               <div data-create-primary-controls className="clear-composer-settings flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:pb-0">
                 <input
                   ref={fileInputRef}
@@ -1141,8 +1142,8 @@ export function CreateWorkspace({
                     title="Advanced generation controls"
                     className={`clear-composer-advanced-trigger min-h-10 gap-2 px-3${advancedOpen ? " bg-surface-3" : ""}`}
                   >
-                    <span>Advanced</span>
-                    <MoreHorizontal aria-hidden="true" className="size-4" />
+                    <span className="clear-setting-label">Advanced</span>
+                    <strong aria-hidden="true">{advancedOpen ? "−" : "+"}</strong>
                   </Button>
                 </CollapsibleTrigger>
               </div>
@@ -1160,7 +1161,7 @@ export function CreateWorkspace({
                   className="kinetic-generate relative w-full overflow-hidden sm:min-w-32 sm:w-auto"
                   data-active={submitting || jobActive ? "true" : "false"}
                 >
-                  {submitting || jobActive ? <Spinner data-icon="inline-start" /> : <Sparkles aria-hidden="true" data-icon="inline-start" />}
+                  {submitting || jobActive ? <Spinner data-icon="inline-start" /> : null}
                   {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
                 </Button>
               </motion.div>
@@ -1177,7 +1178,7 @@ export function CreateWorkspace({
         </form>
 
         {unresolvedReferenceAliases.length ? (
-          <Alert className="mt-3" variant="destructive" role="alert">
+          <Alert className="clear-create-support-alert mt-3" variant="destructive" role="alert">
             <AlertDescription>
               {unresolvedReferenceAliases.map((alias) => `@${alias}`).join(", ")} no longer has an attached image. Remove the unresolved reference from the prompt before generating.
             </AlertDescription>
@@ -1185,7 +1186,7 @@ export function CreateWorkspace({
         ) : null}
 
         {!accountAvailable ? (
-          <Alert className="mt-3" role="status">
+          <Alert className="clear-create-support-alert mt-3" role="status">
             <AlertDescription className="flex flex-col gap-3 text-text-muted sm:flex-row sm:items-center sm:justify-between">
               <span>Sign in to generate, upload references, and save private media to your Library.</span>
               <Button asChild variant="secondary" size="sm" className="self-start sm:self-auto">
@@ -1196,7 +1197,7 @@ export function CreateWorkspace({
         ) : null}
 
         {!generationAvailable || !mediaUploadAvailable ? (
-          <Alert className="mt-3" role="status">
+          <Alert className="clear-create-support-alert mt-3" role="status">
             <AlertDescription className="space-y-1 text-text-muted">
               {!generationAvailable ? <p>Generation is not connected in this environment yet.</p> : null}
               {!mediaUploadAvailable ? <p>Image uploads are not connected in this environment yet.</p> : null}
@@ -1205,7 +1206,7 @@ export function CreateWorkspace({
         ) : null}
 
         {error ? (
-          <Alert className="mt-4" variant="destructive">
+          <Alert className="clear-create-support-alert mt-4" variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
@@ -1255,23 +1256,31 @@ export function CreateWorkspace({
               exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
               transition={contextTransition}
             >
-              <div className="clear-create-result-info flex flex-col gap-3 border border-border px-4 py-4" data-create-result-info="true">
-                <div>
-                  <p className="text-sm font-semibold text-text">Generated result</p>
-                  <p className="text-xs text-text-muted">Saved to your RenderLab media library.</p>
+              <div className="clear-create-result-info flex flex-col border border-border" data-create-result-info="true">
+                <div className="clear-result-meta-block">
+                  <p className="clear-result-kicker">RESULT / {resultAsset.kind.toUpperCase()}</p>
+                  <h3>{resultAsset.displayName || (resultAsset.kind === "image" ? "Generated image" : "Generated video")}</h3>
+                  <p>Generated from this composer. Keep going without rebuilding the request.</p>
                 </div>
+                <dl className="clear-result-specs">
+                  <div><dt>Model</dt><dd>{resultAsset.kind === "image" ? imageModelTriggerLabels[imageModel] : generationModelDefinitions[defaultVideoGenerationModel].label}</dd></div>
+                  <div><dt>Ratio</dt><dd>{aspectRatio === "original" ? "Original" : aspectRatio}</dd></div>
+                  <div><dt>Source</dt><dd>{references.length ? String(references.length) + " reference" + (references.length === 1 ? "" : "s") : "Prompt only"}</dd></div>
+                </dl>
                 {continuationActions.length ? (
-                  <div className="clear-create-result-actions flex items-center gap-2" aria-label="Continue from result">
-                    {continuationActions.map((action) => (
-                      <Button
-                        key={action.id}
-                        type="button"
-                        variant="secondary"
-                        onClick={() => startContinuation(action)}
-                      >
-                        {action.label}
-                      </Button>
-                    ))}
+                  <div className="clear-create-result-actions" aria-label="Continue from result">
+                    {[...continuationActions]
+                      .sort((a, b) => Number(b.id === "animate-image") - Number(a.id === "animate-image"))
+                      .map((action) => (
+                        <Button
+                          key={action.id}
+                          type="button"
+                          variant={action.id === "animate-image" ? "default" : "secondary"}
+                          onClick={() => startContinuation(action)}
+                        >
+                          {action.label}
+                        </Button>
+                      ))}
                   </div>
                 ) : null}
               </div>

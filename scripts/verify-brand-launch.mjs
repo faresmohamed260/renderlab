@@ -176,12 +176,16 @@ try {
 
   const create = await browser.newPage({ viewport: { width: 1440, height: 1024 } });
   await create.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
-  await create.getByRole("complementary", { name: "Application navigation" }).waitFor();
+  await create.getByRole("navigation", { name: "Application navigation" }).waitFor();
   await create.getByRole("textbox", { name: "Prompt" }).waitFor();
-  const currentCreate = create.getByRole("link", { name: "Create", exact: true }).first();
-  assert((await currentCreate.getAttribute("aria-current")) === "page", "Create nav is not active on /create.");
   const shellBrand = create.getByRole("link", { name: "Open Create workspace" }).first();
   assert((await shellBrand.getAttribute("href")) === "/create", "AppShell brand does not return to /create.");
+  const libraryLink = create.getByRole("link", { name: "Library", exact: true });
+  assert((await libraryLink.getAttribute("href")) === "/library", "AppShell Library navigation does not target /library.");
+  const activityLink = create.getByRole("link", { name: "Open activity", exact: true });
+  assert((await activityLink.getAttribute("href")) === "/activity", "AppShell Activity navigation does not target /activity.");
+  const settingsLink = create.getByRole("link", { name: "Open settings and account", exact: true });
+  assert((await settingsLink.getAttribute("href")) === "/settings", "AppShell Settings navigation does not target /settings.");
   await verifyLockedBrand(create, "Application shell brand");
   await create.screenshot({ path: `${artifactDir}/brand-launch-create-shell.png`, fullPage: true });
 

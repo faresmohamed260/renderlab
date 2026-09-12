@@ -2,46 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Activity,
-  CircleUserRound,
-  Images,
-  Settings,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
-import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { Activity, CircleUserRound } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-type NavItem = {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-};
-
-const primaryNav: NavItem[] = [
-  { href: "/create", label: "Create", icon: Sparkles },
-  { href: "/library", label: "Library", icon: Images },
-];
-
-const utilityNav: NavItem[] = [
-  { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
-const navSpring = {
-  type: "spring",
-  stiffness: 430,
-  damping: 34,
-  mass: 0.78,
-} as const;
-
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 function routeSection(pathname: string) {
   if (pathname.startsWith("/create")) return "/create";
@@ -52,122 +18,8 @@ function routeSection(pathname: string) {
   return null;
 }
 
-function DesktopActiveSurface() {
-  return (
-    <motion.span
-      layoutId="desktop-shell-active"
-      className="pointer-events-none absolute inset-0 -z-10 rounded-xl border border-white/[0.10] bg-[linear-gradient(110deg,rgba(129,114,246,0.16),rgba(255,255,255,0.055)_48%,rgba(115,215,255,0.055))] shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_0_32px_rgba(129,114,246,0.18)]"
-      transition={navSpring}
-      aria-hidden="true"
-    >
-      <span className="absolute inset-y-2 left-0 w-px rounded-full bg-gradient-to-b from-transparent via-accent-bright to-transparent shadow-[0_0_18px_rgba(178,167,255,0.95)]" />
-    </motion.span>
-  );
-}
-
-function NavLink({
-  item,
-  pathname,
-  reduceMotion,
-}: {
-  item: NavItem;
-  pathname: string;
-  reduceMotion: boolean;
-}) {
-  const active = isActive(pathname, item.href);
-  const Icon = item.icon;
-
-  return (
-    <motion.div
-      whileHover={reduceMotion ? undefined : { x: 3 }}
-      whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-      transition={navSpring}
-    >
-      <Button
-        asChild
-        variant="ghost"
-        size="lg"
-        className={cn(
-          "relative isolate w-full justify-start gap-3 overflow-hidden rounded-xl border border-transparent px-3 text-text-muted transition-colors duration-200 hover:bg-white/[0.035] hover:text-text",
-          active && "font-semibold text-text hover:bg-transparent",
-        )}
-      >
-        <Link href={item.href} prefetch={true} aria-current={active ? "page" : undefined}>
-          {active ? <DesktopActiveSurface /> : null}
-          <Icon
-            aria-hidden="true"
-            className={cn(
-              "relative z-10 transition-colors duration-200",
-              active ? "text-accent-bright drop-shadow-[0_0_11px_rgba(178,167,255,0.65)]" : "text-text-muted",
-            )}
-          />
-          <span className="relative z-10">{item.label}</span>
-        </Link>
-      </Button>
-    </motion.div>
-  );
-}
-
-function MobileNavLink({
-  item,
-  pathname,
-  reduceMotion,
-}: {
-  item: NavItem;
-  pathname: string;
-  reduceMotion: boolean;
-}) {
-  const active = isActive(pathname, item.href);
-  const Icon = item.icon;
-
-  return (
-    <motion.div
-      className="min-w-0 flex-1"
-      whileTap={reduceMotion ? undefined : { scale: 0.955 }}
-      transition={navSpring}
-    >
-      <Button
-        asChild
-        variant="ghost"
-        className={cn(
-          "relative isolate min-h-14 w-full min-w-0 flex-col gap-1 overflow-hidden rounded-xl border border-transparent px-2 text-xs text-text-muted hover:bg-white/[0.035] hover:text-text",
-          active && "font-semibold text-text hover:bg-transparent",
-        )}
-      >
-        <Link href={item.href} prefetch={true} aria-current={active ? "page" : undefined}>
-          {active ? (
-            <motion.span
-              layoutId="mobile-shell-active"
-              className="pointer-events-none absolute inset-1 -z-10 rounded-[0.85rem] border border-white/[0.10] bg-[linear-gradient(120deg,rgba(129,114,246,0.18),rgba(255,255,255,0.06)_52%,rgba(115,215,255,0.06))] shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_0_28px_rgba(129,114,246,0.22)]"
-              transition={navSpring}
-              aria-hidden="true"
-            />
-          ) : null}
-          <Icon
-            aria-hidden="true"
-            className={cn(
-              "relative z-10 transition-colors duration-200",
-              active ? "text-accent-bright drop-shadow-[0_0_10px_rgba(178,167,255,0.72)]" : "text-text-muted",
-            )}
-          />
-          <span className="relative z-10">{item.label}</span>
-        </Link>
-      </Button>
-    </motion.div>
-  );
-}
-
-function UtilityIcon({ children, reduceMotion }: { children: ReactNode; reduceMotion: boolean }) {
-  return (
-    <motion.div
-      className="flex size-11 shrink-0 items-center justify-center"
-      whileHover={reduceMotion ? undefined : { y: -2, scale: 1.035 }}
-      whileTap={reduceMotion ? undefined : { scale: 0.94 }}
-      transition={navSpring}
-    >
-      {children}
-    </motion.div>
-  );
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -187,53 +39,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [router, section]);
 
   return (
-    <div className="kinetic-app min-h-dvh text-text lg:flex" data-kinetic-shell="true">
-      <LayoutGroup id="desktop-shell-navigation">
-        <aside
-          className="kinetic-glass kinetic-rail sticky top-3 z-40 hidden h-[calc(100dvh-1.5rem)] w-52 shrink-0 rounded-2xl border px-4 py-5 lg:ml-3 lg:flex lg:flex-col"
-          aria-label="Application navigation"
-          data-kinetic-surface="desktop-rail"
-        >
+    <div className="kinetic-app min-h-dvh text-text" data-kinetic-shell="true">
+      <header
+        className="fixed inset-x-0 top-0 z-50 h-16 border-b border-white/[0.055] bg-[#06080c]/[0.88] backdrop-blur-[18px] lg:h-[72px]"
+        data-kinetic-surface="topbar"
+      >
+        <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-4 sm:px-7 lg:px-12">
           <motion.div
-            whileHover={reduceMotion ? undefined : { scale: 1.018, x: 2 }}
-            transition={navSpring}
-            className="mb-7"
-          >
-            <Link
-              href="/create"
-              prefetch={true}
-              aria-label="Open Create workspace"
-              className="inline-flex min-h-11 items-center rounded-xl px-1 text-lg font-semibold tracking-tight"
-            >
-              <RenderLabBrand markClassName="size-7" textClassName="text-lg" />
-            </Link>
-          </motion.div>
-
-          <nav className="flex flex-col gap-1" aria-label="Primary navigation">
-            {primaryNav.map((item) => (
-              <NavLink key={item.href} item={item} pathname={pathname} reduceMotion={reduceMotion} />
-            ))}
-          </nav>
-
-          <div className="mx-2 mt-5 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" aria-hidden="true" />
-
-          <nav className="mt-auto flex flex-col gap-1" aria-label="Utility navigation">
-            {utilityNav.map((item) => (
-              <NavLink key={item.href} item={item} pathname={pathname} reduceMotion={reduceMotion} />
-            ))}
-          </nav>
-        </aside>
-      </LayoutGroup>
-
-      <div className="relative z-10 min-w-0 flex-1 lg:pl-3">
-        <header
-          className="kinetic-glass kinetic-topbar sticky top-3 z-30 mx-3 mt-3 flex h-14 items-center rounded-2xl border px-4 sm:px-6 lg:hidden"
-          data-kinetic-surface="topbar"
-        >
-          <motion.div
-            whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-            transition={navSpring}
-            className="mr-4 lg:hidden"
+            whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+            transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 430, damping: 34 }}
           >
             <Link
               href="/create"
@@ -241,51 +55,70 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-label="Open Create workspace"
               className="inline-flex min-h-11 items-center rounded-lg font-semibold tracking-tight"
             >
-              <RenderLabBrand markClassName="size-6" textClassName="text-sm" />
+              <RenderLabBrand markClassName="size-7" textClassName="text-[15px]" />
             </Link>
           </motion.div>
 
-          <div className="ml-auto grid grid-cols-2 place-items-center gap-1 rounded-xl border border-white/[0.07] bg-black/15 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_20px_rgba(129,114,246,0.04)]">
-            <UtilityIcon reduceMotion={reduceMotion}>
-              <Button asChild variant="ghost" size="icon-lg" className="rounded-lg hover:bg-white/[0.065]">
-                <Link href="/activity" prefetch={true} aria-label="Open activity">
-                  <Activity aria-hidden="true" />
-                </Link>
-              </Button>
-            </UtilityIcon>
-            <UtilityIcon reduceMotion={reduceMotion}>
-              <Button asChild variant="ghost" size="icon-lg" className="rounded-lg hover:bg-white/[0.065]">
-                <Link href="/settings" prefetch={true} aria-label="Open settings and account">
-                  <CircleUserRound aria-hidden="true" />
-                </Link>
-              </Button>
-            </UtilityIcon>
-          </div>
-        </header>
+          <nav className="ml-auto flex min-h-11 items-center gap-1 sm:gap-2" aria-label="Application navigation">
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "min-h-11 px-2.5 text-[12px] font-medium text-text-muted hover:bg-transparent hover:text-text sm:px-3",
+                isActive(pathname, "/library") && "text-text",
+              )}
+            >
+              <Link href="/library" prefetch={true} aria-current={isActive(pathname, "/library") ? "page" : undefined}>
+                Library
+              </Link>
+            </Button>
 
-        <motion.main
-          key={section ?? pathname}
-          initial={reduceMotion ? false : { opacity: 0.84, y: 6, filter: "blur(3px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className="min-h-[calc(100dvh-5rem)] pb-28 pt-2 lg:pb-3 lg:pr-3"
-          data-kinetic-content="true"
-        >
-          {children}
-        </motion.main>
-      </div>
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "min-h-11 min-w-11 rounded-lg text-text-muted hover:bg-white/[0.045] hover:text-text",
+                isActive(pathname, "/activity") && "text-text",
+              )}
+            >
+              <Link href="/activity" prefetch={true} aria-label="Open activity" aria-current={isActive(pathname, "/activity") ? "page" : undefined}>
+                <Activity aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
 
-      <LayoutGroup id="mobile-shell-navigation">
-        <nav
-          className="kinetic-glass-strong kinetic-dock fixed inset-x-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 flex min-h-16 items-center gap-1 rounded-2xl border p-1.5 lg:hidden"
-          aria-label="Mobile navigation"
-          data-kinetic-surface="mobile-dock"
-        >
-          <MobileNavLink item={primaryNav[0]} pathname={pathname} reduceMotion={reduceMotion} />
-          <MobileNavLink item={primaryNav[1]} pathname={pathname} reduceMotion={reduceMotion} />
-          <MobileNavLink item={utilityNav[0]} pathname={pathname} reduceMotion={reduceMotion} />
-        </nav>
-      </LayoutGroup>
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "min-h-11 min-w-11 rounded-lg text-text-muted hover:bg-white/[0.045] hover:text-text",
+                isActive(pathname, "/settings") && "text-text",
+              )}
+            >
+              <Link href="/settings" prefetch={true} aria-label="Open settings and account" aria-current={isActive(pathname, "/settings") ? "page" : undefined}>
+                <CircleUserRound aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
+
+            <span className="ml-1 hidden text-[9px] font-bold uppercase tracking-[0.18em] text-[#687384] sm:inline">
+              Closed Beta
+            </span>
+          </nav>
+        </div>
+      </header>
+
+      <motion.main
+        key={section ?? pathname}
+        initial={reduceMotion ? false : { opacity: 0.9, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="min-h-dvh pt-16 lg:pt-[72px]"
+        data-kinetic-content="true"
+      >
+        {children}
+      </motion.main>
     </div>
   );
 }
