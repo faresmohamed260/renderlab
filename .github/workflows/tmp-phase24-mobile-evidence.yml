@@ -1,0 +1,74 @@
+name: Apply settled mobile Gallery Rail evidence
+
+on:
+  push:
+    branches:
+      - work/phase-24-library-gallery-rail
+    paths:
+      - .github/workflows/tmp-phase24-mobile-evidence.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-24-library-gallery-rail
+          fetch-depth: 0
+
+      - name: Tighten mobile settled-state evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/verify-library-history.mjs')
+          text = path.read_text(encoding='utf-8')
+          old = '''  await mobileSelect.click();
+  const mobileCheckbox = page.getByRole("checkbox").first();
+'''
+          new = '''  await mobileSelect.click();
+  await page.waitForTimeout(360);
+  const mobileRailSettled = await page.evaluate(() => {
+    const rail = document.querySelector('[data-library-gallery-rail="true"]');
+    const defaults = rail?.querySelector('[data-library-default-controls="true"]');
+    const selection = rail?.querySelector('[data-library-selection-mode="true"]');
+    if (!defaults || !selection) return null;
+    const defaultStyle = getComputedStyle(defaults);
+    const selectionStyle = getComputedStyle(selection);
+    return {
+      defaultVisibility: defaultStyle.visibility,
+      defaultOpacity: Number.parseFloat(defaultStyle.opacity),
+      selectionVisibility: selectionStyle.visibility,
+      selectionOpacity: Number.parseFloat(selectionStyle.opacity),
+    };
+  });
+  assert(
+    mobileRailSettled
+      && mobileRailSettled.defaultVisibility === "hidden"
+      && mobileRailSettled.defaultOpacity < 0.01
+      && mobileRailSettled.selectionVisibility === "visible"
+      && mobileRailSettled.selectionOpacity > 0.99,
+    `Library mobile selection rail did not settle cleanly: ${JSON.stringify(mobileRailSettled)}`,
+  );
+  const mobileCheckbox = page.getByRole("checkbox").first();
+'''
+          if text.count(old) != 1:
+              raise SystemExit('mobile selection evidence marker missing or ambiguous')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          node --check scripts/verify-library-history.mjs
+          git diff --check
+
+      - name: Commit verifier correction and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-phase24-mobile-evidence.yml
+          git add scripts/verify-library-history.mjs
+          git commit -m "Verify settled mobile Gallery Rail selection"
+          git push origin HEAD:work/phase-24-library-gallery-rail
