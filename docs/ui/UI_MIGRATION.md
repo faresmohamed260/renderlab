@@ -50,6 +50,22 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 **Phase 23 correction status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
+## Phase 24 — Library Gallery Rail v0.3
+**Status: `USER-APPROVED DESIGN / IMPLEMENTATION CONTRACT / IMPLEMENTATION NOT STARTED`.**
+
+- [x] Restarted Library R&D from merged UI-074 Create/Landing visual authority rather than the rejected pre-approval Library direction.
+- [x] Audited the current rendered Library and identified stacked command chrome as the primary hierarchy problem.
+- [x] Produced and browser-verified three materially different concepts across desktop/390px default, Uploads, search and selection states.
+- [x] Re-reviewed the concepts impartially and refined the strongest direction into Gallery Rail v0.3, correcting title density, search hierarchy, metadata legibility, selection choreography and a real 390px search-clear touch-target defect.
+- [x] Final R&D head `ba842e919305e07262ae95c81b3c2063a455b54d` passed run `34689164957`; artifact `10296866215`, digest `sha256:db81c13f34514022f01a9e8998de4c0622ee946e316d02655c70477db1a87d95`.
+- [x] User explicitly approved Gallery Rail v0.3 on 2026-09-12; approval is recorded on issue #191.
+- [x] UI-075 and `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md` define the bounded Phase 24 production slice; implementation is tracked by #192.
+- [ ] Production `/library` implementation has not started under this contract yet.
+- [ ] Production deployment is not authorized; automatic Git → Vercel deployment remains disabled.
+
+**Phase 24 boundary:** preserve every current Library URL/server, durable-media, upload, selection/batch, account/ownership, Viewer-link, API/schema/storage/provider and deployment contract. Gallery Rail is a presentation/feature-local interaction redesign, not a product-model migration.
+
+
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
 - [x] Define RenderLab capability model, progressive-disclosure boundaries and information architecture.
