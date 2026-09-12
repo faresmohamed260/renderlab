@@ -300,6 +300,29 @@ try {
   assert(mobileSelectBox && mobileSelectBox.height >= 44, `Library mobile Select target is below 44px: ${JSON.stringify(mobileSelectBox)}`);
   await page.screenshot({ path: `${artifactDir}/library-history-mobile-newest.png`, fullPage: true });
   await mobileSelect.click();
+  await page.waitForTimeout(360);
+  const mobileRailSettled = await page.evaluate(() => {
+    const rail = document.querySelector("[data-library-gallery-rail=\"true\"]");
+    const defaults = rail?.querySelector("[data-library-default-controls=\"true\"]");
+    const selection = rail?.querySelector("[data-library-selection-mode=\"true\"]");
+    if (!defaults || !selection) return null;
+    const defaultStyle = getComputedStyle(defaults);
+    const selectionStyle = getComputedStyle(selection);
+    return {
+      defaultVisibility: defaultStyle.visibility,
+      defaultOpacity: Number.parseFloat(defaultStyle.opacity),
+      selectionVisibility: selectionStyle.visibility,
+      selectionOpacity: Number.parseFloat(selectionStyle.opacity),
+    };
+  });
+  assert(
+    mobileRailSettled
+      && mobileRailSettled.defaultVisibility === `hidden`
+      && mobileRailSettled.defaultOpacity < 0.01
+      && mobileRailSettled.selectionVisibility === `visible`
+      && mobileRailSettled.selectionOpacity > 0.99,
+    `Library mobile selection rail did not settle cleanly: ${JSON.stringify(mobileRailSettled)}`,
+  );
   const mobileCheckbox = page.getByRole("checkbox").first();
   const mobileCheckboxBox = await mobileCheckbox.boundingBox();
   assert(mobileCheckboxBox && mobileCheckboxBox.width >= 43 && mobileCheckboxBox.height >= 43, `Library mobile selection target is too small: ${JSON.stringify(mobileCheckboxBox)}`);
