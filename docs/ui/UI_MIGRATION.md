@@ -36,18 +36,19 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 **Phase 23 status: `IMPLEMENTATION VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
-## Phase 23 fidelity correction reopening — 2026-09-12
-- [x] Direct user fidelity review rejected the first merged Phase 23 pixels as materially divergent from the approved v0.5 artifact; issue #184 remains the tracker and the approved v0.5 evidence remains authoritative.
-- [x] PR #188 / `work/phase-23-create-fidelity-correction` restores the approved horizontal shell and Clear Composer composition without changing product/backend/security/data contracts.
-- [x] User-approved exact implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed all 16 directly attached workflows, including Engineering Quality `34680601598`, UI Shell `34680601708`, Create Clear Composer Visual `34680601776`, configured Create Lifecycle `34680601698`, Integrated Release `34680601834`, Generation Admission `34680601611`, Account Ownership `34680601582` and Video Generation Integration `34680601661`.
-- [x] Create Clear Composer Visual artifact `10293387664` has digest `sha256:e4937a16a2fed2bc160634c73c60322b0748ff3eb5d166b44cbc33f894a92915`; configured Create Lifecycle artifact `10293653778` has digest `sha256:ba13fc48dcf4d823575b041455d902e48040d2cd554892c0b5b508ee80e88624`.
-- [x] The repeated pre-fix lifecycle failure was isolated to the stale post-Edit heading wait after real generation and durable persistence had already succeeded. The verifier now asserts Image mode, `Primary image`, and the loaded durable reference preview; product/security invariants remain intact.
-- [x] Direct user review approved the real corrected desktop generating/result and mobile result appearance on 2026-09-12.
-- [x] Production remains unchanged; Library R&D #187 remains paused pending merge closure.
-- [x] Merge is explicitly authorized after the documentation-final exact head passes the normal attached workflow set.
+## Phase 23 fidelity correction closure — 2026-09-12
+- [x] Direct user fidelity review rejected the first merged Phase 23 pixels as materially divergent from the approved v0.5 artifact; the approved v0.5 evidence remained authoritative throughout the correction.
+- [x] PR #188 restored the approved compact horizontal shell and Clear Composer composition without changing product/backend/security/data contracts.
+- [x] User-approved implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` passed all 16 directly attached workflows and produced accepted browser evidence: Clear Composer artifact `10293387664` (`sha256:e4937a16a2fed2bc160634c73c60322b0748ff3eb5d166b44cbc33f894a92915`) and configured Create Lifecycle artifact `10293653778` (`sha256:ba13fc48dcf4d823575b041455d902e48040d2cd554892c0b5b508ee80e88624`).
+- [x] Documentation-final PR head `b6a2590875432ba75c28db9e0f4b465133e1873c` passed all 16 workflows GitHub attached to that exact head.
+- [x] PR #188 squash-merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076`.
+- [x] Every workflow GitHub actually attached to merged `main` passed: Engineering Quality `34684825581`, Video Generation Integration `34684825378`, Creative Iteration `34684825592` (unchanged attempt 2 after attempt 1 hit a transient Supabase 504 during fixture inspection), Activity Cancel Visual `34684825420`, and UI Shell Validation `34684825448`. Creative Iteration attempt 1 failed only on a transient Supabase 504 while inspecting a configured fixture; the unchanged retry passed the full verifier and cleanup.
+- [x] Direct user review approved the corrected real desktop generating/result and mobile result appearance on 2026-09-12.
+- [x] The stale post-Edit presentation wait was replaced only with the real continuation invariants: Image mode, `Primary image`, and loaded durable reference preview; product/security assertions remain intact.
+- [x] The Create fidelity correction no longer blocks Library redesign work. The previously rejected Library concept stays rejected; future Library work must restart from the merged Create/Landing visual system.
 - [ ] Production deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
 
-**Phase 23 correction status: `VISUALLY APPROVED / IMPLEMENTATION EXACT-HEAD VERIFIED / MERGE AUTHORIZED / DOCUMENTATION-FINAL EXACT-HEAD ACCEPTANCE PENDING / NOT DEPLOYED`.**
+**Phase 23 correction status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
