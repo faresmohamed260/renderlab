@@ -223,12 +223,9 @@ async function ensureComparisonClosed(page) {
   await wait(420);
 }
 
-async function captureCompareAt(page, delayMs, suffix) {
-  await ensureComparisonClosed(page);
-  const compare = page.getByRole("button", { name: "Compare source", exact: true });
-  await compare.click();
-  if (delayMs) await wait(delayMs);
-  await shot(page, `phase25-viewer-compare-${suffix}-desktop`);
+async function temporalShot(page, name) {
+  await noOverflow(page, name);
+  return page.screenshot({ path: `${artifactDir}/${name}.png`, fullPage: false });
 }
 
 async function cleanupFixture() {
@@ -348,10 +345,26 @@ try {
   assert((await sourceLink.getAttribute("href")) === `/library/${source.id}`, "Source Fold did not link to the ordinary source Viewer.");
   await ensureComparisonClosed(page);
 
-  await captureCompareAt(page, 0, "t000");
-  await captureCompareAt(page, 60, "t060");
-  await captureCompareAt(page, 180, "t180");
-  await captureCompareAt(page, 360, "t360");
+  await ensureComparisonClosed(page);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const temporalFrames = [];
+  temporalFrames.push(await temporalShot(page, "phase25-viewer-compare-t000-desktop"));
+  const temporalCompare = page.getByRole("button", { name: "Compare source", exact: true });
+  await temporalCompare.click();
+  await wait(60);
+  temporalFrames.push(await temporalShot(page, "phase25-viewer-compare-t060-desktop"));
+  await wait(120);
+  temporalFrames.push(await temporalShot(page, "phase25-viewer-compare-t180-desktop"));
+  await wait(180);
+  temporalFrames.push(await temporalShot(page, "phase25-viewer-compare-t360-desktop"));
+  await page.getByRole("link", { name: "Open source", exact: true }).waitFor({ state: "visible" });
+  const uniqueTemporalFrames = temporalFrames.filter(
+    (frame, index, frames) => frames.findIndex((candidate) => candidate.equals(frame)) === index,
+  );
+  assert(
+    uniqueTemporalFrames.length >= 3,
+    `Source Fold temporal evidence collapsed to ${uniqueTemporalFrames.length} unique frame(s); expected at least 3 across t000/t060/t180/t360.`,
+  );
 
   await ensureComparisonClosed(page);
   await compareButton.click();
