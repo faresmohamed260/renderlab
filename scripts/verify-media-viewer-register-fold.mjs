@@ -363,20 +363,37 @@ try {
   if (await sourceLink.count()) await sourceLink.waitFor({ state: "detached", timeout: 2_000 }).catch(() => {});
   assert((await sourceLink.count()) === 0, "Source Fold did not fully close after reversal.");
 
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await compareButton.click();
-  await sourceLink.waitFor({ state: "visible" });
+  const reducedDesktop = await browser.newContext({
+    viewport: { width: 1440, height: 1000 },
+    colorScheme: "dark",
+    reducedMotion: "reduce",
+  });
+  const reducedPage = await reducedDesktop.newPage();
+  await routeLocalAppRequestsWithAccount(reducedPage, baseUrl, account);
+  await reducedPage.goto(`${baseUrl}/library/${result.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await reducedPage.getByRole("heading", { name: "Aurora study — resolved", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  assert(
+    await reducedPage.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches),
+    "Reduced-motion evidence context did not expose prefers-reduced-motion: reduce.",
+  );
+  const reducedCompareButton = reducedPage.getByRole("button", { name: "Compare source", exact: true });
+  await reducedCompareButton.click();
+  const reducedSourceLink = reducedPage.getByRole("link", { name: "Open source", exact: true });
+  await reducedSourceLink.waitFor({ state: "visible" });
   await wait(30);
-  const runningReducedAnimations = await page.locator("#media-viewer-comparison").evaluate((element) =>
+  const runningReducedAnimations = await reducedPage.locator("#media-viewer-comparison").evaluate((element) =>
     element.getAnimations({ subtree: true }).filter((animation) => {
       const duration = Number(animation.effect?.getTiming().duration || 0);
       return animation.playState === "running" && duration > 0;
     }).length,
   );
   assert(runningReducedAnimations === 0, `Reduced-motion Source Fold left ${runningReducedAnimations} running animations.`);
-  await shot(page, "phase25-viewer-compare-reduced-motion-desktop");
-  await page.getByRole("button", { name: "Close comparison", exact: true }).click();
-  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await shot(reducedPage, "phase25-viewer-compare-reduced-motion-desktop");
+  await reducedPage.getByRole("button", { name: "Close comparison", exact: true }).click();
+  await reducedCompareButton.waitFor({ state: "visible" });
+  if (await reducedSourceLink.count()) await reducedSourceLink.waitFor({ state: "detached", timeout: 2_000 }).catch(() => {});
+  assert((await reducedSourceLink.count()) === 0, "Reduced-motion Source Fold did not fully close.");
+  await reducedDesktop.close();
 
   await page.goto(`${baseUrl}/library/${video.id}`, { waitUntil: "networkidle", timeout: 60_000 });
   const videoElement = page.locator("video");
