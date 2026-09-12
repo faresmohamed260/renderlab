@@ -52,4 +52,4 @@ jobs:
           git commit -m "Record Phase 24 Library Gallery Rail closure"
           git push origin HEAD:docs/phase-24-library-gallery-rail-closure
 
-# Third guarded attempt corrects only helper code generation; no docs were committed by earlier attempts.
+# Guarded closure helper; failed attempts made no documentation commits.
