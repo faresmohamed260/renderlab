@@ -220,7 +220,10 @@ try {
   assert(await page.getByRole("menuitem", { name: /Advanced controls/ }).count() === 0, "Advanced controls are still nested inside Video settings.");
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-video-settings.png`, fullPage: true });
   await page.getByRole("menuitemradio", { name: "1080p", exact: true }).click();
-  assert((await videoSettings.textContent())?.includes("1080p·5s"), "Video settings trigger did not summarize resolution and duration.");
+  assert(
+    (await videoSettings.getAttribute("aria-label")) === "Video settings. Resolution 1080p. Duration 5 seconds. Audio on",
+    `Video settings trigger did not expose the updated resolution and duration: ${await videoSettings.getAttribute("aria-label")}`,
+  );
 
   const videoAdvancedButton = page.getByRole("button", { name: "Open Advanced controls", exact: true });
   await videoAdvancedButton.waitFor({ state: "visible", timeout: 10_000 });
@@ -370,16 +373,17 @@ try {
   await page.setViewportSize(mobileViewport);
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
-  const mobileDock = page.locator('[data-kinetic-surface="mobile-dock"]');
+  assert(await page.locator('[data-kinetic-surface="mobile-dock"]').count() === 0, "Approved horizontal AppShell unexpectedly rendered the deprecated mobile dock.");
   const resultActions = page.locator('[data-create-result-info="true"] button');
-  const dockBox = await mobileDock.boundingBox();
   const actionBoxes = await resultActions.evaluateAll((buttons) => buttons.map((button) => {
     const rect = button.getBoundingClientRect();
-    return { top: rect.top, bottom: rect.bottom };
+    return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
   }));
-  assert(dockBox && actionBoxes.length > 0, "Could not measure mobile result actions against the fixed dock.");
-  const lowestActionBottom = Math.max(...actionBoxes.map((box) => box.bottom));
-  assert(lowestActionBottom <= dockBox.y - 8, `Mobile result actions were obscured by the fixed dock: actions=${JSON.stringify(actionBoxes)} dock=${JSON.stringify(dockBox)}`);
+  assert(actionBoxes.length > 0, "Could not measure mobile result actions in the approved horizontal AppShell.");
+  assert(
+    actionBoxes.every((box) => box.left >= -1 && box.right <= mobileViewport.width + 1),
+    `Mobile result actions overflowed the viewport: ${JSON.stringify(actionBoxes)}`,
+  );
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-mobile-result.png`, fullPage: true });
 
   await edit.click();
