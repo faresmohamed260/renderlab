@@ -1,0 +1,49 @@
+name: Library Gallery Rail R&D v0.3
+
+on:
+  push:
+    branches:
+      - rd/library-gallery-rail-v03
+    paths:
+      - '.github/workflows/library-gallery-rail-v03.yml'
+      - 'design/rd/library-gallery-rail-v03.md'
+      - 'design/prototypes/library-gallery-rail-v03/**'
+      - 'scripts/verify-library-gallery-rail-v03.mjs'
+  workflow_dispatch:
+
+concurrency:
+  group: library-gallery-rail-v03-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify refined Library Gallery Rail and evidence
+        run: node scripts/verify-library-gallery-rail-v03.mjs
+
+      - name: Upload review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-library-gallery-rail-v03
+          path: artifacts/library-gallery-rail-v03
+          if-no-files-found: ignore
+          retention-days: 30
