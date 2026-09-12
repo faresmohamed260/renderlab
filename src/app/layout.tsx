@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import "./create-clear-composer.css";
 
 const title = "RenderLab — Image & video creative workspace";
 const description =
