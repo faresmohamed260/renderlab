@@ -67,6 +67,15 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - The fidelity correction no longer blocks the next UI-migration work. The rejected pre-approval Library concept must not be resumed; future Library work restarts from the now-merged approved Create/Landing system.
 - Production remains unchanged at source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`. Automatic Git → Vercel deployment remains disabled and no deployment is authorized by this closure.
 
+
+
+## Phase 24 Library Gallery Rail v0.3 — approved design / implementation contract
+- The user explicitly approved the refined Library Gallery Rail v0.3 direction on 2026-09-12 after a fresh R&D restart from the corrected UI-074 Create/Landing system. The rejected older Library concept remains superseded and must not be resumed.
+- Accepted design authority is isolated R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, run `34689164957`, artifact `10296866215` (`sha256:db81c13f34514022f01a9e8998de4c0622ee946e316d02655c70477db1a87d95`). Issue #191 records the design audit, critique, iteration and explicit approval.
+- UI-075 and `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md` govern Phase 24 implementation tracked by issue #192. The slice is visual/feature-local only: compact Library context, one Gallery Rail for source/search/filter/organization controls, media-first grid, bounded card depth and an in-place selection-rail morph.
+- Existing Library product contracts remain fixed: URL/server-owned discovery/organization, shared durable media identity, Uploads-only upload/drop behavior, current-page selection and bounded batch semantics, Viewer activation, account ownership/security and backend/storage/provider/schema/routing boundaries.
+- Production implementation must not begin before the implementation contract is merged. Production deployment remains separately explicit and automatic Git → Vercel deployment remains disabled.
+
 ## Current Verified Baseline — 2026-09-12
 - The verified application implementation baseline is PR #188 merge `3f0d21ed55554b3c48791d35dd17cb6005212076`; repository documentation closure PR #189 is also merged. The correction is user-approved, exact-head verified and merged-main verified. Production is still the separately approved source `0173c4c5ba08360b6352331118abc81978cfa774`; no production deployment followed these repository merges.
 - Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`.
