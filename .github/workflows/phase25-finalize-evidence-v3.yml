@@ -1,0 +1,65 @@
+name: Phase 25 Finalize Evidence V3
+
+on:
+  push:
+    branches:
+      - work/phase-25-media-viewer-register-fold
+    paths:
+      - .github/workflows/phase25-finalize-evidence-v3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-25-media-viewer-register-fold
+          fetch-depth: 0
+
+      - name: Write verifier and timing-safe regression assertion
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64, gzip, re
+          from pathlib import Path
+
+          staged = Path(".github/workflows/phase25-finalize-evidence.yml").read_text()
+          verifier_match = re.search(r"^\s*VERIFIER_B64:\s*(\S+)\s*$", staged, re.MULTILINE)
+          if not verifier_match:
+              raise SystemExit("Could not recover staged Phase 25 verifier payload")
+          Path("scripts/verify-media-viewer-register-fold.mjs").write_bytes(
+              gzip.decompress(base64.b64decode(verifier_match.group(1)))
+          )
+
+          path = Path("scripts/verify-creative-iteration.mjs")
+          text = path.read_text()
+          old = (
+              '  await page.getByRole("button", { name: "Close comparison", exact: true }).click();\n'
+              '  await compareButton.waitFor({ state: "visible" });\n'
+              '  assert((await page.getByRole("link", { name: "Open source", exact: true }).count()) === 0, "Closing comparison did not restore the default Viewer.");'
+          )
+          new = (
+              '  await page.getByRole("button", { name: "Close comparison", exact: true }).click();\n'
+              '  await compareButton.waitFor({ state: "visible" });\n'
+              '  await openSource.waitFor({ state: "detached", timeout: 2_000 });\n'
+              '  assert((await page.getByRole("link", { name: "Open source", exact: true }).count()) === 0, "Closing comparison did not restore the default Viewer.");'
+          )
+          if text.count(old) != 1:
+              raise SystemExit(f"Expected one comparison-close block, found {text.count(old)}")
+          path.write_text(text.replace(old, new))
+          PY
+
+      - name: Verify and commit non-workflow changes
+        shell: bash
+        run: |
+          node --check scripts/verify-media-viewer-register-fold.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-media-viewer-register-fold.mjs scripts/verify-creative-iteration.mjs
+          git diff --cached --check
+          git commit -m "Add Phase 25 Viewer implementation verifier"
+          git push origin HEAD:work/phase-25-media-viewer-register-fold
