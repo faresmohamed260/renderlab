@@ -1,0 +1,50 @@
+name: Apply Phase 24 closure documentation
+
+on:
+  push:
+    branches:
+      - docs/phase-24-library-gallery-rail-closure
+    paths:
+      - .github/workflows/tmp-phase24-docs-closure.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout closure branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/phase-24-library-gallery-rail-closure
+          fetch-depth: 0
+
+      - name: Apply verified Phase 24 closure
+        run: |
+          node scripts/tmp-phase24-docs-closure.mjs
+          git diff --check
+
+      - name: Verify intended documentation scope
+        shell: bash
+        run: |
+          expected=$(printf '%s\n' \
+            PROJECT.md \
+            docs/ui/SCREEN_REGISTRY.md \
+            docs/ui/UI_DECISIONS.md \
+            docs/ui/UI_MIGRATION.md \
+            docs/ui/UI_SYSTEM.md \
+            | sort)
+          actual=$(git diff --name-only | grep -v '^$' | sort)
+          test "$actual" = "$expected"
+
+      - name: Commit closure and remove helpers
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-phase24-docs-closure.yml scripts/tmp-phase24-docs-closure.mjs
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md docs/ui/UI_SYSTEM.md
+          git diff --cached --check
+          git commit -m "Record Phase 24 Library Gallery Rail closure"
+          git push origin HEAD:docs/phase-24-library-gallery-rail-closure
