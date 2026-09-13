@@ -85,3 +85,5 @@ jobs:
           done
           echo '::error::Recovered Upscale endpoint did not expose the durable worker identity.'
           exit 1
+
+# Retry marker: 2026-09-13 durable-ID redeploy after GitHub startup failure.
