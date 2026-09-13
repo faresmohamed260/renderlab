@@ -49,7 +49,14 @@ export function ActivityRetryButton({ jobId }: { jobId: string }) {
 
   return (
     <div className="flex min-w-0 w-full flex-col items-start gap-2 sm:w-auto">
-      <Button type="button" variant="secondary" size="sm" disabled={submitting} onClick={retry}>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="min-h-11 px-4"
+        disabled={submitting}
+        onClick={retry}
+      >
         {submitting ? (
           <>
             <Spinner aria-hidden="true" className="motion-reduce:animate-none" />

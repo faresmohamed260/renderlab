@@ -48,7 +48,7 @@ export function ActivityRunAgainButton({ jobId }: { jobId: string }) {
         type="button"
         variant="secondary"
         size="sm"
-        className="w-full sm:w-auto"
+        className="min-h-11 w-full px-4 sm:w-auto"
         disabled={submitting}
         onClick={runAgain}
       >

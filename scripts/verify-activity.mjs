@@ -623,7 +623,15 @@ try {
   await routeLocalAppRequestsWithAccount(page, baseUrl, owner);
   await page.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });
 
-  await page.locator("h2").filter({ hasText: /^Activity$/ }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Activity", level: 1 }).waitFor({ state: "visible", timeout: 30_000 });
+  assert(await page.locator('[data-activity-system="job-matrix"]').count() === 1, "Activity did not render the approved Job Matrix system root.");
+  assert(await page.locator('[data-activity-stage]').count() === 1, "Activity did not render one registered Activity stage.");
+  const matrixJobs = page.locator('[data-activity-matrix] > li');
+  assert(await matrixJobs.count() === 3, "Activity did not register exactly the three newest visible jobs in the Job Matrix.");
+  assert(await matrixJobs.nth(0).getByText("Nebula active study", { exact: true }).count() === 1, "Activity Job Matrix did not keep the newest job in position 01.");
+  assert(await matrixJobs.nth(1).getByText("Golden result study", { exact: true }).count() === 1, "Activity Job Matrix did not keep the second-newest job in position 02.");
+  assert(await matrixJobs.nth(2).getByText("2× upscale", { exact: true }).count() === 1, "Activity Job Matrix did not keep the third-newest job in position 03.");
+  assert(await page.locator('[data-activity-register]').count() === 1, "Activity did not continue remaining visible jobs in the attached History Register.");
   await page.getByText("Nebula active study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Golden result study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Upscale image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
@@ -638,7 +646,7 @@ try {
   assert(await page.getByRole("link", { name: "View result", exact: true }).count() === 1, "Activity rendered a result link for unavailable historical media.");
   assert(await page.getByText("Historical deleted output", { exact: true }).count() === 0, "Activity retained an entry after its generated result was deleted.");
   assert(await page.getByRole("link", { name: "View result", exact: true }).getAttribute("href") === `/library/${resultAssetId}`, "Activity result link did not target active owner media.");
-  await page.getByText("Updates automatically while generation work is active.", { exact: true }).waitFor({ state: "visible" });
+  await page.locator('[data-activity-live="true"]').waitFor({ state: "visible" });
   await page.getByRole("link", { name: "Older", exact: true }).waitFor({ state: "visible" });
   assert(await page.getByRole("button", { name: "Retry", exact: true }).count() === 11, "Activity did not expose Retry exactly on failed first-page jobs.");
   assert(await page.getByRole("button", { name: /cancel/i }).count() === 0, "Phase 9 exposed a Cancel control.");

@@ -58,11 +58,11 @@ export function ActivityCancelButton({ jobId }: { jobId: string }) {
     <div className="flex min-w-0 w-full flex-col items-start gap-2 sm:w-auto">
       <AlertDialog open={open} onOpenChange={(nextOpen) => !submitting && setOpen(nextOpen)}>
         <AlertDialogTrigger asChild>
-          <Button type="button" variant="outline" size="sm" disabled={submitting}>
+          <Button type="button" variant="outline" size="sm" className="min-h-11 px-4" disabled={submitting}>
             Cancel
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-white/10 bg-[#0a0e14]/[0.98] shadow-2xl shadow-black/50">
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel this generation?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -70,8 +70,9 @@ export function ActivityCancelButton({ jobId }: { jobId: string }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Keep running</AlertDialogCancel>
+            <AlertDialogCancel className="min-h-11" disabled={submitting}>Keep running</AlertDialogCancel>
             <AlertDialogAction
+              className="min-h-11"
               disabled={submitting}
               onClick={(event) => {
                 event.preventDefault();
