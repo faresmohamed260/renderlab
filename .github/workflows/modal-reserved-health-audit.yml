@@ -1,0 +1,31 @@
+name: RenderLab Reserved Modal Health Audit
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - .github/workflows/modal-reserved-health-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe reserved RenderLab-owned historical gateways
+        shell: bash
+        run: |
+          set +e
+          probe() {
+            name="$1"; url="$2"
+            code=$(curl --silent --show-error --max-time 30 -o "/tmp/${name}.out" -w '%{http_code}' "$url/health")
+            rc=$?
+            bytes=$(wc -c < "/tmp/${name}.out" 2>/dev/null || echo 0)
+            printf '{"worker":"%s","curlExit":%s,"httpStatus":"%s","responseBytes":%s}\n' "$name" "$rc" "$code" "$bytes"
+          }
+          probe modal-46-ltx-historical https://dreadcipher67--saga-ltx25-gateway-web.modal.run
+          probe modal-47-ltx-historical https://blackzerox67--saga-ltx25-gateway-web.modal.run
+          exit 0
