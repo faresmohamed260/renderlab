@@ -25,17 +25,12 @@ jobs:
         with:
           ref: ops/phase-26-closure-docs-20260913
           path: helper
-          sparse-checkout: .github/scripts/phase26_closure_docs.py
+          sparse-checkout: .github/scripts/phase26_closure_correction.py
           sparse-checkout-cone-mode: false
 
-      - name: Record verified Phase 26 closure
+      - name: Correct audited Phase 26 closure
         run: |
-          python helper/.github/scripts/phase26_closure_docs.py
-          python - <<'PY'
-          from pathlib import Path
-          path = Path("docs/ui/UI_DECISIONS.md")
-          path.write_text(path.read_text().rstrip() + "\n")
-          PY
+          python helper/.github/scripts/phase26_closure_correction.py
           git diff --check
           git diff -- PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md
 
@@ -45,5 +40,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md
-          git commit -m "Record Phase 26 Activity closure"
+          git commit -m "Correct Phase 26 Activity closure record"
           git push origin HEAD:docs/phase-26-activity-closure
