@@ -1,0 +1,1102 @@
+name: Apply Phase 27 Settings Trust Register
+
+on:
+  push:
+    branches:
+      - work/phase-27-settings-trust-register
+    paths:
+      - ".github/workflows/phase27-settings-apply.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/phase-27-settings-trust-register
+          fetch-depth: 0
+
+      - name: Apply bounded Phase 27 implementation
+        shell: bash
+        run: |
+          cat > 'src/app/(app)/settings/page.tsx' <<'EOF_SETTINGS_PAGE'
+          import { AccountSettings } from "@/features/account/account-settings";
+          import styles from "@/features/account/account-settings.module.css";
+          import { isSupabaseAuthConfigured } from "@/lib/supabase/config";
+          import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
+          import {
+            isRenderLabAccessEnforcementEnabled,
+            resolveRenderLabAccountAccess,
+            type RenderLabAccountAccess,
+          } from "@/server/account/account-access";
+          import { getCurrentRenderLabAdmin } from "@/server/admin/admin-auth";
+          
+          export const dynamic = "force-dynamic";
+          
+          function firstParam(value: string | string[] | undefined) {
+            return Array.isArray(value) ? value[0] : value;
+          }
+          
+          function initialFeedback(params: Record<string, string | string[] | undefined>) {
+            if (firstParam(params.password) === "updated") {
+              return { kind: "success" as const, message: "Password updated." };
+            }
+            const auth = firstParam(params.auth);
+            if (auth === "invitation_accepted") {
+              return { kind: "success" as const, message: "Invitation accepted. Your RenderLab access is active." };
+            }
+            if (auth === "invitation_required") {
+              return { kind: "error" as const, message: "This invitation cannot grant active RenderLab access." };
+            }
+            if (auth === "link_invalid") {
+              return { kind: "error" as const, message: "That account link is invalid or has expired." };
+            }
+            if (auth === "unavailable") {
+              return { kind: "error" as const, message: "Account verification is temporarily unavailable." };
+            }
+            return null;
+          }
+          
+          export default async function SettingsPage({
+            searchParams,
+          }: {
+            searchParams: Promise<Record<string, string | string[] | undefined>>;
+          }) {
+            const params = await searchParams;
+            const configured = isSupabaseAuthConfigured();
+            const identity = configured ? await getCurrentRenderLabIdentity() : null;
+            let access: RenderLabAccountAccess | null = null;
+          
+            if (identity) {
+              try {
+                access = await resolveRenderLabAccountAccess(identity);
+              } catch {
+                access = null;
+              }
+            }
+          
+            const admin = access?.status === "active" && access.role === "admin"
+              ? await getCurrentRenderLabAdmin()
+              : null;
+            const showAdminLink = Boolean(identity && admin?.identity.id === identity.id);
+          
+            const intro = !configured
+              ? "Account access is unavailable in this runtime."
+              : identity
+                ? "Manage your account, access and security."
+                : "Sign in to your invited RenderLab account.";
+          
+            return (
+              <section className={styles.workspace}>
+                <header className={styles.intro}>
+                  <p className={styles.eyebrow}>Account security</p>
+                  <h1 className={styles.title}>Settings</h1>
+                  <p className={styles.lede}>{intro}</p>
+                </header>
+          
+                <AccountSettings
+                  configured={configured}
+                  identity={identity}
+                  access={access}
+                  enforcementEnabled={isRenderLabAccessEnforcementEnabled()}
+                  initialFeedback={initialFeedback(params)}
+                  showAdminLink={showAdminLink}
+                />
+              </section>
+            );
+          }
+          EOF_SETTINGS_PAGE
+          
+          cat > 'src/features/account/account-settings.tsx' <<'EOF_ACCOUNT_SETTINGS'
+          "use client";
+          
+          import Link from "next/link";
+          import { useState, type FormEvent, type ReactNode } from "react";
+          import { useRouter } from "next/navigation";
+          import { Alert, AlertDescription } from "@/components/ui/alert";
+          import { Button } from "@/components/ui/button";
+          import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+          import { Input } from "@/components/ui/input";
+          import { Spinner } from "@/components/ui/spinner";
+          import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+          import type { RenderLabIdentity } from "@/lib/supabase/server";
+          import type { RenderLabAccountAccess } from "@/server/account/account-access";
+          import styles from "./account-settings.module.css";
+          
+          type Feedback = { kind: "error" | "success"; message: string } | null;
+          
+          type BusyAction = "signin" | "recovery" | "signout" | null;
+          
+          function accessPresentation(access: RenderLabAccountAccess | null, enforcementEnabled: boolean) {
+            if (access?.status === "active") {
+              return {
+                key: "active",
+                label: "Active",
+                message: "This account has active RenderLab closed-beta access.",
+              };
+            }
+            if (access?.status === "suspended") {
+              return {
+                key: "suspended",
+                label: "Suspended",
+                message: "Creation, Library and Activity access are paused. Password and sign-out controls remain available.",
+              };
+            }
+            if (enforcementEnabled) {
+              return {
+                key: "invitation-required",
+                label: "Invitation required",
+                message: "This identity is signed in, but it has not been admitted to the RenderLab closed beta.",
+              };
+            }
+            return {
+              key: "transition",
+              label: "Transition access",
+              message: "Closed-beta admission records are being introduced. Existing authenticated access remains available until the explicit account bootstrap is enabled.",
+            };
+          }
+          
+          export function AccountSettings({
+            configured,
+            identity,
+            access,
+            enforcementEnabled,
+            initialFeedback = null,
+            showAdminLink,
+          }: {
+            configured: boolean;
+            identity: RenderLabIdentity | null;
+            access: RenderLabAccountAccess | null;
+            enforcementEnabled: boolean;
+            initialFeedback?: Feedback;
+            showAdminLink: boolean;
+          }) {
+            const router = useRouter();
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const [busyAction, setBusyAction] = useState<BusyAction>(null);
+            const [feedback, setFeedback] = useState<Feedback>(initialFeedback);
+          
+            if (!configured) {
+              return (
+                <div className={styles.runtimeAlert}>
+                  <Alert>
+                    <AlertDescription>Account access is not configured in this runtime.</AlertDescription>
+                  </Alert>
+                </div>
+              );
+            }
+          
+            async function handleSignIn(event: FormEvent<HTMLFormElement>) {
+              event.preventDefault();
+              setFeedback(null);
+              setBusyAction("signin");
+              try {
+                const supabase = createBrowserSupabaseClient();
+                if (!supabase) {
+                  setFeedback({ kind: "error", message: "Account access is unavailable in this runtime." });
+                  return;
+                }
+                const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+                if (error) {
+                  setFeedback({ kind: "error", message: "Unable to sign in with those credentials." });
+                  return;
+                }
+                setPassword("");
+                router.refresh();
+              } catch {
+                setFeedback({ kind: "error", message: "Sign in is temporarily unavailable. Try again." });
+              } finally {
+                setBusyAction(null);
+              }
+            }
+          
+            async function handleRecovery() {
+              setFeedback(null);
+              setBusyAction("recovery");
+              try {
+                const supabase = createBrowserSupabaseClient();
+                if (!supabase) {
+                  setFeedback({ kind: "error", message: "Password recovery is unavailable in this runtime." });
+                  return;
+                }
+                const redirectTo = `${window.location.origin}/auth/confirm?type=recovery&next=/settings/password`;
+                const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+                if (error) {
+                  setFeedback({ kind: "error", message: "Password recovery is temporarily unavailable. Try again shortly." });
+                  return;
+                }
+                setFeedback({
+                  kind: "success",
+                  message: "If this email can receive a recovery link, check its inbox shortly.",
+                });
+              } catch {
+                setFeedback({ kind: "error", message: "Password recovery is temporarily unavailable. Try again shortly." });
+              } finally {
+                setBusyAction(null);
+              }
+            }
+          
+            async function handleSignOut() {
+              setFeedback(null);
+              setBusyAction("signout");
+              try {
+                const supabase = createBrowserSupabaseClient();
+                if (!supabase) {
+                  setFeedback({ kind: "error", message: "Sign out is unavailable in this runtime." });
+                  return;
+                }
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                  setFeedback({ kind: "error", message: "Sign out did not complete. Try again." });
+                  return;
+                }
+                router.refresh();
+              } catch {
+                setFeedback({ kind: "error", message: "Sign out did not complete. Try again." });
+              } finally {
+                setBusyAction(null);
+              }
+            }
+          
+            if (identity) {
+              const accessState = accessPresentation(access, enforcementEnabled);
+          
+              return (
+                <div className={styles.surfaceWrap}>
+                  <div className={styles.register} data-account-state="signed-in">
+                    <span className={styles.signatureArc} aria-hidden="true" />
+          
+                    <RegisterRow index="01" title="Account">
+                      <div className={styles.valueStack}>
+                        <p className={styles.valueLabel}>Sign-in email</p>
+                        <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
+                        <p className={styles.helper}>Used to sign in. Email changes are not currently available.</p>
+                      </div>
+                    </RegisterRow>
+          
+                    <RegisterRow index="02" title="Access">
+                      <div className={styles.valueStack}>
+                        <div className={styles.valueHeader}>
+                          <div>
+                            <p className={styles.valueLabel}>Closed Beta access</p>
+                            <p className={styles.helper}>RenderLab admission is separate from being signed in.</p>
+                          </div>
+                          <span className={styles.status} data-access-state={accessState.key}>
+                            {accessState.label}
+                          </span>
+                        </div>
+                        <p className={styles.helper}>{accessState.message}</p>
+                      </div>
+                    </RegisterRow>
+          
+                    <RegisterRow index="03" title="Security">
+                      <div className={styles.actionRow}>
+                        <div className={styles.valueStack}>
+                          <p className={styles.valueLabel}>Password</p>
+                          <p className={styles.helper}>
+                            Change your password. This browser stays signed in while other RenderLab sessions are revoked after a successful update.
+                          </p>
+                        </div>
+                        <Button asChild variant="secondary" size="lg">
+                          <Link href="/settings/password">Change password</Link>
+                        </Button>
+                      </div>
+                    </RegisterRow>
+          
+                    <RegisterRow index="04" title="Sessions">
+                      <div className={styles.actionRow}>
+                        <div className={styles.valueStack}>
+                          <p className={styles.valueLabel}>All RenderLab sessions</p>
+                          <p className={styles.helper}>Ends RenderLab sessions on every device and browser.</p>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="lg"
+                          onClick={handleSignOut}
+                          disabled={busyAction !== null}
+                        >
+                          {busyAction === "signout" ? <Spinner aria-hidden="true" /> : null}
+                          Sign out everywhere
+                        </Button>
+                      </div>
+                    </RegisterRow>
+          
+                    {showAdminLink ? (
+                      <RegisterRow index="05" title="Admin">
+                        <div className={styles.actionRow}>
+                          <div className={styles.valueStack}>
+                            <p className={styles.valueLabel}>Admin operations</p>
+                            <p className={styles.helper}>
+                              Your active RenderLab admin role can open the separate privileged operations surface.
+                            </p>
+                          </div>
+                          <Button asChild variant="secondary" size="lg">
+                            <Link href="/admin">Open Admin</Link>
+                          </Button>
+                        </div>
+                      </RegisterRow>
+                    ) : null}
+                  </div>
+          
+                  {feedback ? (
+                    <Alert variant={feedback.kind === "error" ? "destructive" : "default"}>
+                      <AlertDescription>{feedback.message}</AlertDescription>
+                    </Alert>
+                  ) : null}
+                </div>
+              );
+            }
+          
+            return (
+              <form className={styles.register} data-account-state="signed-out" onSubmit={handleSignIn}>
+                <span className={styles.signatureArc} aria-hidden="true" />
+                <RegisterRow index="01" title="Account">
+                  <div className={styles.formStack}>
+                    <div className={styles.valueStack}>
+                      <p className={styles.valueLabel}>Sign in</p>
+                      <p className={styles.helper}>Use the credentials for your invited RenderLab account.</p>
+                    </div>
+          
+                    <FieldGroup>
+                      <Field>
+                        <FieldLabel htmlFor="account-email">Email</FieldLabel>
+                        <Input
+                          id="account-email"
+                          name="email"
+                          type="email"
+                          autoComplete="email"
+                          value={email}
+                          onChange={(event) => setEmail(event.target.value)}
+                          required
+                        />
+                      </Field>
+                      <Field>
+                        <div className={styles.fieldHeader}>
+                          <FieldLabel htmlFor="account-password">Password</FieldLabel>
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="lg"
+                            disabled={busyAction !== null || !email.trim()}
+                            onClick={handleRecovery}
+                            className={styles.recoveryButton}
+                          >
+                            {busyAction === "recovery" ? <Spinner aria-hidden="true" /> : null}
+                            Forgot password
+                          </Button>
+                        </div>
+                        <Input
+                          id="account-password"
+                          name="password"
+                          type="password"
+                          autoComplete="current-password"
+                          minLength={8}
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                          required
+                        />
+                        <FieldDescription>Use your invited RenderLab account credentials.</FieldDescription>
+                        <FieldError>{feedback?.kind === "error" ? feedback.message : null}</FieldError>
+                      </Field>
+                    </FieldGroup>
+          
+                    {feedback?.kind === "success" ? (
+                      <Alert>
+                        <AlertDescription>{feedback.message}</AlertDescription>
+                      </Alert>
+                    ) : null}
+          
+                    <div className={styles.formActions}>
+                      <Button type="submit" size="lg" disabled={busyAction !== null || !email.trim() || password.length < 8}>
+                        {busyAction === "signin" ? <Spinner aria-hidden="true" /> : null}
+                        Sign in
+                      </Button>
+                      <p className={styles.closedBeta}>Invitation-only Closed Beta</p>
+                    </div>
+                  </div>
+                </RegisterRow>
+              </form>
+            );
+          }
+          
+          function RegisterRow({ index, title, children }: { index: string; title: string; children: ReactNode }) {
+            return (
+              <section className={styles.row}>
+                <div className={styles.labelCell}>
+                  <span className={styles.index}>{index}</span>
+                  <h2 className={styles.sectionTitle}>{title}</h2>
+                </div>
+                <div className={styles.valueCell}>{children}</div>
+              </section>
+            );
+          }
+          EOF_ACCOUNT_SETTINGS
+          
+          cat > 'src/app/(app)/settings/password/page.tsx' <<'EOF_PASSWORD_PAGE'
+          import Link from "next/link";
+          import { cookies } from "next/headers";
+          import { redirect } from "next/navigation";
+          import { AccountPasswordForm } from "@/features/account/account-password-form";
+          import styles from "@/features/account/account-settings.module.css";
+          import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
+          import {
+            isPasswordRecoveryMarkerValid,
+            PASSWORD_RECOVERY_COOKIE_NAME,
+          } from "@/server/account/recovery-flow";
+          
+          export const dynamic = "force-dynamic";
+          
+          export default async function PasswordSettingsPage() {
+            const identity = await getCurrentRenderLabIdentity();
+            if (!identity?.email) redirect("/settings?auth=signin_required");
+          
+            const cookieStore = await cookies();
+            const recoveryMode = isPasswordRecoveryMarkerValid(
+              cookieStore.get(PASSWORD_RECOVERY_COOKIE_NAME)?.value,
+              identity.id,
+            );
+          
+            return (
+              <section className={styles.workspace}>
+                <header className={styles.intro}>
+                  <Link className={styles.backLink} href="/settings">
+                    ← Settings
+                  </Link>
+                  <p className={styles.eyebrow}>Security</p>
+                  <h1 className={styles.title}>{recoveryMode ? "Set a new password" : "Change password"}</h1>
+                  <p className={styles.lede}>
+                    {recoveryMode
+                      ? "Choose a new password for the account verified by your recovery link."
+                      : "Confirm your current password before replacing it with a new one."}
+                  </p>
+                </header>
+          
+                <AccountPasswordForm email={identity.email} recoveryMode={recoveryMode} />
+              </section>
+            );
+          }
+          EOF_PASSWORD_PAGE
+          
+          cat > 'src/features/account/account-password-form.tsx' <<'EOF_PASSWORD_FORM'
+          "use client";
+          
+          import { useState, type FormEvent } from "react";
+          import { Alert, AlertDescription } from "@/components/ui/alert";
+          import { Button } from "@/components/ui/button";
+          import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+          import { Input } from "@/components/ui/input";
+          import { Spinner } from "@/components/ui/spinner";
+          import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+          import styles from "./account-settings.module.css";
+          
+          type Feedback = { kind: "error" | "success"; message: string } | null;
+          
+          function passwordUpdateMessage(code: string | undefined) {
+            if (code === "weak_password") return "Choose a stronger password and try again.";
+            return "Password could not be updated. Try again.";
+          }
+          
+          export function AccountPasswordForm({ email, recoveryMode }: { email: string; recoveryMode: boolean }) {
+            const [currentPassword, setCurrentPassword] = useState("");
+            const [newPassword, setNewPassword] = useState("");
+            const [confirmPassword, setConfirmPassword] = useState("");
+            const [busy, setBusy] = useState(false);
+            const [feedback, setFeedback] = useState<Feedback>(null);
+          
+            async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+              event.preventDefault();
+              setFeedback(null);
+          
+              if (newPassword.length < 8) {
+                setFeedback({ kind: "error", message: "Use at least 8 characters for the new password." });
+                return;
+              }
+              if (newPassword !== confirmPassword) {
+                setFeedback({ kind: "error", message: "The new passwords do not match." });
+                return;
+              }
+          
+              setBusy(true);
+              try {
+                const supabase = createBrowserSupabaseClient();
+                if (!supabase) {
+                  setFeedback({ kind: "error", message: "Password controls are unavailable in this runtime." });
+                  return;
+                }
+          
+                if (!recoveryMode) {
+                  const { error: reauthenticationError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password: currentPassword,
+                  });
+                  if (reauthenticationError) {
+                    setFeedback({ kind: "error", message: "Current password could not be verified." });
+                    return;
+                  }
+                }
+          
+                const { error } = await supabase.auth.updateUser({ password: newPassword });
+                if (error) {
+                  setFeedback({ kind: "error", message: passwordUpdateMessage(error.code) });
+                  return;
+                }
+          
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                setFeedback({ kind: "success", message: "Password updated." });
+                window.location.assign("/settings/password/complete");
+              } catch {
+                setFeedback({ kind: "error", message: "Password could not be updated. Try again." });
+              } finally {
+                setBusy(false);
+              }
+            }
+          
+            const sessionMessage = recoveryMode
+              ? "This recovery session stays usable. Other RenderLab sessions are revoked after the password is changed."
+              : "This browser stays signed in. Other RenderLab sessions are revoked after the password is changed.";
+          
+            return (
+              <form onSubmit={handleSubmit}>
+                <div className={styles.register}>
+                  <span className={styles.signatureArc} aria-hidden="true" />
+                  <section className={styles.row}>
+                    <div className={styles.labelCell}>
+                      <span className={styles.index}>01</span>
+                      <h2 className={styles.sectionTitle}>Security</h2>
+                    </div>
+                    <div className={styles.valueCell}>
+                      <div className={styles.passwordStack}>
+                        {recoveryMode ? (
+                          <div className={styles.contextBand}>
+                            <span className={styles.contextMark} aria-hidden="true" />
+                            <div>
+                              <p className={styles.valueLabel}>Verified recovery link</p>
+                              <p className={styles.helper}>
+                                RenderLab verified this short-lived recovery context, so your current password is not requested here.
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className={styles.valueStack}>
+                            <p className={styles.valueLabel}>Password replacement</p>
+                            <p className={styles.helper}>Verify your current password before choosing the replacement.</p>
+                          </div>
+                        )}
+          
+                        <FieldGroup>
+                          {!recoveryMode ? (
+                            <Field>
+                              <FieldLabel htmlFor="current-password">Current password</FieldLabel>
+                              <Input
+                                id="current-password"
+                                type="password"
+                                autoComplete="current-password"
+                                value={currentPassword}
+                                onChange={(event) => setCurrentPassword(event.target.value)}
+                                required
+                              />
+                            </Field>
+                          ) : null}
+                          <Field>
+                            <FieldLabel htmlFor="new-password">New password</FieldLabel>
+                            <Input
+                              id="new-password"
+                              type="password"
+                              autoComplete="new-password"
+                              minLength={8}
+                              value={newPassword}
+                              onChange={(event) => setNewPassword(event.target.value)}
+                              required
+                            />
+                            <FieldDescription>Use at least 8 characters.</FieldDescription>
+                          </Field>
+                          <Field>
+                            <FieldLabel htmlFor="confirm-new-password">Confirm new password</FieldLabel>
+                            <Input
+                              id="confirm-new-password"
+                              type="password"
+                              autoComplete="new-password"
+                              minLength={8}
+                              value={confirmPassword}
+                              onChange={(event) => setConfirmPassword(event.target.value)}
+                              required
+                            />
+                          </Field>
+                        </FieldGroup>
+          
+                        {feedback ? (
+                          <Alert variant={feedback.kind === "error" ? "destructive" : "default"}>
+                            <AlertDescription>{feedback.message}</AlertDescription>
+                          </Alert>
+                        ) : null}
+          
+                        <div className={styles.securityNote}>
+                          <p className={styles.valueLabel}>Session security</p>
+                          <p className={styles.helper}>{sessionMessage}</p>
+                        </div>
+          
+                        <div className={styles.passwordActions}>
+                          <Button
+                            size="lg"
+                            type="submit"
+                            disabled={busy || (!recoveryMode && !currentPassword) || newPassword.length < 8 || confirmPassword.length < 8}
+                          >
+                            {busy ? <Spinner aria-hidden="true" /> : null}
+                            Update password
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </form>
+            );
+          }
+          EOF_PASSWORD_FORM
+          
+          cat > 'src/features/account/account-settings.module.css' <<'EOF_SETTINGS_CSS'
+          .workspace {
+            position: relative;
+            isolation: isolate;
+            width: min(100%, 68rem);
+            margin: 0 auto;
+            padding: 2.25rem 1rem 6rem;
+          }
+          
+          .workspace::before {
+            position: absolute;
+            inset: 0.5rem 8% auto;
+            z-index: -1;
+            height: 18rem;
+            border-radius: 999px;
+            background:
+              radial-gradient(circle at 18% 30%, rgb(129 114 246 / 9%), transparent 34%),
+              radial-gradient(circle at 82% 20%, rgb(115 215 255 / 5%), transparent 30%);
+            filter: blur(36px);
+            content: "";
+            pointer-events: none;
+          }
+          
+          .intro {
+            position: relative;
+            max-width: 44rem;
+            margin-bottom: 1.75rem;
+            padding-bottom: 1.15rem;
+          }
+          
+          .intro::after {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 1px;
+            background: linear-gradient(90deg, rgb(178 167 255 / 30%), rgb(115 215 255 / 10%) 42%, transparent 78%);
+            content: "";
+          }
+          
+          .eyebrow,
+          .index,
+          .valueLabel,
+          .closedBeta {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            text-transform: uppercase;
+          }
+          
+          .eyebrow {
+            margin: 0 0 0.55rem;
+            color: var(--color-text-muted);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+          }
+          
+          .title {
+            margin: 0;
+            color: var(--color-text);
+            font-size: clamp(1.65rem, 3vw, 2rem);
+            font-weight: 650;
+            letter-spacing: -0.025em;
+            line-height: 1.1;
+          }
+          
+          .lede {
+            max-width: 40rem;
+            margin: 0.7rem 0 0;
+            color: var(--color-text-muted);
+            font-size: 0.9rem;
+            line-height: 1.65;
+          }
+          
+          .backLink {
+            display: inline-flex;
+            width: fit-content;
+            min-height: 2.75rem;
+            align-items: center;
+            margin-bottom: 0.85rem;
+            color: var(--color-text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: color 160ms ease;
+          }
+          
+          .backLink:hover {
+            color: var(--color-text);
+          }
+          
+          .surfaceWrap {
+            display: grid;
+            gap: 1rem;
+          }
+          
+          .register {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgb(255 255 255 / 10%);
+            border-radius: 1rem;
+            background:
+              linear-gradient(180deg, rgb(255 255 255 / 2.4%), transparent 22%),
+              linear-gradient(118deg, rgb(129 114 246 / 3.5%), transparent 42%, rgb(115 215 255 / 2%)),
+              rgb(7 9 13 / 94%);
+            box-shadow:
+              inset 0 1px 0 rgb(255 255 255 / 6%),
+              0 22px 64px rgb(0 0 0 / 20%);
+          }
+          
+          .signatureArc {
+            position: absolute;
+            top: -3.2rem;
+            right: -2.25rem;
+            z-index: 0;
+            width: 8.5rem;
+            height: 8.5rem;
+            border: 1px solid rgb(178 167 255 / 18%);
+            border-top-color: rgb(115 215 255 / 13%);
+            border-right-color: transparent;
+            border-radius: 0 0 0 100%;
+            opacity: 0.72;
+            pointer-events: none;
+          }
+          
+          .row {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 10.5rem minmax(0, 1fr);
+          }
+          
+          .row + .row {
+            border-top: 1px solid rgb(255 255 255 / 8%);
+          }
+          
+          .labelCell {
+            min-width: 0;
+            padding: 1.35rem 1.25rem;
+            border-right: 1px solid rgb(255 255 255 / 8%);
+            background: rgb(255 255 255 / 1.5%);
+          }
+          
+          .index {
+            display: block;
+            margin-bottom: 0.65rem;
+            color: rgb(178 167 255 / 64%);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+          }
+          
+          .sectionTitle {
+            margin: 0;
+            color: var(--color-text);
+            font-size: 0.84rem;
+            font-weight: 650;
+            letter-spacing: 0.01em;
+          }
+          
+          .valueCell {
+            min-width: 0;
+            padding: 1.35rem 1.5rem;
+          }
+          
+          .valueStack,
+          .passwordStack,
+          .formStack {
+            display: grid;
+            gap: 0.55rem;
+            min-width: 0;
+          }
+          
+          .formStack {
+            max-width: 35rem;
+            gap: 1.1rem;
+          }
+          
+          .passwordStack {
+            max-width: 38rem;
+            gap: 1.15rem;
+          }
+          
+          .valueLabel {
+            margin: 0;
+            color: var(--color-text-muted);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.11em;
+            line-height: 1.35;
+          }
+          
+          .emailValue {
+            margin: 0;
+            overflow-wrap: anywhere;
+            color: var(--color-text);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 0.94rem;
+            line-height: 1.55;
+          }
+          
+          .helper {
+            max-width: 44rem;
+            margin: 0;
+            color: var(--color-text-muted);
+            font-size: 0.86rem;
+            line-height: 1.62;
+          }
+          
+          .valueHeader,
+          .actionRow,
+          .fieldHeader,
+          .formActions {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+          }
+          
+          .actionRow {
+            align-items: center;
+          }
+          
+          .actionRow > :first-child {
+            min-width: 0;
+            flex: 1 1 auto;
+          }
+          
+          .actionRow [data-slot="button"] {
+            flex: 0 0 auto;
+          }
+          
+          .status {
+            display: inline-flex;
+            min-height: 2rem;
+            align-items: center;
+            border: 1px solid rgb(255 255 255 / 11%);
+            border-radius: 0.4rem;
+            padding: 0.25rem 0.65rem;
+            background: rgb(255 255 255 / 3%);
+            color: var(--color-text);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+          }
+          
+          .status[data-access-state="active"] {
+            border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+            color: color-mix(in srgb, var(--color-success) 82%, white);
+          }
+          
+          .status[data-access-state="suspended"] {
+            border-color: color-mix(in srgb, var(--color-warning) 48%, transparent);
+            color: color-mix(in srgb, var(--color-warning) 82%, white);
+          }
+          
+          .status[data-access-state="invitation-required"] {
+            border-color: color-mix(in srgb, var(--color-danger) 42%, transparent);
+            color: color-mix(in srgb, var(--color-danger) 82%, white);
+          }
+          
+          .fieldHeader {
+            align-items: center;
+            min-height: 2.75rem;
+          }
+          
+          .recoveryButton {
+            min-width: auto;
+            padding-inline: 0.35rem;
+            color: var(--color-text-muted);
+            font-size: 0.8rem;
+          }
+          
+          .recoveryButton:hover {
+            color: var(--color-text);
+          }
+          
+          .formActions {
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+          }
+          
+          .closedBeta {
+            margin: 0;
+            color: var(--color-text-muted);
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.11em;
+          }
+          
+          .contextBand,
+          .securityNote {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 0.8rem;
+            border-left: 1px solid rgb(178 167 255 / 32%);
+            padding: 0.8rem 0 0.8rem 1rem;
+            background: linear-gradient(90deg, rgb(129 114 246 / 5%), transparent 74%);
+          }
+          
+          .securityNote {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.35rem;
+            border-left-color: rgb(115 215 255 / 22%);
+            background: linear-gradient(90deg, rgb(115 215 255 / 3.5%), transparent 70%);
+          }
+          
+          .contextMark {
+            width: 0.42rem;
+            height: 0.42rem;
+            margin-top: 0.32rem;
+            border-radius: 999px;
+            background: var(--color-success);
+            box-shadow: 0 0 0 0.2rem rgb(63 191 138 / 10%);
+          }
+          
+          .passwordActions {
+            display: flex;
+            justify-content: flex-start;
+          }
+          
+          .runtimeAlert {
+            max-width: 40rem;
+          }
+          
+          @media (max-width: 640px) {
+            .workspace {
+              padding: 1.75rem 1rem 4.5rem;
+            }
+          
+            .intro {
+              margin-bottom: 1.25rem;
+            }
+          
+            .register {
+              border-radius: 0.85rem;
+            }
+          
+            .signatureArc {
+              top: -3.8rem;
+              right: -3rem;
+              opacity: 0.55;
+            }
+          
+            .row {
+              grid-template-columns: minmax(0, 1fr);
+            }
+          
+            .labelCell {
+              display: flex;
+              align-items: baseline;
+              gap: 0.75rem;
+              padding: 0.85rem 1rem 0.75rem;
+              border-right: 0;
+              border-bottom: 1px solid rgb(255 255 255 / 6%);
+              background: rgb(255 255 255 / 1.2%);
+            }
+          
+            .index {
+              margin: 0;
+            }
+          
+            .valueCell {
+              padding: 1rem;
+            }
+          
+            .valueHeader,
+            .actionRow {
+              align-items: stretch;
+              flex-direction: column;
+            }
+          
+            .actionRow [data-slot="button"] {
+              width: 100%;
+            }
+          
+            .formActions {
+              align-items: stretch;
+              flex-direction: column;
+            }
+          
+            .formActions [data-slot="button"],
+            .passwordActions [data-slot="button"] {
+              width: 100%;
+            }
+          
+            .fieldHeader {
+              gap: 0.5rem;
+            }
+          
+            .recoveryButton {
+              flex: 0 0 auto;
+            }
+          }
+          
+          @media (prefers-reduced-motion: reduce) {
+            .backLink {
+              transition: none;
+            }
+          }
+          EOF_SETTINGS_CSS
+          
+          python <<'PY'
+          from pathlib import Path
+          
+          path = Path('scripts/verify-account-identity.mjs')
+          text = path.read_text()
+          text = text.replace('name: "Sign out", exact: true', 'name: "Sign out everywhere", exact: true')
+          text = text.replace('Signed-in Settings is missing Sign out.', 'Signed-in Settings is missing Sign out everywhere.')
+          text = text.replace('Narrow Settings Sign out"', 'Narrow Settings Sign out everywhere"')
+          text = text.replace('Suspended Settings Sign out"', 'Suspended Settings Sign out everywhere"')
+          
+          active_wait = '  await page.getByText("Active", { exact: true }).waitFor({ state: "visible" });\n'
+          active_assertions = active_wait + (
+              '  assert(await page.getByText("Sign-in email", { exact: true }).isVisible(), "Signed-in Settings is missing Sign-in email framing.");\n'
+              '  assert(await page.getByText("Ends RenderLab sessions on every device and browser.", { exact: true }).isVisible(), "Signed-in Settings is missing global sign-out scope copy.");\n'
+          )
+          if active_wait not in text:
+              raise SystemExit('Could not find initial Active wait for Phase 27 verifier update.')
+          text = text.replace(active_wait, active_assertions, 1)
+          
+          recovery_heading = '  await recoveryPage.getByRole("heading", { name: "Set a new password", exact: true }).waitFor({ state: "visible", timeout: 30_000 });\n'
+          recovery_assertion = recovery_heading + '  await recoveryPage.getByText("Verified recovery link", { exact: true }).waitFor({ state: "visible" });\n'
+          if recovery_heading not in text:
+              raise SystemExit('Could not find recovery heading for Phase 27 verifier update.')
+          text = text.replace(recovery_heading, recovery_assertion, 1)
+          
+          path.write_text(text)
+          PY
+          
+          git rm '.github/workflows/phase27-settings-apply.yml'
+          git config user.name 'RenderLab Implementation Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: implement Phase 27 Settings Trust Register'
+          git push origin HEAD:${GITHUB_REF_NAME}
