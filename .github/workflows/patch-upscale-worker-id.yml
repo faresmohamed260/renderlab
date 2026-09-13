@@ -1,0 +1,55 @@
+name: Patch RenderLab Upscale Worker Identity
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - ".github/workflows/patch-upscale-worker-id.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@v4
+        with:
+          ref: ops/flux-primary-recovery-20260913
+          fetch-depth: 0
+      - name: Patch durable Upscale worker identity and verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          app = Path('workers/image-upscale/modal_app.py')
+          text = app.read_text(encoding='utf-8')
+          old = 'WORKER_ID = os.environ.get("RENDERLAB_UPSCALE_WORKER_ID", "image-upscale-worker")'
+          new = 'WORKER_ID = os.environ.get("RENDERLAB_UPSCALE_WORKER_ID", "renderlab-upscale-01")'
+          if text.count(old) != 1:
+              raise SystemExit('unexpected Upscale worker identity source state')
+          app.write_text(text.replace(old, new), encoding='utf-8')
+
+          verifier = Path('workers/image-upscale/verify_worker.py')
+          v = verifier.read_text(encoding='utf-8')
+          anchor = 'assert "app = modal.App(APP_NAME)" in text\n'
+          addition = 'assert \'WORKER_ID = os.environ.get("RENDERLAB_UPSCALE_WORKER_ID", "renderlab-upscale-01")\' in text\n'
+          if anchor not in v:
+              raise SystemExit('worker verifier anchor missing')
+          if addition not in v:
+              v = v.replace(anchor, anchor + addition)
+          verifier.write_text(v, encoding='utf-8')
+          PY
+          python workers/image-upscale/verify_worker.py
+          git diff --check
+          git diff -- workers/image-upscale/modal_app.py workers/image-upscale/verify_worker.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add workers/image-upscale/modal_app.py workers/image-upscale/verify_worker.py
+          git commit -m "Preserve durable Upscale worker identity"
+          git push origin HEAD:ops/flux-primary-recovery-20260913
