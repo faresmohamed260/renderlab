@@ -218,3 +218,11 @@ For frontend changes:
 For Authorized Redesign Mode, also compare the implementation to the accepted design/prototype. If the work claims kinetic, morphing, physics, scroll choreography, pointer response, or other temporal behavior, review motion evidence including the settled and reduced-motion paths; static screenshots alone are insufficient.
 
 Compilation alone does not mean the UI task is complete.
+
+## Modal Project Ownership Rule
+
+Modal account ownership is a locked cross-project infrastructure boundary. RenderLab owns only `modal-01`, `modal-02`, and `modal-42` through `modal-47`. S.A.G.A. owns `modal-03` through `modal-41`.
+
+Possession of an omnibus credential roster does not authorize use of every Modal credential. Any RenderLab script or workflow that selects Modal credentials must pass the checked-in ownership helper before exporting or using them and must fail closed for S.A.G.A.-owned labels. Do not change this partition unless the owner explicitly changes the decision in both repositories.
+
+Public gateway names may retain historical `saga-` resource names; naming does not transfer ownership. Worker redeployment, reset, token rotation and secret-store changes remain separately authorized infrastructure operations.
