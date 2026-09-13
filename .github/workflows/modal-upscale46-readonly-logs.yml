@@ -1,0 +1,68 @@
+name: RenderLab Modal 46 Upscale Read-Only Logs
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - ".github/workflows/modal-upscale46-readonly-logs.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SAGA_MODAL_TOKENS_JSON: ${{ secrets.SAGA_MODAL_TOKENS_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install exact Modal CLI
+        run: python -m pip install --quiet "modal==1.4.2"
+      - name: Fetch read-only modal-46 Upscale logs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, re, subprocess
+          from pathlib import Path
+
+          manifest = json.loads(Path('config/modal-project-ownership.json').read_text(encoding='utf-8'))
+          label = 'modal-46'
+          if manifest.get('project') != 'renderlab' or label not in manifest.get('ownedAccountLabels', []):
+              raise SystemExit('modal-46 is not authorized by the RenderLab ownership manifest')
+
+          payload = json.loads(os.environ['SAGA_MODAL_TOKENS_JSON'])
+          rows = payload.get('accounts') if isinstance(payload, dict) else payload
+          row = next((r for r in rows if isinstance(r, dict) and str(r.get('label') or r.get('name') or r.get('account') or '').strip() == label), None)
+          if not row:
+              raise SystemExit('modal-46 credential is unavailable')
+          token_id = str(row.get('token_id') or '').strip()
+          token_secret = str(row.get('token_secret') or '').strip()
+          combined = str(row.get('api_key') or row.get('token') or '').strip()
+          if (not token_id or not token_secret) and '.' in combined:
+              token_id, token_secret = combined.split('.', 1)
+          if not token_id or not token_secret:
+              raise SystemExit('modal-46 credential is incomplete')
+
+          print(f'::add-mask::{token_id}')
+          print(f'::add-mask::{token_secret}')
+          env = dict(os.environ, MODAL_TOKEN_ID=token_id, MODAL_TOKEN_SECRET=token_secret)
+          cmd = [
+              'modal','app','logs','renderlab-image-upscale',
+              '--since','4h','--tail','500','--timestamps',
+              '--show-function-id','--show-function-call-id','--show-container-id'
+          ]
+          result = subprocess.run(cmd, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False, timeout=120)
+          text = result.stdout or ''
+          # Keep infrastructure diagnostics while redacting URLs and any accidental credential-like strings.
+          text = text.replace(token_id, '[redacted-token-id]').replace(token_secret, '[redacted-token-secret]')
+          text = re.sub(r'https?://\S+', '[redacted-url]', text)
+          print(text[-60000:])
+          if result.returncode != 0:
+              raise SystemExit(result.returncode)
+          PY
