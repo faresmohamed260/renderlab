@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { RenderLabIdentity } from "@/lib/supabase/server";
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
+import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
 
@@ -19,23 +20,27 @@ type BusyAction = "signin" | "recovery" | "signout" | null;
 function accessPresentation(access: RenderLabAccountAccess | null, enforcementEnabled: boolean) {
   if (access?.status === "active") {
     return {
+      key: "active",
       label: "Active",
       message: "This account has active RenderLab closed-beta access.",
     };
   }
   if (access?.status === "suspended") {
     return {
+      key: "suspended",
       label: "Suspended",
       message: "Creation, Library and Activity access are paused. Password and sign-out controls remain available.",
     };
   }
   if (enforcementEnabled) {
     return {
+      key: "invitation-required",
       label: "Invitation required",
       message: "This identity is signed in, but it has not been admitted to the RenderLab closed beta.",
     };
   }
   return {
+    key: "transition",
     label: "Transition access",
     message: "Closed-beta admission records are being introduced. Existing authenticated access remains available until the explicit account bootstrap is enabled.",
   };
@@ -47,12 +52,14 @@ export function AccountSettings({
   access,
   enforcementEnabled,
   initialFeedback = null,
+  showAdminLink,
 }: {
   configured: boolean;
   identity: RenderLabIdentity | null;
   access: RenderLabAccountAccess | null;
   enforcementEnabled: boolean;
   initialFeedback?: Feedback;
+  showAdminLink: boolean;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -62,9 +69,11 @@ export function AccountSettings({
 
   if (!configured) {
     return (
-      <Alert>
-        <AlertDescription>Account access is not configured in this runtime.</AlertDescription>
-      </Alert>
+      <div className={styles.runtimeAlert}>
+        <Alert>
+          <AlertDescription>Account access is not configured in this runtime.</AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
@@ -142,35 +151,82 @@ export function AccountSettings({
 
   if (identity) {
     const accessState = accessPresentation(access, enforcementEnabled);
+
     return (
-      <div className="flex flex-col gap-5">
-        <div className="kinetic-settings-panel rounded-2xl border border-border p-5 sm:p-6">
-          <p className="text-sm font-semibold text-text">Signed in</p>
-          <p className="mt-1 break-all text-sm text-text-muted">{identity.email ?? "RenderLab account"}</p>
+      <div className={styles.surfaceWrap}>
+        <div className={styles.register} data-account-state="signed-in">
+          <span className={styles.signatureArc} aria-hidden="true" />
 
-          <div className="kinetic-settings-access mt-5 rounded-xl border border-border bg-surface-2 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Closed beta access</p>
-              <span className="rounded-full border border-border bg-surface-1 px-2.5 py-1 text-xs font-semibold text-text">
-                {accessState.label}
-              </span>
+          <RegisterRow index="01" title="Account">
+            <div className={styles.valueStack}>
+              <p className={styles.valueLabel}>Sign-in email</p>
+              <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
+              <p className={styles.helper}>Used to sign in. Email changes are not currently available.</p>
             </div>
-            <p className="mt-2 text-sm leading-6 text-text-muted">{accessState.message}</p>
-          </div>
+          </RegisterRow>
 
-          <div className="mt-5 border-t border-border/70 pt-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Security</p>
-            <p className="mt-1 text-sm leading-6 text-text-muted">Manage your password or end this signed-in session.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-            <Button asChild variant="secondary">
-              <Link href="/settings/password">Change password</Link>
-            </Button>
-            <Button variant="secondary" onClick={handleSignOut} disabled={busyAction !== null}>
-              {busyAction === "signout" ? <Spinner aria-hidden="true" /> : null}
-              Sign out
-            </Button>
+          <RegisterRow index="02" title="Access">
+            <div className={styles.valueStack}>
+              <div className={styles.valueHeader}>
+                <div>
+                  <p className={styles.valueLabel}>Closed Beta access</p>
+                  <p className={styles.helper}>RenderLab admission is separate from being signed in.</p>
+                </div>
+                <span className={styles.status} data-access-state={accessState.key}>
+                  {accessState.label}
+                </span>
+              </div>
+              <p className={styles.helper}>{accessState.message}</p>
             </div>
-          </div>
+          </RegisterRow>
+
+          <RegisterRow index="03" title="Security">
+            <div className={styles.actionRow}>
+              <div className={styles.valueStack}>
+                <p className={styles.valueLabel}>Password</p>
+                <p className={styles.helper}>
+                  Change your password. This browser stays signed in while other RenderLab sessions are revoked after a successful update.
+                </p>
+              </div>
+              <Button asChild variant="secondary" size="lg">
+                <Link href="/settings/password">Change password</Link>
+              </Button>
+            </div>
+          </RegisterRow>
+
+          <RegisterRow index="04" title="Sessions">
+            <div className={styles.actionRow}>
+              <div className={styles.valueStack}>
+                <p className={styles.valueLabel}>All RenderLab sessions</p>
+                <p className={styles.helper}>Ends RenderLab sessions on every device and browser.</p>
+              </div>
+              <Button
+                variant="destructive"
+                size="lg"
+                onClick={handleSignOut}
+                disabled={busyAction !== null}
+              >
+                {busyAction === "signout" ? <Spinner aria-hidden="true" /> : null}
+                Sign out everywhere
+              </Button>
+            </div>
+          </RegisterRow>
+
+          {showAdminLink ? (
+            <RegisterRow index="05" title="Admin">
+              <div className={styles.actionRow}>
+                <div className={styles.valueStack}>
+                  <p className={styles.valueLabel}>Admin operations</p>
+                  <p className={styles.helper}>
+                    Your active RenderLab admin role can open the separate privileged operations surface.
+                  </p>
+                </div>
+                <Button asChild variant="secondary" size="lg">
+                  <Link href="/admin">Open Admin</Link>
+                </Button>
+              </div>
+            </RegisterRow>
+          ) : null}
         </div>
 
         {feedback ? (
@@ -183,62 +239,85 @@ export function AccountSettings({
   }
 
   return (
-    <form className="kinetic-settings-panel flex max-w-lg flex-col gap-5 rounded-2xl border border-border p-5 sm:p-6" onSubmit={handleSignIn}>
-      <div>
-        <p className="text-sm font-semibold text-text">Sign in</p>
-        <p className="mt-1 text-sm leading-6 text-text-muted">Use the credentials for your invited RenderLab account.</p>
-      </div>
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="account-email">Email</FieldLabel>
-          <Input
-            id="account-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="account-password">Password</FieldLabel>
-          <Input
-            id="account-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            minLength={8}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-          <FieldDescription>Use your invited RenderLab account credentials.</FieldDescription>
-          <FieldError>{feedback?.kind === "error" ? feedback.message : null}</FieldError>
-        </Field>
-      </FieldGroup>
+    <form className={styles.register} data-account-state="signed-out" onSubmit={handleSignIn}>
+      <span className={styles.signatureArc} aria-hidden="true" />
+      <RegisterRow index="01" title="Account">
+        <div className={styles.formStack}>
+          <div className={styles.valueStack}>
+            <p className={styles.valueLabel}>Sign in</p>
+            <p className={styles.helper}>Use the credentials for your invited RenderLab account.</p>
+          </div>
 
-      {feedback?.kind === "success" ? (
-        <Alert>
-          <AlertDescription>{feedback.message}</AlertDescription>
-        </Alert>
-      ) : null}
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="account-email">Email</FieldLabel>
+              <Input
+                id="account-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </Field>
+            <Field>
+              <div className={styles.fieldHeader}>
+                <FieldLabel htmlFor="account-password">Password</FieldLabel>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="lg"
+                  disabled={busyAction !== null || !email.trim()}
+                  onClick={handleRecovery}
+                  className={styles.recoveryButton}
+                >
+                  {busyAction === "recovery" ? <Spinner aria-hidden="true" /> : null}
+                  Forgot password
+                </Button>
+              </div>
+              <Input
+                id="account-password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                minLength={8}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+              <FieldDescription>Use your invited RenderLab account credentials.</FieldDescription>
+              <FieldError>{feedback?.kind === "error" ? feedback.message : null}</FieldError>
+            </Field>
+          </FieldGroup>
 
-      <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={busyAction !== null || !email.trim() || password.length < 8}>
-          {busyAction === "signin" ? <Spinner aria-hidden="true" /> : null}
-          Sign in
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={busyAction !== null || !email.trim()}
-          onClick={handleRecovery}
-        >
-          {busyAction === "recovery" ? <Spinner aria-hidden="true" /> : null}
-          Forgot password
-        </Button>
-      </div>
+          {feedback?.kind === "success" ? (
+            <Alert>
+              <AlertDescription>{feedback.message}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className={styles.formActions}>
+            <Button type="submit" size="lg" disabled={busyAction !== null || !email.trim() || password.length < 8}>
+              {busyAction === "signin" ? <Spinner aria-hidden="true" /> : null}
+              Sign in
+            </Button>
+            <p className={styles.closedBeta}>Invitation-only Closed Beta</p>
+          </div>
+        </div>
+      </RegisterRow>
     </form>
+  );
+}
+
+function RegisterRow({ index, title, children }: { index: string; title: string; children: ReactNode }) {
+  return (
+    <section className={styles.row}>
+      <div className={styles.labelCell}>
+        <span className={styles.index}>{index}</span>
+        <h2 className={styles.sectionTitle}>{title}</h2>
+      </div>
+      <div className={styles.valueCell}>{children}</div>
+    </section>
   );
 }

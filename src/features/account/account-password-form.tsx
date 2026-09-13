@@ -3,10 +3,11 @@
 import { useState, type FormEvent } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
 
@@ -72,66 +73,104 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
     }
   }
 
+  const sessionMessage = recoveryMode
+    ? "This recovery session stays usable. Other RenderLab sessions are revoked after the password is changed."
+    : "This browser stays signed in. Other RenderLab sessions are revoked after the password is changed.";
+
   return (
-    <form className="flex max-w-lg flex-col gap-5" onSubmit={handleSubmit}>
-      <div className="kinetic-settings-panel rounded-2xl border border-border p-5 sm:p-6">
-        <FieldGroup>
-          {!recoveryMode ? (
-            <Field>
-              <FieldLabel htmlFor="current-password">Current password</FieldLabel>
-              <Input
-                id="current-password"
-                type="password"
-                autoComplete="current-password"
-                value={currentPassword}
-                onChange={(event) => setCurrentPassword(event.target.value)}
-                required
-              />
-            </Field>
-          ) : null}
-          <Field>
-            <FieldLabel htmlFor="new-password">New password</FieldLabel>
-            <Input
-              id="new-password"
-              type="password"
-              autoComplete="new-password"
-              minLength={8}
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              required
-            />
-            <FieldDescription>Use at least 8 characters.</FieldDescription>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="confirm-new-password">Confirm new password</FieldLabel>
-            <Input
-              id="confirm-new-password"
-              type="password"
-              autoComplete="new-password"
-              minLength={8}
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              required
-            />
-            <FieldError>{feedback?.kind === "error" ? feedback.message : null}</FieldError>
-          </Field>
-        </FieldGroup>
+    <form onSubmit={handleSubmit}>
+      <div className={styles.register}>
+        <span className={styles.signatureArc} aria-hidden="true" />
+        <section className={styles.row}>
+          <div className={styles.labelCell}>
+            <span className={styles.index}>01</span>
+            <h2 className={styles.sectionTitle}>Security</h2>
+          </div>
+          <div className={styles.valueCell}>
+            <div className={styles.passwordStack}>
+              {recoveryMode ? (
+                <div className={styles.contextBand}>
+                  <span className={styles.contextMark} aria-hidden="true" />
+                  <div>
+                    <p className={styles.valueLabel}>Verified recovery link</p>
+                    <p className={styles.helper}>
+                      RenderLab verified this short-lived recovery context, so your current password is not requested here.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.valueStack}>
+                  <p className={styles.valueLabel}>Password replacement</p>
+                  <p className={styles.helper}>Verify your current password before choosing the replacement.</p>
+                </div>
+              )}
 
-        <Button
-          className="mt-5"
-          type="submit"
-          disabled={busy || (!recoveryMode && !currentPassword) || newPassword.length < 8 || confirmPassword.length < 8}
-        >
-          {busy ? <Spinner aria-hidden="true" /> : null}
-          Update password
-        </Button>
+              <FieldGroup>
+                {!recoveryMode ? (
+                  <Field>
+                    <FieldLabel htmlFor="current-password">Current password</FieldLabel>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      autoComplete="current-password"
+                      value={currentPassword}
+                      onChange={(event) => setCurrentPassword(event.target.value)}
+                      required
+                    />
+                  </Field>
+                ) : null}
+                <Field>
+                  <FieldLabel htmlFor="new-password">New password</FieldLabel>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    required
+                  />
+                  <FieldDescription>Use at least 8 characters.</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="confirm-new-password">Confirm new password</FieldLabel>
+                  <Input
+                    id="confirm-new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    required
+                  />
+                </Field>
+              </FieldGroup>
+
+              {feedback ? (
+                <Alert variant={feedback.kind === "error" ? "destructive" : "default"}>
+                  <AlertDescription>{feedback.message}</AlertDescription>
+                </Alert>
+              ) : null}
+
+              <div className={styles.securityNote}>
+                <p className={styles.valueLabel}>Session security</p>
+                <p className={styles.helper}>{sessionMessage}</p>
+              </div>
+
+              <div className={styles.passwordActions}>
+                <Button
+                  size="lg"
+                  type="submit"
+                  disabled={busy || (!recoveryMode && !currentPassword) || newPassword.length < 8 || confirmPassword.length < 8}
+                >
+                  {busy ? <Spinner aria-hidden="true" /> : null}
+                  Update password
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
-
-      {feedback?.kind === "success" ? (
-        <Alert>
-          <AlertDescription>{feedback.message}</AlertDescription>
-        </Alert>
-      ) : null}
     </form>
   );
 }

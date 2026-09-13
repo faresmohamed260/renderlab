@@ -304,8 +304,10 @@ try {
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByText(email, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Active", { exact: true }).waitFor({ state: "visible" });
+  assert(await page.getByText("Sign-in email", { exact: true }).isVisible(), "Signed-in Settings is missing Sign-in email framing.");
+  assert(await page.getByText("Ends RenderLab sessions on every device and browser.", { exact: true }).isVisible(), "Signed-in Settings is missing global sign-out scope copy.");
   assert(await page.getByRole("link", { name: "Change password", exact: true }).isVisible(), "Signed-in Settings is missing Change password.");
-  assert(await page.getByRole("button", { name: "Sign out", exact: true }).isVisible(), "Signed-in Settings is missing Sign out.");
+  assert(await page.getByRole("button", { name: "Sign out everywhere", exact: true }).isVisible(), "Signed-in Settings is missing Sign out everywhere.");
   await page.screenshot({ path: `${artifactDir}/account-identity-desktop-signed-in.png`, fullPage: true });
 
   await page.reload({ waitUntil: "networkidle" });
@@ -314,7 +316,7 @@ try {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await assertNoHorizontalOverflow(page, "Narrow signed-in Settings");
   await assertReachableAfterBottomScroll(page, page.getByRole("link", { name: "Change password", exact: true }), "Narrow Settings Change password");
-  await assertReachableAfterBottomScroll(page, page.getByRole("button", { name: "Sign out", exact: true }), "Narrow Settings Sign out");
+  await assertReachableAfterBottomScroll(page, page.getByRole("button", { name: "Sign out everywhere", exact: true }), "Narrow Settings Sign out everywhere");
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in-actions.png` });
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in.png`, fullPage: true });
 
@@ -324,7 +326,7 @@ try {
   const deniedMedia = await page.request.get(`${baseUrl}/api/media/assets`);
   assert(deniedMedia.status() === 401, `Suspended account media API expected 401, got ${deniedMedia.status()}.`);
   await assertReachableAfterBottomScroll(page, page.getByRole("link", { name: "Change password", exact: true }), "Suspended Settings Change password");
-  await assertReachableAfterBottomScroll(page, page.getByRole("button", { name: "Sign out", exact: true }), "Suspended Settings Sign out");
+  await assertReachableAfterBottomScroll(page, page.getByRole("button", { name: "Sign out everywhere", exact: true }), "Suspended Settings Sign out everywhere");
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended-actions.png` });
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended.png`, fullPage: true });
 
@@ -376,6 +378,7 @@ try {
   );
   assertSameOriginLocation(recoveryPage.url(), "/settings/password");
   await recoveryPage.getByRole("heading", { name: "Set a new password", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await recoveryPage.getByText("Verified recovery link", { exact: true }).waitFor({ state: "visible" });
   assert((await recoveryPage.getByLabel("Current password").count()) === 0, "Verified recovery flow should not ask for the old password.");
 
   const consumedContext = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: "dark" });
@@ -407,7 +410,7 @@ try {
   const staleAfterGlobalSignOut = await passwordSession(recoveredPassword);
   await expectBearerMediaAccepted(staleAfterGlobalSignOut, "Secondary pre-global-sign-out session");
 
-  await recoveryPage.getByRole("button", { name: "Sign out", exact: true }).click();
+  await recoveryPage.getByRole("button", { name: "Sign out everywhere", exact: true }).click();
   await recoveryPage.getByLabel("Email").waitFor({ state: "visible", timeout: 30_000 });
   assert(await recoveryPage.getByRole("button", { name: "Forgot password", exact: true }).isVisible(), "Signed-out Settings is missing Forgot password.");
   assert((await recoveryPage.getByRole("button", { name: "Create account", exact: true }).count()) === 0, "Closed-beta Settings must not expose public Create account.");

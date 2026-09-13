@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AccountPasswordForm } from "@/features/account/account-password-form";
+import styles from "@/features/account/account-settings.module.css";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
 import {
   isPasswordRecoveryMarkerValid,
@@ -21,20 +22,20 @@ export default async function PasswordSettingsPage() {
   );
 
   return (
-    <section className="kinetic-settings-workspace mx-auto w-full max-w-3xl px-4 pb-28 pt-8 sm:px-6 sm:pb-10 sm:pt-10 lg:px-8">
-      <div className="kinetic-settings-intro mb-7 flex flex-col gap-2">
-        <Link className="w-fit text-sm font-medium text-text-muted hover:text-text" href="/settings">
+    <section className={styles.workspace}>
+      <header className={styles.intro}>
+        <Link className={styles.backLink} href="/settings">
           ← Settings
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight text-text">
-          {recoveryMode ? "Set a new password" : "Change password"}
-        </h1>
-        <p className="max-w-2xl text-sm leading-6 text-text-muted">
+        <p className={styles.eyebrow}>Security</p>
+        <h1 className={styles.title}>{recoveryMode ? "Set a new password" : "Change password"}</h1>
+        <p className={styles.lede}>
           {recoveryMode
             ? "Choose a new password for the account verified by your recovery link."
             : "Confirm your current password before replacing it with a new one."}
         </p>
-      </div>
+      </header>
+
       <AccountPasswordForm email={identity.email} recoveryMode={recoveryMode} />
     </section>
   );

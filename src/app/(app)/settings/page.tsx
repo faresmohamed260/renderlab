@@ -1,7 +1,5 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
 import { AccountSettings } from "@/features/account/account-settings";
+import styles from "@/features/account/account-settings.module.css";
 import { isSupabaseAuthConfigured } from "@/lib/supabase/config";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
 import {
@@ -60,54 +58,28 @@ export default async function SettingsPage({
     : null;
   const showAdminLink = Boolean(identity && admin?.identity.id === identity.id);
 
+  const intro = !configured
+    ? "Account access is unavailable in this runtime."
+    : identity
+      ? "Manage your account, access and security."
+      : "Sign in to your invited RenderLab account.";
+
   return (
-    <section className="kinetic-settings-workspace mx-auto w-full max-w-5xl px-4 pb-28 pt-8 sm:px-6 sm:pb-10 sm:pt-10 lg:px-8">
-      <div className="kinetic-settings-intro mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Account</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text sm:text-3xl">Settings</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
-          Sign in to access private RenderLab work, recover your password, and review closed-beta admission status.
-        </p>
-      </div>
+    <section className={styles.workspace}>
+      <header className={styles.intro}>
+        <p className={styles.eyebrow}>Account security</p>
+        <h1 className={styles.title}>Settings</h1>
+        <p className={styles.lede}>{intro}</p>
+      </header>
 
-      <SettingsSection title="Account" description="Identity, password security and closed-beta access status.">
-        <AccountSettings
-          configured={configured}
-          identity={identity}
-          access={access}
-          enforcementEnabled={isRenderLabAccessEnforcementEnabled()}
-          initialFeedback={initialFeedback(params)}
-        />
-      </SettingsSection>
-
-      {showAdminLink ? (
-        <SettingsSection
-          title="Admin"
-          description="Privileged RenderLab access, generation override and product-health operations."
-        >
-          <div className="kinetic-settings-panel rounded-2xl border border-border p-5 sm:p-6">
-            <p className="text-sm font-semibold text-text">Admin operations</p>
-            <p className="mt-1 text-sm leading-6 text-text-muted">
-              Your active RenderLab admin role can open the separate operations surface.
-            </p>
-            <Button asChild variant="secondary" className="mt-4">
-              <Link href="/admin">Open Admin</Link>
-            </Button>
-          </div>
-        </SettingsSection>
-      ) : null}
-    </section>
-  );
-}
-
-function SettingsSection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
-  return (
-    <section className="grid gap-4 border-t border-border/80 py-7 sm:grid-cols-[13rem_1fr] sm:gap-8">
-      <div>
-        <h2 className="text-sm font-semibold text-text">{title}</h2>
-        <p className="mt-1 text-sm leading-6 text-text-muted">{description}</p>
-      </div>
-      <div>{children}</div>
+      <AccountSettings
+        configured={configured}
+        identity={identity}
+        access={access}
+        enforcementEnabled={isRenderLabAccessEnforcementEnabled()}
+        initialFeedback={initialFeedback(params)}
+        showAdminLink={showAdminLink}
+      />
     </section>
   );
 }
