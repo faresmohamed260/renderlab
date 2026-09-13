@@ -1,0 +1,32 @@
+name: Phase 29 Contract Docs Helper
+
+on:
+  push:
+    branches: [plan/phase-29-whole-product-cohesion-contract]
+    paths:
+      - ".github/workflows/phase29-contract-docs-helper.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch_contract_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: plan/phase-29-whole-product-cohesion-contract
+
+      - name: Patch planning docs
+        run: python .github/scripts/phase29-contract-docs.py
+
+      - name: Commit planning docs and remove helper
+        run: |
+          rm .github/workflows/phase29-contract-docs-helper.yml .github/scripts/phase29-contract-docs.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "docs: define Phase 29 whole-product cohesion planning gate"
+          git push origin HEAD:plan/phase-29-whole-product-cohesion-contract
