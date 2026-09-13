@@ -159,24 +159,11 @@ jobs:
         shell: bash
         env:
           DIRECT_UPSCALE_GATEWAY: ${{ secrets.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL || 'https://silentspecter67--renderlab-image-upscale-web.modal.run' }}
-          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
-          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
         run: |
           live_gateway="${DIRECT_UPSCALE_GATEWAY:-}"
           if [ -z "$live_gateway" ]; then
-            if [ -z "${MODAL_TOKEN_ID:-}" ] || [ -z "${MODAL_TOKEN_SECRET:-}" ]; then
-              echo "::error::Neither RENDERLAB_UPSCALE_WORKER_GATEWAY_URL nor Modal credentials are configured for the required Phase 18F live product proof."
-              exit 1
-            fi
-            python -m pip install --disable-pip-version-check --quiet 'modal==1.4.2'
-            live_gateway="$(python - <<'PY'
-          import modal
-          url = modal.Function.from_name("renderlab-image-upscale", "web").get_web_url()
-          if not url:
-              raise SystemExit("deployed RenderLab Upscale web endpoint was not found")
-          print(url.rstrip("/"))
-          PY
-            )"
+            echo "::error::RENDERLAB_UPSCALE_WORKER_GATEWAY_URL is not configured and the RenderLab-owned fallback endpoint is unavailable."
+            exit 1
           fi
           live_gateway="${live_gateway%/}"
           echo "::add-mask::$live_gateway"
@@ -239,3 +226,4 @@ jobs:
           name: phase18f-image-upscale-evidence
           path: artifacts/phase18f-image-upscale
           if-no-files-found: warn
+          retention-days: 7
