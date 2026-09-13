@@ -19,7 +19,18 @@ jobs:
           ref: docs/phase-29-whole-product-cohesion-closure
 
       - name: Patch closure docs
-        run: python .github/scripts/phase29-closure-docs.py
+        run: |
+          python .github/scripts/phase29-closure-docs.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("docs/ui/WHOLE_PRODUCT_COHESION_IMPLEMENTATION_CONTRACT.md")
+          text = p.read_text()
+          old = "**Status:** Closed / implementation verified / merged / merged-main verified / not deployed  \n"
+          new = "**Status:** Closed / implementation verified / merged / merged-main verified / not deployed\n"
+          if text.count(old) != 1:
+              raise SystemExit("expected one patched contract status with Markdown trailing spaces")
+          p.write_text(text.replace(old, new, 1))
+          PY
 
       - name: Commit closure docs and remove helper
         run: |
