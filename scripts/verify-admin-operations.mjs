@@ -536,7 +536,7 @@ try {
   await page.goto(`${baseUrl}/admin`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("main").getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Access", exact: true }).waitFor({ state: "visible" });
-  await page.getByRole("heading", { name: "Generation controls", exact: true }).waitFor({ state: "visible" });
+  await page.getByRole("heading", { name: "Generation", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("heading", { name: "Global defaults", exact: true }).waitFor({ state: "visible" });
   await page.locator("#global-generation-enabled").waitFor({ state: "visible" });
   await page.locator("#global-max-active").waitFor({ state: "visible" });
@@ -545,6 +545,16 @@ try {
   await page.getByText("Completion p50", { exact: true }).waitFor({ state: "visible" });
   await page.getByText("Active state age", { exact: true }).waitFor({ state: "visible" });
   await page.getByText("Maintenance backlog", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Default or blank means inherit the global value.", { exact: true }).waitFor({ state: "visible" });
+
+  assert((await page.locator('[data-admin-register="system-continuity"]').count()) === 1, "Admin must render one Settings-derived registered surface.");
+  assert((await page.locator('[data-admin-row]').count()) === 3, "Admin must render exactly three top-level registered rows.");
+  for (const rowKey of ["access", "generation", "health"]) {
+    assert((await page.locator(`[data-admin-row="${rowKey}"]`).count()) === 1, `Admin registered row ${rowKey} is missing or duplicated.`);
+  }
+  assert(await page.locator(`[id="role-${adminAccount.id}"]`).isDisabled(), "Acting admin role control must remain disabled.");
+  assert(await page.locator(`[id="status-${adminAccount.id}"]`).isDisabled(), "Acting admin status control must remain disabled.");
+
   assert(
     (await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Admin", exact: true }).count()) === 0,
     "Admin was added to ordinary application navigation.",
@@ -559,6 +569,9 @@ try {
   ).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText(outsider.email, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
   const desktopOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert(!desktopOverflow, "Desktop Admin layout has horizontal clipping.");
   await page.screenshot({ path: `${artifactDir}/admin-operations-desktop.png`, fullPage: true });
@@ -568,6 +581,12 @@ try {
   const mobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert(!mobileOverflow, "Narrow Admin layout has horizontal clipping.");
   await page.screenshot({ path: `${artifactDir}/admin-operations-mobile.png`, fullPage: true });
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const reducedOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  assert(!reducedOverflow, "Reduced-motion narrow Admin layout has horizontal clipping.");
+  await page.screenshot({ path: `${artifactDir}/admin-operations-mobile-reduced.png`, fullPage: true });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
 
   const invitationRow = page.getByText(outsider.email, { exact: true }).locator("..").locator("..");
 const revokeInvitationButton = invitationRow.getByRole("button", { name: "Revoke", exact: true });

@@ -498,7 +498,7 @@ try {
   await page.goto(`${baseUrl}/admin`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("main").getByRole("heading", { name: "Admin", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByRole("heading", { name: "Access", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByRole("heading", { name: "Generation controls", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Generation", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await assertNoHorizontalOverflow(page, "Integrated Admin desktop");
   await page.screenshot({ path: `${artifactDir}/release-admin-desktop.png`, fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
