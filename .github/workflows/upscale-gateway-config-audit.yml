@@ -1,0 +1,33 @@
+name: RenderLab Upscale Gateway Config Audit
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - .github/workflows/upscale-gateway-config-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      UPSCALE_GATEWAY: ${{ secrets.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL }}
+    steps:
+      - name: Classify configured GitHub Upscale gateway
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const value = String(process.env.UPSCALE_GATEWAY || '').trim().replace(/\/$/, '');
+          const oldUrl = 'https://silentspecter67--renderlab-image-upscale-web.modal.run';
+          const newUrl = 'https://dreadcipher67--renderlab-image-upscale-web.modal.run';
+          console.log(JSON.stringify({
+            configured: Boolean(value),
+            pointsToOldModal45: value === oldUrl,
+            pointsToNewModal46: value === newUrl,
+            pointsElsewhere: Boolean(value) && value !== oldUrl && value !== newUrl,
+          }));
+          NODE
