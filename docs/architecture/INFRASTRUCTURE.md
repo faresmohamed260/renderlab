@@ -938,3 +938,30 @@ Verified recovery state:
 This recovery does **not** transfer Modal-account ownership: RenderLab still owns only `modal-01`, `modal-02`, and `modal-42` through `modal-47`; S.A.G.A. owns `modal-03` through `modal-41`. It also does not constitute physical GitHub secret-store separation. Repository-level fail-closed isolation and later least-privilege secret splitting remain governed by `MODAL_PROJECT_ISOLATION_CONTRACT.md`.
 
 No RenderLab/Vercel production deployment is performed by this worker recovery. Production release remains a separate explicitly authorized operation.
+
+## Modal Project Ownership Isolation
+
+RenderLab and S.A.G.A. use a reciprocal, fail-closed Modal account partition. Repository ownership is authoritative for project use even when an omnibus credential secret is temporarily available to a repository.
+
+RenderLab-owned Modal accounts:
+
+- `modal-01` — active LTX primary generation capacity.
+- `modal-02` — active LTX standby generation capacity.
+- `modal-42` — active Qwen image-edit primary capacity.
+- `modal-43` — active Qwen image-edit standby capacity.
+- `modal-44` — active FLUX primary capacity (`flux-primary-01`).
+- `modal-45` — RenderLab-owned but currently spend-capped; historical `flux-standby-01` remains disabled for new routing.
+- `modal-46` — current `renderlab-image-upscale` deployment plus historical LTX identity retained for durable job meaning.
+- `modal-47` — historical LTX standby identity retained for durable job meaning.
+
+S.A.G.A. owns `modal-03` through `modal-41`. Those accounts are reserved from RenderLab use. The reciprocal S.A.G.A. implementation is merged on its `main` branch and enforces the inverse allocation.
+
+The checked-in authority for RenderLab is `config/modal-project-ownership.json` together with `scripts/lib/modal-project-ownership.mjs`. Any credential-selection code must validate through that boundary before exporting or using Modal credentials. `scripts/verify-modal-project-ownership.mjs` and Engineering Quality provide a negative CI gate against generic Modal credential references in active workflows.
+
+Normal RenderLab generation runtime calls configured public/server-side worker gateways; Modal API credentials are deployment or maintenance authority, not ordinary request-path configuration. Public app names or historical `saga-` prefixes do not transfer account ownership.
+
+The strongest operational state remains physical least-privilege secret separation: RenderLab secret stores should contain only its eight owned credentials and S.A.G.A. secret stores should contain only its 39 owned credentials. Repository-level fail-closed enforcement protects ordinary development and automation, but it does not by itself prove that non-owned credentials have been removed from GitHub secret storage.
+
+Changing this partition requires an explicit owner decision recorded in both repositories. Worker deployment, reset, token rotation, secret-store changes, and application production deployment remain separate authorized operations.
+
+The 2026-09-13 recovery details for `modal-45`, active FLUX on `modal-44`, and Image Upscale on `modal-46` are recorded in the preceding **2026-09-13 Modal Worker Recovery** section.
