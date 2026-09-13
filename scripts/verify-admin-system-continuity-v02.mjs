@@ -87,10 +87,15 @@ async function verifyViewport({ name, width, height, reducedMotion = 'no-prefere
     }
   }
 
-  // Keyboard focus must enter the ordinary shell/control order without a custom interaction layer.
+  // Prove ordinary keyboard traversal exists, then clear focus before visual capture so
+  // screenshots represent the settled interface rather than a synthetic verifier state.
   await page.keyboard.press('Tab');
   const firstFocus = await page.evaluate(() => document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent?.trim() || document.activeElement?.tagName);
   if (!firstFocus) throw new Error(`${name}: no keyboard focus target found`);
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.scrollTo(0, 0);
+  });
 
   await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage: true });
 
