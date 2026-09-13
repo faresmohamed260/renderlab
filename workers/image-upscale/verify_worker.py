@@ -80,6 +80,7 @@ assert "modal.Image.debian_slim" in text
 assert text.count("Pillow==11.2.1") == 2
 assert "nvidia/cuda:12.8.1-runtime-ubuntu22.04" in text
 assert "app = modal.App(APP_NAME)" in text
+assert 'WORKER_ID = os.environ.get("RENDERLAB_UPSCALE_WORKER_ID", "renderlab-upscale-01")' in text
 assert "@app.cls(\n    image=runtime_image," in text
 assert "@app.function(image=gateway_image, timeout=3600)" in text
 # FastAPI multipart types are imported inside web(); they must resolve eagerly at route definition time.
