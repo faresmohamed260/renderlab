@@ -8,6 +8,19 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth);
 }
 
+async function expectContentClearsTopbar(
+  page: import("@playwright/test").Page,
+  content: import("@playwright/test").Locator,
+) {
+  const topbar = page.locator('[data-kinetic-surface="topbar"]');
+  await expect(topbar).toBeVisible();
+  await expect(content).toBeVisible();
+  const [topbarBox, contentBox] = await Promise.all([topbar.boundingBox(), content.boundingBox()]);
+  expect(topbarBox).not.toBeNull();
+  expect(contentBox).not.toBeNull();
+  expect(contentBox!.y).toBeGreaterThanOrEqual(topbarBox!.y + topbarBox!.height);
+}
+
 test("desktop shell matches the approved compact horizontal hierarchy", async ({ page }) => {
   await page.setViewportSize(desktopViewport);
   await page.goto("/create");
@@ -54,4 +67,38 @@ test("mobile shell keeps the same approved compact header without a second dock"
   await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: "artifacts/shell-mobile.png", fullPage: true });
+});
+
+test("application surfaces clear the fixed header and stay overflow-free at 390px", async ({ page }) => {
+  await page.setViewportSize(mobileViewport);
+
+  const routes = [
+    { path: "/create", content: () => page.locator(".clear-create-context"), artifact: "cohesion-create-mobile.png" },
+    { path: "/library", content: () => page.getByRole("heading", { name: "Library", exact: true }), artifact: "cohesion-library-mobile.png" },
+    { path: "/activity", content: () => page.getByRole("heading", { name: "Activity", exact: true }), artifact: "cohesion-activity-mobile.png" },
+    { path: "/settings", content: () => page.getByRole("heading", { name: "Settings", exact: true }), artifact: "cohesion-settings-mobile.png" },
+  ] as const;
+
+  for (const route of routes) {
+    await page.goto(route.path);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expectContentClearsTopbar(page, route.content());
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: `artifacts/${route.artifact}`, fullPage: true });
+  }
+});
+
+test("application surface geometry remains stable with reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize(mobileViewport);
+
+  await page.goto("/create");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expectContentClearsTopbar(page, page.locator(".clear-create-context"));
+  await expectNoHorizontalOverflow(page);
+
+  const main = page.locator("main");
+  const transitionDuration = await main.evaluate((element) => getComputedStyle(element).transitionDuration);
+  expect(transitionDuration === "0s" || transitionDuration === "").toBeTruthy();
+  await page.screenshot({ path: "artifacts/cohesion-create-mobile-reduced.png", fullPage: true });
 });
