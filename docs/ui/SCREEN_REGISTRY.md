@@ -247,10 +247,12 @@ Approved behavior:
 
 ### Settings
 **Route:** `/settings`  
-**Status:** APPROVED — Account Identity Foundation / UI-029 + Phase 10A/10B account/admin integration / UI-051
+**Status:** APPROVED — UI-078 Trust Register implemented / exact-head verified / merge pending / not deployed; existing account/admin security contracts preserved
 **Implementation:** `src/app/(app)/settings/page.tsx`
 **Account surface:** `src/features/account/account-settings.tsx`; password security: `src/features/account/account-password-form.tsx`
 **Session boundary:** `src/lib/supabase/config.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/proxy.ts`, root `proxy.ts`
+
+**Phase 27 / UI-078 verified candidate:** `/settings` and `/settings/password` now use the bounded Trust Register grammar: state-specific intro copy; read-only Sign-in email; server-derived Access; Change password with truthful session consequences; verified recovery context; global **Sign out everywhere**; and conditional fresh-Admin continuation. Signed-out state remains invitation-only Email/Password plus enumeration-safe recovery. The current 8-character floor, Current/New/Confirm semantics, recovery marker validation, global sign-out behavior, canonical `auth.users.id`, admission/role ownership and Admin gate are unchanged. Profile/avatar/username, reusable Show/Hide/password-policy UX, hosted Auth hardening, session inventory, MFA, email editing, export/deletion, preferences/notifications and passkeys remain out of scope. Exact head `719b68501c2ceccd1fa91e12910ea7aa9bb04636` passed all six attached workflows; reviewed Account Identity artifact `10320219197` (`sha256:8217b1bfcb314825f17b37dbf3c3e51861a6f61b5e2ac772ccbbda6b21cdccac`) covers desktop/390px signed-out, Active, Suspended, ordinary password and verified-recovery states. PR #227 merge and merged-main verification remain pending; production remains unchanged.
 
 **Purpose:** Own persistent account/application settings only when backed by real requirements. UI-029 uses Settings for the first real RenderLab account identity surface; it is not a workflow/model parameter dumping ground.
 
