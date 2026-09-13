@@ -19,7 +19,9 @@ jobs:
           ref: plan/phase-29-whole-product-cohesion-contract
 
       - name: Patch planning docs
-        run: python .github/scripts/phase29-contract-docs.py
+        run: |
+          python .github/scripts/phase29-contract-docs.py
+          sed -i 's/^\(\*\*Status:\*\* Accepted \/ implementation contract defined \/ not implemented \/ not deployed\)  $/\1/' docs/ui/UI_DECISIONS.md
 
       - name: Commit planning docs and remove helper
         run: |
