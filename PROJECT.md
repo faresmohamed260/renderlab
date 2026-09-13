@@ -78,26 +78,27 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - PR #194 squash-merged to `main` as `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. GitHub attached exactly two push workflows to that merge SHA and both passed: Engineering Quality `34699439085` and UI Shell Validation `34699439083`.
 - Phase 24 repository implementation is therefore user-approved, exact-head verified, merged and merged-main verified. Production remains unchanged at source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled and no Phase 24 deployment is authorized.
 
-## UI/UX redesign program — continuation roadmap — 2026-09-12
-**Status: ACTIVE — Landing, Create and Library completed; remaining product surfaces still require redesign.**
+## UI/UX redesign program — continuation roadmap — 2026-09-13
+**Status: ACTIVE — Landing, Create, Library, Media Viewer and Activity completed; Settings, Admin and final cohesion remain.**
 
-Phase 24 closed the approved Library Gallery Rail slice; it did **not** close the broader RenderLab UI/UX redesign program. The redesign must continue as one coherent system derived from the locked Lab Grid identity, approved Lab Matrix Landing, Clear Composer / UI-074 application language and Gallery Rail / UI-075 media language.
+Phase 26 closes the approved Activity Job Matrix + History Register slice; it does **not** close the broader RenderLab UI/UX redesign program. The redesign must continue as one coherent system derived from the locked Lab Grid identity, approved Lab Matrix Landing, Clear Composer / UI-074 application language, Gallery Rail / UI-075 media language, Media Register + Source Fold / UI-076, and Job Matrix + History Register / UI-077.
 
 Completed redesign slices:
 - **Landing:** approved Lab Matrix public experience, production-live.
 - **Create:** approved Clear Composer v0.5 plus UI-074 fidelity correction, merged and verified, not yet deployed.
 - **Library:** approved Gallery Rail v0.3 / UI-075, merged and verified, not yet deployed.
 - **Media Viewer:** approved Media Register + Source Fold v0.2 / UI-076, merged and merged-main verified, not yet deployed.
+- **Activity:** approved Job Matrix + History Register v0.2 / UI-077, merged and merged-main verified, not yet deployed.
 - **Application shell:** UI-074 compact horizontal header is the current shared shell geometry and should be maintained/cohered rather than restarted as a competing navigation system.
 
 Remaining redesign roadmap, under progressive phase planning:
 1. **Phase 25 — Media Viewer:** USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED. Media Register + Source Fold v0.2 is now the repository-authoritative Viewer composition under UI-076. Viewer remains a 3/4-expressiveness surface.
-2. **Phase 26 — Activity:** NEXT / ACTIVE R&D. Phase 25 evidence is closed; audit the current Activity desktop/390px real-state lifecycle, then develop same-family concepts at 2/4 expressiveness without weakening Retry / Run Again / Cancel truth or operational clarity. No production Activity implementation should begin before explicit design approval and an implementation contract.
-3. **Phase 27 — Settings / account-security flows:** roadmap only. Apply the shared typography, spacing, shell and trust language at 1/4 expressiveness across signed-out, signed-in, access-status, password and recovery states.
+2. **Phase 26 — Activity:** USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED. Job Matrix + History Register v0.2 is now the repository-authoritative Activity composition under UI-077.
+3. **Phase 27 — Settings / account-security flows:** NEXT / R&D NOT STARTED. Apply the shared typography, spacing, shell and trust language at 1/4 expressiveness across signed-out, signed-in, access-status, password and recovery states.
 4. **Phase 28 — Admin:** roadmap only. Apply the coherent system to the privileged operational surface at 1/4 expressiveness while preserving dense clarity and authorization boundaries.
 5. **Phase 29 — whole-product cohesion pass:** roadmap only. Audit the completed system end-to-end for shell/navigation continuity, typography, spacing, responsive behavior, empty/loading/error states, focus/touch semantics, reduced motion and cross-surface transitions before calling the redesign program complete.
 
-Phase 25 is closed. The next session may expand only the immediate Phase 26 Activity R&D slice; Phases 27–29 remain roadmap-level until predecessor evidence exists. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled.
+Phase 26 is closed. The next redesign slice is Phase 27 Settings / account-security; it remains unstarted and must follow the normal audit, design-approval and implementation-contract gates before production work. Phases 28–29 remain roadmap-level until predecessor evidence exists. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled.
 
 ## Phase 25 Media Viewer Register + Source Fold closure — 2026-09-13
 - User approved **Media Register + Source Fold v0.2** from R&D head `639aef25e57e166be8d8b3d226b3e83930e05a25`; design run `34703774288`, artifact `10300577421`, digest `sha256:06cade2dc2e9ce51dc871971530fa9641a7c1ef0cc0271e19763fcebfa8ca2b0`.
@@ -111,8 +112,19 @@ Phase 25 is closed. The next session may expand only the immediate Phase 26 Acti
 
 **Phase 25 status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
-## Current Verified Baseline — 2026-09-12
-- The verified repository application baseline is Phase 25 / PR #200 merge `b672c711f885092c5e92c42824078e7bd5bc691e`; Media Register + Source Fold v0.2 is user-approved, exact-head verified and merged-main verified. Production remains the separately approved source `0173c4c5ba08360b6352331118abc81978cfa774`; no production deployment followed the Phase 25 repository merge.
+
+## Phase 26 Activity Job Matrix + History Register closure — 2026-09-13
+- User-approved design authority remains R&D head `13bbfc32e5dabb5944943c1a704058aed6a1befc`, run `34722631963`, artifact `10307305396`, digest `sha256:5c440d5c1768fa6ea19a67165263c20d701ee9f2b50487e3a87246e7de8a9058`; UI-077 and `docs/ui/ACTIVITY_JOB_MATRIX_IMPLEMENTATION_CONTRACT.md` were merged before production work through planning PR #204 / `8b89f30322ab284b4233ebd6880c6fcb60dff819`.
+- PR #205 implemented the approved three-job `01 / 02 / 03` Job Matrix plus attached History Register while preserving server-owned newest-first lifecycle truth, pagination, ownership, Retry / Run Again / Cancel semantics, sanitized errors, active-only refresh and the UI-074 shell. No schema/API/provider/worker/storage/auth/admission/ownership/generation-lifecycle contract changed.
+- Final implementation head `db4d45320d6abd92e729a5fcae9a8f63ce79d3c4` passed all 10 directly attached workflows. Activity Visual `34755095367` produced artifact `10317550573` (`sha256:dbf866939fdb0787a5ea848a1b5c700e1d9bda864b431600ab8c5ecff24b35b6`), and human review accepted desktop, 390px, reduced-motion, signed-out, retrying, retry-success and retry-error evidence against the approved v0.2 direction.
+- Generation Admission `34755095363` attempt 1 hit a transient Supabase 504 during fixture inspection/cleanup; unchanged attempt 2 passed completely. Release Candidate Matrix `34755095388` attempt 2 then passed the full 23/23 exact-SHA child matrix and produced manifest artifact `10317707403` (`sha256:125d0f85747eb26cba642591a8f62dc386e7a18b0375c86da85c1bb3dab17cc0`).
+- PR #205 squash-merged to `main` as `2a49d7e223595cd2f876829a779d3f5d3c362e81`. All seven push workflows attached to that merge SHA have successful coverage: Engineering Quality `34756670745`, Creative Iteration `34756670762`, Integrated Release `34756670733`, Image Upscale Integration `34756670822`, Release Candidate Matrix `34756670731`, Activity Cancel Visual `34756670746`, and UI Shell Validation `34756670739` unchanged attempt 2 after attempt 1 was cancelled during the visual step. Merged-main Release Candidate Matrix `34756670731` passed its full configured child matrix and produced manifest artifact `10317304020` (`sha256:6ebdc3ea29cd08c31946c51a9bded64f8f1861ae6bbe21e22b840b6ab7230e9e`).
+- Production remains unchanged at source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled.
+
+**Phase 26 status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
+
+## Current Verified Baseline — 2026-09-13
+- The verified repository application baseline is Phase 26 / PR #205 merge `2a49d7e223595cd2f876829a779d3f5d3c362e81`; Job Matrix + History Register v0.2 is user-approved, exact-head verified and merged-main verified. Production remains the separately approved source `0173c4c5ba08360b6352331118abc81978cfa774`; no production deployment followed the Phase 26 repository merge.
 - Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`.
 - Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`.
 - Accepted production application is source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991` / `https://renderlab-a9ssca2l8-faresmohamed260-6733s-projects.vercel.app`. Explicit alias run `34547608773` moved `https://renderlab.faresuniform.uk` to that deployment and passed root + `/create` + `/library` + `/activity` + `/settings` smoke; independent Vercel checks found no runtime-error clusters and no error/fatal logs after rollout. Prior accepted UI-071 deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra` remains a known-good prior deployment for explicit alias restoration if needed.

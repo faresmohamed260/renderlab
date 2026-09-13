@@ -77,17 +77,30 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - [x] All six workflows GitHub actually attached to the merge SHA passed: Engineering `34718303036`, UI Shell `34718302987`, Upscale Viewer `34718303044`, Viewer Register Fold `34718302986`, Image Upscale `34718302998`, Creative Iteration `34718303019`.
 - [x] Production remains unchanged; deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
 
-## Active full-product redesign roadmap — after Phase 25
-**Status: `IN PROGRESS`.** Phase 25 completes the Media Viewer slice only; the full UI/UX redesign is not complete.
 
-The coherent design authority carried forward is the current locked Lab Grid identity + approved Lab Matrix Landing + Clear Composer/UI-074 + Gallery Rail/UI-075. Remaining redesign work must reuse that family—editorial hierarchy, technical microtype, Lab Matrix registration, restrained cool/warm atmosphere, compact horizontal shell, media-first composition, obvious ordinary controls and bounded meaningful motion—rather than introducing independent visual systems per screen.
+## Phase 26 — Activity Job Matrix + History Register v0.2 closure — 2026-09-13
+**Status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
+
+- [x] User-approved design authority: R&D head `13bbfc32e5dabb5944943c1a704058aed6a1befc`, run `34722631963`, artifact `10307305396`, digest `sha256:5c440d5c1768fa6ea19a67165263c20d701ee9f2b50487e3a87246e7de8a9058`.
+- [x] UI-077 and `docs/ui/ACTIVITY_JOB_MATRIX_IMPLEMENTATION_CONTRACT.md` merged before implementation through PR #204 / `8b89f30322ab284b4233ebd6880c6fcb60dff819`.
+- [x] PR #205 preserved the existing Activity route, server-owned lifecycle/order/pagination/ownership, Retry / Run Again / Cancel semantics, sanitized errors, active-only refresh and UI-074 shell while implementing the approved `01 / 02 / 03` Job Matrix plus attached History Register.
+- [x] Final implementation head `db4d45320d6abd92e729a5fcae9a8f63ce79d3c4` passed all 10 attached workflows; Activity Visual `34755095367` produced artifact `10317550573` (`sha256:dbf866939fdb0787a5ea848a1b5c700e1d9bda864b431600ab8c5ecff24b35b6`) and human review accepted desktop, 390px, reduced-motion, signed-out and retry temporal states.
+- [x] Generation Admission `34755095363` unchanged attempt 2 passed after attempt 1 hit a transient Supabase 504. Release Candidate Matrix `34755095388` unchanged attempt 2 passed the complete 23/23 exact-SHA child matrix; manifest artifact `10317707403`, digest `sha256:125d0f85747eb26cba642591a8f62dc386e7a18b0375c86da85c1bb3dab17cc0`.
+- [x] PR #205 squash-merged as `2a49d7e223595cd2f876829a779d3f5d3c362e81`. All seven workflows attached to merged `main` have successful coverage; UI Shell `34756670739` passed unchanged attempt 2 after attempt 1 cancellation, and merged-main Release Candidate Matrix `34756670731` passed its full child matrix with manifest artifact `10317304020` (`sha256:6ebdc3ea29cd08c31946c51a9bded64f8f1861ae6bbe21e22b840b6ab7230e9e`).
+- [x] No schema/API/provider/worker/R2/auth/admission/ownership/routing/deployment contract changed.
+- [ ] Production deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
+
+## Active full-product redesign roadmap — after Phase 26
+**Status: `IN PROGRESS`.** Phase 26 completes the Activity slice; Settings, Admin and the final whole-product cohesion pass remain.
+
+The coherent design authority carried forward is the current locked Lab Grid identity + approved Lab Matrix Landing + Clear Composer/UI-074 + Gallery Rail/UI-075 + Media Register/Source Fold UI-076 + Job Matrix/History Register UI-077. Remaining redesign work must reuse that family—editorial hierarchy, technical microtype, Lab Matrix registration, restrained cool/warm atmosphere, compact horizontal shell, media-first composition, obvious ordinary controls and bounded meaningful motion—rather than introducing independent visual systems per screen.
 
 - [x] Landing redesign — approved / production-live.
 - [x] Create redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
 - [x] Library redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
 - [x] **Phase 25 Media Viewer redesign — COMPLETE / VERIFIED / MERGED / NOT DEPLOYED.** Media Register + Source Fold v0.2 is user-approved, exact-head verified, merged as `b672c711f885092c5e92c42824078e7bd5bc691e`, and all six workflows attached to merged `main` passed.
-- [ ] **Phase 26 Activity redesign — NEXT / ACTIVE R&D.** Phase 25 verified evidence is closed. Audit current Activity desktop/390px real job states, Retry / Run Again / Cancel, loading/empty/error behavior and real-state-driven motion; develop same-family concepts and obtain explicit design approval before any production implementation contract.
-- [ ] **Phase 27 Settings/account-security redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
+- [x] **Phase 26 Activity redesign — COMPLETE / VERIFIED / MERGED / NOT DEPLOYED.** Job Matrix + History Register v0.2 is user-approved, exact-head verified, merged as `2a49d7e223595cd2f876829a779d3f5d3c362e81`, and merged-main verified.
+- [ ] **Phase 27 Settings/account-security redesign — NEXT / R&D NOT STARTED.** Expand only after the Phase 26 closure and follow the normal design-before-code gates.
 - [ ] **Phase 28 Admin redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
 - [ ] **Phase 29 whole-product cohesion pass — ROADMAP ONLY.** Final cross-surface audit before the redesign program may be called complete.
 
