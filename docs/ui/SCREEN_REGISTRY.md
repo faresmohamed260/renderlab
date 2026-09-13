@@ -30,6 +30,8 @@ Approved behavior:
 
 **Phase 23 / UI-074 fidelity correction — merged / verified:** PR #188 restored the approved compact horizontal application header across application routes and removed the persistent desktop rail / fixed mobile dock. User-approved implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` and documentation-final head `b6a2590875432ba75c28db9e0f4b465133e1873c` passed their complete attached suites; PR #188 squash-merged as `3f0d21ed55554b3c48791d35dd17cb6005212076`. Merged-main UI Shell `34684825448` passed. Production remains unchanged until a separately authorized deployment.
 
+**Phase 29 / UI-080 whole-product cohesion closure — merged / verified:** final implementation head `e1cf49db3cff9cd635775c07b9c8f9fe9e68660b` added deterministic cross-route regression coverage for fixed-header clearance, 390px horizontal overflow and reduced-motion geometry without changing production UI code. UI Shell `34788560808`, Engineering Quality `34788560805` and Brand / Launch `34788560864` passed; browser evidence confirmed Create, Library, Activity and Settings clear the UI-074 fixed header and remain overflow-free at 390px. The suspected Create/header collision did not reproduce, so no feature-local or shared-shell pixel correction was justified. PR #237 merged as `1c33fccf7de5b919b6a9f15916c66b92334da84a`; merged-main UI Shell `34788682060` and Engineering Quality `34788682047` passed. Existing Landing/Create/Library/Viewer/Activity/Settings/Admin screen authorities and statuses therefore remain unchanged; Phase 29 closes integration quality rather than redefining any screen. Production deployment remains separate.
+
 ## Screens
 
 ### Brand / Landing
