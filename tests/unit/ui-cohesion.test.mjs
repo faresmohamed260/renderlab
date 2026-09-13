@@ -14,7 +14,7 @@ test("UI-074 fixed header and route-content offsets remain paired", () => {
 
 test("Phase 29 browser coverage retains cross-route clearance and reduced-motion checks", () => {
   for (const route of ["/create", "/library", "/activity", "/settings"]) {
-    assert.match(shellSpec, new RegExp(`path: \\"${route.replace("/", "\\/")}\\"`));
+    assert.equal(shellSpec.includes(`path: "${route}"`), true, `missing cohesion route coverage for ${route}`);
   }
   assert.match(shellSpec, /expectContentClearsTopbar/);
   assert.match(shellSpec, /expectNoHorizontalOverflow/);
