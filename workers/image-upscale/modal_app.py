@@ -9,7 +9,7 @@ import modal
 APP_NAME = "renderlab-image-upscale"
 RUNTIME_CLASS_NAME = "ImageUpscaleWorker"
 ECOSYSTEM_ID = "image-upscale-v1"
-WORKER_ID = os.environ.get("RENDERLAB_UPSCALE_WORKER_ID", "image-upscale-worker")
+WORKER_ID = os.environ.get("RENDERLAB_UPSCALE_WORKER_ID", "renderlab-upscale-01")
 STATE_DICT_NAME = os.environ.get("RENDERLAB_UPSCALE_STATE_DICT", "renderlab-image-upscale-worker-state")
 
 MODAL_VERSION = "1.4.2"

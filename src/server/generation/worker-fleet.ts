@@ -28,7 +28,7 @@ export const generationWorkers: GenerationWorker[] = [
     gatewayUrl: gatewayUrl("https://grimcircuit--saga-flux2-klein-gateway-web.modal.run"),
     displayName: "FLUX.2 Klein 9B · Primary",
     role: "primary",
-    routingStatus: "disabled",
+    routingStatus: "active",
   },
   {
     id: "flux-standby-01",
@@ -36,7 +36,7 @@ export const generationWorkers: GenerationWorker[] = [
     gatewayUrl: gatewayUrl("https://silentspecter67--saga-flux2-klein-gateway-web.modal.run"),
     displayName: "FLUX.2 Klein 9B · Standby",
     role: "standby",
-    routingStatus: "active",
+    routingStatus: "disabled",
   },
   {
     id: "ltx-primary-01",

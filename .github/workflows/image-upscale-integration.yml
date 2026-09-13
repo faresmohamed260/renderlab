@@ -158,11 +158,11 @@ jobs:
       - name: Resolve deployed Upscale worker endpoint
         shell: bash
         env:
-          DIRECT_UPSCALE_GATEWAY: ${{ secrets.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL || 'https://silentspecter67--renderlab-image-upscale-web.modal.run' }}
+          DIRECT_UPSCALE_GATEWAY: ${{ secrets.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL || 'https://dreadcipher67--renderlab-image-upscale-web.modal.run' }}
         run: |
           live_gateway="${DIRECT_UPSCALE_GATEWAY:-}"
           if [ -z "$live_gateway" ]; then
-            echo "::error::RENDERLAB_UPSCALE_WORKER_GATEWAY_URL is not configured and the RenderLab-owned fallback endpoint is unavailable."
+            echo "::error::RENDERLAB_UPSCALE_WORKER_GATEWAY_URL is not configured and no RenderLab-owned live-proof fallback is available."
             exit 1
           fi
           live_gateway="${live_gateway%/}"
@@ -226,4 +226,3 @@ jobs:
           name: phase18f-image-upscale-evidence
           path: artifacts/phase18f-image-upscale
           if-no-files-found: warn
-          retention-days: 7
