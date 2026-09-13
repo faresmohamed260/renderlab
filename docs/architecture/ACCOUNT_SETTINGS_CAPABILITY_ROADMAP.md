@@ -3,25 +3,18 @@
 **Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION PENDING  
 **Tracker:** #213  
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
-**Baseline audited:** `main` `750a5365ad9786f9216f7acef10d829cae048d60` plus fresh 2026-09-13 Supabase/security audit  
+**Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
 **Related visual R&D:** Phase 27 / #211 / draft PR #212  
-**Scope:** account, authentication, security, privacy/data lifecycle, user preferences and notification capability planning  
+**Scope:** account profile, authentication, credential UX, security, recovery, sessions, privacy/data lifecycle, preferences and notifications  
 **Does not authorize:** production implementation, hosted Supabase Auth configuration changes, schema changes, provider changes, or deployment
 
 ## 1. Purpose
 
-RenderLab's existing `/settings` and `/settings/password` flows correctly implement a narrow Closed Beta account baseline, but the underlying account-management product is materially shallower than the account/security surfaces expected from a mature application.
+RenderLab's existing `/settings` and `/settings/password` flows correctly implement a narrow Closed Beta account baseline, but the underlying account-management product is materially shallower than the account/settings systems users expect from a mature application.
 
 Phase 27 can improve the visual hierarchy and account information architecture, but a visual redesign must not create the false impression that the broader account-management program is complete. Missing capabilities require explicit product, security, data and infrastructure contracts before controls are added to Settings.
 
-This roadmap is the durable gap inventory, target Settings information architecture and sequencing plan. It separates:
-
-1. existing behavior Phase 27 may present more clearly now;
-2. platform/Auth hardening that may have little visible Settings UI;
-3. new user-facing security/account capabilities;
-4. privacy/data-lifecycle capabilities tied to RenderLab ownership/storage;
-5. product preferences and notification settings that should exist only after the underlying capability exists;
-6. conventional settings categories deliberately deferred because RenderLab has no current product requirement for them.
+This roadmap is the durable gap inventory, target Settings information architecture and sequencing plan. It now covers both the advanced security gaps already identified and the ordinary account basics that were previously under-scoped: display identity, avatar, username/handle policy, password-field interaction quality, recovery affordances, accessibility/preferences and other conventionally expected account controls.
 
 The goal is a complete, truthful account system—not a visually fuller page.
 
@@ -32,12 +25,13 @@ The umbrella tracker is #213. Future work is split into roadmap-level issues so 
 | Workstream | Tracker | Purpose | Default priority |
 | --- | --- | --- | --- |
 | Auth and email delivery hardening | #215 | Production-ready Auth email, URL/template posture, password/abuse hardening | P0 prerequisite |
-| Session controls and security activity | #216 | Local/other/global sign-out, session visibility, security events | P1 |
-| MFA and privileged step-up | #217 | TOTP, AAL2 and sensitive-operation step-up | P0 security / P1 members |
+| Session controls and security activity | #216 | Current/other/global sign-out, session visibility, security events and device-alert groundwork | P1 |
+| MFA and privileged step-up | #217 | TOTP, AAL2, recovery and sensitive-operation step-up | P0 security / P1 members |
 | Identity and sign-in methods | #218 | Secure email change and justified linked identities | P1 |
 | Data export, retention and account deletion | #219 | Export, retention and safe owner-wide deletion | P1 architecture / P2 implementation |
-| Product preferences and notifications | #220 | Only durable settings backed by real product capability | P2 |
+| Product preferences and notifications | #220 | Product-backed preferences, accessibility overrides and optional notification channels | P2 |
 | Passkeys / WebAuthn research | #221 | Evaluate experimental passkeys without making them a required recovery path | Research / P2 |
+| Profile and credential UX baseline | #223 | Display name, avatar, username policy and consistent password/credential form behavior | P1 basic maturity |
 
 These issues are roadmap-level. Their existence does not authorize implementation or hosted configuration mutation.
 
@@ -60,7 +54,20 @@ Current repository behavior already provides:
 - Conditional Admin continuation from Settings only for an active fresh-authorized admin identity.
 - Existing owner-scoped media, generation, collection, upload and admission records tied to `auth.users.id`.
 
-Phase 27 v0.2 may make these truths clearer, but it must not imply later roadmap capabilities already exist.
+Currently missing from the verified product baseline:
+
+- durable display name/profile identity;
+- user-managed avatar/profile picture;
+- RenderLab username/handle semantics;
+- one documented credential-field interaction standard across sign-in/recovery/password surfaces;
+- MFA/passkeys;
+- independent recovery methods beyond the existing sign-in-email recovery flow;
+- session inventory/security activity;
+- secure sign-in-email change;
+- account export/deletion;
+- durable user preferences/notification settings.
+
+Phase 27 may make existing truths clearer and establish section geometry, but it must not imply later roadmap capabilities already exist.
 
 ## 4. Current hosted/Auth hardening facts
 
@@ -93,12 +100,16 @@ Current Supabase Auth documentation plus a fresh read-only shared-project schema
 
 These facts make roadmap capabilities feasible; they do not make them implemented.
 
-## 6. Security principles used for prioritization
+## 6. Security and credential UX principles
 
 The roadmap follows current security guidance rather than copying another product's Settings menu.
 
-- For password-only authentication, target a long minimum password rather than arbitrary composition rules. NIST SP 800-63B-4 uses 15 characters as the minimum when a password is the single factor, permits shorter minimums when the password is only one factor in MFA, recommends support for long passwords and rejects arbitrary composition requirements.
-- Block known compromised/common passwords when the hosted plan supports it rather than relying on decorative password-strength meters.
+- For password-only authentication, target a long minimum password rather than arbitrary composition rules. NIST SP 800-63B-4 uses 15 characters as the minimum when a password is the single factor, permits a shorter minimum when the password is only one factor in MFA, recommends support for long passwords and rejects arbitrary composition requirements.
+- A conventional `uppercase + lowercase + number + symbol` rule must **not** be added merely because users have seen it elsewhere. If the configured Auth policy ever requires character classes, the UI must communicate that truthfully; otherwise prefer length, compromised-password blocking and rate limiting.
+- Password entry should allow paste and password managers. Do not disable browser password-manager behavior.
+- Password fields should offer an accessible option to reveal/hide the entered secret. NIST explicitly recommends offering a display option to help users verify entry.
+- Credential guidance must come from the real configured policy. Do not hard-code a checklist that can drift from server/Auth enforcement.
+- Block known compromised/common passwords when the hosted plan supports it rather than relying on decorative strength meters.
 - Reauthenticate or step up before high-risk identity/security changes.
 - MFA is especially important for privileged Admin operations.
 - MFA factor replacement/recovery is itself a high-risk operation and requires an explicit recovery policy plus notification.
@@ -107,48 +118,143 @@ The roadmap follows current security guidance rather than copying another produc
 
 These are product-security requirements, not claims of certification or compliance.
 
-## 7. Target Settings information architecture
+## 7. Conventional account-system benchmark audit — 2026-09-13
+
+This audit used current official account/help documentation from GitHub, Figma, Canva, Google and Microsoft together with NIST/OWASP security guidance. The purpose is not to clone any one product. It is to identify the recurring account layers users reasonably expect and then decide whether each layer belongs in RenderLab.
+
+### Recurring patterns across mature products
+
+Commonly recurring account capabilities include:
+
+- display name and profile picture/avatar;
+- a stable account identifier plus, where the product has person-facing identity, a username/handle;
+- primary/sign-in email and email verification/change flows;
+- password change and clear password-entry ergonomics;
+- MFA or stronger authentication options;
+- recovery methods/backups;
+- active-session/device visibility and revocation;
+- recent security activity and alerts for important account changes;
+- notification controls;
+- data export/account deletion in products with durable user content;
+- connected applications/tokens only when an integration/developer ecosystem exists;
+- accessibility, appearance and language settings where the application actually supports those systems.
+
+### Benchmark-specific lessons relevant to RenderLab
+
+- GitHub treats profile name, avatar and username as separate concepts; changing a username has namespace/redirect consequences, while display name is ordinary profile metadata.
+- GitHub separates profile/account controls from Password and Authentication, Sessions and Security Log surfaces. This supports RenderLab's decision to keep profile, credential/security and session logic distinct.
+- Figma's account settings combine account name/avatar, account email/password, 2FA, notifications and connected third-party apps. The connected-app/API-token pieces are relevant only if RenderLab later gains integrations/developer APIs.
+- Canva separates profile management, email/password, linked accounts, account security, accessibility and deletion. This reinforces treating accessibility and account lifecycle as first-class planning categories rather than burying them under generic Preferences.
+- Google treats name/profile image separately from recovery methods and security activity, and supports recovery methods that are not the primary sign-in credential. RenderLab should evaluate recovery-method strategy rather than assuming password-reset email alone is the final recovery architecture.
+- Microsoft exposes recent account activity and distinguishes unusual activity from normal activity. RenderLab should plan security-event visibility and incident-response actions, but must not claim risk detection or geolocation it does not actually implement.
+
+### What RenderLab should adopt versus defer
+
+**Plan as genuine account maturity:**
+
+- display name;
+- profile image/avatar;
+- username/handle contract;
+- sign-in email/verification state and secure email change;
+- consistent password/credential UX including show/hide;
+- real password-policy guidance;
+- MFA/recovery;
+- session management and security activity;
+- security alerts for significant account changes/new access when a reliable event/delivery system exists;
+- export/deletion/retention;
+- accessibility/preferences only where product-backed.
+
+**Keep conditional/deferred:**
+
+- bio, pronouns, location, social links and public-profile visibility until RenderLab has person-facing sharing/collaboration;
+- birthday/gender unless a real age, legal or personalization requirement emerges;
+- billing, teams/workspaces, API keys and connected apps until those product systems exist;
+- theme/light mode until a full cross-product theme program exists;
+- language/region until an i18n/localization program exists.
+
+## 8. Target Settings information architecture
 
 The mature target is not one giant account page. Settings should evolve into a small set of truthful sections as capabilities become real.
 
 ### Account
 
-Purpose: canonical identity and access context.
+Purpose: profile identity, canonical sign-in identity and account/access context.
 
-Eventually contains:
+Target sub-sections:
 
-- sign-in email;
-- change sign-in email;
-- Closed Beta / future account-access status;
-- role only as read-only product truth;
-- conditional Admin continuation;
-- account creation/joined date only if there is real user value in displaying it.
+#### Profile
 
-Not included by default:
-
-- avatar;
 - display name;
-- username;
-- biography;
-- public profile.
+- profile picture/avatar;
+- username/handle once its namespace contract is implemented;
+- deterministic fallback identity when no avatar exists;
+- no authorization/security decisions from any user-editable profile field.
 
-RenderLab currently has no collaboration/public-profile capability that makes those fields useful.
+#### Sign-in identity
+
+- primary/sign-in email;
+- verified/unverified state when meaningful;
+- secure change-email action under Workstream D;
+- linked sign-in methods only when deliberately adopted.
+
+#### Access
+
+- Closed Beta / future account-access status;
+- role as read-only product truth;
+- conditional Admin continuation;
+- joined/account-created date only if it provides real user value.
+
+Profile name/avatar/username are no longer categorically deferred. Display name and avatar are planned ordinary-account features under #223. Username is also planned, but must satisfy its namespace/rename decision gate before implementation.
 
 ### Security
 
-Purpose: authentication factors and sensitive account controls.
+Purpose: credentials, authentication factors, recovery and sensitive account controls.
 
-Target contents:
+Target sub-sections:
 
-- password change and password-policy help;
-- MFA enrollment and factor management;
-- step-up/AAL context only where it explains an actionable security requirement;
-- future passkey management only after deliberate adoption of the experimental provider capability;
-- security-notification information only where users can meaningfully act on it.
+#### Password
 
-### Sessions
+- current password change;
+- accessible Show/Hide password control;
+- real password-policy guidance;
+- Current / New / Confirm semantics;
+- password-match feedback;
+- password-manager/paste/autocomplete compatibility;
+- compromised-password blocking when platform support is enabled.
 
-Purpose: session scope and account-takeover response.
+#### Multi-factor and passkeys
+
+- TOTP enrollment/factor management;
+- backup/recovery strategy;
+- AAL2/step-up behavior where actionable;
+- passkeys only after #221 promotion criteria are met.
+
+#### Account recovery
+
+Current RenderLab recovery is based on the sign-in email. A mature recovery strategy must explicitly decide whether to add any independent recovery mechanism, such as:
+
+- backup MFA factor;
+- recovery codes if a secure supported contract exists;
+- separate recovery email;
+- operator-assisted recovery for lost MFA;
+- another approved recovery channel.
+
+Do not invent custom recovery codes or a recovery contact system without a security contract. Recovery methods require delay/notification protections against hostile replacement.
+
+#### Security notifications
+
+Plan mandatory/non-optional notifications for important security changes once reliable Auth mail exists:
+
+- password changed/reset;
+- sign-in email changed;
+- MFA factor added/removed;
+- sign-in method linked/unlinked;
+- recovery method changed;
+- new or suspicious access if RenderLab later has trustworthy event/risk detection.
+
+### Sessions & Security Activity
+
+Purpose: session scope, active access and account-takeover response.
 
 Target contents:
 
@@ -157,13 +263,15 @@ Target contents:
 - `Sign out other devices`;
 - `Sign out everywhere`;
 - active-session inventory when a trusted server contract is verified;
-- sanitized recent security activity.
+- per-session revoke only if a supported exact owned-session API exists;
+- sanitized recent security activity;
+- clear incident-response actions such as change password / sign out everywhere when an event is unrecognized.
 
-A session list must not imply per-row revoke if exact owned-session revocation is not supportable.
+A session list must not imply per-row revoke if exact owned-session revocation is not supportable. RenderLab must not fabricate city, device or risk certainty from weak data.
 
 ### Data & Privacy
 
-Purpose: user-owned data lifecycle.
+Purpose: user-owned data lifecycle and transparent data-use choices.
 
 Target contents:
 
@@ -171,62 +279,201 @@ Target contents:
 - export/download durable media in a bounded flow;
 - account deletion request;
 - retention/deletion explanation;
-- privacy/terms links when those documents become real public product requirements.
+- privacy/terms links when those documents become real public product requirements;
+- clear disclosure of how prompts/uploads/results are processed and retained;
+- any AI-training/data-use control only if RenderLab or an execution provider actually performs optional training/data reuse that can truthfully be controlled.
 
-### Preferences
+Do not add a meaningless “Do not train on my data” toggle if RenderLab does not train on user data in the first place. The policy/disclosure must match infrastructure reality.
 
-Purpose: durable user choices that are not security or authorization truth.
+### Preferences & Accessibility
+
+Purpose: durable user choices that are not identity, security or authorization truth.
 
 Potential contents only after product contracts exist:
 
 - curated Create defaults;
-- notification-delivery preferences;
-- an application reduced-motion override only if there is demonstrated need beyond the OS preference.
+- optional product notification preferences;
+- application reduced-motion override if there is demonstrated need beyond OS `prefers-reduced-motion`;
+- future accessibility preferences only when they alter real supported behavior;
+- appearance/theme only after a real cross-product theme system exists;
+- language/time zone only after localization/time-zone-aware product behavior exists.
 
-Preferences must not become a dumping ground for fake settings.
+Accessibility itself is not deferred: the product must remain keyboard, screen-reader, touch and reduced-motion accessible regardless of whether any user preference is exposed.
 
 ### Notifications
 
-A separate Notifications section is justified only if RenderLab gains real user-notification channels.
+A separate Notifications section is justified only if RenderLab gains enough real user-notification channels/settings to warrant one.
 
 Security/transactional notifications should generally be mandatory. Product notifications such as generation-completed/failed may be optional if an email/browser/push delivery system actually exists.
 
-## 8. Gap inventory and priority
+### Connected Apps / Developer Access
 
-| Capability | Current state | Target | Priority | Dependency / risk |
-| --- | --- | --- | --- | --- |
-| Truthful sign-out scope | Global behavior exists; Phase 27 copy is being corrected | Explicit current / others / everywhere controls | P0 | Multi-session semantics and tests |
-| Production Auth email | Built-in mailer recorded | Branded reliable custom SMTP/Auth email hook | P0 broader-beta blocker | Operator config and deliverability |
-| Auth URL/template posture | Not fully verified | Verified Site URL, redirect allowlist, invite/recovery/reauth templates | P0 | Hosted config and link safety |
-| Security email notifications | Not productized | Password/email/MFA/sign-in-method change notices | P0 | Hosted config + reliable mail |
-| Password policy | App UI minimum 8 | Standards-aligned long-password policy | P0 | Hosted Auth config + compatibility |
-| Leaked-password block | Advisor WARN: disabled | Enable/verify when plan permits | P0 broader-beta blocker | Plan capability |
-| CAPTCHA / abuse posture | Not part of current flow | Turnstile/hCaptcha when threat model warrants | P0/P1 | Auth config, UX, test strategy |
-| MFA TOTP | Missing | Enrollment, factors, recovery policy | P0 security | Login/AAL enforcement/recovery |
-| Admin AAL2 | Missing | Mandatory step-up for privileged Admin | P0 security | MFA foundation |
-| Sensitive-action step-up | Current-password check only on ordinary password change | Strong reauth for email/MFA/delete/sign-in methods | P0/P1 | Unified reauth contract |
-| Session bulk controls | Only implicit global sign-out | Current / others / everywhere | P1 | Explicit sign-out scopes |
-| Session inventory | Missing | Owner-only trusted active-session list | P1 | Server access, privacy |
-| Per-session revoke | Missing | Revoke chosen owned session if supported | P1 research | Provider API feasibility |
-| Security activity | Missing | Sanitized auth/security event register | P1 | Audit filtering and retention |
-| Change email | Missing | Reauth + confirmation + notification | P1 | Admission/email audit |
-| MFA recovery | Missing | Backup factor + documented recovery | P1 prerequisite to mandatory MFA | Avoid MFA bypass |
-| Passkeys | Missing | Optional phishing-resistant sign-in/management | P2 research | Experimental feature + RP lock-in |
-| Linked sign-in methods/OAuth | Missing | Optional linking only if useful | P2 | Invitation-only admission and identity collision |
-| Data export | Missing | Async account/media export | P1/P2 | Data inventory, media volume, privacy |
-| Account deletion | Missing | Reauthenticated orchestrated lifecycle | P1/P2 | Owner FKs, active jobs, R2, retention |
-| Retention policy | Implicit | Explicit policy by data class | P1 prerequisite | Product/legal/operations decision |
-| User preferences model | Missing | Small typed server-owned contract | P2 | Only real persistent settings |
-| Generation notifications | Missing | Optional completion/failure notifications | P2 | Delivery transport + job events |
-| Appearance/light theme | Missing | Deferred | Deferred | Cross-product theme project, not one toggle |
-| Language/region | Missing | Deferred until i18n exists | Deferred | Localization program |
-| Billing/subscription | No product capability | No surface until commercial model exists | Deferred | Billing product decision |
-| API keys / connected apps | No product capability | No surface until developer/integration platform exists | Deferred | API platform |
-| Team/workspace controls | No product capability | No surface until collaboration exists | Deferred | Multi-user product model |
+This is a conventional account category but remains deferred until RenderLab has a real integration/developer ecosystem. When it exists, it should include only truthful connected identities/apps/tokens with revoke semantics. Do not show an empty Connected Apps page for appearance.
 
-## 9. Workstream A — Auth and email delivery hardening (#215)
+## 9. Convention coverage matrix
 
-**Priority:** first prerequisite; much of this is platform hardening rather than Settings UI.
+| Capability | Category | Decision | Priority / owner |
+| --- | --- | --- | --- |
+| Display name | Account → Profile | Plan | P1 / #223 |
+| Profile picture/avatar | Account → Profile | Plan | P1 / #223 |
+| Avatar crop/replace/remove/reset | Account → Profile | Plan | P1 / #223 |
+| Username/handle | Account → Profile | Plan with namespace gate | P1 / #223 |
+| Bio/pronouns/location/social links | Account → Profile | Defer until person-facing sharing exists | Deferred |
+| Birthday/gender | Account → Profile | Do not collect without real need | Deferred |
+| Sign-in email | Account → Sign-in identity | Existing display truth; improve presentation | Phase 27/#223 |
+| Email verification state | Account → Sign-in identity | Show only when actionable/truthful | P1 / #218 |
+| Change sign-in email | Account → Sign-in identity | Plan | P1 / #218 |
+| Linked OAuth identities | Account → Sign-in identity | Conditional | P2 / #218 |
+| Password change | Security → Password | Existing; retain | Current baseline |
+| Show/Hide password eye | Security/Credential UX | Plan across every secret field | P1 / #223 |
+| Current/New/Confirm fields | Security/Credential UX | Plan standardized semantics | P1 / #223 |
+| Live password requirements | Security/Credential UX | Plan; must derive from real policy | P1 / #223 + #215 |
+| Number/symbol/uppercase requirement | Security policy | Do **not** add unless real configured policy requires it | #215 decision |
+| Long password/passphrase support | Security policy | Plan | P0 / #215 |
+| Compromised-password blocking | Security policy | Plan when plan supports it | P0 / #215 |
+| Password strength meter | Credential UX | Optional only if meaningful; never substitute for policy | #223 |
+| Caps Lock warning | Credential UX | Plan where technically reliable | P1 / #223 |
+| Password-manager/autofill support | Credential UX | Required | P1 / #223 |
+| Paste into password fields | Credential UX | Required | P1 / #223 |
+| MFA/TOTP | Security | Plan | P0/P1 / #217 |
+| MFA backup factor | Security/Recovery | Plan | P1 / #217 |
+| Recovery codes | Security/Recovery | Research supported secure contract before committing | #217 |
+| Independent recovery email/phone/contact | Security/Recovery | Research need/provider fit | P2 research / #217/#218 |
+| Passkeys | Security | Research | #221 |
+| Sensitive-action reauth / sudo mode | Security | Plan | P0/P1 / #217 |
+| Security-change emails | Security notifications | Plan | P0 / #215 |
+| New-device/unusual-access alerts | Security notifications | Plan only after trustworthy event detection | P1 research / #216 |
+| Recent security activity | Sessions & Security Activity | Plan | P1 / #216 |
+| Active session list | Sessions & Security Activity | Plan | P1 / #216 |
+| Current-session marker | Sessions & Security Activity | Plan | P1 / #216 |
+| Revoke one session | Sessions & Security Activity | Research provider API first | P1 research / #216 |
+| Sign out current/others/everywhere | Sessions & Security Activity | Plan | P1 / #216 |
+| Data export | Data & Privacy | Plan | P1/P2 / #219 |
+| Media export | Data & Privacy | Plan bounded async flow | P1/P2 / #219 |
+| Account deletion | Data & Privacy | Plan orchestrated lifecycle | P1/P2 / #219 |
+| Retention policy | Data & Privacy | Required before deletion | P1 / #219 |
+| Privacy/data-use disclosure | Data & Privacy | Plan policy-level truth | P1 architecture / #219 |
+| AI training/data-use opt-out | Data & Privacy | Only if optional training/data reuse actually exists | Conditional |
+| Create defaults | Preferences | Plan only approved durable defaults | P2 / #220 |
+| Product notification preferences | Preferences/Notifications | Plan after delivery channel exists | P2 / #220 |
+| Reduced-motion override | Preferences/Accessibility | Evaluate; OS preference remains baseline | P2 / #220 |
+| High-contrast/accessibility preferences | Preferences/Accessibility | Evaluate only if product-backed | P2 research / #220 |
+| Theme/light mode | Preferences/Appearance | Separate cross-product project | Deferred |
+| Language/region | Preferences | Defer until i18n | Deferred |
+| Time zone | Preferences | Defer until time-zone-aware product need | Deferred |
+| Connected apps/API tokens | Connected Apps | Defer until integration/API platform exists | Deferred |
+| Billing/subscription/invoices | Billing | Defer until commercial model exists | Deferred |
+| Teams/workspaces | Collaboration | Defer until multi-user collaboration exists | Deferred |
+
+## 10. Workstream H — Profile and credential UX baseline (#223)
+
+**Priority:** P1 basic account maturity. This workstream is intentionally separated from #218 because display identity is not authentication identity, and from #215 because credential-field UX is not the hosted Auth policy itself.
+
+### 10.1 Profile identity
+
+Plan:
+
+- editable display name;
+- avatar/profile picture upload;
+- crop/position if the chosen implementation supports it accessibly;
+- replace/remove/reset avatar;
+- deterministic fallback initials/placeholder when no avatar exists;
+- username/handle contract after its namespace gate is decided.
+
+Profile fields are user-editable presentation metadata. They cannot control admission, role, ownership, billing, authorization, Admin access or any security decision.
+
+### 10.2 Preferred profile data architecture
+
+Before implementation, audit whether a RenderLab-owned one-to-one profile record keyed by `auth.users.id` is preferable to relying on Auth `user_metadata`.
+
+Preferred direction unless implementation evidence argues otherwise:
+
+- `auth.users.id` remains immutable canonical identity;
+- RenderLab-owned profile fields are server-validated product data;
+- display name is bounded Unicode text with normalization/sanitization appropriate to its display context;
+- avatar storage uses dedicated profile-media identity/prefix rather than silently turning avatars into ordinary creative Library assets;
+- deletion/export lifecycle explicitly includes profile/avatar data.
+
+No schema decision is authorized by this roadmap alone.
+
+### 10.3 Username/handle contract gate
+
+A username is conventional but creates a namespace. Before implementation define:
+
+- the current user value of the handle;
+- whether it is public, private/account-only, or future-facing;
+- case folding and Unicode/ASCII policy;
+- minimum/maximum length and allowed characters;
+- reserved system/Admin/brand words;
+- uniqueness enforcement and race handling;
+- rename frequency/confirmation;
+- old-handle reuse delay or reservation to reduce impersonation;
+- whether future public/share URLs redirect after rename;
+- moderation/abuse policy if handles become visible to other users.
+
+Do not use username as the ownership key. All ownership remains `auth.users.id`-based.
+
+### 10.4 Credential-field standard
+
+Use one consistent interaction standard across:
+
+- Sign in;
+- invite/account activation if a password is set there;
+- Forgot password request where a secret is not yet entered;
+- recovery password replacement;
+- ordinary Change password;
+- future reauthentication/step-up prompts.
+
+Required behavior for password fields:
+
+- concealed by default;
+- accessible Show/Hide password control with an eye/eye-off visual plus a programmatic accessible name/state;
+- reveal toggling changes presentation only, never the underlying value;
+- touch target meets the product's control-size requirement;
+- clear Current / New / Confirm labels where applicable;
+- live requirements derived from the real Auth policy;
+- new/confirm match state shown accessibly, not by color alone;
+- Caps Lock warning where `KeyboardEvent.getModifierState('CapsLock')` is available/reliable;
+- allow paste;
+- correct `autocomplete` tokens (`current-password`, `new-password`, username/email context as applicable);
+- compatible with password managers and browser-generated passwords;
+- no JavaScript that blocks autofill or paste;
+- no secret values in analytics, logs, screenshots or error reports;
+- mobile-safe layout/keyboard and no accidental horizontal overflow;
+- pending state prevents duplicate submission without erasing the form unnecessarily;
+- sanitized error messages with enumeration-safe behavior preserved.
+
+### 10.5 Password requirements presentation
+
+The UI should present requirements as factual constraints, not a gamified checklist disconnected from enforcement.
+
+Default planned guidance if #215 adopts the standards-aligned policy:
+
+- minimum length;
+- long passphrases allowed;
+- spaces/symbols permitted;
+- common/compromised passwords rejected when protection is enabled;
+- no forced uppercase/number/symbol checklist unless the actual configured policy requires those classes.
+
+A strength meter is optional. If used, it should be supplemental and evidence-based, never the source of truth for acceptance.
+
+### 10.6 Validation
+
+- two-account profile isolation;
+- same `auth.users.id` before/after profile edits;
+- no change to admission/role/media/job ownership after display name/avatar/username edits;
+- duplicate/reserved username races fail safely if handles ship;
+- avatar MIME/size/image validation, crop/replace/remove and exact storage cleanup;
+- desktop + 390px profile and credential states;
+- keyboard/screen-reader/touch behavior;
+- password reveal state is accessible and leaves the secret unchanged;
+- password manager/autofill/paste behavior;
+- policy text exactly matches configured Auth behavior;
+- no secrets in logs/artifacts.
+
+## 11. Workstream A — Auth and email delivery hardening (#215)
+
+**Priority:** P0 prerequisite; much of this is platform hardening rather than Settings UI.
 
 ### Planned scope
 
@@ -236,27 +483,31 @@ Security/transactional notifications should generally be mandatory. Product noti
 - configure sender identity and SPF/DKIM/DMARC;
 - ensure Auth-link tracking is disabled and templates are resilient to email-link prefetch/scanning;
 - enable supported security notifications for password/email/factor/sign-in-method changes;
+- define whether RenderLab can truthfully notify on new-device/new-session events and, if not, do not claim that protection;
 - review Auth endpoint rate limits;
-- evaluate Cloudflare Turnstile as a CAPTCHA candidate because RenderLab already uses Cloudflare infrastructure, without adopting it solely for stack symmetry;
+- evaluate Cloudflare Turnstile as a CAPTCHA candidate without adopting it solely for stack symmetry;
 - set password policy from standards rather than arbitrary composition rules;
 - enable leaked-password protection when hosted plan capability permits and verify the Security Advisor clears.
 
 ### Password policy decision gate
 
-Before MFA is mandatory for an account, target the NIST password-only minimum of 15 characters, preserve long-password support and avoid forced mixed-case/symbol rules solely for appearance.
+Before MFA is mandatory for an account, target the NIST password-only minimum of 15 characters, preserve long-password support and avoid forced mixed-case/number/symbol rules solely for appearance.
 
 If RenderLab later mandates MFA for all users, a shorter minimum may be standards-permitted, but any change remains explicit rather than silently weakening policy.
+
+The configured policy must be programmatically available or shared through one canonical application contract so #223's visible requirement text cannot drift.
 
 ### Exit evidence
 
 - hosted configuration evidence recorded without secrets;
 - configured Auth-email delivery against owned test identities;
 - enumeration-safe recovery preserved;
+- password policy verified at both UI and Auth boundary;
 - Security Advisor reviewed;
 - rate-limit/CAPTCHA behavior verified when enabled;
 - no raw Supabase errors exposed to users.
 
-## 10. Workstream B — Session controls and security activity (#216)
+## 12. Workstream B — Session controls and security activity (#216)
 
 ### Supported bulk scopes
 
@@ -290,17 +541,20 @@ If exact single-session revocation is not supportable, ship local/others/global 
 
 Potential sanitized events include:
 
-- sign-in;
-- password changed;
+- successful sign-in/new session where observable;
+- password changed/reset;
 - email changed;
 - MFA factor enrolled/removed;
 - passkey/sign-in method linked/removed;
+- recovery method changed;
 - global/other-session sign-out where observable;
 - recovery completed.
 
-Never expose raw tokens, arbitrary audit payloads or internal provider metadata.
+A mature incident-response state should let the user act on an unrecognized event, typically by changing the password and/or signing out other/everywhere sessions.
 
-## 11. Workstream C — MFA and privileged step-up (#217)
+Do not label activity “suspicious” unless RenderLab actually has risk-detection logic. Never expose raw tokens, arbitrary audit payloads or internal provider metadata.
+
+## 13. Workstream C — MFA, recovery and privileged step-up (#217)
 
 **Priority:** P0 for Admin; P1 for ordinary members.
 
@@ -329,22 +583,27 @@ MFA is not complete until server authorization enforces it.
 Minimum target:
 
 - active admins require `aal2` before entering/operating Admin;
-- modifying MFA factors requires `aal2` or equivalent strong fresh step-up;
+- modifying MFA/recovery factors requires `aal2` or equivalent strong fresh step-up;
 - account deletion and sign-in-email change require strong reauthentication;
 - ordinary-member MFA policy is an explicit decision: optional-with-enforcement-if-enrolled vs mandatory.
 
-### Recovery
+### Recovery strategy
 
 Mandatory MFA cannot ship without a recovery policy.
 
-Preferred initial strategy:
+Plan and research:
 
-- allow more than one TOTP factor and encourage a backup factor on a separate device;
-- define operator-assisted recovery with strong identity verification if all factors are lost;
-- never let ordinary email recovery silently bypass enrolled MFA;
-- emit security notifications whenever factors are added/removed.
+- multiple enrolled factors/backup factor when supported;
+- provider-supported recovery codes if a secure lifecycle exists;
+- whether a separate recovery email is worthwhile without weakening assurance;
+- operator-assisted recovery with strong identity verification if all factors are lost;
+- cooldown/notification around recovery-method replacement;
+- never let ordinary password-reset email silently bypass an enrolled MFA policy;
+- emit security notifications whenever factors/recovery methods are added/removed.
 
-## 12. Workstream D — Identity and sign-in method management (#218)
+Do not build home-grown recovery codes or security questions merely to imitate other products.
+
+## 14. Workstream D — Identity and sign-in method management (#218)
 
 ### Change sign-in email
 
@@ -368,7 +627,7 @@ Before implementation, verify:
 - Admin display/search uses current verified Auth email rather than stale copied data;
 - email change cannot claim or inherit another person's pending invitation.
 
-### Linked identities
+### Linked identities and account collision
 
 OAuth/social linking is not automatically a maturity requirement. Adopt only if it solves real user friction.
 
@@ -378,9 +637,10 @@ If adopted:
 - provider identity never grants admission by itself;
 - unlinking the last usable sign-in method is blocked;
 - security notifications are mandatory;
-- account-collision behavior receives explicit two-account tests.
+- account-collision/duplicate-account handling receives explicit two-account tests;
+- an account-merge feature is not implied; merge requires its own ownership/data contract if ever needed.
 
-## 13. Workstream E — Data export, retention and account deletion (#219)
+## 15. Workstream E — Data export, privacy, retention and account deletion (#219)
 
 ### Why deletion is non-trivial
 
@@ -388,6 +648,7 @@ RenderLab deliberately uses `owner_id -> auth.users.id ON DELETE RESTRICT` on co
 
 An account may own:
 
+- profile/display metadata and avatar objects once #223 is implemented;
 - generation jobs and persisted product intent;
 - generation sources;
 - media assets and R2 objects;
@@ -404,13 +665,25 @@ Prefer an asynchronous export workflow producing an expiring export package or m
 
 Potential contents:
 
-- account/access metadata appropriate for the user;
+- profile/account/access metadata appropriate for the user;
 - generation history, prompts and normalized user-facing settings;
 - collections/favorites metadata;
 - durable media originals where practical;
 - a machine-readable manifest relating media to jobs/collections.
 
 Exclude secrets, provider credentials, worker routing and internal execution metadata.
+
+### Data-use transparency
+
+Because RenderLab processes creative prompts/uploads/results, users should be able to understand:
+
+- what is stored;
+- what is temporary versus durable;
+- which systems/providers process the content;
+- the broad retention/deletion behavior;
+- whether content is used for model training or product improvement.
+
+Do not expose a training/data-use opt-out unless there is actual optional reuse behavior that can be controlled. If infrastructure never trains on user content, document that truth rather than presenting a fake toggle.
 
 ### Account deletion lifecycle
 
@@ -422,7 +695,7 @@ Proposed sequence:
 4. Block new generation/admission for the account.
 5. Resolve active jobs under an explicit policy; do not orphan accepted backend work.
 6. Tombstone/delete owned media and purge R2 through safe deletion mechanics or a dedicated owner-wide equivalent.
-7. Remove collection/upload/admission state in dependency-safe order.
+7. Remove profile/avatar, collection/upload/admission state in dependency-safe order.
 8. Delete or de-identify generation history according to retention policy.
 9. Revoke all sessions/factors.
 10. Remove RenderLab account-access state.
@@ -433,6 +706,7 @@ Proposed sequence:
 
 Explicitly classify:
 
+- profile/avatar data;
 - active/succeeded/failed/cancelled generation jobs;
 - deleted/tombstoned media;
 - R2 objects;
@@ -443,7 +717,7 @@ Explicitly classify:
 
 Account deletion cannot be called complete while these rules remain implicit.
 
-## 14. Workstream F — Product preferences and notifications (#220)
+## 16. Workstream F — Product preferences, accessibility and notifications (#220)
 
 **Priority:** P2; do not let this delay security fundamentals.
 
@@ -456,7 +730,8 @@ Potential first-class preferences:
 - preferred Create output kind;
 - preferred supported image aspect ratio;
 - preferred supported Video resolution/duration/audio defaults;
-- optional generation-completion/failure notification choices.
+- optional generation-completion/failure notification choices;
+- app-level reduced-motion override only if there is demonstrated need beyond the OS preference.
 
 Rules:
 
@@ -464,6 +739,18 @@ Rules:
 - do not persist worker/model implementation identities as preferences;
 - security/authorization state is never a preference;
 - existing URL/server-owned Library state stays separate unless a product decision deliberately makes a default persistent.
+
+### Accessibility preferences
+
+Accessibility is mandatory independent of preferences. RenderLab must always provide keyboard/screen-reader/touch/reduced-motion support.
+
+Optional user settings may be considered only where they add real capability beyond platform/OS settings, for example:
+
+- reduced-motion override;
+- future contrast/density controls if the design system supports them end-to-end;
+- animation/media autoplay controls if such behavior exists.
+
+Do not create non-functional accessibility toggles.
 
 ### Notification architecture
 
@@ -477,7 +764,7 @@ Potential channels:
 
 Security notifications are not marketing/product preferences and should not be user-disableable by default.
 
-## 15. Passkeys / WebAuthn research (#221)
+## 17. Passkeys / WebAuthn research (#221)
 
 Passkeys are attractive because they are phishing-resistant and Supabase now documents hosted passkey support. Supabase currently marks the capability **experimental**.
 
@@ -494,21 +781,25 @@ Research requirements:
 
 Promotion requires acceptable provider maturity/API stability, hosted configuration, RP-domain strategy, recovery story and browser evidence.
 
-## 16. Deliberately deferred conventional categories
+## 18. Deliberately deferred conventional categories
 
 Common Settings sections are not automatically RenderLab requirements.
 
-### Profile / avatar / username
+### Public profile extras
 
-Deferred until collaboration, sharing, comments, public galleries or another person-facing identity feature exists.
+Bio, pronouns, location, social links, profile visibility and public-profile customization remain deferred until sharing/collaboration/public identity creates a real use.
+
+### Birthday / gender / demographic fields
+
+Do not collect without a concrete age, legal, safety or personalization requirement. Unnecessary personal data is not account maturity.
 
 ### Theme / light mode
 
 A theme setting is not a one-control feature. RenderLab's current design is built around the near-black system. A real light theme requires cross-product token/design/accessibility work.
 
-### Language / region
+### Language / region / time zone
 
-Deferred until an i18n/localization program exists.
+Deferred until localization or time-zone-aware behavior exists.
 
 ### Billing / subscription / invoices
 
@@ -528,7 +819,7 @@ Deferred until RenderLab actually sends optional marketing communications. Secur
 
 This list prevents fake maturity: conventional menu labels are not product capabilities.
 
-## 17. Proposed execution sequence
+## 19. Proposed execution sequence
 
 RenderLab's progressive-planning rule remains in force. Only the immediate next workstream should receive an execution-ready phase contract.
 
@@ -536,41 +827,46 @@ RenderLab's progressive-planning rule remains in force. Only the immediate next 
 
 Continue the Settings visual redesign using truthful current behavior. Phase 27 may establish future section geometry, but must not render fake/disabled MFA/session/delete/passkey controls simply to preview this roadmap.
 
-### 1 — Auth & email hardening
+### 1 — Profile & credential UX baseline
 
-#215. Resolve broader-beta account infrastructure blockers first.
+#223. Close the most visible/basic account maturity gap: display identity plus one consistent credential-field interaction contract. This may proceed in parallel with #215 planning, but visible password requirements must not ship ahead of the actual hosted policy decision.
 
-### 2 — Session controls & security activity
+### 2 — Auth & email hardening
+
+#215. Resolve broader-beta account infrastructure blockers. This remains P0 even if profile UX is implemented first.
+
+### 3 — Session controls & security activity
 
 #216. Establish mature incident-response/account visibility.
 
-### 3 — MFA & privileged step-up
+### 4 — MFA & privileged step-up
 
-#217. Admin AAL2 is the minimum security target; ordinary-member policy is decided in that contract.
+#217. Admin AAL2 is the minimum security target; ordinary-member policy and recovery are decided in that contract.
 
-### 4 — Identity management
+### 5 — Identity management
 
 #218. Add secure email change; consider linked identities only if justified.
 
-### 5 — Data/privacy lifecycle
+### 6 — Data/privacy lifecycle
 
 #219. Implement export, retention and deletion from a verified ownership/data map.
 
-### 6 — Preferences & product notifications
+### 7 — Preferences & product notifications
 
-#220. Add only product-backed durable preferences/channels.
+#220. Add only product-backed durable preferences/channels/accessibility overrides.
 
-### 7 — Passkeys
+### 8 — Passkeys
 
 #221. Promote from research only after stability/domain/recovery gates are satisfied.
 
 Phase 28 Admin redesign and Phase 29 cohesion remain the current UI-redesign roadmap. This account-capability roadmap is a parallel product/security program; it does not silently renumber those phases.
 
-## 18. Cross-cutting implementation invariants
+## 20. Cross-cutting implementation invariants
 
 Every future account-capability phase must preserve:
 
 - `auth.users.id` as canonical identity unless explicitly redesigned;
+- display name/avatar/username as non-authoritative profile metadata;
 - RenderLab admission/role state separate from provider Auth metadata;
 - no authorization from user-editable metadata;
 - server verification of current identity for private/sensitive actions;
@@ -580,14 +876,26 @@ Every future account-capability phase must preserve:
 - sanitized user-facing failures;
 - no browser service-role/secret access;
 - no direct browser access to Auth schema/session/audit tables;
-- no raw session/access/refresh tokens in logs or UI;
+- no raw session/access/refresh tokens or password values in logs or UI artifacts;
 - exact fixture isolation and cleanup for Auth-backed CI;
 - keyboard/touch/focus/accessibility parity;
 - no deployment/config mutation without explicit authorization.
 
-Sensitive operations—email change, MFA-factor mutation, account deletion, sign-in-method mutation and similarly high-impact actions—must define a concrete reauthentication/step-up guarantee rather than assuming an existing session is enough.
+Sensitive operations—email change, MFA/recovery-factor mutation, account deletion, sign-in-method mutation and similarly high-impact actions—must define a concrete reauthentication/step-up guarantee rather than assuming an existing session is enough.
 
-## 19. Validation expectations by workstream
+## 21. Validation expectations by workstream
+
+### Profile / credential UX
+
+- two-account profile isolation;
+- same `auth.users.id` and existing ownership before/after edits;
+- avatar validation/storage cleanup;
+- username uniqueness/reserved-name/rename cases if implemented;
+- desktop/390px profile and password-form states;
+- show/hide accessibility;
+- password-manager/autofill/paste behavior;
+- server-policy/visible-requirement parity;
+- no secrets in logs/artifacts.
 
 ### Auth/email hardening
 
@@ -595,6 +903,7 @@ Sensitive operations—email change, MFA-factor mutation, account deletion, sign
 - custom-mail delivery evidence without exposing secrets;
 - safe redirect/link behavior;
 - recovery enumeration protection;
+- exact password-policy behavior;
 - Security Advisor evidence;
 - CAPTCHA/rate-limit tests when enabled.
 
@@ -607,15 +916,16 @@ Sensitive operations—email change, MFA-factor mutation, account deletion, sign
 - stale bearer rejection after revocation;
 - sanitized metadata review.
 
-### MFA
+### MFA / recovery
 
 - enroll/challenge/verify;
 - AAL1 → AAL2 transition;
 - protected Admin/sensitive-action denial at AAL1;
 - factor removal/backup factor;
 - lost-factor recovery;
+- supported recovery-code lifecycle if adopted;
 - other-session behavior after factor changes;
-- exact MFA fixture cleanup.
+- exact MFA/recovery fixture cleanup.
 
 ### Email change
 
@@ -628,9 +938,9 @@ Sensitive operations—email change, MFA-factor mutation, account deletion, sign
 
 ### Export/deletion
 
-- owned account with media/jobs/collections/upload/admission state;
+- owned account with profile/media/jobs/collections/upload/admission state;
 - active-job policy;
-- exact R2 cleanup;
+- exact profile/avatar/R2 cleanup;
 - database owner-row cleanup/de-identification;
 - session revocation;
 - Auth identity removed last;
@@ -642,14 +952,15 @@ Sensitive operations—email change, MFA-factor mutation, account deletion, sign
 - server-owned typed preference validation;
 - stale capability fallback;
 - cross-device persistence;
+- accessibility override behavior where implemented;
 - channel delivery/opt-out behavior;
 - security notifications kept distinct from optional product notifications.
 
-## 20. Documentation contract
+## 22. Documentation contract
 
-The roadmap is now merged and authoritative for the broader Account & Settings capability program.
+This roadmap is authoritative for the broader Account & Settings capability program.
 
-Future durable documentation work should also ensure:
+Future durable documentation work must ensure:
 
 - `PROJECT.md` references this roadmap as the account-management product roadmap;
 - `docs/architecture/PRODUCT_CAPABILITIES.md` distinguishes the existing Phase 10 account baseline from this future expansion;
@@ -658,18 +969,20 @@ Future durable documentation work should also ensure:
 
 The umbrella #213 remains open until those source-of-truth cross-references are recorded. Child workstreams remain open until independently planned, implemented and verified.
 
-## 21. Program completion definition
+## 23. Program completion definition
 
 The broader Account & Settings program is not complete when the Phase 27 page looks polished. It is complete only when RenderLab has deliberately addressed or explicitly rejected:
 
+- basic profile identity: display name, avatar and username/handle decision;
+- consistent credential/password-field UX;
 - reliable account email/recovery infrastructure;
 - modern password/abuse posture;
 - session control and security visibility;
-- MFA/step-up for privileged and sensitive operations;
+- MFA/step-up and recovery for privileged and sensitive operations;
 - identity/email management;
-- safe recovery for stronger authentication;
-- data export and account deletion/retention;
-- product-backed preferences/notifications;
+- security notifications and access-change awareness;
+- data export, privacy/data-use transparency and account deletion/retention;
+- product-backed preferences/notifications/accessibility overrides;
 - an explicit decision on passkeys and linked identities;
 - clear documentation of intentionally deferred categories.
 
