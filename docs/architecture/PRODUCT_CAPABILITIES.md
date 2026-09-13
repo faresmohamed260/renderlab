@@ -319,6 +319,11 @@ The Phase 5 capability-surface audit found no current user goal that justifies d
 
 Phases 6–9 are complete and verified under the Closed Beta boundary. Phase 10 Account, Admin & Closed-Beta Operations is in progress under UI-051: 10A recovery/admission, 10B privileged admin/access control and 10C atomic generation admission are implemented and exact-head verified; 10D Auth/Operational Hardening remains unimplemented. Verified current Create, Library, Activity and Admin behavior below is authoritative.
 
+### Account & Settings capability boundary — current implementation vs future expansion
+The verified Phase 10 account/admin capability below is the **currently implemented RenderLab baseline**: invitation-gated email/password authentication, recovery/password change, server-owned admission/role/status truth, current global sign-out behavior and fresh-admin authorization. It must not be read as the mature end-state for user account management.
+
+The broader future Account & Settings program is governed by `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` and umbrella #213, with independent roadmap workstreams #215–#221 and #223 for Auth/email hardening, sessions/security activity, MFA/step-up, identity/sign-in methods, export/deletion, product-backed preferences/notifications, passkey research, and profile/credential UX. Those roadmap items are **planned capability**, not verified implementation, until separately contracted, implemented and exact-head verified. Phase 27 Settings visual/account-IA completion does not complete this broader program.
+
 ### Phase 10 Closed-Beta account/admin/guardrail capability — 10A–10C verified; 10D pending
 - Supabase authentication and RenderLab product admission are distinct capabilities. A valid Supabase identity alone does not grant private RenderLab access after Phase 10; an active server-owned RenderLab access record does.
 - Access roles are intentionally only `member` and `admin`; statuses only `active` and `suspended`. User-editable metadata is never authorization. Admin privilege is checked from current server-confirmed identity plus protected RenderLab state.
