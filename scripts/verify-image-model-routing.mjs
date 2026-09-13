@@ -119,7 +119,7 @@ try {
   const fluxRow = await loadJob(flux.payload.job.id);
   assert(fluxRow?.workflow_id === "flux2-klein-image-generate", `Wrong FLUX workflow: ${JSON.stringify(fluxRow)}`);
   assert(fluxRow?.ecosystem === "flux2-klein-9b", `Wrong FLUX ecosystem: ${JSON.stringify(fluxRow)}`);
-  assert(fluxRow?.worker_id === "flux-standby-01", `FLUX did not respect current active fleet routing: ${JSON.stringify(fluxRow)}`);
+  assert(fluxRow?.worker_id === "flux-primary-01", `FLUX did not respect current active fleet routing: ${JSON.stringify(fluxRow)}`);
   assert(fluxRow?.parameters?.model === "flux2-klein-9b", `FLUX product intent was not persisted: ${JSON.stringify(fluxRow?.parameters)}`);
   assert(fluxRow?.parameters?.advanced?.steps === 12 && fluxRow?.parameters?.advanced?.guidance === 2,
     `FLUX configurable tuning was not preserved: ${JSON.stringify(fluxRow?.parameters)}`);
