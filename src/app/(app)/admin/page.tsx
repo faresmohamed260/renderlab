@@ -1,10 +1,25 @@
 import { notFound } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AdminOperations } from "@/features/admin/admin-operations";
+import styles from "@/features/admin/admin-operations.module.css";
 import { getCurrentRenderLabAdmin } from "@/server/admin/admin-auth";
 import { getAdminDashboard } from "@/server/admin/admin-operations";
 
 export const dynamic = "force-dynamic";
+
+function AdminIntro({ unavailable = false }: { unavailable?: boolean }) {
+  return (
+    <header className={styles.intro}>
+      <p className={styles.eyebrow}>Privileged operations</p>
+      <h1 className={styles.title}>Admin</h1>
+      <p className={styles.lede}>
+        {unavailable
+          ? "Admin operations are temporarily unavailable."
+          : "Manage RenderLab beta access, generation guardrails and sanitized product health."}
+      </p>
+    </header>
+  );
+}
 
 export default async function AdminPage() {
   const admin = await getCurrentRenderLabAdmin();
@@ -13,24 +28,15 @@ export default async function AdminPage() {
   try {
     const snapshot = await getAdminDashboard(admin.identity.id);
     return (
-      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        <div className="mb-7">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Operations</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text sm:text-3xl">Admin</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-text-muted">
-            Manage RenderLab beta access, global generation limits, bounded per-account overrides, and sanitized product health.
-          </p>
-        </div>
+      <section className={styles.workspace}>
+        <AdminIntro />
         <AdminOperations snapshot={snapshot} actorUserId={admin.identity.id} />
       </section>
     );
   } catch {
     return (
-      <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        <div className="mb-7">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Operations</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text sm:text-3xl">Admin</h1>
-        </div>
+      <section className={styles.workspace}>
+        <AdminIntro unavailable />
         <Alert variant="destructive">
           <AlertDescription>Admin operations are temporarily unavailable.</AlertDescription>
         </Alert>
