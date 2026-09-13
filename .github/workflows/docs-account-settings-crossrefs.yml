@@ -1,0 +1,76 @@
+name: One-off Account Settings docs cross-reference patch
+
+on:
+  push:
+    branches:
+      - docs/account-settings-roadmap-crossrefs
+
+permissions:
+  contents: write
+
+jobs:
+  patch-docs:
+    if: ${{ !contains(github.event.head_commit.message, '[docs-crossrefs-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/account-settings-roadmap-crossrefs
+          fetch-depth: 0
+      - name: Apply bounded documentation updates
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one match, found {count}")
+              p.write_text(text.replace(old, new))
+
+          replace_exact(
+              "PROJECT.md",
+              "3. **Phase 27 — Settings / account-security flows:** NEXT / R&D NOT STARTED. Apply the shared typography, spacing, shell and trust language at 1/4 expressiveness across signed-out, signed-in, access-status, password and recovery states.",
+              "3. **Phase 27 — Settings / account-security flows:** ACTIVE R&D / PRODUCTION IMPLEMENTATION NOT AUTHORIZED. Issue #211 and draft PR #212 hold the current Trust Register v0.2 visual/account-IA checkpoint. Phase 27 applies the shared typography, spacing, shell and trust language at 1/4 expressiveness across signed-out, signed-in, access-status, password and recovery states, but it does not by itself implement or complete the broader Account & Settings capability program. That program is governed by `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`, umbrella #213 and roadmap workstreams #215–#221/#223."
+          )
+          replace_exact(
+              "PROJECT.md",
+              "Phase 26 is closed. The next redesign slice is Phase 27 Settings / account-security; it remains unstarted and must follow the normal audit, design-approval and implementation-contract gates before production work. Phases 28–29 remain roadmap-level until predecessor evidence exists. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled.",
+              "Phase 26 is closed. Phase 27 Settings / account-security is the active redesign slice at the R&D / implementation-contract preparation stage and must still pass the normal design-approval and merged-contract gates before production work. Completing Phase 27 will close only the production slice explicitly authorized by that contract; it will not close the broader Account & Settings capability roadmap or its independent security/profile/privacy workstreams. Phases 28–29 remain roadmap-level until predecessor evidence exists. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled."
+          )
+
+          product_anchor = "### Phase 10 Closed-Beta account/admin/guardrail capability — 10A–10C verified; 10D pending\n"
+          product_insert = """### Account & Settings capability boundary — current implementation vs future expansion
+The verified Phase 10 account/admin capability below is the **currently implemented RenderLab baseline**: invitation-gated email/password authentication, recovery/password change, server-owned admission/role/status truth, current global sign-out behavior and fresh-admin authorization. It must not be read as the mature end-state for user account management.
+
+The broader future Account & Settings program is governed by `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` and umbrella #213, with independent roadmap workstreams #215–#221 and #223 for Auth/email hardening, sessions/security activity, MFA/step-up, identity/sign-in methods, export/deletion, product-backed preferences/notifications, passkey research, and profile/credential UX. Those roadmap items are **planned capability**, not verified implementation, until separately contracted, implemented and exact-head verified. Phase 27 Settings visual/account-IA completion does not complete this broader program.
+
+"""
+          p = Path("docs/architecture/PRODUCT_CAPABILITIES.md")
+          text = p.read_text()
+          if text.count(product_anchor) != 1:
+              raise SystemExit("PRODUCT_CAPABILITIES.md: Phase 10 anchor mismatch")
+          if "### Account & Settings capability boundary — current implementation vs future expansion" in text:
+              raise SystemExit("PRODUCT_CAPABILITIES.md: cross-reference section already exists")
+          p.write_text(text.replace(product_anchor, product_insert + product_anchor))
+
+          replace_exact(
+              "docs/ui/UI_MIGRATION.md",
+              "- [ ] **Phase 27 Settings/account-security redesign — NEXT / R&D NOT STARTED.** Expand only after the Phase 26 closure and follow the normal design-before-code gates.",
+              "- [ ] **Phase 27 Settings/account-security redesign — R&D ACTIVE / PRODUCTION IMPLEMENTATION NOT AUTHORIZED.** Issue #211 and draft PR #212 hold the current Trust Register v0.2 visual/account-IA checkpoint. Production work still requires an explicit Phase 27 implementation contract. Phase 27 does not by itself complete the broader Account & Settings capability roadmap in `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` / #213 or roadmap workstreams #215–#221/#223."
+          )
+          migration_anchor = "UI-074 already establishes the shared application-shell geometry; shell changes during later slices should be cohesion corrections only unless a separate explicit redesign decision reopens that system. None of this roadmap authorizes backend/schema/security/product-contract changes or production deployment."
+          migration_new = migration_anchor + "\n\n**Account-program boundary:** Phase 27 is a bounded Settings visual/account-information-architecture redesign. Even when its eventual implementation is approved, verified and merged, that status must not be interpreted as completion of profile/credential maturity, Auth/email hardening, session inventory/security activity, MFA/step-up, sign-in identity management, export/deletion, preferences/notifications or passkeys. Those remain independently governed by `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` and must advance through their own implementation contracts and verification."
+          replace_exact("docs/ui/UI_MIGRATION.md", migration_anchor, migration_new)
+          PY
+
+          git diff --check
+          rm .github/workflows/docs-account-settings-crossrefs.yml
+          git config user.name "RenderLab Docs Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add PROJECT.md docs/architecture/PRODUCT_CAPABILITIES.md docs/ui/UI_MIGRATION.md .github/workflows/docs-account-settings-crossrefs.yml
+          git commit -m "docs: cross-reference Account Settings roadmap [docs-crossrefs-applied]"
+          git push origin HEAD:docs/account-settings-roadmap-crossrefs
