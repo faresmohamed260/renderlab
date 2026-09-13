@@ -12,7 +12,8 @@
     "test:unit": "node --test tests/unit/*.test.mjs",
     "test:ui": "playwright test",
     "verify:engineering-quality": "node scripts/verify-engineering-quality.mjs",
-    "verify:ui-purity": "node scripts/verify-ui-purity.mjs"
+    "verify:ui-purity": "node scripts/verify-ui-purity.mjs",
+    "verify:modal-project-ownership": "node scripts/verify-modal-project-ownership.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1116.0",
