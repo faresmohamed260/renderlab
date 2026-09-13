@@ -15,6 +15,7 @@ import type {
   AdminDashboardSnapshot,
   AdminGenerationSettings,
 } from "@/lib/api/admin-contract";
+import styles from "./admin-operations.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
 
@@ -115,128 +116,128 @@ export function AdminOperations({
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className={styles.surfaceWrap}>
       {feedback ? (
         <Alert variant={feedback.kind === "error" ? "destructive" : "default"}>
           <AlertDescription>{feedback.message}</AlertDescription>
         </Alert>
       ) : null}
 
-      <AdminSection
-        title="Access"
-        description="Invite and manage only identities already admitted to RenderLab. Shared Supabase Auth users are never listed here."
-      >
-        <form
-          className="grid gap-4 rounded-xl border border-border bg-surface-1 p-4 sm:grid-cols-[minmax(0,1fr)_10rem_auto] sm:items-end sm:p-5"
-          onSubmit={submitInvitation}
-        >
-          <Field>
-            <FieldLabel htmlFor="admin-invite-email">Invite email</FieldLabel>
-            <Input
-              id="admin-invite-email"
-              type="email"
-              autoComplete="off"
-              value={inviteEmail}
-              onChange={(event) => setInviteEmail(event.target.value)}
-              placeholder="person@example.com"
-              required
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="admin-invite-role">Role</FieldLabel>
-            <NativeSelect
-              id="admin-invite-role"
-              value={inviteRole}
-              onChange={(event) => setInviteRole(event.target.value as AdminAccessRole)}
-            >
-              <NativeSelectOption value="member">Member</NativeSelectOption>
-              <NativeSelectOption value="admin">Admin</NativeSelectOption>
-            </NativeSelect>
-          </Field>
-          <Button type="submit" disabled={busyKey !== null || !inviteEmail.trim()}>
-            {busyKey === "invite" ? <Spinner aria-hidden="true" /> : null}
-            Create invitation
-          </Button>
-        </form>
+      <div className={styles.register} data-admin-register="system-continuity">
+        <span className={styles.signatureArc} aria-hidden="true" />
 
-        <div className="mt-6">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="text-sm font-semibold text-text">Pending invitations</h3>
-            <p className="text-xs text-text-muted">{snapshot.invitations.length} pending</p>
-          </div>
-          {snapshot.invitations.length ? (
-            <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface-1">
-              {snapshot.invitations.map((invitation) => (
-                <div
-                  key={invitation.id}
-                  className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+        <AdminRegisterRow index="01" title="Access" rowKey="access">
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Invitation"
+              description="Invite only identities intended for RenderLab access."
+            />
+            <form className={styles.inviteGrid} onSubmit={submitInvitation}>
+              <Field>
+                <FieldLabel htmlFor="admin-invite-email">Invite email</FieldLabel>
+                <Input
+                  id="admin-invite-email"
+                  type="email"
+                  autoComplete="off"
+                  value={inviteEmail}
+                  onChange={(event) => setInviteEmail(event.target.value)}
+                  placeholder="person@example.com"
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="admin-invite-role">Role</FieldLabel>
+                <NativeSelect
+                  id="admin-invite-role"
+                  value={inviteRole}
+                  onChange={(event) => setInviteRole(event.target.value as AdminAccessRole)}
                 >
-                  <div className="min-w-0">
-                    <p className="break-all text-sm font-semibold text-text">{invitation.email}</p>
-                    <p className="mt-1 text-xs text-text-muted">
-                      {titleCase(invitation.role)} · expires {displayDate(invitation.expiresAt)}
-                    </p>
+                  <NativeSelectOption value="member">Member</NativeSelectOption>
+                  <NativeSelectOption value="admin">Admin</NativeSelectOption>
+                </NativeSelect>
+              </Field>
+              <Button type="submit" disabled={busyKey !== null || !inviteEmail.trim()}>
+                {busyKey === "invite" ? <Spinner aria-hidden="true" /> : null}
+                Create invitation
+              </Button>
+            </form>
+          </div>
+
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Pending invitations"
+              description="Open invitations recorded for RenderLab only."
+              meta={`${snapshot.invitations.length} pending`}
+            />
+            {snapshot.invitations.length ? (
+              <div className={styles.recordList} data-admin-list="invitations">
+                {snapshot.invitations.map((invitation) => (
+                  <div className={styles.pendingRow} key={invitation.id}>
+                    <div className={styles.identity}>
+                      <p className={styles.identityTitle}>{invitation.email}</p>
+                      <p className={styles.identityMeta}>
+                        {titleCase(invitation.role)} · expires {displayDate(invitation.expiresAt)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={busyKey !== null}
+                      onClick={() => void runMutation(
+                        `revoke:${invitation.id}`,
+                        `/api/admin/invitations/${encodeURIComponent(invitation.id)}`,
+                        { method: "DELETE" },
+                        "Invitation revoked.",
+                      )}
+                    >
+                      {busyKey === `revoke:${invitation.id}` ? <Spinner aria-hidden="true" /> : null}
+                      Revoke
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={busyKey !== null}
-                    onClick={() => void runMutation(
-                      `revoke:${invitation.id}`,
-                      `/api/admin/invitations/${encodeURIComponent(invitation.id)}`,
-                      { method: "DELETE" },
-                      "Invitation revoked.",
-                    )}
-                  >
-                    {busyKey === `revoke:${invitation.id}` ? <Spinner aria-hidden="true" /> : null}
-                    Revoke
-                  </Button>
-                </div>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.emptyState}>No pending RenderLab invitations.</p>
+            )}
+          </div>
+
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Admitted accounts"
+              description="Only identities already admitted to RenderLab appear here."
+              meta={`${snapshot.accounts.length} RenderLab accounts`}
+            />
+            <div className={styles.accountList} data-admin-list="accounts">
+              {snapshot.accounts.map((account) => (
+                <AccountAccessEditor
+                  key={`${account.userId}:${account.updatedAt}`}
+                  account={account}
+                  actorUserId={actorUserId}
+                  busyKey={busyKey}
+                  runMutation={runMutation}
+                />
               ))}
             </div>
-          ) : (
-            <p className="rounded-xl border border-border bg-surface-1 p-4 text-sm text-text-muted">
-              No pending RenderLab invitations.
-            </p>
-          )}
-        </div>
-
-        <div className="mt-7">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="text-sm font-semibold text-text">Admitted accounts</h3>
-            <p className="text-xs text-text-muted">{snapshot.accounts.length} RenderLab accounts</p>
           </div>
-          <div className="flex flex-col gap-3">
-            {snapshot.accounts.map((account) => (
-              <AccountAccessEditor
-                key={`${account.userId}:${account.updatedAt}`}
-                account={account}
-                actorUserId={actorUserId}
-                busyKey={busyKey}
-                runMutation={runMutation}
-              />
-            ))}
-          </div>
-        </div>
-      </AdminSection>
+        </AdminRegisterRow>
 
-      <AdminSection
-        title="Generation controls"
-        description="Set typed global generation guardrails, then apply nullable per-account overrides only where a known RenderLab account needs different limits."
-      >
-        <div className="flex flex-col gap-5">
-          <GlobalGenerationSettingsEditor
-            settings={snapshot.settings}
-            busyKey={busyKey}
-            runMutation={runMutation}
-          />
-          <div>
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold text-text">Account overrides</h3>
-              <p className="text-xs text-text-muted">Blank limits inherit the global defaults.</p>
-            </div>
-            <div className="flex flex-col gap-3">
+        <AdminRegisterRow index="02" title="Generation" rowKey="generation">
+          <div className={styles.subsection}>
+            <GlobalGenerationSettingsEditor
+              settings={snapshot.settings}
+              busyKey={busyKey}
+              runMutation={runMutation}
+            />
+          </div>
+
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Account overrides"
+              description="Default or blank means inherit the global value."
+              meta={`${snapshot.accounts.length} accounts`}
+            />
+            <div className={styles.overrideList} data-admin-list="generation-overrides">
               {snapshot.accounts.map((account) => (
                 <GenerationOverrideEditor
                   key={`${account.userId}:${account.updatedAt}:generation`}
@@ -247,82 +248,123 @@ export function AdminOperations({
               ))}
             </div>
           </div>
-        </div>
-      </AdminSection>
+        </AdminRegisterRow>
 
-      <AdminSection
-        title="Health"
-        description={`Aggregate RenderLab product state over the last ${snapshot.health.windowHours} hours. Raw prompts, media, provider data and backend errors are excluded.`}
-      >
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <HealthCard label="Active jobs" value={String(snapshot.health.activeJobs)} />
-          <HealthCard label="Active reservations" value={displayBoundedCount(snapshot.health.capacity.activeReservations)} />
-          <HealthCard label="Completion p50" value={displayDuration(snapshot.health.recentJobs.completionTiming.p50Ms)} />
-          <HealthCard label="Completion p95" value={displayDuration(snapshot.health.recentJobs.completionTiming.p95Ms)} />
-        </div>
-        <p className="mt-2 text-xs leading-5 text-text-muted">
-          Completion timing is accepted-to-terminal duration for {snapshot.health.recentJobs.completionTiming.sampleCount} recent jobs; it is not an SLA or ETA.
-        </p>
+        <AdminRegisterRow index="03" title="Health" rowKey="health">
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Product health"
+              description={`Sanitized aggregate RenderLab state over the current ${snapshot.health.windowHours}-hour window.`}
+              meta={`${snapshot.health.windowHours}-hour window`}
+            />
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-3">
-          <HealthCounts title="Status counts" counts={snapshot.health.statusCounts} />
-          <HealthCounts title="Operation counts" counts={snapshot.health.operationCounts} />
-          <HealthCounts title="Sanitized error codes" counts={snapshot.health.errorCodeCounts} />
-          <HealthCounts
-            title="Active state age"
-            counts={{
-              "Under 15 minutes": snapshot.health.activeStateAge.under15Minutes,
-              "15–60 minutes": snapshot.health.activeStateAge.minutes15To60,
-              "1–2 hours": snapshot.health.activeStateAge.hours1To2,
-              "Over 2 hours": snapshot.health.activeStateAge.over2Hours,
-            }}
-          />
-          <HealthCounts
-            title="Failover incidence"
-            counts={{
-              "Jobs with failover": snapshot.health.recentJobs.failovers.jobsWithFailover,
-              "Failover events": snapshot.health.recentJobs.failovers.eventCount,
-            }}
-          />
-          <HealthCounts
-            title="Maintenance backlog"
-            counts={{
-              "Stale source candidates": displayBoundedCount(snapshot.health.maintenanceBacklog.staleSourceCandidates),
-              "Cleaning sources": displayBoundedCount(snapshot.health.maintenanceBacklog.cleaningSources),
-              "Stale upload candidates": displayBoundedCount(snapshot.health.maintenanceBacklog.staleUploadCandidates),
-              "Cleaning uploads": displayBoundedCount(snapshot.health.maintenanceBacklog.cleaningUploads),
-              "Pending media purges": displayBoundedCount(snapshot.health.maintenanceBacklog.pendingMediaPurges),
-            }}
-          />
-        </div>
+            <div className={styles.metricStrip} aria-label="Primary health metrics">
+              <HealthMetric label="Active jobs" value={String(snapshot.health.activeJobs)} />
+              <HealthMetric
+                label="Active reservations"
+                value={displayBoundedCount(snapshot.health.capacity.activeReservations)}
+              />
+              <HealthMetric
+                label="Completion p50"
+                value={displayDuration(snapshot.health.recentJobs.completionTiming.p50Ms)}
+              />
+              <HealthMetric
+                label="Completion p95"
+                value={displayDuration(snapshot.health.recentJobs.completionTiming.p95Ms)}
+              />
+            </div>
 
-        <div className="mt-4 rounded-xl border border-border bg-surface-1 p-4 text-xs leading-5 text-text-muted">
-          <p>Window: {snapshot.health.windowHours} hours since {displayDate(snapshot.health.since)}.</p>
-          <p className="mt-1">Capacity: generation {snapshot.health.capacity.generationEnabled ? "enabled" : "paused"}; per-account defaults are {snapshot.health.capacity.maxActiveJobsPerAccount} active and {snapshot.health.capacity.maxJobsPerHourPerAccount} per hour.</p>
-          <p className="mt-1">A “+” count means the bounded operator scan was truncated; raw job, account, provider and storage identities remain server-only.</p>
-        </div>
-      </AdminSection>
+            <p className={styles.healthNote}>
+              Completion timing is accepted-to-terminal duration for {snapshot.health.recentJobs.completionTiming.sampleCount} recent jobs; it is not an SLA or ETA.
+            </p>
+
+            <div className={styles.diagnostics}>
+              <HealthCounts title="Status counts" counts={snapshot.health.statusCounts} />
+              <HealthCounts title="Operation counts" counts={snapshot.health.operationCounts} />
+              <HealthCounts title="Sanitized error codes" counts={snapshot.health.errorCodeCounts} />
+              <HealthCounts
+                title="Active state age"
+                counts={{
+                  "Under 15 minutes": snapshot.health.activeStateAge.under15Minutes,
+                  "15–60 minutes": snapshot.health.activeStateAge.minutes15To60,
+                  "1–2 hours": snapshot.health.activeStateAge.hours1To2,
+                  "Over 2 hours": snapshot.health.activeStateAge.over2Hours,
+                }}
+              />
+              <HealthCounts
+                title="Failover incidence"
+                counts={{
+                  "Jobs with failover": snapshot.health.recentJobs.failovers.jobsWithFailover,
+                  "Failover events": snapshot.health.recentJobs.failovers.eventCount,
+                }}
+              />
+              <HealthCounts
+                title="Maintenance backlog"
+                counts={{
+                  "Stale source candidates": displayBoundedCount(snapshot.health.maintenanceBacklog.staleSourceCandidates),
+                  "Cleaning sources": displayBoundedCount(snapshot.health.maintenanceBacklog.cleaningSources),
+                  "Stale upload candidates": displayBoundedCount(snapshot.health.maintenanceBacklog.staleUploadCandidates),
+                  "Cleaning uploads": displayBoundedCount(snapshot.health.maintenanceBacklog.cleaningUploads),
+                  "Pending media purges": displayBoundedCount(snapshot.health.maintenanceBacklog.pendingMediaPurges),
+                }}
+              />
+            </div>
+
+            <div className={styles.healthFooter}>
+              <p>Window: {snapshot.health.windowHours} hours since {displayDate(snapshot.health.since)}.</p>
+              <p>
+                Capacity: generation {snapshot.health.capacity.generationEnabled ? "enabled" : "paused"}; per-account defaults are {snapshot.health.capacity.maxActiveJobsPerAccount} active and {snapshot.health.capacity.maxJobsPerHourPerAccount} per hour.
+              </p>
+              <p>
+                A “+” count means the bounded operator scan was truncated; raw job, account, provider and storage identities remain server-only.
+              </p>
+            </div>
+          </div>
+        </AdminRegisterRow>
+      </div>
     </div>
   );
 }
 
-function AdminSection({
+function AdminRegisterRow({
+  index,
   title,
-  description,
+  rowKey,
   children,
 }: {
+  index: string;
   title: string;
-  description: string;
+  rowKey: "access" | "generation" | "health";
   children: ReactNode;
 }) {
   return (
-    <section className="grid gap-4 border-t border-border pt-6 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">
-      <div>
-        <h2 className="text-base font-semibold text-text">{title}</h2>
-        <p className="mt-1 text-sm leading-6 text-text-muted">{description}</p>
+    <section className={styles.row} data-admin-row={rowKey}>
+      <div className={styles.labelCell}>
+        <span className={styles.index}>{index}</span>
+        <h2 className={styles.sectionTitle}>{title}</h2>
       </div>
-      <div className="min-w-0">{children}</div>
+      <div className={styles.valueCell}>{children}</div>
     </section>
+  );
+}
+
+function SubsectionHeader({
+  title,
+  description,
+  meta,
+}: {
+  title: string;
+  description: string;
+  meta?: string;
+}) {
+  return (
+    <div className={styles.subHead}>
+      <div className={styles.subHeadCopy}>
+        <h3 className={styles.microTitle}>{title}</h3>
+        <p className={styles.helper}>{description}</p>
+      </div>
+      {meta ? <p className={styles.meta}>{meta}</p> : null}
+    </div>
   );
 }
 
@@ -343,69 +385,60 @@ function AccountAccessEditor({
   const key = `access:${account.userId}`;
 
   return (
-    <div className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="break-all text-sm font-semibold text-text">
-              {account.email || "Known RenderLab account"}
-            </p>
-            {isSelf ? (
-              <span className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-xs font-semibold text-text">
-                You
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-1 break-all font-mono text-[11px] text-text-muted">{account.userId}</p>
+    <div className={styles.accountRow} data-admin-account={account.userId}>
+      <div className={styles.identity}>
+        <div className={styles.identityHeading}>
+          <p className={styles.identityTitle}>{account.email || "Known RenderLab account"}</p>
+          {isSelf ? <span className={styles.youBadge}>You</span> : null}
         </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:w-[26rem] xl:grid-cols-[1fr_1fr_auto]">
-          <Field>
-            <FieldLabel htmlFor={`role-${account.userId}`}>Role</FieldLabel>
-            <NativeSelect
-              id={`role-${account.userId}`}
-              size="sm"
-              value={role}
-              disabled={isSelf || busyKey !== null}
-              onChange={(event) => setRole(event.target.value as AdminAccessRole)}
-            >
-              <NativeSelectOption value="member">Member</NativeSelectOption>
-              <NativeSelectOption value="admin">Admin</NativeSelectOption>
-            </NativeSelect>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={`status-${account.userId}`}>Status</FieldLabel>
-            <NativeSelect
-              id={`status-${account.userId}`}
-              size="sm"
-              value={status}
-              disabled={isSelf || busyKey !== null}
-              onChange={(event) => setStatus(event.target.value as AdminAccessStatus)}
-            >
-              <NativeSelectOption value="active">Active</NativeSelectOption>
-              <NativeSelectOption value="suspended">Suspended</NativeSelectOption>
-            </NativeSelect>
-          </Field>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="sm:self-end"
-            disabled={isSelf || busyKey !== null || (role === account.role && status === account.status)}
-            onClick={() => void runMutation(
-              key,
-              `/api/admin/accounts/${encodeURIComponent(account.userId)}`,
-              { method: "PATCH", body: JSON.stringify({ role, status }) },
-              "Account access updated.",
-            )}
-          >
-            {busyKey === key ? <Spinner aria-hidden="true" /> : null}
-            Save access
-          </Button>
-        </div>
+        <p className={styles.userId}>{account.userId}</p>
+        <p className={styles.identityMeta}>{titleCase(account.role)} · {titleCase(account.status)}</p>
       </div>
+
+      <Field className={styles.roleField}>
+        <FieldLabel htmlFor={`role-${account.userId}`}>Role</FieldLabel>
+        <NativeSelect
+          id={`role-${account.userId}`}
+          value={role}
+          disabled={isSelf || busyKey !== null}
+          onChange={(event) => setRole(event.target.value as AdminAccessRole)}
+        >
+          <NativeSelectOption value="member">Member</NativeSelectOption>
+          <NativeSelectOption value="admin">Admin</NativeSelectOption>
+        </NativeSelect>
+      </Field>
+
+      <Field className={styles.statusField}>
+        <FieldLabel htmlFor={`status-${account.userId}`}>Status</FieldLabel>
+        <NativeSelect
+          id={`status-${account.userId}`}
+          value={status}
+          disabled={isSelf || busyKey !== null}
+          onChange={(event) => setStatus(event.target.value as AdminAccessStatus)}
+        >
+          <NativeSelectOption value="active">Active</NativeSelectOption>
+          <NativeSelectOption value="suspended">Suspended</NativeSelectOption>
+        </NativeSelect>
+      </Field>
+
+      <Button
+        type="button"
+        variant="secondary"
+        className={styles.rowAction}
+        disabled={isSelf || busyKey !== null || (role === account.role && status === account.status)}
+        onClick={() => void runMutation(
+          key,
+          `/api/admin/accounts/${encodeURIComponent(account.userId)}`,
+          { method: "PATCH", body: JSON.stringify({ role, status }) },
+          "Account access updated.",
+        )}
+      >
+        {busyKey === key ? <Spinner aria-hidden="true" /> : null}
+        Save access
+      </Button>
+
       {isSelf ? (
-        <p className="mt-3 text-xs leading-5 text-text-muted">
+        <p className={styles.selfNote}>
           Your own active admin role and status cannot be removed from this account.
         </p>
       ) : null}
@@ -440,22 +473,17 @@ function GlobalGenerationSettingsEditor({
   const key = "generation:global";
 
   return (
-    <div className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
-      <div className="mb-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-semibold text-text">Global defaults</h3>
-          <p className="text-xs text-text-muted">Updated {displayDate(settings.updatedAt)}</p>
-        </div>
-        <p className="mt-1 text-xs leading-5 text-text-muted">
-          These guardrails apply to active RenderLab accounts unless an account override is set below.
-        </p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.1fr_1fr_1fr_auto]">
+    <div className={styles.globalTier}>
+      <SubsectionHeader
+        title="Global defaults"
+        description="These guardrails apply to active RenderLab accounts unless an account override is set below."
+        meta={`Updated ${displayDate(settings.updatedAt)}`}
+      />
+      <div className={styles.generationGrid}>
         <Field>
           <FieldLabel htmlFor="global-generation-enabled">Generation</FieldLabel>
           <NativeSelect
             id="global-generation-enabled"
-            size="sm"
             value={enabled}
             disabled={busyKey !== null}
             onChange={(event) => setEnabled(event.target.value)}
@@ -494,9 +522,8 @@ function GlobalGenerationSettingsEditor({
         </Field>
         <Button
           type="button"
-          size="sm"
           variant="secondary"
-          className="sm:self-end"
+          className={styles.rowAction}
           disabled={busyKey !== null || !valid || unchanged}
           onClick={() => void runMutation(
             key,
@@ -553,90 +580,85 @@ function GenerationOverrideEditor({
     && desiredMaxJobsPerHour === account.maxJobsPerHour;
 
   return (
-    <div className="rounded-xl border border-border bg-surface-1 p-4 sm:p-5">
-      <div className="mb-4 min-w-0">
-        <p className="break-all text-sm font-semibold text-text">{account.email || "Known RenderLab account"}</p>
-        <p className="mt-1 text-xs text-text-muted">{titleCase(account.role)} · {titleCase(account.status)}</p>
+    <div className={styles.overrideRow} data-admin-override={account.userId}>
+      <div className={styles.identity}>
+        <p className={styles.identityTitle}>{account.email || "Known RenderLab account"}</p>
+        <p className={styles.identityMeta}>{titleCase(account.role)} · {titleCase(account.status)}</p>
       </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.1fr_1fr_1fr_auto]">
-        <Field>
-          <FieldLabel htmlFor={`generation-enabled-${account.userId}`}>Generation override</FieldLabel>
-          <NativeSelect
-            id={`generation-enabled-${account.userId}`}
-            size="sm"
-            value={enabled}
-            disabled={busyKey !== null}
-            onChange={(event) => setEnabled(event.target.value)}
-          >
-            <NativeSelectOption value="inherit">Default</NativeSelectOption>
-            <NativeSelectOption value="enabled">Enabled</NativeSelectOption>
-            <NativeSelectOption value="disabled">Disabled</NativeSelectOption>
-          </NativeSelect>
-        </Field>
-        <Field>
-          <FieldLabel htmlFor={`max-active-${account.userId}`}>Active-job limit</FieldLabel>
-          <Input
-            id={`max-active-${account.userId}`}
-            type="number"
-            min={1}
-            max={4}
-            inputMode="numeric"
-            placeholder="Default"
-            value={maxActiveJobs}
-            disabled={busyKey !== null}
-            onChange={(event) => setMaxActiveJobs(event.target.value)}
-          />
-          <FieldDescription>1–4 or blank</FieldDescription>
-        </Field>
-        <Field>
-          <FieldLabel htmlFor={`max-hourly-${account.userId}`}>Hourly limit</FieldLabel>
-          <Input
-            id={`max-hourly-${account.userId}`}
-            type="number"
-            min={1}
-            max={120}
-            inputMode="numeric"
-            placeholder="Default"
-            value={maxJobsPerHour}
-            disabled={busyKey !== null}
-            onChange={(event) => setMaxJobsPerHour(event.target.value)}
-          />
-          <FieldDescription>1–120 or blank</FieldDescription>
-        </Field>
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="sm:self-end"
-          disabled={busyKey !== null || !valid || unchanged}
-          onClick={() => void runMutation(
-            key,
-            `/api/admin/accounts/${encodeURIComponent(account.userId)}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                generationEnabled: desiredEnabled,
-                maxActiveJobs: desiredMaxActiveJobs,
-                maxJobsPerHour: desiredMaxJobsPerHour,
-              }),
-            },
-            "Generation overrides updated.",
-          )}
+      <Field>
+        <FieldLabel htmlFor={`generation-enabled-${account.userId}`}>Generation</FieldLabel>
+        <NativeSelect
+          id={`generation-enabled-${account.userId}`}
+          value={enabled}
+          disabled={busyKey !== null}
+          onChange={(event) => setEnabled(event.target.value)}
         >
-          {busyKey === key ? <Spinner aria-hidden="true" /> : null}
-          Save overrides
-        </Button>
-      </div>
+          <NativeSelectOption value="inherit">Default</NativeSelectOption>
+          <NativeSelectOption value="enabled">Enabled</NativeSelectOption>
+          <NativeSelectOption value="disabled">Disabled</NativeSelectOption>
+        </NativeSelect>
+      </Field>
+      <Field>
+        <FieldLabel htmlFor={`max-active-${account.userId}`}>Active jobs</FieldLabel>
+        <Input
+          id={`max-active-${account.userId}`}
+          type="number"
+          min={1}
+          max={4}
+          inputMode="numeric"
+          placeholder="Default"
+          value={maxActiveJobs}
+          disabled={busyKey !== null}
+          onChange={(event) => setMaxActiveJobs(event.target.value)}
+        />
+        <FieldDescription>1–4 or blank</FieldDescription>
+      </Field>
+      <Field>
+        <FieldLabel htmlFor={`max-hourly-${account.userId}`}>Hourly</FieldLabel>
+        <Input
+          id={`max-hourly-${account.userId}`}
+          type="number"
+          min={1}
+          max={120}
+          inputMode="numeric"
+          placeholder="Default"
+          value={maxJobsPerHour}
+          disabled={busyKey !== null}
+          onChange={(event) => setMaxJobsPerHour(event.target.value)}
+        />
+        <FieldDescription>1–120 or blank</FieldDescription>
+      </Field>
+      <Button
+        type="button"
+        variant="secondary"
+        className={styles.rowAction}
+        disabled={busyKey !== null || !valid || unchanged}
+        onClick={() => void runMutation(
+          key,
+          `/api/admin/accounts/${encodeURIComponent(account.userId)}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              generationEnabled: desiredEnabled,
+              maxActiveJobs: desiredMaxActiveJobs,
+              maxJobsPerHour: desiredMaxJobsPerHour,
+            }),
+          },
+          "Generation overrides updated.",
+        )}
+      >
+        {busyKey === key ? <Spinner aria-hidden="true" /> : null}
+        Save overrides
+      </Button>
     </div>
   );
 }
 
-function HealthCard({ label, value }: { label: string; value: string }) {
+function HealthMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-border bg-surface-1 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{label}</p>
-      <p className="mt-2 break-words text-lg font-semibold text-text">{value}</p>
+    <div className={styles.metric}>
+      <p className={styles.metricLabel}>{label}</p>
+      <p className={styles.metricValue}>{value}</p>
     </div>
   );
 }
@@ -644,20 +666,20 @@ function HealthCard({ label, value }: { label: string; value: string }) {
 function HealthCounts({ title, counts }: { title: string; counts: Record<string, ReactNode> }) {
   const entries = Object.entries(counts).sort(([left], [right]) => left.localeCompare(right));
   return (
-    <div className="rounded-xl border border-border bg-surface-1 p-4">
-      <h3 className="text-sm font-semibold text-text">{title}</h3>
+    <section className={styles.diagnostic}>
+      <h3 className={styles.diagnosticTitle}>{title}</h3>
       {entries.length ? (
-        <dl className="mt-3 flex flex-col gap-2">
+        <dl className={styles.diagnosticList}>
           {entries.map(([label, count]) => (
-            <div key={label} className="flex items-center justify-between gap-4 text-sm">
-              <dt className="min-w-0 break-words text-text-muted">{titleCase(label)}</dt>
-              <dd className="font-semibold tabular-nums text-text">{count}</dd>
+            <div key={label} className={styles.diagnosticEntry}>
+              <dt>{titleCase(label)}</dt>
+              <dd>{count}</dd>
             </div>
           ))}
         </dl>
       ) : (
-        <p className="mt-3 text-sm text-text-muted">No matching jobs in this window.</p>
+        <p className={styles.emptyDiagnostic}>No matching jobs in this window.</p>
       )}
-    </div>
+    </section>
   );
 }
