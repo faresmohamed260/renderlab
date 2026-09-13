@@ -921,3 +921,20 @@ Initial guarded rollout run `34427437110` checked out the exact candidate with a
 Corrective guarded rollout run `34427597654` prebound `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID`, checked out exact `378ea68b5c3087f84e83cc73682de2f919168c0a`, required a pristine tree before deploy and required the tree to remain pristine after the Vercel CLI returned. Vercel created READY deployment `dpl_DoNm8T21WSano7zoWgGi112sDDqp` at `https://renderlab-fc4hli5nz-faresmohamed260-6733s-projects.vercel.app` with exact Git SHA `378ea68b5c3087f84e83cc73682de2f919168c0a` and no dirty-source metadata. Active aliases include `https://renderlab.faresuniform.uk` and the stable Vercel project alias. Landing plus `/create`, `/library`, `/activity` and `/settings` smoke passed and rollback was not required. A bounded post-cutover Vercel runtime-error query found no runtime errors.
 
 Prior accepted production deployment `dpl_BpMCWYggKkzf8FuWpb2vLun46r3M` remains the preferred rollback anchor. The rollout changed no Supabase schema, R2 resource contract, worker/provider/routing configuration, scheduler, `pg_cron` or `pg_net` state. This rollout makes UI-068, UI-069 and UI-070 production-live and does not authorize Phase 23 / Cycle 5.
+
+## 2026-09-13 Modal Worker Recovery
+
+Phase 26 release validation exposed an external worker-availability failure rather than an Activity regression. The operational recovery was kept separate from the Modal project-isolation implementation and did not change RenderLab product semantics, database schema, or the project ownership partition.
+
+Verified recovery state:
+
+- `modal-45` remains RenderLab-owned but reached its Modal billing-cycle spend limit. The registered `flux-standby-01` and prior `renderlab-image-upscale` endpoints on that workspace were unavailable, and a bounded redeploy attempt there was rejected by the provider spend cap.
+- New FLUX submissions route through the existing durable worker `flux-primary-01` on RenderLab-owned `modal-44`. `flux-standby-01` remains registered for historical job meaning but is disabled for new routing.
+- `renderlab-image-upscale` was deployed on RenderLab-owned `modal-46` at `https://dreadcipher67--renderlab-image-upscale-web.modal.run`. Its durable persisted worker identity remains `renderlab-upscale-01`; moving the application did not rename the worker identity stored by generation jobs.
+- Bounded recovery run `34752594158` redeployed the current Upscale source to `modal-46` and verified the public health contract with `ready=true`, `worker_id=renderlab-upscale-01`, and `ecosystem=image-upscale-v1`.
+- Image Upscale Integration run `34749379951` attempt 2 then passed the real end-to-end product Upscale proof against the recovered worker. Subsequent exact-head validation must remain green before this recovery is merged.
+- The reciprocal S.A.G.A. Modal ownership implementation is merged independently in `faresmohamed260/saga` at `5b6b12131ee1e920f592b489933569c81d1e430b`; its merged-main Required Check Compatibility and Backend Architecture CI runs passed.
+
+This recovery does **not** transfer Modal-account ownership: RenderLab still owns only `modal-01`, `modal-02`, and `modal-42` through `modal-47`; S.A.G.A. owns `modal-03` through `modal-41`. It also does not constitute physical GitHub secret-store separation. Repository-level fail-closed isolation and later least-privilege secret splitting remain governed by `MODAL_PROJECT_ISOLATION_CONTRACT.md`.
+
+No RenderLab/Vercel production deployment is performed by this worker recovery. Production release remains a separate explicitly authorized operation.
