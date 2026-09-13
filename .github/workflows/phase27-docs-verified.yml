@@ -1,0 +1,99 @@
+name: Record Phase 27 Verified State
+
+on:
+  push:
+    branches:
+      - work/phase-27-settings-trust-register
+    paths:
+      - ".github/workflows/phase27-docs-verified.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-27-settings-trust-register
+          fetch-depth: 0
+      - name: Update authoritative Phase 27 records
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          exact = "719b68501c2ceccd1fa91e12910ea7aa9bb04636"
+          account_run = "34768544863"
+          account_artifact = "10320219197"
+          account_digest = "sha256:8217b1bfcb314825f17b37dbf3c3e51861a6f61b5e2ac772ccbbda6b21cdccac"
+          admin_run = "34768544852"
+          integrated_run = "34768544855"
+          shell_run = "34768544856"
+          quality_run = "34768544858"
+          launch_run = "34768544862"
+
+          # PROJECT.md
+          p = Path("PROJECT.md")
+          text = p.read_text()
+          old = "3. **Phase 27 — Settings / account-security flows:** ACTIVE R&D / PRODUCTION IMPLEMENTATION NOT AUTHORIZED. Issue #211 and draft PR #212 hold the current Trust Register v0.2 visual/account-IA checkpoint. Phase 27 applies the shared typography, spacing, shell and trust language at 1/4 expressiveness across signed-out, signed-in, access-status, password and recovery states, but it does not by itself implement or complete the broader Account & Settings capability program. That program is governed by `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`, umbrella #213 and roadmap workstreams #215–#221/#223."
+          new = f"3. **Phase 27 — Settings / account-security flows:** IMPLEMENTED / EXACT-HEAD VERIFIED / FIDELITY REVIEWED / MERGE PENDING / NOT DEPLOYED. UI-078 and `docs/ui/SETTINGS_TRUST_REGISTER_IMPLEMENTATION_CONTRACT.md` govern the bounded Trust Register production slice. PR #227 exact head `{exact}` passed all six attached workflows and the Account Identity artifact `{account_artifact}` (`{account_digest}`) was human-reviewed across desktop/390px signed-out, Active, Suspended, ordinary password-change and verified-recovery states. The broader Account & Settings capability program remains independently governed by `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` and workstreams #215–#221/#223."
+          if old not in text: raise SystemExit("PROJECT Phase 27 roadmap line not found")
+          text = text.replace(old, new, 1)
+          old2 = "Phase 26 is closed. Phase 27 Settings / account-security is the active redesign slice at the R&D / implementation-contract preparation stage and must still pass the normal design-approval and merged-contract gates before production work. Completing Phase 27 will close only the production slice explicitly authorized by that contract; it will not close the broader Account & Settings capability roadmap or its independent security/profile/privacy workstreams. Phases 28–29 remain roadmap-level until predecessor evidence exists. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled."
+          new2 = f"Phase 26 is closed. Phase 27 Settings / account-security has completed implementation and exact-head/fidelity verification at `{exact}` and is awaiting merge through PR #227. This closes only the UI-078 production slice after merge; it does not close the broader Account & Settings capability roadmap or its independent security/profile/privacy workstreams. Phase 28 Admin remains the next redesign slice only after Phase 27 merge/merged-main verification, and Phase 29 remains roadmap-level. Every remaining surface must reuse the established RenderLab visual/interaction family rather than inventing a new theme. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled."
+          if old2 not in text: raise SystemExit("PROJECT Phase 27 handoff paragraph not found")
+          text = text.replace(old2, new2, 1)
+          marker = "## Phase 25 Media Viewer Register + Source Fold closure — 2026-09-13"
+          section = f'''## Phase 27 Settings Trust Register implementation verification — 2026-09-13\n- UI-078 and `docs/ui/SETTINGS_TRUST_REGISTER_IMPLEMENTATION_CONTRACT.md` were merged before production source changes through PR #226 / `673983b08f1e7f5d2156122607d9773fdca363eb`.\n- PR #227 implements the bounded Trust Register without expanding account capability: read-only Sign-in email, server-derived Access, Change password, verified-recovery context, truthful global **Sign out everywhere**, and conditional fresh-Admin continuation. No profile/avatar/username, password-reveal standard, hosted Auth policy, session inventory, MFA, sign-in-email editing, export/deletion, preferences/notifications or passkey capability is added.\n- Exact implementation head `{exact}` passed all six workflows GitHub attached: Account Identity `{account_run}`, Account/Admin Operations `{admin_run}`, Engineering Quality `{quality_run}`, UI Shell `{shell_run}`, Brand / Launch `{launch_run}`, and Integrated Release `{integrated_run}`.\n- Account Identity artifact `{account_artifact}` (`{account_digest}`) was human-reviewed clean across desktop and 390px signed-out, Active, Suspended, ordinary Change password and verified recovery. The corrected verifier resets scroll before full-page narrow captures, adds password/recovery evidence before secrets are entered, preserves global-session revocation/password-change/recovery assertions, and exposes no credential values in screenshots.\n- The implementation remains pending PR #227 merge and merged-main verification. Production is unchanged and deployment remains separately explicit.\n\n'''
+          if marker not in text: raise SystemExit("PROJECT insertion marker not found")
+          text = text.replace(marker, section + marker, 1)
+          p.write_text(text)
+
+          # UI_MIGRATION.md
+          p = Path("docs/ui/UI_MIGRATION.md")
+          text = p.read_text()
+          old = "- [ ] **Phase 27 Settings/account-security redesign — R&D ACTIVE / PRODUCTION IMPLEMENTATION NOT AUTHORIZED.** Issue #211 and draft PR #212 hold the current Trust Register v0.2 visual/account-IA checkpoint. Production work still requires an explicit Phase 27 implementation contract. Phase 27 does not by itself complete the broader Account & Settings capability roadmap in `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` / #213 or roadmap workstreams #215–#221/#223."
+          new = f"- [ ] **Phase 27 Settings/account-security redesign — IMPLEMENTED / EXACT-HEAD VERIFIED / FIDELITY REVIEWED / MERGE PENDING / NOT DEPLOYED.** UI-078 plus `docs/ui/SETTINGS_TRUST_REGISTER_IMPLEMENTATION_CONTRACT.md` authorized the bounded current-capability slice. PR #227 exact head `{exact}` passed all six attached workflows; Account Identity `{account_run}` produced reviewed artifact `{account_artifact}` (`{account_digest}`). Merge and merged-main verification remain outstanding. Phase 27 still does not complete the broader Account & Settings capability roadmap or workstreams #215–#221/#223."
+          if old not in text: raise SystemExit("UI_MIGRATION Phase 27 line not found")
+          text = text.replace(old, new, 1)
+          anchor = "**Account-program boundary:** Phase 27 is a bounded Settings visual/account-information-architecture redesign."
+          detail = f'''**Phase 27 exact-head verification:** `{exact}` passed Account Identity `{account_run}`, Account/Admin Operations `{admin_run}`, Engineering Quality `{quality_run}`, UI Shell `{shell_run}`, Brand / Launch `{launch_run}`, and Integrated Release `{integrated_run}`. Human review accepted the real desktop/390px Trust Register, signed-out form, Active/Suspended access presentation, ordinary password form and verified-recovery form. No horizontal overflow or fixed-header capture contamination remains; reduced-motion narrow captures are complete and screenshots are taken before credential entry. PR #227 is not yet merged, so this is verified-candidate evidence rather than merged closure.\n\n'''
+          if anchor not in text: raise SystemExit("UI_MIGRATION account boundary anchor not found")
+          text = text.replace(anchor, detail + anchor, 1)
+          p.write_text(text)
+
+          # UI_DECISIONS.md
+          p = Path("docs/ui/UI_DECISIONS.md")
+          text = p.read_text()
+          old = "**Status:** Accepted planning decision / implementation authorized only after contract merge / not implemented / not deployed"
+          new = "**Status:** Accepted / implemented / exact-head verified / fidelity reviewed / merge pending / not deployed"
+          if old not in text: raise SystemExit("UI-078 status not found")
+          text = text.replace(old, new, 1)
+          gate = "**Implementation gate:** `docs/ui/SETTINGS_TRUST_REGISTER_IMPLEMENTATION_CONTRACT.md` must merge with UI-078 before production Settings source changes. Exact-head implementation verification must preserve configured account/security assertions and compare production screenshots against only the v0.2 elements adopted by this decision. Production deployment and hosted Supabase/Auth configuration remain separately explicit operations."
+          verify = f'''\n\n**Implementation verification:** planning PR #226 merged the contract/UI-078 first as `673983b08f1e7f5d2156122607d9773fdca363eb`. PR #227 exact implementation head `{exact}` passed all six attached workflows: Account Identity `{account_run}`, Account/Admin Operations `{admin_run}`, Engineering Quality `{quality_run}`, UI Shell `{shell_run}`, Brand / Launch `{launch_run}`, and Integrated Release `{integrated_run}`. Account Identity artifact `{account_artifact}` (`{account_digest}`) was human-reviewed faithful across desktop/390px signed-out, Active, Suspended, ordinary password-change and verified-recovery states. The verifier preserves the existing global sign-out revocation, password replacement and recovery-security assertions; evidence captures occur before secrets are entered. Merge and merged-main verification are still pending, and production remains unchanged.''' 
+          if gate not in text: raise SystemExit("UI-078 implementation gate not found")
+          text = text.replace(gate, gate + verify, 1)
+          p.write_text(text)
+
+          # SCREEN_REGISTRY.md
+          p = Path("docs/ui/SCREEN_REGISTRY.md")
+          text = p.read_text()
+          old = "**Status:** APPROVED — Account Identity Foundation / UI-029 + Phase 10A/10B account/admin integration / UI-051"
+          new = "**Status:** APPROVED — UI-078 Trust Register implemented / exact-head verified / merge pending / not deployed; existing account/admin security contracts preserved"
+          if old not in text: raise SystemExit("Settings registry status not found")
+          text = text.replace(old, new, 1)
+          anchor = "**Session boundary:** `src/lib/supabase/config.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/proxy.ts`, root `proxy.ts`\n"
+          addition = f'''\n**Phase 27 / UI-078 verified candidate:** `/settings` and `/settings/password` now use the bounded Trust Register grammar: state-specific intro copy; read-only Sign-in email; server-derived Access; Change password with truthful session consequences; verified recovery context; global **Sign out everywhere**; and conditional fresh-Admin continuation. Signed-out state remains invitation-only Email/Password plus enumeration-safe recovery. The current 8-character floor, Current/New/Confirm semantics, recovery marker validation, global sign-out behavior, canonical `auth.users.id`, admission/role ownership and Admin gate are unchanged. Profile/avatar/username, reusable Show/Hide/password-policy UX, hosted Auth hardening, session inventory, MFA, email editing, export/deletion, preferences/notifications and passkeys remain out of scope. Exact head `{exact}` passed all six attached workflows; reviewed Account Identity artifact `{account_artifact}` (`{account_digest}`) covers desktop/390px signed-out, Active, Suspended, ordinary password and verified-recovery states. PR #227 merge and merged-main verification remain pending; production remains unchanged.\n'''
+          if anchor not in text: raise SystemExit("Settings registry session anchor not found")
+          text = text.replace(anchor, anchor + addition, 1)
+          p.write_text(text)
+          PY
+
+          git rm .github/workflows/phase27-docs-verified.yml
+          git config user.name 'RenderLab Docs Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md
+          git commit -m 'docs: record Phase 27 verified implementation candidate'
+          git push origin HEAD:${GITHUB_REF_NAME}
