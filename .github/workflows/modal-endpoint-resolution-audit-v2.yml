@@ -1,0 +1,55 @@
+name: RenderLab Modal Endpoint Resolution Audit v2
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - .github/workflows/modal-endpoint-resolution-audit-v2.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SAGA_MODAL_TOKENS_JSON: ${{ secrets.SAGA_MODAL_TOKENS_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --quiet "modal==1.4.2"
+      - name: Resolve each RenderLab-owned endpoint in isolated Modal clients
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, subprocess, sys
+          from pathlib import Path
+
+          manifest = json.loads(Path('config/modal-project-ownership.json').read_text(encoding='utf-8'))
+          owned = set(manifest['ownedAccountLabels'])
+          payload = json.loads(os.environ['SAGA_MODAL_TOKENS_JSON'])
+          rows = payload.get('accounts') if isinstance(payload, dict) else payload
+          by_label = {str(row.get('label') or row.get('name') or row.get('account') or '').strip(): row for row in rows if isinstance(row, dict)}
+          probes = [
+              ('modal-44', 'flux-primary-01', 'saga-flux2-klein-gateway', 'web'),
+              ('modal-45', 'flux-standby-01', 'saga-flux2-klein-gateway', 'web'),
+              ('modal-45', 'renderlab-upscale', 'renderlab-image-upscale', 'web'),
+          ]
+          code = """import json, modal, os\napp=os.environ['AUDIT_APP']; fn=os.environ['AUDIT_FN']; worker=os.environ['AUDIT_WORKER']; label=os.environ['AUDIT_LABEL']\ntry:\n f=modal.Function.from_name(app,fn); u=f.get_web_url(); print(json.dumps({'account':label,'worker':worker,'resolved':bool(u),'url':u},sort_keys=True))\nexcept Exception as e:\n print(json.dumps({'account':label,'worker':worker,'resolved':False,'errorType':type(e).__name__},sort_keys=True))\n"""
+          for label, worker, app, fn in probes:
+              if label not in owned:
+                  raise SystemExit(f'{label} is not RenderLab-owned')
+              row = by_label[label]
+              token_id = str(row.get('token_id') or '').strip()
+              token_secret = str(row.get('token_secret') or '').strip()
+              combined = str(row.get('api_key') or row.get('token') or '').strip()
+              if (not token_id or not token_secret) and '.' in combined:
+                  token_id, token_secret = combined.split('.', 1)
+              env = dict(os.environ, MODAL_TOKEN_ID=token_id, MODAL_TOKEN_SECRET=token_secret, AUDIT_APP=app, AUDIT_FN=fn, AUDIT_WORKER=worker, AUDIT_LABEL=label)
+              result = subprocess.run([sys.executable, '-c', code], env=env, text=True, capture_output=True, timeout=90)
+              print((result.stdout or '').strip() or json.dumps({'account':label,'worker':worker,'resolved':False,'errorType':'empty-output'}))
+          PY
