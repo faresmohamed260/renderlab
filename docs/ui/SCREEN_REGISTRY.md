@@ -277,19 +277,21 @@ Approved behavior:
 
 ### Admin
 **Route:** `/admin`
-**Status:** APPROVED / VERIFIED — Phase 10B + 10C / UI-051
-**Implementation:** `src/app/admin/page.tsx`, `src/features/admin/admin-operations.tsx`, `src/server/admin/*`, `src/app/api/admin/**`
+**Status:** APPROVED — UI-079 Admin System Continuity implemented / exact-head verified / fidelity reviewed / merged / merged-main verified / not deployed
+**Implementation:** `src/app/(app)/admin/page.tsx`, `src/features/admin/admin-operations.tsx`, `src/features/admin/admin-operations.module.css`, `src/server/admin/*`, `src/app/api/admin/**`
 
 **Purpose:** Operate the controlled RenderLab beta without exposing provider infrastructure or the shared Supabase Auth namespace.
 
-**Verified v0.1 composition:**
+**Phase 28 / UI-079 closure:** Admin now uses the approved Settings/UI-078 structural parent: the UI-074 horizontal shell plus one continuous registered surface with exactly `01 Access`, `02 Generation`, `03 Health`. Access keeps invitations, pending invitations and admitted-account controls; Generation keeps global defaults visually parent to nullable account overrides; Health keeps the existing four primary values plus six bounded diagnostic groups without becoming a generic KPI dashboard. Final PR head `f6cd795621fbf7bd7b7cc5b96b3916318ff420d8` passed all six attached workflows and configured artifact `10325429374` (`sha256:c0be71ba4bf685002dfce9bd74d8cacd866fc1004c03c0326daf08d630c65ce2`) was human-reviewed faithful at 1440px, 390px and reduced motion. PR #234 merged as `f2eda00362ac2931192428bc18f96b62fd697c43`; merged-main Engineering Quality `34783516541`, Integrated Release `34783516490`, UI Shell Validation `34783516479` attempt 2, and Release Candidate Matrix `34783516480` passed, with the matrix again completing its full exact-SHA child set. Production remains unchanged pending separate authorization.
+
+**Verified v0.1 behavior retained:**
 - **Access:** RenderLab invitations and admitted accounts only; invite/revoke, active/suspended status and member/admin role. Account discovery starts from `renderlab_account_access`; Auth Admin lookup is only by already-known RenderLab UUID.
 - **Generation controls:** fresh-admin typed global `generationEnabled`, `maxActiveJobs` (1–4) and `maxJobsPerHour` (1–120) defaults above nullable per-account overrides. Account override wins when present; otherwise the global value is effective. These controls now feed the shared Create/Retry transactional admission boundary.
 - **Health:** bounded aggregate RenderLab operation/status counts, active-job count and sanitized product error-code counts; no prompt/media/provider/worker/workflow/raw-error data.
 - `/admin` and `/api/admin/**` require a freshly server-confirmed Supabase identity plus active RenderLab `admin` access. Unauthorized page/API paths fail closed without privileged payload.
 - ordinary global shell navigation remains Create/Library/Activity/Settings; Settings exposes `Open Admin` only to a fresh active admin.
 - member/admin and active/suspended changes are transactionally protected against self-lockout and removal of the last active admin.
-- desktop uses dense maintained-primitive rows/cards; narrow layout stacks records/actions without horizontal clipping.
+- desktop uses one Settings-derived registered surface with dense maintained-primitive controls inside its value cells; narrow layout collapses each numbered label into the Settings-style band above content without hiding controls or causing horizontal clipping.
 
 **Approval evidence:** Phase 10B exact head `56d5a2c26fc14f6fcad8c7093024bcc9632eb7c8` established the privileged Admin boundary. Phase 10C exact head `ca8e426066385934b296b6d4f88324e9c12861f7` then passed the complete 22-workflow matrix including Account/Admin Operations `33309162310`, Generation Admission `33309162313`, Activity `33309162322`, Generation `33309162306` and Video Generation `33309162305`. Final Admin artifact `9731449736` (`sha256:66188b46f4249a7be6e7efba6f613331de07525f76b8a931f5ffbf85e3f56e81`) was human-reviewed clean on desktop/narrow layouts with global defaults above account overrides; Admission artifact `9731487718` (`sha256:e6e94bfabbd125c20c65aa959900a0081d6ca94bbd5b6d6a5b28fd817a09c3e7`) was reviewed clean for Create/Activity denial states. Migrations `20260830015449 renderlab_admin_access_control` and `20260830101734 renderlab_generation_admission` are applied/audited; exact final fixture cleanup and singleton restoration passed.
 
