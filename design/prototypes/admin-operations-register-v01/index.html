@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenderLab — Admin Operations Register v0.1</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --canvas: #090a0c;
+      --surface-1: #101216;
+      --surface-2: #15181e;
+      --surface-3: #1d222a;
+      --border: #292e36;
+      --border-strong: #3a414c;
+      --text: #f4f5f7;
+      --muted: #969da8;
+      --muted-2: #727a86;
+      --accent: #b7a7ff;
+      --success: #84d6b3;
+      --warning: #e0b76a;
+      --danger: #e57d7d;
+      --warm: rgba(213, 126, 83, .06);
+      --cool: rgba(103, 124, 255, .075);
+      --radius: 8px;
+      --header: 56px;
+      --content: 1240px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--canvas); }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(800px 540px at 81% 20%, var(--warm), transparent 72%),
+        radial-gradient(820px 640px at 14% 44%, var(--cool), transparent 76%),
+        var(--canvas);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; }
+    button, input, select { color: inherit; }
+
+    .shell {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: var(--header);
+      border-bottom: 1px solid rgba(58, 65, 76, .72);
+      background: rgba(9, 10, 12, .9);
+      backdrop-filter: blur(14px);
+    }
+
+    .shell-inner {
+      width: min(calc(100% - 32px), var(--content));
+      height: 100%;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      width: 25px;
+      height: 25px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 2px;
+      transform: rotate(2deg);
+    }
+    .brand-mark i { display: block; border: 1px solid var(--border-strong); background: var(--surface-2); }
+    .brand-mark i:nth-child(1) { border-radius: 8px 2px 2px 2px; background: #c6baf5; }
+    .brand-mark i:nth-child(2) { border-radius: 2px 8px 2px 2px; }
+    .brand-mark i:nth-child(3) { border-radius: 2px 2px 2px 8px; }
+    .brand-mark i:nth-child(4) { border-radius: 2px 2px 8px 2px; background: #cf8f70; }
+
+    .brand-word { font-size: 14px; letter-spacing: -.02em; white-space: nowrap; }
+    .brand-word strong { font-weight: 760; }
+    .brand-word span { font-weight: 360; }
+
+    .shell-nav { display: flex; align-items: center; gap: 4px; }
+    .shell-nav a {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 560;
+    }
+    .shell-nav a:hover, .shell-nav a:focus-visible { color: var(--text); background: var(--surface-2); outline: none; }
+    .shell-nav a.settings { border: 1px solid var(--border); color: var(--text); }
+
+    main {
+      width: min(calc(100% - 32px), var(--content));
+      margin: 0 auto;
+      padding: 38px 0 72px;
+    }
+
+    .page-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 28px;
+      align-items: end;
+      padding: 0 0 28px;
+      border-bottom: 1px solid var(--border-strong);
+      position: relative;
+    }
+
+    .page-head::after {
+      content: "";
+      position: absolute;
+      width: 78px;
+      height: 78px;
+      right: 0;
+      bottom: 0;
+      border-right: 1px solid rgba(198, 186, 245, .28);
+      border-bottom: 1px solid rgba(198, 186, 245, .28);
+      border-radius: 0 0 78px 0;
+      pointer-events: none;
+    }
+
+    .eyebrow, .micro, .section-index, .column-head, .fixture {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow { color: var(--muted); font-size: 10px; font-weight: 700; }
+    h1 { margin: 8px 0 8px; font-size: clamp(28px, 4vw, 38px); line-height: 1.05; letter-spacing: -.04em; }
+    .lead { max-width: 760px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .fixture {
+      align-self: start;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .feedback {
+      margin-top: 18px;
+      border-top: 1px solid rgba(132, 214, 179, .32);
+      border-bottom: 1px solid rgba(132, 214, 179, .18);
+      background: rgba(132, 214, 179, .035);
+      padding: 10px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: #ccebdc;
+      font-size: 12px;
+    }
+    .feedback-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(132,214,179,.08); }
+
+    .register {
+      position: relative;
+      margin-top: 22px;
+    }
+    .register::before {
+      content: "";
+      position: absolute;
+      left: 22px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--border-strong), var(--border), rgba(41,46,54,.2));
+    }
+
+    .zone {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 28px;
+      padding: 36px 0 44px;
+      border-bottom: 1px solid var(--border-strong);
+      position: relative;
+    }
+    .zone:last-child { border-bottom: 0; padding-bottom: 0; }
+
+    .zone-meta {
+      position: relative;
+      padding-left: 48px;
+      min-width: 0;
+    }
+    .zone-meta::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: 7px;
+      width: 9px;
+      height: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--canvas);
+    }
+    .section-index { color: var(--muted-2); font-size: 10px; font-weight: 700; }
+    .zone-meta h2 { margin: 5px 0 8px; font-size: 16px; letter-spacing: -.02em; }
+    .zone-meta p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+
+    .zone-body { min-width: 0; }
+    .band-label {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 7px 0;
+    }
+    .band-label strong { font-size: 12px; font-weight: 650; }
+    .band-label span { color: var(--muted); font-size: 11px; }
+
+    .field { display: grid; gap: 6px; min-width: 0; }
+    .field label, .field-label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
+    .field small { color: var(--muted-2); font-size: 10px; line-height: 1.35; }
+
+    input, select, .btn {
+      min-height: 38px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #0e1014;
+      color: var(--text);
+    }
+    input, select { width: 100%; padding: 0 11px; outline: none; }
+    input:focus-visible, select:focus-visible, .btn:focus-visible {
+      outline: 2px solid rgba(183, 167, 255, .9);
+      outline-offset: 2px;
+      border-color: rgba(183,167,255,.6);
+    }
+    input:disabled, select:disabled, .btn:disabled { opacity: .48; cursor: not-allowed; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 13px;
+      font-weight: 650;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { background: var(--surface-3); }
+    .btn.primary { background: var(--text); color: #111318; border-color: var(--text); }
+    .btn.primary:hover { background: #dcdfe5; }
+    .btn.danger { color: #f0c2c2; border-color: rgba(229,125,125,.38); }
+
+    .invite-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 160px auto;
+      gap: 12px;
+      align-items: end;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pending-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px auto;
+      align-items: center;
+      gap: 16px;
+      min-height: 54px;
+      border-bottom: 1px solid var(--border);
+      padding: 9px 0;
+    }
+    .identity { min-width: 0; }
+    .identity strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
+    .identity .uuid { margin-top: 3px; color: var(--muted-2); font: 10px/1.45 "SFMono-Regular", Consolas, monospace; overflow-wrap: anywhere; }
+    .identity .meta { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .status-copy { color: var(--muted); font-size: 11px; }
+    .pending-row .btn { min-height: 34px; }
+
+    .ledger-head, .account-row {
+      display: grid;
+      grid-template-columns: minmax(260px, 1.4fr) minmax(120px, .62fr) minmax(130px, .66fr) 132px;
+      gap: 14px;
+    }
+    .ledger-head {
+      align-items: end;
+      padding: 14px 0 8px;
+      border-bottom: 1px solid var(--border-strong);
+    }
+    .column-head { color: var(--muted-2); font-size: 9px; font-weight: 700; }
+    .account-row {
+      align-items: end;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .account-row:last-child { border-bottom: 0; }
+    .account-row:hover { background: linear-gradient(90deg, transparent, rgba(255,255,255,.014), transparent); }
+    .self-note { grid-column: 1 / -1; margin-top: -2px; color: var(--muted-2); font-size: 10px; }
+    .you {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 6px;
+      padding: 1px 5px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      color: var(--muted);
+      font: 8px/1.5 "SFMono-Regular", Consolas, monospace;
+      letter-spacing: .08em;
+      vertical-align: 1px;
+    }
+
+    .global-strip {
+      margin-top: 0;
+      padding: 16px 0 18px;
+      border-bottom: 1px solid var(--border-strong);
+      background: linear-gradient(90deg, rgba(183,167,255,.025), transparent 56%);
+    }
+    .global-copy { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 13px; }
+    .global-copy strong { font-size: 12px; letter-spacing: -.01em; }
+    .global-copy p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .global-copy time { color: var(--muted-2); font-size: 10px; white-space: nowrap; }
+    .global-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .override-head, .override-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.15fr) minmax(130px, .8fr) minmax(120px, .7fr) minmax(120px, .7fr) 132px;
+      gap: 12px;
+    }
+    .override-head { padding: 14px 0 8px; border-bottom: 1px solid var(--border-strong); }
+    .override-row { padding: 13px 0; border-bottom: 1px solid var(--border); align-items: end; }
+    .override-row:last-child { border-bottom: 0; }
+    .role-state { margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+    .metric-matrix {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--border-strong);
+      border-bottom: 1px solid var(--border-strong);
+    }
+    .metric {
+      min-height: 100px;
+      padding: 15px 16px 16px 0;
+      border-right: 1px solid var(--border);
+    }
+    .metric:not(:first-child) { padding-left: 16px; }
+    .metric:last-child { border-right: 0; }
+    .metric span { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .055em; font-weight: 700; }
+    .metric strong { display: block; margin-top: 12px; font-size: 27px; line-height: 1; font-weight: 620; letter-spacing: -.035em; }
+    .metric small { display: block; margin-top: 8px; color: var(--muted-2); font-size: 9px; }
+    .health-note { margin: 9px 0 17px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+    .diagnostics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-top: 1px solid var(--border-strong);
+      border-left: 1px solid var(--border);
+    }
+    .diagnostic {
+      min-width: 0;
+      min-height: 168px;
+      padding: 14px 16px 16px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(16,18,22,.36);
+    }
+    .diagnostic h3 { margin: 0 0 10px; font-size: 11px; font-weight: 660; }
+    .kv { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px 12px; font-size: 10px; }
+    .kv span:nth-child(odd) { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+    .kv span:nth-child(even) { color: var(--text); font-family: "SFMono-Regular", Consolas, monospace; }
+    .muted-value { color: var(--muted-2) !important; }
+    .good { color: var(--success) !important; }
+    .warn { color: var(--warning) !important; }
+
+    .health-footer {
+      padding: 13px 0 0;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      color: var(--muted-2);
+      font-size: 9px;
+      line-height: 1.55;
+    }
+
+    .prototype-footer {
+      margin-top: 54px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      color: var(--muted-2);
+      font-size: 9px;
+    }
+
+    @media (max-width: 980px) {
+      .zone { grid-template-columns: 150px minmax(0,1fr); gap: 20px; }
+      .ledger-head, .account-row { grid-template-columns: minmax(200px,1fr) 112px 120px; }
+      .ledger-head > :last-child { display: none; }
+      .account-row .btn { grid-column: 3; }
+      .account-row .field:nth-of-type(2) { grid-column: 2; }
+      .global-controls { grid-template-columns: repeat(3,1fr); }
+      .global-controls .btn { grid-column: 1 / -1; justify-self: start; }
+      .override-head { display: none; }
+      .override-row { grid-template-columns: minmax(180px,1fr) repeat(3, minmax(100px,.72fr)); }
+      .override-row .btn { grid-column: 2 / -1; justify-self: end; }
+      .diagnostics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .health-footer { grid-template-columns: 1fr; gap: 5px; }
+    }
+
+    @media (max-width: 700px) {
+      :root { --header: 52px; }
+      .shell-inner, main { width: min(calc(100% - 24px), var(--content)); }
+      .brand-word { display: none; }
+      .shell-nav { gap: 0; }
+      .shell-nav a { min-height: 42px; padding: 0 9px; font-size: 12px; }
+      main { padding-top: 28px; padding-bottom: 52px; }
+      .page-head { grid-template-columns: 1fr; gap: 14px; padding-bottom: 22px; }
+      .page-head::after { width: 54px; height: 54px; border-radius: 0 0 54px 0; }
+      .fixture { justify-self: start; }
+      .feedback { margin-top: 12px; }
+      .register { margin-top: 10px; }
+      .register::before { left: 8px; }
+      .zone { display: block; padding: 29px 0 34px; }
+      .zone-meta { padding-left: 31px; margin-bottom: 18px; }
+      .zone-meta::before { left: 4px; }
+      .zone-meta p { max-width: 330px; }
+      .band-label { padding-left: 0; }
+      .invite-row { grid-template-columns: minmax(0,1fr) 118px; gap: 10px; padding: 14px 0; }
+      .invite-row .btn { grid-column: 1 / -1; min-height: 44px; }
+      .pending-row { grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+      .pending-row .status-copy { grid-column: 1; }
+      .pending-row .btn { grid-column: 2; grid-row: 1 / span 2; min-height: 40px; }
+      .ledger-head { display: none; }
+      .account-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 10px; padding: 14px 0; }
+      .account-row .identity { grid-column: 1 / -1; }
+      .account-row .field:nth-of-type(2) { grid-column: auto; }
+      .account-row .btn { grid-column: 1 / -1; min-height: 44px; }
+      .self-note { grid-column: 1 / -1; }
+      .global-copy { display: block; }
+      .global-copy time { display: block; margin-top: 6px; }
+      .global-controls { grid-template-columns: 1fr 1fr; }
+      .global-controls .field:first-child { grid-column: 1 / -1; }
+      .global-controls .btn { grid-column: 1 / -1; width: 100%; min-height: 44px; }
+      .override-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 10px; padding: 14px 0; }
+      .override-row .identity { grid-column: 1 / -1; }
+      .override-row .field:first-of-type { grid-column: 1 / -1; }
+      .override-row .btn { grid-column: 1 / -1; justify-self: stretch; min-height: 44px; }
+      .metric-matrix { grid-template-columns: 1fr 1fr; }
+      .metric { min-height: 88px; padding: 13px 12px 13px 0; border-bottom: 1px solid var(--border); }
+      .metric:nth-child(even) { padding-left: 12px; border-right: 0; }
+      .metric:nth-child(n+3) { border-bottom: 0; }
+      .metric strong { font-size: 23px; margin-top: 9px; }
+      .diagnostics { grid-template-columns: 1fr; border-left: 0; }
+      .diagnostic { min-height: auto; padding: 13px 0 15px; border-right: 0; background: transparent; }
+      .prototype-footer { display: block; }
+      .prototype-footer span { display: block; margin-top: 4px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell" aria-label="Application shell design fixture">
+    <div class="shell-inner">
+      <a class="brand" href="#" aria-label="RenderLab Create">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="brand-word"><strong>Render</strong><span>Lab</span></span>
+      </a>
+      <nav class="shell-nav" aria-label="Primary">
+        <a href="#">Create</a><a href="#">Library</a><a href="#">Activity</a><a class="settings" href="#">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">Operations</div>
+        <h1>Admin</h1>
+        <p class="lead">Manage RenderLab beta access, global generation limits, bounded per-account overrides, and sanitized product health.</p>
+      </div>
+      <div class="fixture">Design fixture / not product data</div>
+    </header>
+
+    <div class="feedback" role="status"><span class="feedback-dot" aria-hidden="true"></span>Global generation limits updated. Representative success state for layout review.</div>
+
+    <div class="register">
+      <section class="zone" aria-labelledby="access-title">
+        <header class="zone-meta">
+          <div class="section-index">01 / Access</div>
+          <h2 id="access-title">Access Register</h2>
+          <p>Invite and manage only identities already admitted to RenderLab. Shared Supabase Auth users are never listed here.</p>
+        </header>
+        <div class="zone-body">
+          <div class="band-label"><strong>Invitation desk</strong><span>2 pending</span></div>
+          <form class="invite-row">
+            <div class="field"><label for="invite-email">Invite email</label><input id="invite-email" type="email" placeholder="person@example.com" /></div>
+            <div class="field"><label for="invite-role">Role</label><select id="invite-role"><option>Member</option><option>Admin</option></select></div>
+            <button class="btn primary" type="button">Create invitation</button>
+          </form>
+          <div class="pending-row">
+            <div class="identity"><strong>director@example.com</strong></div>
+            <div class="status-copy">Member · expires Sep 20, 2026</div>
+            <button class="btn" type="button">Revoke</button>
+          </div>
+          <div class="pending-row">
+            <div class="identity"><strong>ops.review@example.com</strong></div>
+            <div class="status-copy">Admin · expires Sep 21, 2026</div>
+            <button class="btn" type="button">Revoke</button>
+          </div>
+
+          <div class="band-label" style="margin-top:22px"><strong>Admitted accounts</strong><span>3 RenderLab accounts</span></div>
+          <div class="ledger-head" aria-hidden="true">
+            <span class="column-head">Identity</span><span class="column-head">Role</span><span class="column-head">Status</span><span class="column-head">Action</span>
+          </div>
+          <div class="account-row">
+            <div class="identity"><strong>fares@example.com <span class="you">YOU</span></strong><div class="uuid">5d3453ca-1cf2-4f11-95b5-9ebed0b964d9</div></div>
+            <div class="field"><label for="role-self">Role</label><select id="role-self" disabled><option>Admin</option></select></div>
+            <div class="field"><label for="status-self">Status</label><select id="status-self" disabled><option>Active</option></select></div>
+            <button class="btn" type="button" disabled>Save access</button>
+            <div class="self-note">Your own active admin role and status cannot be removed from this account.</div>
+          </div>
+          <div class="account-row">
+            <div class="identity"><strong>maya.studio@example.com</strong><div class="uuid">f374c67e-c8db-42a1-8c06-e8d921ba6a90</div></div>
+            <div class="field"><label for="role-maya">Role</label><select id="role-maya"><option>Member</option><option>Admin</option></select></div>
+            <div class="field"><label for="status-maya">Status</label><select id="status-maya"><option>Active</option><option>Suspended</option></select></div>
+            <button class="btn" type="button">Save access</button>
+          </div>
+          <div class="account-row">
+            <div class="identity"><strong>long.operator.identity+renderlab@example-studio.dev</strong><div class="uuid">c9a96d8b-d8c9-4929-a7eb-67ac2ba5fae8</div></div>
+            <div class="field"><label for="role-long">Role</label><select id="role-long"><option>Member</option><option>Admin</option></select></div>
+            <div class="field"><label for="status-long">Status</label><select id="status-long"><option>Suspended</option><option>Active</option></select></div>
+            <button class="btn" type="button">Save access</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="zone" aria-labelledby="generation-title">
+        <header class="zone-meta">
+          <div class="section-index">02 / Generation</div>
+          <h2 id="generation-title">Control Register</h2>
+          <p>Set typed global guardrails first. Account overrides remain explicit exceptions and inherit when left at Default.</p>
+        </header>
+        <div class="zone-body">
+          <div class="band-label"><strong>Global defaults</strong><span>Parent tier</span></div>
+          <div class="global-strip">
+            <div class="global-copy"><div><strong>Default admission controls</strong><p>Apply to active RenderLab accounts unless an override is set below.</p></div><time>Updated Sep 13, 2026, 7:34 PM</time></div>
+            <div class="global-controls">
+              <div class="field"><label for="global-generation">Generation</label><select id="global-generation"><option>Enabled</option><option>Paused</option></select></div>
+              <div class="field"><label for="global-active">Active-job limit</label><input id="global-active" value="2" inputmode="numeric" /><small>1–4 concurrent admissions</small></div>
+              <div class="field"><label for="global-hourly">Hourly limit</label><input id="global-hourly" value="24" inputmode="numeric" /><small>1–120 admitted jobs</small></div>
+              <button class="btn primary" type="button">Save global limits</button>
+            </div>
+          </div>
+
+          <div class="band-label" style="margin-top:22px"><strong>Account overrides</strong><span>Default means inherit global</span></div>
+          <div class="override-head" aria-hidden="true"><span class="column-head">Identity</span><span class="column-head">Generation</span><span class="column-head">Active limit</span><span class="column-head">Hourly limit</span><span class="column-head">Action</span></div>
+          <div class="override-row">
+            <div class="identity"><strong>fares@example.com</strong><div class="role-state">Admin · Active</div></div>
+            <div class="field"><label for="o1-gen">Generation override</label><select id="o1-gen"><option>Default</option><option>Enabled</option><option>Disabled</option></select></div>
+            <div class="field"><label for="o1-active">Active-job limit</label><input id="o1-active" placeholder="Default" /><small>1–4 or blank</small></div>
+            <div class="field"><label for="o1-hour">Hourly limit</label><input id="o1-hour" placeholder="Default" /><small>1–120 or blank</small></div>
+            <button class="btn" type="button" disabled>Save overrides</button>
+          </div>
+          <div class="override-row">
+            <div class="identity"><strong>maya.studio@example.com</strong><div class="role-state">Member · Active</div></div>
+            <div class="field"><label for="o2-gen">Generation override</label><select id="o2-gen"><option>Enabled</option><option>Default</option><option>Disabled</option></select></div>
+            <div class="field"><label for="o2-active">Active-job limit</label><input id="o2-active" value="1" /><small>1–4 or blank</small></div>
+            <div class="field"><label for="o2-hour">Hourly limit</label><input id="o2-hour" value="12" /><small>1–120 or blank</small></div>
+            <button class="btn" type="button">Save overrides</button>
+          </div>
+          <div class="override-row">
+            <div class="identity"><strong>long.operator.identity+renderlab@example-studio.dev</strong><div class="role-state">Member · Suspended</div></div>
+            <div class="field"><label for="o3-gen">Generation override</label><select id="o3-gen"><option>Disabled</option><option>Default</option><option>Enabled</option></select></div>
+            <div class="field"><label for="o3-active">Active-job limit</label><input id="o3-active" placeholder="Default" /><small>1–4 or blank</small></div>
+            <div class="field"><label for="o3-hour">Hourly limit</label><input id="o3-hour" placeholder="Default" /><small>1–120 or blank</small></div>
+            <button class="btn" type="button">Save overrides</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="zone" aria-labelledby="health-title">
+        <header class="zone-meta">
+          <div class="section-index">03 / Health</div>
+          <h2 id="health-title">Health Matrix</h2>
+          <p>Bounded aggregate RenderLab product state. Raw prompts, media, provider data, identities and backend errors remain excluded.</p>
+        </header>
+        <div class="zone-body">
+          <div class="metric-matrix" aria-label="Primary product health metrics">
+            <div class="metric"><span>Active jobs</span><strong>3</strong><small>current nonterminal work</small></div>
+            <div class="metric"><span>Active reservations</span><strong>4</strong><small>bounded operator scan</small></div>
+            <div class="metric"><span>Completion p50</span><strong>44s</strong><small>accepted → terminal</small></div>
+            <div class="metric"><span>Completion p95</span><strong>2.8m</strong><small>accepted → terminal</small></div>
+          </div>
+          <p class="health-note">Completion timing is accepted-to-terminal duration for 58 recent jobs; it is not an SLA or ETA.</p>
+
+          <div class="diagnostics">
+            <section class="diagnostic"><h3>Status counts</h3><div class="kv"><span>Succeeded</span><span>47</span><span>Running</span><span class="good">3</span><span>Failed</span><span>5</span><span>Cancelled</span><span>3</span></div></section>
+            <section class="diagnostic"><h3>Operation counts</h3><div class="kv"><span>Create image</span><span>31</span><span>Edit image</span><span>14</span><span>Create video</span><span>8</span><span>Animate image</span><span>5</span></div></section>
+            <section class="diagnostic"><h3>Sanitized error codes</h3><div class="kv"><span>generation_timeout</span><span>3</span><span>input_unavailable</span><span>2</span><span>other sanitized</span><span class="muted-value">0</span></div></section>
+            <section class="diagnostic"><h3>Active state age</h3><div class="kv"><span>Under 15 minutes</span><span class="good">3</span><span>15–60 minutes</span><span>0</span><span>1–2 hours</span><span>0</span><span>Over 2 hours</span><span>0</span></div></section>
+            <section class="diagnostic"><h3>Failover incidence</h3><div class="kv"><span>Jobs with failover</span><span>2</span><span>Failover events</span><span>2</span></div></section>
+            <section class="diagnostic"><h3>Maintenance backlog</h3><div class="kv"><span>Stale source candidates</span><span>4+</span><span>Cleaning sources</span><span>1</span><span>Stale upload candidates</span><span>0</span><span>Cleaning uploads</span><span>0</span><span>Pending media purges</span><span>2</span></div></section>
+          </div>
+
+          <div class="health-footer">
+            <span>Window: 24 hours since Sep 12, 2026, 7:34 PM.</span>
+            <span>Capacity: generation enabled; per-account defaults are 2 active and 24 per hour.</span>
+            <span>A “+” count means the bounded operator scan was truncated; raw job, account, provider and storage identities remain server-only.</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="prototype-footer"><strong>Phase 28 R&D · Operations Register v0.1</strong><span>Static design prototype — no production behavior or data.</span></footer>
+  </main>
+</body>
+</html>
