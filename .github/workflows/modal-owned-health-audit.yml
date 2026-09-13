@@ -1,0 +1,93 @@
+name: RenderLab Owned Modal Health Audit
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - .github/workflows/modal-owned-health-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SAGA_MODAL_TOKENS_JSON: ${{ secrets.SAGA_MODAL_TOKENS_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Modal CLI
+        run: python -m pip install --quiet "modal==1.4.2"
+      - name: Inventory RenderLab-owned Modal accounts only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+
+          manifest = json.loads(Path('config/modal-project-ownership.json').read_text(encoding='utf-8'))
+          owned = manifest['ownedAccountLabels']
+          expected = ['modal-01','modal-02','modal-42','modal-43','modal-44','modal-45','modal-46','modal-47']
+          if owned != expected:
+              raise SystemExit('RenderLab ownership manifest mismatch; refusing credential selection')
+          raw = os.environ.get('SAGA_MODAL_TOKENS_JSON', '').strip()
+          payload = json.loads(raw)
+          rows = payload.get('accounts') if isinstance(payload, dict) else payload
+          by_label = {str(row.get('label') or row.get('name') or row.get('account') or '').strip(): row for row in rows if isinstance(row, dict)}
+          for label in ['modal-44', 'modal-45']:
+              if label not in owned:
+                  raise SystemExit(f'{label} is not RenderLab-owned')
+              row = by_label.get(label)
+              if not row:
+                  raise SystemExit(f'{label} missing from roster')
+              token_id = str(row.get('token_id') or '').strip()
+              token_secret = str(row.get('token_secret') or '').strip()
+              combined = str(row.get('api_key') or row.get('token') or '').strip()
+              if (not token_id or not token_secret) and '.' in combined:
+                  token_id, token_secret = combined.split('.', 1)
+              if not token_id or not token_secret:
+                  raise SystemExit(f'{label} credentials incomplete')
+              env = dict(os.environ, MODAL_TOKEN_ID=token_id, MODAL_TOKEN_SECRET=token_secret)
+              result = subprocess.run(['modal','app','list','--json'], env=env, text=True, capture_output=True, timeout=90)
+              if result.returncode != 0:
+                  print(json.dumps({'account': label, 'inventoryOk': False, 'errorClass': 'modal-app-list-failed'}))
+                  continue
+              apps = json.loads(result.stdout or '[]')
+              safe = []
+              for app in apps:
+                  if not isinstance(app, dict):
+                      continue
+                  description = str(app.get('Description') or app.get('description') or app.get('Name') or app.get('name') or '')
+                  if 'flux' in description.lower() or 'renderlab-image-upscale' in description.lower():
+                      safe.append({
+                          'description': description,
+                          'state': app.get('State') or app.get('state'),
+                          'createdAt': app.get('Created at') or app.get('created_at'),
+                          'stoppedAt': app.get('Stopped at') or app.get('stopped_at'),
+                      })
+              print(json.dumps({'account': label, 'inventoryOk': True, 'matchingApps': safe}, sort_keys=True))
+          PY
+      - name: Probe public RenderLab worker health endpoints
+        shell: bash
+        run: |
+          set +e
+          probe() {
+            name="$1"; url="$2"
+            code=$(curl --silent --show-error --max-time 30 -o "/tmp/${name}.out" -w '%{http_code}' "$url/health")
+            rc=$?
+            bytes=$(wc -c < "/tmp/${name}.out" 2>/dev/null || echo 0)
+            printf '{"worker":"%s","curlExit":%s,"httpStatus":"%s","responseBytes":%s}\n' "$name" "$rc" "$code" "$bytes"
+          }
+          probe flux-primary-01 https://grimcircuit--saga-flux2-klein-gateway-web.modal.run
+          probe flux-standby-01 https://silentspecter67--saga-flux2-klein-gateway-web.modal.run
+          probe ltx-primary-02 https://faresmohamed260--saga-ltx25-gateway-web.modal.run
+          probe ltx-standby-02 https://bplay2086--saga-ltx25-gateway-web.modal.run
+          probe qwen-primary-01 https://voidtrek--saga-qwen-image-edit-2511-gateway-web.modal.run
+          probe qwen-standby-01 https://nyxprotocol--saga-qwen-image-edit-2511-gateway-web.modal.run
+          probe renderlab-upscale https://silentspecter67--renderlab-image-upscale-web.modal.run
+          exit 0
