@@ -1,0 +1,32 @@
+name: Phase 29 Closure Docs Helper
+
+on:
+  push:
+    branches: [docs/phase-29-whole-product-cohesion-closure]
+    paths:
+      - ".github/workflows/phase29-closure-docs-helper.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch_closure_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: docs/phase-29-whole-product-cohesion-closure
+
+      - name: Patch closure docs
+        run: python .github/scripts/phase29-closure-docs.py
+
+      - name: Commit closure docs and remove helper
+        run: |
+          rm .github/workflows/phase29-closure-docs-helper.yml .github/scripts/phase29-closure-docs.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "docs: close Phase 29 whole-product cohesion"
+          git push origin HEAD:docs/phase-29-whole-product-cohesion-closure
