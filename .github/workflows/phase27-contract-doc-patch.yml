@@ -1,0 +1,55 @@
+name: Stage Phase 27 decision record
+on:
+  push:
+    branches:
+      - plan/phase-27-settings-trust-register
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: plan/phase-27-settings-trust-register
+          fetch-depth: 0
+      - name: Append UI-078 decision
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('docs/ui/UI_DECISIONS.md')
+          text = p.read_text()
+          marker = '### UI-078 — Settings uses a truthful Trust Register for current account/security capability'
+          if marker in text:
+              raise SystemExit('UI-078 already exists')
+          block = r'''
+
+### UI-078 — Settings uses a truthful Trust Register for current account/security capability
+**Status:** Accepted planning decision / implementation authorized only after contract merge / not implemented / not deployed
+**Date:** 2026-09-13
+
+**Decision:** Phase 27 chooses the bounded visual/account-information-architecture path rather than expanding RenderLab account capability. `/settings` and `/settings/password` will adopt the low-expressiveness **Trust Register** grammar for the behavior RenderLab already has: read-only Sign-in email, server-derived Closed Beta Access, Change password, truthful password-session consequences, verified-recovery context, global **Sign out everywhere**, and conditional fresh-Admin continuation. Phase 27 does not make the broader Account & Settings roadmap complete.
+
+**Design/planning authority:** draft R&D PR #212 at exact head `9f315be09a6de3db51de39e215990ca86901f1a4` remains the visual/account-IA checkpoint. Its registered Account / Access / Security / Sessions hierarchy, UI-074 shell continuity, near-black field, compressed editorial hierarchy, technical microtype, precise rules, restrained atmosphere and desktop-to-390px row collapse are adopted. The later merged `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` is authoritative where scope evolved after that R&D: v0.2 password Show/Hide is not a Phase 27 fidelity requirement because #223 now owns one consistent credential-field interaction contract across all credential surfaces.
+
+**Current-truth boundary:** the canonical account owner remains `auth.users.id`; fresh Supabase identity, server-owned RenderLab admission/status/role and the existing fresh-Admin gate remain authoritative. The current Settings sign-out calls global Supabase sign-out and configured verification proves a secondary session is revoked, so presentation must say **Sign out everywhere** rather than imply a current-browser-only action. Ordinary password change continues to require Current password; valid recovery continues to depend on the server-validated recovery marker; successful replacement preserves the acting/recovery session while other sessions are revoked. No Auth/admission/recovery semantic change is approved.
+
+**Roadmap boundary:** #223 remains responsible for editable display name, avatar, username/handle decisions and the reusable Show/Hide/policy-guidance/Caps-Lock/password-manager credential UX standard. #215 remains responsible for hosted Auth/email/password-policy hardening and leaked-password protection. #216–#221 remain responsible for sessions/security activity, MFA/step-up, identity/sign-in methods, export/deletion, product-backed preferences/notifications and passkey research. Phase 27 may leave visual room for those capabilities but must not render fake, disabled or decorative controls for them.
+
+**Visual/system boundary:** Settings remains a 1/4-expressiveness surface. Use one registered account object with restrained row hierarchy rather than isolated rounded SaaS cards, security spectacle, fabricated telemetry or a new navigation shell. Desktop may use a narrow section-label column plus value/action column; 390px collapses in document order to section label → value/title → helper/status → action. Essential controls remain keyboard reachable, focus-visible and touch-safe with no horizontal overflow. Reduced motion preserves a complete static equivalent.
+
+**Implementation gate:** `docs/ui/SETTINGS_TRUST_REGISTER_IMPLEMENTATION_CONTRACT.md` must merge with UI-078 before production Settings source changes. Exact-head implementation verification must preserve configured account/security assertions and compare production screenshots against only the v0.2 elements adopted by this decision. Production deployment and hosted Supabase/Auth configuration remain separately explicit operations.
+'''
+          p.write_text(text.rstrip() + block + '\n')
+          PY
+          git diff --check
+      - name: Commit decision and remove staging workflow
+        shell: bash
+        run: |
+          rm .github/workflows/phase27-contract-doc-patch.yml
+          git config user.name "RenderLab Docs Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/ui/UI_DECISIONS.md .github/workflows/phase27-contract-doc-patch.yml
+          git commit -m "docs: record UI-078 Settings Trust Register decision"
+          git push origin HEAD:plan/phase-27-settings-trust-register
