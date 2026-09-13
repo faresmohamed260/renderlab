@@ -78,17 +78,10 @@
     .brand-mark {
       width: 25px;
       height: 25px;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(2, 1fr);
-      gap: 2px;
-      transform: rotate(2deg);
+      display: block;
+      object-fit: contain;
+      flex: 0 0 auto;
     }
-    .brand-mark i { display: block; border: 1px solid var(--border-strong); background: var(--surface-2); }
-    .brand-mark i:nth-child(1) { border-radius: 8px 2px 2px 2px; background: #c6baf5; }
-    .brand-mark i:nth-child(2) { border-radius: 2px 8px 2px 2px; }
-    .brand-mark i:nth-child(3) { border-radius: 2px 2px 2px 8px; }
-    .brand-mark i:nth-child(4) { border-radius: 2px 2px 8px 2px; background: #cf8f70; }
 
     .brand-word { font-size: 14px; letter-spacing: -.02em; white-space: nowrap; }
     .brand-word strong { font-weight: 760; }
@@ -481,7 +474,7 @@
   <header class="shell" aria-label="Application shell design fixture">
     <div class="shell-inner">
       <a class="brand" href="#" aria-label="RenderLab Create">
-        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <img class="brand-mark" src="../../../public/renderlab-mark-white.svg" alt="" aria-hidden="true" />
         <span class="brand-word"><strong>Render</strong><span>Lab</span></span>
       </a>
       <nav class="shell-nav" aria-label="Primary">
