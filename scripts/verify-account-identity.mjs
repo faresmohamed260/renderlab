@@ -318,6 +318,8 @@ try {
   await assertReachableAfterBottomScroll(page, page.getByRole("link", { name: "Change password", exact: true }), "Narrow Settings Change password");
   await assertReachableAfterBottomScroll(page, page.getByRole("button", { name: "Sign out everywhere", exact: true }), "Narrow Settings Sign out everywhere");
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in-actions.png` });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(80);
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in.png`, fullPage: true });
 
   await setAccessStatus("suspended");
@@ -328,7 +330,13 @@ try {
   await assertReachableAfterBottomScroll(page, page.getByRole("link", { name: "Change password", exact: true }), "Suspended Settings Change password");
   await assertReachableAfterBottomScroll(page, page.getByRole("button", { name: "Sign out everywhere", exact: true }), "Suspended Settings Sign out everywhere");
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended-actions.png` });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(80);
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended.png`, fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await assertNoHorizontalOverflow(page, "Desktop suspended Settings");
+  await page.screenshot({ path: `${artifactDir}/account-identity-desktop-suspended.png`, fullPage: true });
 
   await setAccessStatus("active");
   await page.reload({ waitUntil: "networkidle" });
@@ -340,6 +348,12 @@ try {
   await page.getByRole("link", { name: "Change password", exact: true }).click();
   await page.getByRole("heading", { name: "Change password", exact: true }).waitFor({ state: "visible" });
   assert(await page.getByLabel("Current password").isVisible(), "Ordinary password change must require the current password.");
+  await assertNoHorizontalOverflow(page, "Desktop password change");
+  await page.screenshot({ path: `${artifactDir}/account-identity-desktop-password-change.png`, fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await assertNoHorizontalOverflow(page, "Narrow password change");
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-password-change.png`, fullPage: true });
   await page.getByLabel("Current password").fill(password);
   await page.getByLabel("New password", { exact: true }).fill(changedPassword);
   await page.getByLabel("Confirm new password", { exact: true }).fill(changedPassword);
@@ -380,6 +394,14 @@ try {
   await recoveryPage.getByRole("heading", { name: "Set a new password", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await recoveryPage.getByText("Verified recovery link", { exact: true }).waitFor({ state: "visible" });
   assert((await recoveryPage.getByLabel("Current password").count()) === 0, "Verified recovery flow should not ask for the old password.");
+  await assertNoHorizontalOverflow(recoveryPage, "Narrow verified recovery");
+  await recoveryPage.screenshot({ path: `${artifactDir}/account-identity-mobile-recovery-form.png`, fullPage: true });
+  await recoveryPage.setViewportSize({ width: 1440, height: 1024 });
+  await recoveryPage.emulateMedia({ reducedMotion: "no-preference" });
+  await assertNoHorizontalOverflow(recoveryPage, "Desktop verified recovery");
+  await recoveryPage.screenshot({ path: `${artifactDir}/account-identity-desktop-recovery-form.png`, fullPage: true });
+  await recoveryPage.setViewportSize({ width: 390, height: 844 });
+  await recoveryPage.emulateMedia({ reducedMotion: "reduce" });
 
   const consumedContext = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: "dark" });
   try {
