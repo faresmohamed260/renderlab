@@ -1,0 +1,63 @@
+name: RenderLab Modal Endpoint Resolution Audit
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - .github/workflows/modal-endpoint-resolution-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SAGA_MODAL_TOKENS_JSON: ${{ secrets.SAGA_MODAL_TOKENS_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --quiet "modal==1.4.2"
+      - name: Resolve current web endpoints for RenderLab-owned apps
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          import modal
+
+          manifest = json.loads(Path('config/modal-project-ownership.json').read_text(encoding='utf-8'))
+          owned = set(manifest['ownedAccountLabels'])
+          raw = os.environ['SAGA_MODAL_TOKENS_JSON']
+          payload = json.loads(raw)
+          rows = payload.get('accounts') if isinstance(payload, dict) else payload
+          by_label = {str(row.get('label') or row.get('name') or row.get('account') or '').strip(): row for row in rows if isinstance(row, dict)}
+
+          probes = [
+              ('modal-44', 'flux-primary-01', 'saga-flux2-klein-gateway', 'web'),
+              ('modal-45', 'flux-standby-01', 'saga-flux2-klein-gateway', 'web'),
+              ('modal-45', 'renderlab-upscale', 'renderlab-image-upscale', 'web'),
+          ]
+
+          for label, worker, app_name, function_name in probes:
+              if label not in owned:
+                  raise SystemExit(f'{label} is not RenderLab-owned')
+              row = by_label[label]
+              token_id = str(row.get('token_id') or '').strip()
+              token_secret = str(row.get('token_secret') or '').strip()
+              combined = str(row.get('api_key') or row.get('token') or '').strip()
+              if (not token_id or not token_secret) and '.' in combined:
+                  token_id, token_secret = combined.split('.', 1)
+              os.environ['MODAL_TOKEN_ID'] = token_id
+              os.environ['MODAL_TOKEN_SECRET'] = token_secret
+              try:
+                  fn = modal.Function.from_name(app_name, function_name)
+                  url = fn.get_web_url()
+                  print(json.dumps({'account': label, 'worker': worker, 'resolved': bool(url), 'url': url}, sort_keys=True))
+              except Exception as exc:
+                  print(json.dumps({'account': label, 'worker': worker, 'resolved': False, 'errorType': type(exc).__name__}, sort_keys=True))
+          PY
