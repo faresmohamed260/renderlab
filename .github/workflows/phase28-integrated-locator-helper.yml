@@ -1,0 +1,39 @@
+name: Phase 28 integrated locator helper
+
+on:
+  push:
+    branches:
+      - work/phase-28-admin-system-continuity
+    paths:
+      - '.github/workflows/phase28-integrated-locator-helper.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-28-admin-system-continuity
+          fetch-depth: 0
+      - name: Align Integrated Release with UI-079 heading
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/verify-integrated-release.mjs')
+          text = path.read_text()
+          old = '  await page.getByRole("heading", { name: "Generation controls", exact: true }).waitFor({ state: "visible", timeout: 30_000 });'
+          new = '  await page.getByRole("heading", { name: "Generation", exact: true }).waitFor({ state: "visible", timeout: 30_000 });'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected exactly one stale Admin heading locator, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          rm .github/workflows/phase28-integrated-locator-helper.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/verify-integrated-release.mjs .github/workflows/phase28-integrated-locator-helper.yml
+          git commit -m 'test: align Integrated Release with UI-079 Admin label'
+          git push origin HEAD:work/phase-28-admin-system-continuity
