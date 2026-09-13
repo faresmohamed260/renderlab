@@ -28,14 +28,22 @@ export default async function AdminPage() {
   try {
     const snapshot = await getAdminDashboard(admin.identity.id);
     return (
-      <section className={styles.workspace} data-admin-system="settings-continuity">
+      <section
+        className={styles.workspace}
+        data-admin-system="settings-continuity"
+        data-admin-decision="UI-079"
+      >
         <AdminIntro />
         <AdminOperations snapshot={snapshot} actorUserId={admin.identity.id} />
       </section>
     );
   } catch {
     return (
-      <section className={styles.workspace} data-admin-system="settings-continuity">
+      <section
+        className={styles.workspace}
+        data-admin-system="settings-continuity"
+        data-admin-decision="UI-079"
+      >
         <AdminIntro unavailable />
         <Alert variant="destructive">
           <AlertDescription>Admin operations are temporarily unavailable.</AlertDescription>
