@@ -37,6 +37,10 @@ Only information density. Admin must fit existing Access, Generation and Health 
 
 All emails, UUIDs, dates, counts and metrics in this static R&D prototype are representative design fixtures chosen only to exercise density, wrapping, disabled self-account controls, inheritance copy and bounded health presentation. They are not production data or product claims.
 
+## Final shell check
+
+The review candidate reuses the locked RenderLab mark geometry and the same ECG-style Activity glyph used by the production UI-074 shell. Keyboard traversal is verified separately, then focus is cleared before screenshots so evidence represents the settled interface rather than a synthetic test-focus state.
+
 ## Gate
 
 This artifact is design evidence only. Production Admin code, contracts and deployment remain unchanged until explicit user approval and a separately merged Phase 28 implementation contract/UI decision.
