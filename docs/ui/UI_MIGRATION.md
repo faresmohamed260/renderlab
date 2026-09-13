@@ -91,9 +91,9 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - [ ] Production deployment remains separately explicit and automatic Git → Vercel deployment stays disabled.
 
 ## Active full-product redesign roadmap — after Phase 26
-**Status: `IN PROGRESS`.** Phase 25 completes the Media Viewer slice only; the full UI/UX redesign is not complete.
+**Status: `IN PROGRESS`.** Phase 26 completes the Activity slice; Settings, Admin and the final whole-product cohesion pass remain.
 
-The coherent design authority carried forward is the current locked Lab Grid identity + approved Lab Matrix Landing + Clear Composer/UI-074 + Gallery Rail/UI-075. Remaining redesign work must reuse that family—editorial hierarchy, technical microtype, Lab Matrix registration, restrained cool/warm atmosphere, compact horizontal shell, media-first composition, obvious ordinary controls and bounded meaningful motion—rather than introducing independent visual systems per screen.
+The coherent design authority carried forward is the current locked Lab Grid identity + approved Lab Matrix Landing + Clear Composer/UI-074 + Gallery Rail/UI-075 + Media Register/Source Fold UI-076 + Job Matrix/History Register UI-077. Remaining redesign work must reuse that family—editorial hierarchy, technical microtype, Lab Matrix registration, restrained cool/warm atmosphere, compact horizontal shell, media-first composition, obvious ordinary controls and bounded meaningful motion—rather than introducing independent visual systems per screen.
 
 - [x] Landing redesign — approved / production-live.
 - [x] Create redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.

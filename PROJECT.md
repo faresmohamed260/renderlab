@@ -78,10 +78,10 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - PR #194 squash-merged to `main` as `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. GitHub attached exactly two push workflows to that merge SHA and both passed: Engineering Quality `34699439085` and UI Shell Validation `34699439083`.
 - Phase 24 repository implementation is therefore user-approved, exact-head verified, merged and merged-main verified. Production remains unchanged at source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled and no Phase 24 deployment is authorized.
 
-## UI/UX redesign program — continuation roadmap — 2026-09-12
+## UI/UX redesign program — continuation roadmap — 2026-09-13
 **Status: ACTIVE — Landing, Create, Library, Media Viewer and Activity completed; Settings, Admin and final cohesion remain.**
 
-Phase 24 closed the approved Library Gallery Rail slice; it did **not** close the broader RenderLab UI/UX redesign program. The redesign must continue as one coherent system derived from the locked Lab Grid identity, approved Lab Matrix Landing, Clear Composer / UI-074 application language and Gallery Rail / UI-075 media language.
+Phase 26 closes the approved Activity Job Matrix + History Register slice; it does **not** close the broader RenderLab UI/UX redesign program. The redesign must continue as one coherent system derived from the locked Lab Grid identity, approved Lab Matrix Landing, Clear Composer / UI-074 application language, Gallery Rail / UI-075 media language, Media Register + Source Fold / UI-076, and Job Matrix + History Register / UI-077.
 
 Completed redesign slices:
 - **Landing:** approved Lab Matrix public experience, production-live.
