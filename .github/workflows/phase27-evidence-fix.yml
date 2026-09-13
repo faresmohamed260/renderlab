@@ -1,0 +1,96 @@
+name: Phase 27 Evidence Fix
+
+on:
+  push:
+    branches:
+      - work/phase-27-settings-trust-register
+    paths:
+      - ".github/workflows/phase27-evidence-fix.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/phase-27-settings-trust-register
+          fetch-depth: 0
+      - name: Improve exact-head Settings evidence
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          path = Path('scripts/verify-account-identity.mjs')
+          text = path.read_text()
+
+          old = '''  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in-actions.png` });
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in.png`, fullPage: true });'''
+          new = '''  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in-actions.png` });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(80);
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-signed-in.png`, fullPage: true });'''
+          if old not in text: raise SystemExit('signed-in screenshot block not found')
+          text = text.replace(old, new, 1)
+
+          old = '''  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended-actions.png` });
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended.png`, fullPage: true });'''
+          new = '''  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended-actions.png` });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(80);
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-suspended.png`, fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await assertNoHorizontalOverflow(page, "Desktop suspended Settings");
+  await page.screenshot({ path: `${artifactDir}/account-identity-desktop-suspended.png`, fullPage: true });'''
+          if old not in text: raise SystemExit('suspended screenshot block not found')
+          text = text.replace(old, new, 1)
+
+          old = '''  await page.getByRole("link", { name: "Change password", exact: true }).click();
+  await page.getByRole("heading", { name: "Change password", exact: true }).waitFor({ state: "visible" });
+  assert(await page.getByLabel("Current password").isVisible(), "Ordinary password change must require the current password.");
+  await page.getByLabel("Current password").fill(password);'''
+          new = '''  await page.getByRole("link", { name: "Change password", exact: true }).click();
+  await page.getByRole("heading", { name: "Change password", exact: true }).waitFor({ state: "visible" });
+  assert(await page.getByLabel("Current password").isVisible(), "Ordinary password change must require the current password.");
+  await assertNoHorizontalOverflow(page, "Desktop password change");
+  await page.screenshot({ path: `${artifactDir}/account-identity-desktop-password-change.png`, fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await assertNoHorizontalOverflow(page, "Narrow password change");
+  await page.screenshot({ path: `${artifactDir}/account-identity-mobile-password-change.png`, fullPage: true });
+  await page.getByLabel("Current password").fill(password);'''
+          if old not in text: raise SystemExit('password change block not found')
+          text = text.replace(old, new, 1)
+
+          old = '''  await recoveryPage.getByText("Verified recovery link", { exact: true }).waitFor({ state: "visible" });
+  assert((await recoveryPage.getByLabel("Current password").count()) === 0, "Verified recovery flow should not ask for the old password.");
+
+  const consumedContext'''
+          new = '''  await recoveryPage.getByText("Verified recovery link", { exact: true }).waitFor({ state: "visible" });
+  assert((await recoveryPage.getByLabel("Current password").count()) === 0, "Verified recovery flow should not ask for the old password.");
+  await assertNoHorizontalOverflow(recoveryPage, "Narrow verified recovery");
+  await recoveryPage.screenshot({ path: `${artifactDir}/account-identity-mobile-recovery-form.png`, fullPage: true });
+  await recoveryPage.setViewportSize({ width: 1440, height: 1024 });
+  await recoveryPage.emulateMedia({ reducedMotion: "no-preference" });
+  await assertNoHorizontalOverflow(recoveryPage, "Desktop verified recovery");
+  await recoveryPage.screenshot({ path: `${artifactDir}/account-identity-desktop-recovery-form.png`, fullPage: true });
+  await recoveryPage.setViewportSize({ width: 390, height: 844 });
+  await recoveryPage.emulateMedia({ reducedMotion: "reduce" });
+
+  const consumedContext'''
+          if old not in text: raise SystemExit('recovery evidence block not found')
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+          git rm .github/workflows/phase27-evidence-fix.yml
+          git config user.name 'RenderLab Implementation Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'test: strengthen Phase 27 Settings evidence'
+          git push origin HEAD:${GITHUB_REF_NAME}
