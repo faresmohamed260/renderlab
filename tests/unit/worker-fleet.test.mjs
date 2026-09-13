@@ -7,14 +7,15 @@ import {
   workersForEcosystem,
 } from "../../src/server/generation/worker-fleet.ts";
 
-test("disabled fleet registrations remain historical but are excluded from new routing", () => {
-  assert.equal(findWorker("flux-primary-01")?.routingStatus, "disabled");
+test("disabled fleet registrations remain historical and FLUX routes only through the recovered primary", () => {
+  assert.equal(findWorker("flux-primary-01")?.routingStatus, "active");
+  assert.equal(findWorker("flux-standby-01")?.routingStatus, "disabled");
   assert.equal(findWorker("ltx-primary-01")?.routingStatus, "disabled");
   assert.equal(findWorker("ltx-standby-01")?.routingStatus, "disabled");
 
   assert.deepEqual(
     workersForEcosystem("flux2-klein-9b").map((worker) => worker.id),
-    ["flux-standby-01"],
+    ["flux-primary-01"],
   );
   assert.deepEqual(
     workersForEcosystem("ltx25-redgraft").map((worker) => worker.id),
