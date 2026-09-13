@@ -100,11 +100,13 @@ The coherent design authority carried forward is the current locked Lab Grid ide
 - [x] Library redesign — user-approved / exact-head verified / merged / merged-main verified / not deployed.
 - [x] **Phase 25 Media Viewer redesign — COMPLETE / VERIFIED / MERGED / NOT DEPLOYED.** Media Register + Source Fold v0.2 is user-approved, exact-head verified, merged as `b672c711f885092c5e92c42824078e7bd5bc691e`, and all six workflows attached to merged `main` passed.
 - [x] **Phase 26 Activity redesign — COMPLETE / VERIFIED / MERGED / NOT DEPLOYED.** Job Matrix + History Register v0.2 is user-approved, exact-head verified, merged as `2a49d7e223595cd2f876829a779d3f5d3c362e81`, and merged-main verified.
-- [ ] **Phase 27 Settings/account-security redesign — NEXT / R&D NOT STARTED.** Expand only after the Phase 26 closure and follow the normal design-before-code gates.
+- [ ] **Phase 27 Settings/account-security redesign — R&D ACTIVE / PRODUCTION IMPLEMENTATION NOT AUTHORIZED.** Issue #211 and draft PR #212 hold the current Trust Register v0.2 visual/account-IA checkpoint. Production work still requires an explicit Phase 27 implementation contract. Phase 27 does not by itself complete the broader Account & Settings capability roadmap in `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` / #213 or roadmap workstreams #215–#221/#223.
 - [ ] **Phase 28 Admin redesign — ROADMAP ONLY.** Expand only after the prior slice closes.
 - [ ] **Phase 29 whole-product cohesion pass — ROADMAP ONLY.** Final cross-surface audit before the redesign program may be called complete.
 
 UI-074 already establishes the shared application-shell geometry; shell changes during later slices should be cohesion corrections only unless a separate explicit redesign decision reopens that system. None of this roadmap authorizes backend/schema/security/product-contract changes or production deployment.
+
+**Account-program boundary:** Phase 27 is a bounded Settings visual/account-information-architecture redesign. Even when its eventual implementation is approved, verified and merged, that status must not be interpreted as completion of profile/credential maturity, Auth/email hardening, session inventory/security activity, MFA/step-up, sign-in identity management, export/deletion, preferences/notifications or passkeys. Those remain independently governed by `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` and must advance through their own implementation contracts and verification.
 
 ## Phase 0 — Product & Capability Baseline
 - [x] Audit Saga behavior/backend contracts and UX problems.
