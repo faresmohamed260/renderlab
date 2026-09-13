@@ -1,0 +1,82 @@
+name: RenderLab Upscale Relocate to Modal 46
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - .github/workflows/modal-upscale-relocate-modal46.yml
+
+permissions:
+  contents: read
+
+jobs:
+  relocate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SAGA_MODAL_TOKENS_JSON: ${{ secrets.SAGA_MODAL_TOKENS_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install exact Modal CLI
+        run: python -m pip install --quiet "modal==1.4.2"
+      - name: Deploy current RenderLab Upscale app on owned modal-46
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+
+          manifest = json.loads(Path('config/modal-project-ownership.json').read_text(encoding='utf-8'))
+          expected = ['modal-01','modal-02','modal-42','modal-43','modal-44','modal-45','modal-46','modal-47']
+          if manifest.get('project') != 'renderlab' or manifest.get('ownedAccountLabels') != expected:
+              raise SystemExit('RenderLab Modal ownership manifest mismatch; refusing relocation')
+
+          label = 'modal-46'
+          payload = json.loads(os.environ['SAGA_MODAL_TOKENS_JSON'])
+          rows = payload.get('accounts') if isinstance(payload, dict) else payload
+          row = next((row for row in rows if isinstance(row, dict) and str(row.get('label') or row.get('name') or row.get('account') or '').strip() == label), None)
+          if not row:
+              raise SystemExit('modal-46 credential is unavailable')
+          token_id = str(row.get('token_id') or '').strip()
+          token_secret = str(row.get('token_secret') or '').strip()
+          combined = str(row.get('api_key') or row.get('token') or '').strip()
+          if (not token_id or not token_secret) and '.' in combined:
+              token_id, token_secret = combined.split('.', 1)
+          if not token_id or not token_secret:
+              raise SystemExit('modal-46 credential is incomplete')
+
+          print(f'::add-mask::{token_id}')
+          print(f'::add-mask::{token_secret}')
+          env = dict(os.environ, MODAL_TOKEN_ID=token_id, MODAL_TOKEN_SECRET=token_secret)
+
+          # Add a distinct app to the RenderLab-owned modal-46 workspace. This does
+          # not stop, reset, rename, or otherwise mutate the historical LTX app.
+          subprocess.run(['modal','deploy','workers/image-upscale/modal_app.py'], env=env, check=True, timeout=1500)
+          PY
+      - name: Verify relocated Upscale endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://dreadcipher67--renderlab-image-upscale-web.modal.run'
+          for i in {1..36}; do
+            code=$(curl --silent --show-error --max-time 20 -o /tmp/upscale46-health.json -w '%{http_code}' "$url/health" || true)
+            if [ "$code" = "200" ]; then
+              node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const health = JSON.parse(fs.readFileSync('/tmp/upscale46-health.json','utf8'));
+          if (health.ready !== true || health.cancel_jobs !== true || !Array.isArray(health.upscale_scales) || !health.upscale_scales.includes(2)) {
+            throw new Error(`Upscale health contract mismatch: ${JSON.stringify(health)}`);
+          }
+          console.log(JSON.stringify({ready:health.ready,cancel_jobs:health.cancel_jobs,upscale_scales:health.upscale_scales,worker_id:health.worker_id || health.worker?.worker_id || null}));
+          NODE
+              exit 0
+            fi
+            sleep 5
+          done
+          echo '::error::Relocated RenderLab Upscale endpoint did not return the required health contract.'
+          cat /tmp/upscale46-health.json || true
+          exit 1
