@@ -1,6 +1,6 @@
 # Phase 29 — Whole-product Cohesion Implementation Contract
 
-**Status:** Accepted execution boundary pending merge  
+**Status:** Closed / implementation verified / merged / merged-main verified / not deployed
 **Tracker:** #235  
 **Baseline:** `main` `fcab275189089106ee7186e9ddd0b935aa5aeade`  
 **Deployment:** Not authorized by this contract
@@ -136,6 +136,17 @@ On verified implementation closure, update from repository reality:
 - `docs/ui/COMPONENT_CATALOG.md` only if reusable component state actually changes.
 
 Issue #235 closes only after implementation, fidelity review, merge, merged-main verification and documentation closure are all complete.
+
+## Closure evidence
+Planning PR #236 merged this contract and UI-080 first as `b4a76e279aea79bcd5779495064f635fb8bc8fbf`.
+
+PR #237 final exact head `e1cf49db3cff9cd635775c07b9c8f9fe9e68660b` changed only Phase 29 regression verification. Engineering Quality `34788560805`, UI Shell Validation `34788560808` and Brand / Launch Visual `34788560864` passed. UI Shell artifact `10326429843` (`sha256:7df45aec014ed0a2203486645f2db11781c817bf28c3c18a7f5936c9d5c41982`) supplied the final exact-head cross-route evidence.
+
+The candidate 390px Create/header overlap did not reproduce under deterministic bounding geometry. Create, Library, Activity and Settings cleared the UI-074 fixed header and stayed free of horizontal overflow at 390px; the reduced-motion Create path remained geometrically equivalent. Human review found no evidence-backed current integration defect requiring a production UI correction, so the accepted per-surface designs remained untouched.
+
+PR #237 squash-merged as `1c33fccf7de5b919b6a9f15916c66b92334da84a`. Merged-main Engineering Quality `34788682047` and UI Shell Validation `34788682060` passed; merged-main shell artifact `10326969432` has digest `sha256:8ad356af9fc5b1cd9a25b42f63d1a66c00829a2f343ecb753895ced2a29660a4`.
+
+Phase 29 therefore closes the repository UI/UX redesign program without a production-pixel diff. No backend/security/infrastructure contract changed and no production deployment occurred.
 
 ## Deployment boundary
 Completing Phase 29 completes the **repository UI/UX redesign program**. It does not make the current repository tree production-live automatically. Production rollout of the accumulated not-yet-deployed redesign remains a separate explicit user-authorized operation with its own readiness and post-rollout verification.
