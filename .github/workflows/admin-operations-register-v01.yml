@@ -1,0 +1,49 @@
+name: Admin Operations Register R&D v0.1
+
+on:
+  push:
+    branches:
+      - rd/phase-28-admin-operations-register-v01
+    paths:
+      - '.github/workflows/admin-operations-register-v01.yml'
+      - 'design/rd/admin-operations-register-v01.md'
+      - 'design/prototypes/admin-operations-register-v01/**'
+      - 'scripts/verify-admin-operations-register-v01.mjs'
+  workflow_dispatch:
+
+concurrency:
+  group: admin-operations-register-v01-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify responsive Admin R&D evidence
+        run: node scripts/verify-admin-operations-register-v01.mjs
+
+      - name: Upload review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-admin-operations-register-v01
+          path: artifacts/admin-operations-register-v01
+          if-no-files-found: ignore
+          retention-days: 30
