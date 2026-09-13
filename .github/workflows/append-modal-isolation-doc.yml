@@ -1,0 +1,76 @@
+name: Append RenderLab Modal Isolation Documentation
+
+on:
+  push:
+    branches:
+      - ops/modal-credential-readiness-20260913
+    paths:
+      - ".github/workflows/append-modal-isolation-doc.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  document:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout isolation branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/modal-project-isolation
+          fetch-depth: 0
+      - name: Append current ownership state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('docs/architecture/INFRASTRUCTURE.md')
+          text = path.read_text(encoding='utf-8')
+          marker = '## Modal Project Ownership Isolation'
+          if marker in text:
+              raise SystemExit('Modal Project Ownership Isolation section already exists; refusing duplicate append.')
+          lines = [
+              '',
+              '## Modal Project Ownership Isolation',
+              '',
+              'RenderLab and S.A.G.A. use a reciprocal, fail-closed Modal account partition. Repository ownership is authoritative for project use even when an omnibus credential secret is temporarily available to a repository.',
+              '',
+              'RenderLab-owned Modal accounts:',
+              '',
+              '- `modal-01` — active LTX primary generation capacity.',
+              '- `modal-02` — active LTX standby generation capacity.',
+              '- `modal-42` — active Qwen image-edit primary capacity.',
+              '- `modal-43` — active Qwen image-edit standby capacity.',
+              '- `modal-44` — active FLUX primary capacity (`flux-primary-01`).',
+              '- `modal-45` — RenderLab-owned but currently spend-capped; historical `flux-standby-01` remains disabled for new routing.',
+              '- `modal-46` — current `renderlab-image-upscale` deployment plus historical LTX identity retained for durable job meaning.',
+              '- `modal-47` — historical LTX standby identity retained for durable job meaning.',
+              '',
+              'S.A.G.A. owns `modal-03` through `modal-41`. Those accounts are reserved from RenderLab use. The reciprocal S.A.G.A. implementation is merged on its `main` branch and enforces the inverse allocation.',
+              '',
+              'The checked-in authority for RenderLab is `config/modal-project-ownership.json` together with `scripts/lib/modal-project-ownership.mjs`. Any credential-selection code must validate through that boundary before exporting or using Modal credentials. `scripts/verify-modal-project-ownership.mjs` and Engineering Quality provide a negative CI gate against generic Modal credential references in active workflows.',
+              '',
+              'Normal RenderLab generation runtime calls configured public/server-side worker gateways; Modal API credentials are deployment or maintenance authority, not ordinary request-path configuration. Public app names or historical `saga-` prefixes do not transfer account ownership.',
+              '',
+              'The strongest operational state remains physical least-privilege secret separation: RenderLab secret stores should contain only its eight owned credentials and S.A.G.A. secret stores should contain only its 39 owned credentials. Repository-level fail-closed enforcement protects ordinary development and automation, but it does not by itself prove that non-owned credentials have been removed from GitHub secret storage.',
+              '',
+              'Changing this partition requires an explicit owner decision recorded in both repositories. Worker deployment, reset, token rotation, secret-store changes, and application production deployment remain separate authorized operations.',
+              '',
+              'The 2026-09-13 recovery details for `modal-45`, active FLUX on `modal-44`, and Image Upscale on `modal-46` are recorded in the preceding **2026-09-13 Modal Worker Recovery** section.',
+              '',
+          ]
+          path.write_text(text.rstrip() + '\n' + '\n'.join(lines), encoding='utf-8')
+          PY
+          git diff --check
+          git diff -- docs/architecture/INFRASTRUCTURE.md
+      - name: Commit current ownership state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/architecture/INFRASTRUCTURE.md
+          git commit -m 'Document current Modal project ownership isolation'
+          git push origin HEAD:work/modal-project-isolation
