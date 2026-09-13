@@ -1,0 +1,51 @@
+name: Phase 26 Closure Exact-Head Verification
+
+on:
+  push:
+    branches:
+      - ops/phase-26-closure-docs-20260913
+    paths:
+      - .github/workflows/phase26-closure-verify.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact docs candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 241eaffffde4e77637d86d170f82caab38afa5a2
+          fetch-depth: 0
+
+      - name: Verify exact candidate and documentation boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=2a49d7e223595cd2f876829a779d3f5d3c362e81
+          head=241eaffffde4e77637d86d170f82caab38afa5a2
+          test "$(git rev-parse HEAD)" = "$head"
+          git diff --check "$base...$head"
+
+          mapfile -t files < <(git diff --name-only "$base...$head")
+          expected=(
+            PROJECT.md
+            docs/ui/SCREEN_REGISTRY.md
+            docs/ui/UI_DECISIONS.md
+            docs/ui/UI_MIGRATION.md
+          )
+          test "${#files[@]}" -eq "${#expected[@]}"
+          for i in "${!expected[@]}"; do
+            test "${files[$i]}" = "${expected[$i]}"
+          done
+
+          grep -Fq 'Phase 26 status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`' PROJECT.md
+          grep -Fq 'Phase 27 — Settings / account-security flows:** NEXT / R&D NOT STARTED' PROJECT.md
+          grep -Fq 'Phase 26 Activity redesign — COMPLETE / VERIFIED / MERGED / NOT DEPLOYED' docs/ui/UI_MIGRATION.md
+          grep -Fq 'Phase 27 Settings/account-security redesign — NEXT / R&D NOT STARTED' docs/ui/UI_MIGRATION.md
+          grep -Fq 'Accepted / user-approved / implemented / exact-head verified / merged / merged-main verified / not deployed' docs/ui/UI_DECISIONS.md
+          grep -Fq 'Job Matrix + History Register v0.2 / UI-077' docs/ui/SCREEN_REGISTRY.md
+          grep -Fq '2a49d7e223595cd2f876829a779d3f5d3c362e81' PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md
+          grep -Fq '10317304020' PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md
