@@ -31,6 +31,11 @@ jobs:
       - name: Record verified Phase 26 closure
         run: |
           python helper/.github/scripts/phase26_closure_docs.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("docs/ui/UI_DECISIONS.md")
+          path.write_text(path.read_text().rstrip() + "\n")
+          PY
           git diff --check
           git diff -- PROJECT.md docs/ui/UI_MIGRATION.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md
 
