@@ -154,7 +154,7 @@ Final current-plan hosted state:
 - hosted current-password and nonce-reauthentication toggles remain disabled, preserving RenderLab's app-owned current-password verification contract;
 - leaked-password protection remains disabled solely as the explicit #215B **Supabase Pro+ plan gate**.
 
-#215A is therefore **implementation-complete and verified for the current Free plan**. #215 remains open only for the separately authorized #215B plan/billing decision and leaked-password-protection closure. The repository-side 15-character application guidance is merged but still requires a separately authorized production application deployment before hosted policy and production presentation are fully synchronized.
+#215A is therefore **implementation-complete, verified and production-live for the current Free plan**. #215 remains open only for the separately authorized #215B plan/billing decision and leaked-password-protection closure. Hosted policy and production application presentation are synchronized on the canonical 15-character minimum.
 
 ### Stage 3 application production rollout — completed and verified 2026-09-14
 
