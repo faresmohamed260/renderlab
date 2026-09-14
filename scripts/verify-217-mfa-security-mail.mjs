@@ -160,12 +160,16 @@ try {
   await waitForSecurityMail("A RenderLab verification method was added");
   console.log("RENDERLAB_217_MFA_ENROLLED_EMAIL_RESEND_DELIVERED=true");
 
-  const removal = await user.auth.mfa.unenroll({ factorId: enrollment.data.id });
+  const listedFactors = await service.auth.admin.mfa.listFactors({ userId });
+  if (listedFactors.error) throw listedFactors.error;
+  assert(listedFactors.data.factors.length === 1, "Operator recovery expected exactly one verified factor.");
+  assert(listedFactors.data.factors[0].id === enrollment.data.id, "Operator recovery factor listing did not match the enrolled factor.");
+  const removal = await service.auth.admin.mfa.deleteFactor({ userId, id: enrollment.data.id });
   if (removal.error) throw removal.error;
-  console.log("RENDERLAB_217_MFA_FACTOR_REMOVED=true");
+  console.log("RENDERLAB_217_MFA_OPERATOR_FACTOR_REMOVED=true");
 
   await waitForSecurityMail("A RenderLab verification method was removed");
-  console.log("RENDERLAB_217_MFA_REMOVED_EMAIL_RESEND_DELIVERED=true");
+  console.log("RENDERLAB_217_MFA_OPERATOR_REMOVED_EMAIL_RESEND_DELIVERED=true");
   console.log("RENDERLAB_217_MFA_SECURITY_EMAIL_BRANDING_PRIVACY_OK=true");
 } finally {
   await cleanup();
