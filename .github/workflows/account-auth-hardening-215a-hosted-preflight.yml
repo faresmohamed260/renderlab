@@ -38,7 +38,7 @@ jobs:
           endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
           mkdir -p artifacts
           curl --fail-with-body --silent --show-error \
-            --user-agent 'RenderLab-215A-Hosted-Preflight/1.0' \
+            --user-agent 'RenderLab-215A-Hosted-Preflight/1.1' \
             --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
             "$endpoint" -o /tmp/auth-config.json
 
@@ -46,49 +46,45 @@ jobs:
           import hashlib
           import json
           import os
-          import re
           from datetime import datetime, timezone
           from pathlib import Path
 
           raw = json.loads(Path('/tmp/auth-config.json').read_text())
 
-          def safe_value(key, value):
-              lower = key.lower()
-              if any(marker in lower for marker in ('secret', 'pass', 'token', 'key')):
-                  return {'redacted': True, 'present': value not in (None, '', False)}
-              if isinstance(value, (bool, int, float)) or value is None:
-                  return value
-              if isinstance(value, str):
-                  return value
-              if isinstance(value, list):
-                  return value
-              return {'type': type(value).__name__}
-
-          safe_exact = {
-              'site_url',
-              'uri_allow_list',
+          safe_smtp = {
               'smtp_admin_email',
               'smtp_host',
               'smtp_port',
               'smtp_sender_name',
-              'password_min_length',
-              'password_required_characters',
-              'security_captcha_enabled',
-              'security_captcha_provider',
-              'captcha_enabled',
-              'captcha_provider',
-              'mailer_allow_unverified_email_sign_ins',
+              'smtp_max_frequency',
+          }
+          secret_fields = {
+              'smtp_pass',
+              'smtp_user',
+              'security_captcha_secret',
           }
 
-          relevant_pattern = re.compile(
-              r'^(site_url|uri_allow_list|smtp_|password_|rate_limit_|captcha_|security_captcha|mailer_notifications_|mailer_subjects_|mailer_templates_)'
-          )
+          def relevant(key):
+              lowered = key.lower()
+              return any(marker in lowered for marker in (
+                  'site_url',
+                  'uri_allow_list',
+                  'smtp_',
+                  'password',
+                  'reauth',
+                  'email_change',
+                  'rate_limit_',
+                  'captcha',
+                  'mailer_notifications_',
+                  'mailer_subjects_',
+                  'mailer_templates_',
+              ))
 
           safe = {}
           inventory = []
           template_hashes = {}
           for key in sorted(raw):
-              if not relevant_pattern.search(key):
+              if not relevant(key):
                   continue
               inventory.append(key)
               value = raw[key]
@@ -99,14 +95,16 @@ jobs:
                       'length': len(text),
                       'present': bool(text),
                   }
-                  continue
-              if key in safe_exact or key.startswith('rate_limit_') or key.startswith('mailer_notifications_') or key.startswith('mailer_subjects_'):
-                  safe[key] = safe_value(key, value)
-              elif key.startswith('password_') or 'captcha' in key:
-                  # Discover current field names without exposing possible credential material.
-                  safe[key] = safe_value(key, value)
-              elif key.startswith('smtp_'):
+              elif key in secret_fields:
                   safe[key] = {'redacted': True, 'present': value not in (None, '', False)}
+              elif key.startswith('smtp_') and key not in safe_smtp:
+                  safe[key] = {'redacted': True, 'present': value not in (None, '', False)}
+              elif isinstance(value, (bool, int, float, str)) or value is None:
+                  safe[key] = value
+              elif isinstance(value, list):
+                  safe[key] = value
+              else:
+                  safe[key] = {'type': type(value).__name__}
 
           report = {
               'project_ref': os.environ['SUPABASE_PROJECT_REF'],
