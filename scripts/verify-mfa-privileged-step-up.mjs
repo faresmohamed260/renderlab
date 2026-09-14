@@ -93,6 +93,18 @@ async function fetchAdminHealth() {
   return fetchAdminHealthWithToken(await currentAccessToken());
 }
 
+async function fetchPrivateProductWithToken(token) {
+  const response = await fetch(`${baseUrl}/api/media/assets?limit=1`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  const body = await response.json().catch(() => null);
+  return { response, body };
+}
+
+async function fetchPrivateProduct() {
+  return fetchPrivateProductWithToken(await currentAccessToken());
+}
+
 async function expectAdminMfaRequired(label) {
   const { response, body } = await fetchAdminHealth();
   assert(response.status === 403, `${label}: expected HTTP 403, got ${response.status}`);
@@ -164,6 +176,9 @@ async function main() {
 
     const authorized = await fetchAdminHealth();
     assert(authorized.response.ok && authorized.body?.ok === true, `Admin at AAL2 should be authorized; got ${authorized.response.status}`);
+    const privateAtAal2 = await fetchPrivateProduct();
+    assert(privateAtAal2.response.ok, `Private product access at AAL2 should be authorized; got ${privateAtAal2.response.status}.`);
+    console.log("PRIVATE_PRODUCT_ACCESS_AT_AAL2=authorized");
 
     await expectSecondEnrollmentRejected("DIRECT_SECOND_ENROLLMENT_AT_AAL2");
 
@@ -173,7 +188,16 @@ async function main() {
     await expectAal("aal1", "aal2", "password sign-in with enrolled MFA");
     await expectAdminMfaRequired("Admin at AAL1 with enrolled MFA");
 
+    const privateAtAal1 = await fetchPrivateProduct();
+    assert(privateAtAal1.response.status === 401, `Private product access at AAL1 with enrolled MFA should be denied; got ${privateAtAal1.response.status}.`);
+    assert(privateAtAal1.body?.error?.code === "authentication_required", `Private AAL1 denial should use authentication_required, got ${privateAtAal1.body?.error?.code}.`);
+    console.log("PRIVATE_PRODUCT_ACCESS_AT_AAL1=denied");
+
     await expectSecondEnrollmentRejected("DIRECT_SECOND_ENROLLMENT_AT_AAL1");
+
+    const directUnenrollAtAal1 = await user.auth.mfa.unenroll({ factorId: currentFactorId });
+    assert(directUnenrollAtAal1.error, "Hosted Auth accepted verified-factor unenroll at AAL1.");
+    console.log(`DIRECT_FACTOR_UNENROLL_AT_AAL1=rejected (${directUnenrollAtAal1.error.message})`);
 
     const directPasswordUpdate = await user.auth.updateUser({ password: replacementPassword });
     assert(
@@ -185,13 +209,14 @@ async function main() {
     const factors = await user.auth.mfa.listFactors();
     if (factors.error) throw factors.error;
     const verifiedFirst = factors.data.totp.find((factor) => factor.id === currentFactorId && factor.status === "verified");
-    assert(verifiedFirst, "Expected the original verified factor to remain available.");
+    assert(verifiedFirst, "Expected the original verified factor to remain available after rejected AAL1 mutations.");
 
     await verifyFactor(currentFactorId, enrollment.totp.secret);
     await expectAal("aal2", "aal2", "after MFA challenge");
 
     const removal = await user.auth.mfa.unenroll({ factorId: currentFactorId });
     if (removal.error) throw removal.error;
+    console.log("DIRECT_FACTOR_UNENROLL_AT_AAL2=success");
     currentFactorId = null;
     const refreshed = await user.auth.refreshSession();
     if (refreshed.error) throw refreshed.error;
@@ -271,7 +296,7 @@ async function main() {
     );
     console.log("OPERATOR_MFA_ADMIN_RESTORED_AFTER_REENROLLMENT=true");
 
-    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, password AAL2 enforcement, live-factor Admin authorization, replacement gap, and freeze/rotation/delete/unfreeze operator recovery verified.");
+    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, AAL1 unenroll/password rejection, private-product and Admin AAL enforcement, replacement gap, and freeze/rotation/delete/unfreeze operator recovery verified.");
   } finally {
     await user.auth.signOut({ scope: "local" }).catch(() => undefined);
     if (fixtureUserId) {
