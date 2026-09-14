@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { normalizeRenderLabSessionClient } from "@/lib/auth/session-client-label";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -37,37 +38,6 @@ function validUuid(value: unknown): value is string {
 
 function validTimestamp(value: unknown): value is string {
   return typeof value === "string" && Number.isFinite(Date.parse(value));
-}
-
-export function normalizeRenderLabSessionClient(userAgent: string | null | undefined) {
-  if (!userAgent) return "Unknown browser";
-
-  const browser = /Edg\//.test(userAgent)
-    ? "Edge"
-    : /(?:Chrome|CriOS)\//.test(userAgent)
-      ? "Chrome"
-      : /Firefox\//.test(userAgent)
-        ? "Firefox"
-        : /Safari\//.test(userAgent) && /Version\//.test(userAgent)
-          ? "Safari"
-          : "Unknown browser";
-
-  const platform = /iPhone/.test(userAgent)
-    ? "iPhone"
-    : /iPad/.test(userAgent)
-      ? "iPad"
-      : /Android/.test(userAgent)
-        ? "Android"
-        : /Windows NT/.test(userAgent)
-          ? "Windows"
-          : /Macintosh|Mac OS X/.test(userAgent)
-            ? "macOS"
-            : /Linux/.test(userAgent)
-              ? "Linux"
-              : null;
-
-  if (browser === "Unknown browser") return platform ? `Unknown browser on ${platform}` : browser;
-  return platform ? `${browser} on ${platform}` : browser;
 }
 
 async function getRenderLabAuthSessionRows(userId: string) {
