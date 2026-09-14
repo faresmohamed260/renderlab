@@ -554,7 +554,7 @@ This follow-up currently authorizes documentation/research only. It changes no R
 - RenderLab will use browser-side Web Crypto SHA-1 only to derive the HIBP lookup hash, transmit only the first five hexadecimal characters, request `Add-Padding: true`, and compare returned suffixes locally. Plaintext passwords and complete hashes must never be sent to HIBP, stored or logged.
 - The lookup runs only on complete form submission, never incrementally while the user types. Password establishment/change fails closed after a bounded timeout/retry if the check cannot complete.
 - This is an application-layer product control, not equivalent to Supabase-native Auth enforcement. On Supabase Free, a technically capable authenticated user can bypass normal RenderLab UI and call the hosted Auth endpoint directly; removing that bypass would require a paid/native hook or a materially different Auth architecture and is not authorized.
-- Security Advisor will therefore continue to report `auth_leaked_password_protection`. After #215B is verified, that warning is an accepted Supabase-platform limitation rather than a RenderLab broader-beta blocker.
+- Security Advisor continues to report `auth_leaked_password_protection`. #215B is verified and production-live, so that warning is an accepted Supabase-platform limitation rather than a RenderLab broader-beta blocker; it must not be presented as cleared.
 - No Supabase plan/billing change, schema/RLS change, new secret, paid HIBP subscription, R2 change or generation infrastructure change is authorized by this decision.
 
 

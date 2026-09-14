@@ -1,6 +1,6 @@
 # Account & Settings Capability Roadmap
 
-**Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE
+**Status:** ACCEPTED PLANNING BASELINE / #215 COMPLETE + VERIFIED + PRODUCTION-LIVE / NEXT CONTRACT PLANNING: #217
 **Current execution:** #215 is complete, verified and production-live. #215A established the 15-character hosted/application policy, branded security mail and current-plan hardening. #215B replaced the rejected Supabase paid-plan path with free RenderLab-owned HIBP Pwned Passwords k-anonymity screening and is live from exact source `f3f89d0859154b2ab45b5364ce1acb04a0eb204b` as Vercel deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh`. Supabase's native leaked-password warning is an accepted Free-plan limitation, not an open roadmap blocker. The next default contract-planning slice is #217 privileged MFA/step-up.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
@@ -80,7 +80,7 @@ The repository's Phase 10D audit established that:
 - leaked-password protection remained disabled and was recorded as a broader-beta blocker;
 - hosted Auth configuration changes require explicit operator authorization and are not ordinary application-code changes.
 
-A fresh Security Advisor read after #215A hosted execution on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The current organization remains on Free. On 2026-09-14 the user explicitly rejected a Supabase plan upgrade solely for this control, so the warning is no longer a billing/plan gate. #215B instead owns free application-layer compromised-password screening; after that is verified, the Supabase-native warning remains visible as an accepted platform limitation and must not be misrepresented as cleared.
+A fresh Security Advisor read after #215B verification and production rollout on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The organization remains on Free and the user explicitly rejected a Supabase upgrade solely for this feature. #215B free application-layer HIBP screening is verified and production-live, so the native warning is an accepted platform limitation and must not be misrepresented as cleared. #215 is closed; the next default P0 contract-planning slice is #217 privileged MFA/AAL2 step-up.
 
 ## 5. Current Supabase capability facts
 

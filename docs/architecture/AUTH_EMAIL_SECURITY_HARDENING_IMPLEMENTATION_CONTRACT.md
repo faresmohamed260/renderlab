@@ -49,14 +49,9 @@ These behaviors are already covered by `scripts/verify-account-identity.mjs` and
 
 ### Current password presentation
 
-The application currently hard-codes an eight-character client floor in:
+The production application now uses one canonical **15-character** password-creation/replacement policy shared by the account layer. Sign-in intentionally applies no client minimum-length gate so existing admitted credentials reach authoritative Supabase Auth rather than being rejected by browser presentation logic. Ordinary password change and verified recovery replacement both run the free RenderLab-owned HIBP compromised-password screen before Auth mutation.
 
-- signed-out password input enablement;
-- new-password validation;
-- new-password `minLength` attributes;
-- visible `Use at least 8 characters.` guidance.
-
-The actual hosted Auth password policy remains the authoritative enforcement boundary. #215 owns the real policy; #223 owns visible field ergonomics such as Show/Hide password, Caps Lock feedback and broader credential-field interaction quality.
+The hosted Auth password policy remains authoritative for minimum length. #223 still owns visible field ergonomics such as Show/Hide password, Caps Lock feedback and broader credential-field interaction quality.
 
 ### Production Auth email state already completed by Phase 13
 
@@ -122,7 +117,7 @@ Execution decisions from this preflight:
 - retain the existing Phase 13 invite/recovery templates unchanged;
 - CAPTCHA is evaluated/deferred for #215A because no evidence-backed abuse need was found; Cloudflare Turnstile remains a future code+config change only if justified by later threat evidence;
 - the authorized hosted delta remains the 15-character minimum, branded reauthentication/email-change templates and the six scoped security notifications;
-- #215B remains plan-gated and no Supabase billing/plan change is authorized by #215A.
+- At this preflight point Supabase-native leaked-password protection was still plan-gated. That path was later superseded by the user's explicit no-upgrade decision and the free HIBP #215B implementation recorded below.
 
 ### Stage 2 hosted execution — completed and verified 2026-09-14
 
@@ -154,7 +149,7 @@ Final current-plan hosted state:
 - hosted current-password and nonce-reauthentication toggles remain disabled, preserving RenderLab's app-owned current-password verification contract;
 - Supabase-native leaked-password protection remains disabled on Free; the user explicitly rejected a paid-plan upgrade for this feature, and #215B now owns a free RenderLab-layer alternative instead.
 
-#215A is therefore **implementation-complete, verified and production-live for the current Free plan**. #215 remains open only for #215B free compromised-password screening. No Supabase billing/plan decision remains in this workstream. Hosted policy and production application presentation are synchronized on the canonical 15-character minimum.
+#215A is therefore **implementation-complete, verified and production-live for the current Free plan**. #215B is also complete, verified and production-live through the free RenderLab-owned HIBP control. No Supabase billing/plan decision remains in this workstream. Hosted policy, compromised-password screening and production application presentation are synchronized on the canonical 15-character minimum.
 
 ### Stage 3 application production rollout — completed and verified 2026-09-14
 
@@ -170,7 +165,18 @@ Explicit user authorization deployed the already-merged #215A application policy
 - post-cutover Vercel audit found no error/fatal logs for the new deployment and no runtime-error clusters in the observed window;
 - automatic Git → Vercel deployment remains disabled.
 
-Hosted Auth and the production application are therefore synchronized on the canonical 15-character password-creation/replacement policy. #215A is complete for the current Free plan. #215B now proceeds only as the free RenderLab-owned HIBP compromised-password-screening slice; no Supabase plan upgrade will be pursued for this feature.
+Hosted Auth and the production application are therefore synchronized on the canonical 15-character password-creation/replacement policy. #215A is complete for the current Free plan. The former paid leaked-password path is permanently rejected.
+
+### Stage 4 #215B free compromised-password screening — completed, verified and production-live 2026-09-14
+
+- Contract amendment PR #249 merged as `31824147c7e3716ddf187a260220c74733102fbe`, replacing the former Supabase Pro+ gate with free RenderLab-owned HIBP Pwned Passwords k-anonymity screening.
+- Implementation PR #250 exact head `15edffab3662c28c5169584b8982e5df2831c880` passed all six attached workflows: Engineering `34868698449`, Account Identity `34868698376`, Compromised Password Screening `34868698510`, UI Shell `34868699614`, Integrated Release `34868698377`, and Brand/Launch `34868698354`.
+- Account Identity artifact `10357573841` has digest `sha256:bc22e9ed81a4e7ef30b82329236c3580c7b6f61d4ced42c47f988741c6f5fad8`. Verification proved submit-only lookup, five-character-prefix disclosure only, padded responses, local suffix comparison, compromised rejection, bounded retry/fail-closed behavior, safe ordinary/recovery password mutation, and preservation of existing recovery/session/revocation guarantees.
+- PR #250 merged as `f3f89d0859154b2ab45b5364ce1acb04a0eb204b`; merged-main Engineering `34869098474` and UI Shell `34869098397` both passed.
+- Explicit guarded rollout `34873131594` deployed exact source `f3f89d0859154b2ab45b5364ce1acb04a0eb204b` as READY Vercel deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh`. `renderlab.faresuniform.uk` moved only after build completion; root, Create, Library, Activity and Settings smoke passed.
+- Post-cutover Vercel checks found no runtime-error clusters and no error/fatal logs. Rollback was not required; `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7` remains the immediate known-good rollback target. Automatic Git → Vercel deployment remains disabled.
+- Fresh Security Advisor showed no new findings. The remaining `auth_leaked_password_protection` warning is accepted as a Supabase-native Free-plan limitation; the existing server-owned `rls_enabled_no_policy` INFO notices remain expected.
+- #215 is complete and closed. The next default P0 account-security contract-planning slice is #217 privileged MFA/AAL2 step-up; #216 session controls/security activity follows by default.
 
 ## 3. Binding product/security decisions
 
