@@ -26,6 +26,12 @@ function initialFeedback(params: Record<string, string | string[] | undefined>) 
   if (auth === "invitation_accepted") {
     return { kind: "success" as const, message: "Invitation accepted. Your RenderLab access is active." };
   }
+  if (auth === "email_change_confirmation_pending") {
+    return { kind: "success" as const, message: "One email confirmation was accepted. Confirm the change from the other inbox to finish." };
+  }
+  if (auth === "email_changed") {
+    return { kind: "success" as const, message: "Sign-in email updated. RenderLab ownership and access remain attached to the same account." };
+  }
   if (auth === "invitation_required") {
     return { kind: "error" as const, message: "This invitation cannot grant active RenderLab access." };
   }
