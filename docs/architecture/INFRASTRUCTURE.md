@@ -965,3 +965,12 @@ The strongest operational state remains physical least-privilege secret separati
 Changing this partition requires an explicit owner decision recorded in both repositories. Worker deployment, reset, token rotation, secret-store changes, and application production deployment remain separate authorized operations.
 
 The 2026-09-13 recovery details for `modal-45`, active FLUX on `modal-44`, and Image Upscale on `modal-46` are recorded in the preceding **2026-09-13 Modal Worker Recovery** section.
+
+## Full UI/UX redesign production rollout — 2026-09-14
+The user explicitly authorized rollout after Phase 29 repository closure. Guarded GitHub Actions run `34795391075` checked out exact source `b6deedad8a229b34828da0c3760b62fa147c1981`, required a pristine tree and a configured `VERCEL_TOKEN`, and deployed with the established pinned Vercel CLI path while `VERCEL_ORG_ID=team_r09C6RLmb2acHapENECQIn9T` and `VERCEL_PROJECT_ID=prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU` were prebound.
+
+Vercel created production deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh` at `https://renderlab-6r28s40a8-faresmohamed260-6733s-projects.vercel.app`. It reached `READY`; deployment metadata reports exact Git SHA `b6deedad8a229b34828da0c3760b62fa147c1981`, Next.js project framework and CLI production source. The Vercel build ran the repository prebuild environment-contract verifier successfully.
+
+Because the project production alias does not reliably move `renderlab.faresuniform.uk`, the rollout explicitly ran `vercel alias set` for the custom domain after the deployment completed. Root, `/create`, `/library`, `/activity` and `/settings` then passed custom-domain smoke. The rollback step was armed to restore the custom-domain alias to prior accepted deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991` on post-deploy failure, but it was skipped because smoke passed. The temporary rollout branch self-deleted.
+
+A post-cutover Vercel runtime-error query found no runtime-error clusters in the rollout window. No Supabase schema/migration/RLS/Auth configuration, R2 resource/CORS contract, worker/provider/routing, scheduler, `pg_cron` or `pg_net` mutation accompanied this rollout. Repository `vercel.json` continues to disable automatic Git deployment; future production mutations remain explicit operations.

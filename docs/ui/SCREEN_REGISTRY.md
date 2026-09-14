@@ -14,6 +14,9 @@ Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextua
 
 Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051. The public **Brand / Landing** remains `/` and the authoritative Create workspace remains `/create`; UI-052 established that route boundary in PR #73, while the current approved four-section Lab Matrix Landing redesign is merged through PR #174 / `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.
 
+## Current production application — 2026-09-14
+The completed Phase 23–29 UI/UX redesign is production-live from exact repository source `b6deedad8a229b34828da0c3760b62fa147c1981` at READY Vercel deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh`. Guarded rollout `34795391075` explicitly assigned `renderlab.faresuniform.uk` and passed root plus `/create`, `/library`, `/activity` and `/settings` smoke; the prior Landing deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991` remains the immediate known-good alias restoration target and was not needed. Current production therefore includes UI-074 shell, UI-075 Library, UI-076 Viewer, UI-077 Activity, UI-078 Settings, UI-079 Admin and UI-080 cohesion verification. Historical per-screen statements below that say a redesign was not yet deployed describe the state at that phase's closure and are superseded by this current production record. Automatic Git → Vercel deployment remains disabled.
+
 ## Application Shell
 **Status:** APPROVED  
 **Implementation:** `src/components/shell/app-shell.tsx`
