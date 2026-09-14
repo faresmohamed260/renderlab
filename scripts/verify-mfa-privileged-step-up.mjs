@@ -14,6 +14,8 @@ const runSuffix = `${Date.now()}-${randomBytes(4).toString("hex")}`;
 const email = `renderlab-ci-mfa-${runSuffix}@example.com`;
 const password = `RenderLab-MFA-${runSuffix}-Strong!`;
 const replacementPassword = `${password}-replacement`;
+const operatorRecoveryPassword = `RenderLab-Recovery-${randomBytes(32).toString("base64url")}!Aa1`;
+const staleProbePassword = `RenderLab-Stale-${randomBytes(24).toString("base64url")}!Aa1`;
 let fixtureUserId = null;
 
 const service = createClient(supabaseUrl, serviceRoleKey, {
@@ -95,6 +97,18 @@ async function expectAdminMfaRequired(label) {
   const { response, body } = await fetchAdminHealth();
   assert(response.status === 403, `${label}: expected HTTP 403, got ${response.status}`);
   assert(body?.error?.code === "admin_mfa_required", `${label}: expected admin_mfa_required, got ${body?.error?.code}`);
+}
+
+async function updatePasswordWithBearer(token, nextPassword) {
+  return fetch(`${supabaseUrl}/auth/v1/user`, {
+    method: "PUT",
+    headers: {
+      apikey: publishableKey,
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ password: nextPassword }),
+  });
 }
 
 async function verifyFactor(factorId, secret) {
@@ -188,6 +202,18 @@ async function main() {
     currentFactorId = replacement.id;
     await expectAal("aal2", "aal2", "before operator reset");
 
+    const preResetToken = await currentAccessToken();
+    const frozen = await service.auth.admin.updateUserById(fixtureUserId, {
+      password: operatorRecoveryPassword,
+      ban_duration: "1h",
+    });
+    if (frozen.error) throw frozen.error;
+    console.log("OPERATOR_MFA_ACCOUNT_FROZEN_AND_PASSWORD_ROTATED=success");
+
+    const staleWhileFrozen = await updatePasswordWithBearer(preResetToken, staleProbePassword);
+    assert(!staleWhileFrozen.ok, `Pre-reset AAL2 bearer remained usable while recovery freeze was active (HTTP ${staleWhileFrozen.status}).`);
+    console.log(`OPERATOR_MFA_STALE_BEARER_WHILE_FROZEN=${staleWhileFrozen.status}`);
+
     const listed = await service.auth.admin.mfa.listFactors({ userId: fixtureUserId });
     if (listed.error) throw listed.error;
     assert(listed.data.factors.length === 1, `Operator factor listing expected one factor, got ${listed.data.factors.length}.`);
@@ -195,37 +221,57 @@ async function main() {
     assert(operatorFactor.id === currentFactorId, "Operator factor listing did not return the exact verified fixture factor.");
     assert(operatorFactor.status === "verified", `Operator factor listing expected verified status, got ${operatorFactor.status}.`);
 
-    const preResetToken = await currentAccessToken();
     const deletedFactor = await service.auth.admin.mfa.deleteFactor({ userId: fixtureUserId, id: currentFactorId });
     if (deletedFactor.error) throw deletedFactor.error;
     currentFactorId = null;
     console.log("OPERATOR_MFA_ADMIN_FACTOR_DELETE=success");
 
-    const postResetPasswordUpdate = await user.auth.updateUser({ password: replacementPassword });
-    if (postResetPasswordUpdate.error) {
-      console.log(`POST_OPERATOR_RESET_STALE_AAL2_PASSWORD_UPDATE=rejected (${postResetPasswordUpdate.error.message})`);
-    } else {
-      console.log("POST_OPERATOR_RESET_STALE_AAL2_PASSWORD_UPDATE=accepted");
-      const restored = await service.auth.admin.updateUserById(fixtureUserId, { password });
-      if (restored.error) throw restored.error;
-    }
-
-    const revoked = await fetchAdminHealthWithToken(preResetToken);
-    assert(revoked.response.status === 403, `Operator factor reset must immediately remove RenderLab Admin authorization; got HTTP ${revoked.response.status}.`);
-    console.log(`OPERATOR_MFA_RESET_OLD_ADMIN_STATUS=${revoked.response.status}`);
-
-    await user.auth.signOut({ scope: "local" }).catch(() => undefined);
-    const signedAfterReset = await user.auth.signInWithPassword({ email, password });
-    if (signedAfterReset.error) throw signedAfterReset.error;
-    await expectAal("aal1", "aal1", "after operator reset sign-in");
-    await expectAdminMfaRequired("Admin after operator reset before re-enrollment");
-
+    const staleAdminAfterDelete = await fetchAdminHealthWithToken(preResetToken);
     assert(
-      postResetPasswordUpdate.error,
-      "A still-unexpired AAL2 token remained able to replace the password after operator MFA reset.",
+      staleAdminAfterDelete.response.status === 403,
+      `Operator factor reset must immediately remove RenderLab Admin authorization; got HTTP ${staleAdminAfterDelete.response.status}.`,
+    );
+    console.log(`OPERATOR_MFA_RESET_OLD_ADMIN_STATUS=${staleAdminAfterDelete.response.status}`);
+
+    const unfrozen = await service.auth.admin.updateUserById(fixtureUserId, { ban_duration: "none" });
+    if (unfrozen.error) throw unfrozen.error;
+    console.log("OPERATOR_MFA_ACCOUNT_UNFROZEN=success");
+
+    const staleAfterUnfreeze = await updatePasswordWithBearer(preResetToken, staleProbePassword);
+    assert(!staleAfterUnfreeze.ok, `Pre-reset AAL2 bearer became usable after recovery unfreeze (HTTP ${staleAfterUnfreeze.status}).`);
+    console.log(`OPERATOR_MFA_STALE_BEARER_AFTER_UNFREEZE=${staleAfterUnfreeze.status}`);
+
+    const staleAdminAfterUnfreeze = await fetchAdminHealthWithToken(preResetToken);
+    assert(
+      staleAdminAfterUnfreeze.response.status === 403,
+      `Pre-reset AAL2 bearer regained RenderLab Admin authorization after unfreeze; got HTTP ${staleAdminAfterUnfreeze.response.status}.`,
     );
 
-    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, password AAL2 enforcement, live-factor Admin authorization, removal gap, and supported operator-assisted factor reset verified.");
+    await user.auth.signOut({ scope: "local" }).catch(() => undefined);
+    const oldPasswordSignIn = await user.auth.signInWithPassword({ email, password });
+    assert(oldPasswordSignIn.error, "Original password remained valid after operator recovery rotation.");
+    console.log("OPERATOR_MFA_OLD_PASSWORD_REJECTED=true");
+
+    const recoverySignIn = await user.auth.signInWithPassword({ email, password: operatorRecoveryPassword });
+    if (recoverySignIn.error) throw recoverySignIn.error;
+    await expectAal("aal1", "aal1", "after operator recovery sign-in");
+    const postResetFactors = await user.auth.mfa.listFactors();
+    if (postResetFactors.error) throw postResetFactors.error;
+    assert(postResetFactors.data.totp.length === 0, "Operator recovery left a TOTP factor enrolled.");
+    await expectAdminMfaRequired("Admin after operator reset before re-enrollment");
+    console.log("OPERATOR_MFA_POST_RESET_AAL1_NO_FACTOR=true");
+
+    const recoveredFactor = await enrollAndVerify("RenderLab CI post-recovery authenticator");
+    currentFactorId = recoveredFactor.id;
+    await expectAal("aal2", "aal2", "after operator recovery re-enrollment");
+    const recoveredAdmin = await fetchAdminHealth();
+    assert(
+      recoveredAdmin.response.ok && recoveredAdmin.body?.ok === true,
+      `Admin should return only after post-recovery TOTP reaches AAL2; got ${recoveredAdmin.response.status}.`,
+    );
+    console.log("OPERATOR_MFA_ADMIN_RESTORED_AFTER_REENROLLMENT=true");
+
+    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, password AAL2 enforcement, live-factor Admin authorization, replacement gap, and freeze/rotation/delete/unfreeze operator recovery verified.");
   } finally {
     await user.auth.signOut({ scope: "local" }).catch(() => undefined);
     if (fixtureUserId) {
