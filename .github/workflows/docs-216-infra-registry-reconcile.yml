@@ -1,0 +1,53 @@
+name: Reconcile #216 infrastructure registry
+
+on:
+  push:
+    branches:
+      - docs/216-session-controls-closure
+    paths:
+      - ".github/workflows/docs-216-infra-registry-reconcile.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/216-session-controls-closure
+          fetch-depth: 0
+
+      - name: Reconcile applied migration registry
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("docs/architecture/INFRASTRUCTURE.md")
+          text = path.read_text()
+          anchor = "- `0015_generation_admission_external_bind.sql` — applied as `20260903093654 renderlab_generation_admission_external_bind`; corrective additive migration preserving 0014 terminal-local settlement while restoring the established conservative bind for accepted external backend job UUIDs that intentionally have no local `generation_jobs` row.\n- `0019_renderlab_auth_session_projection.sql`"
+          replacement = """- `0015_generation_admission_external_bind.sql` — applied as `20260903093654 renderlab_generation_admission_external_bind`; corrective additive migration preserving 0014 terminal-local settlement while restoring the established conservative bind for accepted external backend job UUIDs that intentionally have no local `generation_jobs` row.
+- `0016_generation_cancellation.sql` — applied as `20260905015926 renderlab_generation_cancellation`; adds the active `cancelling` generation lifecycle state and includes it in the existing serialized reconciliation claim/index so cancellation cannot race provider polling, failover, or durable finalization independently.
+- `0017_staging_cleanup_claims.sql` — applied as `20260905020803 renderlab_staging_cleanup_claims`; adds internal `cleaning` states plus service-role-only, empty-search-path claim/reference/restore routines for race-safe bounded cleanup of temporary generation sources and unpromoted upload staging without deleting referenced durable state.
+- `0018_image_upscale_job_semantics.sql` — applied as `20260906004810 renderlab_image_upscale_job_semantics`; adds `upscale-image` as a first-class generation operation and makes only that operation promptless while preserving the nonblank-prompt invariant for create/edit/video/animate jobs.
+- `0019_renderlab_auth_session_projection.sql`"""
+          if anchor not in text:
+              raise SystemExit("Infrastructure migration registry anchor not found")
+          text = text.replace(anchor, replacement, 1)
+
+          old = "Do not reapply migrations 0003, 0004, 0005, 0006, 0007, 0008, 0009, 0010, 0011 or 0012."
+          new = "Do not reapply migrations 0003 through 0019; all are recorded above as applied to the approved shared project."
+          if old not in text:
+              raise SystemExit("Do-not-reapply anchor not found")
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+
+      - name: Commit infrastructure registry reconciliation
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/architecture/INFRASTRUCTURE.md
+          git commit -m "docs: reconcile applied migration registry through 0019"
+          git push origin HEAD:docs/216-session-controls-closure
