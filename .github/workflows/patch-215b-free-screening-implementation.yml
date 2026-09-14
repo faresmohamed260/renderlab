@@ -49,3 +49,5 @@ jobs:
           git add src/features/account/account-password-form.tsx scripts/verify-account-identity.mjs scripts/patch-215b-free-screening-implementation.py .github/workflows/patch-215b-free-screening-implementation.yml
           git commit -m "feat: enforce free compromised password screening"
           git push origin HEAD:work/215b-free-compromised-password-screening
+
+# Validation retry after correcting live HIBP padding semantics.
