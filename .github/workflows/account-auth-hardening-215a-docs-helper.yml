@@ -1,0 +1,91 @@
+name: Account Auth Hardening 215A Docs Helper
+
+on:
+  push:
+    branches:
+      - docs/account-auth-hardening-215a-repo-closure
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/account-auth-hardening-215a-repo-closure
+          fetch-depth: 0
+
+      - name: Patch authoritative #215 status
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one occurrence, found {count}: {old!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          project_marker = "Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.\n"
+          project_section = project_marker + """
+
+## Account & Settings capability program — active work
+- Workstream #215 is the immediate P0 account/security slice under `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` and `docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md`.
+- The #215 contract merged as `85cdd59909a3b48bd4a043ed9d984064497215fb`. Repository-side #215A policy synchronization then merged through PR #243 as `8ea859df84f5173267defbf3e278a95bba403014`.
+- The repository now has one canonical 15-character password-creation/replacement policy. Sign-in intentionally has no client minimum-length gate so existing credentials reach authoritative Supabase Auth instead of being rejected by browser presentation logic.
+- Exact PR-head workflows all passed: Engineering `34821671241`, Brand/Launch `34821671275`, UI Shell `34821671336`, Integrated Release `34821671515`, and Account Identity `34821671246` unchanged attempt 2. Account Identity attempt 1 failed only on a transient Supabase 504 during stale invitation cleanup before UI assertions. The successful run uploaded artifact `10338159764` (`sha256:9bf0f467dc01f570f2a3b755f40ebd377c6869219eb410ec43473ce8586c6b45`).
+- Both workflows GitHub attached to merged `main` passed: Engineering `34822037091` and UI Shell `34822037092`.
+- This repository-side work is **not deployed**. Production remains the completed UI redesign source `b6deedad8a229b34828da0c3760b62fa147c1981` / READY deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh` until hosted Auth policy and repository policy are explicitly coordinated and a separate deployment is authorized.
+- Hosted Supabase Auth configuration has not been mutated. Remaining #215A work is the separately authorized configuration/audit stage: capture redacted current Auth config, coordinate the hosted 15-character policy, verify Site URL/redirects/templates/security notifications/rate limits, evaluate CAPTCHA, and rerun acceptance. Leaked-password protection remains the #215B plan-gated blocker because the current Supabase organization is on Free and the feature is Pro+.
+"""
+          replace_once("PROJECT.md", project_marker, project_section)
+
+          replace_once(
+              "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
+              "**Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION PENDING  \n**Tracker:** #213  \n",
+              "**Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE  \n**Current execution:** #215A repository-side password-policy synchronization merged/verified as `8ea859df84f5173267defbf3e278a95bba403014`; hosted Auth execution remains separately pending and #215B leaked-password protection remains plan-gated.  \n**Tracker:** #213  \n",
+          )
+
+          replace_once(
+              "docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md",
+              "**Status:** EXECUTION CONTRACT / HOSTED CONFIG MUTATION NOT YET AUTHORIZED  \n",
+              "**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / HOSTED CONFIG MUTATION PENDING AUTHORIZATION / NOT DEPLOYED  \n",
+          )
+
+          contract_marker = "No hosted Supabase Auth setting is changed by this contract. Hosted configuration changes remain an explicit operator/configuration operation and require separate authorization after this contract is merged.\n"
+          contract_record = contract_marker + """
+
+### Repository-side execution record — 2026-09-14
+
+- Contract merge: `85cdd59909a3b48bd4a043ed9d984064497215fb`.
+- Implementation PR #243 exact head: `3cd08fbb3b6256ae5a087bdb91715a67cb1cb8e8`.
+- Exact-head workflows: Engineering `34821671241`, Brand/Launch `34821671275`, UI Shell `34821671336`, Integrated Release `34821671515`, Account Identity `34821671246` — all passed; Account Identity required an unchanged retry after attempt 1 hit a transient Supabase 504 during preflight invitation cleanup.
+- Account Identity artifact: `10338159764`, `sha256:9bf0f467dc01f570f2a3b755f40ebd377c6869219eb410ec43473ce8586c6b45`.
+- Implementation merge: `8ea859df84f5173267defbf3e278a95bba403014`.
+- Merged-main attached workflows: Engineering `34822037091`, UI Shell `34822037092` — both passed.
+- No hosted Auth configuration or production deployment changed. The merged code must remain undeployed until Stage 2 hosted policy/config execution is explicitly authorized and coordinated.
+"""
+          replace_once("docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md", contract_marker, contract_record)
+          PY
+
+          git diff --check
+          grep -F '8ea859df84f5173267defbf3e278a95bba403014' PROJECT.md >/dev/null
+          grep -F 'IMPLEMENTATION ACTIVE' docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md >/dev/null
+          grep -F 'HOSTED CONFIG MUTATION PENDING AUTHORIZATION / NOT DEPLOYED' docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md >/dev/null
+
+      - name: Commit docs and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/account-auth-hardening-215a-docs-helper.yml
+          git add PROJECT.md docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: record #215A repository-side closure"
+          git push origin HEAD:docs/account-auth-hardening-215a-repo-closure
