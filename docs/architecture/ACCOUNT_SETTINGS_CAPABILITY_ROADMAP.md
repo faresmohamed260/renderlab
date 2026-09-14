@@ -1,7 +1,7 @@
 # Account & Settings Capability Roadmap
 
 **Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE
-**Current execution:** #215A current-plan hardening is complete and verified: repository policy merged as `8ea859df84f5173267defbf3e278a95bba403014`, hosted Auth minimum is 15, security notifications/templates are branded, configured acceptance passed, and #215B leaked-password protection remains the explicit Supabase Pro+ plan gate. Repository policy presentation is not yet deployed.
+**Current execution:** #215A current-plan hardening is complete, verified and production-live: repository policy merged as `8ea859df84f5173267defbf3e278a95bba403014`, hosted Auth minimum is 15, security notifications/templates are branded, configured acceptance passed, and exact application source `27eda7ed0a619435b9d89531bdeb3fffe772e803` is live as Vercel deployment `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7`. #215B leaked-password protection remains the explicit Supabase Pro+ plan gate.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
