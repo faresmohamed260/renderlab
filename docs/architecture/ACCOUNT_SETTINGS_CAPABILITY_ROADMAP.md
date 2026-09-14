@@ -1,7 +1,7 @@
 # Account & Settings Capability Roadmap
 
 **Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE
-**Current execution:** #215A repository-side password-policy synchronization merged/verified as `8ea859df84f5173267defbf3e278a95bba403014`; hosted Auth execution remains separately pending and #215B leaked-password protection remains plan-gated.
+**Current execution:** #215A current-plan hardening is complete and verified: repository policy merged as `8ea859df84f5173267defbf3e278a95bba403014`, hosted Auth minimum is 15, security notifications/templates are branded, configured acceptance passed, and #215B leaked-password protection remains the explicit Supabase Pro+ plan gate. Repository policy presentation is not yet deployed.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
@@ -80,7 +80,7 @@ The repository's Phase 10D audit established that:
 - leaked-password protection remained disabled and was recorded as a broader-beta blocker;
 - hosted Auth configuration changes require explicit operator authorization and are not ordinary application-code changes.
 
-A fresh Security Advisor read on 2026-09-13 still reports **Leaked Password Protection Disabled**. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables.
+A fresh Security Advisor read after #215A hosted execution on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The current organization remains on Free, so the warning is the explicit #215B Pro+ plan gate rather than unfinished #215A work.
 
 ## 5. Current Supabase capability facts
 

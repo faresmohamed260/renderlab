@@ -3,7 +3,7 @@
 **Tracker:** #215  
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `adfb9153003a6e1c86015bbd56c40b1e329788ce`  
-**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A MERGED + MERGED-MAIN VERIFIED / HOSTED PREFLIGHT VERIFIED / HOSTED MUTATION NOT EXECUTED / NOT DEPLOYED
+**Status:** #215A CURRENT-PLAN HARDENING COMPLETE + VERIFIED / #215B PLAN-GATED / APPLICATION POLICY CODE NOT YET DEPLOYED
 **Scope:** remaining hosted Supabase Auth policy/security hardening plus the minimum application-policy synchronization required to keep RenderLab truthful  
 **Out of scope:** Settings redesign, profile/MFA/session-management feature implementation, schema/RLS/storage/provider/worker changes, production deployment
 
@@ -24,7 +24,8 @@ No hosted Supabase Auth setting is changed by this contract. Hosted configuratio
 - Account Identity artifact: `10338159764`, `sha256:9bf0f467dc01f570f2a3b755f40ebd377c6869219eb410ec43473ce8586c6b45`.
 - Implementation merge: `8ea859df84f5173267defbf3e278a95bba403014`.
 - Merged-main attached workflows: Engineering `34822037091`, UI Shell `34822037092` — both passed.
-- No hosted Auth configuration or production deployment changed. The merged code must remain undeployed until Stage 2 hosted policy/config execution is explicitly authorized and coordinated.
+- Repository policy code remains **not deployed**. Production application source is still the Phase 23–29 redesign deployment until a separate application deployment is authorized.
+- Hosted #215A configuration was subsequently executed and verified under the Stage 2 record below.
 
 ## 2. Verified current baseline
 
@@ -123,7 +124,37 @@ Execution decisions from this preflight:
 - the authorized hosted delta remains the 15-character minimum, branded reauthentication/email-change templates and the six scoped security notifications;
 - #215B remains plan-gated and no Supabase billing/plan change is authorized by #215A.
 
-A guarded patch definition and rollback-capable execution script were prepared on temporary ops branch `ops/account-auth-hardening-215a-hosted-preflight`, but the current GitHub connector refused creation of a new workflow binding the repository's high-privilege service-role secret to that script. That control was not bypassed. Because the contract requires an owned existing below-new-policy user fixture before raising the hosted minimum, **no hosted Auth mutation occurred** and #215A is not implementation-complete.
+### Stage 2 hosted execution — completed and verified 2026-09-14
+
+The first attempt to create a new high-privilege workflow was correctly rejected by the GitHub connector. Execution therefore reused only **existing trusted secret bindings** already established by RenderLab: Account Identity for `SUPABASE_SERVICE_ROLE_KEY`, and the historical Phase 13B Management API workflow for `SUPABASE_ACCESS_TOKEN`. No new repository secret binding was introduced.
+
+Verified execution evidence:
+
+- owned legacy-password fixture preparation: Account Identity run `34844165287`, job `103975951408`; a deterministic owned fixture with a runtime-derived **12-character** password signed in successfully before the hosted policy change, without logging the password;
+- hosted password transition: Phase 13B Management API run `34844260270`, job `103976259966`; guarded read/write/readback changed only `password_min_length` from `6` to `15`, retained no required character classes and preserved Site URL, redirect allowlist and Resend SMTP;
+- legacy compatibility after strengthening: Account Identity run `34844349294`, job `103976544838`; the same existing 12-character fixture still signed in after the hosted minimum became 15, proving existing credentials were not locked out by the policy increase;
+- hosted security-mail mutation: Phase 13B Management API run `34844522493`, job `103977111129`; all six contracted security notifications were enabled, reauthentication and future email-change templates were branded, and readback proved URLs, Resend SMTP, password policy, CAPTCHA state, rate limits, invite/recovery templates, secure-email-change mode and hosted password-change reauthentication flags did not drift;
+- rollback artifact: `10347711381`, `sha256:c4d7b56726467df807b20096325ecd47fd511811dd81d527336d0ec50d50935d`, containing only the bounded pre-change non-secret values for the security-mail delta;
+- real password-change security-email delivery: Phase 13D run `34844954211`, job `103978532280`; one approved Gmail test fixture changed its password through Auth, the `Your RenderLab password was changed` message reached Resend `delivered`, RenderLab branding/privacy checks passed and the fixture was deleted;
+- configured Account Identity after hosted mutation: existing run `34821671246` attempt 4, job `103978254613`, passed the full suite unchanged. Attempt 3 failed only on the known shared-project transient `504 Gateway Timeout` while deleting stale admission reservations before any product/Auth assertion; cleanup succeeded and the unchanged retry passed;
+- fresh Account Identity artifact after hosted mutation: `10347217183`, `sha256:69c61dd88fce6154766210d56748b4faaca8d1506ddc9af722de83e6fbfbb1ce`;
+- Security Advisor after mutation contained no new findings: the only warning remained `auth_leaked_password_protection`, plus the expected `rls_enabled_no_policy` informational notices for intentionally server-owned tables;
+- owned legacy fixture cleanup: run `34845048297`, job `103978842910`, emitted `RENDERLAB_215A_LEGACY_FIXTURE_CLEAN=true`; temporary PR #246 was closed unmerged.
+
+Final current-plan hosted state:
+
+- password minimum `15`;
+- required-character policy none;
+- six contracted security notifications enabled and RenderLab-branded;
+- reauthentication and future email-change templates RenderLab-branded;
+- production Site URL and redirect allowlist unchanged;
+- Resend SMTP plus Phase 13 invite/recovery templates unchanged;
+- Auth rate limits unchanged;
+- CAPTCHA remains disabled/evaluated-deferred;
+- hosted current-password and nonce-reauthentication toggles remain disabled, preserving RenderLab's app-owned current-password verification contract;
+- leaked-password protection remains disabled solely as the explicit #215B **Supabase Pro+ plan gate**.
+
+#215A is therefore **implementation-complete and verified for the current Free plan**. #215 remains open only for the separately authorized #215B plan/billing decision and leaked-password-protection closure. The repository-side 15-character application guidance is merged but still requires a separately authorized production application deployment before hosted policy and production presentation are fully synchronized.
 
 ## 3. Binding product/security decisions
 
