@@ -28,45 +28,104 @@ jobs:
           test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "::error::SUPABASE_ACCESS_TOKEN is not configured."; exit 1; }
           echo "SUPABASE_ACCESS_TOKEN_PRESENT=true"
 
-      - name: Audit hosted MFA configuration without mutation
+      - name: Apply guarded MFA factor-cap transition
         shell: bash
         run: |
           set -euo pipefail
-          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
-          curl --fail-with-body --silent --show-error \
-            --user-agent 'RenderLab-217-MFAConfigAudit/1.0' \
-            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
-            "$endpoint" -o /tmp/auth-config.json
-
+          mkdir -p artifacts
           python - <<'PY'
-          import json, os
+          import json
+          import os
+          import urllib.request
           from pathlib import Path
 
-          d = json.loads(Path('/tmp/auth-config.json').read_text())
-          if d.get('site_url') != os.environ['SITE_URL']:
-              raise SystemExit('Unexpected Site URL')
-          allow = [x.strip() for x in str(d.get('uri_allow_list') or '').split(',') if x.strip()]
+          endpoint = f"https://api.supabase.com/v1/projects/{os.environ['SUPABASE_PROJECT_REF']}/config/auth"
+          token = os.environ['SUPABASE_ACCESS_TOKEN']
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Content-Type': 'application/json',
+              'User-Agent': 'RenderLab-217-MFAFactorCap/1.0',
+          }
+
+          def request(method='GET', body=None):
+              data = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request(endpoint, data=data, headers=headers, method=method)
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  text = response.read().decode()
+              return json.loads(text) if text else {}
+
+          before = request()
+          if before.get('site_url') != os.environ['SITE_URL']:
+              raise SystemExit('Unexpected Site URL; refusing mutation')
+          allow = [x.strip() for x in str(before.get('uri_allow_list') or '').split(',') if x.strip()]
           for required in (os.environ['INVITE_REDIRECT'], os.environ['RECOVERY_REDIRECT']):
               if required not in allow:
-                  raise SystemExit('Required redirect missing')
-          if d.get('smtp_host') != 'smtp.resend.com':
-              raise SystemExit('Unexpected SMTP host')
-          if int(d.get('password_min_length') or -1) != 15:
-              raise SystemExit('Hosted password minimum drifted')
-          if d.get('password_required_characters') not in (None, ''):
-              raise SystemExit('Hosted required-character policy drifted')
-          if d.get('mailer_notifications_mfa_factor_enrolled_enabled') is not True:
-              raise SystemExit('MFA enrollment security notification is not enabled')
-          if d.get('mailer_notifications_mfa_factor_unenrolled_enabled') is not True:
-              raise SystemExit('MFA removal security notification is not enabled')
+                  raise SystemExit('Required redirect missing; refusing mutation')
+          if before.get('smtp_host') != 'smtp.resend.com':
+              raise SystemExit('Unexpected SMTP host; refusing mutation')
+          if int(before.get('password_min_length') or -1) != 15:
+              raise SystemExit('Hosted password minimum drifted; refusing mutation')
+          if before.get('password_required_characters') not in (None, ''):
+              raise SystemExit('Hosted required-character policy drifted; refusing mutation')
+          if before.get('mfa_totp_enroll_enabled') is not True or before.get('mfa_totp_verify_enabled') is not True:
+              raise SystemExit('TOTP hosted state drifted; refusing mutation')
+          if before.get('mailer_notifications_mfa_factor_enrolled_enabled') is not True:
+              raise SystemExit('MFA enrollment notification is not enabled')
+          if before.get('mailer_notifications_mfa_factor_unenrolled_enabled') is not True:
+              raise SystemExit('MFA removal notification is not enabled')
+          if int(before.get('mfa_max_enrolled_factors') or -1) != 10:
+              raise SystemExit(f"Expected MFA factor cap 10 before transition, got {before.get('mfa_max_enrolled_factors')!r}")
 
-          value = d.get('mfa_max_enrolled_factors')
-          if not isinstance(value, int):
-              raise SystemExit(f'Hosted Auth did not expose integer mfa_max_enrolled_factors: {value!r}')
+          patch = {'mfa_max_enrolled_factors': 1}
+          rollback = {'mfa_max_enrolled_factors': 10}
+          Path('artifacts/renderlab-217-mfa-factor-cap-rollback.json').write_text(
+              json.dumps(rollback, indent=2, sort_keys=True) + '\n'
+          )
 
-          print(f'RENDERLAB_217_MFA_MAX_ENROLLED_FACTORS={value}')
-          print(f'RENDERLAB_217_MFA_TOTP_ENROLL_ENABLED={str(d.get("mfa_totp_enroll_enabled")).lower()}')
-          print(f'RENDERLAB_217_MFA_TOTP_VERIFY_ENABLED={str(d.get("mfa_totp_verify_enabled")).lower()}')
-          print('RENDERLAB_217_MFA_SECURITY_NOTIFICATIONS_ENABLED=true')
-          print('RENDERLAB_217_HOSTED_AUTH_BASELINE_OK=true')
+          unchanged = [
+              'site_url', 'uri_allow_list',
+              'smtp_admin_email', 'smtp_host', 'smtp_port', 'smtp_sender_name', 'smtp_max_frequency',
+              'password_min_length', 'password_required_characters', 'password_hibp_enabled',
+              'security_captcha_enabled', 'security_captcha_provider',
+              'security_update_password_require_current_password', 'security_update_password_require_reauthentication',
+              'mailer_secure_email_change_enabled',
+              'rate_limit_anonymous_users', 'rate_limit_email_sent', 'rate_limit_otp', 'rate_limit_sms_sent',
+              'rate_limit_token_refresh', 'rate_limit_verify', 'rate_limit_web3',
+              'mailer_subjects_invite', 'mailer_templates_invite_content',
+              'mailer_subjects_recovery', 'mailer_templates_recovery_content',
+              'mfa_totp_enroll_enabled', 'mfa_totp_verify_enabled',
+              'mailer_notifications_mfa_factor_enrolled_enabled',
+              'mailer_notifications_mfa_factor_unenrolled_enabled',
+          ]
+
+          mutated = False
+          try:
+              request('PATCH', patch)
+              mutated = True
+              after = request()
+              if int(after.get('mfa_max_enrolled_factors') or -1) != 1:
+                  raise RuntimeError('Hosted MFA factor cap did not read back as 1')
+              for key in unchanged:
+                  if after.get(key) != before.get(key):
+                      raise RuntimeError(f'Out-of-scope hosted config changed: {key}')
+              print('RENDERLAB_217_MFA_MAX_ENROLLED_FACTORS_BEFORE=10')
+              print('RENDERLAB_217_MFA_MAX_ENROLLED_FACTORS_AFTER=1')
+              print('RENDERLAB_217_MFA_FACTOR_CAP_READBACK_OK=true')
+              print('RENDERLAB_217_OUT_OF_SCOPE_CONFIG_PRESERVED=true')
+          except Exception:
+              if mutated:
+                  try:
+                      request('PATCH', rollback)
+                      print('RENDERLAB_217_MFA_FACTOR_CAP_ROLLBACK_ATTEMPTED=true')
+                  except Exception:
+                      print('RENDERLAB_217_MFA_FACTOR_CAP_ROLLBACK_FAILED=true')
+              raise
           PY
+
+      - name: Upload bounded rollback value
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-217-mfa-factor-cap-rollback
+          path: artifacts/renderlab-217-mfa-factor-cap-rollback.json
+          if-no-files-found: error
+          retention-days: 14
