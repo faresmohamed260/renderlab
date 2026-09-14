@@ -1,0 +1,37 @@
+name: Fix 215A Production Contract Helper
+
+on:
+  push:
+    branches:
+      - docs/account-auth-hardening-215a-production-rollout
+    paths:
+      - ".github/workflows/fix-215a-production-contract-helper.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Reconcile final contract sentence
+        run: node scripts/fix-215a-production-contract.mjs
+
+      - name: Validate and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          rm scripts/fix-215a-production-contract.mjs
+          rm .github/workflows/fix-215a-production-contract-helper.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md scripts/fix-215a-production-contract.mjs .github/workflows/fix-215a-production-contract-helper.yml
+          git diff --cached --check
+          git commit -m "docs: reconcile #215A production contract"
+          git push origin HEAD:docs/account-auth-hardening-215a-production-rollout
