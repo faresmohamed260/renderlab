@@ -1,0 +1,51 @@
+name: Patch 215B Free Screening Implementation
+
+on:
+  push:
+    branches:
+      - work/215b-free-compromised-password-screening
+    paths:
+      - scripts/patch-215b-free-screening-implementation.py
+      - .github/workflows/patch-215b-free-screening-implementation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/215b-free-compromised-password-screening
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Patch implementation and verifier
+        run: python scripts/patch-215b-free-screening-implementation.py
+      - name: Remove temporary helpers
+        run: |
+          rm scripts/patch-215b-free-screening-implementation.py
+          rm .github/workflows/patch-215b-free-screening-implementation.yml
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate implementation
+        run: |
+          set -euo pipefail
+          npm run lint
+          npm run typecheck
+          npm run test:unit
+          node scripts/verify-pwned-passwords-reachability.mjs
+          git diff --check
+      - name: Commit implementation
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/features/account/account-password-form.tsx scripts/verify-account-identity.mjs scripts/patch-215b-free-screening-implementation.py .github/workflows/patch-215b-free-screening-implementation.yml
+          git commit -m "feat: enforce free compromised password screening"
+          git push origin HEAD:work/215b-free-compromised-password-screening
