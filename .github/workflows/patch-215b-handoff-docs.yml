@@ -1,0 +1,38 @@
+name: Patch 215B Handoff Docs
+
+on:
+  push:
+    branches:
+      - docs/215b-handoff-closure
+    paths:
+      - scripts/patch-215b-handoff-docs.py
+      - .github/workflows/patch-215b-handoff-docs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/215b-handoff-closure
+          fetch-depth: 1
+      - name: Patch docs
+        run: python scripts/patch-215b-handoff-docs.py
+      - name: Remove temporary helpers
+        run: |
+          rm scripts/patch-215b-handoff-docs.py
+          rm .github/workflows/patch-215b-handoff-docs.yml
+      - name: Validate and commit
+        run: |
+          set -euo pipefail
+          git diff --check
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md docs/architecture/INFRASTRUCTURE.md scripts/patch-215b-handoff-docs.py .github/workflows/patch-215b-handoff-docs.yml
+          git commit -m "docs: record #215B verified handoff state"
+          git push origin HEAD:docs/215b-handoff-closure
