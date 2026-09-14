@@ -1,5 +1,6 @@
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -8,7 +9,7 @@ const runToken = process.env.GITHUB_RUN_ID || "local";
 const accountScope = process.env.RENDERLAB_TEST_ACCOUNT_SCOPE || runToken;
 const accountScopeToken = createHash("sha256").update(accountScope).digest("hex").slice(0, 12);
 const bypassGenerationAdmission = process.env.RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS === "true";
-
+const mfaNamespace = process.env.RENDERLAB_TEST_MFA_NAMESPACE?.trim() || "";
 
 function fixtureUuid(namespace) {
   const hex = createHash("sha256").update(`renderlab-ci-account-${accountScope}-${namespace}`).digest("hex").slice(0, 32).split("");
@@ -113,6 +114,68 @@ async function cleanupOwnedRenderLabRows(ownerId) {
   }
 }
 
+function decodeBase32(value) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const normalized = value.toUpperCase().replace(/=+$/g, "").replace(/\s+/g, "");
+  let bits = "";
+  for (const character of normalized) {
+    const index = alphabet.indexOf(character);
+    if (index < 0) throw new Error("Unexpected configured-account TOTP secret encoding.");
+    bits += index.toString(2).padStart(5, "0");
+  }
+  const bytes = [];
+  for (let offset = 0; offset + 8 <= bits.length; offset += 8) {
+    bytes.push(Number.parseInt(bits.slice(offset, offset + 8), 2));
+  }
+  return Buffer.from(bytes);
+}
+
+function currentTotp(secret, timeMs = Date.now()) {
+  const counter = BigInt(Math.floor(timeMs / 1000 / 30));
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeBigUInt64BE(counter);
+  const digest = createHmac("sha1", decodeBase32(secret)).update(counterBuffer).digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary =
+    ((digest[offset] & 0x7f) << 24) |
+    ((digest[offset + 1] & 0xff) << 16) |
+    ((digest[offset + 2] & 0xff) << 8) |
+    (digest[offset + 3] & 0xff);
+  return String(binary % 1_000_000).padStart(6, "0");
+}
+
+async function createAal2AccessToken(account, namespace) {
+  const client = createClient(supabaseUrl, publishableKey, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+  });
+  const signedIn = await client.auth.signInWithPassword({ email: account.email, password: account.password });
+  if (signedIn.error) throw signedIn.error;
+
+  const enrollment = await client.auth.mfa.enroll({
+    factorType: "totp",
+    friendlyName: `RenderLab CI ${namespace}`,
+  });
+  if (enrollment.error) throw enrollment.error;
+
+  let verificationError = null;
+  for (const offset of [0, -30_000, 30_000]) {
+    const verified = await client.auth.mfa.challengeAndVerify({
+      factorId: enrollment.data.id,
+      code: currentTotp(enrollment.data.totp.secret, Date.now() + offset),
+    });
+    if (!verified.error) {
+      const session = await client.auth.getSession();
+      if (session.error) throw session.error;
+      const accessToken = session.data.session?.access_token;
+      if (!accessToken) throw new Error("Configured MFA account fixture did not receive an AAL2 access token.");
+      return accessToken;
+    }
+    verificationError = verified.error;
+  }
+
+  throw verificationError ?? new Error("Configured MFA account fixture could not verify TOTP.");
+}
+
 export function configuredTestAccountIdentity(namespace) {
   const id = fixtureUuid(namespace);
   const safeNamespace = namespace.replace(/[^a-z0-9-]+/gi, "-").toLowerCase();
@@ -182,6 +245,11 @@ export async function createConfiguredTestAccount(namespace) {
   });
   if (!accessResponse.ok) {
     throw new Error(`Could not seed configured account access (${accessResponse.status}): ${await accessResponse.text()}`);
+  }
+
+  if (mfaNamespace === namespace) {
+    const accessToken = await createAal2AccessToken(account, namespace);
+    return { ...account, accessToken };
   }
 
   const signInResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
