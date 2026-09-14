@@ -1,13 +1,12 @@
 import { AccountSettings } from "@/features/account/account-settings";
 import styles from "@/features/account/account-settings.module.css";
 import { isSupabaseAuthConfigured } from "@/lib/supabase/config";
-import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
+import { getCurrentRenderLabIdentity, getCurrentRenderLabMfaAssurance } from "@/lib/supabase/server";
 import {
   isRenderLabAccessEnforcementEnabled,
   resolveRenderLabAccountAccess,
   type RenderLabAccountAccess,
 } from "@/server/account/account-access";
-import { getCurrentRenderLabAdmin } from "@/server/admin/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +27,9 @@ function initialFeedback(params: Record<string, string | string[] | undefined>) 
   }
   if (auth === "link_invalid") {
     return { kind: "error" as const, message: "That account link is invalid or has expired." };
+  }
+  if (auth === "signin_required") {
+    return { kind: "error" as const, message: "Sign in to continue with that security action." };
   }
   if (auth === "unavailable") {
     return { kind: "error" as const, message: "Account verification is temporarily unavailable." };
@@ -53,10 +55,15 @@ export default async function SettingsPage({
     }
   }
 
-  const admin = access?.status === "active" && access.role === "admin"
-    ? await getCurrentRenderLabAdmin()
-    : null;
-  const showAdminLink = Boolean(identity && admin?.identity.id === identity.id);
+  const assurance = identity ? await getCurrentRenderLabMfaAssurance() : null;
+  const mfaState = !assurance
+    ? "unavailable"
+    : assurance.nextLevel !== "aal2"
+      ? "disabled"
+      : assurance.currentLevel === "aal2"
+        ? "verified"
+        : "verification-required";
+  const showAdminLink = Boolean(identity && access?.status === "active" && access.role === "admin");
 
   const intro = !configured
     ? "Account access is unavailable in this runtime."
@@ -79,6 +86,7 @@ export default async function SettingsPage({
         enforcementEnabled={isRenderLabAccessEnforcementEnabled()}
         initialFeedback={initialFeedback(params)}
         showAdminLink={showAdminLink}
+        mfaState={mfaState}
       />
     </section>
   );

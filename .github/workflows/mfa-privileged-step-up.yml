@@ -1,0 +1,81 @@
+name: MFA Privileged Step-Up
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/auth/mfa-assurance.ts"
+      - "src/lib/supabase/**"
+      - "src/server/admin/**"
+      - "src/app/api/admin/**"
+      - "src/app/(app)/admin/**"
+      - "src/app/(app)/settings/mfa/**"
+      - "src/app/(app)/settings/password/**"
+      - "src/features/account/account-mfa-*.tsx"
+      - "src/features/account/account-password-form.tsx"
+      - "scripts/verify-mfa-privileged-step-up.mjs"
+      - ".github/workflows/mfa-privileged-step-up.yml"
+      - "docs/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md"
+      - "docs/architecture/MFA_PRIVILEGED_STEP_UP_CONTRACT_AMENDMENT_1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  configured-mfa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Validate required auth fixture secret
+        shell: bash
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is not configured for RenderLab."
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build exact head
+        run: npm run build
+
+      - name: Start configured application
+        shell: bash
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-mfa-next.log 2>&1 &
+          echo $! > /tmp/renderlab-mfa-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/settings > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-mfa-next.log || true
+          exit 1
+
+      - name: Verify configured MFA and privileged step-up
+        run: node scripts/verify-mfa-privileged-step-up.mjs
+
+      - name: Print server log on failure
+        if: failure()
+        run: cat /tmp/renderlab-mfa-next.log || true

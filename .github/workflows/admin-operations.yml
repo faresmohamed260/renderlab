@@ -44,6 +44,7 @@ jobs:
       RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
       RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE: "true"
       RENDERLAB_TEST_MAINTENANCE_OWNER_SCOPE: "true"
+      RENDERLAB_TEST_MFA_NAMESPACE: admin-operations-admin
 
     steps:
       - name: Checkout

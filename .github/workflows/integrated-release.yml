@@ -47,6 +47,7 @@ jobs:
       RENDERLAB_GENERATION_BACKEND_URL: http://127.0.0.1:4312
       RENDERLAB_GENERATION_BACKEND_TOKEN: phase-12-integrated-release
       RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
+      RENDERLAB_TEST_MFA_NAMESPACE: integrated-release-owner
 
     steps:
       - name: Checkout
