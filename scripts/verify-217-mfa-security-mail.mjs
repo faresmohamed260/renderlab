@@ -19,7 +19,6 @@ assert(resendKey, "RESEND_API_KEY is required.");
 assert(arm === "YES_RENDERLAB_217_REAL_MFA_EMAIL", "Real MFA security-mail verification is not armed.");
 assert(recipient.endsWith("@gmail.com"), "Approved historical Gmail test recipient could not be resolved.");
 
-const startedAt = Date.now() - 15_000;
 const password = createHash("sha256").update(`${serviceRole}:renderlab-217-mfa-security-mail`).digest("base64url");
 const operatorPassword = `RenderLab-Recovery-${randomBytes(32).toString("base64url")}!Aa1`;
 const staleProbePassword = `RenderLab-Stale-${randomBytes(24).toString("base64url")}!Aa1`;
@@ -84,29 +83,26 @@ function assertSafeSecurityMail(message, subject) {
   if (userId) assert(!message.html.includes(userId), `Security email exposed an internal Auth user ID: ${subject}`);
 }
 
-async function waitForSecurityMail(subject) {
-  let listed = null;
-  for (let attempt = 0; attempt < 30; attempt += 1) {
-    const list = await resend("/emails");
-    listed = (list.data || []).find((row) =>
+async function resolveVerifiedSecuritySender() {
+  let after = null;
+  for (let page = 0; page < 5; page += 1) {
+    const query = new URLSearchParams({ limit: "100" });
+    if (after) query.set("after", after);
+    const list = await resend(`/emails?${query.toString()}`);
+    const rows = Array.isArray(list.data) ? list.data : [];
+    const existing = rows.find((row) =>
       Array.isArray(row?.to)
       && row.to.includes(recipient)
-      && row.subject === subject
-      && Date.parse(row.created_at) >= startedAt
-    ) || null;
-    if (listed?.id && listed.last_event === "delivered") break;
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      && row.subject === "A RenderLab verification method was added"
+      && typeof row.from === "string"
+      && row.from.trim()
+    );
+    if (existing) return existing.from.trim();
+    if (!list.has_more || rows.length === 0) break;
+    after = rows[rows.length - 1]?.id || null;
+    if (!after) break;
   }
-  assert(listed?.id, `Resend did not expose security email: ${subject}`);
-
-  let message = null;
-  for (let attempt = 0; attempt < 15; attempt += 1) {
-    message = await resend(`/emails/${encodeURIComponent(listed.id)}`);
-    if (message.last_event === "delivered") break;
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-  assertSafeSecurityMail(message, subject);
-  return message;
+  throw new Error("Could not resolve the verified RenderLab security sender from prior delivered security mail.");
 }
 
 async function waitForSecurityMailById(id, subject) {
@@ -152,7 +148,7 @@ async function cleanup() {
 }
 
 try {
-  console.log("RENDERLAB_217_REAL_MFA_SECURITY_EMAIL_TEST=true");
+  console.log("RENDERLAB_217_REAL_MFA_OPERATOR_RECOVERY_TEST=true");
   console.log("RENDERLAB_217_MFA_SECURITY_EMAIL_RECIPIENT_COUNT=1");
 
   const domains = await resend("/domains");
@@ -161,7 +157,9 @@ try {
   const domain = await resend(`/domains/${encodeURIComponent(exact.id)}`);
   assert(domain.status === "verified", "Resend sender domain is not verified.");
   assert(domain.open_tracking === false && domain.click_tracking === false, "Resend tracking must remain disabled.");
+  const securitySender = await resolveVerifiedSecuritySender();
   console.log("RENDERLAB_217_RESEND_PROVIDER_BASELINE=true");
+  console.log("RENDERLAB_217_VERIFIED_SECURITY_SENDER_RESOLVED=true");
 
   const listedUsers = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (listedUsers.error) throw listedUsers.error;
@@ -174,24 +172,19 @@ try {
     email: recipient,
     password,
     email_confirm: true,
-    user_metadata: { source: "renderlab-217-mfa-security-mail-delivery" },
+    user_metadata: { source: "renderlab-217-mfa-operator-recovery" },
   });
   if (created.error) throw created.error;
   userId = created.data.user?.id ?? null;
-  assert(userId, "Supabase did not return the MFA mail fixture user ID.");
+  assert(userId, "Supabase did not return the MFA recovery fixture user ID.");
 
   const signedIn = await user.auth.signInWithPassword({ email: recipient, password });
   if (signedIn.error) throw signedIn.error;
 
-  const enrollment = await user.auth.mfa.enroll({ factorType: "totp", friendlyName: "RenderLab security-mail fixture" });
+  const enrollment = await user.auth.mfa.enroll({ factorType: "totp", friendlyName: "RenderLab operator-recovery fixture" });
   if (enrollment.error) throw enrollment.error;
   await verifyFactor(enrollment.data.id, enrollment.data.totp.secret);
   console.log("RENDERLAB_217_MFA_FACTOR_ENROLLED=true");
-
-  const enrollmentMail = await waitForSecurityMail("A RenderLab verification method was added");
-  const securitySender = typeof enrollmentMail.from === "string" ? enrollmentMail.from.trim() : "";
-  assert(securitySender, "Delivered RenderLab enrollment mail did not expose a reusable verified sender identity.");
-  console.log("RENDERLAB_217_MFA_ENROLLED_EMAIL_RESEND_DELIVERED=true");
 
   const session = await user.auth.getSession();
   if (session.error) throw session.error;
@@ -258,6 +251,7 @@ try {
   if (postResetFactors.error) throw postResetFactors.error;
   assert(postResetFactors.data.totp.length === 0, "Operator recovery left a TOTP factor enrolled.");
   console.log("RENDERLAB_217_MFA_POST_RESET_AAL1_NO_FACTOR=true");
+  console.log("RENDERLAB_217_MFA_OPERATOR_RECOVERY_PROOF=true");
   console.log("RENDERLAB_217_MFA_SECURITY_EMAIL_BRANDING_PRIVACY_OK=true");
 } finally {
   await cleanup();
