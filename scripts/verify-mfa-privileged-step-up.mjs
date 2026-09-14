@@ -12,7 +12,7 @@ if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
 
 const runSuffix = `${Date.now()}-${randomBytes(4).toString("hex")}`;
 const email = `renderlab-ci-mfa-${runSuffix}@example.com`;
-let password = `RenderLab-MFA-${runSuffix}-Strong!`;
+const password = `RenderLab-MFA-${runSuffix}-Strong!`;
 const replacementPassword = `${password}-replacement`;
 let fixtureUserId = null;
 
@@ -103,8 +103,16 @@ async function verifyFactor(factorId, secret) {
   throw lastError ?? new Error("TOTP verification failed.");
 }
 
+async function expectSecondEnrollmentRejected(label) {
+  const attempt = await user.auth.mfa.enroll({ factorType: "totp", friendlyName: `Forbidden second factor ${label}` });
+  if (!attempt.error) {
+    await user.auth.mfa.unenroll({ factorId: attempt.data.id }).catch(() => undefined);
+    throw new Error(`${label}: hosted Auth accepted a second direct TOTP enrollment; factor cap is not enforced.`);
+  }
+  console.log(`${label}=rejected (${attempt.error.message})`);
+}
+
 async function main() {
-  const failures = [];
   let firstFactorId = null;
 
   try {
@@ -134,25 +142,22 @@ async function main() {
     const authorized = await fetchAdminHealth();
     assert(authorized.response.ok && authorized.body?.ok === true, `Admin at AAL2 should be authorized; got ${authorized.response.status}`);
 
+    await expectSecondEnrollmentRejected("DIRECT_SECOND_ENROLLMENT_AT_AAL2");
+
     await user.auth.signOut({ scope: "local" });
     const signedBackIn = await user.auth.signInWithPassword({ email, password });
     if (signedBackIn.error) throw signedBackIn.error;
     await expectAal("aal1", "aal2", "password sign-in with enrolled MFA");
     await expectAdminMfaRequired("Admin at AAL1 with enrolled MFA");
 
-    const directSecondEnrollment = await user.auth.mfa.enroll({ factorType: "totp", friendlyName: "Forbidden second factor" });
-    if (!directSecondEnrollment.error) {
-      failures.push("Hosted Auth accepted a second direct TOTP enrollment. mfa_max_enrolled_factors=1 is not enforced.");
-      await user.auth.mfa.unenroll({ factorId: directSecondEnrollment.data.id }).catch(() => undefined);
-    }
+    await expectSecondEnrollmentRejected("DIRECT_SECOND_ENROLLMENT_AT_AAL1");
 
     const directPasswordUpdate = await user.auth.updateUser({ password: replacementPassword });
-    if (directPasswordUpdate.error) {
-      console.log(`DIRECT_PASSWORD_UPDATE_AT_AAL1=rejected (${directPasswordUpdate.error.message})`);
-    } else {
-      password = replacementPassword;
-      console.log("DIRECT_PASSWORD_UPDATE_AT_AAL1=accepted");
-    }
+    assert(
+      directPasswordUpdate.error,
+      "Hosted Auth accepted direct password replacement at AAL1 despite an enrolled MFA factor.",
+    );
+    console.log(`DIRECT_PASSWORD_UPDATE_AT_AAL1=rejected (${directPasswordUpdate.error.message})`);
 
     const factors = await user.auth.mfa.listFactors();
     if (factors.error) throw factors.error;
@@ -170,8 +175,7 @@ async function main() {
     await expectAal("aal1", "aal1", "after sole-factor removal");
     await expectAdminMfaRequired("Admin during replacement gap");
 
-    if (failures.length > 0) throw new Error(failures.join("\n"));
-    console.log("MFA configured fixture passed: one-factor provider cap, AAL transitions, Admin denial/authorization and removal gap verified.");
+    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, password AAL2 enforcement, AAL transitions, Admin authorization and removal gap verified.");
   } finally {
     await user.auth.signOut({ scope: "local" }).catch(() => undefined);
     if (fixtureUserId) {
