@@ -295,6 +295,7 @@ export function AccountSettings({
                 </Alert>
               )}
 
+              <p className={styles.helper}>Ends RenderLab sessions on every device and browser.</p>
               <div className={styles.sessionActions}>
                 <Button variant="secondary" size="lg" onClick={() => handleSignOut("local")} disabled={busyAction !== null}>
                   {busyAction === "signout-local" ? <Spinner aria-hidden="true" /> : null}
