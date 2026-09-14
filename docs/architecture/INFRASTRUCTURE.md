@@ -557,6 +557,17 @@ This follow-up currently authorizes documentation/research only. It changes no R
 - Security Advisor will therefore continue to report `auth_leaked_password_protection`. After #215B is verified, that warning is an accepted Supabase-platform limitation rather than a RenderLab broader-beta blocker.
 - No Supabase plan/billing change, schema/RLS change, new secret, paid HIBP subscription, R2 change or generation infrastructure change is authorized by this decision.
 
+
+## #215B free compromised-password screening production rollout — 2026-09-14
+
+- The user permanently rejected upgrading Supabase solely for native leaked-password protection. RenderLab instead owns a free application-layer compromised-password control using the official HIBP Pwned Passwords range API with browser-side SHA-1 lookup hashing, five-character prefix k-anonymity, padded responses and local suffix comparison. Password plaintext and complete hashes are never sent to HIBP.
+- Contract amendment PR #249 merged as `31824147c7e3716ddf187a260220c74733102fbe`; implementation PR #250 exact head `15edffab3662c28c5169584b8982e5df2831c880` passed all six attached workflows, including live no-secret HIBP reachability and configured Account Identity.
+- PR #250 merged as `f3f89d0859154b2ab45b5364ce1acb04a0eb204b`; merged-main Engineering `34869098474` and UI Shell `34869098397` passed.
+- Explicit guarded rollout `34873131594` deployed exact application source `f3f89d0859154b2ab45b5364ce1acb04a0eb204b` as READY Vercel deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh` (`renderlab-8h61hf59f-faresmohamed260-6733s-projects.vercel.app`). `renderlab.faresuniform.uk` was moved only after build completion; root, Create, Library, Activity and Settings smoke passed.
+- Post-cutover Vercel checks found no runtime-error clusters and no error/fatal logs. Rollback was not required; prior deployment `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7` remains the immediate known-good rollback target.
+- Fresh Security Advisor showed no new findings. The remaining `auth_leaked_password_protection` warning is accepted as a Supabase-native Free-plan limitation; the existing `rls_enabled_no_policy` INFO notices remain expected for deliberately server-owned tables.
+- #215B changed no Supabase plan/billing, hosted Auth configuration, database schema/RLS, R2 contract, generation worker/provider routing or secret inventory. Automatic Git → Vercel deployment remains disabled.
+
 ## Security Rules
 - Never commit service-role/R2/provider/backend bearer credentials.
 - Only the Supabase project URL and publishable key are intentionally exposed to browser code. `next.config.ts` maps those public-safe values from `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`; service-role and R2 credentials must never be published.

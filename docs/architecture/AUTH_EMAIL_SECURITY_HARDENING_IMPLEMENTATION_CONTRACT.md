@@ -3,7 +3,7 @@
 **Tracker:** #215  
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `adfb9153003a6e1c86015bbd56c40b1e329788ce`  
-**Status:** #215A CURRENT-PLAN HARDENING COMPLETE + VERIFIED + PRODUCTION-LIVE / #215B FREE COMPROMISED-PASSWORD SCREENING CONTRACTED / SUPABASE PAID UPGRADE REJECTED
+**Status:** COMPLETE / VERIFIED / MERGED / PRODUCTION-LIVE — #215A CURRENT-PLAN HARDENING + #215B FREE HIBP COMPROMISED-PASSWORD SCREENING / SUPABASE PAID UPGRADE REJECTED
 **Scope:** remaining hosted Supabase Auth policy/security hardening plus the minimum application-policy synchronization required to keep RenderLab truthful  
 **Out of scope:** Settings redesign, profile/MFA/session-management feature implementation, schema/RLS/storage/provider/worker changes, production deployment
 
@@ -267,16 +267,16 @@ If there is no evidence-backed abuse need during this slice, record CAPTCHA as e
 
 ### 3.6 Leaked-password protection plan gate
 
-Leaked-password protection is a required broader-beta hardening objective, but it is currently blocked by the Supabase Free plan.
+Supabase-native leaked-password protection remains unavailable on the Free plan and is intentionally not a RenderLab dependency. The required product control is instead the verified free RenderLab-owned HIBP compromised-password screening described in this contract.
 
 This workstream is therefore split into two closure states:
 
 - **#215A — Free-plan hardening:** all hosted/application configuration work in the original contract is completed, verified and production-live.
-- **#215B — Free compromised-password screening:** implement and verify the RenderLab-owned HIBP k-anonymity check described above. Supabase-native leaked-password protection remains disabled and its Security Advisor warning remains visible by design.
+- **#215B — Free compromised-password screening:** COMPLETE / VERIFIED / PRODUCTION-LIVE. RenderLab screens supported password-establishment/change flows through the HIBP k-anonymity range API. Supabase-native leaked-password protection remains disabled and its Security Advisor warning remains visible by design.
 
 The user explicitly rejected upgrading Supabase solely for leaked-password protection. That paid path is abandoned for this project unless the user later reopens the decision for unrelated reasons.
 
-#215 closes when #215B is verified and the native Supabase warning is documented as an accepted platform limitation rather than a product blocker.
+#215's closure condition is satisfied: #215B is verified and production-live, and the native Supabase warning is documented as an accepted platform limitation rather than a product blocker.
 
 ## 4. Planned implementation delta
 
@@ -383,14 +383,15 @@ If Stage 1 changed production application code:
 
 If no application code changed, there is no Vercel deployment solely for hosted Auth configuration.
 
-### Stage 4 — #215B free-screening closure
+### Stage 4 — #215B free-screening closure — completed and verified 2026-09-14
 
-1. implement the bounded HIBP range check under the privacy rules above;
-2. verify deterministic compromised, clean and unavailable paths without logging candidate secrets;
-3. run an exact-head live HIBP reachability smoke plus Engineering Quality and Account Identity;
-4. verify Security Advisor has no **new** findings while accepting that `auth_leaked_password_protection` remains because Supabase-native enforcement is intentionally disabled on Free;
-5. merge, verify merged-main checks, update #215/roadmap/infrastructure documentation and close #215;
-6. deploy only under a separate explicit production authorization.
+- Contract amendment PR #249 merged as `31824147c7e3716ddf187a260220c74733102fbe` and permanently removed a Supabase paid-plan upgrade as the leaked-password strategy.
+- Implementation PR #250 exact head `15edffab3662c28c5169584b8982e5df2831c880` passed Engineering `34868698449`, Account Identity `34868698376`, live Compromised Password Screening `34868698510`, UI Shell `34868699614`, Integrated Release `34868698377`, and Brand/Launch `34868698354`.
+- Account Identity artifact `10357573841` (`sha256:bc22e9ed81a4e7ef30b82329236c3580c7b6f61d4ced42c47f988741c6f5fad8`) verifies the configured account flows while deterministic HIBP mocks prove compromised, safe, unavailable/fail-closed and submit-only privacy behavior.
+- PR #250 merged as `f3f89d0859154b2ab45b5364ce1acb04a0eb204b`; merged-main Engineering `34869098474` and UI Shell `34869098397` both passed.
+- Fresh Security Advisor after the merge showed no new findings. `auth_leaked_password_protection` remains as the accepted Supabase-native Free-plan warning; the expected server-owned-table `rls_enabled_no_policy` notices remain informational.
+- Explicit rollout `34873131594` deployed exact source `f3f89d0859154b2ab45b5364ce1acb04a0eb204b` as READY deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh`, then moved `renderlab.faresuniform.uk` and passed root/Create/Library/Activity/Settings smoke. Post-cutover Vercel audit found no runtime-error clusters and no error/fatal logs. Rollback was not required; `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7` remains the immediate known-good rollback target.
+- No Supabase plan/billing change, schema/RLS change, hosted Auth mutation, R2/provider/worker change or automatic Git deployment enablement was introduced by #215B.
 
 ## 7. Rollback
 
@@ -468,9 +469,9 @@ Closure evidence must identify:
 
 ## 10. Next workstream boundary
 
-Completing #215A does not automatically authorize #216, #217 or #223 implementation. #215B free compromised-password screening is the immediate remaining slice for #215; after it is verified and #215 closes, re-establish repository/live Auth state and expand the next roadmap slice into its own contract.
+#215 is complete and does not automatically authorize #216, #217 or #223 implementation. Re-establish repository/live Auth state before the next workstream and merge its own execution contract before implementation. The next default planning slice is #217 privileged MFA/step-up because Admin/high-risk AAL2 enforcement remains the highest-priority security gap.
 
-Default sequencing after #215A remains:
+Default sequencing after #215 remains:
 
 1. #217 privileged MFA/step-up where needed for Admin/high-risk operations;
 2. #216 session controls/security activity;
