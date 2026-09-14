@@ -331,6 +331,77 @@
   padding-top: 1rem;
 }
 
+.sessionStack {
+  display: grid;
+  max-width: 44rem;
+  gap: 1rem;
+}
+
+.sessionList {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.sessionItem {
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 0.65rem;
+  padding: 0.85rem 0.95rem;
+  background: rgb(255 255 255 / 2%);
+}
+
+.sessionItem[data-current-session="true"] {
+  border-color: rgb(178 167 255 / 24%);
+  background: linear-gradient(90deg, rgb(129 114 246 / 5%), rgb(255 255 255 / 1.5%));
+}
+
+.sessionHeader {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sessionClient {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.currentSession {
+  flex: 0 0 auto;
+  border: 1px solid rgb(178 167 255 / 25%);
+  border-radius: 999px;
+  padding: 0.18rem 0.5rem;
+  color: rgb(211 205 255);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sessionTimes {
+  display: flex;
+  gap: 0.45rem 1rem;
+  flex-wrap: wrap;
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.sessionActions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
 .enrollmentGrid {
   display: grid;
   grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
@@ -439,8 +510,18 @@
 
   .formActions [data-slot="button"],
   .passwordActions [data-slot="button"],
-  .buttonCluster [data-slot="button"] {
+  .buttonCluster [data-slot="button"],
+  .sessionActions [data-slot="button"] {
     width: 100%;
+  }
+
+  .sessionHeader {
+    align-items: flex-start;
+  }
+
+  .sessionTimes {
+    display: grid;
+    gap: 0.2rem;
   }
 
   .enrollmentGrid {
