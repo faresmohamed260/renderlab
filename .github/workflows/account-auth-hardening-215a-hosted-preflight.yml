@@ -1,0 +1,141 @@
+name: Account Auth Hardening 215A Hosted Preflight
+
+on:
+  push:
+    branches:
+      - ops/account-auth-hardening-215a-hosted-preflight
+    paths:
+      - ".github/workflows/account-auth-hardening-215a-hosted-preflight.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      EXPECTED_SITE_URL: https://renderlab.faresuniform.uk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate management credential presence
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN is not configured."
+            exit 1
+          fi
+          echo "SUPABASE_ACCESS_TOKEN_PRESENT=true"
+
+      - name: Read and redact hosted Auth configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
+          mkdir -p artifacts
+          curl --fail-with-body --silent --show-error \
+            --user-agent 'RenderLab-215A-Hosted-Preflight/1.0' \
+            --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            "$endpoint" -o /tmp/auth-config.json
+
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          raw = json.loads(Path('/tmp/auth-config.json').read_text())
+
+          def safe_value(key, value):
+              lower = key.lower()
+              if any(marker in lower for marker in ('secret', 'pass', 'token', 'key')):
+                  return {'redacted': True, 'present': value not in (None, '', False)}
+              if isinstance(value, (bool, int, float)) or value is None:
+                  return value
+              if isinstance(value, str):
+                  return value
+              if isinstance(value, list):
+                  return value
+              return {'type': type(value).__name__}
+
+          safe_exact = {
+              'site_url',
+              'uri_allow_list',
+              'smtp_admin_email',
+              'smtp_host',
+              'smtp_port',
+              'smtp_sender_name',
+              'password_min_length',
+              'password_required_characters',
+              'security_captcha_enabled',
+              'security_captcha_provider',
+              'captcha_enabled',
+              'captcha_provider',
+              'mailer_allow_unverified_email_sign_ins',
+          }
+
+          relevant_pattern = re.compile(
+              r'^(site_url|uri_allow_list|smtp_|password_|rate_limit_|captcha_|security_captcha|mailer_notifications_|mailer_subjects_|mailer_templates_)'
+          )
+
+          safe = {}
+          inventory = []
+          template_hashes = {}
+          for key in sorted(raw):
+              if not relevant_pattern.search(key):
+                  continue
+              inventory.append(key)
+              value = raw[key]
+              if key.startswith('mailer_templates_'):
+                  text = '' if value is None else str(value)
+                  template_hashes[key] = {
+                      'sha256': hashlib.sha256(text.encode()).hexdigest(),
+                      'length': len(text),
+                      'present': bool(text),
+                  }
+                  continue
+              if key in safe_exact or key.startswith('rate_limit_') or key.startswith('mailer_notifications_') or key.startswith('mailer_subjects_'):
+                  safe[key] = safe_value(key, value)
+              elif key.startswith('password_') or 'captcha' in key:
+                  # Discover current field names without exposing possible credential material.
+                  safe[key] = safe_value(key, value)
+              elif key.startswith('smtp_'):
+                  safe[key] = {'redacted': True, 'present': value not in (None, '', False)}
+
+          report = {
+              'project_ref': os.environ['SUPABASE_PROJECT_REF'],
+              'captured_at_utc': datetime.now(timezone.utc).isoformat(),
+              'expected_site_url': os.environ['EXPECTED_SITE_URL'],
+              'site_url_matches_expected': raw.get('site_url') == os.environ['EXPECTED_SITE_URL'],
+              'safe_config': safe,
+              'template_hashes': template_hashes,
+              'relevant_field_inventory': inventory,
+          }
+          Path('artifacts/account-auth-hardening-215a-hosted-preflight.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n'
+          )
+
+          print('SUPABASE_AUTH_CONFIG_READ_OK=true')
+          print('SUPABASE_SITE_URL_MATCH=' + str(report['site_url_matches_expected']).lower())
+          print('SUPABASE_RELEVANT_FIELD_COUNT=' + str(len(inventory)))
+          print('SUPABASE_TEMPLATE_FINGERPRINT_COUNT=' + str(len(template_hashes)))
+          print('SUPABASE_AUTH_CONFIG_SECRET_VALUES_LOGGED=false')
+          PY
+
+      - name: Print redacted preflight summary
+        shell: bash
+        run: cat artifacts/account-auth-hardening-215a-hosted-preflight.json
+
+      - name: Upload redacted preflight artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-account-auth-hardening-215a-hosted-preflight
+          path: artifacts/account-auth-hardening-215a-hosted-preflight.json
+          if-no-files-found: error
+          retention-days: 14
