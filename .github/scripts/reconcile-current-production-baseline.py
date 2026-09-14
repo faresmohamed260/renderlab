@@ -1,0 +1,19 @@
+from pathlib import Path
+
+p = Path("PROJECT.md")
+text = p.read_text()
+repls = {
+"- Accepted production application is source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991` / `https://renderlab-a9ssca2l8-faresmohamed260-6733s-projects.vercel.app`. Explicit alias run `34547608773` moved `https://renderlab.faresuniform.uk` to that deployment and passed root + `/create` + `/library` + `/activity` + `/settings` smoke; independent Vercel checks found no runtime-error clusters and no error/fatal logs after rollout. Prior accepted UI-071 deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra` remains a known-good prior deployment for explicit alias restoration if needed.":
+"- Accepted production application is exact source `b6deedad8a229b34828da0c3760b62fa147c1981` at READY deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh` / `https://renderlab-6r28s40a8-faresmohamed260-6733s-projects.vercel.app`. Guarded rollout `34795391075` explicitly moved `https://renderlab.faresuniform.uk` to that deployment and passed root + `/create` + `/library` + `/activity` + `/settings` smoke; the immediate known-good alias restoration target is prior accepted Landing deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, and rollback was not required.",
+"- Application surfaces remain verified through UI-071, while the public `/` surface is now the approved Lab Matrix Landing. UI-068 / PR #138, UI-069 / PR #140, UI-070 / PR #142 and UI-071 / PR #145 remain included in production source `0173c4c5ba08360b6352331118abc81978cfa774`; Landing implementation PR #174 is production-live in READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`. Automatic Git → Vercel deployment remains disabled.":
+"- Production now includes the completed Phase 23–29 UI/UX redesign: UI-074 shell, UI-075 Library, UI-076 Viewer, UI-077 Activity, UI-078 Settings, UI-079 Admin and UI-080 cohesion verification, together with the previously production-live Lab Matrix Landing and UI-068 through UI-071 behavior. Exact production source is `b6deedad8a229b34828da0c3760b62fa147c1981` at READY deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh`. Automatic Git → Vercel deployment remains disabled.",
+"- UI-071 / PR #145 is merged as `be0d2fa23fd16acbd5202e88ba2a09a7d8eefc20`: desktop application routes omit the redundant top context bar, mobile/narrow routes retain account/Settings access, and Create reference-drop copy aligns beside its icon. Exact candidate `c151b0284a29a469b1e89d5f4cd66c55151d1d01` passed all 14 attached workflows and responsive rendered review; all four workflows attached to merged main also passed. UI-071 remains included in current production source `0173c4c5ba08360b6352331118abc81978cfa774`, now served with the Lab Matrix Landing from READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; its original guarded production rollout evidence remains run `34460364114`. See `docs/ui/UI_MIGRATION.md` for the verification record.":
+"- UI-071 / PR #145 is merged as `be0d2fa23fd16acbd5202e88ba2a09a7d8eefc20`: desktop application routes omit the redundant top context bar, mobile/narrow routes retain account/Settings access, and Create reference-drop copy aligns beside its icon. Exact candidate `c151b0284a29a469b1e89d5f4cd66c55151d1d01` passed all 14 attached workflows and responsive rendered review; all four workflows attached to merged main also passed. UI-071 remains included in current production source `b6deedad8a229b34828da0c3760b62fa147c1981` at READY deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh`; its original guarded production rollout evidence remains run `34460364114`. See `docs/ui/UI_MIGRATION.md` for the verification record."
+}
+for old,new in repls.items():
+    c=text.count(old)
+    if c != 1:
+        raise SystemExit(f"expected one match, found {c}: {old[:120]}")
+    text=text.replace(old,new,1)
+p.write_text(text)
+print("Current production baseline reconciled")
