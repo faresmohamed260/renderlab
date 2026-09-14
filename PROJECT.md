@@ -79,18 +79,18 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Phase 24 repository implementation is therefore user-approved, exact-head verified, merged and merged-main verified. Production remains unchanged at source `0173c4c5ba08360b6352331118abc81978cfa774` / READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`; automatic Git → Vercel deployment remains disabled and no Phase 24 deployment is authorized.
 
 ## UI/UX redesign program — continuation roadmap — 2026-09-13
-**Status: COMPLETE / VERIFIED IN REPOSITORY — the Phase 23–29 UI/UX redesign program is closed; accumulated post-Landing application redesign remains not deployed.**
+**Status: COMPLETE / VERIFIED / PRODUCTION-LIVE — the Phase 23–29 UI/UX redesign program is closed and the completed application redesign is now live in production.**
 
 Phase 29 closes the repository UI/UX redesign program as one coherent system derived from the locked Lab Grid identity, approved Lab Matrix Landing, Clear Composer / UI-074 application language, Gallery Rail / UI-075 media language, Media Register + Source Fold / UI-076, Job Matrix + History Register / UI-077, Trust Register / UI-078 and Admin System Continuity / UI-079. Future UI work must treat these approved surfaces as current product authority unless a new explicit decision reopens a named surface.
 
 Completed redesign slices:
 - **Landing:** approved Lab Matrix public experience, production-live.
-- **Create:** approved Clear Composer v0.5 plus UI-074 fidelity correction, merged and verified, not yet deployed.
-- **Library:** approved Gallery Rail v0.3 / UI-075, merged and verified, not yet deployed.
-- **Media Viewer:** approved Media Register + Source Fold v0.2 / UI-076, merged and merged-main verified, not yet deployed.
-- **Activity:** approved Job Matrix + History Register v0.2 / UI-077, merged and merged-main verified, not yet deployed.
-- **Settings:** approved Trust Register / UI-078, merged and merged-main verified, not yet deployed.
-- **Admin:** approved Admin System Continuity v0.2 / UI-079, exact-head and fidelity verified, merged and merged-main verified, not yet deployed.
+- **Create:** approved Clear Composer v0.5 plus UI-074 fidelity correction, merged, verified and production-live.
+- **Library:** approved Gallery Rail v0.3 / UI-075, merged, verified and production-live.
+- **Media Viewer:** approved Media Register + Source Fold v0.2 / UI-076, merged, merged-main verified and production-live.
+- **Activity:** approved Job Matrix + History Register v0.2 / UI-077, merged, merged-main verified and production-live.
+- **Settings:** approved Trust Register / UI-078, merged, merged-main verified and production-live.
+- **Admin:** approved Admin System Continuity v0.2 / UI-079, exact-head/fidelity verified, merged, merged-main verified and production-live.
 - **Application shell:** UI-074 compact horizontal header is the current shared shell geometry and should be maintained/cohered rather than restarted as a competing navigation system.
 - **Whole-product cohesion:** UI-080 integration audit is exact-head verified, merged and merged-main verified; no current production UI defect required a pixel correction.
 
@@ -99,9 +99,18 @@ Redesign program closure record:
 2. **Phase 26 — Activity:** USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED. Job Matrix + History Register v0.2 is now the repository-authoritative Activity composition under UI-077.
 3. **Phase 27 — Settings / account-security flows:** IMPLEMENTED / EXACT-HEAD VERIFIED / FIDELITY REVIEWED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED. UI-078 and `docs/ui/SETTINGS_TRUST_REGISTER_IMPLEMENTATION_CONTRACT.md` govern the bounded Trust Register production slice. Final PR #227 head `d48084fef1255ee672936f6da8905ba95bc678ea` passed all six attached workflows; the accepted fidelity review remains Account Identity artifact `10320219197` (`sha256:8217b1bfcb314825f17b37dbf3c3e51861a6f61b5e2ac772ccbbda6b21cdccac`) from the unchanged implementation code, and final-head Account Identity artifact `10321540973` (`sha256:490236398632e5a6c68ee4fca7591da68682b2c13343766f7c6d4903545e62f8`) confirmed the configured flow. PR #227 squash-merged as `383def35fdf77566696a0c41f88349613029a37a`; merged-main Engineering Quality `34769204247` and UI Shell Validation `34769204150` both passed. The broader Account & Settings capability program remains independently governed by `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` and workstreams #215–#221/#223.
 4. **Phase 28 — Admin:** USER-APPROVED / EXACT-HEAD VERIFIED / FIDELITY REVIEWED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED. Admin System Continuity v0.2 is the repository-authoritative Admin composition under UI-079, using Settings/UI-078 as the binding structural parent while preserving the existing privileged product/security contracts.
-5. **Phase 29 — whole-product cohesion pass:** COMPLETE / EXACT-HEAD VERIFIED / HUMAN-REVIEWED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED. UI-080 and `docs/ui/WHOLE_PRODUCT_COHESION_IMPLEMENTATION_CONTRACT.md` governed a verification-first integration pass. The suspected 390px Create/header collision did not reproduce under deterministic geometry, so no production UI code was changed; durable regression coverage now guards fixed-header clearance, narrow overflow and reduced-motion behavior.
+5. **Phase 29 — whole-product cohesion pass:** COMPLETE / EXACT-HEAD VERIFIED / HUMAN-REVIEWED / MERGED / MERGED-MAIN VERIFIED / PRODUCTION-LIVE. UI-080 and `docs/ui/WHOLE_PRODUCT_COHESION_IMPLEMENTATION_CONTRACT.md` governed a verification-first integration pass. The suspected 390px Create/header collision did not reproduce under deterministic geometry, so no production UI code was changed; durable regression coverage now guards fixed-header clearance, narrow overflow and reduced-motion behavior.
 
-Phases 26 through 29 are closed and the repository UI/UX redesign program is complete. Phase 27 still closes only the UI-078 Settings production slice; the broader Account & Settings capability roadmap and workstreams #215–#221/#223 remain independent. Phase 29 intentionally made no production pixel changes because the integrated audit found no evidence-backed defect that justified reopening an approved surface. Production deployment remains separate and explicit; current production is still source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, with automatic Git → Vercel deployment disabled.
+Phases 26 through 29 are closed and the repository UI/UX redesign program is complete. Phase 27 still closes only the UI-078 Settings production slice; the broader Account & Settings capability roadmap and workstreams #215–#221/#223 remain independent. Phase 29 intentionally made no production pixel changes because the integrated audit found no evidence-backed defect that justified reopening an approved surface. The completed redesign is now production-live from exact source `b6deedad8a229b34828da0c3760b62fa147c1981` at READY deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh`; automatic Git → Vercel deployment remains disabled.
+
+## Phase 23–29 UI/UX redesign production rollout — 2026-09-14
+**Status: `COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
+
+- Explicit user authorization deployed exact repository source `b6deedad8a229b34828da0c3760b62fa147c1981` through guarded GitHub Actions rollout `34795391075`. The deployed application tree contains the fully closed Phase 23–29 redesign; the Phase 29 implementation itself made no production-pixel changes beyond regression verification.
+- Vercel production deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh` (`https://renderlab-6r28s40a8-faresmohamed260-6733s-projects.vercel.app`) reached `READY` with exact Git metadata `b6deedad8a229b34828da0c3760b62fa147c1981` and the production environment contract passed during the Vercel build.
+- The rollout explicitly assigned `renderlab.faresuniform.uk` to the new deployment because the project-level production alias does not reliably move the custom domain by itself. Custom-domain root, `/create`, `/library`, `/activity` and `/settings` smoke all passed after cutover.
+- The post-cutover Vercel runtime-error audit found no runtime-error clusters in the rollout window. The prior accepted Landing deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991` remains the immediate known-good alias restoration target; rollback was not required.
+- No Supabase migration/schema/RLS/Auth configuration, Cloudflare R2 contract, provider/worker, generation routing, scheduler, `pg_cron` or `pg_net` state changed during this rollout. Automatic Git → Vercel deployment remains disabled.
 
 ## Phase 29 Whole-product cohesion closure — 2026-09-14
 - Planning PR #236 merged UI-080 and `docs/ui/WHOLE_PRODUCT_COHESION_IMPLEMENTATION_CONTRACT.md` first as `b4a76e279aea79bcd5779495064f635fb8bc8fbf`.
@@ -145,7 +154,7 @@ Phases 26 through 29 are closed and the repository UI/UX redesign program is com
 **Phase 26 status: `USER-APPROVED / EXACT-HEAD VERIFIED / MERGED / MERGED-MAIN VERIFIED / NOT DEPLOYED`.**
 
 ## Current Verified Baseline — 2026-09-14
-- The verified repository application baseline is Phase 29 / PR #237 merge `1c33fccf7de5b919b6a9f15916c66b92334da84a`; UI-080 whole-product cohesion is exact-head verified, human-reviewed and merged-main verified. Phase 29 changed only regression verification, not production UI pixels. Production remains the separately approved source `0173c4c5ba08360b6352331118abc81978cfa774`; no production deployment followed the Phase 29 repository merge.
+- The verified repository application baseline is the completed Phase 29/UI-080 redesign tree, production-live from exact repository source `b6deedad8a229b34828da0c3760b62fa147c1981` at READY Vercel deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh`. Phase 29 changed only regression verification, not production UI pixels; guarded rollout `34795391075` moved the custom domain and passed root/Create/Library/Activity/Settings smoke without rollback.
 - Cycle 2 — Creative Productivity & Beta Maturity is `COMPLETE / VERIFIED`.
 - Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`.
 - Accepted production application is source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991` / `https://renderlab-a9ssca2l8-faresmohamed260-6733s-projects.vercel.app`. Explicit alias run `34547608773` moved `https://renderlab.faresuniform.uk` to that deployment and passed root + `/create` + `/library` + `/activity` + `/settings` smoke; independent Vercel checks found no runtime-error clusters and no error/fatal logs after rollout. Prior accepted UI-071 deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra` remains a known-good prior deployment for explicit alias restoration if needed.
