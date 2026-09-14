@@ -9,6 +9,7 @@ on:
       - "src/features/account/account-settings.tsx"
       - "src/features/account/account-settings.module.css"
       - "supabase/migrations/0019_renderlab_auth_session_projection.sql"
+      - "scripts/cleanup-stale-session-control-fixtures.mjs"
       - "scripts/verify-session-controls.mjs"
       - ".github/workflows/session-controls.yml"
       - "docs/architecture/SESSION_CONTROLS_SECURITY_ACTIVITY_IMPLEMENTATION_CONTRACT.md"
@@ -53,7 +54,12 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Verify configured verifier syntax
-        run: node --check scripts/verify-session-controls.mjs
+        run: |
+          node --check scripts/cleanup-stale-session-control-fixtures.mjs
+          node --check scripts/verify-session-controls.mjs
+
+      - name: Clean stale session-control fixtures
+        run: node scripts/cleanup-stale-session-control-fixtures.mjs
 
       - name: Build exact head
         run: npm run build
