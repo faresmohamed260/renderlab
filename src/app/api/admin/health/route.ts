@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
-import { getCurrentRenderLabAdmin } from "@/server/admin/admin-auth";
-import {
-  AdminOperationError,
-  getAdminHealth,
-} from "@/server/admin/admin-operations";
-
-function denied() {
-  return NextResponse.json(
-    { ok: false, error: { code: "admin_access_required", message: "Active RenderLab admin access is required." } },
-    { status: 403 },
-  );
-}
+import { authorizeRenderLabAdminApi } from "@/app/api/admin/admin-api-authorization";
+import { AdminOperationError, getAdminHealth } from "@/server/admin/admin-operations";
 
 export async function GET() {
-  const admin = await getCurrentRenderLabAdmin();
-  if (!admin) return denied();
+  const authorization = await authorizeRenderLabAdminApi();
+  if (!authorization.ok) return authorization.response;
+  const { admin } = authorization;
 
   try {
     return NextResponse.json({ ok: true, health: await getAdminHealth(admin.identity.id) });
