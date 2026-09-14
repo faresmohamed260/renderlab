@@ -79,12 +79,16 @@ async function currentAccessToken() {
   return token;
 }
 
-async function fetchAdminHealth() {
+async function fetchAdminHealthWithToken(token) {
   const response = await fetch(`${baseUrl}/api/admin/health`, {
-    headers: { authorization: `Bearer ${await currentAccessToken()}` },
+    headers: { authorization: `Bearer ${token}` },
   });
   const body = await response.json().catch(() => null);
   return { response, body };
+}
+
+async function fetchAdminHealth() {
+  return fetchAdminHealthWithToken(await currentAccessToken());
 }
 
 async function expectAdminMfaRequired(label) {
@@ -103,6 +107,13 @@ async function verifyFactor(factorId, secret) {
   throw lastError ?? new Error("TOTP verification failed.");
 }
 
+async function enrollAndVerify(label) {
+  const enrollment = await user.auth.mfa.enroll({ factorType: "totp", friendlyName: label });
+  if (enrollment.error) throw enrollment.error;
+  await verifyFactor(enrollment.data.id, enrollment.data.totp.secret);
+  return enrollment.data;
+}
+
 async function expectSecondEnrollmentRejected(label) {
   const attempt = await user.auth.mfa.enroll({ factorType: "totp", friendlyName: `Forbidden second factor ${label}` });
   if (!attempt.error) {
@@ -113,7 +124,7 @@ async function expectSecondEnrollmentRejected(label) {
 }
 
 async function main() {
-  let firstFactorId = null;
+  let currentFactorId = null;
 
   try {
     const created = await service.auth.admin.createUser({ email, password, email_confirm: true });
@@ -133,10 +144,8 @@ async function main() {
     await expectAal("aal1", "aal1", "before enrollment");
     await expectAdminMfaRequired("Admin without MFA");
 
-    const enrollment = await user.auth.mfa.enroll({ factorType: "totp", friendlyName: "RenderLab CI authenticator" });
-    if (enrollment.error) throw enrollment.error;
-    firstFactorId = enrollment.data.id;
-    await verifyFactor(enrollment.data.id, enrollment.data.totp.secret);
+    const enrollment = await enrollAndVerify("RenderLab CI authenticator");
+    currentFactorId = enrollment.id;
     await expectAal("aal2", "aal2", "after first-factor verification");
 
     const authorized = await fetchAdminHealth();
@@ -161,21 +170,48 @@ async function main() {
 
     const factors = await user.auth.mfa.listFactors();
     if (factors.error) throw factors.error;
-    const verifiedFirst = factors.data.totp.find((factor) => factor.id === firstFactorId && factor.status === "verified");
+    const verifiedFirst = factors.data.totp.find((factor) => factor.id === currentFactorId && factor.status === "verified");
     assert(verifiedFirst, "Expected the original verified factor to remain available.");
 
-    await verifyFactor(firstFactorId, enrollment.data.totp.secret);
+    await verifyFactor(currentFactorId, enrollment.totp.secret);
     await expectAal("aal2", "aal2", "after MFA challenge");
 
-    const removal = await user.auth.mfa.unenroll({ factorId: firstFactorId });
+    const removal = await user.auth.mfa.unenroll({ factorId: currentFactorId });
     if (removal.error) throw removal.error;
-    firstFactorId = null;
+    currentFactorId = null;
     const refreshed = await user.auth.refreshSession();
     if (refreshed.error) throw refreshed.error;
     await expectAal("aal1", "aal1", "after sole-factor removal");
     await expectAdminMfaRequired("Admin during replacement gap");
 
-    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, password AAL2 enforcement, AAL transitions, Admin authorization and removal gap verified.");
+    const replacement = await enrollAndVerify("RenderLab CI operator-reset fixture");
+    currentFactorId = replacement.id;
+    await expectAal("aal2", "aal2", "before operator reset");
+
+    const listed = await service.auth.admin.mfa.listFactors({ userId: fixtureUserId });
+    if (listed.error) throw listed.error;
+    assert(listed.data.factors.length === 1, `Operator factor listing expected one factor, got ${listed.data.factors.length}.`);
+    const operatorFactor = listed.data.factors[0];
+    assert(operatorFactor.id === currentFactorId, "Operator factor listing did not return the exact verified fixture factor.");
+    assert(operatorFactor.status === "verified", `Operator factor listing expected verified status, got ${operatorFactor.status}.`);
+
+    const preResetToken = await currentAccessToken();
+    const deletedFactor = await service.auth.admin.mfa.deleteFactor({ userId: fixtureUserId, id: currentFactorId });
+    if (deletedFactor.error) throw deletedFactor.error;
+    currentFactorId = null;
+    console.log("OPERATOR_MFA_ADMIN_FACTOR_DELETE=success");
+
+    const revoked = await fetchAdminHealthWithToken(preResetToken);
+    assert(revoked.response.status === 403, `Operator factor reset must revoke the prior session; got HTTP ${revoked.response.status}.`);
+    console.log(`OPERATOR_MFA_RESET_OLD_SESSION_STATUS=${revoked.response.status}`);
+
+    await user.auth.signOut({ scope: "local" }).catch(() => undefined);
+    const signedAfterReset = await user.auth.signInWithPassword({ email, password });
+    if (signedAfterReset.error) throw signedAfterReset.error;
+    await expectAal("aal1", "aal1", "after operator reset sign-in");
+    await expectAdminMfaRequired("Admin after operator reset before re-enrollment");
+
+    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, password AAL2 enforcement, AAL transitions, Admin authorization, removal gap, and supported operator-assisted factor reset verified.");
   } finally {
     await user.auth.signOut({ scope: "local" }).catch(() => undefined);
     if (fixtureUserId) {
