@@ -1,0 +1,121 @@
+name: Account Auth Hardening Patch Helper
+
+on:
+  push:
+    branches:
+      - work/account-auth-hardening-215a
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/account-auth-hardening-215a
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Patch account password policy consumers and verifier
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str, expected: int = 1):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f"{path}: expected {expected} occurrence(s), found {count}: {old!r}")
+              p.write_text(text.replace(old, new))
+
+          replace_exact(
+              "src/features/account/account-password-form.tsx",
+              'import { Spinner } from "@/components/ui/spinner";\n',
+              'import { Spinner } from "@/components/ui/spinner";\nimport {\n  meetsRenderLabPasswordPolicy,\n  RENDERLAB_PASSWORD_MIN_LENGTH,\n  RENDERLAB_PASSWORD_REQUIREMENT,\n} from "./password-policy";\n',
+          )
+          replace_exact(
+              "src/features/account/account-password-form.tsx",
+              '    if (newPassword.length < 8) {\n      setFeedback({ kind: "error", message: "Use at least 8 characters for the new password." });\n      return;\n    }',
+              '    if (!meetsRenderLabPasswordPolicy(newPassword)) {\n      setFeedback({\n        kind: "error",\n        message: `Use at least ${RENDERLAB_PASSWORD_MIN_LENGTH} characters for the new password.`,\n      });\n      return;\n    }',
+          )
+          replace_exact(
+              "src/features/account/account-password-form.tsx",
+              '                    minLength={8}',
+              '                    minLength={RENDERLAB_PASSWORD_MIN_LENGTH}',
+              expected=2,
+          )
+          replace_exact(
+              "src/features/account/account-password-form.tsx",
+              '                  <FieldDescription>Use at least 8 characters.</FieldDescription>',
+              '                  <FieldDescription>{RENDERLAB_PASSWORD_REQUIREMENT}</FieldDescription>',
+          )
+          replace_exact(
+              "src/features/account/account-password-form.tsx",
+              '                  disabled={busy || (!recoveryMode && !currentPassword) || newPassword.length < 8 || confirmPassword.length < 8}',
+              '                  disabled={\n                    busy ||\n                    (!recoveryMode && !currentPassword) ||\n                    !meetsRenderLabPasswordPolicy(newPassword) ||\n                    !meetsRenderLabPasswordPolicy(confirmPassword)\n                  }',
+          )
+
+          replace_exact(
+              "src/features/account/account-settings.tsx",
+              '                minLength={8}\n                value={password}',
+              '                value={password}',
+          )
+          replace_exact(
+              "src/features/account/account-settings.tsx",
+              '            <Button type="submit" size="lg" disabled={busyAction !== null || !email.trim() || password.length < 8}>',
+              '            <Button type="submit" size="lg" disabled={busyAction !== null || !email.trim() || !password}>',
+          )
+
+          replace_exact(
+              "scripts/verify-account-identity.mjs",
+              'const recoveredPassword = `RenderLab-${runToken}-Recovered!`;\n',
+              'const recoveredPassword = `RenderLab-${runToken}-Recovered!`;\nconst belowPolicyPassword = "TooShort-123!";\n',
+          )
+          replace_exact(
+              "scripts/verify-account-identity.mjs",
+              '  await page.getByRole("button", { name: "Sign in", exact: true }).waitFor({ state: "visible" });\n',
+              '  await page.getByRole("button", { name: "Sign in", exact: true }).waitFor({ state: "visible" });\n  assert(\n    (await page.getByLabel("Password").getAttribute("minlength")) === null,\n    "Sign-in must not client-block legacy credentials using the new-password minimum.",\n  );\n',
+          )
+          replace_exact(
+              "scripts/verify-account-identity.mjs",
+              '  assert(await page.getByLabel("Current password").isVisible(), "Ordinary password change must require the current password.");\n',
+              '  assert(await page.getByLabel("Current password").isVisible(), "Ordinary password change must require the current password.");\n  assert(\n    await page.getByText("Use at least 15 characters.", { exact: true }).isVisible(),\n    "Password replacement must display the canonical 15-character policy.",\n  );\n  assert(\n    (await page.getByLabel("New password", { exact: true }).getAttribute("minlength")) === "15",\n    "New-password input must use the canonical 15-character minimum.",\n  );\n',
+          )
+          replace_exact(
+              "scripts/verify-account-identity.mjs",
+              '  await page.getByLabel("Current password").fill(password);\n  await page.getByLabel("New password", { exact: true }).fill(changedPassword);\n  await page.getByLabel("Confirm new password", { exact: true }).fill(changedPassword);\n  await page.getByRole("button", { name: "Update password", exact: true }).click();',
+              '  await page.getByLabel("Current password").fill(password);\n  await page.getByLabel("New password", { exact: true }).fill(belowPolicyPassword);\n  await page.getByLabel("Confirm new password", { exact: true }).fill(belowPolicyPassword);\n  assert(\n    await page.getByRole("button", { name: "Update password", exact: true }).isDisabled(),\n    "Below-policy password must remain client-blocked before Auth mutation.",\n  );\n  await page.getByLabel("New password", { exact: true }).fill(changedPassword);\n  await page.getByLabel("Confirm new password", { exact: true }).fill(changedPassword);\n  await page.getByRole("button", { name: "Update password", exact: true }).click();',
+          )
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Commit implementation and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/account-auth-hardening-patch-helper.yml
+          git add src/features/account/password-policy.ts src/features/account/account-password-form.tsx src/features/account/account-settings.tsx scripts/verify-account-identity.mjs
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Implement #215A canonical password policy"
+          git push origin HEAD:work/account-auth-hardening-215a
