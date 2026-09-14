@@ -3,19 +3,7 @@ name: Account Identity Visual
 on:
   pull_request:
     paths:
-      - "package.json"
-      - "next.config.ts"
-      - "proxy.ts"
-      - "src/lib/supabase/**"
-      - "src/server/account/**"
-      - "src/app/globals.css"
-      - "src/features/account/**"
-      - "src/app/auth/**"
-      - "src/app/(app)/settings/**"
-      - "supabase/migrations/0010_renderlab_account_admission.sql"
-      - "supabase/migrations/0011_renderlab_admin_access_control.sql"
-      - "supabase/migrations/0012_renderlab_generation_admission.sql"
-      - "scripts/verify-account-identity.mjs"
+      - "scripts/account-auth-hardening-215a-legacy-fixture.mjs"
       - ".github/workflows/account-identity-visual.yml"
   workflow_dispatch:
 
@@ -25,72 +13,27 @@ permissions:
 jobs:
   account:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
-      RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
 
     steps:
-      - name: Checkout
+      - name: Checkout exact fixture branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
       - name: Validate required auth fixture secret
         shell: bash
         run: |
-          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "::error::SUPABASE_SERVICE_ROLE_KEY is not configured for RenderLab."
-            exit 1
-          fi
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "::error::SUPABASE_SERVICE_ROLE_KEY is not configured for RenderLab."; exit 1; }
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: package.json
 
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Build
-        run: npm run build
-
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Start configured application
-        shell: bash
-        run: |
-          npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
-          echo $! > /tmp/renderlab-next.pid
-          for i in {1..60}; do
-            if curl --fail --silent http://127.0.0.1:3000/settings > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat /tmp/renderlab-next.log || true
-          exit 1
-
-      - name: Verify configured account identity
-        run: node scripts/verify-account-identity.mjs
-
-      - name: Cleanup account fixture
-        if: always()
-        run: node scripts/verify-account-identity.mjs --cleanup-only
-
-      - name: Print server log on failure
-        if: failure()
-        run: cat /tmp/renderlab-next.log || true
-
-      - name: Upload account screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: renderlab-account-identity-screenshots
-          path: artifacts/account-identity-*.png
-          if-no-files-found: warn
-          retention-days: 14
+      - name: Prepare owned sub-15-character legacy fixture
+        run: node scripts/account-auth-hardening-215a-legacy-fixture.mjs prepare
