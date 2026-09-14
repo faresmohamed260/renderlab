@@ -7,7 +7,7 @@ import {
 } from "@/lib/auth/mfa-assurance";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
 import {
-  createRequestSupabaseClient,
+  createServerSupabaseClient,
   getFreshCurrentRenderLabAuthentication,
 } from "@/lib/supabase/server";
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     return errorResponse("email_change_invalid_email", "Enter a valid email address.", 400);
   }
 
-  const authentication = await getFreshCurrentRenderLabAuthentication(request);
+  const authentication = await getFreshCurrentRenderLabAuthentication();
   if (!authentication?.identity.email) {
     return errorResponse("email_change_auth_required", "Sign in to change the sign-in email.", 401);
   }
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     await verifier.auth.signOut({ scope: "local" });
   }
 
-  const supabase = await createRequestSupabaseClient(request.headers.get("authorization"));
+  const supabase = await createServerSupabaseClient();
   if (!supabase) {
     return errorResponse("email_change_unavailable", "Email change is unavailable in this runtime.", 503);
   }
