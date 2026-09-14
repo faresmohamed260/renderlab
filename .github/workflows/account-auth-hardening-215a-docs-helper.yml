@@ -49,13 +49,13 @@ jobs:
           replace_once(
               "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
               "**Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION PENDING  \n**Tracker:** #213  \n",
-              "**Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE  \n**Current execution:** #215A repository-side password-policy synchronization merged/verified as `8ea859df84f5173267defbf3e278a95bba403014`; hosted Auth execution remains separately pending and #215B leaked-password protection remains plan-gated.  \n**Tracker:** #213  \n",
+              "**Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE\n**Current execution:** #215A repository-side password-policy synchronization merged/verified as `8ea859df84f5173267defbf3e278a95bba403014`; hosted Auth execution remains separately pending and #215B leaked-password protection remains plan-gated.\n**Tracker:** #213\n",
           )
 
           replace_once(
               "docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md",
               "**Status:** EXECUTION CONTRACT / HOSTED CONFIG MUTATION NOT YET AUTHORIZED  \n",
-              "**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / HOSTED CONFIG MUTATION PENDING AUTHORIZATION / NOT DEPLOYED  \n",
+              "**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / HOSTED CONFIG MUTATION PENDING AUTHORIZATION / NOT DEPLOYED\n",
           )
 
           contract_marker = "No hosted Supabase Auth setting is changed by this contract. Hosted configuration changes remain an explicit operator/configuration operation and require separate authorization after this contract is merged.\n"
