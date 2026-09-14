@@ -12,6 +12,9 @@ import {
   getRenderLabAccountAccess,
   isRenderLabAccessEnforcementEnabled,
 } from "@/server/account/account-access";
+import { isRenderLabAuthSessionLive } from "@/server/account/account-sessions";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type RenderLabIdentity = {
   id: string;
@@ -23,6 +26,7 @@ export type RenderLabAccount = RenderLabIdentity;
 export type RenderLabAuthenticationContext = {
   identity: RenderLabIdentity;
   assurance: RenderLabMfaAssurance;
+  sessionId: string;
 };
 
 export async function createServerSupabaseClient() {
@@ -73,6 +77,15 @@ function verifiedUserIdentity(user: User | null): RenderLabIdentity | null {
   };
 }
 
+function verifiedSessionId(claims: unknown, expectedUserId: string) {
+  if (!claims || typeof claims !== "object") return null;
+  const record = claims as Record<string, unknown>;
+  if (record.sub !== expectedUserId) return null;
+  return typeof record.session_id === "string" && UUID_PATTERN.test(record.session_id)
+    ? record.session_id
+    : null;
+}
+
 async function currentRequestBearerToken() {
   const requestHeaders = await headers();
   return bearerToken(requestHeaders.get("authorization"));
@@ -103,22 +116,33 @@ export async function getFreshCurrentRenderLabAuthentication(): Promise<RenderLa
   if (!supabase) return null;
 
   const token = await currentRequestBearerToken();
-  const { data: userData, error: userError } = await supabase.auth.getUser(token ?? undefined);
+  const [{ data: userData, error: userError }, { data: claimsData, error: claimsError }] = await Promise.all([
+    supabase.auth.getUser(token ?? undefined),
+    supabase.auth.getClaims(token ?? undefined),
+  ]);
   const identity = userError ? null : verifiedUserIdentity(userData.user);
-  if (!identity) return null;
+  if (!identity || claimsError) return null;
 
-  const [{ data: assuranceData, error: assuranceError }, liveFactorCount] = await Promise.all([
+  const sessionId = verifiedSessionId(claimsData?.claims, identity.id);
+  if (!sessionId) return null;
+
+  const [
+    { data: assuranceData, error: assuranceError },
+    liveFactorCount,
+    liveSession,
+  ] = await Promise.all([
     supabase.auth.mfa.getAuthenticatorAssuranceLevel(token ?? undefined),
     getVerifiedTotpFactorCount(identity.id),
+    isRenderLabAuthSessionLive(identity.id, sessionId),
   ]);
-  if (assuranceError || liveFactorCount === null) return null;
+  if (assuranceError || liveFactorCount === null || liveSession !== true) return null;
   const assurance = normalizeRenderLabMfaAssurance({
     ...assuranceData,
     verifiedTotpFactorCount: liveFactorCount,
   });
   if (!assurance || !isRenderLabMfaFactorStateSupported(assurance)) return null;
 
-  return { identity, assurance };
+  return { identity, assurance, sessionId };
 }
 
 export async function getCurrentRenderLabMfaAssurance(): Promise<RenderLabMfaAssurance | null> {

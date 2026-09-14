@@ -1,12 +1,16 @@
 import { AccountSettings } from "@/features/account/account-settings";
 import styles from "@/features/account/account-settings.module.css";
 import { isSupabaseAuthConfigured } from "@/lib/supabase/config";
-import { getCurrentRenderLabIdentity, getCurrentRenderLabMfaAssurance } from "@/lib/supabase/server";
+import {
+  getCurrentRenderLabIdentity,
+  getFreshCurrentRenderLabAuthentication,
+} from "@/lib/supabase/server";
 import {
   isRenderLabAccessEnforcementEnabled,
   resolveRenderLabAccountAccess,
   type RenderLabAccountAccess,
 } from "@/server/account/account-access";
+import { getRenderLabSessionSummaries } from "@/server/account/account-sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +48,8 @@ export default async function SettingsPage({
 }) {
   const params = await searchParams;
   const configured = isSupabaseAuthConfigured();
-  const identity = configured ? await getCurrentRenderLabIdentity() : null;
+  const authentication = configured ? await getFreshCurrentRenderLabAuthentication() : null;
+  const identity = authentication?.identity ?? (configured ? await getCurrentRenderLabIdentity() : null);
   let access: RenderLabAccountAccess | null = null;
 
   if (identity) {
@@ -55,7 +60,10 @@ export default async function SettingsPage({
     }
   }
 
-  const assurance = identity ? await getCurrentRenderLabMfaAssurance() : null;
+  const assurance = authentication?.assurance ?? null;
+  const sessions = authentication
+    ? await getRenderLabSessionSummaries(authentication.identity.id, authentication.sessionId)
+    : null;
   const mfaState = !assurance
     ? "unavailable"
     : assurance.nextLevel !== "aal2"
@@ -87,6 +95,7 @@ export default async function SettingsPage({
         initialFeedback={initialFeedback(params)}
         showAdminLink={showAdminLink}
         mfaState={mfaState}
+        sessions={sessions}
       />
     </section>
   );
