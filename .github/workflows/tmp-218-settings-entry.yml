@@ -1,0 +1,56 @@
+name: Temporary #218 Settings entry patch
+
+on:
+  push:
+    branches:
+      - account/218-email-identity
+    paths:
+      - ".github/workflows/tmp-218-settings-entry.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: account/218-email-identity
+          fetch-depth: 0
+      - name: Patch Settings sign-in email row
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("src/features/account/account-settings.tsx")
+          text = path.read_text()
+          old = '''          <RegisterRow index="01" title="Account">
+            <div className={styles.valueStack}>
+              <p className={styles.valueLabel}>Sign-in email</p>
+              <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
+              <p className={styles.helper}>Used to sign in. Email changes are not currently available.</p>
+            </div>
+          </RegisterRow>'''
+          new = '''          <RegisterRow index="01" title="Account">
+            <div className={styles.actionRow}>
+              <div className={styles.valueStack}>
+                <p className={styles.valueLabel}>Sign-in email</p>
+                <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
+                <p className={styles.helper}>Used to sign in. Changing it keeps the same RenderLab account, access and ownership.</p>
+              </div>
+              <Button asChild variant="secondary" size="lg">
+                <Link href="/settings/email">Change email</Link>
+              </Button>
+            </div>
+          </RegisterRow>'''
+          if old not in text:
+              raise SystemExit("Settings email row anchor not found")
+          path.write_text(text.replace(old, new, 1))
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/features/account/account-settings.tsx
+          git commit -m "feat: expose sign-in email change from Settings"
+          git push origin HEAD:account/218-email-identity
