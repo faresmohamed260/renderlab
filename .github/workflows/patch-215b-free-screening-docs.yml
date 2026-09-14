@@ -1,0 +1,37 @@
+name: Patch 215B Free Screening Docs
+
+on:
+  push:
+    branches:
+      - plan/215b-free-compromised-password-screening
+    paths:
+      - scripts/patch-215b-free-screening-docs.py
+      - .github/workflows/patch-215b-free-screening-docs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: plan/215b-free-compromised-password-screening
+          fetch-depth: 1
+      - name: Patch authoritative docs
+        run: python scripts/patch-215b-free-screening-docs.py
+      - name: Remove temporary helpers
+        run: |
+          rm scripts/patch-215b-free-screening-docs.py
+          rm .github/workflows/patch-215b-free-screening-docs.yml
+      - name: Validate and commit contract
+        run: |
+          set -euo pipefail
+          git diff --check
+          test -z "$(git status --porcelain | grep -vE '^( M| D) (PROJECT.md|docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md|docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md|docs/architecture/INFRASTRUCTURE.md|scripts/patch-215b-free-screening-docs.py|.github/workflows/patch-215b-free-screening-docs.yml)$' || true)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md docs/architecture/INFRASTRUCTURE.md scripts/patch-215b-free-screening-docs.py .github/workflows/patch-215b-free-screening-docs.yml
+          git commit -m "docs: replace paid leaked-password gate with free HIBP screening"
+          git push origin HEAD:plan/215b-free-compromised-password-screening
