@@ -9,6 +9,7 @@ export type RenderLabMfaAssurance = {
   currentLevel: RenderLabAuthenticatorAssuranceLevel;
   nextLevel: RenderLabAuthenticatorAssuranceLevel;
   currentAuthenticationMethods: RenderLabAuthenticationMethod[];
+  verifiedTotpFactorCount: number | null;
 };
 
 export const RENDERLAB_RECENT_TOTP_STEP_UP_SECONDS = 10 * 60;
@@ -28,6 +29,11 @@ function authenticationMethods(value: unknown): RenderLabAuthenticationMethod[] 
   });
 }
 
+function verifiedTotpFactorCount(value: unknown) {
+  if (value == null) return null;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
 export function normalizeRenderLabMfaAssurance(value: unknown): RenderLabMfaAssurance | null {
   if (!value || typeof value !== "object") return null;
   const currentLevel = assuranceLevel("currentLevel" in value ? value.currentLevel : null);
@@ -39,11 +45,19 @@ export function normalizeRenderLabMfaAssurance(value: unknown): RenderLabMfaAssu
     currentAuthenticationMethods: authenticationMethods(
       "currentAuthenticationMethods" in value ? value.currentAuthenticationMethods : null,
     ),
+    verifiedTotpFactorCount: verifiedTotpFactorCount(
+      "verifiedTotpFactorCount" in value ? value.verifiedTotpFactorCount : null,
+    ),
   };
 }
 
 export function isRenderLabMfaEnrolled(assurance: RenderLabMfaAssurance) {
+  if (assurance.verifiedTotpFactorCount !== null) return assurance.verifiedTotpFactorCount > 0;
   return assurance.nextLevel === "aal2";
+}
+
+export function isRenderLabMfaFactorStateSupported(assurance: RenderLabMfaAssurance) {
+  return assurance.verifiedTotpFactorCount === null || assurance.verifiedTotpFactorCount <= 1;
 }
 
 export function isRenderLabMfaChallengeRequired(assurance: RenderLabMfaAssurance) {
