@@ -16,8 +16,7 @@ type FactorSummary = {
 };
 
 export function AccountMfaChallenge({ nextPath }: { nextPath: string }) {
-  const [factors, setFactors] = useState<FactorSummary[]>([]);
-  const [factorId, setFactorId] = useState("");
+  const [factor, setFactor] = useState<FactorSummary | null>(null);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -32,11 +31,14 @@ export function AccountMfaChallenge({ nextPath }: { nextPath: string }) {
         const { data, error: factorError } = await supabase.auth.mfa.listFactors();
         if (factorError) throw factorError;
         const verified = data.totp
-          .filter((factor) => factor.status === "verified")
-          .map((factor) => ({ id: factor.id, friendlyName: factor.friendly_name ?? null }));
+          .filter((candidate) => candidate.status === "verified")
+          .map((candidate) => ({ id: candidate.id, friendlyName: candidate.friendly_name ?? null }));
         if (!active) return;
-        setFactors(verified);
-        setFactorId(verified[0]?.id ?? "");
+        if (verified.length > 1) {
+          setError("This account has an unsupported MFA state. Return to MFA settings and do not continue verification.");
+          return;
+        }
+        setFactor(verified[0] ?? null);
       } catch {
         if (active) setError("Authenticator verification is temporarily unavailable.");
       } finally {
@@ -50,13 +52,13 @@ export function AccountMfaChallenge({ nextPath }: { nextPath: string }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!factorId || !code.trim()) return;
+    if (!factor || !code.trim()) return;
     setError(null);
     setBusy(true);
     try {
       const supabase = createBrowserSupabaseClient();
       if (!supabase) throw new Error("MFA unavailable");
-      const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: code.trim() });
+      const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: code.trim() });
       if (verifyError) throw verifyError;
       window.location.assign(nextPath);
     } catch {
@@ -79,12 +81,14 @@ export function AccountMfaChallenge({ nextPath }: { nextPath: string }) {
             <div className={styles.passwordStack}>
               <div className={styles.valueStack}>
                 <p className={styles.valueLabel}>Authenticator code</p>
-                <p className={styles.helper}>Use a current code from one of your verified authenticator apps.</p>
+                <p className={styles.helper}>
+                  Use a current code from your verified authenticator{factor?.friendlyName ? ` (${factor.friendlyName})` : ""}.
+                </p>
               </div>
 
-              {loading ? <Spinner aria-label="Loading authenticators" /> : null}
+              {loading ? <Spinner aria-label="Loading authenticator" /> : null}
 
-              {!loading && factors.length === 0 ? (
+              {!loading && !factor && !error ? (
                 <Alert variant="destructive">
                   <AlertDescription>
                     No verified authenticator is available. <Link href="/settings/mfa">Return to MFA settings</Link>.
@@ -92,25 +96,7 @@ export function AccountMfaChallenge({ nextPath }: { nextPath: string }) {
                 </Alert>
               ) : null}
 
-              {factors.length > 1 ? (
-                <Field>
-                  <FieldLabel htmlFor="mfa-factor">Authenticator</FieldLabel>
-                  <select
-                    id="mfa-factor"
-                    className={styles.factorSelect}
-                    value={factorId}
-                    onChange={(event) => setFactorId(event.target.value)}
-                  >
-                    {factors.map((factor, index) => (
-                      <option key={factor.id} value={factor.id}>
-                        {factor.friendlyName || `Authenticator ${index + 1}`}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              ) : null}
-
-              {factors.length > 0 ? (
+              {factor ? (
                 <Field>
                   <FieldLabel htmlFor="mfa-challenge-code">Code</FieldLabel>
                   <Input
@@ -132,9 +118,9 @@ export function AccountMfaChallenge({ nextPath }: { nextPath: string }) {
                 </Alert>
               ) : null}
 
-              {factors.length > 0 ? (
+              {factor ? (
                 <div className={styles.passwordActions}>
-                  <Button type="submit" size="lg" disabled={busy || !factorId || !code.trim()}>
+                  <Button type="submit" size="lg" disabled={busy || !code.trim()}>
                     {busy ? <Spinner aria-hidden="true" /> : null}
                     Verify
                   </Button>

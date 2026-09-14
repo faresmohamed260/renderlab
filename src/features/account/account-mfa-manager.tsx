@@ -40,11 +40,16 @@ export function AccountMfaManager({ activeAdmin }: { activeAdmin: boolean }) {
     if (!supabase) throw new Error("MFA unavailable");
     const { data, error } = await supabase.auth.mfa.listFactors();
     if (error) throw error;
-    setFactors(
-      data.totp
-        .filter((factor) => factor.status === "verified")
-        .map((factor) => ({ id: factor.id, friendlyName: factor.friendly_name ?? null })),
-    );
+    const verified = data.totp
+      .filter((factor) => factor.status === "verified")
+      .map((factor) => ({ id: factor.id, friendlyName: factor.friendly_name ?? null }));
+    setFactors(verified);
+    if (verified.length > 1) {
+      setFeedback({
+        kind: "error",
+        message: "This account has an unsupported MFA state. Do not change factors until RenderLab support reviews it.",
+      });
+    }
   }
 
   useEffect(() => {
@@ -79,9 +84,16 @@ export function AccountMfaManager({ activeAdmin }: { activeAdmin: boolean }) {
 
   async function startEnrollment() {
     setFeedback(null);
+    if (factors.length > 0) {
+      setFeedback({
+        kind: "error",
+        message: "RenderLab supports one verified authenticator per account. Remove the current authenticator before enrolling a replacement.",
+      });
+      return;
+    }
+
     setBusy(true);
     try {
-      if (factors.length > 0 && !(await requireRecentStepUp())) return;
       const supabase = createBrowserSupabaseClient();
       if (!supabase) throw new Error("MFA unavailable");
       const { data, error } = await supabase.auth.mfa.enroll({
@@ -134,13 +146,11 @@ export function AccountMfaManager({ activeAdmin }: { activeAdmin: boolean }) {
 
   async function removeFactor(factorId: string) {
     setFeedback(null);
-    if (activeAdmin && factors.length === 1) {
-      setFeedback({
-        kind: "error",
-        message: "Active Admin access requires at least one verified authenticator. Add a replacement before removing this factor.",
-      });
+    if (factors.length !== 1) {
+      setFeedback({ kind: "error", message: "Authenticator removal is unavailable while factor state is inconsistent." });
       return;
     }
+
     setBusy(true);
     try {
       if (!(await requireRecentStepUp())) return;
@@ -150,13 +160,21 @@ export function AccountMfaManager({ activeAdmin }: { activeAdmin: boolean }) {
       if (error) throw error;
       await supabase.auth.refreshSession();
       await loadFactors();
-      setFeedback({ kind: "success", message: "Authenticator removed." });
+      setFeedback({
+        kind: "success",
+        message: activeAdmin
+          ? "Authenticator removed. Admin access is now locked until you enroll and verify a replacement."
+          : "Authenticator removed. Multi-factor authentication is no longer enabled for this account.",
+      });
     } catch {
       setFeedback({ kind: "error", message: "Authenticator could not be removed. Verify again and retry." });
     } finally {
       setBusy(false);
     }
   }
+
+  const hasVerifiedFactor = factors.length === 1;
+  const inconsistentFactorState = factors.length > 1;
 
   return (
     <div className={styles.surfaceWrap}>
@@ -165,30 +183,38 @@ export function AccountMfaManager({ activeAdmin }: { activeAdmin: boolean }) {
         <section className={styles.row}>
           <div className={styles.labelCell}>
             <span className={styles.index}>01</span>
-            <h2 className={styles.sectionTitle}>Authenticators</h2>
+            <h2 className={styles.sectionTitle}>Authenticator</h2>
           </div>
           <div className={styles.valueCell}>
             <div className={styles.passwordStack}>
               <div className={styles.valueStack}>
-                <p className={styles.valueLabel}>TOTP authenticator apps</p>
+                <p className={styles.valueLabel}>TOTP authenticator app</p>
                 <p className={styles.helper}>
-                  RenderLab supports authenticator-app codes. Add a backup authenticator if losing one device would lock you out.
+                  RenderLab supports one verified authenticator per account. If you lose it, automated email recovery does not remove MFA; recovery requires the operator-assisted policy.
                 </p>
               </div>
 
+              {activeAdmin && hasVerifiedFactor ? (
+                <Alert>
+                  <AlertDescription>
+                    Removing this authenticator immediately locks Admin access until a replacement is enrolled and verified.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
               {busy && factors.length === 0 && !enrollment ? <Spinner aria-label="Loading authenticator settings" /> : null}
 
-              {factors.map((factor, index) => (
+              {factors.map((factor) => (
                 <div className={styles.factorRow} key={factor.id}>
                   <div className={styles.valueStack}>
-                    <p className={styles.valueLabel}>{factor.friendlyName || `Authenticator ${index + 1}`}</p>
+                    <p className={styles.valueLabel}>{factor.friendlyName || "Authenticator"}</p>
                     <p className={styles.helper}>Verified TOTP factor</p>
                   </div>
                   <Button
                     type="button"
                     variant="secondary"
                     size="lg"
-                    disabled={busy}
+                    disabled={busy || inconsistentFactorState}
                     onClick={() => removeFactor(factor.id)}
                   >
                     Remove
@@ -196,7 +222,7 @@ export function AccountMfaManager({ activeAdmin }: { activeAdmin: boolean }) {
                 </div>
               ))}
 
-              {!enrollment ? (
+              {!hasVerifiedFactor && !inconsistentFactorState && !enrollment ? (
                 <FieldGroup>
                   <Field>
                     <FieldLabel htmlFor="mfa-friendly-name">Authenticator label</FieldLabel>
@@ -205,18 +231,20 @@ export function AccountMfaManager({ activeAdmin }: { activeAdmin: boolean }) {
                       value={friendlyName}
                       maxLength={64}
                       onChange={(event) => setFriendlyName(event.target.value)}
-                      placeholder={factors.length === 0 ? "Primary authenticator" : "Backup authenticator"}
+                      placeholder="Authenticator"
                     />
-                    <FieldDescription>This label is only for identifying your own factors.</FieldDescription>
+                    <FieldDescription>This label is only for identifying your authenticator.</FieldDescription>
                   </Field>
                   <div className={styles.passwordActions}>
                     <Button type="button" size="lg" disabled={busy} onClick={startEnrollment}>
                       {busy ? <Spinner aria-hidden="true" /> : null}
-                      {factors.length === 0 ? "Set up authenticator" : "Add authenticator"}
+                      Set up authenticator
                     </Button>
                   </div>
                 </FieldGroup>
-              ) : (
+              ) : null}
+
+              {enrollment ? (
                 <div className={styles.enrollmentGrid}>
                   <div className={styles.qrPanel}>
                     {/* Supabase returns a short-lived data URL for this enrollment only. */}
@@ -251,7 +279,7 @@ export function AccountMfaManager({ activeAdmin }: { activeAdmin: boolean }) {
                     </div>
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </section>
