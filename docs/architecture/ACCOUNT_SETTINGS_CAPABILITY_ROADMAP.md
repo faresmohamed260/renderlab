@@ -1,7 +1,8 @@
 # Account & Settings Capability Roadmap
 
-**Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION PENDING  
-**Tracker:** #213  
+**Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE
+**Current execution:** #215A repository-side password-policy synchronization merged/verified as `8ea859df84f5173267defbf3e278a95bba403014`; hosted Auth execution remains separately pending and #215B leaked-password protection remains plan-gated.
+**Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
 **Related visual R&D:** Phase 27 / #211 / draft PR #212  

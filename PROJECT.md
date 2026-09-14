@@ -58,6 +58,16 @@ Contextual/utility:
 
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
+
+## Account & Settings capability program — active work
+- Workstream #215 is the immediate P0 account/security slice under `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` and `docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md`.
+- The #215 contract merged as `85cdd59909a3b48bd4a043ed9d984064497215fb`. Repository-side #215A policy synchronization then merged through PR #243 as `8ea859df84f5173267defbf3e278a95bba403014`.
+- The repository now has one canonical 15-character password-creation/replacement policy. Sign-in intentionally has no client minimum-length gate so existing credentials reach authoritative Supabase Auth instead of being rejected by browser presentation logic.
+- Exact PR-head workflows all passed: Engineering `34821671241`, Brand/Launch `34821671275`, UI Shell `34821671336`, Integrated Release `34821671515`, and Account Identity `34821671246` unchanged attempt 2. Account Identity attempt 1 failed only on a transient Supabase 504 during stale invitation cleanup before UI assertions. The successful run uploaded artifact `10338159764` (`sha256:9bf0f467dc01f570f2a3b755f40ebd377c6869219eb410ec43473ce8586c6b45`).
+- Both workflows GitHub attached to merged `main` passed: Engineering `34822037091` and UI Shell `34822037092`.
+- This repository-side work is **not deployed**. Production remains the completed UI redesign source `b6deedad8a229b34828da0c3760b62fa147c1981` / READY deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh` until hosted Auth policy and repository policy are explicitly coordinated and a separate deployment is authorized.
+- Hosted Supabase Auth configuration has not been mutated. Remaining #215A work is the separately authorized configuration/audit stage: capture redacted current Auth config, coordinate the hosted 15-character policy, verify Site URL/redirects/templates/security notifications/rate limits, evaluate CAPTCHA, and rerun acceptance. Leaked-password protection remains the #215B plan-gated blocker because the current Supabase organization is on Free and the feature is Pro+.
+
 ## Phase 23 Create fidelity correction — 2026-09-12
 - Direct user comparison against the explicitly approved Clear Composer v0.5 evidence reopened issue #184 after the first merged Phase 23 implementation proved functionally correct but materially drifted from the approved composition. The binding visual authority remains prototype/code head `6237f59351d2cd7b397881f617a483d62d9bf438`, R&D run `34613720083`, artifact `10269841181` (`sha256:3d3eec07dc2ff4924deb2ce6739bca420fba88e816665af34c4289ed45aae1c0`).
 - The user-approved correction implementation head `c786a17fa3a3c7f76dba5a64cb7822926749c1a2` restored the compact horizontal application header, 900px authoring / 1120px result composition, Image/Video-above-composer order, visible `PROMPT` labelling, reference-before-prompt grammar, flat essential-settings footer, visible setting label/value grammar, stable high-contrast Generate, composer-attached Advanced, truthful registration-framed generating state and asymmetric media-first result rail. No schema, worker/provider, routing, auth/admission, ownership, durable-media, storage or deployment contract changed.
