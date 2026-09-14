@@ -3,7 +3,7 @@
 **Tracker:** #215  
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `adfb9153003a6e1c86015bbd56c40b1e329788ce`  
-**Status:** #215A CURRENT-PLAN HARDENING COMPLETE + VERIFIED / #215B PLAN-GATED / APPLICATION POLICY CODE NOT YET DEPLOYED
+**Status:** #215A CURRENT-PLAN HARDENING COMPLETE + VERIFIED + PRODUCTION-LIVE / #215B PLAN-GATED
 **Scope:** remaining hosted Supabase Auth policy/security hardening plus the minimum application-policy synchronization required to keep RenderLab truthful  
 **Out of scope:** Settings redesign, profile/MFA/session-management feature implementation, schema/RLS/storage/provider/worker changes, production deployment
 
@@ -24,7 +24,7 @@ No hosted Supabase Auth setting is changed by this contract. Hosted configuratio
 - Account Identity artifact: `10338159764`, `sha256:9bf0f467dc01f570f2a3b755f40ebd377c6869219eb410ec43473ce8586c6b45`.
 - Implementation merge: `8ea859df84f5173267defbf3e278a95bba403014`.
 - Merged-main attached workflows: Engineering `34822037091`, UI Shell `34822037092` — both passed.
-- Repository policy code remains **not deployed**. Production application source is still the Phase 23–29 redesign deployment until a separate application deployment is authorized.
+- Repository policy code is now **production-live** through the separately authorized Stage 3 rollout recorded below.
 - Hosted #215A configuration was subsequently executed and verified under the Stage 2 record below.
 
 ## 2. Verified current baseline
@@ -154,7 +154,23 @@ Final current-plan hosted state:
 - hosted current-password and nonce-reauthentication toggles remain disabled, preserving RenderLab's app-owned current-password verification contract;
 - leaked-password protection remains disabled solely as the explicit #215B **Supabase Pro+ plan gate**.
 
-#215A is therefore **implementation-complete and verified for the current Free plan**. #215 remains open only for the separately authorized #215B plan/billing decision and leaked-password-protection closure. The repository-side 15-character application guidance is merged but still requires a separately authorized production application deployment before hosted policy and production presentation are fully synchronized.
+#215A is therefore **implementation-complete, verified and production-live for the current Free plan**. #215 remains open only for the separately authorized #215B plan/billing decision and leaked-password-protection closure. Hosted policy and production application presentation are synchronized on the canonical 15-character minimum.
+
+### Stage 3 application production rollout — completed and verified 2026-09-14
+
+Explicit user authorization deployed the already-merged #215A application policy through the repository's established guarded Vercel rollout pattern.
+
+- rollout workflow run `34865097038`, job `104046825061`, completed successfully;
+- exact pristine source guard checked out `27eda7ed0a619435b9d89531bdeb3fffe772e803`;
+- Vercel production deployment `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7` / `https://renderlab-apvh9ck6i-faresmohamed260-6733s-projects.vercel.app` reached `READY` with exact Git metadata `27eda7ed0a619435b9d89531bdeb3fffe772e803`;
+- the production environment prebuild contract passed before Next.js compilation;
+- the workflow explicitly moved `renderlab.faresuniform.uk` to the new deployment;
+- custom-domain smoke passed for root, `/create`, `/library`, `/activity` and `/settings`, including the approved Landing identity markers;
+- rollback was not invoked; prior deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh` remains the immediate known-good alias restoration target;
+- post-cutover Vercel audit found no error/fatal logs for the new deployment and no runtime-error clusters in the observed window;
+- automatic Git → Vercel deployment remains disabled.
+
+Hosted Auth and the production application are therefore synchronized on the canonical 15-character password-creation/replacement policy. #215A is complete for the current Free plan. #215B remains independently gated on explicit authorization for a qualifying Supabase plan and leaked-password protection.
 
 ## 3. Binding product/security decisions
 

@@ -537,6 +537,16 @@ Phase 13A recorded the existing apex DMARC posture as `p=none`, and Phase 13 did
 
 This follow-up currently authorizes documentation/research only. It changes no Resend SMTP state, Supabase Auth configuration, Cloudflare DNS, application code, schema, generation infrastructure or Vercel deployment.
 
+## #215A application production rollout — 2026-09-14
+
+- Explicit rollout run `34865097038` deployed exact repository source `27eda7ed0a619435b9d89531bdeb3fffe772e803` using the established pinned Vercel CLI production workflow.
+- READY production deployment: `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7` (`renderlab-apvh9ck6i-faresmohamed260-6733s-projects.vercel.app`). Vercel Git metadata matches the exact candidate SHA.
+- `renderlab.faresuniform.uk` was explicitly aliased only after the production deploy completed. Root, Create, Library, Activity and Settings smoke passed after cutover.
+- Post-cutover Vercel audit found no error/fatal runtime logs for the deployment and no runtime-error clusters in the observed window. Rollback was not required.
+- Prior production deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh` remains the immediate known-good alias rollback target.
+- This rollout changed no Supabase schema/RLS, Auth configuration, R2 contract, worker/provider routing, scheduler or secret inventory. Hosted #215A Auth configuration had already been separately applied and verified before this application rollout.
+- Automatic Git → Vercel deployment remains disabled; future production releases still require explicit authorization.
+
 ## Security Rules
 - Never commit service-role/R2/provider/backend bearer credentials.
 - Only the Supabase project URL and publishable key are intentionally exposed to browser code. `next.config.ts` maps those public-safe values from `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`; service-role and R2 credentials must never be published.
