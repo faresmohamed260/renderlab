@@ -27,16 +27,18 @@ try {
 assert(response.ok, `Pwned Passwords range API returned HTTP ${response.status}.`);
 const body = await response.text();
 const lines = body.split(/\r?\n/).filter(Boolean);
-assert(lines.length >= 800 && lines.length <= 1_000, `Expected padded response with 800-1000 rows, got ${lines.length}.`);
+assert(lines.length > 0, "Pwned Passwords range API returned an empty response.");
 
 let matched = false;
+let padded = false;
 for (const line of lines) {
   const [candidateSuffix, countValue] = line.trim().split(":", 2);
-  if (candidateSuffix?.toUpperCase() !== suffix) continue;
   const count = Number.parseInt(countValue, 10);
+  if (Number.isFinite(count) && count === 0) padded = true;
+  if (candidateSuffix?.toUpperCase() !== suffix) continue;
   matched = Number.isFinite(count) && count > 0;
-  break;
 }
 
-assert(matched, "Pwned Passwords public compromised fixture was not present in the padded range response.");
+assert(matched, "Pwned Passwords public compromised fixture was not present in the range response.");
+assert(padded, "Pwned Passwords padded response did not contain any zero-count padding records.");
 console.log("Pwned Passwords free range API reachable; padded k-anonymity response verified.");
