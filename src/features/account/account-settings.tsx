@@ -281,7 +281,6 @@ export function AccountSettings({
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                minLength={8}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
@@ -298,7 +297,7 @@ export function AccountSettings({
           ) : null}
 
           <div className={styles.formActions}>
-            <Button type="submit" size="lg" disabled={busyAction !== null || !email.trim() || password.length < 8}>
+            <Button type="submit" size="lg" disabled={busyAction !== null || !email.trim() || !password}>
               {busyAction === "signin" ? <Spinner aria-hidden="true" /> : null}
               Sign in
             </Button>
