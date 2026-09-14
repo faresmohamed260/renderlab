@@ -293,12 +293,23 @@ export async function routeLocalAppRequestsWithAccount(page, baseUrl, account) {
       authorization: `Bearer ${account.accessToken}`,
     };
 
-    // Playwright carries route.continue header overrides across redirects. RenderLab media
-    // routes intentionally redirect to signed R2 GETs, so authenticate only the local route
-    // and let the browser follow the returned 3xx as a fresh external request.
+    // Header overrides from route.continue() follow redirects. Resolve signed-media routes
+    // outside Playwright's page-bound request context so the local Authorization header never
+    // reaches R2 and browser teardown cannot dispose an in-flight route.fetch() callback.
     if (isSignedMediaRedirectPath(requestUrl.pathname)) {
-      const response = await route.fetch({ headers, maxRedirects: 0 });
-      await route.fulfill({ response });
+      const method = request.method();
+      const response = await fetch(request.url(), {
+        method,
+        headers,
+        redirect: "manual",
+        body: method === "GET" || method === "HEAD" ? undefined : request.postDataBuffer() ?? undefined,
+      });
+      const responseHeaders = {};
+      response.headers.forEach((value, name) => {
+        if (name !== "content-encoding" && name !== "content-length") responseHeaders[name] = value;
+      });
+      const body = method === "HEAD" ? undefined : Buffer.from(await response.arrayBuffer());
+      await route.fulfill({ status: response.status, headers: responseHeaders, body });
       return;
     }
 
