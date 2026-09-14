@@ -12,11 +12,13 @@ import { isRenderLabMfaChallengeRequired, normalizeRenderLabMfaAssurance } from 
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { RenderLabIdentity } from "@/lib/supabase/server";
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
+import type { RenderLabSessionSummary } from "@/server/account/account-sessions";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
-type BusyAction = "signin" | "recovery" | "signout" | null;
+type BusyAction = "signin" | "recovery" | "signout-local" | "signout-others" | "signout-global" | null;
 type MfaState = "disabled" | "verified" | "verification-required" | "unavailable";
+type SignOutScope = "local" | "others" | "global";
 
 function accessPresentation(access: RenderLabAccountAccess | null, enforcementEnabled: boolean) {
   if (access?.status === "active") {
@@ -72,6 +74,16 @@ function mfaPresentation(state: MfaState) {
   };
 }
 
+function sessionTime(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Unknown";
+  return `${new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(date)} UTC`;
+}
+
 export function AccountSettings({
   configured,
   identity,
@@ -80,6 +92,7 @@ export function AccountSettings({
   initialFeedback = null,
   showAdminLink,
   mfaState,
+  sessions,
 }: {
   configured: boolean;
   identity: RenderLabIdentity | null;
@@ -88,6 +101,7 @@ export function AccountSettings({
   initialFeedback?: Feedback;
   showAdminLink: boolean;
   mfaState: MfaState;
+  sessions: RenderLabSessionSummary[] | null;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -158,21 +172,31 @@ export function AccountSettings({
     }
   }
 
-  async function handleSignOut() {
+  async function handleSignOut(scope: SignOutScope) {
     setFeedback(null);
-    setBusyAction("signout");
+    const action: BusyAction = scope === "local"
+      ? "signout-local"
+      : scope === "others"
+        ? "signout-others"
+        : "signout-global";
+    setBusyAction(action);
     try {
       const supabase = createBrowserSupabaseClient();
       if (!supabase) {
         setFeedback({ kind: "error", message: "Sign out is unavailable in this runtime." });
         return;
       }
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope });
       if (error) {
         setFeedback({ kind: "error", message: "Sign out did not complete. Try again." });
         return;
       }
-      router.refresh();
+      if (scope === "others") {
+        setFeedback({ kind: "success", message: "Other RenderLab sessions signed out." });
+        router.refresh();
+        return;
+      }
+      window.location.assign("/settings");
     } catch {
       setFeedback({ kind: "error", message: "Sign out did not complete. Try again." });
     } finally {
@@ -242,15 +266,49 @@ export function AccountSettings({
           </RegisterRow>
 
           <RegisterRow index="04" title="Sessions">
-            <div className={styles.actionRow}>
+            <div className={styles.sessionStack}>
               <div className={styles.valueStack}>
-                <p className={styles.valueLabel}>All RenderLab sessions</p>
-                <p className={styles.helper}>Ends RenderLab sessions on every device and browser.</p>
+                <p className={styles.valueLabel}>Active RenderLab sessions</p>
+                <p className={styles.helper}>
+                  Session labels are based on browser-reported information. RenderLab does not infer a physical location from your network address.
+                </p>
               </div>
-              <Button variant="destructive" size="lg" onClick={handleSignOut} disabled={busyAction !== null}>
-                {busyAction === "signout" ? <Spinner aria-hidden="true" /> : null}
-                Sign out everywhere
-              </Button>
+
+              {sessions ? (
+                <div className={styles.sessionList} aria-label="Active RenderLab sessions">
+                  {sessions.map((session) => (
+                    <div className={styles.sessionItem} key={session.id} data-current-session={session.isCurrent ? "true" : undefined}>
+                      <div className={styles.sessionHeader}>
+                        <p className={styles.sessionClient}>{session.clientLabel}</p>
+                        {session.isCurrent ? <span className={styles.currentSession}>This device</span> : null}
+                      </div>
+                      <div className={styles.sessionTimes}>
+                        <span>Last active <time dateTime={session.lastActiveAt}>{sessionTime(session.lastActiveAt)}</time></span>
+                        <span>Started <time dateTime={session.createdAt}>{sessionTime(session.createdAt)}</time></span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Alert>
+                  <AlertDescription>Session details are temporarily unavailable. Sign-out controls remain available.</AlertDescription>
+                </Alert>
+              )}
+
+              <div className={styles.sessionActions}>
+                <Button variant="secondary" size="lg" onClick={() => handleSignOut("local")} disabled={busyAction !== null}>
+                  {busyAction === "signout-local" ? <Spinner aria-hidden="true" /> : null}
+                  Sign out this device
+                </Button>
+                <Button variant="secondary" size="lg" onClick={() => handleSignOut("others")} disabled={busyAction !== null}>
+                  {busyAction === "signout-others" ? <Spinner aria-hidden="true" /> : null}
+                  Sign out other devices
+                </Button>
+                <Button variant="destructive" size="lg" onClick={() => handleSignOut("global")} disabled={busyAction !== null}>
+                  {busyAction === "signout-global" ? <Spinner aria-hidden="true" /> : null}
+                  Sign out everywhere
+                </Button>
+              </div>
             </div>
           </RegisterRow>
 
