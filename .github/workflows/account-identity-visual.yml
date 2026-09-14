@@ -35,5 +35,5 @@ jobs:
         with:
           node-version: 24
 
-      - name: Verify owned sub-15-character legacy fixture after hosted policy change
-        run: node scripts/account-auth-hardening-215a-legacy-fixture.mjs verify
+      - name: Clean owned sub-15-character legacy fixture
+        run: node scripts/account-auth-hardening-215a-legacy-fixture.mjs cleanup
