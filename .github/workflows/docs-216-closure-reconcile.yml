@@ -1,0 +1,55 @@
+name: Reconcile #216 closure docs
+
+on:
+  push:
+    branches:
+      - docs/216-session-controls-closure
+    paths:
+      - ".github/workflows/docs-216-closure-reconcile.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.repository == 'faresmohamed260/renderlab'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/216-session-controls-closure
+          fetch-depth: 0
+
+      - name: Apply narrow source-of-truth updates
+        shell: python
+        run: |
+          from pathlib import Path
+
+          project = Path("PROJECT.md")
+          project_text = project.read_text()
+          old_project = "- Workstream #215 Auth/email security hardening is **COMPLETE / VERIFIED / PRODUCTION-LIVE**. Its free RenderLab-owned HIBP compromised-password screening replaced the rejected Supabase paid-plan path. The next default P0 planning slice is #217 privileged MFA/step-up; it still requires its own fresh contract before implementation."
+          new_project = """- Workstream #215 Auth/email security hardening is **COMPLETE / VERIFIED / PRODUCTION-LIVE**. Its free RenderLab-owned HIBP compromised-password screening replaced the rejected Supabase paid-plan path.\n- Workstream #217 MFA/privileged step-up is **COMPLETE / VERIFIED / MERGED / NOT DEPLOYED by that workstream**. The binding initial policy is one TOTP factor, hosted `mfa_max_enrolled_factors = 1`, AAL2 for active Admin, member enforcement once enrolled, recent protected step-up, and operator-assisted lost-factor recovery.\n- Workstream #216 Session Controls v0.1 is **COMPLETE / VERIFIED / MERGED / NOT DEPLOYED by that workstream** at implementation merge `590c15f6fc9db9c107b3bc67fae80083fe0d55c4`. Settings now has a privacy-safe live session inventory plus local/others/global sign-out, and private authorization requires the verified JWT `session_id` to remain present in owner-scoped live `auth.sessions`. Security Activity remains deliberately deferred because the hosted database audit source was empty and no new audit-retention/PII policy was authorized.\n- The next default Account & Settings contract-planning slice is #218 Identity and sign-in method management unless explicitly reprioritized. #223 remains an independent P1 profile/credential-UX lane."""
+          if old_project not in project_text:
+              raise SystemExit("PROJECT.md closure anchor not found")
+          project.write_text(project_text.replace(old_project, new_project, 1))
+
+          infra = Path("docs/architecture/INFRASTRUCTURE.md")
+          infra_text = infra.read_text()
+          old_infra = "- `0015_generation_admission_external_bind.sql` — applied as `20260903093654 renderlab_generation_admission_external_bind`; corrective additive migration preserving 0014 terminal-local settlement while restoring the established conservative bind for accepted external backend job UUIDs that intentionally have no local `generation_jobs` row."
+          new_infra = old_infra + "\n- `0019_renderlab_auth_session_projection.sql` — applied and verified for #216 Session Controls v0.1; adds read-only `public.renderlab_auth_session_projection(p_user_id uuid)` over owner-scoped `auth.sessions`. The routine is `SECURITY DEFINER` with empty `search_path`, returns only session ID / created / last-active / user-agent fields for server-side normalization, exposes no IP/token/factor material, has no Auth write/delete capability, and grants execute only to `service_role` (plus owner), not `PUBLIC`, `anon` or `authenticated`. It supports live-session-aware RenderLab authorization and the privacy-safe Settings inventory. Application merge `590c15f6fc9db9c107b3bc67fae80083fe0d55c4`; no production application deployment was performed by #216."
+          if old_infra not in infra_text:
+              raise SystemExit("INFRASTRUCTURE.md migration anchor not found")
+          infra.write_text(infra_text.replace(old_infra, new_infra, 1))
+
+      - name: Commit reconciled docs
+        shell: bash
+        run: |
+          if git diff --quiet -- PROJECT.md docs/architecture/INFRASTRUCTURE.md; then
+            echo "No reconciliation changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/architecture/INFRASTRUCTURE.md
+          git commit -m "docs: synchronize #216 project and infrastructure state"
+          git push origin HEAD:docs/216-session-controls-closure
