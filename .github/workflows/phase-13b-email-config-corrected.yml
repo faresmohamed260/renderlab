@@ -28,82 +28,126 @@ jobs:
           test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "::error::SUPABASE_ACCESS_TOKEN is not configured."; exit 1; }
           echo "SUPABASE_ACCESS_TOKEN_PRESENT=true"
 
-      - name: Apply guarded 6-to-15 password minimum transition
+      - name: Apply guarded branded security-mail configuration
         shell: bash
         run: |
           set -euo pipefail
-          endpoint="https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth"
-
-          read_auth() {
-            curl --fail-with-body --silent --show-error \
-              --user-agent 'RenderLab-215A-PasswordPolicy/1.0' \
-              --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
-              "$endpoint" -o "$1"
-          }
-
-          patch_auth() {
-            curl --fail-with-body --silent --show-error \
-              --user-agent 'RenderLab-215A-PasswordPolicy/1.0' \
-              --request PATCH \
-              --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
-              --header 'content-type: application/json' \
-              --data-binary @"$1" \
-              "$endpoint" -o "$2"
-          }
-
-          read_auth /tmp/auth-before.json
+          mkdir -p artifacts
           python - <<'PY'
-          import json, os
+          import json
+          import os
+          import urllib.request
           from pathlib import Path
-          d=json.loads(Path('/tmp/auth-before.json').read_text())
-          if d.get('site_url') != os.environ['SITE_URL']:
+
+          endpoint = f"https://api.supabase.com/v1/projects/{os.environ['SUPABASE_PROJECT_REF']}/config/auth"
+          token = os.environ['SUPABASE_ACCESS_TOKEN']
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Content-Type': 'application/json',
+              'User-Agent': 'RenderLab-215A-SecurityMail/1.0',
+          }
+
+          def request(method='GET', body=None):
+              data = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request(endpoint, data=data, headers=headers, method=method)
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  text = response.read().decode()
+              return json.loads(text) if text else {}
+
+          before = request()
+          if before.get('site_url') != os.environ['SITE_URL']:
               raise SystemExit('Unexpected Site URL; refusing mutation')
-          allow=[x.strip() for x in str(d.get('uri_allow_list') or '').split(',') if x.strip()]
+          allow = [x.strip() for x in str(before.get('uri_allow_list') or '').split(',') if x.strip()]
           for required in (os.environ['INVITE_REDIRECT'], os.environ['RECOVERY_REDIRECT']):
               if required not in allow:
                   raise SystemExit('Required redirect missing; refusing mutation')
-          if d.get('smtp_host') != 'smtp.resend.com':
+          if before.get('smtp_host') != 'smtp.resend.com':
               raise SystemExit('Unexpected SMTP host; refusing mutation')
-          if int(d.get('password_min_length') or -1) != 6:
-              raise SystemExit(f"Expected hosted password minimum 6 before transition, got {d.get('password_min_length')!r}")
-          if d.get('password_required_characters') not in (None, ''):
-              raise SystemExit('Unexpected required-character policy; refusing mutation')
-          Path('/tmp/auth-patch.json').write_text(json.dumps({'password_min_length':15}))
-          Path('/tmp/auth-rollback.json').write_text(json.dumps({'password_min_length':6}))
-          print('RENDERLAB_215A_PASSWORD_MINIMUM_BEFORE=6')
-          print('RENDERLAB_215A_BASELINE_ASSERTIONS_OK=true')
-          PY
+          if int(before.get('password_min_length') or -1) != 15:
+              raise SystemExit('Hosted password minimum must already be 15')
+          if before.get('password_required_characters') not in (None, ''):
+              raise SystemExit('Unexpected required-character policy')
+          if before.get('security_captcha_enabled') is not False:
+              raise SystemExit('CAPTCHA state drifted; refusing mutation')
+          if before.get('security_update_password_require_current_password') is not False:
+              raise SystemExit('Hosted current-password requirement drifted')
+          if before.get('security_update_password_require_reauthentication') is not False:
+              raise SystemExit('Hosted nonce reauthentication requirement drifted')
 
-          mutated=false
-          rollback() {
-            if [ "$mutated" = true ]; then
-              echo "RENDERLAB_215A_PASSWORD_POLICY_ROLLBACK_ATTEMPTED=true"
-              patch_auth /tmp/auth-rollback.json /tmp/auth-rollback-response.json || true
-            fi
+          patch = {
+              'mailer_subjects_reauthentication': '{{ .Token }} is your RenderLab verification code',
+              'mailer_templates_reauthentication_content': '<h2>RenderLab verification code</h2><p>Use this code to verify a sensitive RenderLab account action:</p><p><strong>{{ .Token }}</strong></p><p>If you did not request this, do not share the code and change your RenderLab password.</p>',
+              'mailer_subjects_email_change': 'Confirm your RenderLab sign-in email change',
+              'mailer_templates_email_change_content': '<h2>Confirm your RenderLab sign-in email change</h2><p>You requested to change your RenderLab sign-in email to {{ .NewEmail }}.</p><p><a href="{{ .ConfirmationURL }}">Confirm new sign-in email</a></p><p>If you did not request this change, do not use the link and change your RenderLab password.</p>',
+              'mailer_notifications_password_changed_enabled': True,
+              'mailer_subjects_password_changed_notification': 'Your RenderLab password was changed',
+              'mailer_templates_password_changed_notification_content': '<h2>Your RenderLab password was changed</h2><p>The password for your RenderLab account was changed.</p><p>If you did not make this change, use RenderLab password recovery immediately and contact your RenderLab administrator.</p>',
+              'mailer_notifications_email_changed_enabled': True,
+              'mailer_subjects_email_changed_notification': 'Your RenderLab sign-in email was changed',
+              'mailer_templates_email_changed_notification_content': '<h2>Your RenderLab sign-in email was changed</h2><p>Your RenderLab sign-in email was changed from {{ .OldEmail }} to {{ .Email }}.</p><p>If you did not make this change, use RenderLab password recovery immediately and contact your RenderLab administrator.</p>',
+              'mailer_notifications_mfa_factor_enrolled_enabled': True,
+              'mailer_subjects_mfa_factor_enrolled_notification': 'A RenderLab verification method was added',
+              'mailer_templates_mfa_factor_enrolled_notification_content': '<h2>A RenderLab verification method was added</h2><p>Verification method {{ .FactorType }} was added to your RenderLab account.</p><p>If you did not make this change, change your RenderLab password immediately and contact your RenderLab administrator.</p>',
+              'mailer_notifications_mfa_factor_unenrolled_enabled': True,
+              'mailer_subjects_mfa_factor_unenrolled_notification': 'A RenderLab verification method was removed',
+              'mailer_templates_mfa_factor_unenrolled_notification_content': '<h2>A RenderLab verification method was removed</h2><p>Verification method {{ .FactorType }} was removed from your RenderLab account.</p><p>If you did not make this change, change your RenderLab password immediately and contact your RenderLab administrator.</p>',
+              'mailer_notifications_identity_linked_enabled': True,
+              'mailer_subjects_identity_linked_notification': 'A RenderLab sign-in method was linked',
+              'mailer_templates_identity_linked_notification_content': '<h2>A RenderLab sign-in method was linked</h2><p>A {{ .Provider }} sign-in method was linked to your RenderLab account.</p><p>If you did not make this change, change your RenderLab password immediately and contact your RenderLab administrator.</p>',
+              'mailer_notifications_identity_unlinked_enabled': True,
+              'mailer_subjects_identity_unlinked_notification': 'A RenderLab sign-in method was removed',
+              'mailer_templates_identity_unlinked_notification_content': '<h2>A RenderLab sign-in method was removed</h2><p>A {{ .Provider }} sign-in method was removed from your RenderLab account.</p><p>If you did not make this change, change your RenderLab password immediately and contact your RenderLab administrator.</p>',
           }
-          trap rollback ERR
 
-          patch_auth /tmp/auth-patch.json /tmp/auth-patch-response.json
-          mutated=true
-          read_auth /tmp/auth-after.json
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path('/tmp/auth-after.json').read_text())
-          if int(d.get('password_min_length') or -1) != 15:
-              raise SystemExit('Hosted password minimum did not read back as 15')
-          if d.get('password_required_characters') not in (None, ''):
-              raise SystemExit('Required-character policy changed unexpectedly')
-          if d.get('site_url') != os.environ['SITE_URL']:
-              raise SystemExit('Site URL changed unexpectedly')
-          if d.get('smtp_host') != 'smtp.resend.com':
-              raise SystemExit('SMTP host changed unexpectedly')
-          allow=[x.strip() for x in str(d.get('uri_allow_list') or '').split(',') if x.strip()]
-          for required in (os.environ['INVITE_REDIRECT'], os.environ['RECOVERY_REDIRECT']):
-              if required not in allow:
-                  raise SystemExit('Required redirect disappeared')
-          print('RENDERLAB_215A_PASSWORD_MINIMUM_AFTER=15')
-          print('RENDERLAB_215A_PASSWORD_POLICY_READBACK_OK=true')
+          rollback = {key: before.get(key) for key in patch}
+          Path('artifacts/account-auth-hardening-215a-security-mail-rollback.json').write_text(
+              json.dumps(rollback, indent=2, sort_keys=True) + '\n'
+          )
+
+          unchanged = [
+              'site_url', 'uri_allow_list',
+              'smtp_admin_email', 'smtp_host', 'smtp_port', 'smtp_sender_name', 'smtp_max_frequency',
+              'password_min_length', 'password_required_characters', 'password_hibp_enabled',
+              'security_captcha_enabled', 'security_captcha_provider',
+              'security_update_password_require_current_password', 'security_update_password_require_reauthentication',
+              'mailer_secure_email_change_enabled',
+              'rate_limit_anonymous_users', 'rate_limit_email_sent', 'rate_limit_otp', 'rate_limit_sms_sent',
+              'rate_limit_token_refresh', 'rate_limit_verify', 'rate_limit_web3',
+              'mailer_subjects_invite', 'mailer_templates_invite_content',
+              'mailer_subjects_recovery', 'mailer_templates_recovery_content',
+              'mailer_notifications_phone_changed_enabled',
+          ]
+
+          mutated = False
+          try:
+              request('PATCH', patch)
+              mutated = True
+              after = request()
+              for key, value in patch.items():
+                  if after.get(key) != value:
+                      raise RuntimeError(f'Hosted readback mismatch: {key}')
+              for key in unchanged:
+                  if after.get(key) != before.get(key):
+                      raise RuntimeError(f'Out-of-scope hosted config changed: {key}')
+              print('RENDERLAB_215A_SECURITY_NOTIFICATIONS_ENABLED=6')
+              print('RENDERLAB_215A_REAUTH_TEMPLATE_BRANDED=true')
+              print('RENDERLAB_215A_EMAIL_CHANGE_TEMPLATE_BRANDED=true')
+              print('RENDERLAB_215A_SECURITY_MAIL_READBACK_OK=true')
+              print('RENDERLAB_215A_OUT_OF_SCOPE_CONFIG_PRESERVED=true')
+          except Exception:
+              if mutated:
+                  try:
+                      request('PATCH', rollback)
+                      print('RENDERLAB_215A_SECURITY_MAIL_ROLLBACK_ATTEMPTED=true')
+                  except Exception:
+                      print('RENDERLAB_215A_SECURITY_MAIL_ROLLBACK_FAILED=true')
+              raise
           PY
 
-          trap - ERR
+      - name: Upload bounded rollback values
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderlab-account-auth-hardening-215a-security-mail-rollback
+          path: artifacts/account-auth-hardening-215a-security-mail-rollback.json
+          if-no-files-found: error
+          retention-days: 14
