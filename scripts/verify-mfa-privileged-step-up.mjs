@@ -201,9 +201,18 @@ async function main() {
     currentFactorId = null;
     console.log("OPERATOR_MFA_ADMIN_FACTOR_DELETE=success");
 
+    const postResetPasswordUpdate = await user.auth.updateUser({ password: replacementPassword });
+    if (postResetPasswordUpdate.error) {
+      console.log(`POST_OPERATOR_RESET_STALE_AAL2_PASSWORD_UPDATE=rejected (${postResetPasswordUpdate.error.message})`);
+    } else {
+      console.log("POST_OPERATOR_RESET_STALE_AAL2_PASSWORD_UPDATE=accepted");
+      const restored = await service.auth.admin.updateUserById(fixtureUserId, { password });
+      if (restored.error) throw restored.error;
+    }
+
     const revoked = await fetchAdminHealthWithToken(preResetToken);
-    assert(revoked.response.status === 403, `Operator factor reset must revoke the prior session; got HTTP ${revoked.response.status}.`);
-    console.log(`OPERATOR_MFA_RESET_OLD_SESSION_STATUS=${revoked.response.status}`);
+    assert(revoked.response.status === 403, `Operator factor reset must immediately remove RenderLab Admin authorization; got HTTP ${revoked.response.status}.`);
+    console.log(`OPERATOR_MFA_RESET_OLD_ADMIN_STATUS=${revoked.response.status}`);
 
     await user.auth.signOut({ scope: "local" }).catch(() => undefined);
     const signedAfterReset = await user.auth.signInWithPassword({ email, password });
@@ -211,7 +220,12 @@ async function main() {
     await expectAal("aal1", "aal1", "after operator reset sign-in");
     await expectAdminMfaRequired("Admin after operator reset before re-enrollment");
 
-    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, password AAL2 enforcement, AAL transitions, Admin authorization, removal gap, and supported operator-assisted factor reset verified.");
+    assert(
+      postResetPasswordUpdate.error,
+      "A still-unexpired AAL2 token remained able to replace the password after operator MFA reset.",
+    );
+
+    console.log("MFA configured fixture passed: one-factor provider cap at AAL1/AAL2, password AAL2 enforcement, live-factor Admin authorization, removal gap, and supported operator-assisted factor reset verified.");
   } finally {
     await user.auth.signOut({ scope: "local" }).catch(() => undefined);
     if (fixtureUserId) {
