@@ -3,7 +3,7 @@
 **Tracker:** #215  
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `adfb9153003a6e1c86015bbd56c40b1e329788ce`  
-**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / HOSTED CONFIG MUTATION PENDING AUTHORIZATION / NOT DEPLOYED
+**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A MERGED + MERGED-MAIN VERIFIED / HOSTED PREFLIGHT VERIFIED / HOSTED MUTATION NOT EXECUTED / NOT DEPLOYED
 **Scope:** remaining hosted Supabase Auth policy/security hardening plus the minimum application-policy synchronization required to keep RenderLab truthful  
 **Out of scope:** Settings redesign, profile/MFA/session-management feature implementation, schema/RLS/storage/provider/worker changes, production deployment
 
@@ -89,23 +89,41 @@ Current Supabase documentation establishes:
 - CAPTCHA protection can cover sign-in and password-reset flows, but enabling it also requires compatible frontend token handling;
 - Site URL and redirect allowlist are part of the hosted Auth security boundary.
 
-### Hosted configuration fields still not independently readable from the connected toolset
+### Hosted configuration preflight — verified 2026-09-14
 
-The current Supabase connector exposes project health, schema, advisors, logs and documentation but does not expose the hosted Auth configuration document. The repository also does not contain a checked-in Management API token or a workflow that reads `/v1/projects/<ref>/config/auth`.
+The connected Supabase plugin still does not expose the hosted Auth configuration document directly, but the repository's established Phase 13 Management API credential path was successfully reused through a read-only GitHub Actions preflight. No hosted Auth setting was mutated.
 
-Therefore the following must be captured during the authorized execution preflight from the Supabase Dashboard or Management API **without recording secrets**:
+Authoritative read-only evidence:
 
-- Site URL;
-- additional redirect URLs;
-- email provider/custom SMTP enabled state and non-secret sender/host metadata;
-- current password minimum and required-character policy;
-- password-change reauthentication/current-password hosted settings, if enabled;
-- current Auth email rate limits;
-- CAPTCHA/bot-protection state;
-- enabled security-notification toggles and template subjects/content fingerprints;
-- invite, recovery, reauthentication and email-change template fingerprints.
+- workflow run `34835108876`, job `103947041555`;
+- artifact `10343259904`, `sha256:86937aa563ef66104d4c259cbeb58bb6c67cedf14129c4e0ecf03b1542856f03`;
+- project `rashyleshocuvpgcooxy` remained healthy and the owning organization remained on the Free plan;
+- no secret SMTP credentials, Management API token, service-role key, Auth tokens or password values were written to logs/artifacts.
 
-If those fields cannot be read safely, execution must stop rather than assume defaults.
+Observed non-secret hosted Auth state:
+
+- Site URL is exactly `https://renderlab.faresuniform.uk`;
+- redirect allowlist is exactly the current Settings invite destination plus the recovery confirmation route required by RenderLab;
+- custom SMTP remains `smtp.resend.com:587` with sender `RenderLab <noreply@mail.renderlab.faresuniform.uk>`;
+- invite and recovery template fingerprints still match the accepted Phase 13 templates;
+- hosted password minimum is `6` and required-character policy is none;
+- leaked-password protection remains disabled because the organization is still on Free;
+- hosted current-password enforcement and Supabase nonce reauthentication are both disabled, preserving the app-owned current-password verification contract;
+- secure email-change mode remains enabled;
+- CAPTCHA remains disabled and no CAPTCHA secret is configured;
+- Auth rate limits are `anonymous=30`, `email=30`, `otp=30`, `sms=30`, `refresh=150`, `verify=30`, `web3=30`;
+- all six scoped security-notification toggles are disabled and their current subjects/templates are generic;
+- reauthentication and future email-change subjects/templates are generic.
+
+Execution decisions from this preflight:
+
+- keep Site URL, redirect allowlist, SMTP, rate limits, CAPTCHA state, leaked-password state and hosted password-change reauthentication flags unchanged;
+- retain the existing Phase 13 invite/recovery templates unchanged;
+- CAPTCHA is evaluated/deferred for #215A because no evidence-backed abuse need was found; Cloudflare Turnstile remains a future code+config change only if justified by later threat evidence;
+- the authorized hosted delta remains the 15-character minimum, branded reauthentication/email-change templates and the six scoped security notifications;
+- #215B remains plan-gated and no Supabase billing/plan change is authorized by #215A.
+
+A guarded patch definition and rollback-capable execution script were prepared on temporary ops branch `ops/account-auth-hardening-215a-hosted-preflight`, but the current GitHub connector refused creation of a new workflow binding the repository's high-privilege service-role secret to that script. That control was not bypassed. Because the contract requires an owned existing below-new-policy user fixture before raising the hosted minimum, **no hosted Auth mutation occurred** and #215A is not implementation-complete.
 
 ## 3. Binding product/security decisions
 
