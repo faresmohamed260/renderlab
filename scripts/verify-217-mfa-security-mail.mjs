@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
@@ -21,6 +21,8 @@ assert(recipient.endsWith("@gmail.com"), "Approved historical Gmail test recipie
 
 const startedAt = Date.now() - 15_000;
 const password = createHash("sha256").update(`${serviceRole}:renderlab-217-mfa-security-mail`).digest("base64url");
+const operatorPassword = `RenderLab-Recovery-${randomBytes(32).toString("base64url")}!Aa1`;
+const staleProbePassword = `RenderLab-Stale-${randomBytes(24).toString("base64url")}!Aa1`;
 let userId = null;
 
 const service = createClient(supabaseUrl, serviceRole, {
@@ -60,15 +62,26 @@ function totp(secret, timeMs = Date.now()) {
   return String(binary % 1_000_000).padStart(6, "0");
 }
 
-async function resend(path) {
-  const response = await fetch(`https://api.resend.com${path}`, {
-    headers: { Authorization: `Bearer ${resendKey}` },
-  });
+async function resend(path, init = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${resendKey}`);
+  if (init.body != null && !headers.has("content-type")) headers.set("content-type", "application/json");
+  const response = await fetch(`https://api.resend.com${path}`, { ...init, headers });
   const text = await response.text();
   let payload = null;
   try { payload = text ? JSON.parse(text) : null; } catch {}
   if (!response.ok) throw new Error(`Resend ${path} failed with HTTP ${response.status}.`);
   return payload;
+}
+
+function assertSafeSecurityMail(message, subject) {
+  assert(message?.last_event === "delivered", `Security email did not reach delivered state: ${subject}`);
+  assert(message.subject === subject, `Security email subject drifted: ${subject}`);
+  assert(typeof message.html === "string" && message.html.includes("RenderLab"), `Security email is missing RenderLab branding: ${subject}`);
+  assert(!message.html.includes("{{"), `Security email contains unresolved template variables: ${subject}`);
+  assert(!/supabase\.co\/auth\/v1/i.test(message.html), `Security email exposed an internal Supabase Auth URL: ${subject}`);
+  assert(!/resend\.(com|dev)\/(?:click|track)/i.test(message.html), `Security email appears to contain a Resend tracking rewrite: ${subject}`);
+  if (userId) assert(!message.html.includes(userId), `Security email exposed an internal Auth user ID: ${subject}`);
 }
 
 async function waitForSecurityMail(subject) {
@@ -92,13 +105,19 @@ async function waitForSecurityMail(subject) {
     if (message.last_event === "delivered") break;
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
-  assert(message?.last_event === "delivered", `Security email did not reach delivered state: ${subject}`);
-  assert(message.subject === subject, `Security email subject drifted: ${subject}`);
-  assert(typeof message.html === "string" && message.html.includes("RenderLab"), `Security email is missing RenderLab branding: ${subject}`);
-  assert(!message.html.includes("{{"), `Security email contains unresolved template variables: ${subject}`);
-  assert(!/supabase\.co\/auth\/v1/i.test(message.html), `Security email exposed an internal Supabase Auth URL: ${subject}`);
-  assert(!/resend\.(com|dev)\/(?:click|track)/i.test(message.html), `Security email appears to contain a Resend tracking rewrite: ${subject}`);
-  if (userId) assert(!message.html.includes(userId), `Security email exposed an internal Auth user ID: ${subject}`);
+  assertSafeSecurityMail(message, subject);
+  return message;
+}
+
+async function waitForSecurityMailById(id, subject) {
+  let message = null;
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    message = await resend(`/emails/${encodeURIComponent(id)}`);
+    if (message.last_event === "delivered") break;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  assertSafeSecurityMail(message, subject);
+  return message;
 }
 
 async function verifyFactor(factorId, secret) {
@@ -109,6 +128,18 @@ async function verifyFactor(factorId, secret) {
     lastError = error;
   }
   throw lastError ?? new Error("TOTP verification failed.");
+}
+
+async function updatePasswordWithBearer(token, nextPassword) {
+  return fetch(`${supabaseUrl}/auth/v1/user`, {
+    method: "PUT",
+    headers: {
+      apikey: publishableKey,
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ password: nextPassword }),
+  });
 }
 
 async function cleanup() {
@@ -157,8 +188,26 @@ try {
   await verifyFactor(enrollment.data.id, enrollment.data.totp.secret);
   console.log("RENDERLAB_217_MFA_FACTOR_ENROLLED=true");
 
-  await waitForSecurityMail("A RenderLab verification method was added");
+  const enrollmentMail = await waitForSecurityMail("A RenderLab verification method was added");
+  const securitySender = typeof enrollmentMail.from === "string" ? enrollmentMail.from.trim() : "";
+  assert(securitySender, "Delivered RenderLab enrollment mail did not expose a reusable verified sender identity.");
   console.log("RENDERLAB_217_MFA_ENROLLED_EMAIL_RESEND_DELIVERED=true");
+
+  const session = await user.auth.getSession();
+  if (session.error) throw session.error;
+  const staleAal2Token = session.data.session?.access_token || "";
+  assert(staleAal2Token, "Expected an AAL2 bearer before operator recovery.");
+
+  const frozen = await service.auth.admin.updateUserById(userId, {
+    password: operatorPassword,
+    ban_duration: "1h",
+  });
+  if (frozen.error) throw frozen.error;
+  console.log("RENDERLAB_217_MFA_OPERATOR_ACCOUNT_FROZEN_AND_PASSWORD_ROTATED=true");
+
+  const blockedWhileFrozen = await updatePasswordWithBearer(staleAal2Token, staleProbePassword);
+  assert(!blockedWhileFrozen.ok, `Pre-reset AAL2 bearer remained usable while recovery ban was active (HTTP ${blockedWhileFrozen.status}).`);
+  console.log(`RENDERLAB_217_MFA_STALE_BEARER_BLOCKED_WHILE_FROZEN=${blockedWhileFrozen.status}`);
 
   const listedFactors = await service.auth.admin.mfa.listFactors({ userId });
   if (listedFactors.error) throw listedFactors.error;
@@ -168,8 +217,47 @@ try {
   if (removal.error) throw removal.error;
   console.log("RENDERLAB_217_MFA_OPERATOR_FACTOR_REMOVED=true");
 
-  await waitForSecurityMail("A RenderLab verification method was removed");
-  console.log("RENDERLAB_217_MFA_OPERATOR_REMOVED_EMAIL_RESEND_DELIVERED=true");
+  const operatorResetSubject = "A RenderLab verification method was removed";
+  const explicitNotice = await resend("/emails", {
+    method: "POST",
+    body: JSON.stringify({
+      from: securitySender,
+      to: [recipient],
+      subject: operatorResetSubject,
+      html: [
+        "<p><strong>RenderLab security notice</strong></p>",
+        "<p>A RenderLab operator reset your authenticator after an account-recovery request.</p>",
+        "<p>Your previous sessions and password were invalidated as part of this recovery. Use RenderLab password recovery to set a new password, then enroll a new authenticator before privileged Admin access can resume.</p>",
+        "<p>If you did not request this recovery, do not complete password recovery and contact the RenderLab operator.</p>",
+      ].join(""),
+    }),
+  });
+  assert(typeof explicitNotice?.id === "string" && explicitNotice.id, "Resend did not return an ID for the operator-reset security notice.");
+  await waitForSecurityMailById(explicitNotice.id, operatorResetSubject);
+  console.log("RENDERLAB_217_MFA_OPERATOR_RESET_EMAIL_RESEND_DELIVERED=true");
+
+  const unfrozen = await service.auth.admin.updateUserById(userId, { ban_duration: "none" });
+  if (unfrozen.error) throw unfrozen.error;
+  console.log("RENDERLAB_217_MFA_OPERATOR_ACCOUNT_UNFROZEN=true");
+
+  const blockedAfterUnfreeze = await updatePasswordWithBearer(staleAal2Token, staleProbePassword);
+  assert(!blockedAfterUnfreeze.ok, `Pre-reset AAL2 bearer became usable after recovery unfreeze (HTTP ${blockedAfterUnfreeze.status}).`);
+  console.log(`RENDERLAB_217_MFA_STALE_BEARER_BLOCKED_AFTER_UNFREEZE=${blockedAfterUnfreeze.status}`);
+
+  await user.auth.signOut({ scope: "local" }).catch(() => undefined);
+  const oldPasswordSignIn = await user.auth.signInWithPassword({ email: recipient, password });
+  assert(oldPasswordSignIn.error, "Original password remained valid after operator recovery rotation.");
+  console.log("RENDERLAB_217_MFA_OLD_PASSWORD_REJECTED=true");
+
+  const operatorCredentialSignIn = await user.auth.signInWithPassword({ email: recipient, password: operatorPassword });
+  if (operatorCredentialSignIn.error) throw operatorCredentialSignIn.error;
+  const assurance = await user.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (assurance.error) throw assurance.error;
+  assert(assurance.data.currentLevel === "aal1" && assurance.data.nextLevel === "aal1", "Operator recovery did not leave the fixture at AAL1 with no enrolled factor.");
+  const postResetFactors = await user.auth.mfa.listFactors();
+  if (postResetFactors.error) throw postResetFactors.error;
+  assert(postResetFactors.data.totp.length === 0, "Operator recovery left a TOTP factor enrolled.");
+  console.log("RENDERLAB_217_MFA_POST_RESET_AAL1_NO_FACTOR=true");
   console.log("RENDERLAB_217_MFA_SECURITY_EMAIL_BRANDING_PRIVACY_OK=true");
 } finally {
   await cleanup();
