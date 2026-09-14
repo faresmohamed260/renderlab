@@ -30,6 +30,7 @@ const email = `renderlab-account-${runToken}@example.com`;
 const password = `RenderLab-${runToken}-Pass!`;
 const changedPassword = `RenderLab-${runToken}-Changed!`;
 const recoveredPassword = `RenderLab-${runToken}-Recovered!`;
+const belowPolicyPassword = "TooShort-123!";
 const unavailableMediaAssetId = "00000000-0000-4000-8000-000000000010";
 const staleGenerationRequest = {
   prompt: "Session freshness verification",
@@ -290,6 +291,10 @@ try {
   await page.goto(`${baseUrl}/settings`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("heading", { name: "Account", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Sign in", exact: true }).waitFor({ state: "visible" });
+  assert(
+    (await page.getByLabel("Password").getAttribute("minlength")) === null,
+    "Sign-in must not client-block legacy credentials using the new-password minimum.",
+  );
   assert(await page.getByRole("link", { name: "Open Admin", exact: true }).count() === 0, "Signed-out Settings exposed the Admin operations link.");
   await assertNoHorizontalOverflow(page, "Desktop signed-out Settings");
   await page.screenshot({ path: `${artifactDir}/account-identity-desktop-signed-out.png`, fullPage: true });
@@ -348,6 +353,14 @@ try {
   await page.getByRole("link", { name: "Change password", exact: true }).click();
   await page.getByRole("heading", { name: "Change password", exact: true }).waitFor({ state: "visible" });
   assert(await page.getByLabel("Current password").isVisible(), "Ordinary password change must require the current password.");
+  assert(
+    await page.getByText("Use at least 15 characters.", { exact: true }).isVisible(),
+    "Password replacement must display the canonical 15-character policy.",
+  );
+  assert(
+    (await page.getByLabel("New password", { exact: true }).getAttribute("minlength")) === "15",
+    "New-password input must use the canonical 15-character minimum.",
+  );
   await assertNoHorizontalOverflow(page, "Desktop password change");
   await page.screenshot({ path: `${artifactDir}/account-identity-desktop-password-change.png`, fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -355,6 +368,12 @@ try {
   await assertNoHorizontalOverflow(page, "Narrow password change");
   await page.screenshot({ path: `${artifactDir}/account-identity-mobile-password-change.png`, fullPage: true });
   await page.getByLabel("Current password").fill(password);
+  await page.getByLabel("New password", { exact: true }).fill(belowPolicyPassword);
+  await page.getByLabel("Confirm new password", { exact: true }).fill(belowPolicyPassword);
+  assert(
+    await page.getByRole("button", { name: "Update password", exact: true }).isDisabled(),
+    "Below-policy password must remain client-blocked before Auth mutation.",
+  );
   await page.getByLabel("New password", { exact: true }).fill(changedPassword);
   await page.getByLabel("Confirm new password", { exact: true }).fill(changedPassword);
   await page.getByRole("button", { name: "Update password", exact: true }).click();

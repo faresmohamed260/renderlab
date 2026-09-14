@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  meetsRenderLabPasswordPolicy,
+  RENDERLAB_PASSWORD_MIN_LENGTH,
+  RENDERLAB_PASSWORD_REQUIREMENT,
+} from "./password-policy";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import styles from "./account-settings.module.css";
 
@@ -27,8 +32,11 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
     event.preventDefault();
     setFeedback(null);
 
-    if (newPassword.length < 8) {
-      setFeedback({ kind: "error", message: "Use at least 8 characters for the new password." });
+    if (!meetsRenderLabPasswordPolicy(newPassword)) {
+      setFeedback({
+        kind: "error",
+        message: `Use at least ${RENDERLAB_PASSWORD_MIN_LENGTH} characters for the new password.`,
+      });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -125,12 +133,12 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
                     id="new-password"
                     type="password"
                     autoComplete="new-password"
-                    minLength={8}
+                    minLength={RENDERLAB_PASSWORD_MIN_LENGTH}
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
                     required
                   />
-                  <FieldDescription>Use at least 8 characters.</FieldDescription>
+                  <FieldDescription>{RENDERLAB_PASSWORD_REQUIREMENT}</FieldDescription>
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="confirm-new-password">Confirm new password</FieldLabel>
@@ -138,7 +146,7 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
                     id="confirm-new-password"
                     type="password"
                     autoComplete="new-password"
-                    minLength={8}
+                    minLength={RENDERLAB_PASSWORD_MIN_LENGTH}
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     required
@@ -161,7 +169,12 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
                 <Button
                   size="lg"
                   type="submit"
-                  disabled={busy || (!recoveryMode && !currentPassword) || newPassword.length < 8 || confirmPassword.length < 8}
+                  disabled={
+                    busy ||
+                    (!recoveryMode && !currentPassword) ||
+                    !meetsRenderLabPasswordPolicy(newPassword) ||
+                    !meetsRenderLabPasswordPolicy(confirmPassword)
+                  }
                 >
                   {busy ? <Spinner aria-hidden="true" /> : null}
                   Update password
