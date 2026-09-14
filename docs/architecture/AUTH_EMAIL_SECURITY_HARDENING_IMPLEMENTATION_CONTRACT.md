@@ -3,7 +3,7 @@
 **Tracker:** #215  
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `adfb9153003a6e1c86015bbd56c40b1e329788ce`  
-**Status:** #215A CURRENT-PLAN HARDENING COMPLETE + VERIFIED + PRODUCTION-LIVE / #215B PLAN-GATED
+**Status:** #215A CURRENT-PLAN HARDENING COMPLETE + VERIFIED + PRODUCTION-LIVE / #215B FREE COMPROMISED-PASSWORD SCREENING CONTRACTED / SUPABASE PAID UPGRADE REJECTED
 **Scope:** remaining hosted Supabase Auth policy/security hardening plus the minimum application-policy synchronization required to keep RenderLab truthful  
 **Out of scope:** Settings redesign, profile/MFA/session-management feature implementation, schema/RLS/storage/provider/worker changes, production deployment
 
@@ -11,7 +11,7 @@
 
 Workstream #215 was originally written before Phase 13 completed RenderLab's production Auth-email delivery hardening. The implementation phase must therefore start from current reality instead of replaying the older checklist.
 
-This contract narrows #215 to the still-open security and configuration gaps that remain after Phase 13, freezes the existing account/recovery/session guarantees, and separates controls that are executable on the current Supabase Free plan from leaked-password protection, which current Supabase documentation makes available only on Pro and above.
+This contract narrows #215 to the still-open security and configuration gaps that remain after Phase 13 and freezes the existing account/recovery/session guarantees. #215A completed every approved current-plan hosted/application hardening action. On 2026-09-14 the user permanently rejected upgrading Supabase solely for leaked-password protection, so #215B is now a free RenderLab-owned compromised-password-screening slice instead of a billing/plan gate.
 
 No hosted Supabase Auth setting is changed by this contract. Hosted configuration changes remain an explicit operator/configuration operation and require separate authorization after this contract is merged.
 
@@ -152,9 +152,9 @@ Final current-plan hosted state:
 - Auth rate limits unchanged;
 - CAPTCHA remains disabled/evaluated-deferred;
 - hosted current-password and nonce-reauthentication toggles remain disabled, preserving RenderLab's app-owned current-password verification contract;
-- leaked-password protection remains disabled solely as the explicit #215B **Supabase Pro+ plan gate**.
+- Supabase-native leaked-password protection remains disabled on Free; the user explicitly rejected a paid-plan upgrade for this feature, and #215B now owns a free RenderLab-layer alternative instead.
 
-#215A is therefore **implementation-complete, verified and production-live for the current Free plan**. #215 remains open only for the separately authorized #215B plan/billing decision and leaked-password-protection closure. Hosted policy and production application presentation are synchronized on the canonical 15-character minimum.
+#215A is therefore **implementation-complete, verified and production-live for the current Free plan**. #215 remains open only for #215B free compromised-password screening. No Supabase billing/plan decision remains in this workstream. Hosted policy and production application presentation are synchronized on the canonical 15-character minimum.
 
 ### Stage 3 application production rollout — completed and verified 2026-09-14
 
@@ -170,7 +170,7 @@ Explicit user authorization deployed the already-merged #215A application policy
 - post-cutover Vercel audit found no error/fatal logs for the new deployment and no runtime-error clusters in the observed window;
 - automatic Git → Vercel deployment remains disabled.
 
-Hosted Auth and the production application are therefore synchronized on the canonical 15-character password-creation/replacement policy. #215A is complete for the current Free plan. #215B remains independently gated on explicit authorization for a qualifying Supabase plan and leaked-password protection.
+Hosted Auth and the production application are therefore synchronized on the canonical 15-character password-creation/replacement policy. #215A is complete for the current Free plan. #215B now proceeds only as the free RenderLab-owned HIBP compromised-password-screening slice; no Supabase plan upgrade will be pursued for this feature.
 
 ## 3. Binding product/security decisions
 
@@ -184,9 +184,23 @@ The target policy for password-only accounts is:
 - long passwords/passphrases remain supported;
 - no extra required-character classes unless a later explicit security decision changes this contract;
 - paste, autofill and password-manager compatibility must remain allowed;
-- leaked-password blocking is enabled when the Supabase plan permits it.
+- known-compromised passwords are screened in RenderLab password-establishment/change flows through the free Have I Been Pwned Pwned Passwords range API; no Supabase paid-plan upgrade is permitted solely for this control.
 
 The 15-character target follows the accepted account roadmap's NIST-aligned security direction. The hosted Auth setting is authoritative; application copy/validation must consume one RenderLab-owned canonical policy definition rather than duplicating numeric literals across components.
+
+#215B compromised-password screening is additionally bound to these privacy/availability rules:
+
+- use the official free `https://api.pwnedpasswords.com/range/{prefix}` endpoint; no API key or subscription is introduced;
+- hash the complete candidate password locally with SHA-1 **only for the HIBP lookup**; SHA-1 is never used for credential storage or verification;
+- send only the first five hexadecimal hash characters to HIBP and compare the returned suffixes locally; never transmit plaintext or the complete hash;
+- set `Add-Padding: true` and ignore padded zero-count records;
+- perform the lookup only after the user submits a complete candidate password, never incrementally while typing;
+- reject a password if its exact full-hash suffix appears with a positive breach count; do not expose prevalence counts as a strength score;
+- use a bounded timeout/retry and fail closed for password establishment/change if the safety check cannot complete, because allowing an unchecked password would silently weaken the promised control;
+- surface sanitized product copy such as `This password has appeared in known data breaches. Choose a different password.`;
+- do not log password values, full hashes, hash suffixes, or range responses.
+
+This application-layer control is intentionally described as **RenderLab compromised-password screening**, not Supabase-native leaked-password enforcement. A technically capable authenticated user can bypass normal product UI and call the hosted Supabase Auth endpoint directly on the Free plan; eliminating that bypass would require paid/native Auth enforcement or a materially different authentication architecture, neither of which is authorized.
 
 Before changing the hosted minimum, the execution must verify the exact current Supabase behavior for existing passwords and exercise an owned existing-user fixture. If strengthening the hosted policy would unexpectedly lock out existing admitted accounts instead of applying only at password creation/change or with a clear weak-password response, stop and revise the rollout plan.
 
@@ -257,12 +271,12 @@ Leaked-password protection is a required broader-beta hardening objective, but i
 
 This workstream is therefore split into two closure states:
 
-- **#215A — Free-plan hardening:** all executable configuration/application work in this contract is completed and verified; Security Advisor may still contain only the explicitly documented leaked-password warning plus expected server-owned-table informational notices.
-- **#215B — Plan-gated leaked-password closure:** after an explicit plan-upgrade decision, enable leaked-password protection and verify Security Advisor clears that warning.
+- **#215A — Free-plan hardening:** all hosted/application configuration work in the original contract is completed, verified and production-live.
+- **#215B — Free compromised-password screening:** implement and verify the RenderLab-owned HIBP k-anonymity check described above. Supabase-native leaked-password protection remains disabled and its Security Advisor warning remains visible by design.
 
-Do not upgrade the Supabase plan as an incidental implementation detail. Plan/billing change requires explicit user authorization.
+The user explicitly rejected upgrading Supabase solely for leaked-password protection. That paid path is abandoned for this project unless the user later reopens the decision for unrelated reasons.
 
-#215 may be marked implementation-complete-for-current-plan after #215A, but the broader-beta blocker must remain visibly open until #215B is done.
+#215 closes when #215B is verified and the native Supabase warning is documented as an accepted platform limitation rather than a product blocker.
 
 ## 4. Planned implementation delta
 
@@ -293,14 +307,19 @@ After capturing the exact current config and producing a rollback snapshot:
 - review Auth rate limits and change only values justified by Closed Beta usage/testing;
 - evaluate CAPTCHA and either implement it end-to-end or record a bounded defer decision.
 
-### Plan-gated #215B
+### Free #215B — RenderLab compromised-password screening
 
-After explicit authorization to move to a qualifying Supabase plan:
+Implementation must remain dependency-light and preserve the existing password/session/recovery contracts:
 
-- enable leaked-password protection;
-- verify an owned known-compromised test password is rejected through the supported Auth error contract without exposing the password in logs/artifacts;
-- rerun Security Advisor and confirm `auth_leaked_password_protection` clears;
-- rerun Account Identity and the relevant Auth-hardening verification.
+- add a small account-layer browser helper that SHA-1 hashes the complete submitted candidate with Web Crypto, queries only the five-character prefix from the official HIBP Pwned Passwords range API using padded responses, and compares suffixes locally;
+- call the helper from the shared `AccountPasswordForm` after local length/match validation and before the existing Supabase password mutation, so both ordinary change and verified recovery replacement are covered;
+- do not add an incremental/on-change lookup;
+- use bounded timeout/retry behavior and fail closed with sanitized copy when HIBP cannot be checked;
+- preserve current-password verification, recovery-marker semantics, acting-session preservation, other-session revocation and stale-bearer rejection unchanged;
+- extend deterministic verification to prove a known public compromised-password fixture is blocked before Auth mutation, a generated non-compromised fixture can proceed, network/unavailable behavior fails closed, and no plaintext/full hash is placed in logs/artifacts;
+- perform at least one bounded live range-API smoke at exact head to prove the external dependency is reachable without making CI depend on secret credentials.
+
+Do **not** enable, purchase or simulate Supabase-native leaked-password protection as part of #215B.
 
 ## 5. Explicit non-goals
 
@@ -364,15 +383,14 @@ If Stage 1 changed production application code:
 
 If no application code changed, there is no Vercel deployment solely for hosted Auth configuration.
 
-### Stage 4 — #215B plan-gated closure
+### Stage 4 — #215B free-screening closure
 
-When a qualifying Supabase plan is explicitly approved:
-
-1. capture current Auth config/advisor state again;
-2. enable leaked-password protection;
-3. verify rejection behavior using an owned fixture and non-secret evidence;
-4. confirm the Security Advisor warning clears;
-5. update #215 and roadmap documentation.
+1. implement the bounded HIBP range check under the privacy rules above;
+2. verify deterministic compromised, clean and unavailable paths without logging candidate secrets;
+3. run an exact-head live HIBP reachability smoke plus Engineering Quality and Account Identity;
+4. verify Security Advisor has no **new** findings while accepting that `auth_leaked_password_protection` remains because Supabase-native enforcement is intentionally disabled on Free;
+5. merge, verify merged-main checks, update #215/roadmap/infrastructure documentation and close #215;
+6. deploy only under a separate explicit production authorization.
 
 ## 7. Rollback
 
@@ -419,18 +437,21 @@ All of the following must be true:
 - Auth rate limits are recorded and either retained or changed with evidence;
 - CAPTCHA is either implemented end-to-end with accessibility/test coverage or explicitly deferred with rationale;
 - no secrets, password values, raw tokens or sensitive Auth payloads appear in logs/artifacts/docs;
-- Security Advisor has no new security findings; the leaked-password warning may remain only because the current Free plan blocks that feature;
+- Security Advisor has no new security findings; `auth_leaked_password_protection` is allowed to remain as a documented Supabase-native limitation after the RenderLab-owned HIBP control is verified;
 - exact-head Engineering Quality and Account Identity pass, plus any new dedicated verifier introduced by this slice;
 - authoritative docs and #215 reflect observed reality.
 
-### #215B — broader-beta leaked-password acceptance
+### #215B — free compromised-password-screening acceptance
 
-- qualifying Supabase plan explicitly approved and active;
-- leaked-password protection enabled;
-- owned compromised-password test is rejected without secret leakage;
-- `auth_leaked_password_protection` Security Advisor warning clears;
-- relevant exact-head account/security verification passes;
-- roadmap/issue documentation records the completed blocker.
+- no Supabase billing/plan upgrade is introduced for this control;
+- official HIBP Pwned Passwords range lookup is used with five-character SHA-1 prefix k-anonymity and padded responses;
+- plaintext passwords and complete hashes never leave the browser for the HIBP lookup and are never logged/stored by RenderLab;
+- known-compromised password fixture is rejected before Supabase password mutation in both ordinary/recovery shared-form coverage;
+- deterministic unavailable/network failure path fails closed with sanitized product copy;
+- a generated non-compromised password proceeds through existing password replacement/session semantics;
+- exact-head Engineering Quality, Account Identity and bounded live HIBP reachability verification pass;
+- Security Advisor has no new findings; its native leaked-password warning remains documented/accepted rather than falsely claimed cleared;
+- roadmap/issue/infrastructure documentation records the completed free alternative.
 
 ## 9. Evidence requirements
 
@@ -447,7 +468,7 @@ Closure evidence must identify:
 
 ## 10. Next workstream boundary
 
-Completing #215A does not automatically authorize #216, #217 or #223 implementation. After #215A is verified, re-establish repository/live Auth state and expand the next immediate roadmap slice into its own contract.
+Completing #215A does not automatically authorize #216, #217 or #223 implementation. #215B free compromised-password screening is the immediate remaining slice for #215; after it is verified and #215 closes, re-establish repository/live Auth state and expand the next roadmap slice into its own contract.
 
 Default sequencing after #215A remains:
 

@@ -1,7 +1,7 @@
 # Account & Settings Capability Roadmap
 
 **Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE
-**Current execution:** #215A current-plan hardening is complete, verified and production-live: repository policy merged as `8ea859df84f5173267defbf3e278a95bba403014`, hosted Auth minimum is 15, security notifications/templates are branded, configured acceptance passed, and exact application source `27eda7ed0a619435b9d89531bdeb3fffe772e803` is live as Vercel deployment `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7`. #215B leaked-password protection remains the explicit Supabase Pro+ plan gate.
+**Current execution:** #215A current-plan hardening is complete, verified and production-live: repository policy merged as `8ea859df84f5173267defbf3e278a95bba403014`, hosted Auth minimum is 15, security notifications/templates are branded, configured acceptance passed, and exact application source `27eda7ed0a619435b9d89531bdeb3fffe772e803` is live as Vercel deployment `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7`. The user permanently rejected upgrading Supabase solely for leaked-password protection; #215B is redefined as free RenderLab-owned compromised-password screening through the Have I Been Pwned Pwned Passwords k-anonymity API.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
@@ -80,7 +80,7 @@ The repository's Phase 10D audit established that:
 - leaked-password protection remained disabled and was recorded as a broader-beta blocker;
 - hosted Auth configuration changes require explicit operator authorization and are not ordinary application-code changes.
 
-A fresh Security Advisor read after #215A hosted execution on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The current organization remains on Free, so the warning is the explicit #215B Pro+ plan gate rather than unfinished #215A work.
+A fresh Security Advisor read after #215A hosted execution on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The current organization remains on Free. On 2026-09-14 the user explicitly rejected a Supabase plan upgrade solely for this control, so the warning is no longer a billing/plan gate. #215B instead owns free application-layer compromised-password screening; after that is verified, the Supabase-native warning remains visible as an accepted platform limitation and must not be misrepresented as cleared.
 
 ## 5. Current Supabase capability facts
 
@@ -110,7 +110,7 @@ The roadmap follows current security guidance rather than copying another produc
 - Password entry should allow paste and password managers. Do not disable browser password-manager behavior.
 - Password fields should offer an accessible option to reveal/hide the entered secret. NIST explicitly recommends offering a display option to help users verify entry.
 - Credential guidance must come from the real configured policy. Do not hard-code a checklist that can drift from server/Auth enforcement.
-- Block known compromised/common passwords when the hosted plan supports it rather than relying on decorative strength meters.
+- Block known compromised passwords in RenderLab password-establishment/change flows through the free Have I Been Pwned Pwned Passwords k-anonymity API; do not require a Supabase paid-plan upgrade for this control and do not rely on decorative strength meters.
 - Reauthenticate or step up before high-risk identity/security changes.
 - MFA is especially important for privileged Admin operations.
 - MFA factor replacement/recovery is itself a high-risk operation and requires an explicit recovery policy plus notification.
@@ -221,7 +221,7 @@ Target sub-sections:
 - Current / New / Confirm semantics;
 - password-match feedback;
 - password-manager/paste/autocomplete compatibility;
-- compromised-password blocking when platform support is enabled.
+- RenderLab-owned compromised-password screening through the free HIBP Pwned Passwords range API.
 
 #### Multi-factor and passkeys
 

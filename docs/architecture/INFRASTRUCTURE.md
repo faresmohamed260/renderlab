@@ -547,6 +547,16 @@ This follow-up currently authorizes documentation/research only. It changes no R
 - This rollout changed no Supabase schema/RLS, Auth configuration, R2 contract, worker/provider routing, scheduler or secret inventory. Hosted #215A Auth configuration had already been separately applied and verified before this application rollout.
 - Automatic Git → Vercel deployment remains disabled; future production releases still require explicit authorization.
 
+## #215B free compromised-password screening decision — 2026-09-14
+
+- The user explicitly rejected upgrading Supabase solely for native leaked-password protection. RenderLab will not move to Pro+ for this feature.
+- The selected free replacement is the official Have I Been Pwned **Pwned Passwords** range API, the same underlying breach-password service Supabase documents for its native paid feature. The Pwned Passwords range API requires no API key/subscription.
+- RenderLab will use browser-side Web Crypto SHA-1 only to derive the HIBP lookup hash, transmit only the first five hexadecimal characters, request `Add-Padding: true`, and compare returned suffixes locally. Plaintext passwords and complete hashes must never be sent to HIBP, stored or logged.
+- The lookup runs only on complete form submission, never incrementally while the user types. Password establishment/change fails closed after a bounded timeout/retry if the check cannot complete.
+- This is an application-layer product control, not equivalent to Supabase-native Auth enforcement. On Supabase Free, a technically capable authenticated user can bypass normal RenderLab UI and call the hosted Auth endpoint directly; removing that bypass would require a paid/native hook or a materially different Auth architecture and is not authorized.
+- Security Advisor will therefore continue to report `auth_leaked_password_protection`. After #215B is verified, that warning is an accepted Supabase-platform limitation rather than a RenderLab broader-beta blocker.
+- No Supabase plan/billing change, schema/RLS change, new secret, paid HIBP subscription, R2 change or generation infrastructure change is authorized by this decision.
+
 ## Security Rules
 - Never commit service-role/R2/provider/backend bearer credentials.
 - Only the Supabase project URL and publishable key are intentionally exposed to browser code. `next.config.ts` maps those public-safe values from `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`; service-role and R2 credentials must never be published.
