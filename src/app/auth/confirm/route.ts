@@ -8,10 +8,10 @@ import {
   PASSWORD_RECOVERY_TTL_SECONDS,
 } from "@/server/account/recovery-flow";
 
-type RenderLabEmailFlow = Extract<EmailOtpType, "invite" | "recovery">;
+type RenderLabEmailFlow = Extract<EmailOtpType, "invite" | "recovery" | "email_change">;
 
 function parseFlow(value: string | null): RenderLabEmailFlow | null {
-  return value === "invite" || value === "recovery" ? value : null;
+  return value === "invite" || value === "recovery" || value === "email_change" ? value : null;
 }
 
 function redirectWithinApp(path: string) {
@@ -46,6 +46,13 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: flow });
     if (error) return redirectWithinApp("/settings?auth=link_invalid");
     user = data.user;
+
+    // Secure Email Change deliberately returns no user/session after the first
+    // of the two required confirmations. Treat that as a successful partial
+    // confirmation rather than as an invalid account link.
+    if (flow === "email_change" && !user) {
+      return redirectWithinApp("/settings?auth=email_change_confirmation_pending");
+    }
   } else if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) return redirectWithinApp("/settings?auth=link_invalid");
@@ -54,6 +61,10 @@ export async function GET(request: NextRequest) {
 
   const identity = verifiedIdentity(user);
   if (!identity) return redirectWithinApp("/settings?auth=link_invalid");
+
+  if (flow === "email_change") {
+    return redirectWithinApp("/settings?auth=email_changed");
+  }
 
   if (flow === "invite") {
     try {
