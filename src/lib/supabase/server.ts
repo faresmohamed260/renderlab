@@ -3,8 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { cookies, headers } from "next/headers";
 import {
   isRenderLabMfaChallengeRequired,
-  type RenderLabAuthenticationMethod,
-  type RenderLabAuthenticatorAssuranceLevel,
+  normalizeRenderLabMfaAssurance,
   type RenderLabMfaAssurance,
 } from "@/lib/auth/mfa-assurance";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
@@ -60,35 +59,6 @@ function verifiedUserIdentity(user: User | null): RenderLabIdentity | null {
   };
 }
 
-function assuranceLevel(value: unknown): RenderLabAuthenticatorAssuranceLevel {
-  return value === "aal1" || value === "aal2" ? value : null;
-}
-
-function authenticationMethods(value: unknown): RenderLabAuthenticationMethod[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((candidate) => {
-    if (!candidate || typeof candidate !== "object") return [];
-    const method = "method" in candidate ? candidate.method : null;
-    const timestamp = "timestamp" in candidate ? candidate.timestamp : null;
-    if (typeof method !== "string" || typeof timestamp !== "number") return [];
-    return [{ method, timestamp }];
-  });
-}
-
-function normalizeMfaAssurance(value: unknown): RenderLabMfaAssurance | null {
-  if (!value || typeof value !== "object") return null;
-  const currentLevel = assuranceLevel("currentLevel" in value ? value.currentLevel : null);
-  const nextLevel = assuranceLevel("nextLevel" in value ? value.nextLevel : null);
-  if (!currentLevel || !nextLevel) return null;
-  return {
-    currentLevel,
-    nextLevel,
-    currentAuthenticationMethods: authenticationMethods(
-      "currentAuthenticationMethods" in value ? value.currentAuthenticationMethods : null,
-    ),
-  };
-}
-
 async function currentRequestBearerToken() {
   const requestHeaders = await headers();
   return bearerToken(requestHeaders.get("authorization"));
@@ -116,7 +86,7 @@ export async function getFreshCurrentRenderLabAuthentication(): Promise<RenderLa
   const { data: assuranceData, error: assuranceError } =
     await supabase.auth.mfa.getAuthenticatorAssuranceLevel(token ?? undefined);
   if (assuranceError) return null;
-  const assurance = normalizeMfaAssurance(assuranceData);
+  const assurance = normalizeRenderLabMfaAssurance(assuranceData);
   if (!assurance) return null;
 
   return { identity, assurance };

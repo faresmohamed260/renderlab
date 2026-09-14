@@ -314,9 +314,65 @@
   box-shadow: 0 0 0 0.2rem rgb(63 191 138 / 10%);
 }
 
-.passwordActions {
+.passwordActions,
+.buttonCluster {
   display: flex;
   justify-content: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.factorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  padding-top: 1rem;
+}
+
+.enrollmentGrid {
+  display: grid;
+  grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.qrPanel {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+}
+
+.qrCode {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.secretValue {
+  width: fit-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.65rem;
+  background: rgb(255 255 255 / 5%);
+  color: var(--color-text);
+  font-size: 0.8rem;
+}
+
+.factorSelect {
+  min-height: 2.75rem;
+  width: 100%;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 0.5rem;
+  padding: 0 0.75rem;
+  background: rgb(7 9 13);
+  color: var(--color-text);
 }
 
 .runtimeAlert {
@@ -365,12 +421,14 @@
   }
 
   .valueHeader,
-  .actionRow {
+  .actionRow,
+  .factorRow {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .actionRow [data-slot="button"] {
+  .actionRow [data-slot="button"],
+  .factorRow [data-slot="button"] {
     width: 100%;
   }
 
@@ -380,8 +438,17 @@
   }
 
   .formActions [data-slot="button"],
-  .passwordActions [data-slot="button"] {
+  .passwordActions [data-slot="button"],
+  .buttonCluster [data-slot="button"] {
     width: 100%;
+  }
+
+  .enrollmentGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qrPanel {
+    width: min(100%, 16rem);
   }
 
   .fieldHeader {

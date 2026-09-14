@@ -13,6 +13,35 @@ export type RenderLabMfaAssurance = {
 
 export const RENDERLAB_RECENT_TOTP_STEP_UP_SECONDS = 10 * 60;
 
+function assuranceLevel(value: unknown): RenderLabAuthenticatorAssuranceLevel {
+  return value === "aal1" || value === "aal2" ? value : null;
+}
+
+function authenticationMethods(value: unknown): RenderLabAuthenticationMethod[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== "object") return [];
+    const method = "method" in candidate ? candidate.method : null;
+    const timestamp = "timestamp" in candidate ? candidate.timestamp : null;
+    if (typeof method !== "string" || typeof timestamp !== "number") return [];
+    return [{ method, timestamp }];
+  });
+}
+
+export function normalizeRenderLabMfaAssurance(value: unknown): RenderLabMfaAssurance | null {
+  if (!value || typeof value !== "object") return null;
+  const currentLevel = assuranceLevel("currentLevel" in value ? value.currentLevel : null);
+  const nextLevel = assuranceLevel("nextLevel" in value ? value.nextLevel : null);
+  if (!currentLevel || !nextLevel) return null;
+  return {
+    currentLevel,
+    nextLevel,
+    currentAuthenticationMethods: authenticationMethods(
+      "currentAuthenticationMethods" in value ? value.currentAuthenticationMethods : null,
+    ),
+  };
+}
+
 export function isRenderLabMfaEnrolled(assurance: RenderLabMfaAssurance) {
   return assurance.nextLevel === "aal2";
 }
