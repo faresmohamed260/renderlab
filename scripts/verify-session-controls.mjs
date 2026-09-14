@@ -95,6 +95,17 @@ async function waitForSessionCount(targetUserId, expected, label) {
   throw new Error(`${label}: expected ${expected} live sessions, got ${last?.length ?? "unknown"}.`);
 }
 
+async function waitForRenderedSessionCount(page, expected, label) {
+  const locator = page.locator('[aria-label="Active RenderLab sessions"] > div');
+  let count = -1;
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    count = await locator.count();
+    if (count === expected) return;
+    await page.waitForTimeout(250);
+  }
+  throw new Error(`${label}: expected ${expected} rendered sessions, got ${count}.`);
+}
+
 async function createFixtureUser(userEmail, userPassword, metadata) {
   const result = await service.auth.admin.createUser({
     email: userEmail,
@@ -119,7 +130,8 @@ async function seedAccess(targetUserId) {
 
 async function deleteUser(targetUserId) {
   if (!targetUserId) return;
-  await service.from("renderlab_account_access").delete().eq("user_id", targetUserId).catch(() => undefined);
+  const accessDelete = await service.from("renderlab_account_access").delete().eq("user_id", targetUserId);
+  if (accessDelete.error) throw accessDelete.error;
   const result = await service.auth.admin.deleteUser(targetUserId);
   if (result.error && !/not found/i.test(result.error.message)) throw result.error;
 }
@@ -217,7 +229,7 @@ try {
   await page.getByText("Other RenderLab sessions signed out.", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await expectPrivateDenied(browserSecondary.token, "browser other-device sign-out");
   await page.getByText("This device", { exact: true }).waitFor({ state: "visible" });
-  assert((await page.locator('[aria-label="Active RenderLab sessions"] > div').count()) === 1, "Settings did not refresh to the surviving current session.");
+  await waitForRenderedSessionCount(page, 1, "Settings others sign-out refresh");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(100);
