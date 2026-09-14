@@ -31,6 +31,7 @@ const password = `RenderLab-${runToken}-Pass!`;
 const changedPassword = `RenderLab-${runToken}-Changed!`;
 const recoveredPassword = `RenderLab-${runToken}-Recovered!`;
 const belowPolicyPassword = "TooShort-123!";
+const compromisedPassword = "passwordpassword";
 const unavailableMediaAssetId = "00000000-0000-4000-8000-000000000010";
 const staleGenerationRequest = {
   prompt: "Session freshness verification",
@@ -46,6 +47,62 @@ const staleGenerationRequest = {
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+async function mockPwnedPasswordLookup(page, passwordValue, mode) {
+  const hash = createHash("sha1").update(passwordValue, "utf8").digest("hex").toUpperCase();
+  const prefix = hash.slice(0, 5);
+  const suffix = hash.slice(5);
+  const routePattern = "https://api.pwnedpasswords.com/**";
+  let getCount = 0;
+
+  const handler = async (route) => {
+    const request = route.request();
+    if (request.method() === "OPTIONS") {
+      await route.fulfill({
+        status: 204,
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "GET, OPTIONS",
+          "access-control-allow-headers": "add-padding",
+        },
+      });
+      return;
+    }
+
+    assert(request.method() === "GET", `Pwned Passwords lookup used unexpected method ${request.method()}.`);
+    const url = new URL(request.url());
+    assert(url.pathname === `/range/${prefix}`, "Pwned Passwords lookup must send only the five-character SHA-1 prefix.");
+    assert(request.headers()["add-padding"] === "true", "Pwned Passwords lookup must request padded responses.");
+    assert(request.postData() == null, "Pwned Passwords lookup must not send a request body.");
+    assert(!request.url().includes(passwordValue), "Pwned Passwords lookup URL exposed the candidate password.");
+    assert(!request.url().includes(hash), "Pwned Passwords lookup URL exposed the complete password hash.");
+    getCount += 1;
+
+    if (mode === "unavailable") {
+      await route.abort("failed");
+      return;
+    }
+
+    const fillerSuffix = suffix === "0".repeat(35) ? "1".repeat(35) : "0".repeat(35);
+    const body = mode === "compromised"
+      ? `${suffix}:42\r\n${fillerSuffix}:0\r\n`
+      : `${fillerSuffix}:0\r\n`;
+    await route.fulfill({
+      status: 200,
+      headers: {
+        "access-control-allow-origin": "*",
+        "content-type": "text/plain; charset=utf-8",
+      },
+      body,
+    });
+  };
+
+  await page.route(routePattern, handler);
+  return {
+    getCount: () => getCount,
+    remove: () => page.unroute(routePattern, handler),
+  };
 }
 
 async function assertNoHorizontalOverflow(page, label) {
@@ -374,10 +431,30 @@ try {
     await page.getByRole("button", { name: "Update password", exact: true }).isDisabled(),
     "Below-policy password must remain client-blocked before Auth mutation.",
   );
+
+  const compromisedLookup = await mockPwnedPasswordLookup(page, compromisedPassword, "compromised");
+  await page.getByLabel("New password", { exact: true }).fill(compromisedPassword);
+  await page.getByLabel("Confirm new password", { exact: true }).fill(compromisedPassword);
+  await page.waitForTimeout(100);
+  assert(compromisedLookup.getCount() === 0, "Compromised-password lookup must not run incrementally while typing.");
+  await page.getByRole("button", { name: "Update password", exact: true }).click();
+  await page.getByText("This password has appeared in known data breaches. Choose a different password.", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
+  assert(compromisedLookup.getCount() === 1, `Compromised-password submit expected one range GET, got ${compromisedLookup.getCount()}.`);
+  await compromisedLookup.remove();
+
+  const unavailableLookup = await mockPwnedPasswordLookup(page, changedPassword, "unavailable");
   await page.getByLabel("New password", { exact: true }).fill(changedPassword);
   await page.getByLabel("Confirm new password", { exact: true }).fill(changedPassword);
   await page.getByRole("button", { name: "Update password", exact: true }).click();
+  await page.getByText("Password safety check is unavailable. Try again.", { exact: true }).waitFor({ state: "visible", timeout: 15_000 });
+  assert(unavailableLookup.getCount() === 2, `Unavailable password-safety check should retry once then fail closed; got ${unavailableLookup.getCount()} GETs.`);
+  await unavailableLookup.remove();
+
+  const safeChangeLookup = await mockPwnedPasswordLookup(page, changedPassword, "safe");
+  await page.getByRole("button", { name: "Update password", exact: true }).click();
   await page.getByText("Password updated.", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  assert(safeChangeLookup.getCount() === 1, `Safe ordinary password change expected one range GET, got ${safeChangeLookup.getCount()}.`);
+  await safeChangeLookup.remove();
   await page.getByText("Active", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
   const actingMediaAfterPasswordChange = await page.request.get(`${baseUrl}/api/media/assets?limit=1`);
@@ -434,10 +511,13 @@ try {
     await consumedContext.close();
   }
 
+  const safeRecoveryLookup = await mockPwnedPasswordLookup(recoveryPage, recoveredPassword, "safe");
   await recoveryPage.getByLabel("New password", { exact: true }).fill(recoveredPassword);
   await recoveryPage.getByLabel("Confirm new password", { exact: true }).fill(recoveredPassword);
   await recoveryPage.getByRole("button", { name: "Update password", exact: true }).click();
   await recoveryPage.getByText("Password updated.", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  assert(safeRecoveryLookup.getCount() === 1, `Safe recovery password change expected one range GET, got ${safeRecoveryLookup.getCount()}.`);
+  await safeRecoveryLookup.remove();
   await recoveryPage.getByText("Active", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
   const recoveryActingMedia = await recoveryPage.request.get(`${baseUrl}/api/media/assets?limit=1`);

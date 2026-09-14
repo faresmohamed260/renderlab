@@ -11,6 +11,11 @@ import {
   RENDERLAB_PASSWORD_MIN_LENGTH,
   RENDERLAB_PASSWORD_REQUIREMENT,
 } from "./password-policy";
+import {
+  COMPROMISED_PASSWORD_MESSAGE,
+  PASSWORD_SAFETY_UNAVAILABLE_MESSAGE,
+  screenRenderLabCompromisedPassword,
+} from "./compromised-password-screening";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import styles from "./account-settings.module.css";
 
@@ -49,6 +54,16 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
       const supabase = createBrowserSupabaseClient();
       if (!supabase) {
         setFeedback({ kind: "error", message: "Password controls are unavailable in this runtime." });
+        return;
+      }
+
+      const screening = await screenRenderLabCompromisedPassword(newPassword);
+      if (screening === "compromised") {
+        setFeedback({ kind: "error", message: COMPROMISED_PASSWORD_MESSAGE });
+        return;
+      }
+      if (screening === "unavailable") {
+        setFeedback({ kind: "error", message: PASSWORD_SAFETY_UNAVAILABLE_MESSAGE });
         return;
       }
 
