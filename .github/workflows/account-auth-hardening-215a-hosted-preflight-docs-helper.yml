@@ -1,0 +1,104 @@
+name: Account Auth Hardening 215A Hosted Preflight Docs Helper
+
+on:
+  push:
+    branches:
+      - docs/account-auth-hardening-215a-hosted-preflight-closure
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/account-auth-hardening-215a-hosted-preflight-closure
+          fetch-depth: 0
+
+      - name: Reconcile authoritative hosted preflight state
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          contract = Path('docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md')
+          text = contract.read_text()
+          text = text.replace(
+              '**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / HOSTED CONFIG MUTATION PENDING AUTHORIZATION / NOT DEPLOYED\n',
+              '**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A MERGED + MERGED-MAIN VERIFIED / HOSTED PREFLIGHT VERIFIED / HOSTED MUTATION NOT EXECUTED / NOT DEPLOYED\n',
+              1,
+          )
+          start_marker = '### Hosted configuration fields still not independently readable from the connected toolset\n'
+          end_marker = '\n## 3. Binding product/security decisions\n'
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          replacement = dedent('''
+          ### Hosted configuration preflight — verified 2026-09-14
+
+          The connected Supabase plugin still does not expose the hosted Auth configuration document directly, but the repository's established Phase 13 Management API credential path was successfully reused through a read-only GitHub Actions preflight. No hosted Auth setting was mutated.
+
+          Authoritative read-only evidence:
+
+          - workflow run `34835108876`, job `103947041555`;
+          - artifact `10343259904`, `sha256:86937aa563ef66104d4c259cbeb58bb6c67cedf14129c4e0ecf03b1542856f03`;
+          - project `rashyleshocuvpgcooxy` remained healthy and the owning organization remained on the Free plan;
+          - no secret SMTP credentials, Management API token, service-role key, Auth tokens or password values were written to logs/artifacts.
+
+          Observed non-secret hosted Auth state:
+
+          - Site URL is exactly `https://renderlab.faresuniform.uk`;
+          - redirect allowlist is exactly the current Settings invite destination plus the recovery confirmation route required by RenderLab;
+          - custom SMTP remains `smtp.resend.com:587` with sender `RenderLab <noreply@mail.renderlab.faresuniform.uk>`;
+          - invite and recovery template fingerprints still match the accepted Phase 13 templates;
+          - hosted password minimum is `6` and required-character policy is none;
+          - leaked-password protection remains disabled because the organization is still on Free;
+          - hosted current-password enforcement and Supabase nonce reauthentication are both disabled, preserving the app-owned current-password verification contract;
+          - secure email-change mode remains enabled;
+          - CAPTCHA remains disabled and no CAPTCHA secret is configured;
+          - Auth rate limits are `anonymous=30`, `email=30`, `otp=30`, `sms=30`, `refresh=150`, `verify=30`, `web3=30`;
+          - all six scoped security-notification toggles are disabled and their current subjects/templates are generic;
+          - reauthentication and future email-change subjects/templates are generic.
+
+          Execution decisions from this preflight:
+
+          - keep Site URL, redirect allowlist, SMTP, rate limits, CAPTCHA state, leaked-password state and hosted password-change reauthentication flags unchanged;
+          - retain the existing Phase 13 invite/recovery templates unchanged;
+          - CAPTCHA is evaluated/deferred for #215A because no evidence-backed abuse need was found; Cloudflare Turnstile remains a future code+config change only if justified by later threat evidence;
+          - the authorized hosted delta remains the 15-character minimum, branded reauthentication/email-change templates and the six scoped security notifications;
+          - #215B remains plan-gated and no Supabase billing/plan change is authorized by #215A.
+
+          A guarded patch definition and rollback-capable execution script were prepared on temporary ops branch `ops/account-auth-hardening-215a-hosted-preflight`, but the current GitHub connector refused creation of a new workflow binding the repository's high-privilege service-role secret to that script. That control was not bypassed. Because the contract requires an owned existing below-new-policy user fixture before raising the hosted minimum, **no hosted Auth mutation occurred** and #215A is not implementation-complete.
+          ''').lstrip()
+          text = text[:start] + replacement + text[end:]
+          contract.write_text(text)
+
+          project = Path('PROJECT.md')
+          ptext = project.read_text()
+          old = '- Hosted Supabase Auth configuration has not been mutated. Remaining #215A work is the separately authorized configuration/audit stage: capture redacted current Auth config, coordinate the hosted 15-character policy, verify Site URL/redirects/templates/security notifications/rate limits, evaluate CAPTCHA, and rerun acceptance. Leaked-password protection remains the #215B plan-gated blocker because the current Supabase organization is on Free and the feature is Pro+.\n'
+          new = dedent('''
+          - Hosted Supabase Auth configuration has **not** been mutated. Read-only Management API preflight run `34835108876` / artifact `10343259904` verified the live config: production URLs and Resend SMTP are correct, invite/recovery fingerprints remain stable, password minimum is still 6 with no required classes, all six scoped security notifications are off, CAPTCHA is off, and existing Auth rate limits are retained. CAPTCHA is evaluated/deferred for lack of evidence-backed abuse need.
+          - The remaining #215A execution gate is the authorized hosted mutation plus owned legacy-password fixture, rollback, Account Identity and Security Advisor verification. A reviewed patch/script exists only on temporary ops branch `ops/account-auth-hardening-215a-hosted-preflight`; the current connector refused a new high-privilege secret-bound workflow, so that control was not bypassed and no production Auth setting changed. Leaked-password protection remains the separate #215B Free-plan blocker.
+          ''').lstrip()
+          if ptext.count(old) != 1:
+              raise SystemExit('PROJECT.md hosted #215A marker drifted')
+          project.write_text(ptext.replace(old, new, 1))
+          PY
+
+          git diff --check
+          grep -F 'HOSTED PREFLIGHT VERIFIED / HOSTED MUTATION NOT EXECUTED' docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md >/dev/null
+          grep -F '34835108876' PROJECT.md >/dev/null
+
+      - name: Commit docs and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/account-auth-hardening-215a-hosted-preflight-docs-helper.yml
+          git add PROJECT.md docs/architecture/AUTH_EMAIL_SECURITY_HARDENING_IMPLEMENTATION_CONTRACT.md
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: record #215A hosted preflight"
+          git push origin HEAD:docs/account-auth-hardening-215a-hosted-preflight-closure
