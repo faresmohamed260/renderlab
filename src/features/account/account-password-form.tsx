@@ -7,6 +7,15 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
+  hasRecentRenderLabTotpStepUp,
+  isRenderLabMfaEnrolled,
+  normalizeRenderLabMfaAssurance,
+} from "@/lib/auth/mfa-assurance";
+import {
+  createBrowserSupabaseClient,
+  createPasswordVerificationSupabaseClient,
+} from "@/lib/supabase/browser";
+import {
   meetsRenderLabPasswordPolicy,
   RENDERLAB_PASSWORD_MIN_LENGTH,
   RENDERLAB_PASSWORD_REQUIREMENT,
@@ -16,7 +25,6 @@ import {
   PASSWORD_SAFETY_UNAVAILABLE_MESSAGE,
   screenRenderLabCompromisedPassword,
 } from "./compromised-password-screening";
-import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
@@ -33,15 +41,24 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
 
+  async function hasRequiredMfaStepUp() {
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase) return false;
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const assurance = error ? null : normalizeRenderLabMfaAssurance(data);
+    if (!assurance) return false;
+    if (!isRenderLabMfaEnrolled(assurance)) return true;
+    if (hasRecentRenderLabTotpStepUp(assurance)) return true;
+    window.location.assign(`/settings/mfa/challenge?next=${encodeURIComponent("/settings/password")}`);
+    return false;
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFeedback(null);
 
     if (!meetsRenderLabPasswordPolicy(newPassword)) {
-      setFeedback({
-        kind: "error",
-        message: `Use at least ${RENDERLAB_PASSWORD_MIN_LENGTH} characters for the new password.`,
-      });
+      setFeedback({ kind: "error", message: `Use at least ${RENDERLAB_PASSWORD_MIN_LENGTH} characters for the new password.` });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -68,14 +85,22 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
       }
 
       if (!recoveryMode) {
-        const { error: reauthenticationError } = await supabase.auth.signInWithPassword({
-          email,
-          password: currentPassword,
-        });
+        const verifier = createPasswordVerificationSupabaseClient();
+        if (!verifier) {
+          setFeedback({ kind: "error", message: "Current password verification is unavailable." });
+          return;
+        }
+        const { error: reauthenticationError } = await verifier.auth.signInWithPassword({ email, password: currentPassword });
         if (reauthenticationError) {
           setFeedback({ kind: "error", message: "Current password could not be verified." });
           return;
         }
+        await verifier.auth.signOut({ scope: "local" });
+      }
+
+      if (!(await hasRequiredMfaStepUp())) {
+        setFeedback({ kind: "error", message: "Authenticator verification is required before changing this password." });
+        return;
       }
 
       const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -97,7 +122,7 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
   }
 
   const sessionMessage = recoveryMode
-    ? "This recovery session stays usable. Other RenderLab sessions are revoked after the password is changed."
+    ? "This recovery session can replace the password only after enrolled MFA is satisfied. Other RenderLab sessions are revoked after the password is changed."
     : "This browser stays signed in. Other RenderLab sessions are revoked after the password is changed.";
 
   return (
@@ -117,7 +142,7 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
                   <div>
                     <p className={styles.valueLabel}>Verified recovery link</p>
                     <p className={styles.helper}>
-                      RenderLab verified this short-lived recovery context, so your current password is not requested here.
+                      RenderLab verified this short-lived recovery context. If MFA is enrolled, authenticator verification is still required.
                     </p>
                   </div>
                 </div>
@@ -132,40 +157,17 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
                 {!recoveryMode ? (
                   <Field>
                     <FieldLabel htmlFor="current-password">Current password</FieldLabel>
-                    <Input
-                      id="current-password"
-                      type="password"
-                      autoComplete="current-password"
-                      value={currentPassword}
-                      onChange={(event) => setCurrentPassword(event.target.value)}
-                      required
-                    />
+                    <Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
                   </Field>
                 ) : null}
                 <Field>
                   <FieldLabel htmlFor="new-password">New password</FieldLabel>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={RENDERLAB_PASSWORD_MIN_LENGTH}
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    required
-                  />
+                  <Input id="new-password" type="password" autoComplete="new-password" minLength={RENDERLAB_PASSWORD_MIN_LENGTH} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required />
                   <FieldDescription>{RENDERLAB_PASSWORD_REQUIREMENT}</FieldDescription>
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="confirm-new-password">Confirm new password</FieldLabel>
-                  <Input
-                    id="confirm-new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={RENDERLAB_PASSWORD_MIN_LENGTH}
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    required
-                  />
+                  <Input id="confirm-new-password" type="password" autoComplete="new-password" minLength={RENDERLAB_PASSWORD_MIN_LENGTH} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
                 </Field>
               </FieldGroup>
 
@@ -181,16 +183,7 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
               </div>
 
               <div className={styles.passwordActions}>
-                <Button
-                  size="lg"
-                  type="submit"
-                  disabled={
-                    busy ||
-                    (!recoveryMode && !currentPassword) ||
-                    !meetsRenderLabPasswordPolicy(newPassword) ||
-                    !meetsRenderLabPasswordPolicy(confirmPassword)
-                  }
-                >
+                <Button size="lg" type="submit" disabled={busy || (!recoveryMode && !currentPassword) || !meetsRenderLabPasswordPolicy(newPassword) || !meetsRenderLabPasswordPolicy(confirmPassword)}>
                   {busy ? <Spinner aria-hidden="true" /> : null}
                   Update password
                 </Button>

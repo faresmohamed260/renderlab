@@ -8,22 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { isRenderLabMfaChallengeRequired, normalizeRenderLabMfaAssurance } from "@/lib/auth/mfa-assurance";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { RenderLabIdentity } from "@/lib/supabase/server";
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
-
 type BusyAction = "signin" | "recovery" | "signout" | null;
+type MfaState = "disabled" | "verified" | "verification-required" | "unavailable";
 
 function accessPresentation(access: RenderLabAccountAccess | null, enforcementEnabled: boolean) {
   if (access?.status === "active") {
-    return {
-      key: "active",
-      label: "Active",
-      message: "This account has active RenderLab closed-beta access.",
-    };
+    return { key: "active", label: "Active", message: "This account has active RenderLab closed-beta access." };
   }
   if (access?.status === "suspended") {
     return {
@@ -46,6 +43,35 @@ function accessPresentation(access: RenderLabAccountAccess | null, enforcementEn
   };
 }
 
+function mfaPresentation(state: MfaState) {
+  if (state === "verified") {
+    return {
+      label: "Manage MFA",
+      href: "/settings/mfa",
+      message: "Authenticator-app MFA is enabled and this session is verified at AAL2.",
+    };
+  }
+  if (state === "verification-required") {
+    return {
+      label: "Verify MFA",
+      href: "/settings/mfa/challenge?next=/settings",
+      message: "Authenticator-app MFA is enabled. Verify a factor to continue protected account access.",
+    };
+  }
+  if (state === "disabled") {
+    return {
+      label: "Set up MFA",
+      href: "/settings/mfa",
+      message: "Add an authenticator app for a stronger sign-in requirement.",
+    };
+  }
+  return {
+    label: "MFA unavailable",
+    href: "/settings/mfa",
+    message: "Authenticator assurance could not be verified right now. Protected operations fail closed.",
+  };
+}
+
 export function AccountSettings({
   configured,
   identity,
@@ -53,6 +79,7 @@ export function AccountSettings({
   enforcementEnabled,
   initialFeedback = null,
   showAdminLink,
+  mfaState,
 }: {
   configured: boolean;
   identity: RenderLabIdentity | null;
@@ -60,6 +87,7 @@ export function AccountSettings({
   enforcementEnabled: boolean;
   initialFeedback?: Feedback;
   showAdminLink: boolean;
+  mfaState: MfaState;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -93,6 +121,12 @@ export function AccountSettings({
         return;
       }
       setPassword("");
+      const { data: assuranceData, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const assurance = assuranceError ? null : normalizeRenderLabMfaAssurance(assuranceData);
+      if (assurance && isRenderLabMfaChallengeRequired(assurance)) {
+        window.location.assign(`/settings/mfa/challenge?next=${encodeURIComponent("/settings")}`);
+        return;
+      }
       router.refresh();
     } catch {
       setFeedback({ kind: "error", message: "Sign in is temporarily unavailable. Try again." });
@@ -116,10 +150,7 @@ export function AccountSettings({
         setFeedback({ kind: "error", message: "Password recovery is temporarily unavailable. Try again shortly." });
         return;
       }
-      setFeedback({
-        kind: "success",
-        message: "If this email can receive a recovery link, check its inbox shortly.",
-      });
+      setFeedback({ kind: "success", message: "If this email can receive a recovery link, check its inbox shortly." });
     } catch {
       setFeedback({ kind: "error", message: "Password recovery is temporarily unavailable. Try again shortly." });
     } finally {
@@ -151,6 +182,13 @@ export function AccountSettings({
 
   if (identity) {
     const accessState = accessPresentation(access, enforcementEnabled);
+    const mfa = mfaPresentation(mfaState);
+    const adminReady = showAdminLink && mfaState === "verified";
+    const adminHref = adminReady
+      ? "/admin"
+      : mfaState === "verification-required"
+        ? "/settings/mfa/challenge?next=/admin"
+        : "/settings/mfa";
 
     return (
       <div className={styles.surfaceWrap}>
@@ -172,25 +210,34 @@ export function AccountSettings({
                   <p className={styles.valueLabel}>Closed Beta access</p>
                   <p className={styles.helper}>RenderLab admission is separate from being signed in.</p>
                 </div>
-                <span className={styles.status} data-access-state={accessState.key}>
-                  {accessState.label}
-                </span>
+                <span className={styles.status} data-access-state={accessState.key}>{accessState.label}</span>
               </div>
               <p className={styles.helper}>{accessState.message}</p>
             </div>
           </RegisterRow>
 
           <RegisterRow index="03" title="Security">
-            <div className={styles.actionRow}>
-              <div className={styles.valueStack}>
-                <p className={styles.valueLabel}>Password</p>
-                <p className={styles.helper}>
-                  Change your password. This browser stays signed in while other RenderLab sessions are revoked after a successful update.
-                </p>
+            <div className={styles.passwordStack}>
+              <div className={styles.actionRow}>
+                <div className={styles.valueStack}>
+                  <p className={styles.valueLabel}>Multi-factor authentication</p>
+                  <p className={styles.helper}>{mfa.message}</p>
+                </div>
+                <Button asChild variant="secondary" size="lg" disabled={mfaState === "unavailable"}>
+                  <Link href={mfa.href}>{mfa.label}</Link>
+                </Button>
               </div>
-              <Button asChild variant="secondary" size="lg">
-                <Link href="/settings/password">Change password</Link>
-              </Button>
+              <div className={styles.factorRow}>
+                <div className={styles.valueStack}>
+                  <p className={styles.valueLabel}>Password</p>
+                  <p className={styles.helper}>
+                    Change your password. This browser stays signed in while other RenderLab sessions are revoked after a successful update.
+                  </p>
+                </div>
+                <Button asChild variant="secondary" size="lg">
+                  <Link href="/settings/password">Change password</Link>
+                </Button>
+              </div>
             </div>
           </RegisterRow>
 
@@ -200,12 +247,7 @@ export function AccountSettings({
                 <p className={styles.valueLabel}>All RenderLab sessions</p>
                 <p className={styles.helper}>Ends RenderLab sessions on every device and browser.</p>
               </div>
-              <Button
-                variant="destructive"
-                size="lg"
-                onClick={handleSignOut}
-                disabled={busyAction !== null}
-              >
+              <Button variant="destructive" size="lg" onClick={handleSignOut} disabled={busyAction !== null}>
                 {busyAction === "signout" ? <Spinner aria-hidden="true" /> : null}
                 Sign out everywhere
               </Button>
@@ -218,11 +260,13 @@ export function AccountSettings({
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Admin operations</p>
                   <p className={styles.helper}>
-                    Your active RenderLab admin role can open the separate privileged operations surface.
+                    {adminReady
+                      ? "Your active Admin role is protected by an AAL2 session."
+                      : "Active Admin access requires a verified authenticator and an AAL2 session."}
                   </p>
                 </div>
                 <Button asChild variant="secondary" size="lg">
-                  <Link href="/admin">Open Admin</Link>
+                  <Link href={adminHref}>{adminReady ? "Open Admin" : "Secure Admin access"}</Link>
                 </Button>
               </div>
             </RegisterRow>
@@ -251,49 +295,24 @@ export function AccountSettings({
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="account-email">Email</FieldLabel>
-              <Input
-                id="account-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
+              <Input id="account-email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
             </Field>
             <Field>
               <div className={styles.fieldHeader}>
                 <FieldLabel htmlFor="account-password">Password</FieldLabel>
-                <Button
-                  type="button"
-                  variant="link"
-                  size="lg"
-                  disabled={busyAction !== null || !email.trim()}
-                  onClick={handleRecovery}
-                  className={styles.recoveryButton}
-                >
+                <Button type="button" variant="link" size="lg" disabled={busyAction !== null || !email.trim()} onClick={handleRecovery} className={styles.recoveryButton}>
                   {busyAction === "recovery" ? <Spinner aria-hidden="true" /> : null}
                   Forgot password
                 </Button>
               </div>
-              <Input
-                id="account-password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
+              <Input id="account-password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
               <FieldDescription>Use your invited RenderLab account credentials.</FieldDescription>
               <FieldError>{feedback?.kind === "error" ? feedback.message : null}</FieldError>
             </Field>
           </FieldGroup>
 
           {feedback?.kind === "success" ? (
-            <Alert>
-              <AlertDescription>{feedback.message}</AlertDescription>
-            </Alert>
+            <Alert><AlertDescription>{feedback.message}</AlertDescription></Alert>
           ) : null}
 
           <div className={styles.formActions}>
