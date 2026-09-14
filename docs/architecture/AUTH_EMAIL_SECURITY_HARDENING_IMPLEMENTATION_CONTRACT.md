@@ -3,7 +3,7 @@
 **Tracker:** #215  
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `adfb9153003a6e1c86015bbd56c40b1e329788ce`  
-**Status:** EXECUTION CONTRACT / HOSTED CONFIG MUTATION NOT YET AUTHORIZED  
+**Status:** CONTRACT MERGED / REPOSITORY-SIDE #215A IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / HOSTED CONFIG MUTATION PENDING AUTHORIZATION / NOT DEPLOYED
 **Scope:** remaining hosted Supabase Auth policy/security hardening plus the minimum application-policy synchronization required to keep RenderLab truthful  
 **Out of scope:** Settings redesign, profile/MFA/session-management feature implementation, schema/RLS/storage/provider/worker changes, production deployment
 
@@ -14,6 +14,17 @@ Workstream #215 was originally written before Phase 13 completed RenderLab's pro
 This contract narrows #215 to the still-open security and configuration gaps that remain after Phase 13, freezes the existing account/recovery/session guarantees, and separates controls that are executable on the current Supabase Free plan from leaked-password protection, which current Supabase documentation makes available only on Pro and above.
 
 No hosted Supabase Auth setting is changed by this contract. Hosted configuration changes remain an explicit operator/configuration operation and require separate authorization after this contract is merged.
+
+
+### Repository-side execution record — 2026-09-14
+
+- Contract merge: `85cdd59909a3b48bd4a043ed9d984064497215fb`.
+- Implementation PR #243 exact head: `3cd08fbb3b6256ae5a087bdb91715a67cb1cb8e8`.
+- Exact-head workflows: Engineering `34821671241`, Brand/Launch `34821671275`, UI Shell `34821671336`, Integrated Release `34821671515`, Account Identity `34821671246` — all passed; Account Identity required an unchanged retry after attempt 1 hit a transient Supabase 504 during preflight invitation cleanup.
+- Account Identity artifact: `10338159764`, `sha256:9bf0f467dc01f570f2a3b755f40ebd377c6869219eb410ec43473ce8586c6b45`.
+- Implementation merge: `8ea859df84f5173267defbf3e278a95bba403014`.
+- Merged-main attached workflows: Engineering `34822037091`, UI Shell `34822037092` — both passed.
+- No hosted Auth configuration or production deployment changed. The merged code must remain undeployed until Stage 2 hosted policy/config execution is explicitly authorized and coordinated.
 
 ## 2. Verified current baseline
 
