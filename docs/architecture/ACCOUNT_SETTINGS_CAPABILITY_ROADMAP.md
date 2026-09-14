@@ -1,7 +1,7 @@
 # Account & Settings Capability Roadmap
 
 **Status:** ACCEPTED PLANNING BASELINE / MERGED / IMPLEMENTATION ACTIVE
-**Current execution:** #215A current-plan hardening is complete, verified and production-live: repository policy merged as `8ea859df84f5173267defbf3e278a95bba403014`, hosted Auth minimum is 15, security notifications/templates are branded, configured acceptance passed, and exact application source `27eda7ed0a619435b9d89531bdeb3fffe772e803` is live as Vercel deployment `dpl_6yCKG1TvPLRZLusxVJG2ALrA5YT7`. The user permanently rejected upgrading Supabase solely for leaked-password protection; #215B is redefined as free RenderLab-owned compromised-password screening through the Have I Been Pwned Pwned Passwords k-anonymity API.
+**Current execution:** #215 is complete, verified and production-live. #215A established the 15-character hosted/application policy, branded security mail and current-plan hardening. #215B replaced the rejected Supabase paid-plan path with free RenderLab-owned HIBP Pwned Passwords k-anonymity screening and is live from exact source `f3f89d0859154b2ab45b5364ce1acb04a0eb204b` as Vercel deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh`. Supabase's native leaked-password warning is an accepted Free-plan limitation, not an open roadmap blocker. The next default contract-planning slice is #217 privileged MFA/step-up.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
@@ -331,7 +331,7 @@ This is a conventional account category but remains deferred until RenderLab has
 | Live password requirements | Security/Credential UX | Plan; must derive from real policy | P1 / #223 + #215 |
 | Number/symbol/uppercase requirement | Security policy | Do **not** add unless real configured policy requires it | #215 decision |
 | Long password/passphrase support | Security policy | Plan | P0 / #215 |
-| Compromised-password blocking | Security policy | Plan when plan supports it | P0 / #215 |
+| Compromised-password blocking | Security policy | Implemented through free RenderLab-owned HIBP k-anonymity screening; native Supabase paid enforcement intentionally not required | COMPLETE / #215 |
 | Password strength meter | Credential UX | Optional only if meaningful; never substitute for policy | #223 |
 | Caps Lock warning | Credential UX | Plan where technically reliable | P1 / #223 |
 | Password-manager/autofill support | Credential UX | Required | P1 / #223 |
@@ -474,9 +474,10 @@ A strength meter is optional. If used, it should be supplemental and evidence-ba
 
 ## 11. Workstream A — Auth and email delivery hardening (#215)
 
+**Status:** COMPLETE / VERIFIED / PRODUCTION-LIVE — #215A hosted/application hardening plus #215B free HIBP compromised-password screening.
 **Priority:** P0 prerequisite; much of this is platform hardening rather than Settings UI.
 
-### Planned scope
+### Completed scope
 
 - audit hosted Site URL and redirect allowlist;
 - audit invite, recovery, reauthentication and future email-change templates;
@@ -488,7 +489,7 @@ A strength meter is optional. If used, it should be supplemental and evidence-ba
 - review Auth endpoint rate limits;
 - evaluate Cloudflare Turnstile as a CAPTCHA candidate without adopting it solely for stack symmetry;
 - set password policy from standards rather than arbitrary composition rules;
-- enable leaked-password protection when hosted plan capability permits and verify the Security Advisor clears.
+- block known-compromised passwords in supported RenderLab password-establishment/change flows through the free HIBP Pwned Passwords k-anonymity API; retain the Supabase-native leaked-password warning as an accepted Free-plan platform limitation rather than buying a plan upgrade for this feature.
 
 ### Password policy decision gate
 
