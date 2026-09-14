@@ -5,7 +5,7 @@ on:
     branches:
       - work/phase-13d-real-gmail-acceptance
     paths:
-      - scripts/phase13d-real-gmail-send.mjs
+      - scripts/verify-217-mfa-security-mail.mjs
       - .github/workflows/phase-13d-real-gmail-send.yml
 
 permissions:
@@ -14,10 +14,11 @@ permissions:
 jobs:
   real-gmail-send:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     env:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      PHASE13D_REAL_SEND_ARMED: YES_PHASE13D_REAL_EMAIL
+      RENDERLAB_217_REAL_MFA_MAIL_ARMED: YES_RENDERLAB_217_REAL_MFA_EMAIL
     steps:
       - name: Checkout exact Gmail acceptance branch
         uses: actions/checkout@v4
@@ -27,7 +28,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
       - name: Verify script syntax
-        run: node --check scripts/phase13d-real-gmail-send.mjs
-      - name: Send two bounded RenderLab Gmail invitations
-        run: node scripts/phase13d-real-gmail-send.mjs
+        run: node --check scripts/verify-217-mfa-security-mail.mjs
+      - name: Verify bounded MFA security-mail delivery
+        run: node scripts/verify-217-mfa-security-mail.mjs
