@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
-import type { User } from "@supabase/supabase-js";
+import { createClient, type User } from "@supabase/supabase-js";
 import { cookies, headers } from "next/headers";
 import {
   isRenderLabMfaChallengeRequired,
+  isRenderLabMfaFactorStateSupported,
   normalizeRenderLabMfaAssurance,
   type RenderLabMfaAssurance,
 } from "@/lib/auth/mfa-assurance";
@@ -45,6 +46,19 @@ export async function createServerSupabaseClient() {
   });
 }
 
+function createServerSupabaseServiceRoleClient() {
+  const config = getSupabaseAuthConfig();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!config || !serviceRoleKey) return null;
+  return createClient(config.url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
 function bearerToken(value: string | null) {
   if (!value) return null;
   const match = /^Bearer\s+(.+)$/i.exec(value.trim());
@@ -62,6 +76,16 @@ function verifiedUserIdentity(user: User | null): RenderLabIdentity | null {
 async function currentRequestBearerToken() {
   const requestHeaders = await headers();
   return bearerToken(requestHeaders.get("authorization"));
+}
+
+async function getVerifiedTotpFactorCount(userId: string) {
+  const service = createServerSupabaseServiceRoleClient();
+  if (!service) return null;
+  const { data, error } = await service.auth.admin.mfa.listFactors({ userId });
+  if (error) return null;
+  return data.factors.filter(
+    (factor) => factor.factor_type === "totp" && factor.status === "verified",
+  ).length;
 }
 
 export async function getFreshCurrentRenderLabIdentity(): Promise<RenderLabIdentity | null> {
@@ -83,11 +107,16 @@ export async function getFreshCurrentRenderLabAuthentication(): Promise<RenderLa
   const identity = userError ? null : verifiedUserIdentity(userData.user);
   if (!identity) return null;
 
-  const { data: assuranceData, error: assuranceError } =
-    await supabase.auth.mfa.getAuthenticatorAssuranceLevel(token ?? undefined);
-  if (assuranceError) return null;
-  const assurance = normalizeRenderLabMfaAssurance(assuranceData);
-  if (!assurance) return null;
+  const [{ data: assuranceData, error: assuranceError }, liveFactorCount] = await Promise.all([
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel(token ?? undefined),
+    getVerifiedTotpFactorCount(identity.id),
+  ]);
+  if (assuranceError || liveFactorCount === null) return null;
+  const assurance = normalizeRenderLabMfaAssurance({
+    ...assuranceData,
+    verifiedTotpFactorCount: liveFactorCount,
+  });
+  if (!assurance || !isRenderLabMfaFactorStateSupported(assurance)) return null;
 
   return { identity, assurance };
 }
