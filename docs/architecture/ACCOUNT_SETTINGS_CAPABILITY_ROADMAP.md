@@ -1,7 +1,7 @@
 # Account & Settings Capability Roadmap
 
-**Status:** ACCEPTED PLANNING BASELINE / #215 COMPLETE + VERIFIED + PRODUCTION-LIVE / NEXT CONTRACT PLANNING: #217
-**Current execution:** #215 is complete, verified and production-live. #215A established the 15-character hosted/application policy, branded security mail and current-plan hardening. #215B replaced the rejected Supabase paid-plan path with free RenderLab-owned HIBP Pwned Passwords k-anonymity screening and is live from exact source `f3f89d0859154b2ab45b5364ce1acb04a0eb204b` as Vercel deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh`. Supabase's native leaked-password warning is an accepted Free-plan limitation, not an open roadmap blocker. The next default contract-planning slice is #217 privileged MFA/step-up.
+**Status:** ACCEPTED ACTIVE ROADMAP / #215 PRODUCTION-LIVE / #216 + #217 IMPLEMENTED + VERIFIED + MERGED + NOT DEPLOYED / NEXT CONTRACT PLANNING: #218
+**Current execution:** #215 is complete, verified and production-live. #217 MFA/privileged step-up and #216 Session Controls v0.1 are complete, verified and merged to `main`; neither was deployed as part of its implementation/closure work. #216 added privacy-safe live session inventory, local/others/global sign-out and live-session-aware private authorization. Security Activity remains deliberately deferred because the approved hosted project's database-backed Auth audit source was empty and no new audit-retention/PII policy was authorized. The next default contract-planning slice is #218 Identity and sign-in method management unless explicitly reprioritized. #223 remains an independent P1 profile/credential-UX lane.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
@@ -49,8 +49,9 @@ Current repository behavior already provides:
 - Recovery-link password replacement only after a server-validated signed recovery marker.
 - Ordinary password change with current-password verification.
 - Password change/recovery session semantics verified by the configured Account Identity workflow: the acting/recovery session remains usable while other sessions are revoked.
-- Settings sign-out currently calls Supabase JavaScript `signOut()` without a scope; current Supabase behavior makes that global sign-out and RenderLab's verifier proves a secondary session is revoked.
-- Private server identity resolution uses fresh Supabase `getUser()` state, so still-unexpired revoked bearer sessions fail private RenderLab authorization.
+- Settings now exposes explicit Supabase `local`, `others` and `global` sign-out controls plus a privacy-safe active-session inventory with one verified current-session marker.
+- Private server authorization freshly verifies the user and JWT claims, then requires the verified `session_id` to remain present in the owner's live `auth.sessions`; revoked still-unexpired bearers therefore fail private RenderLab authorization immediately.
+- Session presentation exposes coarse browser/platform labels and timestamps only; raw user agent, IP/geolocation, tokens and provider Auth internals remain server-owned.
 - Server-owned access/admission truth and fresh Admin eligibility.
 - Conditional Admin continuation from Settings only for an active fresh-authorized admin identity.
 - Existing owner-scoped media, generation, collection, upload and admission records tied to `auth.users.id`.
@@ -61,9 +62,9 @@ Currently missing from the verified product baseline:
 - user-managed avatar/profile picture;
 - RenderLab username/handle semantics;
 - one documented credential-field interaction standard across sign-in/recovery/password surfaces;
-- MFA/passkeys;
+- passkeys;
 - independent recovery methods beyond the existing sign-in-email recovery flow;
-- session inventory/security activity;
+- trustworthy user-facing Security Activity and exact arbitrary row-level session revoke;
 - secure sign-in-email change;
 - account export/deletion;
 - durable user preferences/notification settings.
@@ -80,7 +81,7 @@ The repository's Phase 10D audit established that:
 - leaked-password protection remained disabled and was recorded as a broader-beta blocker;
 - hosted Auth configuration changes require explicit operator authorization and are not ordinary application-code changes.
 
-A fresh Security Advisor read after #215B verification and production rollout on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The organization remains on Free and the user explicitly rejected a Supabase upgrade solely for this feature. #215B free application-layer HIBP screening is verified and production-live, so the native warning is an accepted platform limitation and must not be misrepresented as cleared. #215 is closed; the next default P0 contract-planning slice is #217 privileged MFA/AAL2 step-up.
+A fresh Security Advisor read after #215B verification and production rollout on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The organization remains on Free and the user explicitly rejected a Supabase upgrade solely for this feature. #215B free application-layer HIBP screening is verified and production-live, so the native warning is an accepted platform limitation and must not be misrepresented as cleared. #215 is closed and production-live. #217 MFA/privileged step-up and #216 Session Controls v0.1 are closed at the implementation level, verified and merged but not deployed by those workstreams. The next default contract-planning slice is #218 Identity and sign-in method management.
 
 ## 5. Current Supabase capability facts
 
@@ -88,7 +89,7 @@ Current Supabase Auth documentation plus a fresh read-only shared-project schema
 
 - JavaScript sign-out supports `local`, `others` and `global` scopes; JavaScript defaults to `global`.
 - `auth.sessions` exists and records owner/session identity, created/refreshed timestamps, AAL, user agent and IP among other internal fields.
-- `auth.audit_log_entries` exists and can support a sanitized security-event surface if filtered through a trusted server boundary.
+- `auth.audit_log_entries` exists, but the approved hosted project's database-backed table was empty during the #216 audit; it is not yet a verified complete source for a user-facing Security Activity feed.
 - `auth.mfa_factors` exists.
 - TOTP MFA enrollment/challenge/verification and factor management are supported, and sessions/JWTs expose `aal1` / `aal2` assurance.
 - MFA must be enforced at authorization boundaries; rendering enrollment UI alone is not enough.
@@ -336,19 +337,19 @@ This is a conventional account category but remains deferred until RenderLab has
 | Caps Lock warning | Credential UX | Plan where technically reliable | P1 / #223 |
 | Password-manager/autofill support | Credential UX | Required | P1 / #223 |
 | Paste into password fields | Credential UX | Required | P1 / #223 |
-| MFA/TOTP | Security | Plan | P0/P1 / #217 |
-| MFA backup factor | Security/Recovery | Plan | P1 / #217 |
-| Recovery codes | Security/Recovery | Research supported secure contract before committing | #217 |
+| MFA/TOTP | Security | Implemented: one TOTP factor; Admin AAL2; member enforcement once enrolled | COMPLETE / #217 |
+| MFA backup factor | Security/Recovery | Rejected for initial #217; hosted factor cap is exactly one | #217 decision |
+| Recovery codes | Security/Recovery | Not adopted; operator-assisted lost-factor recovery is the current policy | #217 decision |
 | Independent recovery email/phone/contact | Security/Recovery | Research need/provider fit | P2 research / #217/#218 |
 | Passkeys | Security | Research | #221 |
-| Sensitive-action reauth / sudo mode | Security | Plan | P0/P1 / #217 |
+| Sensitive-action reauth / sudo mode | Security | Implemented recent TOTP step-up where contracted | COMPLETE / #217 |
 | Security-change emails | Security notifications | Plan | P0 / #215 |
 | New-device/unusual-access alerts | Security notifications | Plan only after trustworthy event detection | P1 research / #216 |
-| Recent security activity | Sessions & Security Activity | Plan | P1 / #216 |
-| Active session list | Sessions & Security Activity | Plan | P1 / #216 |
-| Current-session marker | Sessions & Security Activity | Plan | P1 / #216 |
-| Revoke one session | Sessions & Security Activity | Research provider API first | P1 research / #216 |
-| Sign out current/others/everywhere | Sessions & Security Activity | Plan | P1 / #216 |
+| Recent security activity | Sessions & Security Activity | Deferred until a trustworthy populated event source + privacy/retention contract exists | #216 follow-on |
+| Active session list | Sessions & Security Activity | Implemented, privacy-safe owner-scoped projection | COMPLETE / #216 |
+| Current-session marker | Sessions & Security Activity | Implemented from verified JWT `session_id` + live owner session | COMPLETE / #216 |
+| Revoke one session | Sessions & Security Activity | Deferred: supported user Auth API currently exposes local/others/global, not arbitrary session UUID revoke | Provider-gated follow-on |
+| Sign out current/others/everywhere | Sessions & Security Activity | Implemented with supported local/others/global scopes | COMPLETE / #216 |
 | Data export | Data & Privacy | Plan | P1/P2 / #219 |
 | Media export | Data & Privacy | Plan bounded async flow | P1/P2 / #219 |
 | Account deletion | Data & Privacy | Plan orchestrated lifecycle | P1/P2 / #219 |
@@ -511,99 +512,53 @@ The configured policy must be programmatically available or shared through one c
 
 ## 12. Workstream B — Session controls and security activity (#216)
 
-### Supported bulk scopes
+**Status:** SESSION CONTROLS v0.1 COMPLETE / VERIFIED / MERGED / NOT DEPLOYED. Security Activity remains deliberately deferred.
 
-Supabase already supports:
+Implementation authority: `docs/architecture/SESSION_CONTROLS_SECURITY_ACTIVITY_IMPLEMENTATION_CONTRACT.md`. PR #259 exact candidate `061b4bf49637b4fb09f0f1486b6a85f251ea6650` merged as `590c15f6fc9db9c107b3bc67fae80083fe0d55c4`.
 
-- **Sign out this device** → local;
-- **Sign out other devices** → others;
-- **Sign out everywhere** → global.
+Implemented:
 
-Each must have exact real multi-session tests.
+- privacy-safe owner-scoped active-session inventory in Settings;
+- exactly one `This device` marker from freshly verified JWT `session_id` plus live provider session equality;
+- created/last-active timestamps and coarse browser/platform labels;
+- no IP/geolocation or raw user-agent display;
+- **Sign out this device** → `local`;
+- **Sign out other devices** → `others`;
+- **Sign out everywhere** → `global`;
+- private product/Admin authorization requires the verified session ID to remain in live owner-scoped `auth.sessions`, so revoked still-unexpired JWTs fail immediately;
+- migration `0019_renderlab_auth_session_projection.sql` provides the read-only service-role-only provider projection;
+- configured multi-session acceptance and fixture cleanup.
 
-### Session inventory
+The hosted projection is verified `SECURITY DEFINER` with empty `search_path`, owner-scoped reads, no IP/token/factor projection, and execute unavailable to `PUBLIC`, `anon` and `authenticated`; only `service_role` (plus owner) can execute.
 
-The shared project's `auth.sessions` fields are sufficient for a truthful first inventory through a trusted server boundary.
+### Explicitly deferred from #216 v0.1
 
-Recommended presentation:
+- arbitrary per-row `Revoke`: current supported user Auth APIs expose local/others/global but no supported exact owned-session UUID revoke; do not build a decorative or SQL-backed substitute;
+- Security Activity: the approved hosted project's `auth.audit_log_entries` database table was empty despite active Auth usage, so RenderLab did not imply a complete history or change audit retention/PII policy;
+- IP/geolocation, device fingerprint/trust and suspicious/new-device labels;
+- paid hosted session lifetime/inactivity/single-session policy changes.
 
-- current-session marker derived from verified session identity;
-- created/last-refreshed time;
-- normalized browser/device family only if derived deterministically from stored user agent;
-- IP only after a deliberate privacy decision;
-- no city/country label unless a trustworthy geolocation source is explicitly adopted.
-
-### Selective-revoke research gate
-
-Do not promise per-row `Revoke` simply because sessions can be listed. Confirm a supported Auth API for revoking a specific owned session. Directly deleting rows from Auth schema is not an acceptable product API unless Supabase explicitly documents that path as supported.
-
-If exact single-session revocation is not supportable, ship local/others/global controls plus a read-only inventory.
-
-### Security activity
-
-Potential sanitized events include:
-
-- successful sign-in/new session where observable;
-- password changed/reset;
-- email changed;
-- MFA factor enrolled/removed;
-- passkey/sign-in method linked/removed;
-- recovery method changed;
-- global/other-session sign-out where observable;
-- recovery completed.
-
-A mature incident-response state should let the user act on an unrecognized event, typically by changing the password and/or signing out other/everywhere sessions.
-
-Do not label activity “suspicious” unless RenderLab actually has risk-detection logic. Never expose raw tokens, arbitrary audit payloads or internal provider metadata.
+A future Security Activity slice must first establish a populated supported event source, retention/storage policy, privacy treatment, sanitized taxonomy and configured completeness evidence.
 
 ## 13. Workstream C — MFA, recovery and privileged step-up (#217)
 
-**Priority:** P0 for Admin; P1 for ordinary members.
+**Status:** COMPLETE / VERIFIED / MERGED / NOT DEPLOYED.
+**Priority delivered:** P0 Admin / P1 optional members.
 
-### First factor
+Binding current policy:
 
-Start with **TOTP authenticator-app MFA** because it is stable, does not depend on SMS delivery and is supported by Supabase Auth.
+- TOTP authenticator-app MFA only for the initial implementation;
+- exactly one enrolled TOTP factor per user, enforced by hosted `mfa_max_enrolled_factors = 1`;
+- ordinary-member MFA is optional to enroll, but private product access requires AAL2 once enrolled;
+- active Admin access and Admin operations require a verified factor and AAL2;
+- sensitive account/security operations use the contracted recent TOTP step-up where applicable;
+- recovery-email state never counts as MFA;
+- sole-factor replacement is recent step-up → remove factor → refresh to AAL1/no factor → immediately enroll/verify replacement;
+- active Admin authorization disappears during that replacement gap;
+- lost sole factor uses operator-assisted recovery with strong identity correlation, supported Supabase Admin MFA APIs and session revocation;
+- no backup-factor UI, home-grown recovery codes, security questions, SMS-first factor or email-only bypass under the current contract.
 
-Do not start with phone MFA unless a concrete user requirement justifies SIM-swap exposure and messaging operations/cost.
-
-### Target user flow
-
-Security should eventually support:
-
-- view enrolled factors;
-- enroll TOTP with QR plus manual-secret fallback;
-- verify enrollment before treating a factor as active;
-- give factors a comprehensible label where supported;
-- add a backup factor;
-- remove/replace a factor only after step-up verification;
-- explain `aal1` vs `aal2` only where the distinction is actionable.
-
-### Enforcement
-
-MFA is not complete until server authorization enforces it.
-
-Minimum target:
-
-- active admins require `aal2` before entering/operating Admin;
-- modifying MFA/recovery factors requires `aal2` or equivalent strong fresh step-up;
-- account deletion and sign-in-email change require strong reauthentication;
-- ordinary-member MFA policy is an explicit decision: optional-with-enforcement-if-enrolled vs mandatory.
-
-### Recovery strategy
-
-Mandatory MFA cannot ship without a recovery policy.
-
-Plan and research:
-
-- multiple enrolled factors/backup factor when supported;
-- provider-supported recovery codes if a secure lifecycle exists;
-- whether a separate recovery email is worthwhile without weakening assurance;
-- operator-assisted recovery with strong identity verification if all factors are lost;
-- cooldown/notification around recovery-method replacement;
-- never let ordinary password-reset email silently bypass an enrolled MFA policy;
-- emit security notifications whenever factors/recovery methods are added/removed.
-
-Do not build home-grown recovery codes or security questions merely to imitate other products.
+Detailed authority: `docs/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md` plus `docs/architecture/MFA_PRIVILEGED_STEP_UP_CONTRACT_AMENDMENT_1.md`. Do not reintroduce the superseded multi-factor/backup-factor assumption without a new provider-enforceable contract.
 
 ## 14. Workstream D — Identity and sign-in method management (#218)
 
@@ -823,45 +778,23 @@ This list prevents fake maturity: conventional menu labels are not product capab
 
 ## 19. Proposed execution sequence
 
-RenderLab's progressive-planning rule remains in force. Only the immediate next workstream should receive an execution-ready phase contract.
+RenderLab's progressive-planning rule remains in force. Only the immediate selected workstream should receive an execution-ready phase contract.
 
-### 0 — Phase 27 visual/account IA
+Completed account-security foundation:
 
-Continue the Settings visual redesign using truthful current behavior. Phase 27 may establish future section geometry, but must not render fake/disabled MFA/session/delete/passkey controls simply to preview this roadmap.
+1. **#215 — Auth & email hardening:** complete, verified and production-live.
+2. **#217 — MFA & privileged step-up:** complete, verified, merged; not deployed by that workstream.
+3. **#216 — Session Controls v0.1:** complete, verified, merged; not deployed by that workstream. Security Activity remains a separately gated follow-on.
 
-### 1 — Profile & credential UX baseline
+Default next planning sequence unless explicitly reprioritized:
 
-#223. Close the most visible/basic account maturity gap: display identity plus one consistent credential-field interaction contract. This may proceed in parallel with #215 planning, but visible password requirements must not ship ahead of the actual hosted policy decision.
+4. **#218 — Identity management:** secure email change and current identity/admission edge cases now that step-up/session foundations exist.
+5. **#219 — Data/privacy lifecycle:** export, retention and owner-wide deletion from a verified ownership/data map.
+6. **#223 — Profile & credential UX baseline:** independent P1 basic-maturity work that may be selected earlier if the user prioritizes visible account basics; it must not alter canonical Auth/authorization semantics.
+7. **#220 — Preferences & product notifications:** only product-backed durable preferences/channels/accessibility overrides.
+8. **#221 — Passkeys:** promote from research only after stability/domain/recovery gates are satisfied.
 
-### 2 — Auth & email hardening
-
-#215. Resolve broader-beta account infrastructure blockers. This remains P0 even if profile UX is implemented first.
-
-### 3 — Session controls & security activity
-
-#216. Establish mature incident-response/account visibility.
-
-### 4 — MFA & privileged step-up
-
-#217. Admin AAL2 is the minimum security target; ordinary-member policy and recovery are decided in that contract.
-
-### 5 — Identity management
-
-#218. Add secure email change; consider linked identities only if justified.
-
-### 6 — Data/privacy lifecycle
-
-#219. Implement export, retention and deletion from a verified ownership/data map.
-
-### 7 — Preferences & product notifications
-
-#220. Add only product-backed durable preferences/channels/accessibility overrides.
-
-### 8 — Passkeys
-
-#221. Promote from research only after stability/domain/recovery gates are satisfied.
-
-Phase 28 Admin redesign and Phase 29 cohesion remain the current UI-redesign roadmap. This account-capability roadmap is a parallel product/security program; it does not silently renumber those phases.
+The Phase 23–29 UI redesign program is already complete and production-live. This account-capability roadmap is a separate product/security program.
 
 ## 20. Cross-cutting implementation invariants
 
@@ -920,12 +853,12 @@ Sensitive operations—email change, MFA/recovery-factor mutation, account delet
 
 ### MFA / recovery
 
-- enroll/challenge/verify;
+- one-factor enroll/challenge/verify;
 - AAL1 → AAL2 transition;
 - protected Admin/sensitive-action denial at AAL1;
-- factor removal/backup factor;
-- lost-factor recovery;
-- supported recovery-code lifecycle if adopted;
+- direct second-factor enrollment rejected by the hosted one-factor cap;
+- protected sole-factor remove/replace flow;
+- operator-assisted lost-factor recovery;
 - other-session behavior after factor changes;
 - exact MFA/recovery fixture cleanup.
 
