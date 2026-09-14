@@ -24,28 +24,26 @@ jobs:
           from pathlib import Path
           path = Path("src/features/account/account-settings.tsx")
           text = path.read_text()
-          old = '''          <RegisterRow index="01" title="Account">
-            <div className={styles.valueStack}>
-              <p className={styles.valueLabel}>Sign-in email</p>
-              <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
-              <p className={styles.helper}>Used to sign in. Email changes are not currently available.</p>
-            </div>
-          </RegisterRow>'''
-          new = '''          <RegisterRow index="01" title="Account">
-            <div className={styles.actionRow}>
-              <div className={styles.valueStack}>
-                <p className={styles.valueLabel}>Sign-in email</p>
-                <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
-                <p className={styles.helper}>Used to sign in. Changing it keeps the same RenderLab account, access and ownership.</p>
-              </div>
-              <Button asChild variant="secondary" size="lg">
-                <Link href="/settings/email">Change email</Link>
-              </Button>
-            </div>
-          </RegisterRow>'''
-          if old not in text:
-              raise SystemExit("Settings email row anchor not found")
-          path.write_text(text.replace(old, new, 1))
+          identity_start = text.index("  if (identity) {")
+          row_start = text.index('<RegisterRow index="01" title="Account">', identity_start)
+          row_end = text.index("</RegisterRow>", row_start) + len("</RegisterRow>")
+          indent = "          "
+          new = "\n".join([
+              f'{indent}<RegisterRow index="01" title="Account">',
+              f'{indent}  <div className={{styles.actionRow}}>',
+              f'{indent}    <div className={{styles.valueStack}}>',
+              f'{indent}      <p className={{styles.valueLabel}}>Sign-in email</p>',
+              f'{indent}      <p className={{styles.emailValue}}>{{identity.email ?? "RenderLab account"}}</p>',
+              f'{indent}      <p className={{styles.helper}}>Used to sign in. Changing it keeps the same RenderLab account, access and ownership.</p>',
+              f'{indent}    </div>',
+              f'{indent}    <Button asChild variant="secondary" size="lg">',
+              f'{indent}      <Link href="/settings/email">Change email</Link>',
+              f'{indent}    </Button>',
+              f'{indent}  </div>',
+              f'{indent}</RegisterRow>',
+          ])
+          text = text[:row_start] + new + text[row_end:]
+          path.write_text(text)
       - name: Commit patch
         shell: bash
         run: |
