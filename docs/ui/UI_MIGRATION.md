@@ -20,6 +20,15 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Root, Create, Library, Activity, Settings and Settings/Password custom-domain smoke passed. Post-cutover Vercel inspection found no runtime-error clusters and no error/fatal logs.
 - Historical #216–#219 `NOT DEPLOYED` statements record their implementation-closure state and are superseded for current production status by this rollout record. Automatic Git → Vercel deployment remains disabled.
 
+## UI-081 / #223 Profile & credential UX baseline — contract
+**Status: `CONTRACTED / IMPLEMENTATION NOT STARTED / NOT DEPLOYED`.**
+
+- `docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md` is the execution gate for #223 and preserves UI-078 Trust Register as the Settings visual/IA authority rather than reopening Settings redesign.
+- Planned product scope is optional display name plus private account avatar in a RenderLab-owned 1:1 profile keyed by immutable `auth.users.id`; username/handle is deliberately deferred because RenderLab has no current public profile/share/attribution namespace that consumes one.
+- Avatar storage is separate from creative Library media, uses an owner-derived private profile namespace, and must join #219 export/deletion/purge/residue verification before implementation can merge.
+- Credential UX is one reusable account password-field composition across signed-out sign-in, ordinary/recovery password replacement, email-change reauthentication and account-deletion reauthentication. Reveal/hide, Caps Lock advisory, paste/password-manager/autocomplete behavior and the real 15-character policy are binding; no secret may appear in evidence artifacts.
+- This contract changes no production code, schema, hosted Auth state or deployment. Implementation begins only after the contract PR merges.
+
 ## Current Landing production closure — 2026-09-11
 - [x] Approved four-section Lab Matrix Landing implemented in PR #174 and merged as `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`.
 - [x] Current `main` source `0173c4c5ba08360b6352331118abc81978cfa774` deployed as READY Vercel production deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`.
