@@ -53,9 +53,6 @@ const fixtures = {
   mfa: {
     id: fixtureUuid("mfa-user"),
   },
-  directProbe: {
-    id: fixtureUuid("direct-probe-user"),
-  },
 };
 
 function makePassword(namespace) {
@@ -490,7 +487,7 @@ async function deleteRawUser(userId) {
 
 async function cleanupFixtures() {
   await serviceRest(`renderlab_beta_invitations?id=eq.${encodeURIComponent(fixtures.nonMfa.invitationId)}`, { method: "DELETE" }).catch(() => undefined);
-  for (const userId of [fixtures.nonMfa.id, fixtures.mfa.id, fixtures.directProbe.id]) {
+  for (const userId of [fixtures.nonMfa.id, fixtures.mfa.id]) {
     await deleteRawUser(userId).catch(() => undefined);
   }
   await deleteConfiguredTestAccount(configuredTestAccountIdentity(adminNamespace)).catch(() => undefined);
@@ -514,12 +511,9 @@ try {
     nonMfaNew: gmailAlias(ownedInbox, "rl218-member-new"),
     mfaOld: gmailAlias(ownedInbox, "rl218-mfa-old"),
     mfaNew: gmailAlias(ownedInbox, "rl218-mfa-new"),
-    directOld: gmailAlias(ownedInbox, "rl218-direct-old"),
-    directNew: gmailAlias(ownedInbox, "rl218-direct-new"),
   };
   const nonMfaPassword = makePassword("non-mfa");
   const mfaPassword = makePassword("mfa");
-  const directPassword = makePassword("direct");
 
   const domains = await resend("/domains");
   const exactDomain = (domains?.data || []).find((row) => String(row?.name || "").toLowerCase().replace(/\.$/, "") === "mail.renderlab.faresuniform.uk");
@@ -529,17 +523,9 @@ try {
   assert(domain.open_tracking === false && domain.click_tracking === false, "RenderLab Resend tracking must remain disabled.");
   console.log("RENDERLAB_218_RESEND_BASELINE=true");
 
-  // Provider-direct non-MFA initiation is intentionally documented as bypassing
-  // RenderLab's current-password defense-in-depth while still requiring the
-  // provider's Secure Email Change confirmations.
-  await createAuthUser(fixtures.directProbe.id, emails.directOld, directPassword, "email-identity-direct-probe");
-  const directClient = createUserClient();
-  await signIn(directClient, emails.directOld, directPassword);
-  const directStart = await directClient.auth.updateUser({ email: emails.directNew });
-  assert(!directStart.error, "Direct provider AAL1 email-change initiation unexpectedly failed for a non-MFA user.");
-  assert((await readAuthUser(fixtures.directProbe.id)).email?.toLowerCase() === emails.directOld.toLowerCase(), "Direct provider initiation changed canonical email before confirmations.");
-  await deleteRawUser(fixtures.directProbe.id);
-  console.log("RENDERLAB_218_NON_MFA_DIRECT_AAL1_INITIATION_CONFIRMED=true");
+  // The provider-direct non-MFA bypass is a documented Supabase limitation.
+  // Do not initiate it in this configured verifier: doing so consumes the same
+  // hosted Auth email quota needed by the actual RenderLab acceptance flow.
 
   await createAuthUser(fixtures.nonMfa.id, emails.nonMfaOld, nonMfaPassword, "email-identity-member");
   await seedMemberAccess(fixtures.nonMfa.id);
