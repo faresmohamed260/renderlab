@@ -88,6 +88,7 @@ async function cleanupOwnedRenderLabRows(ownerId) {
   ]);
 
   const storageKeys = new Set([
+    `renderlab/account-profiles/${ownerId}/avatar.webp`,
     ...sessions.map((row) => row.storage_key),
     ...assets.flatMap((row) => [row.storage_key, row.thumbnail_storage_key]),
     ...sources.map((row) => row.storage_key),
@@ -100,7 +101,7 @@ async function cleanupOwnedRenderLabRows(ownerId) {
     }
   }
 
-  for (const table of ["media_upload_sessions", "media_assets", "generation_jobs", "generation_sources"]) {
+  for (const table of ["media_upload_sessions", "media_assets", "generation_jobs", "generation_sources", "renderlab_account_profiles"]) {
     const response = await serviceRest(`${table}?owner_id=eq.${encodedOwner}`, { method: "DELETE" });
     if (!response.ok) {
       throw new Error(`Could not clean configured account ${table} rows (${response.status}): ${await response.text()}`);
