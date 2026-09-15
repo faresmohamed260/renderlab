@@ -42,6 +42,22 @@ function providerFailure(code: string | undefined) {
   return errorResponse("email_change_failed", "Email change could not be started. Try again.", 400);
 }
 
+async function createEmailMutationClient(request: NextRequest) {
+  const authorization = request.headers.get("authorization")?.trim();
+  if (!authorization) return createServerSupabaseClient();
+
+  const config = getSupabaseAuthConfig();
+  if (!config) return null;
+  return createClient(config.url, config.publishableKey, {
+    global: { headers: { Authorization: authorization } },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
@@ -106,12 +122,16 @@ export async function POST(request: NextRequest) {
     await verifier.auth.signOut({ scope: "local" });
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = await createEmailMutationClient(request);
   if (!supabase) {
     return errorResponse("email_change_unavailable", "Email change is unavailable in this runtime.", 503);
   }
 
-  const { error } = await supabase.auth.updateUser({ email: nextEmail });
+  const emailRedirectTo = new URL("/settings/email", request.nextUrl.origin).toString();
+  const { error } = await supabase.auth.updateUser(
+    { email: nextEmail },
+    { emailRedirectTo },
+  );
   if (error) return providerFailure(error.code);
 
   return NextResponse.json({
