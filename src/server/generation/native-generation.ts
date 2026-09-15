@@ -98,6 +98,7 @@ type DurableOutputObject = {
 const maxPollReassignmentAttempts = 3;
 const invalidWorkerGraceMs = 15 * 60 * 1000;
 const retryableProviderStaleMs = 2 * 60 * 60 * 1000;
+
 function workflowFor(request: GenerationRequest): WorkflowConfig {
   const operation = resolveCreativeOperation(request);
   const requestedModel = generationModelForRequest(request);
@@ -237,7 +238,7 @@ async function resolveInputs(ownerId: string, request: GenerationRequest): Promi
     const asset = assets?.[0];
     if (!asset) throw new Error("Media asset input was not found.");
     const object = await readR2Object(asset.storage_key);
-    resolved.push({ bytes: object.bytes, contentType: source.mime_type, filename: `asset-${input.source.id}` });
+    resolved.push({ bytes: object.bytes, contentType: asset.mime_type, filename: `asset-${input.source.id}` });
   }
   return resolved;
 }
@@ -809,7 +810,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   if (recovered) {
     await emitDiagnosticEvent({
       event: "generation.reconciliation",
-      correlationIdForGenerationJob(row.id),
+      correlationId: correlationIdForGenerationJob(row.id),
       jobId: row.id,
       operation: row.operation,
       phase: "finalization-recovered",
