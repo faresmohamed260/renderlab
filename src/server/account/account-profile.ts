@@ -16,7 +16,7 @@ const AVATAR_MAX_PIXELS = 40_000_000;
 const AVATAR_OUTPUT_SIZE = 512;
 const AVATAR_CONTENT_TYPE = "image/webp";
 const AVATAR_ALLOWED_INPUT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/u;
+const CONTROL_CHARACTERS = /\p{Cc}/u;
 
 export type RenderLabAccountProfileRow = {
   owner_id: string;

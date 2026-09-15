@@ -202,28 +202,6 @@ async function buildAccountExport(ownerId: string) {
   const [
     user,
     accessRows,
-    profile: {
-      displayName: profile?.display_name ?? null,
-      avatar: profile?.avatar_state === "active"
-        ? {
-            state: "active",
-            contentType: profile.avatar_content_type,
-            sizeBytes: profile.avatar_size_bytes === null ? null : Number(profile.avatar_size_bytes),
-            width: profile.avatar_width,
-            height: profile.avatar_height,
-            updatedAt: profile.avatar_updated_at,
-            downloadPath: "/api/account/profile/avatar",
-          }
-        : {
-            state: profile?.avatar_state ?? "none",
-            contentType: null,
-            sizeBytes: null,
-            width: null,
-            height: null,
-            updatedAt: null,
-            downloadPath: null,
-          },
-    },
     generationJobs,
     generationSources,
     mediaAssets,
@@ -303,6 +281,28 @@ async function buildAccountExport(ownerId: string) {
       lastSignInAt: user.last_sign_in_at ?? null,
       access: accessRows[0] ?? null,
       signInMethods: Array.from(new Set((user.identities ?? []).map((identity) => identity.provider))).sort(),
+    },
+    profile: {
+      displayName: profile?.display_name ?? null,
+      avatar: profile?.avatar_state === "active"
+        ? {
+            state: "active",
+            contentType: profile.avatar_content_type,
+            sizeBytes: profile.avatar_size_bytes === null ? null : Number(profile.avatar_size_bytes),
+            width: profile.avatar_width,
+            height: profile.avatar_height,
+            updatedAt: profile.avatar_updated_at,
+            downloadPath: "/api/account/profile/avatar",
+          }
+        : {
+            state: profile?.avatar_state ?? "none",
+            contentType: null,
+            sizeBytes: null,
+            width: null,
+            height: null,
+            updatedAt: null,
+            downloadPath: null,
+          },
     },
     generationJobs,
     generationSources,
