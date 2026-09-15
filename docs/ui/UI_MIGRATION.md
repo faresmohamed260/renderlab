@@ -12,6 +12,14 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Validate rendered UI, not only compilation.
 - Keep repository documentation synchronized with verified implementation.
 
+## Account/security production rollout — 2026-09-15
+**Status: `#216–#219 COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
+
+- Exact current production source is `d18ef8833d46c812dac6b43572b3f4f7069990f8`, deployed by guarded clean-provenance run `35022243427` as READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`.
+- The rollout makes the already-approved Settings surfaces for live session controls, MFA/step-up, secure sign-in email change, and Data & Privacy export/deletion available in production; it does not reopen UI-078 composition or the Phase 23–29 visual system.
+- Root, Create, Library, Activity, Settings and Settings/Password custom-domain smoke passed. Post-cutover Vercel inspection found no runtime-error clusters and no error/fatal logs.
+- Historical #216–#219 `NOT DEPLOYED` statements record their implementation-closure state and are superseded for current production status by this rollout record. Automatic Git → Vercel deployment remains disabled.
+
 ## Current Landing production closure — 2026-09-11
 - [x] Approved four-section Lab Matrix Landing implemented in PR #174 and merged as `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`.
 - [x] Current `main` source `0173c4c5ba08360b6352331118abc81978cfa774` deployed as READY Vercel production deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`.
