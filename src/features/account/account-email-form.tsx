@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { AccountPasswordField } from "./account-password-field";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
@@ -134,19 +135,16 @@ export function AccountEmailForm({
                       <FieldDescription>Use an address you can access now. Supabase Secure Email Change requires confirmation from both inboxes.</FieldDescription>
                     </Field>
                     {requiresCurrentPassword ? (
-                      <Field>
-                        <FieldLabel htmlFor="email-change-current-password">Current password</FieldLabel>
-                        <Input
-                          id="email-change-current-password"
-                          name="current-password"
-                          type="password"
-                          autoComplete="current-password"
-                          value={currentPassword}
-                          onChange={(event) => setCurrentPassword(event.target.value)}
-                          required
-                        />
-                        <FieldDescription>RenderLab verifies the current password before starting this sensitive change.</FieldDescription>
-                      </Field>
+                      <AccountPasswordField
+                        id="email-change-current-password"
+                        name="current-password"
+                        label="Current password"
+                        autoComplete="current-password"
+                        value={currentPassword}
+                        onChange={setCurrentPassword}
+                        description="RenderLab verifies the current password before starting this sensitive change."
+                        required
+                      />
                     ) : (
                       <div className={styles.securityNote}>
                         <p className={styles.valueLabel}>Authenticator verified</p>

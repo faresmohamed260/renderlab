@@ -5,7 +5,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { isRenderLabMfaChallengeRequired, normalizeRenderLabMfaAssurance } from "@/lib/auth/mfa-assurance";
@@ -14,6 +14,7 @@ import type { RenderLabIdentity } from "@/lib/supabase/server";
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
 import type { RenderLabSessionSummary } from "@/server/account/account-sessions";
 import { AccountDataPrivacy } from "./account-data-privacy";
+import { AccountPasswordField } from "./account-password-field";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
@@ -366,18 +367,23 @@ export function AccountSettings({
               <FieldLabel htmlFor="account-email">Email</FieldLabel>
               <Input id="account-email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
             </Field>
-            <Field>
-              <div className={styles.fieldHeader}>
-                <FieldLabel htmlFor="account-password">Password</FieldLabel>
+            <AccountPasswordField
+              id="account-password"
+              name="password"
+              label="Password"
+              autoComplete="current-password"
+              value={password}
+              onChange={setPassword}
+              description="Use your invited RenderLab account credentials."
+              error={feedback?.kind === "error" ? feedback.message : null}
+              required
+              labelAction={(
                 <Button type="button" variant="link" size="lg" disabled={busyAction !== null || !email.trim()} onClick={handleRecovery} className={styles.recoveryButton}>
                   {busyAction === "recovery" ? <Spinner aria-hidden="true" /> : null}
                   Forgot password
                 </Button>
-              </div>
-              <Input id="account-password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-              <FieldDescription>Use your invited RenderLab account credentials.</FieldDescription>
-              <FieldError>{feedback?.kind === "error" ? feedback.message : null}</FieldError>
-            </Field>
+              )}
+            />
           </FieldGroup>
 
           {feedback?.kind === "success" ? (
