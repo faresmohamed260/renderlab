@@ -1,5 +1,12 @@
+import {
+  injectAccountDataLifecycleTestFault,
+  installAccountDataLifecycleAuthDeleteTestFault,
+} from "@/server/account/account-data-lifecycle-test-faults";
+
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "").trim();
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+installAccountDataLifecycleAuthDeleteTestFault();
 
 export function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseServiceRoleKey);
@@ -8,6 +15,10 @@ export function isSupabaseConfigured() {
 export async function supabaseRest<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!isSupabaseConfigured()) {
     throw new Error("Supabase is not configured.");
+  }
+
+  if (path === "rpc/renderlab_finalize_account_product_deletion") {
+    injectAccountDataLifecycleTestFault("database-finalize");
   }
 
   const headers = new Headers(init.headers);
