@@ -7,9 +7,9 @@ import { getFreshCurrentRenderLabAuthentication } from "@/lib/supabase/server";
 import {
   beginAccountDeletion,
   getAccountDeletionLifecycle,
-  processAccountDeletion,
   verifyCurrentAccountPassword,
 } from "@/server/account/account-data-lifecycle";
+import { processAccountDeletionWithNotification } from "@/server/account/account-deletion-processor";
 
 type DeleteAccountBody = {
   currentPassword?: unknown;
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     const lifecycle = await beginAccountDeletion(authentication.identity.id);
-    const process = await processAccountDeletion(authentication.identity.id);
+    const process = await processAccountDeletionWithNotification(authentication.identity.id);
     return NextResponse.json({
       ok: true,
       deletion: publicLifecycle(await getAccountDeletionLifecycle(authentication.identity.id) ?? lifecycle),
