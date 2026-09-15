@@ -18,34 +18,3 @@ export function injectAccountDataLifecycleTestFault(phase: AccountDataLifecycleF
   consumedFaults.add(phase);
   throw new Error(`account_test_fault_${phase.replaceAll("-", "_")}`);
 }
-
-export function installAccountDataLifecycleAuthDeleteTestFault() {
-  if (!configuredFaults.has("auth-delete")) return;
-  const originalFetch = globalThis.fetch;
-  if ((originalFetch as typeof originalFetch & { __renderlabAccountLifecycleWrapped?: boolean }).__renderlabAccountLifecycleWrapped) {
-    return;
-  }
-
-  const wrappedFetch: typeof fetch = async (input, init) => {
-    const url = typeof input === "string"
-      ? input
-      : input instanceof URL
-        ? input.toString()
-        : input.url;
-    const method = String(init?.method ?? (typeof input === "object" && "method" in input ? input.method : "GET")).toUpperCase();
-    if (method === "DELETE" && /\/auth\/v1\/admin\/users\/[^/?]+(?:\?|$)/.test(url)) {
-      injectAccountDataLifecycleTestFault("auth-delete");
-    }
-    return originalFetch(input, init);
-  };
-
-  (wrappedFetch as typeof wrappedFetch & { __renderlabAccountLifecycleWrapped?: boolean }).__renderlabAccountLifecycleWrapped = true;
-  globalThis.fetch = wrappedFetch;
-}
-
-// This module is imported only by server-side lifecycle adapters. In ordinary
-// application environments the configured fault set is empty, so this is a
-// no-op. Configured #219 acceptance enables the wrapper explicitly through its
-// test-only environment flag so the supported Supabase Admin delete boundary
-// can be proven retryable without changing production behavior.
-installAccountDataLifecycleAuthDeleteTestFault();

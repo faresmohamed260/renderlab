@@ -2,6 +2,7 @@ import { createClient, type User } from "@supabase/supabase-js";
 import { normalizeRenderLabSessionClient } from "@/lib/auth/session-client-label";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
 import { sendAccountDeletionNotification } from "@/server/account/account-deletion-notification";
+import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { requestGenerationCancellation } from "@/server/generation/cancel-generation";
 import { generationStorageCandidates, type GenerationStorageKeyRow } from "@/server/generation/generation-storage-keys";
@@ -554,6 +555,7 @@ async function attemptDeletionNotification(row: AccountLifecycleRow) {
 async function hardDeleteAuthUser(userId: string) {
   const service = serviceRoleClient();
   if (!service) throw new Error("account_auth_unavailable");
+  injectAccountDataLifecycleTestFault("auth-delete");
   const { error } = await service.auth.admin.deleteUser(userId);
   if (error) throw new Error("account_auth_delete_failed");
 }
