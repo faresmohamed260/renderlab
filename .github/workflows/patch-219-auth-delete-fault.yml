@@ -1,0 +1,66 @@
+name: Patch 219 Auth Delete Fault
+
+on:
+  push:
+    branches: [account/219-data-lifecycle]
+    paths:
+      - ".github/workflows/patch-219-auth-delete-fault.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: account/219-data-lifecycle
+          fetch-depth: 0
+      - name: Patch exact test fault boundary
+        shell: python
+        run: |
+          from pathlib import Path
+
+          lifecycle = Path("src/server/account/account-data-lifecycle.ts")
+          text = lifecycle.read_text()
+          old_import = 'import { sendAccountDeletionNotification } from "@/server/account/account-deletion-notification";\n'
+          new_import = old_import + 'import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";\n'
+          if old_import not in text or new_import in text:
+              raise SystemExit("unexpected lifecycle import state")
+          text = text.replace(old_import, new_import, 1)
+          old_delete = '''async function hardDeleteAuthUser(userId: string) {
+            const service = serviceRoleClient();
+            if (!service) throw new Error("account_auth_unavailable");
+            const { error } = await service.auth.admin.deleteUser(userId);
+            if (error) throw new Error("account_auth_delete_failed");
+          }
+          '''
+          new_delete = '''async function hardDeleteAuthUser(userId: string) {
+            const service = serviceRoleClient();
+            if (!service) throw new Error("account_auth_unavailable");
+            injectAccountDataLifecycleTestFault("auth-delete");
+            const { error } = await service.auth.admin.deleteUser(userId);
+            if (error) throw new Error("account_auth_delete_failed");
+          }
+          '''
+          if old_delete not in text:
+              raise SystemExit("hardDeleteAuthUser shape changed")
+          lifecycle.write_text(text.replace(old_delete, new_delete, 1))
+
+          faults = Path("src/server/account/account-data-lifecycle-test-faults.ts")
+          fault_text = faults.read_text()
+          marker = '\nexport function installAccountDataLifecycleAuthDeleteTestFault() {'
+          index = fault_text.find(marker)
+          if index < 0:
+              raise SystemExit("fault installer shape changed")
+          faults.write_text(fault_text[:index].rstrip() + "\n")
+
+          Path(".github/workflows/patch-219-auth-delete-fault.yml").unlink()
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/server/account/account-data-lifecycle.ts src/server/account/account-data-lifecycle-test-faults.ts .github/workflows/patch-219-auth-delete-fault.yml
+          git commit -m "test: inject #219 auth delete failure at admin boundary"
+          git push origin HEAD:account/219-data-lifecycle
