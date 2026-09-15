@@ -1,0 +1,32 @@
+name: Fix 223 Lifecycle Export
+
+on:
+  push:
+    branches:
+      - account/223-profile-credential-implementation
+    paths:
+      - .github/workflows/fix-223-lifecycle-export.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: account/223-profile-credential-implementation
+          fetch-depth: 1
+      - run: python scripts/fix-223-lifecycle-export.py
+      - name: Commit correction
+        run: |
+          set -euo pipefail
+          git rm scripts/fix-223-lifecycle-export.py .github/workflows/fix-223-lifecycle-export.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/server/account/account-data-lifecycle.ts src/server/account/account-profile.ts
+          git commit -m "fix: correct profile export integration"
+          git push origin HEAD:account/223-profile-credential-implementation
