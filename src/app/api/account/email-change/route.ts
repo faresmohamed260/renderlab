@@ -59,6 +59,7 @@ async function mutateSignInEmail(request: NextRequest, nextEmail: string): Promi
 
   if (!authorization) {
     const supabase = await createServerSupabaseClient();
+    if (!supabase) return { ok: false, unavailable: true };
     const { error } = await supabase.auth.updateUser(
       { email: nextEmail },
       { emailRedirectTo: RENDERLAB_EMAIL_CHANGE_REDIRECT },
