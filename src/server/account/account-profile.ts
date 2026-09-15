@@ -1,5 +1,4 @@
 import sharp from "sharp";
-import { getAccountDeletionLifecycle } from "@/server/account/account-data-lifecycle";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import {
   createSignedReadUrl,
@@ -89,7 +88,10 @@ export async function getRenderLabAccountProfile(ownerId: string) {
 }
 
 async function assertProfileMutationAllowed(ownerId: string) {
-  if (await getAccountDeletionLifecycle(ownerId)) throw new Error("account_deletion_in_progress");
+  const rows = await supabaseRest<Array<{ user_id: string }>>(
+    `renderlab_account_lifecycle?user_id=eq.${encodeURIComponent(ownerId)}&state=eq.deleting&select=user_id&limit=1`,
+  );
+  if (rows.length) throw new Error("account_deletion_in_progress");
 }
 
 async function upsertProfile(ownerId: string, patch: Record<string, unknown>) {
