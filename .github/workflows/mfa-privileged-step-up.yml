@@ -7,15 +7,22 @@ on:
       - "src/lib/supabase/**"
       - "src/server/admin/**"
       - "src/app/api/admin/**"
+      - "src/app/api/account/email-change/**"
+      - "src/app/auth/confirm/**"
       - "src/app/(app)/admin/**"
       - "src/app/(app)/settings/mfa/**"
       - "src/app/(app)/settings/password/**"
+      - "src/app/(app)/settings/email/**"
       - "src/features/account/account-mfa-*.tsx"
       - "src/features/account/account-password-form.tsx"
+      - "src/features/account/account-email-form.tsx"
       - "scripts/verify-mfa-privileged-step-up.mjs"
+      - "scripts/verify-email-identity-change.mjs"
       - ".github/workflows/mfa-privileged-step-up.yml"
+      - ".github/workflows/email-identity-change.yml"
       - "docs/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md"
       - "docs/architecture/MFA_PRIVILEGED_STEP_UP_CONTRACT_AMENDMENT_1.md"
+      - "docs/architecture/IDENTITY_SIGN_IN_METHOD_IMPLEMENTATION_CONTRACT.md"
   workflow_dispatch:
 
 permissions:
