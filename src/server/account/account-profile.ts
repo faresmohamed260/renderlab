@@ -67,9 +67,10 @@ export function normalizeRenderLabDisplayName(value: unknown) {
   if (value === null || value === undefined) return null;
   if (typeof value !== "string") throw new Error("profile_display_name_invalid");
 
-  const normalized = value.normalize("NFC").trim().replace(/\s+/gu, " ");
+  const unicode = value.normalize("NFC");
+  if (CONTROL_CHARACTERS.test(unicode)) throw new Error("profile_display_name_invalid");
+  const normalized = unicode.trim().replace(/\s+/gu, " ");
   if (!normalized) return null;
-  if (CONTROL_CHARACTERS.test(normalized)) throw new Error("profile_display_name_invalid");
   if (Array.from(normalized).length > PROFILE_DISPLAY_NAME_MAX_CODE_POINTS) {
     throw new Error("profile_display_name_too_long");
   }

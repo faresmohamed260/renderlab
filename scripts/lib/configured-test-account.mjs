@@ -276,7 +276,8 @@ export function withAccountAuthorization(account, init = {}) {
 }
 
 function isSignedMediaRedirectPath(pathname) {
-  return /^\/api\/media\/assets\/[^/]+\/(?:content|thumbnail|download)$/.test(pathname);
+  return pathname === "/api/account/profile/avatar"
+    || /^\/api\/media\/assets\/[^/]+\/(?:content|thumbnail|download)$/.test(pathname);
 }
 
 export async function routeLocalAppRequestsWithAccount(page, baseUrl, account) {
