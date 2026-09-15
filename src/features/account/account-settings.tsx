@@ -13,6 +13,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { RenderLabIdentity } from "@/lib/supabase/server";
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
 import type { RenderLabSessionSummary } from "@/server/account/account-sessions";
+import { AccountDataPrivacy } from "./account-data-privacy";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
@@ -219,7 +220,7 @@ export function AccountSettings({
         <div className={styles.register} data-account-state="signed-in">
           <span className={styles.signatureArc} aria-hidden="true" />
 
-                    <RegisterRow index="01" title="Account">
+          <RegisterRow index="01" title="Account">
             <div className={styles.actionRow}>
               <div className={styles.valueStack}>
                 <p className={styles.valueLabel}>Sign-in email</p>
@@ -318,8 +319,12 @@ export function AccountSettings({
             </div>
           </RegisterRow>
 
+          <RegisterRow index="05" title="Data & Privacy">
+            <AccountDataPrivacy />
+          </RegisterRow>
+
           {showAdminLink ? (
-            <RegisterRow index="05" title="Admin">
+            <RegisterRow index="06" title="Admin">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Admin operations</p>
