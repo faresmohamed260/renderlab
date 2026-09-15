@@ -47,6 +47,11 @@ const pngBytes = Buffer.from(
 const thumbnailBytes = Buffer.from("renderlab-219-thumbnail", "utf8");
 const sourceBytes = Buffer.from("renderlab-219-source", "utf8");
 const runPrefix = `renderlab/account-lifecycle-ci/${runToken}`;
+const profileAvatarBytes = Buffer.from(`renderlab-profile-avatar-${runToken}`, "utf8");
+
+function profileAvatarKey(ownerId) {
+  return `renderlab/account-profiles/${ownerId}/avatar.webp`;
+}
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -95,6 +100,9 @@ const keys = {
   thumbA: `${runPrefix}/a/thumb.webp`,
   mediaB: `${runPrefix}/b/media.png`,
   thumbB: `${runPrefix}/b/thumb.webp`,
+  avatarA: profileAvatarKey(accountA.id),
+  avatarB: profileAvatarKey(accountB.id),
+  avatarC: profileAvatarKey(accountC.id),
 };
 
 function deterministicGenerationAssetId(jobId, outputIndex = 0) {
@@ -292,6 +300,7 @@ async function cleanupOwner(ownerId) {
     serviceRows(`renderlab_account_exports?owner_id=eq.${encoded}&select=storage_key`).catch(() => []),
   ]);
   for (const key of new Set([
+    profileAvatarKey(ownerId),
     ...uploads.map((row) => row.storage_key),
     ...assets.flatMap((row) => [row.storage_key, row.thumbnail_storage_key]),
     ...sources.map((row) => row.storage_key),
@@ -309,6 +318,7 @@ async function cleanupOwner(ownerId) {
     "generation_admission_reservations",
     "generation_jobs",
     "renderlab_account_exports",
+    "renderlab_account_profiles",
   ]) {
     await serviceRest(`${table}?owner_id=eq.${encoded}`, { method: "DELETE" }).catch(() => null);
   }
@@ -327,6 +337,9 @@ async function cleanupFixtures() {
   await deleteObject(keys.thumbA);
   await deleteObject(keys.mediaB);
   await deleteObject(keys.thumbB);
+  await deleteObject(keys.avatarA);
+  await deleteObject(keys.avatarB);
+  await deleteObject(keys.avatarC);
   await deleteObject(orphanOutputKey);
   for (const account of accounts) await cleanupOwner(account.id);
   console.log("RENDERLAB_219_FIXTURE_CLEAN=true");
@@ -339,7 +352,41 @@ async function seedProductData() {
   await putObject(keys.thumbA, thumbnailBytes, "image/webp");
   await putObject(keys.mediaB, pngBytes, "image/png");
   await putObject(keys.thumbB, thumbnailBytes, "image/webp");
+  await putObject(keys.avatarA, profileAvatarBytes, "image/webp");
+  await putObject(keys.avatarB, profileAvatarBytes, "image/webp");
+  await putObject(keys.avatarC, profileAvatarBytes, "image/webp");
   await putObject(orphanOutputKey, pngBytes, "image/png");
+
+  await expectOk(await serviceRest("renderlab_account_profiles", {
+    method: "POST",
+    body: JSON.stringify([
+      {
+        owner_id: accountA.id,
+        display_name: "Profile Owner A",
+        avatar_state: "active",
+        avatar_content_type: "image/webp",
+        avatar_size_bytes: profileAvatarBytes.length,
+        avatar_width: 512,
+        avatar_height: 512,
+        avatar_updated_at: now,
+      },
+      {
+        owner_id: accountB.id,
+        display_name: "Profile Sentinel B",
+        avatar_state: "active",
+        avatar_content_type: "image/webp",
+        avatar_size_bytes: profileAvatarBytes.length,
+        avatar_width: 512,
+        avatar_height: 512,
+        avatar_updated_at: now,
+      },
+      {
+        owner_id: accountC.id,
+        display_name: "Purge Pending C",
+        avatar_state: "purge_pending",
+      },
+    ]),
+  }), "Could not seed account profile fixtures");
 
   await expectOk(await serviceRest("generation_jobs", {
     method: "POST",
@@ -576,6 +623,8 @@ try {
   const bJobBefore = JSON.stringify(await serviceRows(`generation_jobs?owner_id=eq.${encodeURIComponent(accountB.id)}&select=*&order=id.asc`));
   const bMediaBefore = await readObject(keys.mediaB);
   const bThumbBefore = await readObject(keys.thumbB);
+  const bProfileBefore = JSON.stringify(await serviceRows(`renderlab_account_profiles?owner_id=eq.${encodeURIComponent(accountB.id)}&select=*`));
+  const bAvatarBefore = await readObject(keys.avatarB);
 
   const mfaA = await enrollTotpAndGetAal2(accountA);
   const tokenAAal1 = await passwordToken(accountA);
@@ -598,8 +647,12 @@ try {
   const signedExportResponse = await fetch(aDownload.headers.get("location"));
   assert(signedExportResponse.ok, `Signed export object could not be read (${signedExportResponse.status}).`);
   const exported = await signedExportResponse.json();
-  assert(exported.schemaVersion === 1, "Export schema version mismatch.");
+  assert(exported.schemaVersion === 2, "Export schema version mismatch.");
   assert(exported.account?.userId === accountA.id && exported.account?.email === accountA.email, "Export identity mismatch.");
+  assert(exported.profile?.displayName === "Profile Owner A", "Export is missing profile display identity.");
+  assert(exported.profile?.avatar?.state === "active", "Export is missing active profile-avatar state.");
+  assert(exported.profile?.avatar?.contentType === "image/webp" && exported.profile?.avatar?.width === 512 && exported.profile?.avatar?.height === 512, "Export profile-avatar metadata is incorrect.");
+  assert(exported.profile?.avatar?.downloadPath === "/api/account/profile/avatar", "Export profile-avatar download path is not owner-authenticated.");
   assert(exported.generationJobs?.some((row) => row.id === ids.jobA && row.prompt?.includes("private prompt A")), "Export is missing generation prompt/history.");
   assert(exported.generationSources?.some((row) => row.id === ids.sourceA), "Export is missing source metadata.");
   assert(exported.mediaAssets?.some((row) => row.id === ids.assetA && row.favorited_at), "Export is missing durable media/Favorite state.");
@@ -613,7 +666,7 @@ try {
   assert(exported.durableMediaManifest?.some((row) => row.assetId === ids.assetA && row.downloadPath === `/api/media/assets/${ids.assetA}/download`), "Export durable-media manifest is incorrect.");
   assert(exported.retentionAndProcessing?.renderLabModelTraining === false, "Export does not state RenderLab's no-model-training policy.");
   const exportedText = JSON.stringify(exported);
-  for (const forbidden of [keys.sourceA, keys.mediaA, keys.thumbA, serviceRoleKey, "provider_job_id", "refresh_token", "access_token"]) {
+  for (const forbidden of [keys.sourceA, keys.mediaA, keys.thumbA, keys.avatarA, serviceRoleKey, "provider_job_id", "refresh_token", "access_token"]) {
     assert(!exportedText.includes(forbidden), `Export leaked forbidden internal/secret material: ${forbidden.slice(0, 24)}.`);
   }
   assert(!exportedText.includes(accountB.id) && !exportedText.includes("sentinel prompt B"), "Export leaked Account B state.");
@@ -634,6 +687,11 @@ try {
   const expiredRows = await serviceRows(`renderlab_account_exports?id=eq.${encodeURIComponent(exportId)}&select=status,storage_key`);
   assert(expiredRows[0]?.status === "expired" && expiredRows[0]?.storage_key === null, "Maintenance did not expire and detach export storage.");
   assert(!(await objectExists(exportRow.storage_key)), "Maintenance did not physically purge the expired export artifact.");
+  assert(!(await objectExists(keys.avatarC)), "Maintenance did not purge the pending profile avatar.");
+  const profileCRows = await serviceRows(`renderlab_account_profiles?owner_id=eq.${encodeURIComponent(accountC.id)}&select=avatar_state,avatar_content_type,avatar_size_bytes,avatar_width,avatar_height,avatar_updated_at`);
+  assert(profileCRows[0]?.avatar_state === "none", "Maintenance did not settle purge-pending profile avatar state.");
+  assert(profileCRows[0]?.avatar_content_type === null && profileCRows[0]?.avatar_size_bytes === null && profileCRows[0]?.avatar_width === null && profileCRows[0]?.avatar_height === null && profileCRows[0]?.avatar_updated_at === null, "Maintenance left profile avatar metadata after purge.");
+  console.log("RENDERLAB_223_PROFILE_PURGE_MAINTENANCE=true");
   console.log("RENDERLAB_219_EXPORT_EXPIRY_PURGED=true");
 
   await expectOk(await patchAccessStatus(accountA.id, "suspended"), "Could not suspend A for export policy check");
@@ -722,6 +780,7 @@ try {
     "media_collection_items",
     "generation_admission_reservations",
     "renderlab_account_exports",
+    "renderlab_account_profiles",
   ]) {
     const response = await serviceRest(table, { method: "POST", body: JSON.stringify({ owner_id: accountA.id }) });
     const detail = await response.text();
@@ -749,6 +808,7 @@ try {
   const retryDatabase = await appJson("/api/account/delete", mfaA.accessToken, { method: "PUT" });
   assert(retryDatabase.response.status === 202 && retryDatabase.payload?.process?.code === "account_test_fault_database_finalize", "Injected database finalizer failure did not leave deletion retryable.");
   assert(!(await objectExists(lateUploadKey)) && !(await objectExists(orphanOutputKey)), "Storage cleanup did not remove late/orphan objects before the database finalizer retry.");
+  assert(!(await objectExists(keys.avatarA)), "Storage cleanup did not remove the private profile avatar before database finalization.");
   const aMediaStillPresent = await serviceRows(`media_assets?owner_id=eq.${encodeURIComponent(accountA.id)}&select=id&limit=1`);
   assert(aMediaStillPresent.length === 1, "Database product rows disappeared before finalizer commit.");
 
@@ -777,6 +837,7 @@ try {
     "media_collection_items",
     "generation_admission_reservations",
     "renderlab_account_exports",
+    "renderlab_account_profiles",
   ]) {
     const rows = await serviceRows(`${table}?owner_id=eq.${encodeURIComponent(accountA.id)}&select=*&limit=1`);
     assert(rows.length === 0, `Owner A residue remains in ${table}.`);
@@ -791,9 +852,13 @@ try {
   assert(bAssetAfter === bAssetBefore && bJobAfter === bJobBefore, "Account B sentinel database state changed during A deletion.");
   assert(Buffer.compare(await readObject(keys.mediaB), bMediaBefore) === 0, "Account B media object changed during A deletion.");
   assert(Buffer.compare(await readObject(keys.thumbB), bThumbBefore) === 0, "Account B thumbnail object changed during A deletion.");
+  const bProfileAfter = JSON.stringify(await serviceRows(`renderlab_account_profiles?owner_id=eq.${encodeURIComponent(accountB.id)}&select=*`));
+  assert(bProfileAfter === bProfileBefore, "Account B profile metadata changed during A deletion.");
+  assert(Buffer.compare(await readObject(keys.avatarB), bAvatarBefore) === 0, "Account B profile avatar changed during A deletion.");
   assert(await factorCount(accountB.id) === bFactorCountBefore, "Account B MFA state changed during A deletion.");
   const bStillAuthorized = await appFetch("/api/media/assets?limit=24", tokenB);
   assert(bStillAuthorized.status === 200, "Account B session/access stopped working during A deletion.");
+  console.log("RENDERLAB_223_PROFILE_EXPORT_DELETE_NONINTERFERENCE=true");
   console.log("RENDERLAB_219_CROSS_ACCOUNT_NON_INTERFERENCE=true");
 
   const tokenC = await passwordToken(accountC);
