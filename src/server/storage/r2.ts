@@ -87,7 +87,9 @@ export async function writeR2Object({ key, contentType, body }: { key: string; c
 }
 
 export async function deleteR2Object(key: string) {
-  injectAccountDataLifecycleTestFault("r2-delete");
+  if (!key.startsWith("renderlab/account-exports/")) {
+    injectAccountDataLifecycleTestFault("r2-delete");
+  }
   await getClient().send(new DeleteObjectCommand({ Bucket: bucketName!, Key: key }));
 }
 
