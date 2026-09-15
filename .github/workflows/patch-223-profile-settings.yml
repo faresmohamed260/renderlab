@@ -1,0 +1,33 @@
+name: Patch 223 Profile Settings
+
+on:
+  push:
+    branches:
+      - account/223-profile-credential-implementation
+    paths:
+      - .github/workflows/patch-223-profile-settings.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: account/223-profile-credential-implementation
+          fetch-depth: 1
+      - name: Apply profile Settings integration
+        run: python scripts/patch-223-profile-settings.py
+      - name: Commit profile Settings integration
+        run: |
+          set -euo pipefail
+          git rm scripts/patch-223-profile-settings.py .github/workflows/patch-223-profile-settings.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'src/app/(app)/settings/page.tsx' src/features/account/account-settings.tsx src/features/account/account-data-privacy.tsx src/features/account/account-profile-form.tsx src/features/account/account-settings.module.css
+          git commit -m "feat: integrate private profile into Settings"
+          git push origin HEAD:account/223-profile-credential-implementation
