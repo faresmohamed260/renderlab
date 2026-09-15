@@ -26,6 +26,12 @@ function getClient() {
   return client;
 }
 
+function r2NotFound(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { name?: unknown; $metadata?: { httpStatusCode?: unknown } };
+  return candidate.name === "NotFound" || candidate.name === "NoSuchKey" || candidate.$metadata?.httpStatusCode === 404;
+}
+
 export async function createSignedUploadUrl({ key, contentType, expiresIn = 300 }: { key: string; contentType: string; expiresIn?: number }) {
   return getSignedUrl(
     getClient(),
@@ -87,4 +93,14 @@ export async function headR2Object(key: string) {
     contentType: String(object.ContentType ?? "application/octet-stream").split(";")[0].trim().toLowerCase(),
     etag: String(object.ETag ?? "").replace(/^"|"$/g, ""),
   };
+}
+
+export async function r2ObjectExists(key: string) {
+  try {
+    await headR2Object(key);
+    return true;
+  } catch (error) {
+    if (r2NotFound(error)) return false;
+    throw error;
+  }
 }
