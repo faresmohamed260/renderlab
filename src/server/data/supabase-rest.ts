@@ -1,12 +1,7 @@
-import {
-  injectAccountDataLifecycleTestFault,
-  installAccountDataLifecycleAuthDeleteTestFault,
-} from "@/server/account/account-data-lifecycle-test-faults";
+import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";
 
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "").trim();
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-
-installAccountDataLifecycleAuthDeleteTestFault();
 
 export function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseServiceRoleKey);
