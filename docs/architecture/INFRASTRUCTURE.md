@@ -2,6 +2,13 @@
 
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
+## Account/security production rollout — 2026-09-15
+- Exact application source `d18ef8833d46c812dac6b43572b3f4f7069990f8` is production-live as READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7` (`https://renderlab-baa28u96o-faresmohamed260-6733s-projects.vercel.app`). Deployment metadata points to that exact Git SHA and has no dirty-source marker.
+- Initial candidate `dpl_JCNZJb35Crhk9ngMeYeqAsp91GhK` failed during the Vercel build before cutover because the production environment lacked newly required `RESEND_API_KEY` and `CRON_SECRET`. The custom domain therefore remained on the prior deployment throughout the failure.
+- Configuration run `35022087690` copied the existing protected GitHub `RESEND_API_KEY` into the Vercel production environment and generated a new 64-hex-character server-only `CRON_SECRET`; neither secret value is checked into the repository. This satisfies the current `scripts/verify-vercel-env.mjs` contract and authorizes the daily `/api/internal/maintenance` cron declared in `vercel.json` to authenticate its request.
+- Clean-provenance rollout `35022243427` then deployed the exact source, passed production smoke for `/`, `/create`, `/library`, `/activity`, `/settings`, and `/settings/password`, and did not invoke rollback. A direct production fetch returned HTTP 200 for Settings. Vercel reported no runtime-error clusters and no error/fatal logs in the post-cutover window.
+- Prior production deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh` remains the immediate known-good rollback target. Automatic Git → Vercel deployment remains disabled. This rollout changed Vercel application/environment state only; it did not add Supabase/R2/worker/provider mutations beyond the already-applied #219 migrations and existing shared-resource contracts.
+
 ## Source of Truth
 The `renderlab` repository is authoritative for RenderLab infrastructure intent/contracts. Saga/Studio resources may be reused deliberately, but RenderLab application code, schema, storage prefixes, orchestration and product APIs remain independently named and owned.
 
