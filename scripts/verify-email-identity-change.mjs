@@ -562,8 +562,11 @@ try {
 
   const nonMfaMailStart = Date.now() - 5_000;
   const startResponse = await appEmailChange(primarySession.accessToken, emails.nonMfaNew, nonMfaPassword);
-  assert(startResponse.status === 200, `Correct-current-password email change expected 200, got ${startResponse.status}.`);
-  const startPayload = await startResponse.json();
+  const startPayload = await startResponse.json().catch(() => null);
+  assert(
+    startResponse.status === 200,
+    `Correct-current-password email change expected 200, got ${startResponse.status}, code=${startPayload?.error?.code || "unknown"}.`,
+  );
   assert(startPayload?.ok === true, "Correct-current-password email change did not return success.");
   assert((await readAuthUser(fixtures.nonMfa.id)).email?.toLowerCase() === emails.nonMfaOld.toLowerCase(), "Initiation changed canonical email before confirmations.");
   const stillPrimary = await memberPrimary.auth.getUser();
