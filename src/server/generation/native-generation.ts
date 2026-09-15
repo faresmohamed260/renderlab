@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type {
   CreativeOperation,
   GenerationJob,
@@ -20,6 +19,13 @@ import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/ser
 import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
+import {
+  deterministicGenerationAssetId,
+  generationOutputStoragePrefix,
+  generationThumbnailStoragePrefix,
+  possibleGenerationOutputExtensions,
+  possibleGenerationThumbnailExtensions,
+} from "@/server/generation/generation-storage-keys";
 import { classifyWorkerFailure, failureKind, type WorkerFailureClassification } from "@/server/generation/worker-failure";
 import { inspectUpscaleOutputMetadata, type UpscaleOutputMetadata } from "@/server/generation/upscale-output-metadata";
 import {
@@ -92,6 +98,7 @@ type DurableOutputObject = {
 const maxPollReassignmentAttempts = 3;
 const invalidWorkerGraceMs = 15 * 60 * 1000;
 const retryableProviderStaleMs = 2 * 60 * 60 * 1000;
+
 function workflowFor(request: GenerationRequest): WorkflowConfig {
   const operation = resolveCreativeOperation(request);
   const requestedModel = generationModelForRequest(request);
@@ -422,46 +429,15 @@ function extensionFor(contentType: string) {
   return "png";
 }
 
-function deterministicGenerationAssetId(jobId: string, outputIndex: number) {
-  const bytes = Buffer.from(
-    createHash("sha256")
-      .update(`renderlab:generation-output:${jobId}:${outputIndex}`)
-      .digest()
-      .subarray(0, 16),
-  );
-  bytes[6] = (bytes[6] & 0x0f) | 0x50;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = bytes.toString("hex");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function outputStoragePrefix(row: JobRow, assetId: string) {
-  const created = new Date(row.created_at);
-  const year = created.getUTCFullYear();
-  const month = String(created.getUTCMonth() + 1).padStart(2, "0");
-  return `renderlab/generations/${year}/${month}/${assetId}`;
-}
-
-function thumbnailStoragePrefix(row: JobRow, assetId: string) {
-  const created = new Date(row.created_at);
-  const year = created.getUTCFullYear();
-  const month = String(created.getUTCMonth() + 1).padStart(2, "0");
-  return `renderlab/thumbnails/${year}/${month}/${assetId}`;
-}
-
-function possibleOutputExtensions(row: JobRow) {
-  return row.output_kind === "image" ? ["png", "jpg", "webp"] : ["mp4", "webm", "mov"];
-}
-
-function possibleThumbnailExtensions() {
-  return ["png", "jpg", "webp"];
-}
-
 function contentTypeMatchesKind(kind: JobRow["output_kind"], contentType: string) {
   return kind === "image" ? contentType.startsWith("image/") : contentType.startsWith("video/");
 }
 
-async function findDurableObject(prefix: string, extensions: string[], expectedKind: "image" | "video"): Promise<DurableOutputObject | null> {
+async function findDurableObject(
+  prefix: string,
+  extensions: readonly string[],
+  expectedKind: "image" | "video",
+): Promise<DurableOutputObject | null> {
   for (const extension of extensions) {
     const storageKey = `${prefix}.${extension}`;
     try {
@@ -559,8 +535,8 @@ export async function recoverPersistingResult(row: JobRow) {
 
   const assetId = deterministicGenerationAssetId(row.id, outputIndex);
   const primary = await findDurableObject(
-    outputStoragePrefix(row, assetId),
-    possibleOutputExtensions(row),
+    generationOutputStoragePrefix(row, assetId),
+    possibleGenerationOutputExtensions(row.output_kind),
     row.output_kind,
   );
   if (!primary) return null;
@@ -589,8 +565,8 @@ export async function recoverPersistingResult(row: JobRow) {
     }
   } else {
     const thumbnail = await findDurableObject(
-      thumbnailStoragePrefix(row, assetId),
-      possibleThumbnailExtensions(),
+      generationThumbnailStoragePrefix(row, assetId),
+      possibleGenerationThumbnailExtensions(),
       "image",
     );
     thumbnailStorageKey = thumbnail?.storageKey ?? null;
@@ -616,7 +592,7 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
     ? await inspectUpscaleOutputMetadata(bytes, contentType)
     : null;
   const assetId = deterministicGenerationAssetId(row.id, outputIndex);
-  const storageKey = `${outputStoragePrefix(row, assetId)}.${extensionFor(contentType)}`;
+  const storageKey = `${generationOutputStoragePrefix(row, assetId)}.${extensionFor(contentType)}`;
   injectGenerationFinalizationFault("before-primary-write");
   await writeR2Object({ key: storageKey, contentType, body: bytes });
   injectGenerationFinalizationFault("after-primary-write");
@@ -636,7 +612,7 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
       thumbnailStorageKey = null;
     }
   } else if (poster?.bytes?.length && poster.contentType.startsWith("image/")) {
-    const posterKey = `${thumbnailStoragePrefix(row, assetId)}.${extensionFor(poster.contentType)}`;
+    const posterKey = `${generationThumbnailStoragePrefix(row, assetId)}.${extensionFor(poster.contentType)}`;
     try {
       injectGenerationFinalizationFault("thumbnail-write");
       await writeR2Object({ key: posterKey, contentType: poster.contentType, body: poster.bytes });

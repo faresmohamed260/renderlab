@@ -84,6 +84,8 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: "test-secret-key"
           CLOUDFLARE_R2_BUCKET: "test-bucket"
           RENDERLAB_UPSCALE_WORKER_GATEWAY_URL: "https://upscale.example.invalid"
+          RESEND_API_KEY: "re_test_renderlab"
+          CRON_SECRET: "renderlab-test-cron-secret"
         run: node scripts/verify-vercel-env.mjs
 
       - name: Build production application with Vercel contract
@@ -97,4 +99,6 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: "test-secret-key"
           CLOUDFLARE_R2_BUCKET: "test-bucket"
           RENDERLAB_UPSCALE_WORKER_GATEWAY_URL: "https://upscale.example.invalid"
+          RESEND_API_KEY: "re_test_renderlab"
+          CRON_SECRET: "renderlab-test-cron-secret"
         run: npm run build

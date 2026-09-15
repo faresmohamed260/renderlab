@@ -1,5 +1,6 @@
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";
 
 const accountId = (process.env.CLOUDFLARE_R2_ACCOUNT_ID ?? process.env.R2_ACCOUNT_ID)?.trim();
 const accessKeyId = (process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? process.env.R2_ACCESS_KEY_ID)?.trim();
@@ -24,6 +25,12 @@ function getClient() {
     });
   }
   return client;
+}
+
+function r2NotFound(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { name?: unknown; $metadata?: { httpStatusCode?: unknown } };
+  return candidate.name === "NotFound" || candidate.name === "NoSuchKey" || candidate.$metadata?.httpStatusCode === 404;
 }
 
 export async function createSignedUploadUrl({ key, contentType, expiresIn = 300 }: { key: string; contentType: string; expiresIn?: number }) {
@@ -68,6 +75,9 @@ export async function readR2Object(key: string) {
 }
 
 export async function writeR2Object({ key, contentType, body }: { key: string; contentType: string; body: Uint8Array }) {
+  if (key.startsWith("renderlab/account-exports/")) {
+    injectAccountDataLifecycleTestFault("export-write");
+  }
   const response = await fetch(await createSignedUploadUrl({ key, contentType }), {
     method: "PUT",
     headers: { "content-type": contentType },
@@ -87,4 +97,14 @@ export async function headR2Object(key: string) {
     contentType: String(object.ContentType ?? "application/octet-stream").split(";")[0].trim().toLowerCase(),
     etag: String(object.ETag ?? "").replace(/^"|"$/g, ""),
   };
+}
+
+export async function r2ObjectExists(key: string) {
+  try {
+    await headR2Object(key);
+    return true;
+  } catch (error) {
+    if (r2NotFound(error)) return false;
+    throw error;
+  }
 }

@@ -14,6 +14,8 @@ const required = [
   "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
   "CLOUDFLARE_R2_BUCKET",
   "RENDERLAB_UPSCALE_WORKER_GATEWAY_URL",
+  "RESEND_API_KEY",
+  "CRON_SECRET",
 ];
 
 const missing = required.filter((name) => !process.env[name]?.trim());
@@ -39,6 +41,10 @@ if (Boolean(externalBackendUrl) !== Boolean(externalBackendToken)) {
 const upscaleWorkerUrl = new URL(process.env.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL.trim());
 if (upscaleWorkerUrl.protocol !== "https:") {
   throw new Error("RENDERLAB_UPSCALE_WORKER_GATEWAY_URL must use HTTPS.");
+}
+
+if (process.env.CRON_SECRET.trim().length < 16) {
+  throw new Error("CRON_SECRET must be a nontrivial bearer secret for the account-lifecycle recovery cron.");
 }
 
 console.log("Vercel production environment contract is complete.");

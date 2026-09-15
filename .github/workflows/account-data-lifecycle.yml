@@ -1,0 +1,169 @@
+name: Account Data Lifecycle
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/app/api/account/data-export/**"
+      - "src/app/api/account/delete/**"
+      - "src/app/api/internal/maintenance/**"
+      - "src/features/account/**"
+      - "src/lib/auth/**"
+      - "src/lib/supabase/**"
+      - "src/server/account/**"
+      - "src/server/data/supabase-rest.ts"
+      - "src/server/generation/**"
+      - "src/server/media/**"
+      - "src/server/storage/r2.ts"
+      - "supabase/migrations/0020_account_data_lifecycle.sql"
+      - "supabase/migrations/0021_revoke_account_lifecycle_trigger_rpc_execute.sql"
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/mock-native-generation-worker.mjs"
+      - "scripts/verify-account-data-lifecycle.mjs"
+      - ".github/workflows/account-data-lifecycle.yml"
+      - "vercel.json"
+  push:
+    branches: [main]
+    paths:
+      - "src/app/api/account/data-export/**"
+      - "src/app/api/account/delete/**"
+      - "src/app/api/internal/maintenance/**"
+      - "src/features/account/**"
+      - "src/lib/auth/**"
+      - "src/lib/supabase/**"
+      - "src/server/account/**"
+      - "src/server/data/supabase-rest.ts"
+      - "src/server/generation/**"
+      - "src/server/media/**"
+      - "src/server/storage/r2.ts"
+      - "supabase/migrations/0020_account_data_lifecycle.sql"
+      - "supabase/migrations/0021_revoke_account_lifecycle_trigger_rpc_execute.sql"
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/mock-native-generation-worker.mjs"
+      - "scripts/verify-account-data-lifecycle.mjs"
+      - ".github/workflows/account-data-lifecycle.yml"
+      - "vercel.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-account-data-lifecycle-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  configured-account-data-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      CRON_SECRET: renderlab-219-ci-cron-secret
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
+      RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE: "true"
+      RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL: http://127.0.0.1:4312
+      RENDERLAB_TEST_NATIVE_WORKER_PORT: "4312"
+      RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE: "true"
+      RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL: http://127.0.0.1:4312
+      RENDERLAB_TEST_ACCOUNT_DATA_LIFECYCLE_FAULTS: export-write,r2-delete,database-finalize,auth-delete
+      RENDERLAB_ACCOUNT_DATA_ARTIFACT_DIR: artifacts/account-data-lifecycle
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Validate configured secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME RESEND_API_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify configured verifier syntax
+        run: node --check scripts/verify-account-data-lifecycle.mjs
+
+      - name: Clean exact configured fixtures before verification
+        run: node scripts/verify-account-data-lifecycle.mjs --cleanup-only
+
+      - name: Build exact head
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start run-owned native worker mock
+        shell: bash
+        run: |
+          node scripts/mock-native-generation-worker.mjs > /tmp/renderlab-219-worker.log 2>&1 &
+          echo $! > /tmp/renderlab-219-worker.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4312/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-219-worker.log
+          exit 1
+
+      - name: Start configured application
+        shell: bash
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-219-next.log 2>&1 &
+          echo $! > /tmp/renderlab-219-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/settings > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-219-next.log
+          exit 1
+
+      - name: Verify configured account export and deletion lifecycle
+        run: node scripts/verify-account-data-lifecycle.mjs
+
+      - name: Clean exact configured fixtures after verification
+        if: always()
+        run: node scripts/verify-account-data-lifecycle.mjs --cleanup-only
+
+      - name: Print logs on failure
+        if: failure()
+        run: |
+          echo "--- RenderLab ---"
+          cat /tmp/renderlab-219-next.log || true
+          echo "--- #219 mock worker ---"
+          cat /tmp/renderlab-219-worker.log || true
+
+      - name: Upload #219 Settings evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: account-data-lifecycle-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/account-data-lifecycle
+          if-no-files-found: ignore
+          retention-days: 14

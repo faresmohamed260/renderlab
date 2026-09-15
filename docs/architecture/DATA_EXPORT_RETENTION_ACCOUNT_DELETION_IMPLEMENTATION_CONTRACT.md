@@ -4,7 +4,7 @@
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `e66fe3bfa93674d2a8ef2218b1efef5767a51df4`  
 **Audit date:** 2026-09-15  
-**Status:** CONTRACT — IMPLEMENTATION NOT YET COMPLETE  
+**Status:** IMPLEMENTED + VERIFIED — EXACT-HEAD ACCEPTANCE COMPLETE / PRODUCTION DEPLOYMENT NOT AUTHORIZED
 **Scope:** truthful data-use/retention disclosure, account-data export, bounded durable-media export affordance, owner-wide deletion orchestration, active-job/upload quiescence, storage cleanup, fresh destructive-action authorization, residue verification and configured two-account acceptance  
 **Out of scope:** #223 profile/avatar/username implementation, linked identities, new billing/commercial retention, a new queue vendor, paid Vercel/Supabase plan changes, arbitrary security-activity history, legal-policy drafting, production deployment
 
@@ -649,3 +649,7 @@ Do not create a separate privacy-policy document merely to repeat this implement
 16. repository documentation matches verified implementation reality.
 
 Merging #219 does **not** authorize production deployment. Deployment remains a separate explicit operation.
+
+## 17. Implementation verification — 2026-09-15
+
+#219 is implemented and verified on PR #265. Exact implementation head `886a4722826b268ad156eda22e817002471cd04c` passed all 38 workflows GitHub attached to the pull request, including Account Data Lifecycle, Session Controls, Engineering Quality, UI Shell Validation, Integrated Release, Maintenance Integration, Account/Admin Operations, Account Identity, generation/media regressions, and Video Generation Integration. The configured lifecycle acceptance proves owner-scoped export, authenticated durable-media manifest behavior, logical expiry plus physical export cleanup, fresh destructive authorization, MFA step-up where applicable, last-active-Admin protection, immediate work freeze, active-generation cancellation, six-minute upload quiescence, owner-derived R2 purge/proof, transactional product cleanup, invitation de-identification, Auth deletion last, two-account non-interference, and recovery from export-write, R2-delete, database-finalization, and Auth-delete injected faults. The #219 Supabase migrations are live. Real account-deletion security-mail acceptance passed on the approved Gmail test lane with tracking disabled. No production application deployment was performed or authorized by #219.

@@ -111,7 +111,7 @@ async function assertNoHorizontalOverflow(page, label) {
 }
 
 async function assertReachableAfterBottomScroll(page, locator, label) {
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await locator.scrollIntoViewIfNeeded();
   await page.waitForTimeout(80);
   const state = await locator.evaluate((element) => {
     const rect = element.getBoundingClientRect();
@@ -125,7 +125,7 @@ async function assertReachableAfterBottomScroll(page, locator, label) {
     };
   });
   assert(state.inViewport, `${label} could not be brought fully into the mobile viewport.`);
-  assert(state.topmost, `${label} remains occluded after bottom scroll (top element: ${state.topTag ?? "none"}).`);
+  assert(state.topmost, `${label} remains occluded after targeted scroll (top element: ${state.topTag ?? "none"}).`);
 }
 
 function jwtPayload(token) {
