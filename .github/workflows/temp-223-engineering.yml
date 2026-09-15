@@ -1,0 +1,41 @@
+name: Temporary 223 Engineering Verification
+
+on:
+  push:
+    branches:
+      - account/223-profile-credential-implementation
+    paths:
+      - .github/workflows/temp-223-engineering.yml
+
+permissions:
+  contents: write
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: account/223-profile-credential-implementation
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run verify:engineering-quality
+      - run: npm run verify:modal-project-ownership
+      - run: npm run verify:ui-purity
+      - name: Remove temporary verifier after success
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/temp-223-engineering.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: remove temporary #223 engineering verifier"
+          git push origin HEAD:account/223-profile-credential-implementation
