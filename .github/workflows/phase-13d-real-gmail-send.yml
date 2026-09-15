@@ -6,6 +6,7 @@ on:
       - work/phase-13d-real-gmail-acceptance
     paths:
       - scripts/verify-217-mfa-security-mail.mjs
+      - scripts/verify-219-account-deletion-security-mail.mjs
       - .github/workflows/phase-13d-real-gmail-send.yml
 
 permissions:
@@ -19,11 +20,17 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       RENDERLAB_217_REAL_MFA_MAIL_ARMED: YES_RENDERLAB_217_REAL_MFA_EMAIL
+      RENDERLAB_219_REAL_DELETION_MAIL_ARMED: YES_RENDERLAB_219_REAL_DELETION_EMAIL
     steps:
       - name: Checkout exact Gmail acceptance branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+      - name: Checkout exact #219 candidate source
+        uses: actions/checkout@v4
+        with:
+          ref: account/219-data-lifecycle
+          path: candidate
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -31,6 +38,10 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Verify script syntax
-        run: node --check scripts/verify-217-mfa-security-mail.mjs
+        run: |
+          node --check scripts/verify-217-mfa-security-mail.mjs
+          node --check scripts/verify-219-account-deletion-security-mail.mjs
       - name: Verify bounded MFA security-mail delivery
         run: node scripts/verify-217-mfa-security-mail.mjs
+      - name: Verify bounded account-deletion security-mail delivery
+        run: node scripts/verify-219-account-deletion-security-mail.mjs
