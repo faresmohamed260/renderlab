@@ -1,6 +1,7 @@
 import { createClient, type User } from "@supabase/supabase-js";
 import { normalizeRenderLabSessionClient } from "@/lib/auth/session-client-label";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
+import { sendAccountDeletionNotification } from "@/server/account/account-deletion-notification";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { requestGenerationCancellation } from "@/server/generation/cancel-generation";
 import { generationStorageCandidates, type GenerationStorageKeyRow } from "@/server/generation/generation-storage-keys";
@@ -26,6 +27,9 @@ export type AccountLifecycleRow = {
   retry_count: number;
   last_error_code: string | null;
   last_attempt_at: string | null;
+  notification_state: "pending" | "accepted" | "failed";
+  notification_attempted_at: string | null;
+  notification_error_code: string | null;
   updated_at: string;
 };
 
@@ -519,6 +523,34 @@ async function recordDeletionRetry(row: AccountLifecycleRow, code: string) {
   ).catch(() => null);
 }
 
+async function attemptDeletionNotification(row: AccountLifecycleRow) {
+  if (row.notification_state !== "pending") return;
+
+  let result: Awaited<ReturnType<typeof sendAccountDeletionNotification>>;
+  try {
+    const user = await accountAuthUser(row.user_id);
+    result = typeof user.email === "string" && user.email
+      ? await sendAccountDeletionNotification(user.email)
+      : { state: "failed", errorCode: "account_deletion_mail_recipient_unavailable" };
+  } catch {
+    result = { state: "failed", errorCode: "account_deletion_mail_recipient_unavailable" };
+  }
+
+  const attemptedAt = new Date().toISOString();
+  await supabaseRest(
+    `renderlab_account_lifecycle?user_id=eq.${encodeURIComponent(row.user_id)}&state=eq.deleting&notification_state=eq.pending`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        notification_state: result.state,
+        notification_attempted_at: attemptedAt,
+        notification_error_code: result.errorCode,
+        updated_at: attemptedAt,
+      }),
+    },
+  ).catch(() => null);
+}
+
 async function hardDeleteAuthUser(userId: string) {
   const service = serviceRoleClient();
   if (!service) throw new Error("account_auth_unavailable");
@@ -531,6 +563,7 @@ export async function processAccountDeletion(ownerId: string): Promise<AccountDe
   if (!lifecycle) return { state: "missing" };
 
   try {
+    await attemptDeletionNotification(lifecycle);
     const remainingJobs = await settleActiveJobs(ownerId);
     if (remainingJobs.length) return { state: "active-jobs", activeJobs: remainingJobs.length };
     if (Date.now() < Date.parse(lifecycle.quiescence_until)) {
