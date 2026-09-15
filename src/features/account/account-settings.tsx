@@ -219,11 +219,16 @@ export function AccountSettings({
         <div className={styles.register} data-account-state="signed-in">
           <span className={styles.signatureArc} aria-hidden="true" />
 
-          <RegisterRow index="01" title="Account">
-            <div className={styles.valueStack}>
-              <p className={styles.valueLabel}>Sign-in email</p>
-              <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
-              <p className={styles.helper}>Used to sign in. Email changes are not currently available.</p>
+                    <RegisterRow index="01" title="Account">
+            <div className={styles.actionRow}>
+              <div className={styles.valueStack}>
+                <p className={styles.valueLabel}>Sign-in email</p>
+                <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
+                <p className={styles.helper}>Used to sign in. Changing it keeps the same RenderLab account, access and ownership.</p>
+              </div>
+              <Button asChild variant="secondary" size="lg">
+                <Link href="/settings/email">Change email</Link>
+              </Button>
             </div>
           </RegisterRow>
 

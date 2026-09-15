@@ -1,27 +1,21 @@
-name: MFA Privileged Step-Up
+name: Email Identity Change
 
 on:
   pull_request:
     paths:
       - "src/lib/auth/mfa-assurance.ts"
       - "src/lib/supabase/**"
+      - "src/server/account/**"
       - "src/server/admin/**"
-      - "src/app/api/admin/**"
       - "src/app/api/account/email-change/**"
+      - "src/app/api/admin/accounts/**"
       - "src/app/auth/confirm/**"
-      - "src/app/(app)/admin/**"
-      - "src/app/(app)/settings/mfa/**"
-      - "src/app/(app)/settings/password/**"
-      - "src/app/(app)/settings/email/**"
-      - "src/features/account/account-mfa-*.tsx"
-      - "src/features/account/account-password-form.tsx"
+      - "src/app/(app)/settings/**"
       - "src/features/account/account-email-form.tsx"
-      - "scripts/verify-mfa-privileged-step-up.mjs"
+      - "src/features/account/account-settings.tsx"
+      - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-email-identity-change.mjs"
-      - ".github/workflows/mfa-privileged-step-up.yml"
       - ".github/workflows/email-identity-change.yml"
-      - "docs/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md"
-      - "docs/architecture/MFA_PRIVILEGED_STEP_UP_CONTRACT_AMENDMENT_1.md"
       - "docs/architecture/IDENTITY_SIGN_IN_METHOD_IMPLEMENTATION_CONTRACT.md"
   workflow_dispatch:
 
@@ -29,17 +23,21 @@ permissions:
   contents: read
 
 jobs:
-  configured-mfa:
+  configured-email-identity:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
       RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
+      RENDERLAB_TEST_ACCOUNT_SCOPE: email-identity-${{ github.run_id }}-${{ github.run_attempt }}
+      RENDERLAB_TEST_MFA_NAMESPACE: email-identity-admin
+      RENDERLAB_EMAIL_IDENTITY_ARTIFACT_DIR: artifacts/email-identity
 
     steps:
       - name: Checkout exact head
@@ -47,11 +45,15 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Validate required auth fixture secret
+      - name: Validate required configured secrets
         shell: bash
         run: |
           if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
             echo "::error::SUPABASE_SERVICE_ROLE_KEY is not configured for RenderLab."
+            exit 1
+          fi
+          if [ -z "$RESEND_API_KEY" ]; then
+            echo "::error::RESEND_API_KEY is not configured for RenderLab."
             exit 1
           fi
 
@@ -63,26 +65,48 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify configured verifier syntax
+        run: node --check scripts/verify-email-identity-change.mjs
+
+      - name: Clean exact configured fixtures before verification
+        run: node scripts/verify-email-identity-change.mjs --cleanup-only
+
       - name: Build exact head
         run: npm run build
 
       - name: Start configured application
         shell: bash
         run: |
-          npm run start -- -p 3000 > /tmp/renderlab-mfa-next.log 2>&1 &
-          echo $! > /tmp/renderlab-mfa-next.pid
+          npm run start -- -p 3000 > /tmp/renderlab-email-identity-next.log 2>&1 &
+          echo $! > /tmp/renderlab-email-identity-next.pid
           for i in {1..60}; do
             if curl --fail --silent http://127.0.0.1:3000/settings > /dev/null; then
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/renderlab-mfa-next.log || true
+          cat /tmp/renderlab-email-identity-next.log || true
           exit 1
 
-      - name: Verify configured MFA and privileged step-up
-        run: node scripts/verify-mfa-privileged-step-up.mjs
+      - name: Verify configured email identity change
+        run: node scripts/verify-email-identity-change.mjs
+
+      - name: Clean exact configured fixtures after verification
+        if: always()
+        run: node scripts/verify-email-identity-change.mjs --cleanup-only
 
       - name: Print server log on failure
         if: failure()
-        run: cat /tmp/renderlab-mfa-next.log || true
+        run: cat /tmp/renderlab-email-identity-next.log || true
+
+      - name: Upload sanitized email identity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: email-identity-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/email-identity
+          if-no-files-found: ignore
+          retention-days: 7
