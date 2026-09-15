@@ -398,3 +398,7 @@ Do not treat examples, registry listings, Saga components, or desired concepts a
 ## Cycle 4 Phase 19 component update — AppShell
 **Status:** APPROVED / KINETIC FOUNDATION VERIFIED
 `AppShell` remains the authoritative application chrome and now owns the UI-062 Kinetic Precision shell layer: floating translucent desktop rail/topbar, luminous edge separation, shared-layout spring active navigation, tactile hover/press response, floating mobile dock and reduced-motion-aware fast route continuity. It still owns no feature data or product state. Exact implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b`; rendered evidence UI Shell `34094816643` / artifact `10008197585`.
+
+## Account data privacy feature surface
+
+`src/features/account/account-data-privacy.tsx` is the feature-local composition for #219 Settings Data & Privacy. It owns lifecycle-specific presentation/state while continuing to use approved shared UI primitives for buttons, fields, dialogs/status treatment, focus behavior, and responsive layout. It is not a new global primitive and should not be duplicated into a parallel component family.

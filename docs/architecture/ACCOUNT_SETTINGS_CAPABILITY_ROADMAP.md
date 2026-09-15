@@ -1,7 +1,7 @@
 # Account & Settings Capability Roadmap
 
-**Status:** ACCEPTED ACTIVE ROADMAP / #215 PRODUCTION-LIVE / #216 + #217 + #218 IMPLEMENTED + VERIFIED + MERGED / #216 + #217 + #218 NOT DEPLOYED / NEXT DEFAULT: #219
-**Current execution:** #215 is complete, verified and production-live. #217 MFA/privileged step-up, #216 Session Controls v0.1, and #218 secure sign-in-email change v0.1 are complete, verified and merged to `main`; #216, #217 and #218 were not deployed as part of their implementation/closure work. #218 merged through PR #262 as `bd84e2e993399a35922bf2d3c0ea6aa817b73d97` after configured two-mailbox acceptance proved immutable account identity/ownership, live Admin email resolution, delivered security notification, preserved TOTP/AAL2 assurance, and both observed pre-existing sessions remaining live and refreshable. Linked OAuth/social identity management remains deferred. The next default contract-planning slice is #219 Data export, retention and account deletion unless explicitly reprioritized. #223 remains an independent P1 profile/credential-UX lane.
+**Status:** ACCEPTED ACTIVE ROADMAP / #215 PRODUCTION-LIVE / #216 + #217 + #218 + #219 IMPLEMENTED + VERIFIED / #216 + #217 + #218 + #219 NOT DEPLOYED BY THEIR IMPLEMENTATION WORKSTREAMS
+**Current execution:** #219 Data export, retention and account deletion is implemented and verified in PR #265. Exact head `886a4722826b268ad156eda22e817002471cd04c` passed all 38 attached pull-request workflows, including the configured Account Data Lifecycle and Session Controls gates. The #219 Supabase migrations are live; the Settings Data & Privacy export/delete surface and real account-deletion security email were verified. No production application deployment was performed by #219. Remaining roadmap workstreams require explicit prioritization rather than being inferred from this closure.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
@@ -67,7 +67,6 @@ Currently missing from the verified product baseline:
 - passkeys;
 - independent recovery methods beyond the existing sign-in-email recovery flow;
 - trustworthy user-facing Security Activity and exact arbitrary row-level session revoke;
-- account export/deletion;
 - durable user preferences/notification settings.
 
 Phase 27 may make existing truths clearer and establish section geometry, but it must not imply later roadmap capabilities already exist.
