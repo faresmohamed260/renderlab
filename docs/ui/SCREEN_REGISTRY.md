@@ -17,6 +17,8 @@ Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps
 ## Current production application — 2026-09-15
 Current production runs exact repository source `d18ef8833d46c812dac6b43572b3f4f7069990f8` at READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`. Guarded clean-provenance rollout `35022243427` passed custom-domain smoke for root, `/create`, `/library`, `/activity`, `/settings` and `/settings/password`; post-cutover runtime inspection found no runtime-error clusters and no error/fatal logs. Production includes the completed Phase 23–29 UI/UX redesign plus the subsequently merged #216 Session Controls, #217 MFA/step-up, #218 secure sign-in-email change and #219 Data & Privacy lifecycle surfaces. Historical per-screen/workstream `NOT DEPLOYED` statements below describe their individual closure state and are superseded by this current production record. Prior deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh` is the immediate known-good rollback target. Automatic Git → Vercel deployment remains disabled.
 
+**Next Settings extension:** UI-081 / #223 is contracted but not implemented. It will extend UI-078 Account with private display-name/avatar profile identity plus a subordinate `/settings/profile` editor, and standardize existing password fields without redesigning Settings. Username/handle remains deferred. Current production remains unchanged until a separately verified implementation and explicit deployment.
+
 ## Application Shell
 **Status:** APPROVED  
 **Implementation:** `src/components/shell/app-shell.tsx`

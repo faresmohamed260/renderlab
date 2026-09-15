@@ -8,6 +8,8 @@
 **Scope:** truthful data-use/retention disclosure, account-data export, bounded durable-media export affordance, owner-wide deletion orchestration, active-job/upload quiescence, storage cleanup, fresh destructive-action authorization, residue verification and configured two-account acceptance  
 **Out of scope:** #223 profile/avatar/username implementation, linked identities, new billing/commercial retention, a new queue vendor, paid Vercel/Supabase plan changes, arbitrary security-activity history, legal-policy drafting, production deployment
 
+**Post-closure integration note — 2026-09-16:** #219 is now production-live. The #223 execution contract deliberately adds a RenderLab-owned profile row and private avatar object. #223 therefore must extend the account export schema, owner storage-key purge/proof, transactional product finalizer, database/R2 residue verification, maintenance recovery and configured two-account acceptance before #223 implementation may merge. Historical statements below correctly describe the #219 planning/closure baseline where no profile existed; they are not permission for new account-owned state to bypass the lifecycle registry.
+
 ## 1. Purpose
 
 #219 gives RenderLab a real user-data lifecycle instead of a decorative Settings control. Export must describe the data RenderLab actually holds. Account deletion must remove user-owned creative/product state without weakening the existing ownership model, orphaning asynchronous work, or leaving reachable R2 objects behind.
