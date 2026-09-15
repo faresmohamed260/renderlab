@@ -14,6 +14,10 @@ import {
 const EMAIL_MAX_LENGTH = 254;
 const RENDERLAB_EMAIL_CHANGE_REDIRECT = "https://renderlab.faresuniform.uk/settings";
 
+type EmailMutationResult =
+  | { ok: true }
+  | { ok: false; code?: string; unavailable?: boolean };
+
 function normalizedEmail(value: unknown) {
   if (typeof value !== "string") return null;
   const email = value.trim();
@@ -43,20 +47,53 @@ function providerFailure(code: string | undefined) {
   return errorResponse("email_change_failed", "Email change could not be started. Try again.", 400);
 }
 
-async function createEmailMutationClient(request: NextRequest) {
+function providerErrorCode(payload: unknown) {
+  if (!payload || typeof payload !== "object") return undefined;
+  if ("code" in payload && typeof payload.code === "string") return payload.code;
+  if ("error_code" in payload && typeof payload.error_code === "string") return payload.error_code;
+  return undefined;
+}
+
+async function mutateSignInEmail(request: NextRequest, nextEmail: string): Promise<EmailMutationResult> {
   const authorization = request.headers.get("authorization")?.trim();
-  if (!authorization) return createServerSupabaseClient();
+
+  if (!authorization) {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.updateUser(
+      { email: nextEmail },
+      { emailRedirectTo: RENDERLAB_EMAIL_CHANGE_REDIRECT },
+    );
+    return error ? { ok: false, code: error.code } : { ok: true };
+  }
 
   const config = getSupabaseAuthConfig();
-  if (!config) return null;
-  return createClient(config.url, config.publishableKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
-  });
+  if (!config) return { ok: false, unavailable: true };
+
+  // supabase-js updateUser() requires an SDK-managed session before it sends the
+  // authenticated PUT /auth/v1/user request. Bearer-authenticated API callers do
+  // not have that local session state, so reproduce the supported Auth request
+  // with the same bearer that the fresh-auth boundary already verified.
+  const endpoint = new URL("/auth/v1/user", config.url);
+  endpoint.searchParams.set("redirect_to", RENDERLAB_EMAIL_CHANGE_REDIRECT);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "PUT",
+      headers: {
+        apikey: config.publishableKey,
+        authorization,
+        "content-type": "application/json;charset=UTF-8",
+      },
+      body: JSON.stringify({ email: nextEmail }),
+      cache: "no-store",
+    });
+
+    if (response.ok) return { ok: true };
+    const payload = await response.json().catch(() => null);
+    return { ok: false, code: providerErrorCode(payload) };
+  } catch {
+    return { ok: false, unavailable: true };
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -123,16 +160,13 @@ export async function POST(request: NextRequest) {
     await verifier.auth.signOut({ scope: "local" });
   }
 
-  const supabase = await createEmailMutationClient(request);
-  if (!supabase) {
-    return errorResponse("email_change_unavailable", "Email change is unavailable in this runtime.", 503);
+  const mutation = await mutateSignInEmail(request, nextEmail);
+  if (!mutation.ok) {
+    if (mutation.unavailable) {
+      return errorResponse("email_change_unavailable", "Email change is unavailable in this runtime.", 503);
+    }
+    return providerFailure(mutation.code);
   }
-
-  const { error } = await supabase.auth.updateUser(
-    { email: nextEmail },
-    { emailRedirectTo: RENDERLAB_EMAIL_CHANGE_REDIRECT },
-  );
-  if (error) return providerFailure(error.code);
 
   return NextResponse.json({
     ok: true,
