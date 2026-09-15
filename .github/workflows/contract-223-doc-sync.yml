@@ -25,6 +25,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          sed -i '/^\*\*Status:\*\* Accepted contract \/ implementation pending \/ not deployed  $/s/  $//' docs/ui/UI_DECISIONS.md
           git rm .github/workflows/contract-223-doc-sync.yml scripts/contract-223-doc-sync.py
           git diff --check
           git config user.name "github-actions[bot]"
