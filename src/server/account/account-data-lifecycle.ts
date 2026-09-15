@@ -473,6 +473,7 @@ async function accountStorageKeys(ownerId: string) {
 }
 
 async function purgeAndProveStorage(keys: string[]) {
+  injectAccountDataLifecycleTestFault("r2-delete");
   for (const key of keys) await deleteR2Object(key);
   for (const key of keys) {
     if (await r2ObjectExists(key)) throw new Error("account_storage_residue");

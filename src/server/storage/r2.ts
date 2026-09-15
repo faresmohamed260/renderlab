@@ -1,6 +1,5 @@
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";
 
 const accountId = (process.env.CLOUDFLARE_R2_ACCOUNT_ID ?? process.env.R2_ACCOUNT_ID)?.trim();
 const accessKeyId = (process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? process.env.R2_ACCESS_KEY_ID)?.trim();
@@ -87,9 +86,6 @@ export async function writeR2Object({ key, contentType, body }: { key: string; c
 }
 
 export async function deleteR2Object(key: string) {
-  if (!key.startsWith("renderlab/account-exports/")) {
-    injectAccountDataLifecycleTestFault("r2-delete");
-  }
   await getClient().send(new DeleteObjectCommand({ Bucket: bucketName!, Key: key }));
 }
 
