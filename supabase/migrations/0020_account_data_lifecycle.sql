@@ -129,6 +129,31 @@ create trigger renderlab_account_exports_deleting_owner_guard
 before insert on public.renderlab_account_exports
 for each row execute function public.renderlab_reject_deleting_owner_insert();
 
+create or replace function public.renderlab_reject_deleting_account_reactivation()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.status = 'active'
+     and old.status is distinct from new.status
+     and exists (
+       select 1
+       from public.renderlab_account_lifecycle as lifecycle
+       where lifecycle.user_id = new.user_id
+         and lifecycle.state = 'deleting'
+     ) then
+    raise exception 'renderlab_account_deleting' using errcode = '55000';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger renderlab_account_access_deleting_reactivation_guard
+before update of status on public.renderlab_account_access
+for each row execute function public.renderlab_reject_deleting_account_reactivation();
+
 create or replace function public.renderlab_begin_account_deletion(
   p_user_id uuid
 )
