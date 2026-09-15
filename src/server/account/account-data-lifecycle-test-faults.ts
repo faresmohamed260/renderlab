@@ -42,3 +42,10 @@ export function installAccountDataLifecycleAuthDeleteTestFault() {
   (wrappedFetch as typeof wrappedFetch & { __renderlabAccountLifecycleWrapped?: boolean }).__renderlabAccountLifecycleWrapped = true;
   globalThis.fetch = wrappedFetch;
 }
+
+// This module is imported only by server-side lifecycle adapters. In ordinary
+// application environments the configured fault set is empty, so this is a
+// no-op. Configured #219 acceptance enables the wrapper explicitly through its
+// test-only environment flag so the supported Supabase Admin delete boundary
+// can be proven retryable without changing production behavior.
+installAccountDataLifecycleAuthDeleteTestFault();
