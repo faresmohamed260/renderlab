@@ -1,7 +1,7 @@
 # Account & Settings Capability Roadmap
 
-**Status:** ACCEPTED ACTIVE ROADMAP / #215 PRODUCTION-LIVE / #216 + #217 IMPLEMENTED + VERIFIED + MERGED + NOT DEPLOYED / NEXT CONTRACT PLANNING: #218
-**Current execution:** #215 is complete, verified and production-live. #217 MFA/privileged step-up and #216 Session Controls v0.1 are complete, verified and merged to `main`; neither was deployed as part of its implementation/closure work. #216 added privacy-safe live session inventory, local/others/global sign-out and live-session-aware private authorization. Security Activity remains deliberately deferred because the approved hosted project's database-backed Auth audit source was empty and no new audit-retention/PII policy was authorized. The next default contract-planning slice is #218 Identity and sign-in method management unless explicitly reprioritized. #223 remains an independent P1 profile/credential-UX lane.
+**Status:** ACCEPTED ACTIVE ROADMAP / #215 PRODUCTION-LIVE / #216 + #217 + #218 IMPLEMENTED + VERIFIED + MERGED / #216 + #217 + #218 NOT DEPLOYED / NEXT DEFAULT: #219
+**Current execution:** #215 is complete, verified and production-live. #217 MFA/privileged step-up, #216 Session Controls v0.1, and #218 secure sign-in-email change v0.1 are complete, verified and merged to `main`; #216, #217 and #218 were not deployed as part of their implementation/closure work. #218 merged through PR #262 as `bd84e2e993399a35922bf2d3c0ea6aa817b73d97` after configured two-mailbox acceptance proved immutable account identity/ownership, live Admin email resolution, delivered security notification, preserved TOTP/AAL2 assurance, and both observed pre-existing sessions remaining live and refreshable. Linked OAuth/social identity management remains deferred. The next default contract-planning slice is #219 Data export, retention and account deletion unless explicitly reprioritized. #223 remains an independent P1 profile/credential-UX lane.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
@@ -52,6 +52,8 @@ Current repository behavior already provides:
 - Settings now exposes explicit Supabase `local`, `others` and `global` sign-out controls plus a privacy-safe active-session inventory with one verified current-session marker.
 - Private server authorization freshly verifies the user and JWT claims, then requires the verified `session_id` to remain present in the owner's live `auth.sessions`; revoked still-unexpired bearers therefore fail private RenderLab authorization immediately.
 - Session presentation exposes coarse browser/platform labels and timestamps only; raw user agent, IP/geolocation, tokens and provider Auth internals remain server-owned.
+- Secure sign-in-email change now uses Supabase Secure Email Change with scanner-safe RenderLab token-hash confirmation links and requires both current/new owned mailbox confirmations before the canonical Auth email changes.
+- #218 configured acceptance proved both confirmation orders, immutable `auth.users.id`, unchanged RenderLab access/ownership/invitation state, live Admin email resolution, delivered `email_changed` notification, both observed pre-existing sessions remaining live and refreshable, and preserved verified TOTP with post-confirm `aal2` assurance.
 - Server-owned access/admission truth and fresh Admin eligibility.
 - Conditional Admin continuation from Settings only for an active fresh-authorized admin identity.
 - Existing owner-scoped media, generation, collection, upload and admission records tied to `auth.users.id`.
@@ -65,7 +67,6 @@ Currently missing from the verified product baseline:
 - passkeys;
 - independent recovery methods beyond the existing sign-in-email recovery flow;
 - trustworthy user-facing Security Activity and exact arbitrary row-level session revoke;
-- secure sign-in-email change;
 - account export/deletion;
 - durable user preferences/notification settings.
 
