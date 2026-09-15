@@ -309,10 +309,10 @@ async function cleanupOwner(ownerId) {
     "generation_admission_reservations",
     "generation_jobs",
     "renderlab_account_exports",
-    "renderlab_account_lifecycle",
   ]) {
     await serviceRest(`${table}?owner_id=eq.${encoded}`, { method: "DELETE" }).catch(() => null);
   }
+  await serviceRest(`renderlab_account_lifecycle?user_id=eq.${encoded}`, { method: "DELETE" }).catch(() => null);
   await serviceRest(`renderlab_account_access?user_id=eq.${encoded}`, { method: "DELETE" }).catch(() => null);
   const userDelete = await authAdmin(`users/${encoded}`, { method: "DELETE" });
   if (!userDelete.ok && userDelete.status !== 404) {
@@ -321,6 +321,7 @@ async function cleanupOwner(ownerId) {
 }
 
 async function cleanupFixtures() {
+  await serviceRest(`renderlab_beta_invitations?id=eq.${encodeURIComponent(ids.invitationA)}`, { method: "DELETE" }).catch(() => null);
   await deleteObject(keys.sourceA);
   await deleteObject(keys.mediaA);
   await deleteObject(keys.thumbA);
@@ -328,7 +329,6 @@ async function cleanupFixtures() {
   await deleteObject(keys.thumbB);
   await deleteObject(orphanOutputKey);
   for (const account of accounts) await cleanupOwner(account.id);
-  await serviceRest(`renderlab_beta_invitations?id=eq.${encodeURIComponent(ids.invitationA)}`, { method: "DELETE" }).catch(() => null);
   console.log("RENDERLAB_219_FIXTURE_CLEAN=true");
 }
 
@@ -528,11 +528,10 @@ async function verifySettingsVisual(tokenA) {
 }
 
 async function patchAccessStatus(userId, status) {
-  const response = await serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(userId)}`, {
+  return serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(userId)}`, {
     method: "PATCH",
     body: JSON.stringify({ status, updated_at: new Date().toISOString() }),
   });
-  return response;
 }
 
 async function fastForwardDeletion(userId) {
@@ -651,7 +650,7 @@ try {
     method: "POST",
     body: JSON.stringify({ prompt: `active deletion fixture ${runToken}`, output: { kind: "image", aspectRatio: "1:1" }, inputs: [] }),
   });
-  assert(activeGeneration.response.status === 201 && activeGeneration.payload?.ok === true, `Could not start active generation fixture: ${JSON.stringify(activeGeneration.payload)}`);
+  assert(activeGeneration.response.status === 202 && activeGeneration.payload?.ok === true, `Could not start active generation fixture: ${JSON.stringify(activeGeneration.payload)}`);
   const activeJobId = activeGeneration.payload.job.id;
   const activeJobRows = await serviceRows(`generation_jobs?id=eq.${encodeURIComponent(activeJobId)}&owner_id=eq.${encodeURIComponent(accountA.id)}&select=provider_job_id,status`);
   const providerJobId = activeJobRows[0]?.provider_job_id;
@@ -703,7 +702,7 @@ try {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ prompt: "must be blocked", output: { kind: "image", aspectRatio: "1:1" }, inputs: [] }),
   });
-  assert(blockedGeneration.status === 401, `Deleting account unexpectedly started new generation (${blockedGeneration.status}).`);
+  assert(blockedGeneration.status === 403, `Deleting account unexpectedly started new generation (${blockedGeneration.status}).`);
   const blockedExport = await appJson("/api/account/data-export", mfaA.accessToken, { method: "POST" });
   assert(blockedExport.response.status === 409 && blockedExport.payload?.error?.code === "account_deletion_in_progress", "Deleting account unexpectedly created a new export.");
 
