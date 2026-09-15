@@ -208,7 +208,6 @@ export function AccountProfileForm({ initialProfile }: { initialProfile: RenderL
                     name="display-name"
                     value={displayName}
                     onChange={(event) => setDisplayName(event.target.value)}
-                    maxLength={160}
                     autoComplete="name"
                   />
                   <FieldDescription>Optional, non-unique display identity. RenderLab normalizes whitespace and stores up to 80 Unicode characters.</FieldDescription>

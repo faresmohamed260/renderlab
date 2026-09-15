@@ -199,7 +199,7 @@ export function AccountDataPrivacy() {
         <div className={styles.valueStack}>
           <p className={styles.valueLabel}>Data use</p>
           <p className={styles.helper}>
-            RenderLab stores account/product metadata in Supabase and creative objects in Cloudflare R2. Modal processes content required for generation/upscale, and Vercel hosts the web/API execution plane. RenderLab does not use your prompts, uploads or results to train models. Provider service logs follow provider retention policies.
+            RenderLab stores account/product and private profile metadata in Supabase, plus creative objects and private profile-avatar bytes in Cloudflare R2. Modal processes content required for generation/upscale, and Vercel hosts the web/API execution plane. RenderLab does not use your prompts, uploads or results to train models. Provider service logs follow provider retention policies.
           </p>
         </div>
       </div>
