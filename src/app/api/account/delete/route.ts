@@ -44,6 +44,27 @@ export async function GET() {
   }
 }
 
+export async function PUT() {
+  const authentication = await getFreshCurrentRenderLabAuthentication();
+  if (!authentication) return unauthorized();
+  try {
+    const lifecycle = await getAccountDeletionLifecycle(authentication.identity.id);
+    if (!lifecycle) {
+      return NextResponse.json({ ok: false, error: { code: "account_deletion_not_started" } }, { status: 404 });
+    }
+    const process = await processAccountDeletion(authentication.identity.id);
+    return NextResponse.json({
+      ok: true,
+      deletion: process.state === "complete"
+        ? null
+        : publicLifecycle(await getAccountDeletionLifecycle(authentication.identity.id) ?? lifecycle),
+      process,
+    }, { status: process.state === "complete" ? 200 : 202 });
+  } catch {
+    return NextResponse.json({ ok: false, error: { code: "account_deletion_unavailable" } }, { status: 503 });
+  }
+}
+
 export async function POST(request: Request) {
   const authentication = await getFreshCurrentRenderLabAuthentication();
   if (!authentication) return unauthorized();
