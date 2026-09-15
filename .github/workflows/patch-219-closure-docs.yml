@@ -1,0 +1,107 @@
+name: Patch #219 closure documentation
+
+on:
+  push:
+    branches: [account/219-data-lifecycle]
+    paths:
+      - ".github/workflows/patch-219-closure-docs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: account/219-data-lifecycle
+          fetch-depth: 0
+      - name: Update verified repository state
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import re
+
+          HEAD = "886a4722826b268ad156eda22e817002471cd04c"
+
+          def patch(path, transform):
+              p = Path(path)
+              text = p.read_text()
+              new = transform(text)
+              if new == text:
+                  print(f"unchanged: {path}")
+              else:
+                  p.write_text(new)
+                  print(f"updated: {path}")
+
+          def append_once(text, marker, block):
+              if marker in text:
+                  return text
+              return text.rstrip() + "\n\n" + block.strip() + "\n"
+
+          patch("docs/architecture/DATA_EXPORT_RETENTION_ACCOUNT_DELETION_IMPLEMENTATION_CONTRACT.md", lambda text: (
+              re.sub(r"\*\*Status:\*\* .*", "**Status:** IMPLEMENTED + VERIFIED — EXACT-HEAD ACCEPTANCE COMPLETE / PRODUCTION DEPLOYMENT NOT AUTHORIZED", text, count=1)
+              if "**Status:**" in text else text
+          ).rstrip() + f"\n\n## 17. Implementation verification — 2026-09-15\n\n#219 is implemented and verified on PR #265. Exact implementation head `{HEAD}` passed all 38 workflows GitHub attached to the pull request, including Account Data Lifecycle, Session Controls, Engineering Quality, UI Shell Validation, Integrated Release, Maintenance Integration, Account/Admin Operations, Account Identity, generation/media regressions, and Video Generation Integration. The configured lifecycle acceptance proves owner-scoped export, authenticated durable-media manifest behavior, logical expiry plus physical export cleanup, fresh destructive authorization, MFA step-up where applicable, last-active-Admin protection, immediate work freeze, active-generation cancellation, six-minute upload quiescence, owner-derived R2 purge/proof, transactional product cleanup, invitation de-identification, Auth deletion last, two-account non-interference, and recovery from export-write, R2-delete, database-finalization, and Auth-delete injected faults. The #219 Supabase migrations are live. Real account-deletion security-mail acceptance passed on the approved Gmail test lane with tracking disabled. No production application deployment was performed or authorized by #219.\n" if "## 17. Implementation verification — 2026-09-15" not in text else re.sub(r"\*\*Status:\*\* .*", "**Status:** IMPLEMENTED + VERIFIED — EXACT-HEAD ACCEPTANCE COMPLETE / PRODUCTION DEPLOYMENT NOT AUTHORIZED", text, count=1))
+
+          def roadmap(text):
+              text = re.sub(
+                  r"\*\*Status:\*\* .*",
+                  "**Status:** ACCEPTED ACTIVE ROADMAP / #215 PRODUCTION-LIVE / #216 + #217 + #218 + #219 IMPLEMENTED + VERIFIED / #216 + #217 + #218 + #219 NOT DEPLOYED BY THEIR IMPLEMENTATION WORKSTREAMS",
+                  text,
+                  count=1,
+              )
+              text = re.sub(
+                  r"\*\*Current execution:\*\* .*",
+                  f"**Current execution:** #219 Data export, retention and account deletion is implemented and verified in PR #265. Exact head `{HEAD}` passed all 38 attached pull-request workflows, including the configured Account Data Lifecycle and Session Controls gates. The #219 Supabase migrations are live; the Settings Data & Privacy export/delete surface and real account-deletion security email were verified. No production application deployment was performed by #219. Remaining roadmap workstreams require explicit prioritization rather than being inferred from this closure.",
+                  text,
+                  count=1,
+              )
+              text = text.replace("- account export/deletion;\n", "")
+              return text
+          patch("docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md", roadmap)
+
+          def project(text):
+              marker = "- Workstream #219 Data export, retention and account deletion"
+              if marker in text:
+                  return text
+              heading = "## Account & Settings capability program — active work\n"
+              bullet = f"- Workstream #219 Data export, retention and account deletion is **IMPLEMENTED + VERIFIED / NOT DEPLOYED by that workstream** in PR #265. Exact head `{HEAD}` passed all 38 attached PR workflows. The implementation provides owner-scoped machine-readable export with authenticated durable-media manifest, 24-hour logical expiry plus maintenance cleanup, fresh password proof and conditional MFA step-up for deletion, last-active-Admin protection, immediate new-work freeze, active-job cancellation, six-minute presigned-upload quiescence, R2 purge/proof, transactional owner cleanup, invitation de-identification, Auth deletion last, retry convergence across all four contracted fault classes, and verified two-account non-interference. The #219 Supabase migrations are live and real account-deletion security-mail acceptance passed; no production application deployment was performed.\n"
+              return text.replace(heading, heading + bullet, 1)
+          patch("PROJECT.md", project)
+
+          patch("docs/architecture/FRONTEND_ARCHITECTURE.md", lambda text: append_once(text, "## Account data lifecycle boundaries — #219", f'''## Account data lifecycle boundaries — #219
+
+The verified #219 implementation keeps account-data lifecycle orchestration server-owned. Settings renders the feature-local Data & Privacy surface, while `/api/account/data-export`, `/api/account/data-export/download`, and `/api/account/delete` enforce owner authorization and delegate durable work to `src/server/account/account-data-lifecycle.ts`. Destructive deletion reuses fresh password proof plus recent TOTP/AAL2 step-up when MFA exists; UI state never substitutes for those server checks.
+
+Export status is durable and browser-independent. Durable media is represented by authenticated manifest/download routes rather than by exposing R2 keys or promising one unbounded ZIP. Account deletion freezes new product work before quiescence and removes Supabase Auth only after storage proof and transactional product cleanup succeed. Exact head `{HEAD}` passed the configured lifecycle, Session Controls, Account Identity, Account/Admin Operations, UI and regression gates. Production deployment remains separate.'''))
+
+          patch("docs/architecture/INFRASTRUCTURE.md", lambda text: append_once(text, "## #219 account-data lifecycle infrastructure", f'''## #219 account-data lifecycle infrastructure
+
+#219 adds durable account-export/lifecycle state in Supabase and owner-scoped R2 export artifacts under the RenderLab account-export namespace. Export download availability expires logically after 24 hours; the application refuses expired downloads even before physical deletion, and the existing maintenance surface performs physical expiry cleanup. `vercel.json` includes the bounded daily recovery/cleanup schedule allowed by the current deployment plan; this does not authorize or imply a production deployment.
+
+Account deletion derives storage keys from owner-scoped database state plus deterministic generation-output candidates, waits through the six-minute presigned-upload quiescence window, deletes and proves R2 absence, finalizes owner product cleanup transactionally, de-identifies the claimed invitation, and calls the supported Supabase Admin Auth delete boundary last. The configured verifier on exact head `{HEAD}` proved retry convergence for export write, R2 deletion, database finalization, and Auth deletion without cross-account interference. The two trigger-only `SECURITY DEFINER` helpers introduced for lifecycle integrity have RPC execute revoked from `anon`, `authenticated`, and `service_role`; the Security Advisor recheck showed no new #219 warning.
+
+RenderLab-controlled rows and R2 objects are within this deletion proof. Provider/service logs maintained by Supabase, Cloudflare, Vercel, or Modal remain subject to those providers' retention contracts and must not be described as synchronously erased by RenderLab.'''))
+
+          patch("docs/ui/SCREEN_REGISTRY.md", lambda text: append_once(text, "## #219 Settings Data & Privacy state", '''## #219 Settings Data & Privacy state
+
+`/settings` now includes the implemented Data & Privacy account-lifecycle surface rather than a placeholder: truthful data-use/processing disclosure, account-data export status/action/download affordance, durable-media manifest explanation, and a visually separated destructive account-deletion flow with pending/progress treatment. The surface remains available within the established Settings authorization model and uses the real server-owned lifecycle APIs. Desktop and 390px configured verification passed. No fake training opt-out toggle is present.'''))
+
+          patch("docs/ui/UI_MIGRATION.md", lambda text: append_once(text, "## #219 Settings lifecycle closure", f'''## #219 Settings lifecycle closure
+
+The Settings Data & Privacy lifecycle slice is implemented and verified. The production UI now reflects real export/delete behavior, uses existing shared controls, preserves desktop/mobile usability, and does not imply unsupported provider-log deletion or model-training controls. Exact head `{HEAD}` passed UI Shell Validation plus the configured Account Data Lifecycle desktop/mobile evidence. This closure does not authorize deployment.'''))
+
+          patch("docs/ui/COMPONENT_CATALOG.md", lambda text: append_once(text, "## Account data privacy feature surface", '''## Account data privacy feature surface
+
+`src/features/account/account-data-privacy.tsx` is the feature-local composition for #219 Settings Data & Privacy. It owns lifecycle-specific presentation/state while continuing to use approved shared UI primitives for buttons, fields, dialogs/status treatment, focus behavior, and responsive layout. It is not a new global primitive and should not be duplicated into a parallel component family.'''))
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/patch-219-closure-docs.yml
+          git add PROJECT.md docs/architecture docs/ui
+          git commit -m "docs: record verified #219 implementation state"
+          git push origin HEAD:account/219-data-lifecycle
