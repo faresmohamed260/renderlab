@@ -8,6 +8,10 @@ create table public.renderlab_account_lifecycle (
   retry_count integer not null default 0 check (retry_count >= 0),
   last_error_code text null,
   last_attempt_at timestamptz null,
+  notification_state text not null default 'pending'
+    check (notification_state in ('pending', 'accepted', 'failed')),
+  notification_attempted_at timestamptz null,
+  notification_error_code text null,
   updated_at timestamptz not null default now(),
   constraint renderlab_account_lifecycle_quiescence_check
     check (quiescence_until >= requested_at + interval '6 minutes')
@@ -336,7 +340,7 @@ grant execute on function public.renderlab_finalize_account_product_deletion(uui
   to service_role;
 
 comment on table public.renderlab_account_lifecycle is
-  'Server-only irreversible account-deletion control state. Existing owner RESTRICT foreign keys remain intact until product/storage cleanup is proven.';
+  'Server-only irreversible account-deletion control state including bounded retry state and best-effort notification outcome. Existing owner RESTRICT foreign keys remain intact until product/storage cleanup is proven.';
 comment on table public.renderlab_account_exports is
   'Server-only account-data export requests and private R2 artifact metadata. Download authorization remains owner-scoped in the application.';
 comment on column public.renderlab_beta_invitations.deidentified_at is
