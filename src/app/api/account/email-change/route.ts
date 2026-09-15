@@ -12,6 +12,7 @@ import {
 } from "@/lib/supabase/server";
 
 const EMAIL_MAX_LENGTH = 254;
+const RENDERLAB_EMAIL_CHANGE_REDIRECT = "https://renderlab.faresuniform.uk/settings";
 
 function normalizedEmail(value: unknown) {
   if (typeof value !== "string") return null;
@@ -127,10 +128,9 @@ export async function POST(request: NextRequest) {
     return errorResponse("email_change_unavailable", "Email change is unavailable in this runtime.", 503);
   }
 
-  const emailRedirectTo = new URL("/settings/email", request.nextUrl.origin).toString();
   const { error } = await supabase.auth.updateUser(
     { email: nextEmail },
-    { emailRedirectTo },
+    { emailRedirectTo: RENDERLAB_EMAIL_CHANGE_REDIRECT },
   );
   if (error) return providerFailure(error.code);
 
