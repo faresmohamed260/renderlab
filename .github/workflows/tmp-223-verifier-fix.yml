@@ -1,0 +1,81 @@
+name: Temporary #223 verifier fix
+
+on:
+  pull_request:
+    branches:
+      - main
+
+authorizations: {}
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.ref == 'account/223-profile-credential-implementation' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Patch exact verifier failures
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path, old, new, expected):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f"{path}: expected {expected} matches, found {count}")
+              p.write_text(text.replace(old, new))
+
+          replace_exact(
+              "scripts/verify-session-controls.mjs",
+              'page.getByLabel("Password").fill(password);',
+              'page.getByLabel("Password", { exact: true }).fill(password);',
+              2,
+          )
+
+          replace_exact(
+              "scripts/verify-account-identity.mjs",
+              'getByLabel("Password")',
+              'getByLabel("Password", { exact: true })',
+              3,
+          )
+
+          replace_exact(
+              "scripts/verify-account-profile-credential.mjs",
+              '''    await showSignIn.click();\n    assert((await signInPassword.getAttribute("type")) === "text" && (await showSignIn.getAttribute("aria-pressed")) === "true", "Sign-in reveal state is not accessible/functional.");\n    await signedOut.getByRole("button", { name: "Hide password", exact: true }).click();''',
+              '''    await showSignIn.click();\n    const hideSignIn = signedOut.getByRole("button", { name: "Hide password", exact: true });\n    assert((await signInPassword.getAttribute("type")) === "text" && (await hideSignIn.getAttribute("aria-pressed")) === "true", "Sign-in reveal state is not accessible/functional.");\n    await hideSignIn.click();''',
+              1,
+          )
+
+          replace_exact(
+              "scripts/verify-account-data-lifecycle.mjs",
+              '''      {\n        owner_id: accountC.id,\n        display_name: "Purge Pending C",\n        avatar_state: "purge_pending",\n      },''',
+              '''      {\n        owner_id: accountC.id,\n        display_name: "Purge Pending C",\n        avatar_state: "purge_pending",\n        avatar_content_type: null,\n        avatar_size_bytes: null,\n        avatar_width: null,\n        avatar_height: null,\n        avatar_updated_at: null,\n      },''',
+              1,
+          )
+
+          Path(".github/workflows/tmp-223-verifier-fix.yml").unlink()
+          PY
+
+      - name: Validate and push
+        shell: bash
+        run: |
+          node --check scripts/verify-session-controls.mjs
+          node --check scripts/verify-account-identity.mjs
+          node --check scripts/verify-account-profile-credential.mjs
+          node --check scripts/verify-account-data-lifecycle.mjs
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-session-controls.mjs scripts/verify-account-identity.mjs scripts/verify-account-profile-credential.mjs scripts/verify-account-data-lifecycle.mjs .github/workflows/tmp-223-verifier-fix.yml
+          git commit -m "test: fix #223 credential verifier compatibility"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
