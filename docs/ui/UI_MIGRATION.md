@@ -31,15 +31,16 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Human review of the dedicated Account Profile Credential artifact accepted desktop, 390px and reduced-motion profile/crop/credential states as faithful to UI-078/UI-081, overflow-free and secret-free.
 - PR #271 squash-merged to `main` as `7519eb1a6367633bf244a9ed7474f374b9ffc6ca`. All 17 workflows GitHub attached to that merged-main SHA passed, including Account Data Lifecycle and Video Generation Integration. Issue #223 is closed as completed.
 - Username/handle remains deliberately deferred. Production application deployment remains unchanged at source `d18ef8833d46c812dac6b43572b3f4f7069990f8` / READY `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`; automatic Git → Vercel deployment remains disabled.
-## #220 Product preferences initial Create-default slice — implementation verification
-**Status: `IMPLEMENTATION VERIFIED / RENDERED-EVIDENCE REVIEWED / MERGE PENDING / NOT DEPLOYED`.**
+## #220 Product preferences initial Create-default slice — closure
+**Status: `COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED / RENDERED-EVIDENCE REVIEWED / NOT DEPLOYED`.**
 
 - PR #275 extends UI-078 in Integration Mode rather than reopening Settings: admitted accounts gain one quiet `Create defaults` row and subordinate `/settings/preferences`; no top-level navigation destination or Settings redesign is introduced.
 - The subordinate form manages only Default Create mode, fixed Image aspect ratio, Video resolution, Video duration and Video audio. `Save defaults` persists owner-scoped server state; `Reset to RenderLab defaults` deletes the row so future product defaults remain authoritative.
 - Clean authenticated Create drafts are seeded server-side before hydration. Saved recipes and media continuations retain precedence, stale/unsupported stored values fall back to current capability truth, and preferences never become generation/admission/ownership authority.
 - Exact implementation head `f01399bac0a50fef82ac55cf2c9a088c18443415` passed all 16 attached workflows. Account Profile Credential `35138292468` includes the dedicated #220 configured acceptance; Account Data Lifecycle `35138293298` passed export schema v3/deletion/residue behavior; Email Identity Change `35138292829` passed fully on the unchanged cooled-down retry after two hosted 429 attempts.
 - Dedicated artifact `10463549435` (`sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`) was reviewed clean across desktop Settings, 390px reduced-motion Settings and mobile Create. No overflow, hierarchy regression, credential exposure or unrelated composer redesign was observed.
-- Product notification toggles and an app-level reduced-motion/accessibility override remain deliberately deferred because their backing cross-product systems do not yet exist. Production remains unchanged and deployment is separately explicit.
+- Documentation-complete PR head `e6045a28462ed40859a656c49f73b1772e9e4700` passed all 16 attached exact-head workflows. PR #275 then squash-merged to `main` as `ec29fd160d7ce7a90beb3025da32ec4cc18f0898`; all 10 workflows GitHub attached to that merged-main SHA passed, including Account Data Lifecycle `35148209427` and Video Generation Integration `35148209254`. Issue #220 is closed as completed.
+- Product notification toggles and an app-level reduced-motion/accessibility override remain deliberately deferred because their backing cross-product systems do not yet exist. Production remains unchanged at exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`, and deployment is separately explicit.
 ## Current Landing production closure — 2026-09-11
 - [x] Approved four-section Lab Matrix Landing implemented in PR #174 and merged as `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`.
 - [x] Current `main` source `0173c4c5ba08360b6352331118abc81978cfa774` deployed as READY Vercel production deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`.
