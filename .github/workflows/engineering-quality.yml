@@ -1,16 +1,34 @@
 name: Engineering Quality
 
 on:
+  workflow_dispatch:
   push:
-    branches: [tmp/220-doc-closure-20260916]
+    branches: [main]
     paths:
+      - "src/**"
+      - "scripts/**"
+      - "tests/unit/**"
+      - "config/modal-project-ownership.json"
+      - ".oxlintrc.json"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/engineering-quality.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "tests/unit/**"
+      - "config/modal-project-ownership.json"
+      - ".oxlintrc.json"
+      - "package.json"
+      - "tsconfig.json"
       - ".github/workflows/engineering-quality.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: renderlab-engineering-quality-${{ github.ref }}
+  group: renderlab-engineering-quality-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -18,35 +36,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout scratch head
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build documentation-only closure
-        env:
-          BASE_SHA: f01399bac0a50fef82ac55cf2c9a088c18443415
-        shell: bash
-        run: |
-          python .github/tmp-220-doc-closure.py
-          git fetch --no-tags --depth=1 origin "$BASE_SHA"
-          git checkout "$BASE_SHA" -- .github/workflows/engineering-quality.yml
-          rm .github/tmp-220-doc-closure.py
-          git diff --check
-          test -s PROJECT.md
-          test -s docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md
-          test -s docs/architecture/PRODUCT_PREFERENCES_NOTIFICATIONS_IMPLEMENTATION_CONTRACT.md
-          test -s docs/architecture/INFRASTRUCTURE.md
-          test -s docs/ui/UI_MIGRATION.md
-          test -s docs/ui/SCREEN_REGISTRY.md
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT.md \
-            docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md \
-            docs/architecture/PRODUCT_PREFERENCES_NOTIFICATIONS_IMPLEMENTATION_CONTRACT.md \
-            docs/architecture/INFRASTRUCTURE.md \
-            docs/ui/UI_MIGRATION.md \
-            docs/ui/SCREEN_REGISTRY.md \
-            .github/workflows/engineering-quality.yml \
-            .github/tmp-220-doc-closure.py
-          git diff --cached --check
-          git commit -m "docs: record #220 implementation verification"
-          git push origin HEAD:tmp/220-doc-closure-20260916
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Verify negative gate fixtures
+        run: npm run verify:engineering-quality
+
+      - name: Verify Modal project ownership boundary
+        run: npm run verify:modal-project-ownership
+
+      - name: Verify maintained UI primitive usage
+        run: npm run verify:ui-purity
