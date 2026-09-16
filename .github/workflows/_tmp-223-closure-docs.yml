@@ -1,4 +1,4 @@
-name: Temporary #223 closure docs
+name: "Temporary #223 closure docs"
 
 on:
   push:
@@ -18,9 +18,10 @@ jobs:
         with:
           ref: account/223-profile-credential-implementation
           fetch-depth: 0
-      - name: Synchronize verified #223 source of truth
+      - name: "Synchronize verified #223 source of truth"
         shell: bash
         run: |
+          set -euo pipefail
           python - <<'PY'
           from pathlib import Path
           import re
@@ -97,7 +98,7 @@ jobs:
           exact(
               "docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md",
               "**Status:** EXECUTION CONTRACT — implementation authorized after this contract merges; hosted Auth mutation and production deployment are not authorized  ",
-              "**Status:** IMPLEMENTED + EXACT-HEAD VERIFIED — contract remains binding; production application deployment remains separately explicit and no hosted Auth/password-policy mutation was performed by #223  ",
+              "**Status:** IMPLEMENTED + EXACT-HEAD VERIFIED — contract remains binding; production application deployment remains separately explicit and no hosted Auth/password-policy mutation was performed by #223",
           )
           exact(
               "docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md",
@@ -113,21 +114,23 @@ jobs:
           )
 
           # UI migration status — replace the contract-only block with verified closure.
+          ui_migration = "\n".join([
+              "## UI-081 / #223 Profile & credential UX baseline — implementation closure",
+              "**Status: `IMPLEMENTED / EXACT-HEAD VERIFIED / HUMAN-REVIEWED / NOT DEPLOYED`.**",
+              "",
+              "- PR #271 implements the merged #223/UI-081 contract without reopening UI-078: private optional display name, deterministic private avatar, subordinate `/settings/profile`, and Profile-before-sign-in-identity composition inside Account.",
+              "- Shared `AccountPasswordField` now owns current password-entry interaction across signed-out sign-in, password change/recovery, email-change reauthentication and account-deletion reauthentication: hidden by default, accessible Show/Hide state, independent reveal state, Caps Lock advisory, paste/password-manager-safe behavior, correct autocomplete semantics, real 15-character new-password guidance and textual confirmation matching.",
+              "- Migration `0022_renderlab_account_profiles.sql` is applied to the approved shared Supabase project. Profile metadata is server-owned/RLS-enabled with no browser table grants; avatar bytes use one owner-derived private R2 key and remain outside Library/media/generation identity.",
+              "- #219 integration is complete: new exports are schema v2 with safe profile metadata, avatar storage joins deterministic purge/proof, profile rows join transactional finalization/residue verification, and `purge_pending` avatar state joins maintenance recovery. Exact Account Data Lifecycle run `35062679557` passed.",
+              "- Exact implementation-verification head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3` passed Account Profile Credential `35062679531`, Engineering `35062679429`, UI Shell `35062679416`, Account Identity `35062679423`, Session Controls `35062679419`, MFA `35062679519`, Account/Admin `35062679428`, Maintenance `35062679414`, Integrated Release `35062679421`, Video Generation `35062679350` and every other non-email attached workflow. Account Profile Credential artifact `10432827873` has digest `sha256:79e27a2998adf76d3150e1a296cfd87bdbe98eb35948468bf366a2deaf50583c`.",
+              "- Human review of the dedicated artifact accepted desktop, 390px and reduced-motion profile/crop/credential states as faithful to UI-078/UI-081, overflow-free and secret-free.",
+              "- Email Identity Change run `35062679472` passed fixture cleanup, build, Settings desktop/mobile/a11y and wrong-current-password assertions on both attempts, but hosted Supabase returned `429 email_change_rate_limited` at correct-current-password change initiation on the original attempt and the single unchanged retry. The same #218 email-change implementation previously passed full configured acceptance (`34962080182` attempt 3), and #223 changes no email-change backend flow; the hosted rate limit is therefore recorded rather than worked around.",
+              "- Username/handle remains deliberately deferred. Production application deployment remains unchanged at source `d18ef8833d46c812dac6b43572b3f4f7069990f8` / READY `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`; automatic Git → Vercel deployment remains disabled.",
+          ]) + "\n"
           regex_once(
               "docs/ui/UI_MIGRATION.md",
               r"## UI-081 / #223 Profile & credential UX baseline — contract\n.*?(?=\n## Current Landing production closure)",
-              """## UI-081 / #223 Profile & credential UX baseline — implementation closure
-**Status: `IMPLEMENTED / EXACT-HEAD VERIFIED / HUMAN-REVIEWED / NOT DEPLOYED`.**
-
-- PR #271 implements the merged #223/UI-081 contract without reopening UI-078: private optional display name, deterministic private avatar, subordinate `/settings/profile`, and Profile-before-sign-in-identity composition inside Account.
-- Shared `AccountPasswordField` now owns current password-entry interaction across signed-out sign-in, password change/recovery, email-change reauthentication and account-deletion reauthentication: hidden by default, accessible Show/Hide state, independent reveal state, Caps Lock advisory, paste/password-manager-safe behavior, correct autocomplete semantics, real 15-character new-password guidance and textual confirmation matching.
-- Migration `0022_renderlab_account_profiles.sql` is applied to the approved shared Supabase project. Profile metadata is server-owned/RLS-enabled with no browser table grants; avatar bytes use one owner-derived private R2 key and remain outside Library/media/generation identity.
-- #219 integration is complete: new exports are schema v2 with safe profile metadata, avatar storage joins deterministic purge/proof, profile rows join transactional finalization/residue verification, and `purge_pending` avatar state joins maintenance recovery. Exact Account Data Lifecycle run `35062679557` passed.
-- Exact implementation-verification head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3` passed Account Profile Credential `35062679531`, Engineering `35062679429`, UI Shell `35062679416`, Account Identity `35062679423`, Session Controls `35062679419`, MFA `35062679519`, Account/Admin `35062679428`, Maintenance `35062679414`, Integrated Release `35062679421`, Video Generation `35062679350` and every other non-email attached workflow. Account Profile Credential artifact `10432827873` has digest `sha256:79e27a2998adf76d3150e1a296cfd87bdbe98eb35948468bf366a2deaf50583c`.
-- Human review of the dedicated artifact accepted desktop, 390px and reduced-motion profile/crop/credential states as faithful to UI-078/UI-081, overflow-free and secret-free.
-- Email Identity Change run `35062679472` passed fixture cleanup, build, Settings desktop/mobile/a11y and wrong-current-password assertions on both attempts, but hosted Supabase returned `429 email_change_rate_limited` at correct-current-password change initiation on the original attempt and the single unchanged retry. The same #218 email-change implementation previously passed full configured acceptance (`34962080182` attempt 3), and #223 changes no email-change backend flow; the hosted rate limit is therefore recorded rather than worked around.
-- Username/handle remains deliberately deferred. Production application deployment remains unchanged at source `d18ef8833d46c812dac6b43572b3f4f7069990f8` / READY `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`; automatic Git → Vercel deployment remains disabled.
-""",
+              ui_migration,
           )
 
           # UI decision — status and implementation evidence.
@@ -152,40 +155,45 @@ jobs:
               "**Next Settings extension:** UI-081 / #223 is contracted but not implemented. It will extend UI-078 Account with private display-name/avatar profile identity plus a subordinate `/settings/profile` editor, and standardize existing password fields without redesigning Settings. Username/handle remains deferred. Current production remains unchanged until a separately verified implementation and explicit deployment.",
               "**Current repository Settings extension:** UI-081 / #223 is implemented, exact-head verified and human-reviewed in PR #271 but not production-deployed. UI-078 Account now composes private display-name/avatar profile identity plus subordinate `/settings/profile`, and all current password-entry surfaces share the approved account credential-field interaction standard. Username/handle remains deferred. Current production remains unchanged until an explicit deployment.",
           )
+          settings_profile = "\n".join([
+              "## Screens",
+              "",
+              "### Settings Profile",
+              "**Route:** `/settings/profile`",
+              "**Status:** APPROVED — UI-081 implementation verified / not deployed",
+              "**Implementation:** `src/app/(app)/settings/profile/page.tsx`, `src/features/account/account-profile-form.tsx`, `src/features/account/account-profile-identity.tsx`",
+              "**Purpose:** Edit optional private display name and private account avatar without changing sign-in identity, admission, role, ownership or public visibility.",
+              "**Composition:** subordinate UI-078 Trust Register continuation; square avatar crop supports pointer/touch pan plus keyboard controls, zoom/reset, deterministic replacement/removal and neutral fallback when no display identity exists. Username/handle, public profile and social identity are intentionally absent.",
+              "**Verification:** exact head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3`, Account Profile Credential `35062679531`, artifact `10432827873` (`sha256:79e27a2998adf76d3150e1a296cfd87bdbe98eb35948468bf366a2deaf50583c`), human-reviewed at desktop and reduced-motion 390px. Production deployment remains separate.",
+              "",
+              "### Brand / Landing",
+          ])
           exact(
               "docs/ui/SCREEN_REGISTRY.md",
               "## Screens\n\n### Brand / Landing",
-              """## Screens
-
-### Settings Profile
-**Route:** `/settings/profile`  
-**Status:** APPROVED — UI-081 implementation verified / not deployed  
-**Implementation:** `src/app/(app)/settings/profile/page.tsx`, `src/features/account/account-profile-form.tsx`, `src/features/account/account-profile-identity.tsx`  
-**Purpose:** Edit optional private display name and private account avatar without changing sign-in identity, admission, role, ownership or public visibility.  
-**Composition:** subordinate UI-078 Trust Register continuation; square avatar crop supports pointer/touch pan plus keyboard controls, zoom/reset, deterministic replacement/removal and neutral fallback when no display identity exists. Username/handle, public profile and social identity are intentionally absent.  
-**Verification:** exact head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3`, Account Profile Credential `35062679531`, artifact `10432827873` (`sha256:79e27a2998adf76d3150e1a296cfd87bdbe98eb35948468bf366a2deaf50583c`), human-reviewed at desktop and reduced-motion 390px. Production deployment remains separate.
-
-### Brand / Landing""",
+              settings_profile,
           )
 
           # Component catalog — reusable account credential composition is now repository reality.
+          password_field = "\n".join([
+              "### AccountPasswordField",
+              "**Status:** APPROVED",
+              "**Source:** `src/features/account/account-password-field.tsx`",
+              "**Origin:** RenderLab account-owned composition over maintained Field/Input/Button + Lucide mechanics",
+              "**Purpose:** One reusable password-entry interaction standard without moving account policy into the generic Input primitive.",
+              "**Used by:** signed-out Settings sign-in, `/settings/password` Current/New/Confirm fields, `/settings/email` current-password reauthentication, and Data & Privacy account-deletion current-password reauthentication.",
+              "**Reuse rules:** hidden by default; accessible Show/Hide name + pressed state; independent reveal state per field; Caps Lock advisory where detectable; paste/password managers allowed; preserve authoritative `current-password` vs `new-password` autocomplete; apply the real 15-character guidance only to new-password establishment and keep HIBP screening out of per-keystroke interaction.",
+              "**Do not:** add a minimum-length gate to sign-in/current-password fields, persist/log password values, reveal secrets in evidence, invent composition rules/strength scores, or copy this behavior into one-off account fields.",
+              "**Verification:** exact head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3`; Account Profile Credential `35062679531`, Account Identity `35062679423`, Session Controls `35062679419`, MFA `35062679519` and Engineering Quality `35062679429` passed. Dedicated credential screenshots in artifact `10432827873` were reviewed secret-free.",
+              "",
+              "### AppShell",
+              "",
+          ])
           exact(
               "docs/ui/COMPONENT_CATALOG.md",
               "### AppShell\n",
-              """### AccountPasswordField
-**Status:** APPROVED  
-**Source:** `src/features/account/account-password-field.tsx`  
-**Origin:** RenderLab account-owned composition over maintained Field/Input/Button + Lucide mechanics  
-**Purpose:** One reusable password-entry interaction standard without moving account policy into the generic Input primitive.  
-**Used by:** signed-out Settings sign-in, `/settings/password` Current/New/Confirm fields, `/settings/email` current-password reauthentication, and Data & Privacy account-deletion current-password reauthentication.  
-**Reuse rules:** hidden by default; accessible Show/Hide name + pressed state; independent reveal state per field; Caps Lock advisory where detectable; paste/password managers allowed; preserve authoritative `current-password` vs `new-password` autocomplete; apply the real 15-character guidance only to new-password establishment and keep HIBP screening out of per-keystroke interaction.  
-**Do not:** add a minimum-length gate to sign-in/current-password fields, persist/log password values, reveal secrets in evidence, invent composition rules/strength scores, or copy this behavior into one-off account fields.  
-**Verification:** exact head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3`; Account Profile Credential `35062679531`, Account Identity `35062679423`, Session Controls `35062679419`, MFA `35062679519` and Engineering Quality `35062679429` passed. Dedicated credential screenshots in artifact `10432827873` were reviewed secret-free.
-
-### AppShell
-""",
+              password_field,
           )
-
           PY
 
           git diff --check
@@ -204,6 +212,7 @@ jobs:
       - name: Commit closure docs and self-remove helper
         shell: bash
         run: |
+          set -euo pipefail
           rm .github/workflows/_tmp-223-closure-docs.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
