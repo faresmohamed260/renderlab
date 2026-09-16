@@ -4,10 +4,20 @@
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `e6583fa0a87cc0127793166beb845f57f3c6a5fa`  
 **Audit date:** 2026-09-16  
-**Status:** EXECUTION CONTRACT — implementation authorized after this contract merges; production deployment remains separately explicit  
+**Status:** INITIAL CREATE-DEFAULT SLICE IMPLEMENTED + EXACT-HEAD VERIFIED / DOCUMENTATION CLOSURE IN PROGRESS / MERGE PENDING / NOT DEPLOYED; notification/accessibility follow-ons remain deferred
 **Scope:** durable owner-scoped Create defaults, truthful Settings management, capability-safe fallback, and complete #219 account-lifecycle registration  
 **Out of scope for the initial slice:** product notification delivery/toggles, browser notifications, an app-level reduced-motion override, theme/language/timezone controls, provider/model defaults, Advanced tuning defaults, Library/view state, hosted Auth changes, provider changes, worker changes, production deployment
 
+## Implementation verification — 2026-09-16
+
+- PR #275 implementation-verification head `f01399bac0a50fef82ac55cf2c9a088c18443415` implements the five curated owner-scoped Create defaults without adding notification controls, accessibility overrides, model/provider identity, Advanced tuning persistence or deployment changes.
+- Shared-project migration `0023_renderlab_account_preferences.sql` is applied as `20260916150243 renderlab_account_preferences`. Fresh hosted inspection confirms RLS enabled, no `anon`/`authenticated` DML and service-role DML available for the server-owned application boundary.
+- Dedicated Account Profile Credential run `35138292468` passed the existing #223 profile/credential verifier and the new #220 configured verifier. Markers prove cross-session Settings→Create portability, owner isolation, recipe/continuation precedence, stale-value fallback/reset, export-v3 inclusion, account-deletion cleanup/non-interference and fixture cleanup. Artifact `10463549435` has digest `sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`.
+- Rendered evidence was reviewed clean at desktop Settings, 390px reduced-motion Settings and mobile Create. The Trust Register hierarchy remains intact, no document horizontal overflow was visible, and the clean Create evidence showed the saved Image `4:5` default without redesigning the approved composer.
+- Account Data Lifecycle `35138293298` passed the real export/deletion verifier with export schema v3 and clean configured fixture teardown. The previous v2 assertion was corrected narrowly to v3; no #219 lifecycle coverage was removed.
+- Every workflow GitHub attached to the implementation head passed: 16/16. Email Identity Change `35138292829` initially encountered hosted Supabase `429 email_change_rate_limited` twice after its local build/Settings/a11y/wrong-password checks passed; an unchanged same-head retry after cooldown then passed the full real identity-change verifier and cleanup. No #220 product code changed to resolve that external rate limit.
+- The shared `renderlab_account_preferences` fixture table was confirmed empty after acceptance. Production remains on exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`; implementation merge and any deployment remain separate operations.
+- This documentation-complete tree still requires its own attached exact-head gates before PR #275 may merge; the evidence above is deliberately identified as implementation-head evidence rather than being misrepresented as documentation-head evidence.
 ## 1. Goal
 
 #220 closes one real cross-device product-preference gap without inventing settings for systems RenderLab does not yet have.
