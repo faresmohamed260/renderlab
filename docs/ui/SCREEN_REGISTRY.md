@@ -17,7 +17,7 @@ Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps
 ## Current production application — 2026-09-15
 Current production runs exact repository source `d18ef8833d46c812dac6b43572b3f4f7069990f8` at READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`. Guarded clean-provenance rollout `35022243427` passed custom-domain smoke for root, `/create`, `/library`, `/activity`, `/settings` and `/settings/password`; post-cutover runtime inspection found no runtime-error clusters and no error/fatal logs. Production includes the completed Phase 23–29 UI/UX redesign plus the subsequently merged #216 Session Controls, #217 MFA/step-up, #218 secure sign-in-email change and #219 Data & Privacy lifecycle surfaces. Historical per-screen/workstream `NOT DEPLOYED` statements below describe their individual closure state and are superseded by this current production record. Prior deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh` is the immediate known-good rollback target. Automatic Git → Vercel deployment remains disabled.
 
-**Current repository Settings extension:** UI-081 / #223 is implemented, exact-head verified and human-reviewed in PR #271 but not production-deployed. UI-078 Account now composes private display-name/avatar profile identity plus subordinate `/settings/profile`, and all current password-entry surfaces share the approved account credential-field interaction standard. Username/handle remains deferred. Current production remains unchanged until an explicit deployment.
+**Current repository Settings extensions:** UI-081 / #223 is merged, exact-head/merged-main verified and not production-deployed. PR #275's #220 initial Create-default slice is implementation-head verified and merge-pending: UI-078 Account/Settings gains a subordinate `/settings/preferences` continuation for five durable Create defaults, while clean `/create` drafts consume those defaults server-side without changing saved-recipe or media-continuation precedence. Production remains unchanged until an explicit deployment.
 
 ## Application Shell
 **Status:** APPROVED  
@@ -39,6 +39,14 @@ Approved behavior:
 
 ## Screens
 
+### Settings Preferences
+**Route:** `/settings/preferences`
+**Status:** APPROVED — #220 initial slice implementation-head verified / rendered-evidence reviewed / merge pending / not deployed
+**Implementation:** `src/app/(app)/settings/preferences/page.tsx`, `src/features/account/account-preferences-form.tsx`, `src/app/api/account/preferences/route.ts`, `src/server/account/account-preferences.ts`
+**Purpose:** Manage the admitted account's durable defaults for new Create drafts without changing existing generations, media, history, recipes, continuations, admission, role, ownership or security state.
+**Composition:** subordinate UI-078 Trust Register continuation with Default Create mode, fixed Image aspect ratio, Video resolution, Video duration and Video audio. Save persists the complete curated set; Reset deletes the owner row and follows current RenderLab product defaults. Product notifications, theme/language/timezone, model/provider defaults, Advanced tuning persistence and app-level accessibility overrides are absent by design.
+**Create integration:** clean authenticated `/create` is seeded server-side before hydration; saved recipes and media continuations win over preferences, capability/product defaults win over stale unsupported values, and signed-out Create retains current product defaults.
+**Verification:** implementation head `f01399bac0a50fef82ac55cf2c9a088c18443415`; Account Profile Credential `35138292468`; dedicated artifact `10463549435` (`sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`); desktop, 390px reduced-motion Settings and mobile Create evidence reviewed clean. Account Data Lifecycle `35138293298` proves export-v3/deletion integration. Production deployment remains separate.
 ### Settings Profile
 **Route:** `/settings/profile`
 **Status:** APPROVED — UI-081 implementation verified / not deployed

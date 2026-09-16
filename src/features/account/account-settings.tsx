@@ -355,8 +355,24 @@ export function AccountSettings({
             <AccountDataPrivacy />
           </RegisterRow>
 
+          {access ? (
+            <RegisterRow index="06" title="Preferences">
+              <div className={styles.actionRow}>
+                <div className={styles.valueStack}>
+                  <p className={styles.valueLabel}>Create defaults</p>
+                  <p className={styles.helper}>
+                    Choose starting values for new Image and Video drafts. Saved recipes and continuations keep their own settings.
+                  </p>
+                </div>
+                <Button asChild variant="secondary" size="lg">
+                  <Link href="/settings/preferences">Manage preferences</Link>
+                </Button>
+              </div>
+            </RegisterRow>
+          ) : null}
+
           {showAdminLink ? (
-            <RegisterRow index="06" title="Admin">
+            <RegisterRow index="07" title="Admin">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Admin operations</p>

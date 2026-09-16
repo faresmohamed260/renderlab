@@ -652,7 +652,7 @@ try {
   const signedExportResponse = await fetch(aDownload.headers.get("location"));
   assert(signedExportResponse.ok, `Signed export object could not be read (${signedExportResponse.status}).`);
   const exported = await signedExportResponse.json();
-  assert(exported.schemaVersion === 2, "Export schema version mismatch.");
+  assert(exported.schemaVersion === 3, "Export schema version mismatch.");
   assert(exported.account?.userId === accountA.id && exported.account?.email === accountA.email, "Export identity mismatch.");
   assert(exported.profile?.displayName === "Profile Owner A", "Export is missing profile display identity.");
   assert(exported.profile?.avatar?.state === "active", "Export is missing active profile-avatar state.");
