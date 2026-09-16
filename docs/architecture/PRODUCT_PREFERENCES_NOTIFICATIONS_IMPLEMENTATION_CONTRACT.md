@@ -4,7 +4,7 @@
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `e6583fa0a87cc0127793166beb845f57f3c6a5fa`  
 **Audit date:** 2026-09-16  
-**Status:** INITIAL CREATE-DEFAULT SLICE IMPLEMENTED + EXACT-HEAD VERIFIED / DOCUMENTATION CLOSURE IN PROGRESS / MERGE PENDING / NOT DEPLOYED; notification/accessibility follow-ons remain deferred
+**Status:** INITIAL CREATE-DEFAULT SLICE COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / RENDERED-EVIDENCE REVIEWED / NOT DEPLOYED; notification/accessibility follow-ons remain deferred
 **Scope:** durable owner-scoped Create defaults, truthful Settings management, capability-safe fallback, and complete #219 account-lifecycle registration  
 **Out of scope for the initial slice:** product notification delivery/toggles, browser notifications, an app-level reduced-motion override, theme/language/timezone controls, provider/model defaults, Advanced tuning defaults, Library/view state, hosted Auth changes, provider changes, worker changes, production deployment
 
@@ -17,7 +17,8 @@
 - Account Data Lifecycle `35138293298` passed the real export/deletion verifier with export schema v3 and clean configured fixture teardown. The previous v2 assertion was corrected narrowly to v3; no #219 lifecycle coverage was removed.
 - Every workflow GitHub attached to the implementation head passed: 16/16. Email Identity Change `35138292829` initially encountered hosted Supabase `429 email_change_rate_limited` twice after its local build/Settings/a11y/wrong-password checks passed; an unchanged same-head retry after cooldown then passed the full real identity-change verifier and cleanup. No #220 product code changed to resolve that external rate limit.
 - The shared `renderlab_account_preferences` fixture table was confirmed empty after acceptance. Production remains on exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`; implementation merge and any deployment remain separate operations.
-- This documentation-complete tree still requires its own attached exact-head gates before PR #275 may merge; the evidence above is deliberately identified as implementation-head evidence rather than being misrepresented as documentation-head evidence.
+- Documentation-complete PR head `e6045a28462ed40859a656c49f73b1772e9e4700` passed all 16 workflows GitHub attached to it, including Email Identity Change, Account Data Lifecycle, Account Profile Credential, Engineering Quality and UI Shell Validation.
+- PR #275 squash-merged to `main` as `ec29fd160d7ce7a90beb3025da32ec4cc18f0898`. All 10 workflows GitHub attached to the merged-main SHA passed; Account Data Lifecycle `35148209427` and worker-backed Video Generation Integration `35148209254` both completed their real acceptance, cleanup and evidence paths successfully. Issue #220 is closed as completed. Production remains on exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`; deployment remains separately explicit.
 ## 1. Goal
 
 #220 closes one real cross-device product-preference gap without inventing settings for systems RenderLab does not yet have.
