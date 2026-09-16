@@ -1,8 +1,15 @@
+import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import type { ContinuationAction } from "@/lib/capabilities/generation";
-import { continuationActionForMedia } from "@/lib/capabilities/generation";
+import {
+  continuationActionForMedia,
+  defaultGenerationModelForOutput,
+} from "@/lib/capabilities/generation";
 import { CreateWorkspace } from "@/features/create/create-workspace";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
-import { getRenderLabAccountPreferences } from "@/server/account/account-preferences";
+import {
+  getRenderLabAccountPreferences,
+  type RenderLabCreatePreferences,
+} from "@/server/account/account-preferences";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { loadInitialGenerationRecipe } from "@/server/generation/generation-recipe";
 import { isGenerationBackendConfigured } from "@/server/generation/submit-generation";
@@ -18,6 +25,31 @@ function firstValue(value: string | string[] | undefined) {
 
 function isContinuationActionId(value: string): value is ContinuationAction["id"] {
   return value === "edit-image" || value === "animate-image";
+}
+
+function preferenceSeedRecipe(preferences: RenderLabCreatePreferences): InitialGenerationRecipe {
+  const kind = preferences.outputKind;
+  return {
+    jobId: "account-preferences",
+    references: [],
+    request: {
+      model: defaultGenerationModelForOutput(kind),
+      prompt: "",
+      inputs: [],
+      output: kind === "image"
+        ? {
+            kind,
+            aspectRatio: preferences.imageAspectRatio,
+          }
+        : {
+            kind,
+            aspectRatio: "16:9",
+            resolution: preferences.videoResolution,
+            durationSeconds: preferences.videoDurationSeconds,
+            audioEnabled: preferences.videoAudioEnabled,
+          },
+    },
+  };
 }
 
 export default async function CreatePage({
@@ -77,12 +109,12 @@ export default async function CreatePage({
     }
   }
 
-  let initialPreferences = null;
+  let initialPreferenceRecipe: InitialGenerationRecipe | null = null;
   if (account && !recipeId && !sourceId && !requestedAction) {
     try {
-      initialPreferences = (await getRenderLabAccountPreferences(account.id)).create;
+      initialPreferenceRecipe = preferenceSeedRecipe((await getRenderLabAccountPreferences(account.id)).create);
     } catch {
-      initialPreferences = null;
+      initialPreferenceRecipe = null;
     }
   }
 
@@ -91,9 +123,8 @@ export default async function CreatePage({
       accountAvailable={Boolean(account)}
       generationAvailable={isGenerationBackendConfigured()}
       mediaUploadAvailable={isMediaUploadConfigured()}
-      initialPreferences={initialPreferences}
       initialContinuation={initialContinuation}
-      initialRecipe={initialRecipe}
+      initialRecipe={initialRecipe ?? initialPreferenceRecipe}
       initialContinuationError={initialNavigationError}
     />
   );
