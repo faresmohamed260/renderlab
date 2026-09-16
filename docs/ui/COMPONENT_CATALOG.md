@@ -101,6 +101,16 @@ Before copying/installing an external component:
 
 **UI-070 composition note:** Library keeps the same maintained Radix Checkbox root and checked/focus semantics, but the card composition uses a 44×44 transparent interactive root around a centered 22×22 visible box so selection remains practical without visually dominating the media card.
 
+### AccountPasswordField
+**Status:** APPROVED
+**Source:** `src/features/account/account-password-field.tsx`
+**Origin:** RenderLab account-owned composition over maintained Field/Input/Button + Lucide mechanics
+**Purpose:** One reusable password-entry interaction standard without moving account policy into the generic Input primitive.
+**Used by:** signed-out Settings sign-in, `/settings/password` Current/New/Confirm fields, `/settings/email` current-password reauthentication, and Data & Privacy account-deletion current-password reauthentication.
+**Reuse rules:** hidden by default; accessible Show/Hide name + pressed state; independent reveal state per field; Caps Lock advisory where detectable; paste/password managers allowed; preserve authoritative `current-password` vs `new-password` autocomplete; apply the real 15-character guidance only to new-password establishment and keep HIBP screening out of per-keystroke interaction.
+**Do not:** add a minimum-length gate to sign-in/current-password fields, persist/log password values, reveal secrets in evidence, invent composition rules/strength scores, or copy this behavior into one-off account fields.
+**Verification:** exact head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3`; Account Profile Credential `35062679531`, Account Identity `35062679423`, Session Controls `35062679419`, MFA `35062679519` and Engineering Quality `35062679429` passed. Dedicated credential screenshots in artifact `10432827873` were reviewed secret-free.
+
 ### AppShell
 **Status:** APPROVED
 **Source:** `src/components/shell/app-shell.tsx`  

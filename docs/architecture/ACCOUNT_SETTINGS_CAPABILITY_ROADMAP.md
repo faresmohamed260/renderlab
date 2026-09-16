@@ -1,7 +1,7 @@
 # Account & Settings Capability Roadmap
 
-**Status:** ACCEPTED ACTIVE ROADMAP / #215 + #216 + #217 + #218 + #219 PRODUCTION-LIVE / #223 CONTRACTED NEXT / #220 + #221 REMAINING
-**Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 Data & Privacy lifecycle are production-live from exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`. #223 is the next execution lane under `docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md` / UI-081: a RenderLab-owned 1:1 profile keyed by immutable `auth.users.id`; display name + private avatar; username/handle deferred until a real namespace consumer exists; and one reusable credential-field standard across every current password-entry surface. #223 implementation must extend #219 export/deletion/storage residue coverage before merge. This contract does not authorize hosted Auth mutation or production deployment. #220 remains P2 and #221 remains research.
+**Status:** ACCEPTED ACTIVE ROADMAP / #215 + #216 + #217 + #218 + #219 PRODUCTION-LIVE / #223 IMPLEMENTED + VERIFIED / NOT DEPLOYED / #220 + #221 REMAINING
+**Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 Data & Privacy lifecycle are production-live from exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`. #223 is implemented and exact-head verified in PR #271 under `docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md` / UI-081: private display name + avatar keyed by immutable `auth.users.id`, username/handle deferred, and one reusable credential-field standard across every current password-entry surface. #219 export/deletion/storage-residue integration is complete and shared-project migration `0022_renderlab_account_profiles.sql` is applied. The #223 application is not production-deployed. #220 is the next default product lane; #221 remains research.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  
 **Baseline audited:** `main` `bbb0624a8b1fa98b24824294a495cdb8500c9c9c` plus 2026-09-13 Supabase/security/convention audit  
@@ -60,10 +60,7 @@ Current repository behavior already provides:
 
 Currently missing from the verified product baseline:
 
-- durable display name/profile identity;
-- user-managed avatar/profile picture;
 - RenderLab username/handle semantics;
-- one documented credential-field interaction standard across sign-in/recovery/password surfaces;
 - passkeys;
 - independent recovery methods beyond the existing sign-in-email recovery flow;
 - trustworthy user-facing Security Activity and exact arbitrary row-level session revoke;
@@ -81,7 +78,7 @@ The repository's Phase 10D audit established that:
 - leaked-password protection remained disabled and was recorded as a broader-beta blocker;
 - hosted Auth configuration changes require explicit operator authorization and are not ordinary application-code changes.
 
-A fresh Security Advisor read after #215B verification and production rollout on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The organization remains on Free and the user explicitly rejected a Supabase upgrade solely for this feature. #215B free application-layer HIBP screening is verified and production-live, so the native warning is an accepted platform limitation and must not be misrepresented as cleared. #215 is closed and production-live. #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change and #219 account data lifecycle are production-live from the guarded 2026-09-15 rollout. The next default contract-planning slice is #223 Profile and credential UX baseline unless explicitly reprioritized.
+A fresh Security Advisor read after #215B verification and production rollout on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The organization remains on Free and the user explicitly rejected a Supabase upgrade solely for this feature. #215B free application-layer HIBP screening is verified and production-live, so the native warning is an accepted platform limitation and must not be misrepresented as cleared. #215 is closed and production-live. #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change and #219 account data lifecycle are production-live from the guarded 2026-09-15 rollout. With #223 implemented and verified, the next default product lane is #220 Product preferences and notifications unless explicitly reprioritized; #221 remains research.
 
 ## 5. Current Supabase capability facts
 

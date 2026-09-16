@@ -17,7 +17,7 @@ Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps
 ## Current production application — 2026-09-15
 Current production runs exact repository source `d18ef8833d46c812dac6b43572b3f4f7069990f8` at READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`. Guarded clean-provenance rollout `35022243427` passed custom-domain smoke for root, `/create`, `/library`, `/activity`, `/settings` and `/settings/password`; post-cutover runtime inspection found no runtime-error clusters and no error/fatal logs. Production includes the completed Phase 23–29 UI/UX redesign plus the subsequently merged #216 Session Controls, #217 MFA/step-up, #218 secure sign-in-email change and #219 Data & Privacy lifecycle surfaces. Historical per-screen/workstream `NOT DEPLOYED` statements below describe their individual closure state and are superseded by this current production record. Prior deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh` is the immediate known-good rollback target. Automatic Git → Vercel deployment remains disabled.
 
-**Next Settings extension:** UI-081 / #223 is contracted but not implemented. It will extend UI-078 Account with private display-name/avatar profile identity plus a subordinate `/settings/profile` editor, and standardize existing password fields without redesigning Settings. Username/handle remains deferred. Current production remains unchanged until a separately verified implementation and explicit deployment.
+**Current repository Settings extension:** UI-081 / #223 is implemented, exact-head verified and human-reviewed in PR #271 but not production-deployed. UI-078 Account now composes private display-name/avatar profile identity plus subordinate `/settings/profile`, and all current password-entry surfaces share the approved account credential-field interaction standard. Username/handle remains deferred. Current production remains unchanged until an explicit deployment.
 
 ## Application Shell
 **Status:** APPROVED  
@@ -38,6 +38,14 @@ Approved behavior:
 **Phase 29 / UI-080 whole-product cohesion closure — merged / verified:** final implementation head `e1cf49db3cff9cd635775c07b9c8f9fe9e68660b` added deterministic cross-route regression coverage for fixed-header clearance, 390px horizontal overflow and reduced-motion geometry without changing production UI code. UI Shell `34788560808`, Engineering Quality `34788560805` and Brand / Launch `34788560864` passed; browser evidence confirmed Create, Library, Activity and Settings clear the UI-074 fixed header and remain overflow-free at 390px. The suspected Create/header collision did not reproduce, so no feature-local or shared-shell pixel correction was justified. PR #237 merged as `1c33fccf7de5b919b6a9f15916c66b92334da84a`; merged-main UI Shell `34788682060` and Engineering Quality `34788682047` passed. Existing Landing/Create/Library/Viewer/Activity/Settings/Admin screen authorities and statuses therefore remain unchanged; Phase 29 closes integration quality rather than redefining any screen. Production deployment remains separate.
 
 ## Screens
+
+### Settings Profile
+**Route:** `/settings/profile`
+**Status:** APPROVED — UI-081 implementation verified / not deployed
+**Implementation:** `src/app/(app)/settings/profile/page.tsx`, `src/features/account/account-profile-form.tsx`, `src/features/account/account-profile-identity.tsx`
+**Purpose:** Edit optional private display name and private account avatar without changing sign-in identity, admission, role, ownership or public visibility.
+**Composition:** subordinate UI-078 Trust Register continuation; square avatar crop supports pointer/touch pan plus keyboard controls, zoom/reset, deterministic replacement/removal and neutral fallback when no display identity exists. Username/handle, public profile and social identity are intentionally absent.
+**Verification:** exact head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3`, Account Profile Credential `35062679531`, artifact `10432827873` (`sha256:79e27a2998adf76d3150e1a296cfd87bdbe98eb35948468bf366a2deaf50583c`), human-reviewed at desktop and reduced-motion 390px. Production deployment remains separate.
 
 ### Brand / Landing
 **Route:** `/`

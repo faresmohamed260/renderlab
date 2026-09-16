@@ -4,10 +4,11 @@
 **Parent roadmap:** #213 / `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md`  
 **Planning baseline:** `main` `af72a40bd0b62b85fbcf4dcd373bade977082449`  
 **Audit date:** 2026-09-16  
-**Status:** EXECUTION CONTRACT — implementation authorized after this contract merges; hosted Auth mutation and production deployment are not authorized  
+**Status:** IMPLEMENTED + EXACT-HEAD VERIFIED — contract remains binding; production application deployment remains separately explicit and no hosted Auth/password-policy mutation was performed by #223
 **UI decision:** UI-081  
 **Scope:** ordinary account profile identity (display name + avatar), profile editing inside the approved Settings system, and one reusable password-field interaction standard across every current RenderLab password-entry surface  
 **Out of scope:** public profiles, username/handle namespace implementation, bio/pronouns/location/social fields, linked identities, passkeys, independent recovery methods, notification/preferences work, hosted password-policy mutation, public sharing routes, production deployment
+**Implementation verification:** PR #271 implementation-verification head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3` passed Account Profile Credential `35062679531`, Account Data Lifecycle `35062679557`, Engineering `35062679429`, UI Shell `35062679416`, Account Identity `35062679423`, Session Controls `35062679419`, MFA `35062679519`, Integrated Release `35062679421`, Account/Admin `35062679428`, Maintenance `35062679414`, Video Generation `35062679350` and every other non-email attached workflow. The dedicated profile artifact `10432827873` (`sha256:79e27a2998adf76d3150e1a296cfd87bdbe98eb35948468bf366a2deaf50583c`) was human-reviewed clean across desktop, 390px and reduced motion with no credential secret visible. Email Identity Change `35062679472` was blocked at the hosted Supabase correct-current-password initiation boundary by repeat `429 email_change_rate_limited` after its local UI/a11y and wrong-password assertions passed; #223 changes no email-change backend contract. Migration `0022_renderlab_account_profiles.sql` is applied to the approved shared project.
 
 ## 1. Goal
 
