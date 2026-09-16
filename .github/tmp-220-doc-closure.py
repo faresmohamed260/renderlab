@@ -1,0 +1,156 @@
+from pathlib import Path
+import re
+
+
+def read(path):
+    return Path(path).read_text()
+
+
+def write(path, text):
+    Path(path).write_text(text)
+
+
+def replace_once(path, old, new):
+    text = read(path)
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{path}: expected exactly one replacement target, found {count}: {old[:100]!r}")
+    write(path, text.replace(old, new, 1))
+
+
+def regex_once(path, pattern, repl):
+    text = read(path)
+    updated, count = re.subn(pattern, repl, text, count=1, flags=re.M)
+    if count != 1:
+        raise SystemExit(f"{path}: expected exactly one regex target, found {count}: {pattern!r}")
+    write(path, updated)
+
+
+project = "PROJECT.md"
+project_text = read(project)
+if "Workstream #220 Product preferences initial Create-default slice" in project_text:
+    raise SystemExit("PROJECT.md already contains #220 closure text")
+marker = "- Workstream #219 Data export, retention and account deletion"
+if project_text.count(marker) != 1:
+    raise SystemExit("PROJECT.md: #219 insertion marker mismatch")
+project_insert = "\n".join([
+    "- Workstream #220 Product preferences initial Create-default slice is **IMPLEMENTED / EXACT-HEAD VERIFIED / RENDERED-EVIDENCE REVIEWED / MERGE PENDING / NOT DEPLOYED** in PR #275 at implementation-verification head `f01399bac0a50fef82ac55cf2c9a088c18443415`. It adds owner-scoped durable defaults for Create mode, Image aspect ratio, Video resolution, Video duration and Video audio; clean new drafts consume them server-side while saved recipes and media continuations keep precedence, stale values fail soft to current capability truth, and Reset removes the row so future product defaults remain authoritative.",
+    "- Shared-project migration `0023_renderlab_account_preferences.sql` is applied as `20260916150243 renderlab_account_preferences`; the table is RLS-enabled with no `anon`/`authenticated` DML and service-role application access only. Account export is schema v3 and preference state joins #219 deletion/residue/non-interference. All 16 workflows attached to `f01399bac0a50fef82ac55cf2c9a088c18443415` passed, including Account Profile Credential `35138292468`, Account Data Lifecycle `35138293298`, and Email Identity Change `35138292829` after the hosted Supabase email-change cooldown cleared. Dedicated #220 artifact `10463549435` (`sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`) was reviewed clean across desktop Settings, 390px reduced-motion Settings and mobile Create evidence. Optional product notifications and an app-level accessibility override remain deliberately deferred; production is unchanged.",
+    "",
+])
+write(project, project_text.replace(marker, project_insert + marker, 1))
+replace_once(
+    project,
+    "- With #223 implemented and verified, the next default Account & Settings implementation/planning lane is #220 Product preferences and notifications unless explicitly reprioritized. #221 remains research-oriented passkeys/WebAuthn work.",
+    "- #220's initial durable Create-default slice is implemented and exact-head verified. Optional product notifications and an app-level accessibility override remain deferred until real backing capabilities and a separate execution-ready amendment exist; #221 remains research-oriented passkeys/WebAuthn work. No additional Account & Settings implementation lane is implicitly authorized by this closure.",
+)
+
+roadmap = "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md"
+regex_once(
+    roadmap,
+    r"^\*\*Status:\*\*.*$",
+    "**Status:** ACCEPTED ACTIVE ROADMAP / #215 + #216 + #217 + #218 + #219 PRODUCTION-LIVE / #223 COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / NOT DEPLOYED / #220 INITIAL CREATE-DEFAULT SLICE IMPLEMENTED + EXACT-HEAD VERIFIED / MERGE PENDING / NOT DEPLOYED / #220 FOLLOW-ONS DEFERRED / #221 RESEARCH",
+)
+regex_once(
+    roadmap,
+    r"^\*\*Current execution:\*\*.*$",
+    "**Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 Data & Privacy lifecycle are production-live from exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`. #223 is complete/merged/merged-main verified through PR #271 / `7519eb1a6367633bf244a9ed7474f374b9ffc6ca` and remains not production-deployed. #220's initial durable Create-default slice is implemented in PR #275 at implementation-verification head `f01399bac0a50fef82ac55cf2c9a088c18443415`; migration `0023_renderlab_account_preferences.sql` is applied as `20260916150243 renderlab_account_preferences`, all 16 attached workflows passed, and dedicated rendered evidence was reviewed clean. Product-notification controls and an app-level accessibility override remain deferred until their backing product systems exist and a separate amendment is merged. #221 remains research. Production remains on the 2026-09-15 release.",
+)
+replace_once(
+    roadmap,
+    "- durable user preferences/notification settings.",
+    "- optional product notification settings and any app-level accessibility override; durable owner-scoped Create defaults are implemented by #220's initial slice.",
+)
+replace_once(
+    roadmap,
+    "With #223 complete, verified and merged as `7519eb1a6367633bf244a9ed7474f374b9ffc6ca`, the next default product lane is #220 Product preferences and notifications unless explicitly reprioritized; #221 remains research.",
+    "#220's initial durable Create-default slice is now implemented and exact-head verified in PR #275. Optional product notifications and any app-level accessibility override remain deferred pending real backing systems and a separate execution-ready amendment; #221 remains research. No further #220 implementation is implied by the initial-slice closure.",
+)
+
+contract = "docs/architecture/PRODUCT_PREFERENCES_NOTIFICATIONS_IMPLEMENTATION_CONTRACT.md"
+regex_once(
+    contract,
+    r"^\*\*Status:\*\*.*$",
+    "**Status:** INITIAL CREATE-DEFAULT SLICE IMPLEMENTED + EXACT-HEAD VERIFIED / DOCUMENTATION CLOSURE IN PROGRESS / MERGE PENDING / NOT DEPLOYED; notification/accessibility follow-ons remain deferred",
+)
+contract_text = read(contract)
+if "## Implementation verification — 2026-09-16" in contract_text:
+    raise SystemExit("implementation verification section already present")
+marker = "## 1. Goal"
+if contract_text.count(marker) != 1:
+    raise SystemExit("contract goal marker mismatch")
+contract_insert = "\n".join([
+    "## Implementation verification — 2026-09-16",
+    "",
+    "- PR #275 implementation-verification head `f01399bac0a50fef82ac55cf2c9a088c18443415` implements the five curated owner-scoped Create defaults without adding notification controls, accessibility overrides, model/provider identity, Advanced tuning persistence or deployment changes.",
+    "- Shared-project migration `0023_renderlab_account_preferences.sql` is applied as `20260916150243 renderlab_account_preferences`. Fresh hosted inspection confirms RLS enabled, no `anon`/`authenticated` DML and service-role DML available for the server-owned application boundary.",
+    "- Dedicated Account Profile Credential run `35138292468` passed the existing #223 profile/credential verifier and the new #220 configured verifier. Markers prove cross-session Settings→Create portability, owner isolation, recipe/continuation precedence, stale-value fallback/reset, export-v3 inclusion, account-deletion cleanup/non-interference and fixture cleanup. Artifact `10463549435` has digest `sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`.",
+    "- Rendered evidence was reviewed clean at desktop Settings, 390px reduced-motion Settings and mobile Create. The Trust Register hierarchy remains intact, no document horizontal overflow was visible, and the clean Create evidence showed the saved Image `4:5` default without redesigning the approved composer.",
+    "- Account Data Lifecycle `35138293298` passed the real export/deletion verifier with export schema v3 and clean configured fixture teardown. The previous v2 assertion was corrected narrowly to v3; no #219 lifecycle coverage was removed.",
+    "- Every workflow GitHub attached to the implementation head passed: 16/16. Email Identity Change `35138292829` initially encountered hosted Supabase `429 email_change_rate_limited` twice after its local build/Settings/a11y/wrong-password checks passed; an unchanged same-head retry after cooldown then passed the full real identity-change verifier and cleanup. No #220 product code changed to resolve that external rate limit.",
+    "- The shared `renderlab_account_preferences` fixture table was confirmed empty after acceptance. Production remains on exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`; implementation merge and any deployment remain separate operations.",
+    "- This documentation-complete tree still requires its own attached exact-head gates before PR #275 may merge; the evidence above is deliberately identified as implementation-head evidence rather than being misrepresented as documentation-head evidence.",
+    "",
+])
+write(contract, contract_text.replace(marker, contract_insert + marker, 1))
+
+ui = "docs/ui/UI_MIGRATION.md"
+ui_text = read(ui)
+if "## #220 Product preferences initial Create-default slice — implementation verification" in ui_text:
+    raise SystemExit("UI_MIGRATION already contains #220 closure section")
+marker = "## Current Landing production closure — 2026-09-11"
+if ui_text.count(marker) != 1:
+    raise SystemExit("UI_MIGRATION insertion marker mismatch")
+ui_insert = "\n".join([
+    "## #220 Product preferences initial Create-default slice — implementation verification",
+    "**Status: `IMPLEMENTATION VERIFIED / RENDERED-EVIDENCE REVIEWED / MERGE PENDING / NOT DEPLOYED`.**",
+    "",
+    "- PR #275 extends UI-078 in Integration Mode rather than reopening Settings: admitted accounts gain one quiet `Create defaults` row and subordinate `/settings/preferences`; no top-level navigation destination or Settings redesign is introduced.",
+    "- The subordinate form manages only Default Create mode, fixed Image aspect ratio, Video resolution, Video duration and Video audio. `Save defaults` persists owner-scoped server state; `Reset to RenderLab defaults` deletes the row so future product defaults remain authoritative.",
+    "- Clean authenticated Create drafts are seeded server-side before hydration. Saved recipes and media continuations retain precedence, stale/unsupported stored values fall back to current capability truth, and preferences never become generation/admission/ownership authority.",
+    "- Exact implementation head `f01399bac0a50fef82ac55cf2c9a088c18443415` passed all 16 attached workflows. Account Profile Credential `35138292468` includes the dedicated #220 configured acceptance; Account Data Lifecycle `35138293298` passed export schema v3/deletion/residue behavior; Email Identity Change `35138292829` passed fully on the unchanged cooled-down retry after two hosted 429 attempts.",
+    "- Dedicated artifact `10463549435` (`sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`) was reviewed clean across desktop Settings, 390px reduced-motion Settings and mobile Create. No overflow, hierarchy regression, credential exposure or unrelated composer redesign was observed.",
+    "- Product notification toggles and an app-level reduced-motion/accessibility override remain deliberately deferred because their backing cross-product systems do not yet exist. Production remains unchanged and deployment is separately explicit.",
+    "",
+])
+write(ui, ui_text.replace(marker, ui_insert + marker, 1))
+
+registry = "docs/ui/SCREEN_REGISTRY.md"
+regex_once(
+    registry,
+    r"^\*\*Current repository Settings extension:\*\*.*$",
+    "**Current repository Settings extensions:** UI-081 / #223 is merged, exact-head/merged-main verified and not production-deployed. PR #275's #220 initial Create-default slice is implementation-head verified and merge-pending: UI-078 Account/Settings gains a subordinate `/settings/preferences` continuation for five durable Create defaults, while clean `/create` drafts consume those defaults server-side without changing saved-recipe or media-continuation precedence. Production remains unchanged until an explicit deployment.",
+)
+registry_text = read(registry)
+if "### Settings Preferences" in registry_text:
+    raise SystemExit("SCREEN_REGISTRY already contains Settings Preferences")
+marker = "### Settings Profile"
+if registry_text.count(marker) != 1:
+    raise SystemExit("SCREEN_REGISTRY Settings Profile marker mismatch")
+registry_insert = "\n".join([
+    "### Settings Preferences",
+    "**Route:** `/settings/preferences`",
+    "**Status:** APPROVED — #220 initial slice implementation-head verified / rendered-evidence reviewed / merge pending / not deployed",
+    "**Implementation:** `src/app/(app)/settings/preferences/page.tsx`, `src/features/account/account-preferences-form.tsx`, `src/app/api/account/preferences/route.ts`, `src/server/account/account-preferences.ts`",
+    "**Purpose:** Manage the admitted account's durable defaults for new Create drafts without changing existing generations, media, history, recipes, continuations, admission, role, ownership or security state.",
+    "**Composition:** subordinate UI-078 Trust Register continuation with Default Create mode, fixed Image aspect ratio, Video resolution, Video duration and Video audio. Save persists the complete curated set; Reset deletes the owner row and follows current RenderLab product defaults. Product notifications, theme/language/timezone, model/provider defaults, Advanced tuning persistence and app-level accessibility overrides are absent by design.",
+    "**Create integration:** clean authenticated `/create` is seeded server-side before hydration; saved recipes and media continuations win over preferences, capability/product defaults win over stale unsupported values, and signed-out Create retains current product defaults.",
+    "**Verification:** implementation head `f01399bac0a50fef82ac55cf2c9a088c18443415`; Account Profile Credential `35138292468`; dedicated artifact `10463549435` (`sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`); desktop, 390px reduced-motion Settings and mobile Create evidence reviewed clean. Account Data Lifecycle `35138293298` proves export-v3/deletion integration. Production deployment remains separate.",
+    "",
+])
+write(registry, registry_text.replace(marker, registry_insert + marker, 1))
+
+infra = "docs/architecture/INFRASTRUCTURE.md"
+infra_text = read(infra)
+if "0023_renderlab_account_preferences.sql" in infra_text:
+    raise SystemExit("INFRASTRUCTURE already records 0023")
+marker = "\n\nDo not reapply migrations 0003 through 0022;"
+if infra_text.count(marker) != 1:
+    raise SystemExit("INFRASTRUCTURE migration tail marker mismatch")
+infra_insert = "\n".join([
+    "",
+    "- `0023_renderlab_account_preferences.sql` — applied as `20260916150243 renderlab_account_preferences` for #220 on 2026-09-16; adds private 1:1 `renderlab_account_preferences` keyed by immutable `auth.users.id ON DELETE RESTRICT`, structural sanity constraints, deleting-owner protection and service-role lifecycle integration. RLS is enabled; hosted inspection confirms no `anon`/`authenticated` DML and service-role DML only for the application boundary. Preference state has no R2 object contract and joins account export schema v3 plus deletion/residue verification. The #220 application remains not production-deployed.",
+    "",
+    "Do not reapply migrations 0003 through 0023;",
+])
+write(infra, infra_text.replace(marker, "\n" + infra_insert, 1))
