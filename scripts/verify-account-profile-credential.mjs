@@ -382,8 +382,9 @@ async function verifyCredentialBrowser(accountA) {
     await signedOut.keyboard.press("Control+V");
     assert((await signInPassword.inputValue()) === "PasteProbe-RenderLab-223!", "Password field blocked ordinary paste behavior.");
     await showSignIn.click();
-    assert((await signInPassword.getAttribute("type")) === "text" && (await showSignIn.getAttribute("aria-pressed")) === "true", "Sign-in reveal state is not accessible/functional.");
-    await signedOut.getByRole("button", { name: "Hide password", exact: true }).click();
+    const hideSignIn = signedOut.getByRole("button", { name: "Hide password", exact: true });
+    assert((await signInPassword.getAttribute("type")) === "text" && (await hideSignIn.getAttribute("aria-pressed")) === "true", "Sign-in reveal state is not accessible/functional.");
+    await hideSignIn.click();
     await signInPassword.fill("");
     await dispatchCapsLock(signInPassword, true);
     await signedOut.getByText("Caps Lock is on", { exact: true }).waitFor({ state: "visible" });

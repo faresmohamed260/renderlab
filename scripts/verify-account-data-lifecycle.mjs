@@ -384,6 +384,11 @@ async function seedProductData() {
         owner_id: accountC.id,
         display_name: "Purge Pending C",
         avatar_state: "purge_pending",
+        avatar_content_type: null,
+        avatar_size_bytes: null,
+        avatar_width: null,
+        avatar_height: null,
+        avatar_updated_at: null,
       },
     ]),
   }), "Could not seed account profile fixtures");

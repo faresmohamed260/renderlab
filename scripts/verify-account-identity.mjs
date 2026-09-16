@@ -349,7 +349,7 @@ try {
   await page.getByRole("heading", { name: "Account", exact: true }).waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Sign in", exact: true }).waitFor({ state: "visible" });
   assert(
-    (await page.getByLabel("Password").getAttribute("minlength")) === null,
+    (await page.getByLabel("Password", { exact: true }).getAttribute("minlength")) === null,
     "Sign-in must not client-block legacy credentials using the new-password minimum.",
   );
   assert(await page.getByRole("link", { name: "Open Admin", exact: true }).count() === 0, "Signed-out Settings exposed the Admin operations link.");
@@ -362,7 +362,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1024 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByText(email, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Active", { exact: true }).waitFor({ state: "visible" });
@@ -539,7 +539,7 @@ try {
   await expectBearerRevoked(staleAfterGlobalSignOut, "Secondary post-global-sign-out session", { generation: true });
 
   await recoveryPage.getByLabel("Email").fill(email);
-  await recoveryPage.getByLabel("Password").fill(recoveredPassword);
+  await recoveryPage.getByLabel("Password", { exact: true }).fill(recoveredPassword);
   await recoveryPage.getByRole("button", { name: "Sign in", exact: true }).click();
   await recoveryPage.getByText("Active", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
