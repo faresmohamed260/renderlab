@@ -8,6 +8,7 @@ import {
   getRenderLabAccountProfileRow,
   runAccountAvatarPurgeMaintenance,
 } from "@/server/account/account-profile";
+import { getRenderLabAccountPreferencesRow } from "@/server/account/account-preferences";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { requestGenerationCancellation } from "@/server/generation/cancel-generation";
 import { generationStorageCandidates, type GenerationStorageKeyRow } from "@/server/generation/generation-storage-keys";
@@ -19,7 +20,7 @@ import {
   writeR2Object,
 } from "@/server/storage/r2";
 
-const EXPORT_SCHEMA_VERSION = 2;
+const EXPORT_SCHEMA_VERSION = 3;
 const EXPORT_PAGE_SIZE = 200;
 const EXPORT_TTL_MS = 24 * 60 * 60 * 1000;
 const STALE_EXPORT_PROCESSING_MS = 15 * 60 * 1000;
@@ -212,6 +213,7 @@ async function buildAccountExport(ownerId: string) {
     sessions,
     mfa,
     profile,
+    preferences,
     invitations,
   ] = await Promise.all([
     accountAuthUser(ownerId),
@@ -254,6 +256,7 @@ async function buildAccountExport(ownerId: string) {
     accountSessionExport(ownerId),
     accountFactorExport(ownerId),
     getRenderLabAccountProfileRow(ownerId),
+    getRenderLabAccountPreferencesRow(ownerId),
     supabaseRest<Array<Record<string, unknown>>>(
       `renderlab_beta_invitations?claimed_user_id=eq.${encodeURIComponent(ownerId)}&select=id,normalized_email,role,expires_at,claimed_at,revoked_at,created_at&order=created_at.asc,id.asc`,
     ),
@@ -304,6 +307,19 @@ async function buildAccountExport(ownerId: string) {
             downloadPath: null,
           },
     },
+    preferences: preferences
+      ? {
+          source: "saved",
+          create: {
+            outputKind: preferences.create_output_kind,
+            imageAspectRatio: preferences.create_image_aspect_ratio,
+            videoResolution: preferences.create_video_resolution,
+            videoDurationSeconds: preferences.create_video_duration_seconds,
+            videoAudioEnabled: preferences.create_video_audio_enabled,
+          },
+          updatedAt: preferences.updated_at,
+        }
+      : { source: "product-defaults", create: null, updatedAt: null },
     generationJobs,
     generationSources,
     mediaAssets,
@@ -527,6 +543,7 @@ async function verifyDatabaseResidue(ownerId: string) {
     "generation_admission_reservations",
     "renderlab_account_exports",
     "renderlab_account_profiles",
+    "renderlab_account_preferences",
   ];
   for (const table of tables) {
     if (await ownerResidueCount(table, ownerId)) throw new Error("account_database_residue");
