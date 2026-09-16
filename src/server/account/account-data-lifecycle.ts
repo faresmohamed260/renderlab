@@ -3,6 +3,11 @@ import { normalizeRenderLabSessionClient } from "@/lib/auth/session-client-label
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
 import { sendAccountDeletionNotification } from "@/server/account/account-deletion-notification";
 import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";
+import {
+  accountProfileAvatarKey,
+  getRenderLabAccountProfileRow,
+  runAccountAvatarPurgeMaintenance,
+} from "@/server/account/account-profile";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { requestGenerationCancellation } from "@/server/generation/cancel-generation";
 import { generationStorageCandidates, type GenerationStorageKeyRow } from "@/server/generation/generation-storage-keys";
@@ -14,7 +19,7 @@ import {
   writeR2Object,
 } from "@/server/storage/r2";
 
-const EXPORT_SCHEMA_VERSION = 1;
+const EXPORT_SCHEMA_VERSION = 2;
 const EXPORT_PAGE_SIZE = 200;
 const EXPORT_TTL_MS = 24 * 60 * 60 * 1000;
 const STALE_EXPORT_PROCESSING_MS = 15 * 60 * 1000;
@@ -206,6 +211,7 @@ async function buildAccountExport(ownerId: string) {
     reservations,
     sessions,
     mfa,
+    profile,
     invitations,
   ] = await Promise.all([
     accountAuthUser(ownerId),
@@ -247,6 +253,7 @@ async function buildAccountExport(ownerId: string) {
     ),
     accountSessionExport(ownerId),
     accountFactorExport(ownerId),
+    getRenderLabAccountProfileRow(ownerId),
     supabaseRest<Array<Record<string, unknown>>>(
       `renderlab_beta_invitations?claimed_user_id=eq.${encodeURIComponent(ownerId)}&select=id,normalized_email,role,expires_at,claimed_at,revoked_at,created_at&order=created_at.asc,id.asc`,
     ),
@@ -275,6 +282,28 @@ async function buildAccountExport(ownerId: string) {
       access: accessRows[0] ?? null,
       signInMethods: Array.from(new Set((user.identities ?? []).map((identity) => identity.provider))).sort(),
     },
+    profile: {
+      displayName: profile?.display_name ?? null,
+      avatar: profile?.avatar_state === "active"
+        ? {
+            state: "active",
+            contentType: profile.avatar_content_type,
+            sizeBytes: profile.avatar_size_bytes === null ? null : Number(profile.avatar_size_bytes),
+            width: profile.avatar_width,
+            height: profile.avatar_height,
+            updatedAt: profile.avatar_updated_at,
+            downloadPath: "/api/account/profile/avatar",
+          }
+        : {
+            state: profile?.avatar_state ?? "none",
+            contentType: null,
+            sizeBytes: null,
+            width: null,
+            height: null,
+            updatedAt: null,
+            downloadPath: null,
+          },
+    },
     generationJobs,
     generationSources,
     mediaAssets,
@@ -291,7 +320,7 @@ async function buildAccountExport(ownerId: string) {
       exportAvailabilityHours: 24,
       systems: {
         supabase: "Authentication and RenderLab product metadata/database state.",
-        cloudflareR2: "Object storage for uploaded/generated media, thumbnails, temporary sources and this export artifact.",
+        cloudflareR2: "Object storage for uploaded/generated media, thumbnails, temporary sources, private profile avatars and this export artifact.",
         modal: "Generation and upscale compute receives the content required for the requested operation.",
         vercel: "Hosts the RenderLab web application and API execution plane.",
       },
@@ -461,6 +490,7 @@ async function accountStorageKeys(ownerId: string) {
     pagedOwnerRows<StorageExportRow>("renderlab_account_exports", ownerId, "storage_key", "requested_at.asc,id.asc"),
   ]);
   const keys = new Set<string>();
+  keys.add(accountProfileAvatarKey(ownerId));
   for (const row of media) {
     keys.add(row.storage_key);
     if (row.thumbnail_storage_key) keys.add(row.thumbnail_storage_key);
@@ -482,7 +512,7 @@ async function purgeAndProveStorage(keys: string[]) {
 
 async function ownerResidueCount(table: string, ownerId: string) {
   const rows = await supabaseRest<Array<Record<string, unknown>>>(
-    `${table}?owner_id=eq.${encodeURIComponent(ownerId)}&select=id&limit=1`,
+    `${table}?owner_id=eq.${encodeURIComponent(ownerId)}&select=owner_id&limit=1`,
   );
   return rows.length;
 }
@@ -496,6 +526,7 @@ async function verifyDatabaseResidue(ownerId: string) {
     "media_collections",
     "generation_admission_reservations",
     "renderlab_account_exports",
+    "renderlab_account_profiles",
   ];
   for (const table of tables) {
     if (await ownerResidueCount(table, ownerId)) throw new Error("account_database_residue");
@@ -642,6 +673,7 @@ export async function runAccountDataLifecycleMaintenance(limit = 4) {
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 8);
   await recoverStaleProcessingExports();
   const expiry = await expireReadyExports(safeLimit);
+  const avatarPurge = await runAccountAvatarPurgeMaintenance(safeLimit);
   const exports = await supabaseRest<Array<{ id: string }>>(
     `renderlab_account_exports?status=in.(pending,failed)&select=id&order=updated_at.asc,id.asc&limit=${safeLimit}`,
   );
@@ -666,6 +698,7 @@ export async function runAccountDataLifecycleMaintenance(limit = 4) {
 
   return {
     expiry,
+    avatarPurge,
     exports: { scanned: exports.length, ready: exportsReady, failed: exportFailures },
     deletions: { scanned: deletions.length, complete: deletionsComplete, retry: deletionRetries },
   };

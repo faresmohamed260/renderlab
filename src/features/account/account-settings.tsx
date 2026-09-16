@@ -5,15 +5,18 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { isRenderLabMfaChallengeRequired, normalizeRenderLabMfaAssurance } from "@/lib/auth/mfa-assurance";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { RenderLabIdentity } from "@/lib/supabase/server";
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
+import type { RenderLabAccountProfile } from "@/server/account/account-profile";
 import type { RenderLabSessionSummary } from "@/server/account/account-sessions";
 import { AccountDataPrivacy } from "./account-data-privacy";
+import { AccountPasswordField } from "./account-password-field";
+import { AccountProfileIdentity } from "./account-profile-identity";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
@@ -94,6 +97,7 @@ export function AccountSettings({
   showAdminLink,
   mfaState,
   sessions,
+  profile,
 }: {
   configured: boolean;
   identity: RenderLabIdentity | null;
@@ -103,6 +107,7 @@ export function AccountSettings({
   showAdminLink: boolean;
   mfaState: MfaState;
   sessions: RenderLabSessionSummary[] | null;
+  profile: RenderLabAccountProfile | null;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -221,15 +226,42 @@ export function AccountSettings({
           <span className={styles.signatureArc} aria-hidden="true" />
 
           <RegisterRow index="01" title="Account">
-            <div className={styles.actionRow}>
-              <div className={styles.valueStack}>
-                <p className={styles.valueLabel}>Sign-in email</p>
-                <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
-                <p className={styles.helper}>Used to sign in. Changing it keeps the same RenderLab account, access and ownership.</p>
+            <div className={styles.passwordStack}>
+              {access ? (
+                profile ? (
+                  <div className={styles.actionRow}>
+                    <AccountProfileIdentity profile={profile} />
+                    <Button asChild variant="secondary" size="lg">
+                      <Link href="/settings/profile">Edit profile</Link>
+                    </Button>
+                  </div>
+                ) : mfaState === "verification-required" ? (
+                  <div className={styles.actionRow}>
+                    <div className={styles.valueStack}>
+                      <p className={styles.valueLabel}>Profile</p>
+                      <p className={styles.helper}>Verify your authenticator before viewing or editing private profile identity.</p>
+                    </div>
+                    <Button asChild variant="secondary" size="lg">
+                      <Link href={`/settings/mfa/challenge?next=${encodeURIComponent("/settings/profile")}`}>Verify MFA</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className={styles.valueStack}>
+                    <p className={styles.valueLabel}>Profile</p>
+                    <p className={styles.helper}>Private profile information is temporarily unavailable.</p>
+                  </div>
+                )
+              ) : null}
+              <div className={access ? styles.factorRow : styles.actionRow}>
+                <div className={styles.valueStack}>
+                  <p className={styles.valueLabel}>Sign-in email</p>
+                  <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
+                  <p className={styles.helper}>Used to sign in. Changing it keeps the same RenderLab account, access and ownership.</p>
+                </div>
+                <Button asChild variant="secondary" size="lg">
+                  <Link href="/settings/email">Change email</Link>
+                </Button>
               </div>
-              <Button asChild variant="secondary" size="lg">
-                <Link href="/settings/email">Change email</Link>
-              </Button>
             </div>
           </RegisterRow>
 
@@ -366,18 +398,23 @@ export function AccountSettings({
               <FieldLabel htmlFor="account-email">Email</FieldLabel>
               <Input id="account-email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
             </Field>
-            <Field>
-              <div className={styles.fieldHeader}>
-                <FieldLabel htmlFor="account-password">Password</FieldLabel>
+            <AccountPasswordField
+              id="account-password"
+              name="password"
+              label="Password"
+              autoComplete="current-password"
+              value={password}
+              onChange={setPassword}
+              description="Use your invited RenderLab account credentials."
+              error={feedback?.kind === "error" ? feedback.message : null}
+              required
+              labelAction={(
                 <Button type="button" variant="link" size="lg" disabled={busyAction !== null || !email.trim()} onClick={handleRecovery} className={styles.recoveryButton}>
                   {busyAction === "recovery" ? <Spinner aria-hidden="true" /> : null}
                   Forgot password
                 </Button>
-              </div>
-              <Input id="account-password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-              <FieldDescription>Use your invited RenderLab account credentials.</FieldDescription>
-              <FieldError>{feedback?.kind === "error" ? feedback.message : null}</FieldError>
-            </Field>
+              )}
+            />
           </FieldGroup>
 
           {feedback?.kind === "success" ? (

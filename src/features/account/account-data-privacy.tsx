@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { AccountPasswordField } from "./account-password-field";
 import styles from "./account-settings.module.css";
 
 type ExportState = {
@@ -198,7 +199,7 @@ export function AccountDataPrivacy() {
         <div className={styles.valueStack}>
           <p className={styles.valueLabel}>Data use</p>
           <p className={styles.helper}>
-            RenderLab stores account/product metadata in Supabase and creative objects in Cloudflare R2. Modal processes content required for generation/upscale, and Vercel hosts the web/API execution plane. RenderLab does not use your prompts, uploads or results to train models. Provider service logs follow provider retention policies.
+            RenderLab stores account/product and private profile metadata in Supabase, plus creative objects and private profile-avatar bytes in Cloudflare R2. Modal processes content required for generation/upscale, and Vercel hosts the web/API execution plane. RenderLab does not use your prompts, uploads or results to train models. Provider service logs follow provider retention policies.
           </p>
         </div>
       </div>
@@ -231,10 +232,13 @@ export function AccountDataPrivacy() {
                 <Input id="delete-account-confirmation" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" />
                 <FieldDescription>This starts an irreversible deletion freeze immediately after verification.</FieldDescription>
               </Field>
-              <Field>
-                <FieldLabel htmlFor="delete-account-password">Current password</FieldLabel>
-                <Input id="delete-account-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
-              </Field>
+              <AccountPasswordField
+                id="delete-account-password"
+                label="Current password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={setCurrentPassword}
+              />
             </FieldGroup>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={busy === "delete"}>Cancel</AlertDialogCancel>

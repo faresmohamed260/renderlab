@@ -212,7 +212,7 @@ try {
   const page = await context.newPage();
   await page.goto(`${baseUrl}/settings`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByText("Active RenderLab sessions", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("This device", { exact: true }).waitFor({ state: "visible" });
@@ -249,7 +249,7 @@ try {
   const globalUiSecondary = userClient("browser-global-secondary");
   const globalUiSecondarySession = await signIn(globalUiSecondary);
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByText("Active RenderLab sessions", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByRole("button", { name: "Sign out everywhere", exact: true }).click();

@@ -3,8 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import {
   hasRecentRenderLabTotpStepUp,
@@ -25,6 +24,7 @@ import {
   PASSWORD_SAFETY_UNAVAILABLE_MESSAGE,
   screenRenderLabCompromisedPassword,
 } from "./compromised-password-screening";
+import { AccountPasswordField } from "./account-password-field";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
@@ -155,20 +155,38 @@ export function AccountPasswordForm({ email, recoveryMode }: { email: string; re
 
               <FieldGroup>
                 {!recoveryMode ? (
-                  <Field>
-                    <FieldLabel htmlFor="current-password">Current password</FieldLabel>
-                    <Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
-                  </Field>
+                  <AccountPasswordField
+                    id="current-password"
+                    label="Current password"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={setCurrentPassword}
+                    required
+                  />
                 ) : null}
-                <Field>
-                  <FieldLabel htmlFor="new-password">New password</FieldLabel>
-                  <Input id="new-password" type="password" autoComplete="new-password" minLength={RENDERLAB_PASSWORD_MIN_LENGTH} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required />
-                  <FieldDescription>{RENDERLAB_PASSWORD_REQUIREMENT}</FieldDescription>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="confirm-new-password">Confirm new password</FieldLabel>
-                  <Input id="confirm-new-password" type="password" autoComplete="new-password" minLength={RENDERLAB_PASSWORD_MIN_LENGTH} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
-                </Field>
+                <AccountPasswordField
+                  id="new-password"
+                  label="New password"
+                  autoComplete="new-password"
+                  minLength={RENDERLAB_PASSWORD_MIN_LENGTH}
+                  value={newPassword}
+                  onChange={setNewPassword}
+                  description={RENDERLAB_PASSWORD_REQUIREMENT}
+                  statusMessage={newPassword ? (meetsRenderLabPasswordPolicy(newPassword) ? "Length requirement met." : RENDERLAB_PASSWORD_REQUIREMENT) : undefined}
+                  statusKind={newPassword && !meetsRenderLabPasswordPolicy(newPassword) ? "error" : "success"}
+                  required
+                />
+                <AccountPasswordField
+                  id="confirm-new-password"
+                  label="Confirm new password"
+                  autoComplete="new-password"
+                  minLength={RENDERLAB_PASSWORD_MIN_LENGTH}
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  statusMessage={confirmPassword ? (newPassword === confirmPassword ? "Passwords match" : "Passwords do not match") : undefined}
+                  statusKind={confirmPassword && newPassword !== confirmPassword ? "error" : "success"}
+                  required
+                />
               </FieldGroup>
 
               {feedback ? (

@@ -88,6 +88,7 @@ async function cleanupOwnedRenderLabRows(ownerId) {
   ]);
 
   const storageKeys = new Set([
+    `renderlab/account-profiles/${ownerId}/avatar.webp`,
     ...sessions.map((row) => row.storage_key),
     ...assets.flatMap((row) => [row.storage_key, row.thumbnail_storage_key]),
     ...sources.map((row) => row.storage_key),
@@ -100,7 +101,7 @@ async function cleanupOwnedRenderLabRows(ownerId) {
     }
   }
 
-  for (const table of ["media_upload_sessions", "media_assets", "generation_jobs", "generation_sources"]) {
+  for (const table of ["media_upload_sessions", "media_assets", "generation_jobs", "generation_sources", "renderlab_account_profiles"]) {
     const response = await serviceRest(`${table}?owner_id=eq.${encodedOwner}`, { method: "DELETE" });
     if (!response.ok) {
       throw new Error(`Could not clean configured account ${table} rows (${response.status}): ${await response.text()}`);
@@ -274,7 +275,8 @@ export function withAccountAuthorization(account, init = {}) {
   return { ...init, headers };
 }
 
-function isSignedMediaRedirectPath(pathname) {
+function isSignedMediaRedirectRequest(pathname, method) {
+  if (pathname === "/api/account/profile/avatar") return method === "GET" || method === "HEAD";
   return /^\/api\/media\/assets\/[^/]+\/(?:content|thumbnail|download)$/.test(pathname);
 }
 
@@ -293,10 +295,10 @@ export async function routeLocalAppRequestsWithAccount(page, baseUrl, account) {
       authorization: `Bearer ${account.accessToken}`,
     };
 
-    // Header overrides from route.continue() follow redirects. Resolve signed-media routes
+    // Header overrides from route.continue() follow redirects. Resolve signed-media reads
     // outside Playwright's page-bound request context so the local Authorization header never
     // reaches R2 and browser teardown cannot dispose an in-flight route.fetch() callback.
-    if (isSignedMediaRedirectPath(requestUrl.pathname)) {
+    if (isSignedMediaRedirectRequest(requestUrl.pathname, request.method())) {
       const method = request.method();
       const response = await fetch(request.url(), {
         method,

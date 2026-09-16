@@ -11,6 +11,7 @@ import {
   type RenderLabAccountAccess,
 } from "@/server/account/account-access";
 import { getRenderLabSessionSummaries } from "@/server/account/account-sessions";
+import { getRenderLabAccountProfile, type RenderLabAccountProfile } from "@/server/account/account-profile";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,15 @@ export default async function SettingsPage({
       : assurance.currentLevel === "aal2"
         ? "verified"
         : "verification-required";
+  let profile: RenderLabAccountProfile | null = null;
+  if (identity && access && (mfaState === "disabled" || mfaState === "verified")) {
+    try {
+      profile = await getRenderLabAccountProfile(identity.id);
+    } catch {
+      profile = null;
+    }
+  }
+
   const showAdminLink = Boolean(identity && access?.status === "active" && access.role === "admin");
 
   const intro = !configured
@@ -102,6 +112,7 @@ export default async function SettingsPage({
         showAdminLink={showAdminLink}
         mfaState={mfaState}
         sessions={sessions}
+        profile={profile}
       />
     </section>
   );
