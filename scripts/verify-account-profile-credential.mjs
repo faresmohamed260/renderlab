@@ -414,7 +414,7 @@ async function verifyCredentialBrowser(accountA) {
     await dispatchCapsLock(current, false);
 
     await next.fill("short");
-    await page.getByText(/Use at least 15 characters/).waitFor({ state: "visible" });
+    await page.getByRole("status").filter({ hasText: /^Use at least 15 characters\.$/ }).waitFor({ state: "visible" });
     await next.fill("LongEnoughPassword223!");
     await page.getByText("Length requirement met.", { exact: true }).waitFor({ state: "visible" });
     await confirm.fill("DifferentPassword223!");
