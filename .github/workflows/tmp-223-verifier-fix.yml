@@ -1,11 +1,9 @@
-name: Temporary #223 verifier fix
+name: Temporary 223 verifier fix
 
 on:
   pull_request:
     branches:
       - main
-
-authorizations: {}
 
 permissions:
   contents: write
