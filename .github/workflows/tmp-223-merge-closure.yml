@@ -1,49 +1,40 @@
-name: Temporary #223 Merge Closure Sync
+name: "Temporary #223 merge closure docs"
 
 on:
-  pull_request:
+  push:
+    branches:
+      - docs/223-merge-closure
     paths:
-      - ".github/workflows/tmp-223-merge-closure.yml"
+      - .github/workflows/tmp-223-merge-closure.yml
 
 permissions:
   actions: read
   contents: write
 
-concurrency:
-  group: renderlab-223-merge-closure-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
 jobs:
-  sync:
+  close:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    env:
-      MERGE_SHA: 7519eb1a6367633bf244a9ed7474f374b9ffc6ca
-      PR_HEAD_SHA: 5851641ff47bd70cc1177f09e0e02ab7f2e32eff
-      DRAG_DROP_RUN: "35098734899"
-      MERGE_PR: "271"
+    timeout-minutes: 45
     steps:
-      - name: Checkout closure branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: docs/223-merge-closure
           fetch-depth: 0
-
-      - name: Wait for all merged-main #223 workflows to pass
+      - name: "Require merged-main #223 verification"
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          MERGE_SHA: 7519eb1a6367633bf244a9ed7474f374b9ffc6ca
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 240); do
+          for attempt in $(seq 1 120); do
             response="$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$MERGE_SHA&per_page=100")"
-            total="$(jq '[.workflow_runs[] | select(.head_sha == env.MERGE_SHA)] | length' <<<"$response")"
-            success="$(jq '[.workflow_runs[] | select(.head_sha == env.MERGE_SHA and .status == "completed" and .conclusion == "success")] | length' <<<"$response")"
-            bad="$(jq '[.workflow_runs[] | select(.head_sha == env.MERGE_SHA and .status == "completed" and .conclusion != "success")] | length' <<<"$response")"
-            active="$(jq '[.workflow_runs[] | select(.head_sha == env.MERGE_SHA and .status != "completed")] | length' <<<"$response")"
-            echo "merged-main workflows: total=$total success=$success bad=$bad active=$active"
+            total="$(jq --arg sha "$MERGE_SHA" '[.workflow_runs[] | select(.head_sha == $sha)] | length' <<<"$response")"
+            success="$(jq --arg sha "$MERGE_SHA" '[.workflow_runs[] | select(.head_sha == $sha and .status == "completed" and .conclusion == "success")] | length' <<<"$response")"
+            bad="$(jq --arg sha "$MERGE_SHA" '[.workflow_runs[] | select(.head_sha == $sha and .status == "completed" and .conclusion != "success")] | length' <<<"$response")"
+            active="$(jq --arg sha "$MERGE_SHA" '[.workflow_runs[] | select(.head_sha == $sha and .status != "completed")] | length' <<<"$response")"
+            echo "merged-main workflows total=$total success=$success bad=$bad active=$active"
             if [ "$bad" -gt 0 ]; then
-              jq -r '.workflow_runs[] | select(.head_sha == env.MERGE_SHA and .status == "completed" and .conclusion != "success") | "::error::\(.name): \(.conclusion) run=\(.id)"' <<<"$response"
               exit 1
             fi
             if [ "$total" -eq 17 ] && [ "$success" -eq 17 ] && [ "$active" -eq 0 ]; then
@@ -51,10 +42,8 @@ jobs:
             fi
             sleep 15
           done
-          echo "::error::Timed out waiting for all 17 merged-main workflows."
           exit 1
-
-      - name: Synchronize authoritative #223 closure records
+      - name: "Synchronize verified #223 merge closure"
         shell: bash
         run: |
           set -euo pipefail
@@ -66,41 +55,45 @@ jobs:
           pr_head = "5851641ff47bd70cc1177f09e0e02ab7f2e32eff"
           drag_run = "35098734899"
 
-          def replace_once(path, pattern, replacement, flags=0):
+          def regex_once(path, pattern, replacement):
               p = Path(path)
               text = p.read_text()
-              new, count = re.subn(pattern, replacement, text, count=1, flags=flags)
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
               if count != 1:
-                  raise SystemExit(f"{path}: expected exactly one replacement for {pattern!r}, got {count}")
-              p.write_text(new)
+                  raise SystemExit(f"{path}: expected exactly one regex match, found {count}: {pattern[:90]!r}")
+              p.write_text(updated)
 
-          project_replacement = f'''- Workstream #223 Profile and credential UX baseline is **COMPLETE / VERIFIED / MERGED / NOT DEPLOYED**. PR #271 squash-merged to `main` as `{merge_sha}` after final closure head `{pr_head}` passed the applicable exact-head configured matrix. The attached Library Drag Drop copy was cancelled before job allocation by its shared concurrency group; same-head workflow-dispatch run `{drag_run}` then passed the real drag/drop upload/render assertion, cleanup and screenshot evidence. Account Data Lifecycle passed its single unchanged exact-head retry after one transient hosted Auth Admin read, and Email Identity Change passed fully on the final head. All 17 workflows GitHub attached to merged `main` `{merge_sha}` subsequently passed. Issue #223 is closed; production remains on the 2026-09-15 release and no #223 application deployment has occurred.
+          def line_once(path, pattern, replacement):
+              p = Path(path)
+              text = p.read_text()
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.M)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one line match, found {count}: {pattern[:90]!r}")
+              p.write_text(updated)
+
+          project_replacement = f'''- Workstream #223 Profile and credential UX baseline is **COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED / HUMAN-REVIEWED / NOT DEPLOYED**. PR #271 squash-merged to `main` as `{merge_sha}` after final closure head `{pr_head}` passed the applicable exact-head configured matrix. The attached Library Drag Drop copy was cancelled before job allocation by its shared concurrency group; same-head workflow-dispatch run `{drag_run}` then passed the real drag/drop upload/render assertion, cleanup and screenshot evidence. Account Data Lifecycle passed its single unchanged exact-head retry after one transient hosted Auth Admin read, and Email Identity Change passed fully on the final head. All 17 workflows GitHub attached to merged `main` `{merge_sha}` subsequently passed. Issue #223 is closed; production remains on the 2026-09-15 release and no #223 application deployment has occurred.
 - #223 implements the merged UI-081 contract: a RenderLab-owned 1:1 private profile keyed by immutable `auth.users.id`, optional normalized display name, deterministic private R2 avatar, `/settings/profile`, and one reusable account password-field interaction standard across every current password-entry surface. Username/handle remains deliberately deferred. Export schema v2, deterministic avatar purge/proof, transactional profile finalization, residue verification and maintenance are integrated into #219. Shared-project migration `0022_renderlab_account_profiles.sql` is applied and verified.'''
-          replace_once(
+          regex_once(
               "PROJECT.md",
               r'- Workstream #223 Profile and credential UX baseline is .*?\n- #223 now implements .*?(?=\n- Workstream #219)',
               project_replacement,
-              re.S,
           )
 
-          roadmap = Path("docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md")
-          text = roadmap.read_text()
-          text, c1 = re.subn(
+          roadmap = "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md"
+          line_once(
+              roadmap,
               r'^\*\*Status:\*\* .*$',
-              '**Status:** ACCEPTED ACTIVE ROADMAP / #215 + #216 + #217 + #218 + #219 PRODUCTION-LIVE / #223 COMPLETE + VERIFIED + MERGED / NOT DEPLOYED / #220 + #221 REMAINING',
-              text,
-              count=1,
-              flags=re.M,
+              '**Status:** ACCEPTED ACTIVE ROADMAP / #215 + #216 + #217 + #218 + #219 PRODUCTION-LIVE / #223 COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / NOT DEPLOYED / #220 + #221 REMAINING',
           )
           current = f'**Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 Data & Privacy lifecycle are production-live from exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`. #223 completed through PR #271, which squash-merged to `main` as `{merge_sha}`. Final closure head `{pr_head}` passed the applicable exact-head configured matrix; same-head Library Drag Drop dispatch `{drag_run}` passed after the attached PR run was cancelled before job allocation, Account Data Lifecycle passed its unchanged exact-head retry after one transient hosted Auth Admin read, and Email Identity Change passed fully. All 17 workflows attached to merged `main` `{merge_sha}` passed. Shared-project migration `0022_renderlab_account_profiles.sql` is applied and verified. The #223 application remains not production-deployed. #220 is the next default product lane; #221 remains research.'
-          text, c2 = re.subn(r'^\*\*Current execution:\*\* .*$', current, text, count=1, flags=re.M)
-          if c1 != 1 or c2 != 1:
-              raise SystemExit(f"roadmap header replacement counts: status={c1} current={c2}")
-          text = text.replace(
-              'With #223 implemented and verified, the next default product lane is #220 Product preferences and notifications unless explicitly reprioritized; #221 remains research.',
-              f'With #223 complete, verified and merged as `{merge_sha}`, the next default product lane is #220 Product preferences and notifications unless explicitly reprioritized; #221 remains research.',
-          )
-          roadmap.write_text(text)
+          line_once(roadmap, r'^\*\*Current execution:\*\* .*$', current)
+          p = Path(roadmap)
+          text = p.read_text()
+          old = 'With #223 implemented and verified, the next default product lane is #220 Product preferences and notifications unless explicitly reprioritized; #221 remains research.'
+          new = f'With #223 complete, verified and merged as `{merge_sha}`, the next default product lane is #220 Product preferences and notifications unless explicitly reprioritized; #221 remains research.'
+          if text.count(old) != 1:
+              raise SystemExit(f"{roadmap}: expected one next-lane sentence, found {text.count(old)}")
+          p.write_text(text.replace(old, new))
 
           ui_replacement = f'''## UI-081 / #223 Profile & credential UX baseline — implementation closure
 **Status: `IMPLEMENTATION VERIFIED / MERGED / MERGED-MAIN VERIFIED / HUMAN-REVIEWED / NOT DEPLOYED`.**
@@ -112,46 +105,39 @@ jobs:
 - Final documentation-complete PR head `{pr_head}` passed the applicable configured matrix. Account Data Lifecycle passed its single unchanged exact-head retry after one transient hosted Auth Admin read; Email Identity Change passed fully on the final head. The attached Library Drag Drop run was cancelled before job allocation by the shared Library concurrency group, then same-head workflow-dispatch run `{drag_run}` passed build, R2 CORS verification, the real drag/drop upload/render assertion, cleanup and screenshot evidence.
 - Human review of the dedicated Account Profile Credential artifact accepted desktop, 390px and reduced-motion profile/crop/credential states as faithful to UI-078/UI-081, overflow-free and secret-free.
 - PR #271 squash-merged to `main` as `{merge_sha}`. All 17 workflows GitHub attached to that merged-main SHA passed, including Account Data Lifecycle and Video Generation Integration. Issue #223 is closed as completed.
-- Username/handle remains deliberately deferred. Production application deployment remains unchanged at source `d18ef8833d46c812dac6b43572b3f4f7069990f8` / READY `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`; automatic Git → Vercel deployment remains disabled.
-'''
-          replace_once(
+- Username/handle remains deliberately deferred. Production application deployment remains unchanged at source `d18ef8833d46c812dac6b43572b3f4f7069990f8` / READY `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`; automatic Git → Vercel deployment remains disabled.'''
+          regex_once(
               "docs/ui/UI_MIGRATION.md",
               r'## UI-081 / #223 Profile & credential UX baseline — implementation closure\n.*?(?=\n## Current Landing production closure)',
-              ui_replacement.rstrip(),
-              re.S,
+              ui_replacement,
           )
 
-          contract = Path("docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md")
-          text = contract.read_text()
-          text, c1 = re.subn(
+          contract = "docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md"
+          line_once(
+              contract,
               r'^\*\*Status:\*\* .*$',
               '**Status:** COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED — contract remains binding; production application deployment remains separately explicit and no hosted Auth/password-policy mutation was performed by #223',
-              text,
-              count=1,
-              flags=re.M,
           )
           verification = f'**Implementation verification:** PR #271 final closure head `{pr_head}` passed the applicable exact-head configured matrix. Account Profile Credential evidence was human-reviewed clean across desktop, 390px and reduced motion with no credential secret visible. Account Data Lifecycle passed its single unchanged exact-head retry after one transient hosted Auth Admin read; Email Identity Change passed fully on the final head. The pull-request Library Drag Drop run was cancelled before job allocation by the shared Library concurrency group, and same-head workflow-dispatch run `{drag_run}` then passed its full build/CORS/browser/upload/render/cleanup/evidence path. PR #271 squash-merged as `{merge_sha}`, issue #223 closed as completed, and all 17 workflows GitHub attached to merged `main` `{merge_sha}` passed. Migration `0022_renderlab_account_profiles.sql` remains applied and verified on the approved shared project. Production remains unchanged and separately explicit.'
-          text, c2 = re.subn(r'^\*\*Implementation verification:\*\* .*$', verification, text, count=1, flags=re.M)
-          if c1 != 1 or c2 != 1:
-              raise SystemExit(f"contract header replacement counts: status={c1} verification={c2}")
-          contract.write_text(text)
+          line_once(contract, r'^\*\*Implementation verification:\*\* .*$', verification)
           PY
 
-      - name: Verify documentation diff and self-remove helper
+          git diff --check
+          for f in \
+            PROJECT.md \
+            docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md \
+            docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md \
+            docs/ui/UI_MIGRATION.md; do
+            test -s "$f"
+          done
+      - name: "Commit merge closure docs and self-remove helper"
         shell: bash
         run: |
           set -euo pipefail
           rm .github/workflows/tmp-223-merge-closure.yml
-          git diff --check
-          git diff -- PROJECT.md docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md docs/ui/UI_MIGRATION.md
-          test -z "$(git diff --name-only | grep -v -E '^(PROJECT.md|docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md|docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md|docs/ui/UI_MIGRATION.md|.github/workflows/tmp-223-merge-closure.yml)$' || true)"
-
-      - name: Commit synchronized closure documentation
-        shell: bash
-        run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add PROJECT.md docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md docs/architecture/PROFILE_CREDENTIAL_UX_BASELINE_IMPLEMENTATION_CONTRACT.md docs/ui/UI_MIGRATION.md .github/workflows/tmp-223-merge-closure.yml
+          git diff --cached --check
           git commit -m "docs: record #223 merge closure"
           git push origin HEAD:docs/223-merge-closure
