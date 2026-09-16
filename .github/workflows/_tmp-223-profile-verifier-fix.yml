@@ -1,0 +1,46 @@
+name: Temporary #223 verifier correction
+
+on:
+  push:
+    branches:
+      - account/223-profile-credential-implementation
+    paths:
+      - .github/workflows/_tmp-223-profile-verifier-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: account/223-profile-credential-implementation
+          fetch-depth: 0
+      - name: Apply exact verifier correction
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/verify-account-profile-credential.mjs')
+          text = path.read_text()
+          old = '    await page.getByText(/Use at least 15 characters/).waitFor({ state: "visible" });'
+          new = '    await page.getByRole("status").filter({ hasText: /^Use at least 15 characters\\.$/ }).waitFor({ state: "visible" });'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'expected exactly one target assertion, found {count}')
+          path.write_text(text.replace(old, new))
+          PY
+          node --check scripts/verify-account-profile-credential.mjs
+          git diff --check
+      - name: Commit correction and self-remove helper
+        shell: bash
+        run: |
+          rm .github/workflows/_tmp-223-profile-verifier-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-account-profile-credential.mjs .github/workflows/_tmp-223-profile-verifier-fix.yml
+          git diff --cached --check
+          git commit -m "test: tighten #223 password policy assertion"
+          git push origin HEAD:account/223-profile-credential-implementation
