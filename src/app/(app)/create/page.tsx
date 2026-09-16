@@ -2,6 +2,7 @@ import type { ContinuationAction } from "@/lib/capabilities/generation";
 import { continuationActionForMedia } from "@/lib/capabilities/generation";
 import { CreateWorkspace } from "@/features/create/create-workspace";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
+import { getRenderLabAccountPreferences } from "@/server/account/account-preferences";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { loadInitialGenerationRecipe } from "@/server/generation/generation-recipe";
 import { isGenerationBackendConfigured } from "@/server/generation/submit-generation";
@@ -76,11 +77,21 @@ export default async function CreatePage({
     }
   }
 
+  let initialPreferences = null;
+  if (account && !recipeId && !sourceId && !requestedAction) {
+    try {
+      initialPreferences = (await getRenderLabAccountPreferences(account.id)).create;
+    } catch {
+      initialPreferences = null;
+    }
+  }
+
   return (
     <CreateWorkspace
       accountAvailable={Boolean(account)}
       generationAvailable={isGenerationBackendConfigured()}
       mediaUploadAvailable={isMediaUploadConfigured()}
+      initialPreferences={initialPreferences}
       initialContinuation={initialContinuation}
       initialRecipe={initialRecipe}
       initialContinuationError={initialNavigationError}
