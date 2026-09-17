@@ -13,10 +13,10 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Keep repository documentation synchronized with verified implementation.
 
 ## Current production and whole-product audit — 2026-09-17
-**Status: `ROADMAP-COMPLETE SOURCE PRODUCTION-LIVE / USER AUDIT PASS WITH FOLLOW-UP`.**
+**Status: `ROADMAP-COMPLETE SOURCE PRODUCTION-LIVE / USER AUDIT INCOMPLETE`.**
 
 - Exact current production source is `c2b7c022cd91167822f75874ef7caf70b0ec264c`. Guarded rollout `35253785761` produced READY deployment `https://renderlab-bq106211v-faresmohamed260-6733s-projects.vercel.app`, explicitly moved the custom-domain alias, passed smoke for root plus Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
-- The production user audit at `docs/audits/2026-09-17-production-user-audit/REPORT.md` found no reproducible product-runtime defect across signed-out, controlled authenticated-fixture and real-account read-only coverage. Controlled run `35258165837` passed with exact cleanup; real Admin access correctly failed closed to MFA because the session was not AAL2.
+- The production user audit at `docs/audits/2026-09-17-production-user-audit/REPORT.md` found no reproducible product-runtime defect in exercised scope, but remains incomplete: run `35258165837` completed one real image generation with exact cleanup, not full Create → live Activity → Viewer Image/Edit/Animate/Video journeys on both viewports. Real Admin access correctly failed closed to MFA because the session was not AAL2, so Admin content was not audited.
 - UI-081 Profile and #220 Create preferences are production-live through the roadmap-complete source. Historical `NOT DEPLOYED` statements below retain phase-close chronology but are superseded for current production by this block.
 - QA-001 through QA-003 in the audit report are the next QA roadmap. No further deployment is authorized.
 
