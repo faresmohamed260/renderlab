@@ -655,6 +655,27 @@ try {
   await page.screenshot({ path: `${artifactDir}/activity-desktop.png`, fullPage: true });
   await page.screenshot({ path: `${artifactDir}/activity-retry-desktop.png`, fullPage: true });
 
+  // The first five-second refresh must see this job still running. Terminalize it only
+  // afterward so this assertion requires a second automatic refresh from the same mount.
+  await wait(6500);
+  const completedAt = new Date().toISOString();
+  const terminalResponse = await supabase(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(owner.id)}&id=eq.${encodeURIComponent(runningJob.id)}`,
+    {
+      method: "PATCH",
+      headers: { prefer: "return=minimal" },
+      body: JSON.stringify({ status: "succeeded", updated_at: completedAt, completed_at: completedAt }),
+    },
+  );
+  assert(terminalResponse.ok, `Could not terminalize recurring-refresh fixture (${terminalResponse.status}).`);
+  const refreshedRunningRow = page.locator("li").filter({ hasText: "Nebula active study" }).first();
+  await refreshedRunningRow.locator('[data-state="succeeded"]').waitFor({ state: "visible", timeout: 12_000 });
+  assert(
+    (await refreshedRunningRow.getAttribute("data-activity-status")) === "succeeded",
+    "Activity did not advance a job that completed after the first automatic refresh.",
+  );
+  await page.screenshot({ path: `${artifactDir}/activity-auto-refresh-complete-desktop.png`, fullPage: true });
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await assertNoHorizontalOverflow(page, "Narrow reduced-motion Activity");
