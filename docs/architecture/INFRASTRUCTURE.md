@@ -2,7 +2,12 @@
 
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
-## Account/security production rollout — 2026-09-15
+## Roadmap-complete production rollout and audit — 2026-09-17
+- Exact application source `c2b7c022cd91167822f75874ef7caf70b0ec264c` is production-live at READY deployment URL `https://renderlab-bq106211v-faresmohamed260-6733s-projects.vercel.app`. Guarded rollout `35253785761` checked out pristine exact source, passed the production environment contract, moved `renderlab.faresuniform.uk`, passed smoke for root, Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
+- Strict user audit `docs/audits/2026-09-17-production-user-audit/REPORT.md` used public browser coverage, controlled repository fixtures and a real-account read-only pass. Production audit run `35258165837` passed with exact fixture cleanup; no product-runtime defect, infrastructure mutation, hosted Auth mutation or deployment followed.
+- The rollout makes UI-081 Profile and #220 Create defaults production-live with the previously released account/security and Phase 23–29 surfaces. Automatic Git → Vercel deployment remains disabled. QA-001–QA-003 are audit-roadmap work only and confer no mutation or rollout authority.
+
+## Superseded account/security production rollout — 2026-09-15
 - Exact application source `d18ef8833d46c812dac6b43572b3f4f7069990f8` is production-live as READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7` (`https://renderlab-baa28u96o-faresmohamed260-6733s-projects.vercel.app`). Deployment metadata points to that exact Git SHA and has no dirty-source marker.
 - Initial candidate `dpl_JCNZJb35Crhk9ngMeYeqAsp91GhK` failed during the Vercel build before cutover because the production environment lacked newly required `RESEND_API_KEY` and `CRON_SECRET`. The custom domain therefore remained on the prior deployment throughout the failure.
 - Configuration run `35022087690` copied the existing protected GitHub `RESEND_API_KEY` into the Vercel production environment and generated a new 64-hex-character server-only `CRON_SECRET`; neither secret value is checked into the repository. This satisfies the current `scripts/verify-vercel-env.mjs` contract and authorizes the daily `/api/internal/maintenance` cron declared in `vercel.json` to authenticate its request.

@@ -14,10 +14,10 @@ Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextua
 
 Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps and ComfyUI graph/node surfaces are not top-level destinations by default. Cycle 2 includes the privileged Admin surface at `/admin` under UI-051. The public **Brand / Landing** remains `/` and the authoritative Create workspace remains `/create`; UI-052 established that route boundary in PR #73, while the current approved four-section Lab Matrix Landing redesign is merged through PR #174 / `1dc04f68d059a9f7d903c8313fe2e690aeec9d0e`. Admin stays out of ordinary shell navigation and remains reachable contextually from Settings only for an active admin.
 
-## Current production application — 2026-09-15
-Current production runs exact repository source `d18ef8833d46c812dac6b43572b3f4f7069990f8` at READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`. Guarded clean-provenance rollout `35022243427` passed custom-domain smoke for root, `/create`, `/library`, `/activity`, `/settings` and `/settings/password`; post-cutover runtime inspection found no runtime-error clusters and no error/fatal logs. Production includes the completed Phase 23–29 UI/UX redesign plus the subsequently merged #216 Session Controls, #217 MFA/step-up, #218 secure sign-in-email change and #219 Data & Privacy lifecycle surfaces. Historical per-screen/workstream `NOT DEPLOYED` statements below describe their individual closure state and are superseded by this current production record. Prior deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh` is the immediate known-good rollback target. Automatic Git → Vercel deployment remains disabled.
+## Current production application — 2026-09-17
+Current production runs exact repository source `c2b7c022cd91167822f75874ef7caf70b0ec264c` at READY Vercel URL `https://renderlab-bq106211v-faresmohamed260-6733s-projects.vercel.app`. Guarded rollout `35253785761` explicitly moved `renderlab.faresuniform.uk`, passed custom-domain smoke for root, `/create`, `/library`, `/activity`, `/settings`, `/settings/password`, `/settings/profile`, and `/settings/preferences`, and did not invoke rollback. Production now includes Profile/UI-081 and the initial #220 Create-default preferences slice in addition to Phase 23–29 and #216–#219. Historical per-screen/workstream `NOT DEPLOYED` statements below preserve their closure-time chronology and are superseded by this current record. Automatic Git → Vercel deployment remains disabled.
 
-**Current repository Settings extensions:** UI-081 / #223 is merged, exact-head/merged-main verified and not production-deployed. PR #275's #220 initial Create-default slice is implementation-head verified and merge-pending: UI-078 Account/Settings gains a subordinate `/settings/preferences` continuation for five durable Create defaults, while clean `/create` drafts consume those defaults server-side without changing saved-recipe or media-continuation precedence. Production remains unchanged until an explicit deployment.
+Strict whole-product user audit `docs/audits/2026-09-17-production-user-audit/REPORT.md` found no reproducible product-runtime defect. Controlled production run `35258165837` passed signed-out, Create, Library, Viewer, Profile, Preferences and Sessions coverage with exact cleanup; real-account read-only inspection verified Activity, Library, account/security surfaces and the correct AAL2 redirect for an unenrolled administrator. QA-001–QA-003 are the next QA roadmap; no deployment is authorized.
 
 ## Application Shell
 **Status:** APPROVED  
@@ -41,7 +41,7 @@ Approved behavior:
 
 ### Settings Preferences
 **Route:** `/settings/preferences`
-**Status:** APPROVED — #220 initial slice implementation-head verified / rendered-evidence reviewed / merge pending / not deployed
+**Status:** APPROVED — #220 initial slice production-live
 **Implementation:** `src/app/(app)/settings/preferences/page.tsx`, `src/features/account/account-preferences-form.tsx`, `src/app/api/account/preferences/route.ts`, `src/server/account/account-preferences.ts`
 **Purpose:** Manage the admitted account's durable defaults for new Create drafts without changing existing generations, media, history, recipes, continuations, admission, role, ownership or security state.
 **Composition:** subordinate UI-078 Trust Register continuation with Default Create mode, fixed Image aspect ratio, Video resolution, Video duration and Video audio. Save persists the complete curated set; Reset deletes the owner row and follows current RenderLab product defaults. Product notifications, theme/language/timezone, model/provider defaults, Advanced tuning persistence and app-level accessibility overrides are absent by design.
@@ -49,7 +49,7 @@ Approved behavior:
 **Verification:** implementation head `f01399bac0a50fef82ac55cf2c9a088c18443415`; Account Profile Credential `35138292468`; dedicated artifact `10463549435` (`sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`); desktop, 390px reduced-motion Settings and mobile Create evidence reviewed clean. Account Data Lifecycle `35138293298` proves export-v3/deletion integration. Production deployment remains separate.
 ### Settings Profile
 **Route:** `/settings/profile`
-**Status:** APPROVED — UI-081 implementation verified / not deployed
+**Status:** APPROVED — UI-081 production-live
 **Implementation:** `src/app/(app)/settings/profile/page.tsx`, `src/features/account/account-profile-form.tsx`, `src/features/account/account-profile-identity.tsx`
 **Purpose:** Edit optional private display name and private account avatar without changing sign-in identity, admission, role, ownership or public visibility.
 **Composition:** subordinate UI-078 Trust Register continuation; square avatar crop supports pointer/touch pan plus keyboard controls, zoom/reset, deterministic replacement/removal and neutral fallback when no display identity exists. Username/handle, public profile and social identity are intentionally absent.
