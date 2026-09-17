@@ -1,7 +1,62 @@
-name: placeholder
-on: workflow_dispatch
+name: Temporary #221 research status sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/_tmp-221-research-sync.yml"
+
+permissions:
+  contents: write
+
 jobs:
-  noop:
+  sync:
     runs-on: ubuntu-latest
     steps:
-      - run: true
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Synchronize #221 research checkpoint
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}")
+              p.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              "PROJECT.md",
+              "- #220's initial durable Create-default slice is implemented and exact-head verified. Optional product notifications and an app-level accessibility override remain deferred until real backing capabilities and a separate execution-ready amendment exist; #221 remains research-oriented passkeys/WebAuthn work. No additional Account & Settings implementation lane is implicitly authorized by this closure.\n",
+              "- #220's initial durable Create-default slice is complete, merged and merged-main verified. Optional product notifications and an app-level accessibility override remain deferred until real backing capabilities and a separate execution-ready amendment exist. #221 Passkeys/WebAuthn completed its 2026-09-17 research checkpoint in `docs/architecture/PASSKEY_WEBAUTHN_RESEARCH.md`: RenderLab architecture is compatible with optional passkey sign-in, but implementation remains deferred while Supabase labels the API experimental and until hosted RP configuration, assurance behavior, recovery, security notifications and configured browser/device acceptance satisfy the recorded promotion gate. No hosted Auth mutation, passkey enrollment, application implementation or deployment was performed.\n",
+          )
+
+          roadmap = "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md"
+          replace_once(
+              roadmap,
+              "**Status:** ACCEPTED ACTIVE ROADMAP / #215 + #216 + #217 + #218 + #219 PRODUCTION-LIVE / #223 COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / NOT DEPLOYED / #220 INITIAL CREATE-DEFAULT SLICE COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / NOT DEPLOYED / #220 FOLLOW-ONS DEFERRED / #221 RESEARCH\n",
+              "**Status:** ACCEPTED ACTIVE ROADMAP / #215 + #216 + #217 + #218 + #219 PRODUCTION-LIVE / #223 COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / NOT DEPLOYED / #220 INITIAL CREATE-DEFAULT SLICE COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / NOT DEPLOYED / #220 FOLLOW-ONS DEFERRED / #221 RESEARCH CHECKPOINT COMPLETE + IMPLEMENTATION DEFERRED\n",
+          )
+          replace_once(
+              roadmap,
+              "**Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 Data & Privacy lifecycle are production-live from exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`. #223 is complete/merged/merged-main verified through PR #271 / `7519eb1a6367633bf244a9ed7474f374b9ffc6ca` and remains not production-deployed. #220's initial durable Create-default slice is complete/merged/merged-main verified through PR #275 / `ec29fd160d7ce7a90beb3025da32ec4cc18f0898`; final PR head `e6045a28462ed40859a656c49f73b1772e9e4700` passed all 16 attached workflows and all 10 merged-main workflows passed, while dedicated rendered evidence was reviewed clean. Migration `0023_renderlab_account_preferences.sql` remains applied as `20260916150243 renderlab_account_preferences`. Issue #220 is closed as completed. Product-notification controls and an app-level accessibility override remain deferred until their backing product systems exist and a separate amendment is merged. #221 remains research. Production remains on the 2026-09-15 release.\n",
+              "**Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 Data & Privacy lifecycle are production-live from exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`. #223 is complete/merged/merged-main verified through PR #271 / `7519eb1a6367633bf244a9ed7474f374b9ffc6ca` and remains not production-deployed. #220's initial durable Create-default slice is complete/merged/merged-main verified through PR #275 / `ec29fd160d7ce7a90beb3025da32ec4cc18f0898`; issue #220 is closed and its follow-ons remain deferred. #221 completed a read-only research checkpoint on 2026-09-17, recorded in `docs/architecture/PASSKEY_WEBAUTHN_RESEARCH.md`: current RenderLab/Supabase architecture is compatible, but implementation is deferred because Supabase still labels passkeys experimental and the promotion gate still requires live hosted RP-config verification, stable RP-domain acceptance, assurance/AAL evidence, recovery and notification proof, and configured browser/device acceptance. No hosted Auth mutation or deployment occurred. Production remains on the 2026-09-15 release.\n",
+          )
+          replace_once(
+              roadmap,
+              "A fresh Security Advisor read after #215B verification and production rollout on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The organization remains on Free and the user explicitly rejected a Supabase upgrade solely for this feature. #215B free application-layer HIBP screening is verified and production-live, so the native warning is an accepted platform limitation and must not be misrepresented as cleared. #215 is closed and production-live. #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change and #219 account data lifecycle are production-live from the guarded 2026-09-15 rollout. #220's initial durable Create-default slice is complete, merged and merged-main verified through PR #275 / `ec29fd160d7ce7a90beb3025da32ec4cc18f0898`. Optional product notifications and any app-level accessibility override remain deferred pending real backing systems and a separate execution-ready amendment; #221 remains research. No further #220 implementation is implied by the initial-slice closure.\n",
+              "A fresh Security Advisor read after #215B verification and production rollout on 2026-09-14 still reports **Leaked Password Protection Disabled** as the only warning. The other current findings are the expected `rls_enabled_no_policy` informational notices for deliberately server-owned RenderLab tables. The organization remains on Free and the user explicitly rejected a Supabase upgrade solely for this feature. #215B free application-layer HIBP screening is verified and production-live, so the native warning is an accepted platform limitation and must not be misrepresented as cleared. #215 is closed and production-live. #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change and #219 account data lifecycle are production-live from the guarded 2026-09-15 rollout. #220's initial durable Create-default slice is complete, merged and merged-main verified through PR #275 / `ec29fd160d7ce7a90beb3025da32ec4cc18f0898`. Optional product notifications and any app-level accessibility override remain deferred pending real backing systems and a separate execution-ready amendment. #221's 2026-09-17 passkey/WebAuthn research checkpoint is complete but implementation remains deferred under its explicit promotion gate; the provider is still experimental and no hosted passkey/RP configuration was changed.\n",
+          )
+          PY
+          git diff --check
+          rm -f .github/workflows/_tmp-221-research-sync.yml noop
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT.md docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md .github/workflows/_tmp-221-research-sync.yml noop
+          git commit -m "docs: synchronize #221 research checkpoint"
+          git push
