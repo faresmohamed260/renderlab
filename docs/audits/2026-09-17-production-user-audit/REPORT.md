@@ -131,7 +131,7 @@ An earlier audit attempt, run `35257837265`, stopped before product actions beca
 
 **Acceptance:** run-owned failed/running jobs with a non-provider dispatch seam; action temporal states and cleanup; dedicated MFA-enrolled test administrator; Admin reads and responsive screenshots; all invitation/account/generation controls remain non-mutating unless the fixture owns the target and rollback is exact.
 
-These items are the next QA roadmap. They do not authorize implementation, production deployment, hosted Auth changes, or Admin configuration changes.
+These items are the next QA roadmap and are tracked by GitHub issue #278. They do not authorize implementation, production deployment, hosted Auth changes, or Admin configuration changes.
 
 ## Final judgement
 

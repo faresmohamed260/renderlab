@@ -63,7 +63,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 
 - Exact repository source `c2b7c022cd91167822f75874ef7caf70b0ec264c` is production-live. Guarded rollout `35253785761` produced READY deployment `https://renderlab-bq106211v-faresmohamed260-6733s-projects.vercel.app`, explicitly moved `renderlab.faresuniform.uk`, passed smoke for `/`, `/create`, `/library`, `/activity`, `/settings`, `/settings/password`, `/settings/profile`, and `/settings/preferences`, and did not invoke rollback. Automatic Git → Vercel deployment remains disabled.
 - The strict post-rollout user audit is recorded in `docs/audits/2026-09-17-production-user-audit/REPORT.md`. Controlled production audit run `35258165837` passed the signed-out, Create, Library, Viewer, Profile, Preferences and Sessions matrix with exact fixture cleanup; a real administrator-account read-only pass verified actual Activity/Library/Settings and the fail-closed AAL2 Admin redirect. No product-runtime defect was reproduced and no deployment or production-account mutation followed.
-- Next QA roadmap: QA-001 keeps all current-production records synchronized at rollout; QA-002 makes the non-destructive production journey permanent; QA-003 adds fixture-safe Activity mutation and MFA-enrolled Admin visual coverage. These audit tasks do not authorize implementation or deployment.
+- Next QA roadmap, tracked by issue #278: QA-001 keeps all current-production records synchronized at rollout; QA-002 makes the non-destructive production journey permanent; QA-003 adds fixture-safe Activity mutation and MFA-enrolled Admin visual coverage. These audit tasks do not authorize implementation or deployment.
 
 ## Account & Settings capability program — active work
 
