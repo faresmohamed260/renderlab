@@ -6,7 +6,7 @@
 
 The initial run completed one real image generation through durable result persistence without watching Activity. Corrective run `35269965598` then followed the real user path and reproduced the refresh defect on its first Image job, blocking all dependent generation journeys. The defect is corrected and configured-browser verified on PR #277, but the fix is not production-live and the blocked journeys have not been re-audited. Several account surfaces were inspected or exercised through controlled component/fixture coverage rather than submitted end-to-end on production. Production Activity mutation controls were not fired against real history, account-destructive/security-changing submissions were not made, and the real administrator could not enter `/admin` because the account has no verified TOTP factor. The AAL2 redirect to `/settings/mfa` is the designed security result, but it does not constitute a complete Admin audit.
 
-No Supabase/R2/provider mutation, production-account mutation, or deployment was performed. The application fix remains merge/deployment-pending.
+No Supabase/R2/provider mutation, production-account mutation, or deployment was performed. The application fix remains outside production pending an explicitly authorized rollout.
 
 ## Audit identity and production provenance
 
