@@ -1,0 +1,56 @@
+name: Production Complete User Journey
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-production-complete-user-journey
+  cancel-in-progress: false
+
+jobs:
+  journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: https://renderlab.faresuniform.uk
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
+      RENDERLAB_TEST_ACCOUNT_SCOPE: production-complete-user-journey-${{ github.run_id }}
+      RENDERLAB_COMPLETE_JOURNEY_ARTIFACT_DIR: artifacts/production-complete-user-journey
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Validate audit script
+        run: node --check scripts/verify-production-complete-user-journey.mjs
+      - name: Clean stale fixture
+        run: node scripts/verify-production-complete-user-journey.mjs --cleanup-only
+      - name: Run complete production user journey
+        run: node scripts/verify-production-complete-user-journey.mjs
+      - name: Cleanup fixture
+        if: always()
+        run: node scripts/verify-production-complete-user-journey.mjs --cleanup-only
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-complete-user-journey-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/production-complete-user-journey
+          if-no-files-found: warn
+          retention-days: 30

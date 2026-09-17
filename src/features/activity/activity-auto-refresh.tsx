@@ -8,8 +8,8 @@ export function ActivityAutoRefresh({ enabled }: { enabled: boolean }) {
 
   useEffect(() => {
     if (!enabled) return;
-    const timer = window.setTimeout(() => router.refresh(), 5000);
-    return () => window.clearTimeout(timer);
+    const timer = window.setInterval(() => router.refresh(), 5000);
+    return () => window.clearInterval(timer);
   }, [enabled, router]);
 
   return null;

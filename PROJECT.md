@@ -59,9 +59,15 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 
+## Production user audit and current live source — 2026-09-17
+
+- Exact repository source `c2b7c022cd91167822f75874ef7caf70b0ec264c` is production-live. Guarded rollout `35253785761` produced READY deployment `https://renderlab-bq106211v-faresmohamed260-6733s-projects.vercel.app`, explicitly moved `renderlab.faresuniform.uk`, passed smoke for `/`, `/create`, `/library`, `/activity`, `/settings`, `/settings/password`, `/settings/profile`, and `/settings/preferences`, and did not invoke rollback. Automatic Git → Vercel deployment remains disabled.
+- The post-rollout user audit is recorded in `docs/audits/2026-09-17-production-user-audit/REPORT.md` and is **FAILED / BLOCKED BY P2 ISSUE #279 IN PRODUCTION**. Corrective live run `35269965598` submitted an Image through Create, then watched Activity remain `RUNNING` for the entire 30-minute bound without exposing View result; the owner independently confirmed media completes while the site fails to refresh. Root cause was the one-shot `ActivityAutoRefresh` timer. PR #277 head `20a0697b91485fd0c6f5040f6f70c9467e9db62c` replaces it with active-only recurring refresh; configured Activity Visual run `35277589256` passed the post-first-refresh terminal transition and exact cleanup. The fix is not deployed, so production re-verification and blocked Edit/Animate/Video journeys remain open.
+- Next QA roadmap, tracked by issue #278: QA-001 keeps all current-production records synchronized at rollout; QA-002 makes the non-destructive production journey permanent; QA-003 adds fixture-safe Activity mutation and MFA-enrolled Admin visual coverage. These audit tasks do not authorize implementation or deployment.
+
 ## Account & Settings capability program — active work
 
-### Production rollout — 2026-09-15
+### Superseded account/security rollout — 2026-09-15
 - Workstreams #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 data export/retention/account deletion are now **PRODUCTION-LIVE** from exact repository source `d18ef8833d46c812dac6b43572b3f4f7069990f8`.
 - Guarded clean-provenance rollout `35022243427` produced READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7` (`https://renderlab-baa28u96o-faresmohamed260-6733s-projects.vercel.app`). Root, `/create`, `/library`, `/activity`, `/settings`, and `/settings/password` smoke passed on `renderlab.faresuniform.uk`; post-cutover Vercel inspection found no runtime-error clusters and no error/fatal logs in the rollout window.
 - Production Vercel now has protected `RESEND_API_KEY` and a generated server-only `CRON_SECRET`; secret values are not stored in the repository. Initial candidate `dpl_JCNZJb35Crhk9ngMeYeqAsp91GhK` failed before cutover because those variables were missing, so production stayed unchanged until configuration run `35022087690` completed and the clean rerun passed. Prior production deployment `dpl_44guHU58EZvh9mPfE6bAVfUtHZvh` is the immediate rollback target.

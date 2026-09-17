@@ -12,7 +12,16 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Validate rendered UI, not only compilation.
 - Keep repository documentation synchronized with verified implementation.
 
-## Account/security production rollout — 2026-09-15
+## Current production and whole-product audit — 2026-09-17
+**Status: `ROADMAP-COMPLETE SOURCE PRODUCTION-LIVE / P2 #279 FIX VERIFIED — NOT DEPLOYED`.**
+
+- Exact current production source is `c2b7c022cd91167822f75874ef7caf70b0ec264c`. Guarded rollout `35253785761` produced READY deployment `https://renderlab-bq106211v-faresmohamed260-6733s-projects.vercel.app`, explicitly moved the custom-domain alias, passed smoke for root plus Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
+- Corrective production run `35269965598` reproduced P2 issue #279: a live Image accepted from Create remained `RUNNING` in Activity for 30 minutes and never exposed View result, while the owner confirmed media completes without the site refreshing. Exact fixture cleanup passed. This blocks truthful Image/Edit/Animate/Video terminal-journey acceptance on both viewports. Real Admin access also correctly failed closed to MFA because the session was not AAL2, so Admin content remains unaudited.
+- Root cause was the one-shot `ActivityAutoRefresh` timer. PR #277 head `20a0697b91485fd0c6f5040f6f70c9467e9db62c` uses recurring five-second refresh only while active work exists. Activity Visual run `35277589256` passed a regression that terminalizes its fixture after the first refresh and requires a later refresh on the same mount; cleanup passed. Production remains on the affected source until a separately authorized rollout.
+- UI-081 Profile and #220 Create preferences are production-live through the roadmap-complete source. Historical `NOT DEPLOYED` statements below retain phase-close chronology but are superseded for current production by this block.
+- QA-001 through QA-003 in the audit report are the next QA roadmap. No further deployment is authorized.
+
+## Superseded account/security production rollout — 2026-09-15
 **Status: `#216–#219 COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
 
 - Exact current production source is `d18ef8833d46c812dac6b43572b3f4f7069990f8`, deployed by guarded clean-provenance run `35022243427` as READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`.
