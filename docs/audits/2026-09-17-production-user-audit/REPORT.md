@@ -4,9 +4,9 @@
 
 **Production acceptance: FAIL — BLOCKED BY A P2 GENERATION-LIFECYCLE DEFECT.** The live custom domain is serving the explicitly deployed, roadmap-complete repository source `c2b7c022cd91167822f75874ef7caf70b0ec264c`, but a strict Create → Activity → Viewer journey reproduced a core completion-refresh failure. Activity continued to present an accepted Image job as `RUNNING` for the full 30-minute audit bound and never exposed the durable result. The product owner independently confirmed the provider work completes while the site fails to refresh. The audit therefore cannot truthfully certify Edit, Animate, standalone Video or downstream Viewer journeys through the normal user path.
 
-The initial run completed one real image generation through durable result persistence without watching Activity. Corrective run `35269965598` then followed the real user path and reproduced the refresh defect on its first Image job, blocking all dependent generation journeys. Several account surfaces were inspected or exercised through controlled component/fixture coverage rather than submitted end-to-end on production. Production Activity mutation controls were not fired against real history, account-destructive/security-changing submissions were not made, and the real administrator could not enter `/admin` because the account has no verified TOTP factor. The AAL2 redirect to `/settings/mfa` is the designed security result, but it does not constitute a complete Admin audit.
+The initial run completed one real image generation through durable result persistence without watching Activity. Corrective run `35269965598` then followed the real user path and reproduced the refresh defect on its first Image job, blocking all dependent generation journeys. The defect is corrected and configured-browser verified on PR #277, but the fix is not production-live and the blocked journeys have not been re-audited. Several account surfaces were inspected or exercised through controlled component/fixture coverage rather than submitted end-to-end on production. Production Activity mutation controls were not fired against real history, account-destructive/security-changing submissions were not made, and the real administrator could not enter `/admin` because the account has no verified TOTP factor. The AAL2 redirect to `/settings/mfa` is the designed security result, but it does not constitute a complete Admin audit.
 
-No application fix, Supabase/R2/provider mutation, account mutation, or deployment was performed.
+No Supabase/R2/provider mutation, production-account mutation, or deployment was performed. The application fix remains merge/deployment-pending.
 
 ## Audit identity and production provenance
 
@@ -24,6 +24,8 @@ No application fix, Supabase/R2/provider mutation, account mutation, or deployme
 | Audit date | 2026-09-17 UTC / Africa-Cairo |
 | Corrective end-to-end run | `35269965598`, failed after reproducing Activity stuck `RUNNING` for 30 minutes |
 | Corrective artifact | `production-complete-user-journey-35269965598-1`, artifact `10518743048`, `sha256:608daf18ffc6dd8918736f20f6cf17a68de0545aa425adaac88132f2c07d8561` |
+| Fix verification | Head `20a0697b91485fd0c6f5040f6f70c9467e9db62c`; Activity Visual run `35277589256`, successful in 2m28s |
+| Fix artifact | `renderlab-activity-screenshots`, artifact `10521626476`, `sha256:c66694a0dd9fd1aeca2a965f80106c07e4cc1cd2344da851c2e6cbf1dd0da8d5` |
 
 The rollout workflow ref itself was a release-control ref, so its GitHub `headSha` is not used as the application-source assertion. The decisive evidence is the workflow's clean checkout/deploy log, which explicitly selected and verified `c2b7c022cd91167822f75874ef7caf70b0ec264c` before alias cutover.
 
@@ -64,14 +66,15 @@ The audit did not submit password/email changes, enroll or remove MFA, export or
 ### RLQA-002 — Activity does not refresh a completed generation to its terminal result
 
 - **Severity:** P2
-- **Status:** open; tracked by GitHub issue #279
+- **Status:** fix implemented and configured-browser verified on PR #277; production remains affected until an explicitly authorized rollout and live re-test; tracked by GitHub issue #279
 - **Scope:** Create/Activity lifecycle, durable-result discovery, and every continuation that depends on reaching Viewer; shared logic affects desktop and mobile
 - **Reproduction:** sign in with an admitted account; submit a valid Image generation from `/create`; after acceptance open `/activity`; leave the page on the row displaying `RUNNING` and `refreshing active work`.
 - **Expected:** Activity reconciles the job to `Complete`, removes Cancel, exposes View result/Run again when eligible, and lets the user reach the durable Viewer.
 - **Actual:** corrective run `35269965598` accepted job `27de0eb4-288b-4eb1-9e51-5911a9bed20a` at 20:19:28 UTC; Activity remained `RUNNING` until the 30-minute bound expired. No View result appeared. The product owner independently confirmed the media completes but the site fails to refresh.
 - **Evidence:** [Create accepted/generating](evidence/create-desktop-active-stuck-journey.webp); [Activity stuck running](evidence/activity-desktop-stuck-running.webp); run `35269965598`; artifact `10518743048` / `sha256:608daf18ffc6dd8918736f20f6cf17a68de0545aa425adaac88132f2c07d8561`.
-- **Suspected owner/component:** `src/features/activity/activity-auto-refresh.tsx`; `src/server/generation/generation-activity.ts`; `src/server/generation/poll-generation.ts`; native reconciliation/finalization. `listGenerationActivity` silently returns the stale fallback when active refresh throws, so the UI can continue claiming it is refreshing without an actionable error. This is a hypothesis until provider/job and server logs are correlated.
-- **Remediation acceptance:** a run-owned Image job observed from Activity automatically reaches its truthful terminal state; errors become bounded/actionable instead of endless Running; View result opens durable media; the proof repeats on desktop and 390px before Edit, Animate and standalone Video journeys are re-audited.
+- **Root cause:** `src/features/activity/activity-auto-refresh.tsx` used one `setTimeout`. The first server refresh retained the mounted component with `enabled=true`, so the effect dependencies did not change and no later timer was scheduled. Jobs completing after that single refresh remained visually stale until manual navigation.
+- **Implemented fix:** use one cleaned-up five-second interval while active server truth enables observation. The configured regression waits through the first refresh, terminalizes its fixture afterward, and requires the same mounted page to render `Completed` on a later refresh. Activity Visual run `35277589256` passed, including exact fixture cleanup. [Configured fixed state](evidence/activity-auto-refresh-fixed-desktop.webp).
+- **Remaining acceptance:** deploy only with explicit authorization, then repeat a real run-owned Image through Create → Activity → Viewer on desktop and 390px. After production proof, repeat Edit, Animate and standalone Video journeys. Provider/reconciliation errors remain a separate hardening concern and are not claimed fixed by this timer correction.
 
 ## Coverage matrix
 
@@ -111,6 +114,10 @@ The audit did not submit password/email changes, enroll or remove MFA, export or
 
 ![Activity still presenting the accepted production Image job as running](evidence/activity-desktop-stuck-running.webp)
 
+### Configured fix verification
+
+![The same mounted Activity page presenting the post-first-refresh fixture as completed](evidence/activity-auto-refresh-fixed-desktop.webp)
+
 ### Mobile Library viewer
 
 ![Mobile Library viewer from the isolated production fixture](evidence/library-mobile-viewer.webp)
@@ -135,7 +142,9 @@ Corrective end-to-end run `35269965598` is a product finding, not a harness fail
 
 **Outcome:** Activity and Create advance accepted jobs to truthful terminal state without manual recovery, and successful jobs reliably expose durable Viewer results.
 
-**Acceptance:** correlate provider, database and application state for the reproduced job class; stop silently masking reconciliation failures; add a bounded actionable failure state; prove Image, Edit, Animate and standalone Video through Create → Activity → Viewer on desktop and 390px with exact cleanup. Do not deploy without separate authorization.
+**Status:** implementation and configured-browser regression are complete on PR #277. Production deployment and real-user-path re-verification remain pending.
+
+**Acceptance:** after explicitly authorized deployment, prove a real Image result refreshes through Create → Activity → Viewer on desktop and 390px, then repeat Edit, Animate and standalone Video with exact cleanup. Separately harden provider/reconciliation failures into bounded actionable states. Do not deploy without separate authorization.
 
 ### QA-001 — Close production release-record drift at rollout time (P4)
 
@@ -159,4 +168,4 @@ These items are the next QA roadmap and are tracked by GitHub issue #278. They d
 
 ## Final judgement
 
-Production-source provenance is verified, but whole-product user acceptance fails on the core generation-completion experience. A user can submit work and be left indefinitely on `RUNNING` even after media completion, which prevents the normal result/continuation path. Issue #279 is the first remediation priority. Edit, Animate, standalone Video, both-viewport terminal journeys, and the remaining controlled account/Admin submissions must be re-audited after that blocker is corrected. No fix or deployment is authorized by this report.
+Production-source provenance is verified, but whole-product user acceptance still fails on the live core generation-completion experience. The one-shot refresh root cause is fixed and configured-browser verified on PR #277, but production still serves the affected source until an explicitly authorized rollout. Issue #279 remains open through live proof. Edit, Animate, standalone Video, both-viewport terminal journeys, and the remaining controlled account/Admin submissions must be re-audited after deployment. This report does not authorize deployment.
