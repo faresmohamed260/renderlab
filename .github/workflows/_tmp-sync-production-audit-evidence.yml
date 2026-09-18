@@ -1,0 +1,44 @@
+name: Temporary Production Audit Evidence Sync
+
+on:
+  push:
+    branches:
+      - docs/279-production-audit-closure
+    paths:
+      - .github/workflows/_tmp-sync-production-audit-evidence.yml
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download reviewed evidence
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/journey /tmp/sessions
+          mkdir -p /tmp/journey /tmp/sessions docs/audits/2026-09-17-production-user-audit/evidence
+          gh run download 35292334383 -n production-complete-user-journey-35292334383-1 -D /tmp/journey
+          gh run download 35293048807 -n renderlab-session-controls-screenshots -D /tmp/sessions
+          cp /tmp/journey/01-create-image-desktop-activity-complete.png docs/audits/2026-09-17-production-user-audit/evidence/postfix-image-activity-complete.png
+          cp /tmp/journey/01-create-image-desktop-viewer-mobile.png docs/audits/2026-09-17-production-user-audit/evidence/postfix-image-viewer-mobile.png
+          cp /tmp/journey/02-edit-image-mobile-create-active-390.png docs/audits/2026-09-17-production-user-audit/evidence/postfix-edit-mobile-active.png
+          cp /tmp/journey/03-animate-image-desktop-viewer-desktop.png docs/audits/2026-09-17-production-user-audit/evidence/postfix-animate-viewer-desktop.png
+          cp /tmp/journey/04-create-video-mobile-viewer-mobile.png docs/audits/2026-09-17-production-user-audit/evidence/postfix-video-viewer-mobile.png
+          cp /tmp/sessions/session-controls-mobile.png docs/audits/2026-09-17-production-user-audit/evidence/production-sessions-mobile.png
+          rm -f .github/workflows/_tmp-sync-production-audit-evidence.yml
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/audits/2026-09-17-production-user-audit/evidence .github/workflows/_tmp-sync-production-audit-evidence.yml
+          git diff --cached --check
+          git commit -m "docs: add production audit closure screenshots"
+          git push
