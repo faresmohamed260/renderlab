@@ -1,6 +1,6 @@
 # QA-004 Production Account / Security / Data Audit Contract
 
-**Status:** EXECUTION CONTRACT / PRODUCTION RUN NOT YET PERFORMED  
+**Status:** EXECUTION CONTRACT + PERMANENT HARNESS MERGED / PRODUCTION RUN NOT YET PERFORMED  
 **Tracker:** #278  
 **Planning baseline:** repository `main` `310f345d6c80002ef274f1c86d4ddec61914e8da`  
 **Production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`  
@@ -19,6 +19,7 @@ QA-004 is acceptance/audit work. It does not redesign Settings, expand account c
 - #216 session controls, #217 TOTP/AAL2 step-up, #218 secure email identity management and #219 data export/deletion are production-live. Profile/credential UX and durable Create preferences are also included in the current production application source.
 - Existing configured workflows already prove the component contracts locally/exact-head: Account Profile Credential, Session Controls, MFA Privileged Step-Up, Account Data Lifecycle and Account Identity. QA-004 must reuse their proven fixture/data semantics where appropriate rather than creating competing account models.
 - Existing configured account-data acceptance includes active-generation cancellation and injected retry faults. QA-004 does not need to spend provider work or repeat fault injection to prove the live account surface; those remain covered by the dedicated configured #219 suite.
+- Permanent harness PR #292 merged as `4254f07ab044d2d1d815498844513bf57e451ba6`. Exact PR head `559def62a8336c95f8aa7fdbf7adba41fb100ef1` passed Engineering Quality after correcting an invalid one-line/literal-`\\n` workflow serialization, and merged-main Engineering Quality run `35397924862` passed. The merged harness is `.github/workflows/production-qa004-account-security-data.yml` plus `scripts/verify-production-qa004-account-security-data.mjs` and its unit contract guard. No production audit run has executed yet.
 
 ## In scope
 
