@@ -12,14 +12,14 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Validate rendered UI, not only compilation.
 - Keep repository documentation synchronized with verified implementation.
 
-## Current production and whole-product audit — 2026-09-17
-**Status: `ROADMAP-COMPLETE SOURCE PRODUCTION-LIVE / P2 #279 FIX VERIFIED — NOT DEPLOYED`.**
+## Current production and whole-product audit — 2026-09-18
+**Status: `ROADMAP-COMPLETE SOURCE + ACTIVITY CORRECTION PRODUCTION-LIVE / WHOLE-PRODUCT AUDIT PASS WITH CONTROLLED SAFETY EXCLUSIONS`.**
 
-- Exact current production source is `c2b7c022cd91167822f75874ef7caf70b0ec264c`. Guarded rollout `35253785761` produced READY deployment `https://renderlab-bq106211v-faresmohamed260-6733s-projects.vercel.app`, explicitly moved the custom-domain alias, passed smoke for root plus Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
-- Corrective production run `35269965598` reproduced P2 issue #279: a live Image accepted from Create remained `RUNNING` in Activity for 30 minutes and never exposed View result, while the owner confirmed media completes without the site refreshing. Exact fixture cleanup passed. This blocks truthful Image/Edit/Animate/Video terminal-journey acceptance on both viewports. Real Admin access also correctly failed closed to MFA because the session was not AAL2, so Admin content remains unaudited.
-- Root cause was the one-shot `ActivityAutoRefresh` timer. PR #277 head `20a0697b91485fd0c6f5040f6f70c9467e9db62c` uses recurring five-second refresh only while active work exists. Activity Visual run `35277589256` passed a regression that terminalizes its fixture after the first refresh and requires a later refresh on the same mount; cleanup passed. Production remains on the affected source until a separately authorized rollout.
-- UI-081 Profile and #220 Create preferences are production-live through the roadmap-complete source. Historical `NOT DEPLOYED` statements below retain phase-close chronology but are superseded for current production by this block.
-- QA-001 through QA-003 in the audit report are the next QA roadmap. No further deployment is authorized.
+- Exact current production source is `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`. Guarded rollout `35292170973` produced READY deployment `dpl_ASvYe7jgaZMBPqsh6weHLEo4mdxT`, explicitly moved the custom-domain alias, passed root/Create/Library/Activity/Settings/Password/Profile/Preferences smoke, and did not invoke rollback.
+- P2 #279 was a real production defect in the preceding source: one-shot Activity refresh could leave completed generations visibly `RUNNING`. PR #277 changed active observation to a cleaned-up recurring five-second refresh. Production journey `35292334383` re-verified the correction with real Image, Edit, Animate and standalone Video operations; every operation advanced through Activity without manual reload and opened durable Viewer media on desktop/390px.
+- Production Sessions `35293048807` passed local/other/global sign-out with run-owned users. Read-only AAL2 Admin `35293115875` reached Access/Generation/Health at desktop, 390px and reduced motion with no horizontal overflow and no submitted Admin mutation. Screenshot evidence was human-reviewed; privacy-safe Admin excerpts omit the admitted-account directory.
+- No unresolved P0-P3 defect remains from the completed audit. High-side-effect credential/email/deletion/global-Admin actions were not repeated against real user state; their configured exact-fixture acceptance remains authoritative.
+- UI-081 Profile and #220 Create preferences are production-live. Historical `NOT DEPLOYED` statements below preserve phase-close chronology but are superseded for current production by this block. QA institutionalization continues under issue #278.
 
 ## Superseded account/security production rollout — 2026-09-15
 **Status: `#216–#219 COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
