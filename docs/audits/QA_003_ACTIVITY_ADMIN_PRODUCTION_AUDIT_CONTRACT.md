@@ -15,8 +15,8 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - Production automatic Git deployment remains disabled.
 
 ## In scope
-1. Create run-owned Activity fixtures representing eligible running, failed and succeeded jobs without spending provider work.
-2. Exercise Cancel, Retry and Run Again from the live production UI only against those fixtures.
+1. Use only run-owned Activity state. Seed the failed historical row directly, but allow a bounded provider-backed generation budget where the production action intrinsically requires it: one cancellable run-owned generation for Cancel, one generation created by Retry, and one generation created by Run Again.
+2. Exercise Cancel, Retry and Run Again from the live production UI only against those run-owned jobs. Cancel must be requested promptly after dispatch; Retry and Run Again must be observed through truthful terminal Activity state.
 3. Verify loading/disabled/terminal states, action eligibility, history ordering and cleanup at desktop and 390px.
 4. Create a dedicated run-owned active Admin Auth/access fixture.
 5. Enroll one TOTP factor on that fixture, obtain AAL2 through the live MFA challenge, and enter live `/admin`.
@@ -28,7 +28,7 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - Any mutation of the owner's real account, sessions, media, jobs or invitations.
 - Global generation-setting changes.
 - Real invitation delivery.
-- Provider-backed generation spend for Activity action fixtures.
+- Unbounded or unrelated provider generation. QA-003 may spend only the minimum run-owned jobs explicitly required to prove Cancel, Retry and Run Again; it may not dispatch against real history.
 - UI redesign, route changes, schema migrations, hosted Auth policy changes, deployment, or worker/provider changes.
 - Passkeys/WebAuthn.
 
@@ -36,16 +36,16 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - `auth.users.id` remains the canonical principal.
 - Admin admission still requires active Admin access plus fresh AAL2; the audit must prove the gate rather than bypass it.
 - TOTP enrollment is permitted only on the dedicated run-owned fixture and must be removed by deleting that fixture during unconditional cleanup.
-- Activity fixtures must use server-owned test setup and must never attach to another owner's rows.
+- Activity fixtures must use server-owned test setup and must never attach to another owner's rows. Any provider-backed jobs must belong to the exact run-owned account and be cleaned with its database/R2/Auth state.
 - Browser roles continue to have no direct service-role capability; fixture setup/cleanup may use CI-only service credentials.
 - Any singleton Admin setting read is observational. No global write is authorized.
 
 ## Validation matrix
 | Surface | Desktop | 390px | Required evidence |
 | --- | --- | --- | --- |
-| Activity running → Cancel | yes | yes | before, submitting/disabled, cancelled |
-| Activity failed → Retry | yes | yes | before, submitting/disabled, new run-owned job or accepted retry state |
-| Activity succeeded → Run Again | yes | yes | eligibility and Create continuation state without provider dispatch |
+| Activity running → Cancel | yes | yes | real run-owned dispatch, confirm dialog, submitting/disabled, cancelled |
+| Activity failed → Retry | yes | yes | seeded failed history, submitting/disabled, real run-owned retry job to terminal state |
+| Activity succeeded → Run Again | yes | yes | eligibility, submitting/disabled, real run-owned new job to terminal state |
 | Admin MFA gate | yes | yes | pre-AAL2 redirect/challenge |
 | Admin authenticated content | yes | yes | health + account/invitation/settings sections, no sensitive values |
 | Cleanup | n/a | n/a | zero run-owned Auth/access/job/media/source/invitation residue |
@@ -64,7 +64,7 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - Do not mark QA-003 complete until screenshot evidence is human-reviewed and cleanup is independently verified.
 
 ## Exit criteria
-- All contracted Activity actions pass against fixture-safe production state on both viewports, or defects are recorded with reproduction/evidence.
+- All contracted Activity actions pass against fixture-safe production state on both viewports, using only the bounded run-owned provider work above, or defects are recorded with reproduction/evidence.
 - AAL2 Admin content is reached and visually audited on both viewports without global mutation.
 - Exact cleanup succeeds and independent residue checks are zero.
 - Audit report and tracker match verified reality.
