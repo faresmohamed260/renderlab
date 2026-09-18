@@ -1,6 +1,6 @@
 # QA-003 Production Activity Actions + AAL2 Admin Audit Contract
 
-**Status:** EXECUTION-READY CONTRACT — IMPLEMENTATION/AUDIT NOT YET COMPLETE  
+**Status:** HARNESS IMPLEMENTATION READY / PRODUCTION RE-RUN BLOCKED ON EXPLICIT DEPLOYMENT OF THE VERIFIED RUN-AGAIN FIX  
 **Tracker:** #278  
 **Starting production source:** `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`  
 **Purpose:** close the highest-value remaining whole-product production-audit gaps without touching real-user history or global Admin state.
@@ -10,6 +10,8 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 
 ## Verified starting state
 - P2 #279 is fixed and production-live; run `35292334383` passed Image, Edit, Animate and standalone Video through Activity → Viewer.
+- First QA-003 production execution run `35351243298` proved Cancel and Retry through terminal fixture-owned states, then reproduced missing `Run again` after the retried job reached `succeeded`. That failure became issue #284 and was fixed by PR #285, squash-merged as `7bfe76e427b633ab848d0132a28788f7420060e2`; its exact-head and merged-main workflow matrices passed. The fix is not production-live yet, so QA-003 remains open.
+- QA-003 also exposed historical configured-fixture residue tracked by #286. PR #287 hardened configured cleanup and squash-merged as `1ac6b2807ab483bc6c87d433d6e8337a950e1371`; 34/34 exact-head PR workflows and 16/16 merged-main push workflows passed, and the two audited historical fixture owners were independently proven absent from Auth and owner-scoped database state.
 - Existing configured suites already cover Activity cancellation/retry/run-again semantics and Admin authorization/mutations against local exact-head applications.
 - The first production audit did not fire Activity mutations against real history and could not enter Admin because the inspected real account lacked AAL2.
 - Production automatic Git deployment remains disabled.
@@ -31,6 +33,12 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - Unbounded or unrelated provider generation. QA-003 may spend only the minimum run-owned jobs explicitly required to prove Cancel, Retry and Run Again; it may not dispatch against real history.
 - UI redesign, route changes, schema migrations, hosted Auth policy changes, deployment, or worker/provider changes.
 - Passkeys/WebAuthn.
+
+## Execution control
+- The permanent QA-003 workflow is `workflow_dispatch` only. Pull requests must not automatically spend provider work against production.
+- Dispatch requires an explicit exact 40-character production Git SHA plus confirmation of the bounded fixture-only provider-work contract.
+- Before dispatch, the operator must independently verify that the supplied SHA is production-live. The workflow records that SHA in its manifest; it does not authorize deployment.
+- Harness implementation may merge before the production rerun. QA-003 itself remains incomplete until the live source contains the verified #285 fix and the full contract passes.
 
 ## Architecture and security boundaries
 - `auth.users.id` remains the canonical principal.

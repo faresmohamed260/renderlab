@@ -1,0 +1,148 @@
+name: QA-003 Production Activity + Admin Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_production_sha:
+        description: Exact 40-character Git SHA verified as production-live before dispatch.
+        required: true
+        type: string
+      confirm_fixture_only_provider_work:
+        description: Confirm this run may spend only the bounded run-owned provider work in the QA-003 contract.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-production-qa003
+  cancel-in-progress: false
+
+jobs:
+  production-qa003:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: https://renderlab.faresuniform.uk
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
+      RENDERLAB_TEST_ACCOUNT_SCOPE: qa003-${{ github.run_id }}
+      RENDERLAB_EXPECTED_PRODUCTION_SHA: ${{ inputs.expected_production_sha }}
+      RENDERLAB_QA003_ARTIFACT_DIR: artifacts/qa003-production-activity-admin
+
+    steps:
+      - name: Checkout exact audit head
+        uses: actions/checkout@v4
+
+      - name: Validate manual production-audit dispatch
+        shell: bash
+        env:
+          CONFIRM_FIXTURE_ONLY_PROVIDER_WORK: ${{ inputs.confirm_fixture_only_provider_work }}
+        run: |
+          if [ "$CONFIRM_FIXTURE_ONLY_PROVIDER_WORK" != "true" ]; then
+            echo "::error::QA-003 requires explicit confirmation of the bounded fixture-only provider-work contract."
+            exit 1
+          fi
+          if ! printf '%s' "$RENDERLAB_EXPECTED_PRODUCTION_SHA" | grep -Eq '^[0-9a-fA-F]{40}
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate QA-003 audit script
+        run: node --check scripts/verify-production-qa003-activity-admin.mjs
+
+      - name: Clean exact QA-003 fixtures before audit
+        run: node scripts/verify-production-qa003-activity-admin.mjs --cleanup-only
+
+      - name: Run production Activity action + AAL2 Admin audit
+        run: node scripts/verify-production-qa003-activity-admin.mjs
+
+      - name: Clean exact QA-003 fixtures after audit
+        if: always()
+        run: node scripts/verify-production-qa003-activity-admin.mjs --cleanup-only
+
+      - name: Upload QA-003 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-qa003-activity-admin-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/qa003-production-activity-admin
+          if-no-files-found: warn
+          retention-days: 30
+; then
+            echo "::error::expected_production_sha must be an exact 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Validate shared-resource secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate QA-003 audit script
+        run: node --check scripts/verify-production-qa003-activity-admin.mjs
+
+      - name: Clean exact QA-003 fixtures before audit
+        run: node scripts/verify-production-qa003-activity-admin.mjs --cleanup-only
+
+      - name: Run production Activity action + AAL2 Admin audit
+        run: node scripts/verify-production-qa003-activity-admin.mjs
+
+      - name: Clean exact QA-003 fixtures after audit
+        if: always()
+        run: node scripts/verify-production-qa003-activity-admin.mjs --cleanup-only
+
+      - name: Upload QA-003 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-qa003-activity-admin-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/qa003-production-activity-admin
+          if-no-files-found: warn
+          retention-days: 30
