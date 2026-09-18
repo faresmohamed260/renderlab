@@ -6,7 +6,7 @@
 
 Final QA-003 run `35374052822` then passed the bounded fixture-only production contract: Cancel traversed `cancelling → cancelled`; Retry and Run Again reached `succeeded`; the dedicated Admin fixture enrolled TOTP, completed a fresh AAL2 challenge and exposed read-only Admin on desktop and 390px. Artifact `10559613086` (`sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c`) contains 32 screenshots plus the source/domain/cleanup manifest. Human review found the Activity/Admin states responsive and readable, keyboard focus visible and reduced-motion geometry functional. Exact pre/post DB/Auth fixture-absence checks passed; the manifest records verified cleanup with four R2 objects checked.
 
-No P0–P3 defect is currently reproduced in completed production-audit coverage. **This is still not a claim that every RenderLab feature has been exhaustively exercised on production.** QA-004 isolated account/security/data submissions and QA-005 bounded reconciliation/error presentation remain outstanding under #278; QA-004 is unblocked but was not started by this operation.
+No P0–P3 defect is currently reproduced in completed production-audit coverage. **This is still not a claim that every RenderLab feature has been exhaustively exercised on production.** QA-004 is now governed by `docs/audits/QA_004_ACCOUNT_SECURITY_DATA_PRODUCTION_AUDIT_CONTRACT.md` but has not yet executed; QA-005 remains roadmap-only until QA-004 evidence exists.
 
 ## Audit identity and production provenance
 
@@ -169,9 +169,9 @@ Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtur
 
 ### QA-004 — Complete isolated account/security/data production acceptance (P4)
 
-**Outcome:** exercise the production forms and state transitions that were intentionally not submitted on the real owner account: profile save/remove, preferences save/reset, session revocation semantics, password/recovery presentation, MFA enrollment/challenge/recovery boundary, data export, and account deletion.
+**Outcome:** exercise the production forms and state transitions that were intentionally not submitted on the real owner account: profile save/remove, preferences save/reset, session semantics, password/recovery presentation, MFA enrollment/challenge boundary, data export, and account deletion.
 
-**Acceptance:** run-owned accounts only; no mutation of the real owner; destructive account deletion occurs only on the fixture created for that exact run; email-change delivery is attempted only when a dedicated test mailbox and hosted rate-limit budget are available; desktop and 390px evidence; zero Auth/database/R2 residue.
+**Status:** **EXECUTION CONTRACT READY / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_004_ACCOUNT_SECURITY_DATA_PRODUCTION_AUDIT_CONTRACT.md`. The contract requires run-owned accounts only, no provider-backed generation, desktop/390px secret-safe evidence, a sentinel non-interference account and exact Auth/database/R2 cleanup. Secure email-change acceptance is conditional on an explicitly available dedicated mailbox pair and bounded hosted rate-limit budget.
 
 ### QA-005 — Bound generation reconciliation/error presentation (P4)
 
@@ -185,7 +185,7 @@ These items are the next QA roadmap and are tracked by GitHub issue #278. They d
 
 The original P2 generation-completion defect remains fixed and live-user verified, and QA-003 now closes the fixture-safe Activity mutation plus AAL2 Admin gap on exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Responsive evidence and cleanup are clean, and no grouped runtime-error cluster is present for the bounded current rollout/audit window.
 
-The production audit remains **in progress** rather than exhaustive. No P0–P3 defect is reproduced in completed coverage; QA-004 isolated account/security/data lifecycle submissions and QA-005 bounded reconciliation/error presentation remain under issue #278. QA-004 is unblocked by this closure but was not started here.
+The production audit remains **in progress** rather than exhaustive. No P0–P3 defect is reproduced in completed coverage. QA-004 is execution-contracted but not yet run; QA-005 remains under issue #278 and must wait for QA-004 evidence.
 
 
 
