@@ -171,7 +171,7 @@ Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtur
 
 **Outcome:** exercise the production forms and state transitions that were intentionally not submitted on the real owner account: profile save/remove, preferences save/reset, session semantics, password/recovery presentation, MFA enrollment/challenge boundary, data export, and account deletion.
 
-**Status:** **EXECUTION CONTRACT READY / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_004_ACCOUNT_SECURITY_DATA_PRODUCTION_AUDIT_CONTRACT.md`. The contract requires run-owned accounts only, no provider-backed generation, desktop/390px secret-safe evidence, a sentinel non-interference account and exact Auth/database/R2 cleanup. Secure email-change acceptance is conditional on an explicitly available dedicated mailbox pair and bounded hosted rate-limit budget.
+**Status:** **EXECUTION CONTRACT + PERMANENT HARNESS MERGED / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_004_ACCOUNT_SECURITY_DATA_PRODUCTION_AUDIT_CONTRACT.md`. PR #292 / `4254f07ab044d2d1d815498844513bf57e451ba6` merged the manual-only workflow and production orchestrator after the workflow YAML serialization defect was corrected; exact PR head and merged-main Engineering Quality passed. The contract requires run-owned accounts only, no provider-backed generation, desktop/390px secret-safe evidence, a sentinel non-interference account and exact Auth/database/R2 cleanup. Secure email-change acceptance is conditional on an explicitly available dedicated mailbox pair and bounded hosted rate-limit budget.
 
 ### QA-005 — Bound generation reconciliation/error presentation (P4)
 
