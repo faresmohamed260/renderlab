@@ -13,7 +13,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Keep repository documentation synchronized with verified implementation.
 
 ## Current production and whole-product audit — 2026-09-18
-**Status: `CURRENT MAIN PRODUCTION-LIVE / QA-003 COMPLETE / WHOLE-PRODUCT AUDIT OPEN`.**
+**Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-003 COMPLETE / WHOLE-PRODUCT AUDIT OPEN`.**
 
 - Exact current production source is `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Guarded rollout `35373771751` checked out the pristine exact source, created READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`, explicitly moved the custom-domain alias, passed smoke for root plus Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
 - QA-003 manual run `35374052822` passed the accepted fixture-only provider-work contract: Cancel reached `cancelled`; Retry and Run Again each reached `succeeded`; the run-owned administrator completed TOTP enrollment plus a fresh AAL2 challenge and exposed the read-only Admin surface on desktop and 390px.
