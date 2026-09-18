@@ -1,8 +1,9 @@
 # QA-003 Production Activity Actions + AAL2 Admin Audit Contract
 
-**Status:** HARNESS IMPLEMENTATION READY / PRODUCTION RE-RUN BLOCKED ON EXPLICIT DEPLOYMENT OF THE VERIFIED RUN-AGAIN FIX  
+**Status:** COMPLETE / PRODUCTION-VERIFIED / EVIDENCE REVIEWED / CLEANUP VERIFIED  
 **Tracker:** #278  
 **Starting production source:** `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`  
+**Verified closing production source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`  
 **Purpose:** close the highest-value remaining whole-product production-audit gaps without touching real-user history or global Admin state.
 
 ## Goal and user value
@@ -14,6 +15,8 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - QA-003 also exposed historical configured-fixture residue tracked by #286. PR #287 hardened configured cleanup and squash-merged as `1ac6b2807ab483bc6c87d433d6e8337a950e1371`; 34/34 exact-head PR workflows and 16/16 merged-main push workflows passed, and the two audited historical fixture owners were independently proven absent from Auth and owner-scoped database state.
 - Existing configured suites already cover Activity cancellation/retry/run-again semantics and Admin authorization/mutations against local exact-head applications.
 - The first production audit did not fire Activity mutations against real history and could not enter Admin because the inspected real account lacked AAL2.
+- Guarded rollout `35373771751` deployed exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` as READY deployment `dpl_3ZmgUDCW7yZ1RJBz2NCfvkNRt2UH`; custom-domain smoke passed and rollback was not invoked.
+- Manual production run `35374052822` completed the full QA-003 matrix. Artifact `10559613086` / `sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c` contains 32 screenshots plus the manifest; human review and independent zero-residue verification passed.
 - Production automatic Git deployment remains disabled.
 
 ## In scope
@@ -38,7 +41,7 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - The permanent QA-003 workflow is `workflow_dispatch` only. Pull requests must not automatically spend provider work against production.
 - Dispatch requires an explicit exact 40-character production Git SHA plus confirmation of the bounded fixture-only provider-work contract.
 - Before dispatch, the operator must independently verify that the supplied SHA is production-live. The workflow records that SHA in its manifest; it does not authorize deployment.
-- Harness implementation may merge before the production rerun. QA-003 itself remains incomplete until the live source contains the verified #285 fix and the full contract passes.
+- Harness implementation merged before the production rerun. The live source now contains the verified #285 fix and the full contract passed in run `35374052822`; no further QA-003 production execution is required unless a later regression reopens this surface.
 
 ## Architecture and security boundaries
 - `auth.users.id` remains the canonical principal.
@@ -76,6 +79,16 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - AAL2 Admin content is reached and visually audited on both viewports without global mutation.
 - Exact cleanup succeeds and independent residue checks are zero.
 - Audit report and tracker match verified reality.
+
+## Production closure evidence
+- Cancel: `cancelling → cancelled`.
+- Retry: seeded failed history → new real run-owned job → `running → succeeded`.
+- Run Again: became available from the same refreshed succeeded row without manual reload → new real run-owned job → `running → succeeded`.
+- Admin: run-owned active Admin enrolled one TOTP factor, signed out, signed back in, hit the AAL1 protected gate, passed the live TOTP challenge to AAL2 and loaded Admin.
+- Responsive/visual: desktop and 390px Activity/MFA/Admin screenshots reviewed clean; reduced-motion Admin evidence remained functional; no horizontal overflow assertion failed.
+- Privacy: non-fixture Admin invitation/account/override identity lists were masked in screenshot evidence.
+- Cleanup: both workflow cleanup legs passed; manifest reports four R2 objects checked absent; independent database query returned zero residue across Auth/access/jobs/sources/media/uploads/profiles/admission reservations.
+- Runtime: current Vercel deployment showed no grouped runtime errors and no warning/error/fatal logs in the inspected post-cutover window.
 
 ## Next-phase dependency
 After QA-003, expand QA-004 only from the evidence then available. QA-004 owns the remaining isolated account/security/data production submissions; QA-005 owns bounded reconciliation/error presentation.

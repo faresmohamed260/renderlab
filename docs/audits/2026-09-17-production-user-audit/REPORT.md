@@ -2,20 +2,22 @@
 
 ## Verdict
 
-**Production acceptance: CORE JOURNEYS PASS AFTER FIX / WHOLE-PRODUCT AUDIT STILL OPEN.** The live custom domain now serves exact source `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`, including the recurring Activity refresh correction from PR #277. Guarded rollout `35292170973` completed without rollback. Post-fix production run `35292334383` then exercised the previously blocked user path end to end: Create Image → Activity → Viewer, Edit → Activity → Viewer, Animate → Activity → Viewer, and standalone Create Video → Activity → Viewer. All four jobs reached `succeeded` on the same mounted Activity surface; Animate and standalone Video visibly traversed `persisting`; Viewer media loaded on desktop and 390px with no horizontal-overflow assertion failure.
+**Production acceptance: CORE CREATIVE + QA-003 PASS / WHOLE-PRODUCT AUDIT STILL OPEN.** The live custom domain now serves exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Guarded rollout `35373771751` completed without rollback. The previously reproduced P3 #284 same-refresh Run Again defect is production-resolved.
 
-The run uploaded 26 screenshots as artifact `10527172224` (`sha256:27bbadc26b65ac63c59bb01284187544401512108a57ed5dc2a1a330e5bd6d8c`). Human review found the repaired generation states, responsive Activity cards, mobile generating compositions, image viewers and native video viewers visually coherent with the approved product. Cleanup removed the run-owned account's four assets and nine R2 objects, the unconditional cleanup leg passed, and an independent database query found zero recent `QA journey %` rows. Vercel reports no grouped runtime errors and no warning/error/fatal logs for the fixed deployment in the inspected post-cutover window.
+Manual live run `35374052822` completed the QA-003 contract: run-owned Cancel reached `cancelled`; a seeded failed job's Retry reached `succeeded`; Run Again became available from that same refreshed terminal state and its new job reached `succeeded` without manual reload. A separate run-owned Admin fixture enrolled TOTP, signed out, signed back in at AAL1, passed the live MFA challenge to AAL2, and entered the read-only Admin surface on desktop and 390px.
 
-No P0–P3 defect is currently reproduced in the completed production-audit coverage. **This is not yet a claim that every RenderLab feature has been exhaustively exercised on production.** Fixture-safe Activity Cancel/Retry/Run Again, AAL2-authenticated Admin content, and fresh isolated account/security/data-lifecycle submissions remain outstanding. Those are the next audit work, tracked under #278, and must use run-owned fixtures rather than mutate real user state.
+Artifact `10559613086` (`sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c`) contains 32 screenshots plus the source/cleanup manifest. Human review found the Activity action temporal states, MFA enrollment/challenge, responsive Admin layout and privacy masking coherent. Exact cleanup passed; four owned R2 objects were checked absent and an independent database query returned zero residue across Auth/access/jobs/sources/media/uploads/profiles/admission reservations.
+
+No P0–P3 defect is currently reproduced in completed production-audit coverage. **This is still not exhaustive whole-site acceptance.** QA-004 must exercise isolated account/security/data submissions, and QA-005 must prove bounded reconciliation/error presentation.
 
 ## Audit identity and production provenance
 
 | Item | Verified value |
 | --- | --- |
 | Custom domain | `https://renderlab.faresuniform.uk` |
-| Live repository source | `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1` |
-| Guarded rollout | GitHub Actions run `35292170973`, `Deploy Activity Refresh Fix 2026-09-18`, successful |
-| READY deployment URL | `https://renderlab-m9xecmup1-faresmohamed260-6733s-projects.vercel.app` (`dpl_ASvYe7jgaZMBPqsh6weHLEo4mdxT`) |
+| Live repository source | `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` |
+| Guarded rollout | GitHub Actions run `35373771751`, `Deploy QA-003 Run Again Fix 2026-09-18`, successful |
+| READY deployment URL | `https://renderlab-itvgds4bb-faresmohamed260-6733s-projects.vercel.app` (`dpl_3ZmgUDCW7yZ1RJBz2NCfvkNRt2UH`) |
 | Rollout proof | Clean checkout of the exact source, READY state, explicit custom-domain alias, smoke on `/`, `/create`, `/library`, `/activity`, `/settings`, `/settings/password`, `/settings/profile`, and `/settings/preferences`; rollback did not run |
 | Production audit run | `35258165837`, successful in 8m17s |
 | Audit workflow head | `92cd420ffca04bc3fa9a6bf54582196c94bc30fa` (temporary audit-only workflow state; not deployed) |
@@ -94,10 +96,10 @@ The audit did not submit password/email changes, enroll or remove MFA, export or
 | Profile | Real empty-profile read-only state; controlled save/crop/keyboard fixture | 390px reduced-motion crop | Pass. Identity copy and ownership separation are clear. [Mobile profile](evidence/settings-profile-mobile-reduced.webp) |
 | Password and email | Real forms inspected; controlled password-field behavior | Narrow fixture coverage | Pass for layout, labels, disabled-until-valid behavior, reveal controls and 15-character policy copy. Real credentials/email were not changed. |
 | Sessions | Real privacy-safe inventory inspected; controlled local/other/global sign-out semantics | 390px session register | Pass. Real sessions were not revoked. [Mobile sessions](evidence/settings-sessions-mobile.webp) |
-| MFA / step-up | Real unenrolled state and `/admin` redirect | Controlled MFA coverage exists in repository suites | **Partial.** Fail-closed behavior passed; production enrollment, step-up and post-step-up Admin access were not completed in this audit. |
+| MFA / step-up | Real run-owned TOTP enrollment, fresh password sign-in and live AAL2 challenge | Desktop + 390px challenge/enrolled states | **Pass in QA-003.** Run `35374052822` verified enrollment, sign-out/sign-in, AAL1 gate, successful TOTP challenge and protected destination access. |
 | Data & Privacy | Real export/delete copy and disclosure inspected | Existing account-lifecycle fixture coverage | **Partial.** Presentation and prior controlled lifecycle tests were inspected; this audit did not submit a fresh production export/delete fixture journey. |
 | Preferences | Real default state inspected; controlled save, cross-device read, stale fallback, reset, precedence and export/deletion integration | 390px reduced-motion | Pass. [Mobile preferences](evidence/settings-preferences-mobile-reduced.webp) |
-| Admin | Role-aware Settings entry and direct `/admin` request | Existing 390px Admin acceptance from repository verification | **Incomplete.** The real admin was correctly redirected to MFA because the session lacked verified AAL2; Admin content and controls were not audited in this run. |
+| Admin | Dedicated run-owned active Admin; read-only live `/admin` after AAL2 | Desktop + 390px + reduced-motion evidence | **Pass in QA-003.** Health/access/generation sections rendered without horizontal overflow; acting-admin protections remained locked; non-fixture identity lists were privacy-masked in evidence and no global mutation was submitted. |
 | Keyboard/focus | Tab/focus on signed-out and authenticated controls | Narrow visible focus | Pass. Focus indicator remained visible and control labels were announced. |
 | Reduced motion | Repository-controlled production fixture run | Landing/Create/Viewer/Settings at 390px | Pass. Functional content and geometry remained present without motion dependency. |
 | Empty/loading/error | Signed-out empties, MFA loading→ready, failed Activity row, generation start/result | Narrow equivalents | Pass. States were truthful and recoverable; no indefinite loading observed. |
@@ -128,6 +130,16 @@ The audit did not submit password/email changes, enroll or remove MFA, export or
 ### Mobile account sessions
 
 ![Mobile Settings session inventory from the isolated production fixture](evidence/settings-sessions-mobile.webp)
+
+### QA-003 production evidence
+
+Run `35374052822` uploaded 32 screenshots in artifact `10559613086`. Representative artifact files include:
+- `activity-cancel-desktop-dialog.png` and `activity-cancel-mobile-submitting.png`;
+- `activity-retry-mobile-completed.png` and `activity-run-again-mobile-completed.png`;
+- `admin-mfa-enrollment-required-mobile.png`, `admin-mfa-challenge-mobile.png`;
+- `admin-readonly-desktop.png`, `admin-readonly-mobile.png`, and reduced-motion Admin evidence.
+
+The Admin screenshots mask invitation/account/override identity lists while preserving the real layout and product-health/operator surfaces.
 
 The committed images contain only public UI or run-owned test-fixture data. Real-account email, private prompts, media and session timestamps are deliberately excluded.
 
@@ -163,9 +175,13 @@ Corrective end-to-end run `35269965598` is a product finding, not a harness fail
 
 ### QA-003 — Add fixture-safe Activity action and AAL2 Admin visual coverage (P4)
 
-**Outcome:** Retry/Run Again/Cancel eligibility and the complete Admin surface can be audited on production without touching real history or global settings.
+**Outcome:** Retry/Run Again/Cancel eligibility and the privileged Admin surface are audited on production without touching real history or global settings.
 
-**Acceptance:** run-owned failed/running jobs with a non-provider dispatch seam; action temporal states and cleanup; dedicated MFA-enrolled test administrator; Admin reads and responsive screenshots; all invitation/account/generation controls remain non-mutating unless the fixture owns the target and rollback is exact.
+**Status:** **COMPLETE / PRODUCTION-VERIFIED.** Permanent manual audit harness merged through #283/#288. Explicit rollout `35373771751` made exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` live. Production run `35374052822` then passed Cancel, Retry, same-refresh Run Again, TOTP enrollment, fresh AAL2 challenge and read-only Admin desktop/390px coverage. Artifact `10559613086` / `sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c` contains 32 screenshots plus the manifest.
+
+**Cleanup:** workflow cleanup and the unconditional cleanup-only leg passed; manifest checked four R2 objects absent; independent database verification found zero Auth/access/job/source/media/upload/profile/admission residue for both fixture identities.
+
+**Defects discovered and closed:** P3 #284 same-refresh Run Again eligibility was fixed by PR #285 and proven by this live rerun. P4 #286 historical configured-fixture residue was cleaned and the shared cleanup contract was hardened by PR #287.
 
 ### QA-004 — Complete isolated account/security/data production acceptance (P4)
 
@@ -183,10 +199,6 @@ These items are the next QA roadmap and are tracked by GitHub issue #278. They d
 
 ## Final judgement
 
-The original P2 generation-completion defect is fixed, deployed and live-user verified. Exact production source `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1` completed real Image, Edit, Animate and standalone Video journeys through Activity and durable Viewer results; responsive evidence and cleanup are clean, and no runtime-error cluster is present for the fixed deployment.
+The core creative journey and QA-003 privileged/action coverage now pass on exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. The Run Again race reproduced as #284 is fixed and live; Cancel, Retry and Run Again all passed against run-owned production state, and a real TOTP/AAL2 Admin journey passed on desktop and 390px with exact cleanup. No runtime-error cluster is present for the current deployment.
 
-The professional judgement is therefore **core creative journey PASS, whole-product audit IN PROGRESS**. No P0–P3 defect remains reproduced in the completed coverage, but RenderLab should not yet be called exhaustively production-audited: fixture-safe Activity mutations, AAL2 Admin content, and isolated account/security/data lifecycle submissions remain. Issue #278 is the governing roadmap for those remaining acceptance slices.
-
-
-
-
+The professional judgement is therefore **core creative + Activity/Admin acceptance PASS, whole-product audit IN PROGRESS**. No P0–P3 defect remains reproduced in the completed coverage. RenderLab should not yet be called exhaustively production-audited because QA-004 isolated account/security/data submissions and QA-005 bounded reconciliation/error presentation remain. Issue #278 governs those remaining slices.
