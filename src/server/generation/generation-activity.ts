@@ -128,10 +128,14 @@ export async function listGenerationActivity({
     }
   }));
 
-  const reusableIds = new Set((await Promise.all(pageRows.map(async (row) => {
-    if (row.status !== "succeeded") return null;
+  const reusableIds = new Set((await Promise.all(pageRows.map(async (row, index) => {
+    const effectiveStatus = refreshedItems[index]?.status ?? row.status;
+    if (effectiveStatus !== "succeeded") return null;
     try {
-      return await reconstructAvailableGenerationRecipeRequest(ownerId, row) ? row.id : null;
+      return await reconstructAvailableGenerationRecipeRequest(
+        ownerId,
+        { ...row, status: effectiveStatus },
+      ) ? row.id : null;
     } catch {
       return null;
     }
