@@ -52,7 +52,7 @@ jobs:
             echo "::error::QA-003 requires explicit confirmation of the bounded fixture-only provider-work contract."
             exit 1
           fi
-          if ! printf '%s' "$RENDERLAB_EXPECTED_PRODUCTION_SHA" | grep -Eq '^[0-9a-fA-F]{40}\$'; then
+          if ! printf '%s' "$RENDERLAB_EXPECTED_PRODUCTION_SHA" | grep -Eq '^[0-9a-fA-F]{40}$'; then
             echo "::error::expected_production_sha must be an exact 40-character Git SHA."
             exit 1
           fi

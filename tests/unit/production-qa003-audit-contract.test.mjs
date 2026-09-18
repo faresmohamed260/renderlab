@@ -13,15 +13,7 @@ test("QA-003 production audit is manual-only and requires exact source acknowled
   assert.match(workflow, /RENDERLAB_EXPECTED_PRODUCTION_SHA: \$\{\{ inputs\.expected_production_sha \}\}/);
   assert.equal((workflow.match(/- name: Set up Node/g) || []).length, 1);
   assert.equal((workflow.match(/- name: Validate shared-resource secrets/g) || []).length, 1);
-  assert.match(workflow, /grep -Eq '\^\[0-9a-fA-F\]\{40\}\\\
-
-test("QA-003 verifier requires a supplied production SHA and cannot hide cleanup errors", () => {
-  assert.match(verifier, /RENDERLAB_EXPECTED_PRODUCTION_SHA must be an exact 40-character Git SHA/);
-  assert.doesNotMatch(verifier, /expectedSource = .*ae083473/);
-  assert.doesNotMatch(verifier, /deleteConfiguredTestAccount\([^\n]+\)\.catch/);
-  assert.match(verifier, /exact DB\/Auth absence was verified/);
-});
-/);
+  assert.ok(workflow.includes("grep -Eq '^[0-9a-fA-F]{40}$'"));
 });
 
 test("QA-003 verifier requires a supplied production SHA and cannot hide cleanup errors", () => {
