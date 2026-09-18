@@ -132,35 +132,31 @@ The workflow completed in one browser-owned sequence and did not use manual relo
 
 ### Image result reached terminal Activity
 
-![Post-fix production Image shown as completed in Activity](evidence/postfix-image-activity-complete.webp)
+![Post-fix production Image shown as completed in Activity](evidence/postfix-image-activity-complete.png)
 
 ### Generated Image Viewer on mobile
 
-![Post-fix generated Image Viewer at 390px](evidence/postfix-image-viewer-mobile.webp)
+![Post-fix generated Image Viewer at 390px](evidence/postfix-image-viewer-mobile.png)
 
 ### Edit submitted from mobile Create
 
-![Production Edit generation active on the 390px Create surface](evidence/postfix-edit-mobile-active.webp)
+![Production Edit generation active on the 390px Create surface](evidence/postfix-edit-mobile-active.png)
 
 ### Animate result in desktop Viewer
 
-![Production Animate output in the desktop Viewer with native video controls](evidence/postfix-animate-viewer-desktop.webp)
+![Production Animate output in the desktop Viewer with native video controls](evidence/postfix-animate-viewer-desktop.png)
 
 ### Standalone Video result on mobile
 
-![Production standalone Video output in the 390px Viewer](evidence/postfix-video-viewer-mobile.webp)
+![Production standalone Video output in the 390px Viewer](evidence/postfix-video-viewer-mobile.png)
 
 ### Real production session controls
 
-![Run-owned production session inventory and sign-out controls at 390px](evidence/production-sessions-mobile.webp)
+![Run-owned production session inventory and sign-out controls at 390px](evidence/production-sessions-mobile.png)
 
-### AAL2 Admin — privacy-safe evidence
+### AAL2 Admin evidence handling
 
-The raw Admin artifact contains the legitimate admitted-account directory and is therefore not embedded in repository documentation. The committed excerpts intentionally omit the account-list/override identity regions while preserving the live privileged screen, Access entry, Health field and responsive composition.
-
-![Privacy-safe desktop excerpt from the live AAL2 Admin audit](evidence/production-admin-aal2-desktop-privacy-safe.webp)
-
-![Privacy-safe mobile excerpt from the live AAL2 Admin audit](evidence/production-admin-aal2-mobile-privacy-safe.webp)
+The live AAL2 Admin audit passed at desktop, 390px and reduced motion. Its raw screenshot artifact is intentionally **not embedded or copied into the repository** because the legitimate Admin Access directory contains admitted-account identifiers. The raw artifact remains short-lived restricted CI evidence; the report records its run/artifact/digest and the human review outcome without widening that PII into durable documentation.
 
 The initial audit's earlier screenshots remain in this directory as historical evidence of signed-out states, Library/Viewer/Profile/Preferences behavior and the reproduced pre-fix Activity defect.
 
