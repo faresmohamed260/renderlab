@@ -1,6 +1,6 @@
 # QA-003 Production Activity Actions + AAL2 Admin Audit Contract
 
-**Status:** HARNESS IMPLEMENTATION READY / PRODUCTION RE-RUN BLOCKED ON EXPLICIT DEPLOYMENT OF THE VERIFIED RUN-AGAIN FIX  
+**Status:** COMPLETE / VERIFIED IN PRODUCTION — 2026-09-18  
 **Tracker:** #278  
 **Starting production source:** `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`  
 **Purpose:** close the highest-value remaining whole-product production-audit gaps without touching real-user history or global Admin state.
@@ -8,13 +8,13 @@
 ## Goal and user value
 Verify, from the live custom domain and with real browser behavior, that Activity action affordances and the privileged Admin surface remain truthful, responsive and safe after the roadmap-complete release. This phase is QA/audit work, not a redesign.
 
-## Verified starting state
-- P2 #279 is fixed and production-live; run `35292334383` passed Image, Edit, Animate and standalone Video through Activity → Viewer.
-- First QA-003 production execution run `35351243298` proved Cancel and Retry through terminal fixture-owned states, then reproduced missing `Run again` after the retried job reached `succeeded`. That failure became issue #284 and was fixed by PR #285, squash-merged as `7bfe76e427b633ab848d0132a28788f7420060e2`; its exact-head and merged-main workflow matrices passed. The fix is not production-live yet, so QA-003 remains open.
-- QA-003 also exposed historical configured-fixture residue tracked by #286. PR #287 hardened configured cleanup and squash-merged as `1ac6b2807ab483bc6c87d433d6e8337a950e1371`; 34/34 exact-head PR workflows and 16/16 merged-main push workflows passed, and the two audited historical fixture owners were independently proven absent from Auth and owner-scoped database state.
-- Existing configured suites already cover Activity cancellation/retry/run-again semantics and Admin authorization/mutations against local exact-head applications.
-- The first production audit did not fire Activity mutations against real history and could not enter Admin because the inspected real account lacked AAL2.
-- Production automatic Git deployment remains disabled.
+## Verified execution and closure
+- First QA-003 production execution run `35351243298` proved Cancel and Retry through terminal run-owned states, then reproduced missing `Run again` after the retried job reached `succeeded`. That failure became #284 and was fixed by PR #285 / merge `7bfe76e427b633ab848d0132a28788f7420060e2`.
+- Historical configured-fixture residue exposed by QA-003 became #286. PR #287 / merge `1ac6b2807ab483bc6c87d433d6e8337a950e1371` hardened configured cleanup, and the audited historical fixture owners were independently proven absent from Auth and owner-scoped database state.
+- Workflow-definition correction #288 merged into exact current `main` `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Guarded production rollout `35373771751` deployed that pristine exact source as READY `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`, explicitly moved `renderlab.faresuniform.uk`, passed the accepted smoke routes, and did not invoke rollback.
+- Final manual audit run `35374052822` supplied the exact production SHA and confirmed the bounded fixture-only provider-work contract. Activity Cancel reached `cancelled`, Retry and Run Again reached `succeeded`, and the run-owned Admin fixture completed TOTP enrollment plus fresh AAL2 challenge before read-only Admin inspection.
+- Artifact `10559613086` (`sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c`) contains 32 screenshots plus `manifest.json`. Human review accepted desktop, 390px, focus and reduced-motion evidence without a horizontal-overflow blocker or sensitive-value exposure.
+- Exact pre/post DB/Auth fixture absence passed; the manifest records verified cleanup with four R2 objects checked. No P0–P3 defect was reproduced by the completed QA-003 contract. QA-004 is now unblocked but remains a separate operation.
 
 ## In scope
 1. Use only run-owned Activity state. Seed the failed historical row directly, but allow a bounded provider-backed generation budget where the production action intrinsically requires it: one cancellable run-owned generation for Cancel, one generation created by Retry, and one generation created by Run Again.
@@ -38,7 +38,7 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - The permanent QA-003 workflow is `workflow_dispatch` only. Pull requests must not automatically spend provider work against production.
 - Dispatch requires an explicit exact 40-character production Git SHA plus confirmation of the bounded fixture-only provider-work contract.
 - Before dispatch, the operator must independently verify that the supplied SHA is production-live. The workflow records that SHA in its manifest; it does not authorize deployment.
-- Harness implementation may merge before the production rerun. QA-003 itself remains incomplete until the live source contains the verified #285 fix and the full contract passes.
+- The former completion gate is now fulfilled: the live source contains the verified #285 fix and final run `35374052822` passed the full contract. Future reruns remain manual and must preserve the same exact-SHA and bounded-provider confirmation.
 
 ## Architecture and security boundaries
 - `auth.users.id` remains the canonical principal.
