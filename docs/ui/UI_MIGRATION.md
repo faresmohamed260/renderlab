@@ -13,12 +13,13 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Keep repository documentation synchronized with verified implementation.
 
 ## Current production and whole-product audit — 2026-09-18
-**Status: `FIXED SOURCE PRODUCTION-LIVE / CORE GENERATION JOURNEYS PASS / WHOLE-PRODUCT AUDIT OPEN`.**
+**Status: `CURRENT MAIN PRODUCTION-LIVE / QA-003 COMPLETE / WHOLE-PRODUCT AUDIT OPEN`.**
 
-- Exact current production source is `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`. Guarded rollout `35292170973` produced READY deployment `dpl_ASvYe7jgaZMBPqsh6weHLEo4mdxT`, explicitly moved the custom-domain alias, passed smoke for root plus Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
-- P2 #279 is resolved in production. Live post-fix run `35292334383` completed Image, Edit, Animate and standalone Video through Activity to durable Viewer results. The same mounted Activity surface transitioned to `succeeded`; video flows also exposed `persisting`. Desktop and 390px Viewer screenshots were reviewed clean, no horizontal overflow was reported, and exact cleanup removed the run-owned account state, four assets and nine R2 objects. Artifact `10527172224` / `sha256:27bbadc26b65ac63c59bb01284187544401512108a57ed5dc2a1a330e5bd6d8c` contains 26 screenshots.
-- Vercel reports no grouped runtime errors and no warning/error/fatal logs for the fixed deployment in the inspected post-cutover window. UI-081 Profile and #220 Create preferences remain production-live.
-- The whole-product user audit remains open for fixture-safe Activity action mutations, AAL2 Admin content, and fresh isolated account/security/data submissions. QA-001 through QA-005 form the accepted audit roadmap; no UI redesign is authorized by this audit.
+- Exact current production source is `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Guarded rollout `35373771751` checked out the pristine exact source, created READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`, explicitly moved the custom-domain alias, passed smoke for root plus Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
+- QA-003 manual run `35374052822` passed the accepted fixture-only provider-work contract: Cancel reached `cancelled`; Retry and Run Again each reached `succeeded`; the run-owned administrator completed TOTP enrollment plus a fresh AAL2 challenge and exposed the read-only Admin surface on desktop and 390px.
+- Artifact `10559613086` / `sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c` contains 32 screenshots plus its manifest. Human review accepted responsive geometry, visible focus and reduced-motion behavior; exact pre/post DB/Auth cleanup passed and the manifest records verified cleanup with four R2 objects checked.
+- Vercel grouped runtime-error inspection found no runtime errors in the rollout/audit window. Per-entry log retrieval is billing-limited, so no unsupported warning/info-log claim is made.
+- The whole-product user audit remains open for the remaining #278 roadmap. QA-004 is eligible to begin after this closure but was not started here; QA-005 remains outstanding. No UI redesign is authorized by this audit.
 
 ## Superseded account/security production rollout — 2026-09-15
 **Status: `#216–#219 COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
