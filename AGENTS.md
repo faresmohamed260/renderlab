@@ -192,6 +192,17 @@ Durable decisions must update the appropriate source-of-truth file. Examples:
 
 Update existing authoritative documentation rather than creating competing sources of truth.
 
+## Production Release Documentation Closure
+Any production alias cutover is not repository-closed merely because deployment and smoke passed.
+
+After every verified production cutover:
+1. Update the current-production blocks in `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md` from verified deployment reality.
+2. Keep exactly one `RENDERLAB_CURRENT_PRODUCTION_SHA` marker in each authority and move it to the newest current-production H2 block; do not add markers to historical rollout records.
+3. Run the permanent `Production Documentation Sync` workflow with the exact deployed 40-character Git SHA.
+4. Do not describe the rollout as repository-closed until that check passes. If the application is live while the check fails, record documentation closure as incomplete and fix it through a reviewed repository change rather than rewriting history or editing around the check.
+
+The marker records deployed application source, not repository `main`. Documentation-only, QA-harness, and other non-deployed commits may legitimately make `main` newer than production.
+
 ## Scope Discipline
 Follow the user's requested scope precisely. Do not redesign, migrate, refactor, deploy, or expand scope merely because it seems useful. Preserve approved RenderLab behavior unless changing it is required.
 

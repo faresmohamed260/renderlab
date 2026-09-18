@@ -1,0 +1,49 @@
+name: Production Documentation Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_production_sha:
+        description: Exact 40-character Git SHA independently verified as production-live
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      expected_production_sha:
+        description: Exact 40-character Git SHA independently verified as production-live
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-production-documentation-sync-${{ inputs.expected_production_sha }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RENDERLAB_EXPECTED_PRODUCTION_SHA: ${{ inputs.expected_production_sha }}
+
+    steps:
+      - name: Checkout repository documentation
+        uses: actions/checkout@v4
+
+      - name: Validate exact production SHA input
+        shell: bash
+        run: |
+          if ! printf "%s" "$RENDERLAB_EXPECTED_PRODUCTION_SHA" | grep -Eq "^[0-9a-fA-F]{40}$"; then
+            echo "::error::expected_production_sha must be an exact 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Verify current-production documentation synchronization
+        run: node scripts/verify-production-documentation-sync.mjs
