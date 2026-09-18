@@ -1,0 +1,127 @@
+name: QA-004 Production Account Security Data Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_production_sha:
+        description: Exact 40-character Git SHA independently verified as production-live
+        required: true
+        type: string
+      confirm_production_sha_verified:
+        description: Confirm the supplied SHA was independently verified as the live RenderLab application source
+        required: true
+        type: boolean
+        default: false
+      confirm_fixture_only_destructive_work:
+        description: Confirm all destructive work is limited to run-owned QA-004 Auth/DB/R2 fixtures
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-production-qa004-account-security-data
+  cancel-in-progress: false
+
+jobs:
+  production-qa004:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: https://renderlab.faresuniform.uk
+      RENDERLAB_EXPECTED_PRODUCTION_SHA: ${{ inputs.expected_production_sha }}
+      RENDERLAB_CONFIRM_PRODUCTION_SHA_VERIFIED: ${{ inputs.confirm_production_sha_verified }}
+      RENDERLAB_CONFIRM_FIXTURE_ONLY_DESTRUCTIVE_WORK: ${{ inputs.confirm_fixture_only_destructive_work }}
+      RENDERLAB_TEST_ACCOUNT_SCOPE: qa004-${{ github.run_id }}
+      RENDERLAB_TEST_MFA_NAMESPACE: profile-mfa
+      RENDERLAB_PROFILE_CREDENTIAL_ARTIFACT_DIR: artifacts/qa004-production-account-security-data/profile-credential
+      RENDERLAB_ACCOUNT_PREFERENCES_ARTIFACT_DIR: artifacts/qa004-production-account-security-data/preferences
+      RENDERLAB_SESSION_ARTIFACT_DIR: artifacts/qa004-production-account-security-data/sessions
+      RENDERLAB_QA004_ARTIFACT_DIR: artifacts/qa004-production-account-security-data
+
+    steps:
+      - name: Checkout audit harness head
+        uses: actions/checkout@v4
+
+      - name: Validate manual production-audit dispatch
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "::error::QA-004 is manual production-audit only."
+            exit 1
+          fi
+          if [ "$RENDERLAB_CONFIRM_PRODUCTION_SHA_VERIFIED" != "true" ]; then
+            echo "::error::QA-004 requires explicit independent production-SHA verification."
+            exit 1
+          fi
+          if [ "$RENDERLAB_CONFIRM_FIXTURE_ONLY_DESTRUCTIVE_WORK" != "true" ]; then
+            echo "::error::QA-004 requires explicit fixture-only destructive-work confirmation."
+            exit 1
+          fi
+          if ! printf "%s" "$RENDERLAB_EXPECTED_PRODUCTION_SHA" | grep -Eq "^[0-9a-fA-F]{40}$"; then
+            echo "::error::expected_production_sha must be an exact 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Validate shared-resource secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate QA-004 audit harness
+        run: |
+          node --check scripts/verify-production-qa004-account-security-data.mjs
+          node --check scripts/verify-account-profile-credential.mjs
+          node --check scripts/verify-account-preferences.mjs
+          node --check scripts/verify-session-controls.mjs
+          node --test tests/unit/production-qa004-audit-contract.test.mjs
+
+      - name: Clean exact QA-004 fixtures before audit
+        run: node scripts/verify-production-qa004-account-security-data.mjs --cleanup-only
+
+      - name: Run production account security data audit
+        run: node scripts/verify-production-qa004-account-security-data.mjs
+
+      - name: Clean exact QA-004 fixtures after audit
+        if: always()
+        run: node scripts/verify-production-qa004-account-security-data.mjs --cleanup-only
+
+      - name: Upload QA-004 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-qa004-account-security-data-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/qa004-production-account-security-data
+          if-no-files-found: warn
+          retention-days: 30
