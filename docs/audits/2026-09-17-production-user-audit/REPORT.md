@@ -1,4 +1,4 @@
-# RenderLab production user audit — 2026-09-17
+# RenderLab production user audit — 2026-09-17, production closure updated 2026-09-18
 
 ## Verdict
 
@@ -29,7 +29,7 @@ No P0–P3 defect is currently reproduced in the completed production-audit cove
 | Production re-verification | Run `35292334383`, successful in 6m48s; Image/Edit/Animate/Video all completed through Activity → Viewer |
 | Production re-verification artifact | `production-complete-user-journey-35292334383-1`, artifact `10527172224`, `sha256:27bbadc26b65ac63c59bb01284187544401512108a57ed5dc2a1a330e5bd6d8c`, 26 screenshots |
 
-The rollout workflow ref itself was a release-control ref, so its GitHub `headSha` is not used as the application-source assertion. The decisive evidence is the workflow's clean checkout/deploy log, which explicitly selected and verified `c2b7c022cd91167822f75874ef7caf70b0ec264c` before alias cutover.
+The rollout workflow ref itself was a release-control ref, so its GitHub `headSha` is not used as the application-source assertion. The decisive evidence is the workflow's clean checkout/deploy log, which explicitly selected and verified `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1` before alias cutover.
 
 ## Method and safety boundary
 
@@ -189,4 +189,4 @@ The professional judgement is therefore **core creative journey PASS, whole-prod
 
 
 
-Production-source provenance is verified, but whole-product user acceptance still fails on the live core generation-completion experience. The one-shot refresh root cause is fixed and configured-browser verified on PR #277, but production still serves the affected source until an explicitly authorized rollout. Issue #279 remains open through live proof. Edit, Animate, standalone Video, both-viewport terminal journeys, and the remaining controlled account/Admin submissions must be re-audited after deployment. This report does not authorize deployment.
+
