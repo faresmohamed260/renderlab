@@ -151,6 +151,8 @@ Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtur
 
 ### QA-001 — Close production release-record drift at rollout time (P4)
 
+**Status:** **EXECUTION CONTRACT READY / IMPLEMENTATION NOT YET MERGED.** Authority is `docs/audits/QA_001_PRODUCTION_DOCUMENTATION_SYNC_CONTRACT.md`. The planned guard adds one current-production SHA marker to PROJECT, UI Migration, Screen Registry and Infrastructure plus a non-mutating post-cutover verifier/workflow that fails if those four authorities disagree with the supplied deployed SHA.
+
 **Outcome:** every explicit production rollout leaves `PROJECT.md`, UI Migration, Screen Registry and Infrastructure pointing at the exact live source and rollout evidence.
 
 **Acceptance:** a post-cutover check fails or opens a required documentation task when the four current-production pointers disagree with the deployed SHA. Historical phase-local status is preserved, but the current-production block always wins.
