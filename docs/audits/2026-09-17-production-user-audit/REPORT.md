@@ -30,13 +30,14 @@ Historical audit/fix provenance below remains relevant for the earlier #279 comp
 
 ## Method and safety boundary
 
-Testing combined three perspectives:
+Testing now combines four perspectives:
 
 1. A signed-out, headed-browser walkthrough of the real custom domain at desktop and 390×844 mobile-class geometry.
-2. An isolated authenticated fixture run against the real custom domain using repository-owned test credentials and exact run-scoped cleanup. This exercised real persistence and one real image generation while avoiding real-user records.
-3. A real administrator-account read-only walkthrough after the owner signed in manually. This verified actual account admission, history, Library, Settings, session inventory and the privileged Admin gate without changing the account or spending provider work.
+2. The original isolated authenticated production fixture run against the real custom domain, with exact run-scoped cleanup. This exercised real persistence and the baseline creative journeys while avoiding real-user records.
+3. The original real administrator-account read-only walkthrough after the owner signed in manually. This verified actual account admission, history, Library, Settings, session inventory and the privileged Admin gate without changing the account.
+4. Final QA-003 run `35374052822`, using dedicated run-owned Activity and Admin fixtures. That run exercised the explicitly bounded provider-backed Cancel/Retry/Run Again contract, enrolled TOTP on the run-owned Admin fixture, completed a fresh AAL2 challenge, audited Admin read-only on desktop/390px, and exactly cleaned the fixture state.
 
-The audit did not submit password/email changes, enroll or remove MFA, export or delete the real account, sign out existing real sessions, delete/rename/favorite real media, retry/run-again real jobs, alter Admin access/invitations/generation configuration, or cancel live work. These are intentionally excluded because their side effects are disproportionate to observational QA. Equivalent controlled fixture coverage is cited where available.
+The real owner account was never used for password/email changes, MFA enrollment/removal, export/deletion, session revocation, media mutation, Activity action mutation or Admin-global mutation. QA-003 performed only its separately authorized fixture-owned mutations. Global generation settings, real invitations and real-user history remained untouched.
 
 ## Severity scale
 
