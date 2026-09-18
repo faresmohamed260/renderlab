@@ -1,21 +1,21 @@
-# RenderLab production user audit — 2026-09-17
+# RenderLab production user audit — 2026-09-17, production closure updated 2026-09-18
 
 ## Verdict
 
-**Production acceptance: FAIL — BLOCKED BY A P2 GENERATION-LIFECYCLE DEFECT.** The live custom domain is serving the explicitly deployed, roadmap-complete repository source `c2b7c022cd91167822f75874ef7caf70b0ec264c`, but a strict Create → Activity → Viewer journey reproduced a core completion-refresh failure. Activity continued to present an accepted Image job as `RUNNING` for the full 30-minute audit bound and never exposed the durable result. The product owner independently confirmed the provider work completes while the site fails to refresh. The audit therefore cannot truthfully certify Edit, Animate, standalone Video or downstream Viewer journeys through the normal user path.
+**Production acceptance: CORE JOURNEYS PASS AFTER FIX / WHOLE-PRODUCT AUDIT STILL OPEN.** The live custom domain now serves exact source `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`, including the recurring Activity refresh correction from PR #277. Guarded rollout `35292170973` completed without rollback. Post-fix production run `35292334383` then exercised the previously blocked user path end to end: Create Image → Activity → Viewer, Edit → Activity → Viewer, Animate → Activity → Viewer, and standalone Create Video → Activity → Viewer. All four jobs reached `succeeded` on the same mounted Activity surface; Animate and standalone Video visibly traversed `persisting`; Viewer media loaded on desktop and 390px with no horizontal-overflow assertion failure.
 
-The initial run completed one real image generation through durable result persistence without watching Activity. Corrective run `35269965598` then followed the real user path and reproduced the refresh defect on its first Image job, blocking all dependent generation journeys. The defect is corrected and configured-browser verified on PR #277, but the fix is not production-live and the blocked journeys have not been re-audited. Several account surfaces were inspected or exercised through controlled component/fixture coverage rather than submitted end-to-end on production. Production Activity mutation controls were not fired against real history, account-destructive/security-changing submissions were not made, and the real administrator could not enter `/admin` because the account has no verified TOTP factor. The AAL2 redirect to `/settings/mfa` is the designed security result, but it does not constitute a complete Admin audit.
+The run uploaded 26 screenshots as artifact `10527172224` (`sha256:27bbadc26b65ac63c59bb01284187544401512108a57ed5dc2a1a330e5bd6d8c`). Human review found the repaired generation states, responsive Activity cards, mobile generating compositions, image viewers and native video viewers visually coherent with the approved product. Cleanup removed the run-owned account's four assets and nine R2 objects, the unconditional cleanup leg passed, and an independent database query found zero recent `QA journey %` rows. Vercel reports no grouped runtime errors and no warning/error/fatal logs for the fixed deployment in the inspected post-cutover window.
 
-No Supabase/R2/provider mutation, production-account mutation, or deployment was performed. The application fix remains outside production pending an explicitly authorized rollout.
+No P0–P3 defect is currently reproduced in the completed production-audit coverage. **This is not yet a claim that every RenderLab feature has been exhaustively exercised on production.** Fixture-safe Activity Cancel/Retry/Run Again, AAL2-authenticated Admin content, and fresh isolated account/security/data-lifecycle submissions remain outstanding. Those are the next audit work, tracked under #278, and must use run-owned fixtures rather than mutate real user state.
 
 ## Audit identity and production provenance
 
 | Item | Verified value |
 | --- | --- |
 | Custom domain | `https://renderlab.faresuniform.uk` |
-| Live repository source | `c2b7c022cd91167822f75874ef7caf70b0ec264c` |
-| Guarded rollout | GitHub Actions run `35253785761`, `Deploy Roadmap Complete 2026-09-17`, successful |
-| READY deployment URL | `https://renderlab-bq106211v-faresmohamed260-6733s-projects.vercel.app` |
+| Live repository source | `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1` |
+| Guarded rollout | GitHub Actions run `35292170973`, `Deploy Activity Refresh Fix 2026-09-18`, successful |
+| READY deployment URL | `https://renderlab-m9xecmup1-faresmohamed260-6733s-projects.vercel.app` (`dpl_ASvYe7jgaZMBPqsh6weHLEo4mdxT`) |
 | Rollout proof | Clean checkout of the exact source, READY state, explicit custom-domain alias, smoke on `/`, `/create`, `/library`, `/activity`, `/settings`, `/settings/password`, `/settings/profile`, and `/settings/preferences`; rollback did not run |
 | Production audit run | `35258165837`, successful in 8m17s |
 | Audit workflow head | `92cd420ffca04bc3fa9a6bf54582196c94bc30fa` (temporary audit-only workflow state; not deployed) |
@@ -26,8 +26,10 @@ No Supabase/R2/provider mutation, production-account mutation, or deployment was
 | Corrective artifact | `production-complete-user-journey-35269965598-1`, artifact `10518743048`, `sha256:608daf18ffc6dd8918736f20f6cf17a68de0545aa425adaac88132f2c07d8561` |
 | Fix verification | Head `20a0697b91485fd0c6f5040f6f70c9467e9db62c`; Activity Visual run `35277589256`, successful in 2m28s |
 | Fix artifact | `renderlab-activity-screenshots`, artifact `10521626476`, `sha256:c66694a0dd9fd1aeca2a965f80106c07e4cc1cd2344da851c2e6cbf1dd0da8d5` |
+| Production re-verification | Run `35292334383`, successful in 6m48s; Image/Edit/Animate/Video all completed through Activity → Viewer |
+| Production re-verification artifact | `production-complete-user-journey-35292334383-1`, artifact `10527172224`, `sha256:27bbadc26b65ac63c59bb01284187544401512108a57ed5dc2a1a330e5bd6d8c`, 26 screenshots |
 
-The rollout workflow ref itself was a release-control ref, so its GitHub `headSha` is not used as the application-source assertion. The decisive evidence is the workflow's clean checkout/deploy log, which explicitly selected and verified `c2b7c022cd91167822f75874ef7caf70b0ec264c` before alias cutover.
+The rollout workflow ref itself was a release-control ref, so its GitHub `headSha` is not used as the application-source assertion. The decisive evidence is the workflow's clean checkout/deploy log, which explicitly selected and verified `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1` before alias cutover.
 
 ## Method and safety boundary
 
@@ -66,7 +68,7 @@ The audit did not submit password/email changes, enroll or remove MFA, export or
 ### RLQA-002 — Activity does not refresh a completed generation to its terminal result
 
 - **Severity:** P2
-- **Status:** fix implemented and configured-browser verified on PR #277; production remains affected until an explicitly authorized rollout and live re-test; tracked by GitHub issue #279
+- **Status:** **RESOLVED IN PRODUCTION** by PR #277 / merged main `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`; guarded rollout `35292170973`; live re-verification `35292334383` passed all four generation journeys; issue #279 may close.
 - **Scope:** Create/Activity lifecycle, durable-result discovery, and every continuation that depends on reaching Viewer; shared logic affects desktop and mobile
 - **Reproduction:** sign in with an admitted account; submit a valid Image generation from `/create`; after acceptance open `/activity`; leave the page on the row displaying `RUNNING` and `refreshing active work`.
 - **Expected:** Activity reconciles the job to `Complete`, removes Cancel, exposes View result/Run again when eligible, and lets the user reach the durable Viewer.
@@ -74,7 +76,8 @@ The audit did not submit password/email changes, enroll or remove MFA, export or
 - **Evidence:** [Create accepted/generating](evidence/create-desktop-active-stuck-journey.webp); [Activity stuck running](evidence/activity-desktop-stuck-running.webp); run `35269965598`; artifact `10518743048` / `sha256:608daf18ffc6dd8918736f20f6cf17a68de0545aa425adaac88132f2c07d8561`.
 - **Root cause:** `src/features/activity/activity-auto-refresh.tsx` used one `setTimeout`. The first server refresh retained the mounted component with `enabled=true`, so the effect dependencies did not change and no later timer was scheduled. Jobs completing after that single refresh remained visually stale until manual navigation.
 - **Implemented fix:** use one cleaned-up five-second interval while active server truth enables observation. The configured regression waits through the first refresh, terminalizes its fixture afterward, and requires the same mounted page to render `Completed` on a later refresh. Activity Visual run `35277589256` passed, including exact fixture cleanup. [Configured fixed state](evidence/activity-auto-refresh-fixed-desktop.webp).
-- **Remaining acceptance:** deploy only with explicit authorization, then repeat a real run-owned Image through Create → Activity → Viewer on desktop and 390px. After production proof, repeat Edit, Animate and standalone Video journeys. Provider/reconciliation errors remain a separate hardening concern and are not claimed fixed by this timer correction.
+- **Production proof:** run `35292334383` observed real Image, Edit, Animate and standalone Video jobs advance to `succeeded` on the same mounted Activity page, exposed `View result`, opened durable Viewer media, and verified both desktop and 390px Viewer geometry. The artifact contains 26 screenshots; cleanup and independent zero-residue verification passed.
+- **Residual hardening:** provider/reconciliation failure surfacing remains a separate QA concern; no such failure was reproduced in the successful post-fix run.
 
 ## Coverage matrix
 
@@ -82,12 +85,12 @@ The audit did not submit password/email changes, enroll or remove MFA, export or
 | --- | --- | --- | --- |
 | Landing and navigation | Signed-out live walkthrough | Live 390×844 and reduced-motion fixture coverage | Pass. Correct public/application shell boundary, Closed Beta truth, working navigation and no horizontal overflow. [Mobile landing](evidence/signed-out-mobile-landing.webp) |
 | Signed-out access | Settings sign-in, Create gating, Library/Activity states | 390px Settings and Create | Pass. No public sign-up claim, private actions gate truthfully, keyboard focus is visible. [Mobile keyboard focus](evidence/signed-out-mobile-settings-focus.webp) |
-| Create — Image | Real isolated image submission plus corrective Create→Activity journey | Result layout at 390px | **Fail / blocked.** The initial direct Create poll reached durable completion, but corrective run `35269965598` remained `RUNNING` in Activity for 30 minutes and never reached Viewer. [Create active](evidence/create-desktop-active-stuck-journey.webp), [Activity stuck](evidence/activity-desktop-stuck-running.webp) |
-| Create — Video | Mode/settings serialization without provider spend | 390px reduced-motion | **Incomplete.** Controls and serialization were checked, but no real Video generation was completed or watched through Activity/Viewer. [Mobile video](evidence/create-mobile-video-reduced.webp) |
+| Create — Image | Real production Image through Create → Activity → Viewer | Viewer rechecked at 390px | **Pass after fix.** Run `35292334383` reached `succeeded`, exposed View result and loaded durable image Viewer on both viewports. Artifact `10527172224`: `01-create-image-desktop-*`. |
+| Create — Video | Real standalone Video submitted at 390px | Activity + Viewer at 390px | **Pass after fix.** Run `35292334383` traversed Running → Persisting → Completed and loaded a 5-second durable video with native controls on desktop and mobile. Artifact `10527172224`: `04-create-video-mobile-*`. |
 | Create references | Real durable upload/drop, aliases, reorder and limits | Narrow source layout | Pass. Two Image references and one Video start-image boundary enforced; aliases remained stable through reorder; cleanup exact. |
 | Library browse/search/filter | Real run-owned upload, Creatives/Uploads, type and selection behavior | Narrow list/grid and controls | Pass. Search/filter/sort/selection remained coherent. [Desktop upload](evidence/library-desktop-upload.webp) |
-| Viewer and actions | Image/video viewer, quick/manage, prompt/details, collections/rename/delete affordances, continuation and compare | 390px manage/source-fold/native video | **Partial.** Viewer fixtures and an uploaded asset were exercised, but the audit did not follow every newly generated Image/Edit/Animate/Video result into Viewer. [Mobile viewer](evidence/library-mobile-viewer.webp), [mobile manage](evidence/viewer-mobile-manage.webp) |
-| Activity/history | Real account history and a real accepted production Image job | Shared auto-refresh path | **Fail.** A real job was watched from Activity; the page stayed `RUNNING` for 30 minutes and did not reveal its result. Retry/Run Again/Cancel follow-up is blocked pending lifecycle repair. |
+| Viewer and actions | Real Image, Edit, Animate and standalone Video results opened from Activity | All four results rechecked at 390px | **Pass for generated-result viewing/continuation path.** Image and video pixels loaded durably; videos exposed native controls; no horizontal overflow. Destructive/manage mutations remain controlled-fixture scope. Artifact `10527172224`. |
+| Activity/history | Real Image/Edit/Animate/Video jobs observed to terminal state without manual reload | Same responsive Activity surface | **Pass for lifecycle observation.** All four jobs terminalized; Animate/Video exposed Persisting before Completed. Retry/Run Again/Cancel mutation acceptance remains outstanding under QA-003. |
 | Profile | Real empty-profile read-only state; controlled save/crop/keyboard fixture | 390px reduced-motion crop | Pass. Identity copy and ownership separation are clear. [Mobile profile](evidence/settings-profile-mobile-reduced.webp) |
 | Password and email | Real forms inspected; controlled password-field behavior | Narrow fixture coverage | Pass for layout, labels, disabled-until-valid behavior, reveal controls and 15-character policy copy. Real credentials/email were not changed. |
 | Sessions | Real privacy-safe inventory inspected; controlled local/other/global sign-out semantics | 390px session register | Pass. Real sessions were not revoked. [Mobile sessions](evidence/settings-sessions-mobile.webp) |
@@ -98,7 +101,7 @@ The audit did not submit password/email changes, enroll or remove MFA, export or
 | Keyboard/focus | Tab/focus on signed-out and authenticated controls | Narrow visible focus | Pass. Focus indicator remained visible and control labels were announced. |
 | Reduced motion | Repository-controlled production fixture run | Landing/Create/Viewer/Settings at 390px | Pass. Functional content and geometry remained present without motion dependency. |
 | Empty/loading/error | Signed-out empties, MFA loading→ready, failed Activity row, generation start/result | Narrow equivalents | Pass. States were truthful and recoverable; no indefinite loading observed. |
-| Production runtime | Direct HTTP/custom-domain smoke plus the browser journeys listed above | Same origin | **Partial pass.** No audit-visible fatal page or navigation error occurred in exercised scope; this is not evidence that all end-to-end journeys passed. |
+| Production runtime | Guarded smoke plus post-fix real browser journeys | Same origin | **Pass for exercised scope.** Fixed deployment reports no grouped runtime errors and no warning/error/fatal logs in the inspected window; whole-product coverage is still incomplete. |
 
 ## Representative evidence
 
@@ -142,9 +145,9 @@ Corrective end-to-end run `35269965598` is a product finding, not a harness fail
 
 **Outcome:** Activity and Create advance accepted jobs to truthful terminal state without manual recovery, and successful jobs reliably expose durable Viewer results.
 
-**Status:** implementation and configured-browser regression are complete on PR #277. Production deployment and real-user-path re-verification remain pending.
+**Status:** **COMPLETE / PRODUCTION-LIVE / LIVE USER PATH VERIFIED.** PR #277 merged as `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1`; rollout `35292170973` succeeded; production journey `35292334383` passed all four generation paths with exact cleanup.
 
-**Acceptance:** after explicitly authorized deployment, prove a real Image result refreshes through Create → Activity → Viewer on desktop and 390px, then repeat Edit, Animate and standalone Video with exact cleanup. Separately harden provider/reconciliation failures into bounded actionable states. Do not deploy without separate authorization.
+**Acceptance achieved:** live Image, Edit, Animate and standalone Video all reached durable Viewer results through Activity on the fixed production source; desktop/390px evidence and exact cleanup passed. Provider/reconciliation failure surfacing is carried forward as a separate QA hardening item rather than keeping the resolved timer defect open.
 
 ### QA-001 — Close production release-record drift at rollout time (P4)
 
@@ -164,8 +167,26 @@ Corrective end-to-end run `35269965598` is a product finding, not a harness fail
 
 **Acceptance:** run-owned failed/running jobs with a non-provider dispatch seam; action temporal states and cleanup; dedicated MFA-enrolled test administrator; Admin reads and responsive screenshots; all invitation/account/generation controls remain non-mutating unless the fixture owns the target and rollback is exact.
 
-These items are the next QA roadmap and are tracked by GitHub issue #278. They do not authorize implementation, production deployment, hosted Auth changes, or Admin configuration changes.
+### QA-004 — Complete isolated account/security/data production acceptance (P4)
+
+**Outcome:** exercise the production forms and state transitions that were intentionally not submitted on the real owner account: profile save/remove, preferences save/reset, session revocation semantics, password/recovery presentation, MFA enrollment/challenge/recovery boundary, data export, and account deletion.
+
+**Acceptance:** run-owned accounts only; no mutation of the real owner; destructive account deletion occurs only on the fixture created for that exact run; email-change delivery is attempted only when a dedicated test mailbox and hosted rate-limit budget are available; desktop and 390px evidence; zero Auth/database/R2 residue.
+
+### QA-005 — Bound generation reconciliation/error presentation (P4)
+
+**Outcome:** prove that provider/reconciliation failures do not leave Activity claiming indefinite refresh.
+
+**Acceptance:** controlled non-provider failure seams or run-owned failure fixtures exercise server reconciliation error handling and produce a bounded actionable state without exposing provider internals.
+
+These items are the next QA roadmap and are tracked by GitHub issue #278. They do not authorize unrelated product implementation, production deployment, hosted Auth changes, or global Admin configuration changes.
 
 ## Final judgement
 
-Production-source provenance is verified, but whole-product user acceptance still fails on the live core generation-completion experience. The one-shot refresh root cause is fixed and configured-browser verified on PR #277, but production still serves the affected source until an explicitly authorized rollout. Issue #279 remains open through live proof. Edit, Animate, standalone Video, both-viewport terminal journeys, and the remaining controlled account/Admin submissions must be re-audited after deployment. This report does not authorize deployment.
+The original P2 generation-completion defect is fixed, deployed and live-user verified. Exact production source `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1` completed real Image, Edit, Animate and standalone Video journeys through Activity and durable Viewer results; responsive evidence and cleanup are clean, and no runtime-error cluster is present for the fixed deployment.
+
+The professional judgement is therefore **core creative journey PASS, whole-product audit IN PROGRESS**. No P0–P3 defect remains reproduced in the completed coverage, but RenderLab should not yet be called exhaustively production-audited: fixture-safe Activity mutations, AAL2 Admin content, and isolated account/security/data lifecycle submissions remain. Issue #278 is the governing roadmap for those remaining acceptance slices.
+
+
+
+
