@@ -6,6 +6,8 @@ const workflow = readFileSync(".github/workflows/production-qa004-account-securi
 const verifier = readFileSync("scripts/verify-production-qa004-account-security-data.mjs", "utf8");
 
 test("QA-004 production audit is manual-only and requires exact source plus destructive-fixture acknowledgement", () => {
+  assert.ok(workflow.split("\n").length > 60, "QA-004 workflow must be real multiline YAML, not a serialized one-line string.");
+  assert.equal(workflow.includes("\\n"), false, "QA-004 workflow contains literal \\n serialization.");
   assert.match(workflow, /workflow_dispatch:/);
   assert.doesNotMatch(workflow, /\npull_request:/);
   assert.doesNotMatch(workflow, /\npush:/);
