@@ -135,6 +135,10 @@ jobs:
       - name: Verify Activity Cancel interaction and responsive states
         run: node scripts/verify-activity-cancel.mjs
 
+      - name: Cleanup Activity Cancel fixtures
+        if: always()
+        run: node scripts/verify-activity-cancel.mjs --cleanup-only
+
       - name: Print logs on failure
         if: failure()
         run: |

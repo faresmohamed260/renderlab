@@ -55,6 +55,21 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function retryCleanup(label, operation, attempts = 4) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts) break;
+      console.warn(`${label} attempt ${attempt}/${attempts} failed; retrying.`);
+      await new Promise((resolve) => setTimeout(resolve, attempt * 750));
+    }
+  }
+  throw lastError ?? new Error(`${label} failed.`);
+}
+
 async function supabase(path, init = {}) {
   const headers = new Headers(init.headers);
   headers.set("apikey", supabaseKey);
@@ -155,7 +170,8 @@ function assertRatio(metrics, ratio, label) {
 }
 
 if (cleanupOnly) {
-  await cleanupFixture();
+  await retryCleanup("Library fixture cleanup", cleanupFixture);
+  console.log("Library fixture cleanup completed.");
   process.exit(0);
 }
 
@@ -168,7 +184,7 @@ let browser = null;
 let primaryError = null;
 
 try {
-  await cleanupFixture();
+  await retryCleanup("Library initial fixture cleanup", cleanupFixture);
   const account = await createConfiguredTestAccount("library-lifecycle");
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: desktopViewport, colorScheme: "dark", ignoreHTTPSErrors: ignoreHttpsErrors });
@@ -345,7 +361,7 @@ try {
 } finally {
   if (browser) await browser.close().catch(() => {});
   try {
-    await cleanupFixture();
+    await retryCleanup("Library final fixture cleanup", cleanupFixture);
   } catch (cleanupError) {
     console.error(cleanupError);
     if (!primaryError) primaryError = cleanupError;

@@ -14,6 +14,7 @@ const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const reconcilerSecret = process.env.RENDERLAB_GENERATION_RECONCILER_SECRET;
 const artifactDir = process.env.RENDERLAB_ACTIVITY_CANCEL_ARTIFACT_DIR || "artifacts";
+const cleanupOnly = process.argv.includes("--cleanup-only");
 const ownerIdentity = configuredTestAccountIdentity("activity-cancel-owner");
 
 for (const [name, value] of Object.entries({
@@ -52,7 +53,13 @@ async function rows(path) {
 }
 
 async function cleanup() {
-  await deleteConfiguredTestAccount(ownerIdentity).catch(() => {});
+  await deleteConfiguredTestAccount(ownerIdentity);
+}
+
+if (cleanupOnly) {
+  await cleanup();
+  console.log("Activity Cancel fixture cleanup completed.");
+  process.exit(0);
 }
 
 async function submit(account, label) {
@@ -125,6 +132,7 @@ async function exerciseCancel(page, account, label, screenshotSuffix) {
 
 await mkdir(artifactDir, { recursive: true });
 let browser;
+let primaryError = null;
 try {
   await cleanup();
   const account = await createConfiguredTestAccount("activity-cancel-owner");
@@ -141,7 +149,16 @@ try {
 
   await context.close();
   console.log("Activity Cancel visual verification passed on desktop and narrow reduced-motion layouts.");
+} catch (error) {
+  primaryError = error;
 } finally {
   if (browser) await browser.close().catch(() => {});
-  await cleanup();
+  try {
+    await cleanup();
+  } catch (cleanupError) {
+    console.error(cleanupError);
+    if (!primaryError) primaryError = cleanupError;
+  }
 }
+
+if (primaryError) throw primaryError;

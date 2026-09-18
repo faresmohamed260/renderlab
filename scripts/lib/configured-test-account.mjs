@@ -54,6 +54,21 @@ async function serviceRows(path) {
   return response.json();
 }
 
+async function retryConfiguredCleanup(label, operation, attempts = 4) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts) break;
+      console.warn(`${label} cleanup attempt ${attempt}/${attempts} failed; retrying.`);
+      await new Promise((resolve) => setTimeout(resolve, attempt * 750));
+    }
+  }
+  throw lastError ?? new Error(`${label} cleanup failed.`);
+}
+
 function configuredR2Client() {
   const accountId = process.env.R2_ACCOUNT_ID;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
@@ -187,27 +202,61 @@ export function configuredTestAccountIdentity(namespace) {
   };
 }
 
+async function verifyConfiguredTestAccountAbsent(id) {
+  const encodedId = encodeURIComponent(id);
+  const checks = await Promise.all([
+    serviceRows(`generation_admission_reservations?owner_id=eq.${encodedId}&select=id&limit=1`),
+    serviceRows(`renderlab_account_access?user_id=eq.${encodedId}&select=user_id&limit=1`),
+    serviceRows(`generation_jobs?owner_id=eq.${encodedId}&select=id&limit=1`),
+    serviceRows(`generation_sources?owner_id=eq.${encodedId}&select=id&limit=1`),
+    serviceRows(`media_assets?owner_id=eq.${encodedId}&select=id&limit=1`),
+    serviceRows(`media_upload_sessions?owner_id=eq.${encodedId}&select=id&limit=1`),
+    serviceRows(`renderlab_account_profiles?owner_id=eq.${encodedId}&select=owner_id&limit=1`),
+  ]);
+  if (checks.some((rows) => rows.length > 0)) {
+    throw new Error(`Configured account cleanup left owner rows for ${id}.`);
+  }
+
+  const authResponse = await authAdmin(`users/${encodedId}`, { method: "GET" });
+  if (authResponse.ok) {
+    throw new Error(`Configured account cleanup left Auth user ${id}.`);
+  }
+  if (authResponse.status !== 404) {
+    throw new Error(`Could not verify configured Auth cleanup for ${id} (${authResponse.status}): ${await authResponse.text()}`);
+  }
+}
+
 export async function deleteConfiguredTestAccount(accountOrId) {
   const id = typeof accountOrId === "string" ? accountOrId : accountOrId.id;
-  await cleanupOwnedRenderLabRows(id);
 
-  const admissionResponse = await serviceRest(`generation_admission_reservations?owner_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
-  if (!admissionResponse.ok) {
-    const detail = await admissionResponse.text();
-    const relationMissing = admissionResponse.status === 404 && detail.includes("generation_admission_reservations");
-    if (!relationMissing) {
-      throw new Error(`Could not clean configured account admission reservations (${admissionResponse.status}): ${detail}`);
+  await retryConfiguredCleanup("Configured account owner rows", () => cleanupOwnedRenderLabRows(id));
+
+  await retryConfiguredCleanup("Configured account admission reservations", async () => {
+    const admissionResponse = await serviceRest(`generation_admission_reservations?owner_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!admissionResponse.ok) {
+      const detail = await admissionResponse.text();
+      const relationMissing = admissionResponse.status === 404 && detail.includes("generation_admission_reservations");
+      if (!relationMissing) {
+        throw new Error(`Could not clean configured account admission reservations (${admissionResponse.status}): ${detail}`);
+      }
     }
-  }
+  });
 
-  const accessResponse = await serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
-  if (!accessResponse.ok) {
-    throw new Error(`Could not clean configured account access (${accessResponse.status}): ${await accessResponse.text()}`);
-  }
-  const response = await authAdmin(`users/${encodeURIComponent(id)}`, { method: "DELETE" });
-  if (!response.ok && response.status !== 404) {
-    throw new Error(`Could not delete configured account fixture ${id} (${response.status}): ${await response.text()}`);
-  }
+  await retryConfiguredCleanup("Configured account access", async () => {
+    const accessResponse = await serviceRest(`renderlab_account_access?user_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!accessResponse.ok) {
+      throw new Error(`Could not clean configured account access (${accessResponse.status}): ${await accessResponse.text()}`);
+    }
+  });
+
+  await retryConfiguredCleanup("Configured account Auth user", async () => {
+    const response = await authAdmin(`users/${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!response.ok && response.status !== 404) {
+      throw new Error(`Could not delete configured account fixture ${id} (${response.status}): ${await response.text()}`);
+    }
+  });
+
+  await retryConfiguredCleanup("Configured account residue verification", () => verifyConfiguredTestAccountAbsent(id));
 }
 
 export async function createConfiguredTestAccount(namespace) {
