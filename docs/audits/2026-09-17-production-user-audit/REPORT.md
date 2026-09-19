@@ -159,7 +159,7 @@ Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtur
 
 ### QA-002 — Add a permanent non-destructive production user-journey workflow (P4)
 
-**Status:** **IMPLEMENTATION READY / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_002_PERMANENT_PRODUCTION_USER_JOURNEY_CONTRACT.md`. The existing permanent production journey is hardened in place with exact production-SHA/provider-work acknowledgement, read-only Settings/Profile/Preferences/Sessions coverage, a source/domain manifest, and independently verified DB/Auth/R2 cleanup. QA-002 remains open until the manual production run and human evidence review pass.
+**Status:** **IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_002_PERMANENT_PRODUCTION_USER_JOURNEY_CONTRACT.md`. PR #298 merged the hardened existing workflow as `db48d14fa5265036066531cba8aa93d9ac6602f5`; exact-head Engineering Quality `35414005279` and merged-main `35414043345` passed. The workflow now requires exact production-SHA/provider acknowledgement, covers read-only Settings/Profile/Preferences/Sessions, emits a source/domain manifest and independently verifies DB/Auth/R2 cleanup. QA-002 remains open until the manual production run and human evidence review pass.
 
 **Outcome:** the useful parts of audit run `35258165837` become a reviewed, manually dispatched workflow rather than temporarily replacing an existing workflow file.
 
