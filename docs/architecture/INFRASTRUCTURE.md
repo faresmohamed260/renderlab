@@ -2,6 +2,13 @@
 
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
+## QA-002 permanent production user journey harness — 2026-09-19
+- QA-002 evolves the existing `.github/workflows/production-complete-user-journey.yml` and `scripts/verify-production-complete-user-journey.mjs` in place; no competing production-journey workflow is introduced.
+- The hardened workflow remains `workflow_dispatch` only with `cancel-in-progress: false`. It requires an exact expected production SHA and explicit confirmation for exactly four run-owned provider-backed generations: Image, Edit, Animate and standalone Video.
+- The same isolated configured member now captures public/signed-out states plus read-only Settings, Profile, Preferences and session-inventory evidence without profile/preferences/session/password/email/MFA/export/delete/Admin mutation.
+- The verifier records a source/domain/job/asset/route/cleanup manifest, tracks R2 keys discovered from run-owned rows, and independently verifies the contracted DB/Auth residue plus every tracked R2 object after ordinary configured-account cleanup.
+- This harness change performs no deployment, alias/environment change, Supabase schema/Auth policy mutation, R2 resource mutation, worker/provider reset or routing change. Production execution remains separately manual.
+
 ## QA-001 production documentation synchronization — 2026-09-19
 - QA-001 is complete. Contract PR #294 merged as `772b19269a4d27a43e75407c148adb252717a627`; implementation PR #295 merged as `8028f8be33ef8760c55b7f796ed1a802f0199cd1`.
 - `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and this file now each carry exactly one machine-readable `RENDERLAB_CURRENT_PRODUCTION_SHA` marker inside the authoritative current-production H2 block. `AGENTS.md` requires future cutovers to synchronize those four records and pass the permanent checker before repository closure is claimed.

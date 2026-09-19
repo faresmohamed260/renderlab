@@ -1,6 +1,6 @@
 # QA-002 Permanent Production User Journey Contract
 
-**Status:** EXECUTION CONTRACT / IMPLEMENTATION NOT YET MERGED  
+**Status:** IMPLEMENTATION READY / PRODUCTION RUN NOT YET PERFORMED  
 **Tracker:** #278  
 **Planning baseline:** repository `main` `023d21637fd59e4da8f664ea047c7d04a5102fc8`  
 **Current production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`  
