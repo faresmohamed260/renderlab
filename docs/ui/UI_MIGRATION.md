@@ -13,10 +13,10 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Keep repository documentation synchronized with verified implementation.
 
 ## Current production and whole-product audit — 2026-09-19
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 2fc64231f8aa0e5a2df8b2698824319a25c4e9f8 -->
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a -->
 **Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-001–QA-005 COMPLETE / WHOLE-PRODUCT AUDIT COMPLETE`.**
 
-- Exact current production source remains `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`; automatic Git → Vercel deployment remains disabled.
+- Exact current production source is `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` at READY deployment `dpl_6Z8LTAE8g91FvT4TaB7NQaX4dBNM`, deployed by guarded rollout `35455778821`. The custom domain was explicitly reassigned and root/Create/Library/Activity/Settings/Password/Profile/Preferences smoke passed. Compared with audited application source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`, the deployed delta contains no runtime application files, so the approved UI/product behavior is unchanged. Post-cutover Vercel inspection found no runtime errors and no error/fatal logs. Automatic Git → Vercel deployment remains disabled.
 - QA-001 documentation synchronization is complete through permanent verifier merge `8028f8be33ef8760c55b7f796ed1a802f0199cd1` and proof run `35413607297`.
 - QA-002 manual production run `35440027637` passed exactly four fixture-owned Image/Edit/Animate/Video generations plus public/signed-out, Library/Viewer and read-only Settings/Profile/Preferences/session coverage. Artifact `10583333354` / `sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227` contains 38 human-reviewed screenshots; cleanup verified nine R2 objects and zero contracted DB/Auth residue.
 - QA-003 manual run `35374052822` remains accepted for fixture-safe Activity actions plus fresh-AAL2 read-only Admin; artifact `10559613086` contains 32 human-reviewed screenshots with exact cleanup.

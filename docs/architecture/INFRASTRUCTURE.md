@@ -2,6 +2,15 @@
 
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
+## Current production rollout — 2026-09-19
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a -->
+- Exact repository source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` is production-live as READY Vercel deployment `dpl_6Z8LTAE8g91FvT4TaB7NQaX4dBNM` (`https://renderlab-ougwjh7s6-faresmohamed260-6733s-projects.vercel.app`).
+- Guarded rollout `35455778821` checked out the exact pristine candidate, deployed through pinned Vercel CLI `59.11.7`, explicitly assigned `renderlab.faresuniform.uk`, passed smoke for root, Create, Library, Activity, Settings, Password, Profile and Preferences, and skipped rollback. The temporary rollout branch deleted itself after completion.
+- The previous accepted deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` / source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` is the immediate known-good alias rollback anchor.
+- Repository comparison from `2fc64231…` to `c00664d9…` is 15 commits and changes only GitHub workflow definitions, audit/verifier scripts, tests and documentation. There are no `src/**`, package/config, Supabase migration or other runtime application changes, so the deployment advances repository provenance without changing application behavior or pixels.
+- Vercel deployment metadata reports exact Git SHA `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`, READY state, production target and CLI source. Bounded post-cutover inspection found no runtime-error clusters and no error/fatal log entries.
+- No Supabase schema/RLS/Auth-policy, Cloudflare R2 configuration, worker/provider routing, scheduler or environment-variable mutation occurred. Automatic Git → Vercel deployment remains disabled.
+
 ## QA-002 permanent production user journey — 2026-09-19
 - QA-002 remains the existing manual-only `.github/workflows/production-complete-user-journey.yml` with `cancel-in-progress: false`, exact expected-production-SHA input and explicit acknowledgement for exactly four run-owned provider-backed generations.
 - Implementation PR #298 merged as `db48d14fa5265036066531cba8aa93d9ac6602f5`; exact-head Engineering Quality `35414005279` and merged-main `35414043345` passed.
@@ -17,7 +26,6 @@ Records durable RenderLab infrastructure decisions and verified shared-resource 
 - No Vercel deployment/alias/environment, Supabase, R2, provider/worker, scheduler, or application runtime state changed in QA-001.
 
 ## QA-003 production rollout and audit — 2026-09-18
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 2fc64231f8aa0e5a2df8b2698824319a25c4e9f8 -->
 - Exact application source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` is production-live as READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` (`https://renderlab-hrydffycn-faresmohamed260-6733s-projects.vercel.app`). Guarded rollout `35373771751` checked out pristine exact source, deployed with the pinned Vercel CLI path, explicitly assigned `renderlab.faresuniform.uk`, passed smoke for root, Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback. The prior accepted deployment `dpl_ASvYe7jgaZMBPqsh6weHLEo4mdxT` was the armed rollback target.
 - Vercel deployment metadata reports the exact Git SHA above, `READY` state and CLI production source. A direct custom-domain fetch after rollout has the same immutable Activity asset/chunk signature as the exact deployment and differs from the superseded production build, independently corroborating the alias cutover. A grouped runtime-error query for the rollout/audit window returned no runtime errors. Per-entry runtime logs currently return Vercel `ExceedsBillingLimitError`, so warning/info-log absence is not claimed.
 - QA-003 manual production audit `35374052822` ran only after the cutover and required both exact production SHA input and explicit bounded fixture-only provider-work confirmation. Run-owned Cancel traversed `cancelling → cancelled`; Retry traversed `running → succeeded`; Run Again reached `succeeded`; the dedicated Admin fixture enrolled TOTP, completed a fresh AAL2 challenge and exposed the live read-only Admin surface.
