@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**Production acceptance: QA-001–QA-005 COMPLETE / WHOLE-PRODUCT AUDIT COMPLETE.** The live custom domain remains on exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`.
+**Production acceptance: QA-001–QA-005 COMPLETE / WHOLE-PRODUCT AUDIT COMPLETE.** The audit acceptance was executed against source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. A later provenance-only rollout moved the live custom domain to repository source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` at READY deployment `dpl_6Z8LTAE8g91FvT4TaB7NQaX4dBNM`; the delta contains no runtime application files.
 
 QA-002 manual run `35440027637` passed exactly four fixture-owned production creative journeys (Image, Edit, Animate and standalone Video), public/signed-out states, durable Library/Viewer results and read-only Settings/Profile/Preferences/session coverage. Artifact `10583333354` (`sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227`) contains 38 human-reviewed screenshots; its manifest records cleanup verified, nine tracked R2 objects checked and zero contracted DB/Auth residue.
 
@@ -15,11 +15,12 @@ QA-005 manual run `35453752650` then passed the final bounded failure-presentati
 | Item | Verified value |
 | --- | --- |
 | Custom domain | `https://renderlab.faresuniform.uk` |
-| Live repository source | `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` |
-| Guarded rollout | GitHub Actions run `35373771751`, `Deploy QA-003 Run Again Fix 2026-09-18`, successful |
-| READY deployment | `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` / `https://renderlab-hrydffycn-faresmohamed260-6733s-projects.vercel.app` |
-| Rollout proof | Pristine exact-source checkout; forced CLI production deploy; explicit custom-domain alias; smoke on `/`, `/create`, `/library`, `/activity`, `/settings`, `/settings/password`, `/settings/profile`, and `/settings/preferences`; rollback skipped |
-| Prior rollback anchor | `dpl_ASvYe7jgaZMBPqsh6weHLEo4mdxT` / source `ae083473e29a0f9e60f49087a33d1c8d0ce95cd1` |
+| Live repository source | `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` |
+| Audit execution application source | `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` |
+| Current guarded rollout | GitHub Actions run `35455778821`, `Deploy Latest Main 2026-09-19`, successful |
+| Current READY deployment | `dpl_6Z8LTAE8g91FvT4TaB7NQaX4dBNM` / `https://renderlab-ougwjh7s6-faresmohamed260-6733s-projects.vercel.app` |
+| Current rollout proof | Exact pristine-source checkout; forced CLI production deploy; explicit custom-domain alias; smoke on `/`, `/create`, `/library`, `/activity`, `/settings`, `/settings/password`, `/settings/profile`, and `/settings/preferences`; rollback skipped; no post-cutover runtime errors or error/fatal logs |
+| Immediate rollback anchor | `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` / source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` |
 | QA-003 production run | `35374052822`, successful |
 | QA-003 source confirmation | Exact expected production SHA `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`; bounded fixture-only provider-work confirmation `true` |
 | QA-003 artifact | `production-qa003-activity-admin-35374052822-1`, artifact `10559613086` |
