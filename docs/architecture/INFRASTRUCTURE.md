@@ -7,7 +7,8 @@ Records durable RenderLab infrastructure decisions and verified shared-resource 
 - The hardened workflow remains `workflow_dispatch` only with `cancel-in-progress: false`. It requires an exact expected production SHA and explicit confirmation for exactly four run-owned provider-backed generations: Image, Edit, Animate and standalone Video.
 - The same isolated configured member now captures public/signed-out states plus read-only Settings, Profile, Preferences and session-inventory evidence without profile/preferences/session/password/email/MFA/export/delete/Admin mutation.
 - The verifier records a source/domain/job/asset/route/cleanup manifest, tracks R2 keys discovered from run-owned rows, and independently verifies the contracted DB/Auth residue plus every tracked R2 object after ordinary configured-account cleanup.
-- This harness change performs no deployment, alias/environment change, Supabase schema/Auth policy mutation, R2 resource mutation, worker/provider reset or routing change. Production execution remains separately manual.
+- Implementation PR #298 merged as `db48d14fa5265036066531cba8aa93d9ac6602f5` from exact head `6e57f3863c02e443894783cd0367cd5f799172f2`. Engineering Quality `35414005279` passed on the exact head and `35414043345` passed on merged main.
+- This harness change performs no deployment, alias/environment change, Supabase schema/Auth policy mutation, R2 resource mutation, worker/provider reset or routing change. Production was reverified unchanged at exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` / READY `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`. Production execution remains separately manual.
 
 ## QA-001 production documentation synchronization — 2026-09-19
 - QA-001 is complete. Contract PR #294 merged as `772b19269a4d27a43e75407c148adb252717a627`; implementation PR #295 merged as `8028f8be33ef8760c55b7f796ed1a802f0199cd1`.

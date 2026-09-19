@@ -1,6 +1,6 @@
 # QA-002 Permanent Production User Journey Contract
 
-**Status:** IMPLEMENTATION READY / PRODUCTION RUN NOT YET PERFORMED  
+**Status:** IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / PRODUCTION RUN NOT YET PERFORMED  
 **Tracker:** #278  
 **Planning baseline:** repository `main` `023d21637fd59e4da8f664ea047c7d04a5102fc8`  
 **Current production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`  
@@ -183,6 +183,14 @@ QA-002 is complete when:
 - the manifest proves source/domain/provider-work boundary and exact cleanup;
 - screenshots are human-reviewed; and
 - #278 plus repository audit docs match verified reality.
+
+## Implementation evidence
+
+- Contract PR #297 merged as `ca98183eadacc45489b8175cb17a4a013534c25e`.
+- Implementation PR #298 exact head `6e57f3863c02e443894783cd0367cd5f799172f2` passed Engineering Quality run `35414005279` and merged as `db48d14fa5265036066531cba8aa93d9ac6602f5`.
+- Merged-main Engineering Quality run `35414043345` passed.
+- The live Vercel application remained unchanged and was reverified as READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` with exact Git source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`.
+- No production QA-002 workflow run has executed yet; manual dispatch and human evidence review remain required for closure.
 
 ## Next-phase dependency
 
