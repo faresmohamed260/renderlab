@@ -32,6 +32,15 @@ Records durable RenderLab infrastructure decisions and verified shared-resource 
 - Pre-clean, in-run cleanup and unconditional post-clean all passed with exact known Auth/database/R2 absence. A bounded grouped Vercel runtime-error query over the combined QA-002/QA-004 window found no runtime errors; per-entry logs remain billing-limited.
 - QA-004 changed no deployment, hosted Auth policy, Supabase schema, R2 resource contract, provider/worker state or generation routing. QA-005 is now unblocked as the sole remaining #278 audit slice.
 
+## QA-005 production reconciliation/failure audit harness — 2026-09-19
+- Execution authority is `docs/audits/QA_005_RECONCILIATION_FAILURE_PRODUCTION_AUDIT_CONTRACT.md`.
+- The permanent workflow `.github/workflows/production-qa005-reconciliation-failure.yml` is `workflow_dispatch` only, `contents: read`, `cancel-in-progress: false`, and requires the exact production SHA plus explicit fixture-only and zero-real-provider acknowledgements.
+- The audit separately checks out the exact supplied production source and runs that source only on loopback. Its reconciler is restricted by the existing test-only owner scope to one deterministic run-owned QA-005 account; the deployed production reconciler is never called.
+- Provider-failure simulation uses only the repository mock worker on `127.0.0.1`. No real provider-backed generation is authorized. The second fixture is a directly seeded stale run-owned orchestration row.
+- The real custom domain is used only to verify the resulting Activity presentation. Retry is inspected but never clicked, so the audit cannot launch another live generation attempt.
+- Cleanup is unconditional. The verifier independently checks known DB/Auth absence and reconstructs deterministic generation-output keys from leftover fixture jobs before row deletion so R2 absence remains provable after interruption.
+- This harness does not deploy application code, change Vercel aliases/environment, mutate hosted Auth policy, alter Supabase schema/RLS, change R2 resource configuration, reset workers, or modify production provider routing. Manual production execution remains outstanding.
+
 ## Superseded account/security production rollout — 2026-09-15
 - Exact application source `d18ef8833d46c812dac6b43572b3f4f7069990f8` is production-live as READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7` (`https://renderlab-baa28u96o-faresmohamed260-6733s-projects.vercel.app`). Deployment metadata points to that exact Git SHA and has no dirty-source marker.
 - Initial candidate `dpl_JCNZJb35Crhk9ngMeYeqAsp91GhK` failed during the Vercel build before cutover because the production environment lacked newly required `RESEND_API_KEY` and `CRON_SECRET`. The custom domain therefore remained on the prior deployment throughout the failure.
