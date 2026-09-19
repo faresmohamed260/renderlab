@@ -2,13 +2,13 @@
 
 ## Verdict
 
-**Production acceptance: QA-001–QA-004 COMPLETE / WHOLE-PRODUCT AUDIT OPEN ONLY ON QA-005.** The live custom domain remains on exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`.
+**Production acceptance: QA-001–QA-005 COMPLETE / WHOLE-PRODUCT AUDIT COMPLETE.** The live custom domain remains on exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`.
 
 QA-002 manual run `35440027637` passed exactly four fixture-owned production creative journeys (Image, Edit, Animate and standalone Video), public/signed-out states, durable Library/Viewer results and read-only Settings/Profile/Preferences/session coverage. Artifact `10583333354` (`sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227`) contains 38 human-reviewed screenshots; its manifest records cleanup verified, nine tracked R2 objects checked and zero contracted DB/Auth residue.
 
 QA-004 manual run `35440028603` passed live profile/avatar, preferences, session semantics, password/recovery presentation, MFA assurance, data export and fixture-only account deletion with no provider-backed generation. Conditional email change was correctly recorded as `skipped_gate_not_met`. Artifact `10584065519` (`sha256:36af1273b690c1bffe35b50a4bbd77752a4df638d7406d89f3e2e55ca914b38f`) contains 11 human-reviewed screenshots; cleanup verified seven configured accounts, eight known R2 objects and session-run users.
 
-No P0–P3 defect is currently reproduced in completed production-audit coverage. A bounded Vercel grouped runtime-error query covering the combined QA-002/QA-004 window found no runtime errors. Per-entry error/fatal logs remain unavailable because Vercel returns `ExceedsBillingLimitError`, so no stronger log-absence claim is made. QA-005 bounded provider/reconciliation failure presentation is the only remaining #278 audit slice; this report still does not claim that every possible RenderLab failure mode has been exhaustively exercised.
+QA-005 manual run `35453752650` then passed the final bounded failure-presentation contract with zero real provider spend: a prolonged mock provider outage terminalized as `generation_provider_stalled`, a stale incomplete dispatch terminalized as `generation_orchestration_stalled`, and the real production Activity surface showed both as stable non-live failures with safe Retry guidance. Artifact `10587349110` (`sha256:941c7786707616a1b811e38f2d54da5b2deec3b4d391a176ae249e6eef343b8e`) contains four human-reviewed screenshots; cleanup verified zero contracted DB/Auth residue and two deterministic R2 objects. The QA-005 Vercel window had no grouped runtime errors and no error/fatal logs. No P0–P3 defect is currently reproduced in completed production-audit coverage. The whole-product audit is complete for the contracted QA-001–QA-005 roadmap; this is still not a claim that every hypothetical future failure mode has been exhaustively exercised.
 
 ## Audit identity and production provenance
 
@@ -30,6 +30,8 @@ No P0–P3 defect is currently reproduced in completed production-audit coverage
 | QA-002 artifact | `10583333354` / `sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227`; 38 screenshots; cleanup verified; 9 R2 objects; 0 contracted DB/Auth residue |
 | QA-004 production run | `35440028603`, successful; no provider generation; email change `skipped_gate_not_met` |
 | QA-004 artifact | `10584065519` / `sha256:36af1273b690c1bffe35b50a4bbd77752a4df638d7406d89f3e2e55ca914b38f`; 11 screenshots; cleanup verified; 7 configured accounts; 8 known R2 objects |
+| QA-005 production run | `35453752650`, successful; zero real provider work; exact deployed source executed owner-scoped on loopback |
+| QA-005 artifact | `10587349110` / `sha256:941c7786707616a1b811e38f2d54da5b2deec3b4d391a176ae249e6eef343b8e`; 4 screenshots; cleanup verified; 0 contracted DB/Auth residue; 2 deterministic R2 objects |
 | Runtime inspection | No grouped runtime errors in the bounded rollout/audit window; per-entry runtime logs unavailable because Vercel returned `ExceedsBillingLimitError` |
 
 Historical audit/fix provenance below remains relevant for the earlier #279 completion-refresh defect and the initial whole-product baseline.
@@ -187,16 +189,16 @@ QA-002 run `35440027637` then completed exactly four run-owned provider generati
 
 ### QA-005 — Bound generation reconciliation/error presentation (P4)
 
-**Status:** **PERMANENT HARNESS IMPLEMENTED / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_005_RECONCILIATION_FAILURE_PRODUCTION_AUDIT_CONTRACT.md`. The implementation uses an exact-production-source loopback process whose reconciler is restricted to one run-owned fixture account, a loopback mock worker with zero real provider spend, and the real production Activity UI for presentation-only verification. It never calls the deployed unscoped reconciler and never clicks Retry. Cleanup independently proves DB/Auth absence plus deterministic R2-output absence.
+**Status:** **COMPLETE / PRODUCTION-VERIFIED / HUMAN-REVIEWED.** Contract PR #301 merged as `69eba224b4f3e6e939f288609828c2a8d3d4b5c2`; harness PR #302 merged as `8930638f47219482b9b7a4fd8063c36197335e50` after exact-head Engineering Quality `35453629899`, and merged-main `35453684388` passed. Manual run `35453752650` supplied exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`, used owner-scoped loopback reconciliation plus the run-local mock worker, and dispatched zero real provider-backed generation.
 
-**Outcome:** prove that provider/reconciliation failures do not leave Activity claiming indefinite refresh.
+The prolonged provider-status outage terminalized as sanitized `generation_provider_stalled`; the stale incomplete-dispatch fixture terminalized as `generation_orchestration_stalled`. Real production Activity showed both as non-active `Failed / Needs action` rows with safe Retry guidance, no LIVE refresh indicator and stable state after more than one normal refresh interval. Retry was never clicked.
 
-**Acceptance:** one prolonged mock provider-status outage must terminalize as sanitized `generation_provider_stalled`, one stale incomplete-dispatch fixture must terminalize as `generation_orchestration_stalled`, and the real production Activity surface must show stable non-live Failed / Needs action / Retry presentation on desktop and reduced-motion 390px without provider internals.
+Artifact `10587349110` / `sha256:941c7786707616a1b811e38f2d54da5b2deec3b4d391a176ae249e6eef343b8e` contains four human-reviewed screenshots plus its manifest. Cleanup is `verified=true` with zero contracted DB/Auth residue and two deterministic R2 output objects checked. The bounded Vercel audit window contained no grouped runtime errors and no error/fatal logs. No P0–P3 defect was reproduced.
 
-These items are the next QA roadmap and are tracked by GitHub issue #278. They do not authorize unrelated product implementation, production deployment, hosted Auth changes, or global Admin configuration changes.
+QA-001 through QA-005 constitute the contracted #278 whole-product production audit roadmap and are now complete. This closure does not authorize unrelated product implementation, production deployment, hosted Auth changes, or global Admin configuration changes.
 
 ## Final judgement
 
-The original P2 generation-completion defect remains fixed and live-user verified. QA-001 through QA-004 are now complete on the exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`, with reviewed responsive evidence and exact fixture cleanup. No P0–P3 defect is reproduced in completed coverage, and the bounded combined QA-002/QA-004 runtime-error query found no production runtime errors.
+The original P2 generation-completion defect remains fixed and live-user verified. QA-001 through QA-005 are complete on exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`, with reviewed responsive evidence and exact fixture cleanup. The final QA-005 run proves the current bounded provider/reconciliation failure contract converges to actionable terminal Activity states without real provider spend or infrastructure-detail leakage.
 
-The whole-product audit remains **open only for QA-005**. QA-005 owns bounded provider/reconciliation failure presentation and must prove failures become actionable terminal states rather than indefinite Activity refreshing without exposing provider internals. No deployment or unrelated production mutation is authorized by this closure record.
+No P0–P3 defect is reproduced in completed coverage. Bounded Vercel runtime inspection for the final audit found no grouped runtime errors and no error/fatal logs. The #278 whole-product production audit is **complete**. Production itself remains unchanged at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`; no deployment or unrelated production mutation was part of audit closure.

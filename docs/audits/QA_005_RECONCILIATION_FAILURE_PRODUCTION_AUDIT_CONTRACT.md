@@ -1,6 +1,6 @@
 # QA-005 Production Reconciliation / Failure Presentation Audit Contract
 
-**Status:** PERMANENT HARNESS IMPLEMENTED / PRODUCTION RUN NOT YET PERFORMED  
+**Status:** COMPLETE / PRODUCTION-VERIFIED / HUMAN-REVIEWED  
 **Tracker:** #278  
 **Planning baseline:** repository `main` `d87a627661370ab7d039db62cdab1622f156080d`  
 **Production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`  
@@ -14,7 +14,7 @@ QA-005 is production acceptance work. It is not a redesign, worker/provider resi
 
 ## Verified starting state
 
-- QA-001 through QA-004 are complete and production-verified. #278 remains open only for QA-005.
+- At QA-005 planning time, QA-001 through QA-004 were complete and production-verified and #278 remained open only for QA-005.
 - Production remains exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`.
 - The deployed generation/reconciliation and Activity presentation files are byte-identical to current `main` at planning time:
   - `src/server/generation/reconcile-generation.ts`
@@ -229,3 +229,20 @@ When these conditions pass, QA-005 closes the remaining #278 whole-product audit
 - The verifier independently proves DB/Auth absence and reconstructs deterministic generation-output keys from any leftover run-owned jobs before cleanup so the unconditional cleanup process can verify R2 absence after an interrupted audit.
 - Real production Activity is presentation-only: the verifier inspects both failed rows, Retry availability, non-active state, post-refresh stability, visible focus, 390px reduced-motion geometry and secret-safe rendering without clicking Retry.
 - Production execution and human evidence review remain required before QA-005 can close.
+
+
+## Production evidence
+
+- Contract PR #301 merged as `69eba224b4f3e6e939f288609828c2a8d3d4b5c2`.
+- Permanent harness PR #302 exact head `b065e3af18394c300f979ae569263d11b21765b1` passed Engineering Quality `35453629899` and merged as `8930638f47219482b9b7a4fd8063c36197335e50`; merged-main Engineering Quality `35453684388` passed.
+- Manual production audit run `35453752650` executed as a genuine `workflow_dispatch` from merged `main`, supplied exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`, and acknowledged both fixture-only failure work and zero real provider work.
+- The exact deployed source ran only on loopback with owner-scoped reconciliation. The provider-status fixture terminalized as `failed / generation_provider_stalled`; the stale incomplete-dispatch fixture terminalized as `failed / generation_orchestration_stalled`. No real provider-backed generation was dispatched.
+- Real production Activity rendered both failures as stable non-active `Failed / Needs action` rows with safe Retry guidance, no LIVE refresh indicator and no provider/worker/internal-code leakage. Retry was never clicked.
+- Artifact `10587349110` (`production-qa005-reconciliation-failure-35453752650-1`) has digest `sha256:941c7786707616a1b811e38f2d54da5b2deec3b4d391a176ae249e6eef343b8e`. The downloaded ZIP matched that digest exactly.
+- The artifact contains four screenshots plus `manifest.json`. Human review accepted desktop failure state, visible Retry focus, post-refresh-interval stability, and 390px reduced-motion evidence with no horizontal-overflow blocker or sensitive/provider-internal exposure.
+- The manifest records `providerBackedGenerationDispatched=false`, `runOwnedMockWorkerUsed=true`, cleanup `verified=true`, zero contracted DB/Auth residue and two deterministic R2 output objects checked.
+- The unconditional post-audit cleanup step passed independently. The temporary dispatcher branch was reset back to merged `main` immediately after dispatch.
+- Vercel runtime inspection for `2026-09-19T16:04:30Z`–`16:07:00Z` found no grouped runtime errors and no production error/fatal log entries.
+- Production deployment remained unchanged: latest READY production deployment is `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` at exact Git source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`.
+
+QA-005 therefore closes the bounded provider/reconciliation failure-presentation acceptance item. This remains a bounded contract, not a claim that every future provider failure mode has been exhaustively exercised.
