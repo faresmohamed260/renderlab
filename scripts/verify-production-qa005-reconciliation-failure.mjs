@@ -126,6 +126,16 @@ async function assertNoOutputs(jobId) {
 async function assertR2Absent() {
   for (const key of outputKeys) if (await keyExists(key)) throw new Error("QA-005 failed fixture unexpectedly created an R2 output.");
 }
+async function trackKnownFailureOutputKeys() {
+  const { data, error } = await db
+    .from("generation_jobs")
+    .select("id,created_at,output_kind")
+    .eq("owner_id", fixture.id);
+  if (error) throw error;
+  for (const job of data || []) {
+    if (job.output_kind === "image") outputKeys.add(imageKey(job));
+  }
+}
 async function independentAbsence() {
   for (const [table,column] of [
     ["generation_admission_reservations","owner_id"],["generation_jobs","owner_id"],["generation_sources","owner_id"],
@@ -143,6 +153,7 @@ async function independentAbsence() {
   return { verified: true, contractedDbAuthResidue: 0, trackedR2ObjectsChecked: outputKeys.size };
 }
 async function clean() {
+  await trackKnownFailureOutputKeys();
   await deleteConfiguredTestAccount(fixture);
   return independentAbsence();
 }
