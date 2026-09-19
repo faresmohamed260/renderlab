@@ -14,7 +14,7 @@ QA-005 is production acceptance work. It is not a redesign, worker/provider resi
 
 ## Verified starting state
 
-- QA-001 through QA-004 are complete and production-verified. #278 remains open only for QA-005.
+- At QA-005 planning time, QA-001 through QA-004 were complete and production-verified and #278 remained open only for QA-005.
 - Production remains exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`.
 - The deployed generation/reconciliation and Activity presentation files are byte-identical to current `main` at planning time:
   - `src/server/generation/reconcile-generation.ts`
