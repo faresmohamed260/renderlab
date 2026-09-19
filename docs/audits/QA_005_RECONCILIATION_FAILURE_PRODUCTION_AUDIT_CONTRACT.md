@@ -1,6 +1,6 @@
 # QA-005 Production Reconciliation / Failure Presentation Audit Contract
 
-**Status:** EXECUTION CONTRACT / IMPLEMENTATION NOT YET STARTED  
+**Status:** PERMANENT HARNESS IMPLEMENTED / PRODUCTION RUN NOT YET PERFORMED  
 **Tracker:** #278  
 **Planning baseline:** repository `main` `d87a627661370ab7d039db62cdab1622f156080d`  
 **Production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`  
@@ -218,3 +218,14 @@ QA-005 is complete when:
 - #278 and repository audit docs match verified reality.
 
 When these conditions pass, QA-005 closes the remaining #278 whole-product audit roadmap item. This does not mean every hypothetical provider outage or future capability has been exhaustively tested; it establishes the bounded production failure contract represented by the current product.
+
+
+## Implementation evidence
+
+- Permanent workflow: `.github/workflows/production-qa005-reconciliation-failure.yml`.
+- Permanent verifier: `scripts/verify-production-qa005-reconciliation-failure.mjs`.
+- Unit boundary guard: `tests/unit/production-qa005-audit-contract.test.mjs`.
+- The implementation separately checks out the operator-supplied exact production source, starts that source only on loopback, owner-scopes its reconciler to the deterministic QA-005 fixture, and routes the only generated fixture through the run-local mock worker.
+- The verifier independently proves DB/Auth absence and reconstructs deterministic generation-output keys from any leftover run-owned jobs before cleanup so the unconditional cleanup process can verify R2 absence after an interrupted audit.
+- Real production Activity is presentation-only: the verifier inspects both failed rows, Retry availability, non-active state, post-refresh stability, visible focus, 390px reduced-motion geometry and secret-safe rendering without clicking Retry.
+- Production execution and human evidence review remain required before QA-005 can close.
