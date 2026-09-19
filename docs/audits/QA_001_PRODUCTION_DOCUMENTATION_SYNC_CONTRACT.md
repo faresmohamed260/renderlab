@@ -1,6 +1,6 @@
 # QA-001 Production Documentation Synchronization Contract
 
-**Status:** IMPLEMENTATION READY / POST-CUTOVER CHECK RUN PENDING  
+**Status:** COMPLETE / VERIFIED — 2026-09-19  
 **Tracker:** #278  
 **Planning baseline:** repository `main` `301022db79660c788c9b41ec43d851e54e4cd272`  
 **Current production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`  
@@ -113,6 +113,15 @@ QA-001 is complete when:
 - exact implementation head and merged-main Engineering Quality pass;
 - a Production Documentation Sync run passes against the currently verified production SHA `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`; and
 - #278 and the production audit report accurately record the closure.
+
+## Verified closure evidence
+
+- Contract PR #294 merged as `772b19269a4d27a43e75407c148adb252717a627`.
+- Implementation PR #295 exact head `6f5992c1b710f0d47ae084af827cf66462e4eca8` passed Engineering Quality run `35402854810` and merged as `8028f8be33ef8760c55b7f796ed1a802f0199cd1`.
+- Merged-main Engineering Quality run `35402927526` passed.
+- Reusable Production Documentation Sync proof run `35413607297` passed with `expected_production_sha=2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` and logged that all four authorities matched that source in their marked current-production sections.
+- The proof used a temporary branch-only caller commit `c65be461aa0b8a602fe06996e12afd8c5129f9f9`; it was not merged, and the branch was reset to `main` after the run.
+- No production application or infrastructure mutation occurred.
 
 ## Next-phase dependency
 

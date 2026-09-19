@@ -151,7 +151,7 @@ Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtur
 
 ### QA-001 — Close production release-record drift at rollout time (P4)
 
-**Status:** **IMPLEMENTATION READY / POST-CUTOVER CHECK RUN PENDING.** Authority is `docs/audits/QA_001_PRODUCTION_DOCUMENTATION_SYNC_CONTRACT.md`. The implementation adds one current-production SHA marker to PROJECT, UI Migration, Screen Registry and Infrastructure plus a non-mutating manual/reusable post-cutover verifier that fails if those four authorities disagree with the supplied deployed SHA. QA-001 remains open until the permanent check passes on the currently verified production source.
+**Status:** **COMPLETE / VERIFIED.** Contract PR #294 and implementation PR #295 are merged; exact implementation-head Engineering Quality `35402854810` and merged-main Engineering Quality `35402927526` passed. Reusable Production Documentation Sync proof run `35413607297` supplied exact deployed source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` and passed the four-authority marker/prose check. The temporary branch-only caller was reset to `main` after proof. Future release closure now fails closed on stale current-production documentation.
 
 **Outcome:** every explicit production rollout leaves `PROJECT.md`, UI Migration, Screen Registry and Infrastructure pointing at the exact live source and rollout evidence.
 
@@ -187,7 +187,7 @@ These items are the next QA roadmap and are tracked by GitHub issue #278. They d
 
 The original P2 generation-completion defect remains fixed and live-user verified, and QA-003 now closes the fixture-safe Activity mutation plus AAL2 Admin gap on exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Responsive evidence and cleanup are clean, and no grouped runtime-error cluster is present for the bounded current rollout/audit window.
 
-The production audit remains **in progress** rather than exhaustive. No P0–P3 defect is reproduced in completed coverage. QA-004 is execution-contracted but not yet run; QA-005 remains under issue #278 and must wait for QA-004 evidence.
+The production audit remains **in progress** rather than exhaustive. No P0–P3 defect is reproduced in completed coverage. QA-001 and QA-003 are complete. QA-002 is now the next audit slice to expand; QA-004 is execution-contracted but not yet run; QA-005 remains under issue #278 and must wait for QA-004 evidence.
 
 
 
