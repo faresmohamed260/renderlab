@@ -159,6 +159,8 @@ Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtur
 
 ### QA-002 — Add a permanent non-destructive production user-journey workflow (P4)
 
+**Status:** **EXECUTION CONTRACT READY / IMPLEMENTATION NOT YET MERGED.** Authority is `docs/audits/QA_002_PERMANENT_PRODUCTION_USER_JOURNEY_CONTRACT.md`. The existing permanent production journey will be hardened in place with exact production-SHA/provider-work acknowledgement, read-only Settings/Profile/Preferences/Sessions coverage, a source/domain manifest, and independently verified DB/Auth/R2 cleanup.
+
 **Outcome:** the useful parts of audit run `35258165837` become a reviewed, manually dispatched workflow rather than temporarily replacing an existing workflow file.
 
 **Acceptance:** isolated fixture identity; exact cleanup; desktop plus 390px evidence; public routes, Create, Library, Viewer, Settings/Profile/Preferences/Sessions; no real-user data; no account deletion; no Admin-global mutation; artifact manifest with source SHA and domain.
@@ -187,7 +189,7 @@ These items are the next QA roadmap and are tracked by GitHub issue #278. They d
 
 The original P2 generation-completion defect remains fixed and live-user verified, and QA-003 now closes the fixture-safe Activity mutation plus AAL2 Admin gap on exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Responsive evidence and cleanup are clean, and no grouped runtime-error cluster is present for the bounded current rollout/audit window.
 
-The production audit remains **in progress** rather than exhaustive. No P0–P3 defect is reproduced in completed coverage. QA-001 and QA-003 are complete. QA-002 is now the next audit slice to expand; QA-004 is execution-contracted but not yet run; QA-005 remains under issue #278 and must wait for QA-004 evidence.
+The production audit remains **in progress** rather than exhaustive. No P0–P3 defect is reproduced in completed coverage. QA-001 and QA-003 are complete. QA-002 is execution-contracted but not yet implemented; QA-004 is execution-contracted but not yet run; QA-005 remains under issue #278 and must wait for QA-004 evidence.
 
 
 
