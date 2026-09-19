@@ -136,6 +136,9 @@ async function independentAbsence() {
     if (error) throw error;
     if (data?.length) throw new Error(`QA-005 cleanup left fixture residue in ${table}.`);
   }
+  const { data: authUser, error: authError } = await db.auth.admin.getUserById(fixture.id);
+  if (authError && !/not found/i.test(String(authError.message || ""))) throw authError;
+  if (authUser?.user) throw new Error("QA-005 cleanup left the fixture Auth user.");
   await assertR2Absent();
   return { verified: true, contractedDbAuthResidue: 0, trackedR2ObjectsChecked: outputKeys.size };
 }
@@ -147,8 +150,7 @@ async function shot(page,name) {
   await page.screenshot({ path:path.join(outDir,name), fullPage:true });
   evidenceFiles.push(name);
 }
-async function assertActivity(page, account, jobs) {
-  await routeLocalAppRequestsWithAccount(page, liveUrl, account);
+async function assertActivity(page, jobs) {
   await page.goto(`${liveUrl}/activity`, { waitUntil:"networkidle" });
   for (const item of jobs) {
     const row=page.locator('li[data-activity-status="failed"]').filter({hasText:item.prompt});
@@ -169,17 +171,20 @@ async function visualProof(account, jobs) {
   try {
     const desktop=await browser.newContext({viewport:{width:1440,height:1000}});
     const page=await desktop.newPage();
-    await assertActivity(page,account,jobs); await shot(page,"00-activity-failed-desktop.png");
+    await routeLocalAppRequestsWithAccount(page, liveUrl, account);
+    await assertActivity(page,jobs); await shot(page,"00-activity-failed-desktop.png");
     const retry=page.locator('li[data-activity-status="failed"]').filter({hasText:providerPrompt}).getByRole("button",{name:"Retry"});
     await page.keyboard.press("Tab"); await retry.focus();
     const focus=await retry.evaluate(el=>{const s=getComputedStyle(el);return s.outlineStyle!=="none"||s.boxShadow!=="none";});
     if (!focus) throw new Error("Retry focus is not visibly styled.");
     await shot(page,"01-activity-retry-focus-desktop.png");
-    await page.waitForTimeout(6500); await assertActivity(page,account,jobs); await shot(page,"02-activity-post-refresh-interval-desktop.png");
+    await page.waitForTimeout(6500); await assertActivity(page,jobs); await shot(page,"02-activity-post-refresh-interval-desktop.png");
     await desktop.close();
 
     const mobile=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce",isMobile:true,hasTouch:true});
-    const mp=await mobile.newPage(); await assertActivity(mp,account,jobs);
+    const mp=await mobile.newPage();
+    await routeLocalAppRequestsWithAccount(mp, liveUrl, account);
+    await assertActivity(mp,jobs);
     const overflow=await mp.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
     if (overflow>1) throw new Error(`Activity overflows 390px by ${overflow}px.`);
     await shot(mp,"03-activity-failed-mobile-reduced.png"); await mobile.close();
