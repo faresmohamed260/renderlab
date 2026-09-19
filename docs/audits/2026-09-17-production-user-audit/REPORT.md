@@ -1,12 +1,14 @@
-# RenderLab production user audit — 2026-09-17, production closure updated 2026-09-18
+# RenderLab production user audit — 2026-09-17, production closure updated 2026-09-19
 
 ## Verdict
 
-**Production acceptance: QA-003 COMPLETE / WHOLE-PRODUCT AUDIT STILL OPEN.** The live custom domain now serves exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Guarded rollout `35373771751` created READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`, explicitly moved `renderlab.faresuniform.uk`, passed the accepted custom-domain smoke set and did not invoke rollback.
+**Production acceptance: QA-001–QA-004 COMPLETE / WHOLE-PRODUCT AUDIT OPEN ONLY ON QA-005.** The live custom domain remains on exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`.
 
-Final QA-003 run `35374052822` then passed the bounded fixture-only production contract: Cancel traversed `cancelling → cancelled`; Retry and Run Again reached `succeeded`; the dedicated Admin fixture enrolled TOTP, completed a fresh AAL2 challenge and exposed read-only Admin on desktop and 390px. Artifact `10559613086` (`sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c`) contains 32 screenshots plus the source/domain/cleanup manifest. Human review found the Activity/Admin states responsive and readable, keyboard focus visible and reduced-motion geometry functional. Exact pre/post DB/Auth fixture-absence checks passed; the manifest records verified cleanup with four R2 objects checked.
+QA-002 manual run `35440027637` passed exactly four fixture-owned production creative journeys (Image, Edit, Animate and standalone Video), public/signed-out states, durable Library/Viewer results and read-only Settings/Profile/Preferences/session coverage. Artifact `10583333354` (`sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227`) contains 38 human-reviewed screenshots; its manifest records cleanup verified, nine tracked R2 objects checked and zero contracted DB/Auth residue.
 
-No P0–P3 defect is currently reproduced in completed production-audit coverage. **This is still not a claim that every RenderLab feature has been exhaustively exercised on production.** QA-004 is now governed by `docs/audits/QA_004_ACCOUNT_SECURITY_DATA_PRODUCTION_AUDIT_CONTRACT.md` but has not yet executed; QA-005 remains roadmap-only until QA-004 evidence exists.
+QA-004 manual run `35440028603` passed live profile/avatar, preferences, session semantics, password/recovery presentation, MFA assurance, data export and fixture-only account deletion with no provider-backed generation. Conditional email change was correctly recorded as `skipped_gate_not_met`. Artifact `10584065519` (`sha256:36af1273b690c1bffe35b50a4bbd77752a4df638d7406d89f3e2e55ca914b38f`) contains 11 human-reviewed screenshots; cleanup verified seven configured accounts, eight known R2 objects and session-run users.
+
+No P0–P3 defect is currently reproduced in completed production-audit coverage. A bounded Vercel grouped runtime-error query covering the combined QA-002/QA-004 window found no runtime errors. Per-entry error/fatal logs remain unavailable because Vercel returns `ExceedsBillingLimitError`, so no stronger log-absence claim is made. QA-005 bounded provider/reconciliation failure presentation is the only remaining #278 audit slice; this report still does not claim that every possible RenderLab failure mode has been exhaustively exercised.
 
 ## Audit identity and production provenance
 
@@ -24,6 +26,10 @@ No P0–P3 defect is currently reproduced in completed production-audit coverage
 | QA-003 artifact digest | `sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c` |
 | QA-003 evidence | 32 screenshots plus manifest; desktop, 390px, visible-focus and reduced-motion states human-reviewed |
 | QA-003 cleanup | Exact pre/post DB/Auth absence passed; manifest `verified=true`, four R2 objects checked |
+| QA-002 production run | `35440027637`, successful; exactly four fixture-owned provider generations |
+| QA-002 artifact | `10583333354` / `sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227`; 38 screenshots; cleanup verified; 9 R2 objects; 0 contracted DB/Auth residue |
+| QA-004 production run | `35440028603`, successful; no provider generation; email change `skipped_gate_not_met` |
+| QA-004 artifact | `10584065519` / `sha256:36af1273b690c1bffe35b50a4bbd77752a4df638d7406d89f3e2e55ca914b38f`; 11 screenshots; cleanup verified; 7 configured accounts; 8 known R2 objects |
 | Runtime inspection | No grouped runtime errors in the bounded rollout/audit window; per-entry runtime logs unavailable because Vercel returned `ExceedsBillingLimitError` |
 
 Historical audit/fix provenance below remains relevant for the earlier #279 completion-refresh defect and the initial whole-product baseline.
@@ -139,6 +145,8 @@ Corrective end-to-end run `35269965598` was the product finding that led to #279
 
 Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtures. Pre-cleanup verified exact DB/Auth absence, the audit completed Cancel/Retry/Run Again plus fresh-AAL2 Admin coverage, post-cleanup again verified exact DB/Auth absence, and the manifest records verified cleanup with four R2 objects checked.
 
+QA-002 run `35440027637` then completed exactly four run-owned provider generations and independently verified zero contracted DB/Auth residue plus absence of nine tracked R2 objects after cleanup. QA-004 run `35440028603` independently passed its profile/preferences/session/MFA/export/delete fixture cleanup and the final manifest records seven configured accounts plus eight known R2 objects checked. Both workflows' unconditional post-audit cleanup legs passed.
+
 ## Prioritized remediation roadmap
 
 ### QA-000 / issue #279 — Repair and prove generation completion refresh (P2)
@@ -159,7 +167,7 @@ Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtur
 
 ### QA-002 — Add a permanent non-destructive production user-journey workflow (P4)
 
-**Status:** **IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_002_PERMANENT_PRODUCTION_USER_JOURNEY_CONTRACT.md`. PR #298 merged the hardened existing workflow as `db48d14fa5265036066531cba8aa93d9ac6602f5`; exact-head Engineering Quality `35414005279` and merged-main `35414043345` passed. The workflow now requires exact production-SHA/provider acknowledgement, covers read-only Settings/Profile/Preferences/Sessions, emits a source/domain manifest and independently verifies DB/Auth/R2 cleanup. QA-002 remains open until the manual production run and human evidence review pass.
+**Status:** **COMPLETE / PRODUCTION-VERIFIED / HUMAN-REVIEWED.** Authority is `docs/audits/QA_002_PERMANENT_PRODUCTION_USER_JOURNEY_CONTRACT.md`. PR #298 merged the hardened workflow; manual run `35440027637` passed exactly four fixture-owned provider generations plus the expanded public/account coverage. Artifact `10583333354` contains 38 human-reviewed screenshots, and the manifest proves exact source/domain acknowledgement with cleanup verified, nine R2 objects checked and zero contracted DB/Auth residue.
 
 **Outcome:** the useful parts of audit run `35258165837` become a reviewed, manually dispatched workflow rather than temporarily replacing an existing workflow file.
 
@@ -175,7 +183,7 @@ Final QA-003 run `35374052822` used separate run-owned Activity and Admin fixtur
 
 **Outcome:** exercise the production forms and state transitions that were intentionally not submitted on the real owner account: profile save/remove, preferences save/reset, session semantics, password/recovery presentation, MFA enrollment/challenge boundary, data export, and account deletion.
 
-**Status:** **EXECUTION CONTRACT + PERMANENT HARNESS MERGED / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_004_ACCOUNT_SECURITY_DATA_PRODUCTION_AUDIT_CONTRACT.md`. PR #292 / `4254f07ab044d2d1d815498844513bf57e451ba6` merged the manual-only workflow and production orchestrator after the workflow YAML serialization defect was corrected; exact PR head and merged-main Engineering Quality passed. The contract requires run-owned accounts only, no provider-backed generation, desktop/390px secret-safe evidence, a sentinel non-interference account and exact Auth/database/R2 cleanup. Secure email-change acceptance is conditional on an explicitly available dedicated mailbox pair and bounded hosted rate-limit budget.
+**Status:** **COMPLETE / PRODUCTION-VERIFIED / HUMAN-REVIEWED.** Authority is `docs/audits/QA_004_ACCOUNT_SECURITY_DATA_PRODUCTION_AUDIT_CONTRACT.md`. Manual run `35440028603` passed the run-owned profile/preferences/session/password-recovery/MFA/export/delete scope with no provider generation. Email change was truthfully `skipped_gate_not_met`. Artifact `10584065519` contains 11 human-reviewed screenshots; exact Auth/database/R2 cleanup passed with seven configured accounts and eight known R2 objects checked.
 
 ### QA-005 — Bound generation reconciliation/error presentation (P4)
 
@@ -187,10 +195,6 @@ These items are the next QA roadmap and are tracked by GitHub issue #278. They d
 
 ## Final judgement
 
-The original P2 generation-completion defect remains fixed and live-user verified, and QA-003 now closes the fixture-safe Activity mutation plus AAL2 Admin gap on exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Responsive evidence and cleanup are clean, and no grouped runtime-error cluster is present for the bounded current rollout/audit window.
+The original P2 generation-completion defect remains fixed and live-user verified. QA-001 through QA-004 are now complete on the exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`, with reviewed responsive evidence and exact fixture cleanup. No P0–P3 defect is reproduced in completed coverage, and the bounded combined QA-002/QA-004 runtime-error query found no production runtime errors.
 
-The production audit remains **in progress** rather than exhaustive. No P0–P3 defect is reproduced in completed coverage. QA-001 and QA-003 are complete. QA-002 is execution-contracted but not yet implemented; QA-004 is execution-contracted but not yet run; QA-005 remains under issue #278 and must wait for QA-004 evidence.
-
-
-
-
+The whole-product audit remains **open only for QA-005**. QA-005 owns bounded provider/reconciliation failure presentation and must prove failures become actionable terminal states rather than indefinite Activity refreshing without exposing provider internals. No deployment or unrelated production mutation is authorized by this closure record.
