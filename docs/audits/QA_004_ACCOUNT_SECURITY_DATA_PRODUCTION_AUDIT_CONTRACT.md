@@ -1,6 +1,6 @@
 # QA-004 Production Account / Security / Data Audit Contract
 
-**Status:** EXECUTION CONTRACT + PERMANENT HARNESS MERGED / PRODUCTION RUN NOT YET PERFORMED  
+**Status:** COMPLETE / PRODUCTION-VERIFIED / HUMAN-REVIEWED  
 **Tracker:** #278  
 **Planning baseline:** repository `main` `310f345d6c80002ef274f1c86d4ddec61914e8da`  
 **Production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`  
@@ -19,7 +19,7 @@ QA-004 is acceptance/audit work. It does not redesign Settings, expand account c
 - #216 session controls, #217 TOTP/AAL2 step-up, #218 secure email identity management and #219 data export/deletion are production-live. Profile/credential UX and durable Create preferences are also included in the current production application source.
 - Existing configured workflows already prove the component contracts locally/exact-head: Account Profile Credential, Session Controls, MFA Privileged Step-Up, Account Data Lifecycle and Account Identity. QA-004 must reuse their proven fixture/data semantics where appropriate rather than creating competing account models.
 - Existing configured account-data acceptance includes active-generation cancellation and injected retry faults. QA-004 does not need to spend provider work or repeat fault injection to prove the live account surface; those remain covered by the dedicated configured #219 suite.
-- Permanent harness PR #292 merged as `4254f07ab044d2d1d815498844513bf57e451ba6`. Exact PR head `559def62a8336c95f8aa7fdbf7adba41fb100ef1` passed Engineering Quality after correcting an invalid one-line/literal-`\\n` workflow serialization, and merged-main Engineering Quality run `35397924862` passed. The merged harness is `.github/workflows/production-qa004-account-security-data.yml` plus `scripts/verify-production-qa004-account-security-data.mjs` and its unit contract guard. No production audit run has executed yet.
+- Permanent harness PR #292 merged as `4254f07ab044d2d1d815498844513bf57e451ba6`. Exact PR head `559def62a8336c95f8aa7fdbf7adba41fb100ef1` passed Engineering Quality after correcting an invalid one-line/literal-`\\n` workflow serialization, and merged-main Engineering Quality run `35397924862` passed. The merged harness is `.github/workflows/production-qa004-account-security-data.yml` plus `scripts/verify-production-qa004-account-security-data.mjs` and its unit contract guard. Production execution is complete; verified evidence is recorded below.
 
 ## In scope
 
@@ -187,6 +187,17 @@ QA-004 is complete when:
 - evidence is human-reviewed and secret-safe; and
 - the repository/report/#278 tracker match verified reality.
 
+## Production evidence
+
+- Manual production run `35440028603` executed from `main` head `53e847b2ffe2517688de7aa621c5fbaf3f1e78a0` as a genuine `workflow_dispatch` against independently reverified production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`.
+- Both explicit acknowledgements passed: exact production-source verification and fixture-only destructive work. No provider-backed generation was dispatched.
+- The live profile/credential/MFA suite passed, including profile/avatar lifecycle and the AAL1 → fresh-AAL2 sensitive-boundary check. The preferences/export/delete suite passed with sentinel non-interference. The session suite passed local/others/global semantics, stale-bearer denial and Settings desktop/mobile controls.
+- Email change was truthfully recorded as `skipped_gate_not_met`; the dedicated mailbox/rate-limit gate was not satisfied and this is allowed by the contract.
+- Artifact `10584065519` (`production-qa004-account-security-data-35440028603-1`) has digest `sha256:36af1273b690c1bffe35b50a4bbd77752a4df638d7406d89f3e2e55ca914b38f`. Its manifest records cleanup `verified=true`, seven configured accounts checked, eight known R2 objects checked, session-run users checked, and 11 evidence screenshots.
+- Human review accepted all 11 screenshots across profile/credential, preferences and session controls at desktop/390px/reduced-motion sizes with no secret exposure or horizontal-overflow blocker.
+- Pre-clean, in-run cleanup and unconditional post-clean all passed with exact known Auth/database/R2 absence. No P0–P3 product defect was reproduced.
+- A bounded Vercel runtime-error query covering the combined QA-002/QA-004 audit window returned no runtime-error clusters. Per-entry error/fatal log retrieval remained unavailable because Vercel returned `ExceedsBillingLimitError`.
+
 ## Next-phase dependency
 
-After QA-004 closes, QA-005 may expand into an execution-ready contract using the then-current production evidence. QA-005 owns bounded provider/reconciliation failure presentation and must not be implemented merely because this contract exists.
+QA-004 is closed. QA-005 is now unblocked to become an execution-ready bounded provider/reconciliation failure-presentation audit; it remains a separate scope and must preserve the fixture/provider safety boundaries in #278.

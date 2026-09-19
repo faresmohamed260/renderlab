@@ -1,6 +1,6 @@
 # QA-002 Permanent Production User Journey Contract
 
-**Status:** IMPLEMENTATION MERGED + MERGED-MAIN VERIFIED / PRODUCTION RUN NOT YET PERFORMED  
+**Status:** COMPLETE / PRODUCTION-VERIFIED / HUMAN-REVIEWED  
 **Tracker:** #278  
 **Planning baseline:** repository `main` `023d21637fd59e4da8f664ea047c7d04a5102fc8`  
 **Current production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`  
@@ -190,8 +190,13 @@ QA-002 is complete when:
 - Implementation PR #298 exact head `6e57f3863c02e443894783cd0367cd5f799172f2` passed Engineering Quality run `35414005279` and merged as `db48d14fa5265036066531cba8aa93d9ac6602f5`.
 - Merged-main Engineering Quality run `35414043345` passed.
 - The live Vercel application remained unchanged and was reverified as READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` with exact Git source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`.
-- No production QA-002 workflow run has executed yet; manual dispatch and human evidence review remain required for closure.
+- Manual production run `35440027637` executed from `main` head `53e847b2ffe2517688de7aa621c5fbaf3f1e78a0` as a genuine `workflow_dispatch` against exact production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`; the explicit bounded provider-work acknowledgement was true.
+- The run completed exactly four fixture-owned provider generations (Image, Edit, Animate and standalone Video), observed truthful Activity terminalization, opened durable Viewer results, verified Library presence, and covered signed-out plus read-only Settings/Profile/Preferences/session states.
+- Artifact `10583333354` (`production-complete-user-journey-35440027637-1`) has digest `sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227`. Its manifest records `providerGenerationCount=4`, cleanup `verified=true`, nine tracked R2 objects checked, zero contracted DB/Auth residue, and 38 evidence screenshots.
+- Human review accepted all 38 screenshots across desktop, 390px, visible-focus and reduced-motion states with no horizontal-overflow blocker or sensitive-value exposure.
+- The workflow's pre-clean, in-run cleanup and unconditional post-clean all passed. No P0–P3 product defect was reproduced.
+- A bounded Vercel runtime-error query covering the audit window returned no runtime-error clusters. Per-entry error/fatal log retrieval remained unavailable because Vercel returned `ExceedsBillingLimitError`, so no stronger log-absence claim is made.
 
 ## Next-phase dependency
 
-QA-002 completion does not unblock QA-005. QA-005 remains dependent on QA-004 production evidence under the current #278 ordering. QA-004 itself remains execution-ready but awaiting its explicit manual production dispatch.
+QA-002 is closed. QA-005 is now gated only by the separately completed QA-004 production evidence and may proceed under its own bounded failure-presentation contract.

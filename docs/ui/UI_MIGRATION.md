@@ -12,16 +12,17 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Validate rendered UI, not only compilation.
 - Keep repository documentation synchronized with verified implementation.
 
-## Current production and whole-product audit — 2026-09-18
+## Current production and whole-product audit — 2026-09-19
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 2fc64231f8aa0e5a2df8b2698824319a25c4e9f8 -->
-**Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-001 + QA-003 COMPLETE / WHOLE-PRODUCT AUDIT OPEN`.**
+**Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-001–QA-004 COMPLETE / QA-005 OPEN`.**
 
-- Exact current production source is `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Guarded rollout `35373771751` checked out the pristine exact source, created READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`, explicitly moved the custom-domain alias, passed smoke for root plus Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
-- QA-003 manual run `35374052822` passed the accepted fixture-only provider-work contract: Cancel reached `cancelled`; Retry and Run Again each reached `succeeded`; the run-owned administrator completed TOTP enrollment plus a fresh AAL2 challenge and exposed the read-only Admin surface on desktop and 390px.
-- Artifact `10559613086` / `sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c` contains 32 screenshots plus its manifest. Human review accepted responsive geometry, visible focus and reduced-motion behavior; exact pre/post DB/Auth cleanup passed and the manifest records verified cleanup with four R2 objects checked.
-- Vercel grouped runtime-error inspection found no runtime errors in the rollout/audit window. Per-entry log retrieval is billing-limited, so no unsupported warning/info-log claim is made.
-- QA-001 production-documentation synchronization is complete: permanent markers/verifier merged in PR #295 / `8028f8be33ef8760c55b7f796ed1a802f0199cd1`, merged-main Engineering Quality `35402927526` passed, and reusable proof run `35413607297` verified all four current-production authorities against exact deployed source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`.
-- The whole-product user audit remains open for the remaining #278 roadmap. QA-002 is execution-ready and its hardened permanent workflow merged in PR #298 / `db48d14fa5265036066531cba8aa93d9ac6602f5`; exact-head Engineering Quality `35414005279` and merged-main Engineering Quality `35414043345` passed, but its manual production run/evidence review are still pending. QA-004 also awaits its explicit manual production dispatch; QA-005 remains roadmap-only. No UI redesign is authorized by this audit.
+- Exact current production source remains `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`; automatic Git → Vercel deployment remains disabled.
+- QA-001 documentation synchronization is complete through permanent verifier merge `8028f8be33ef8760c55b7f796ed1a802f0199cd1` and proof run `35413607297`.
+- QA-002 manual production run `35440027637` passed exactly four fixture-owned Image/Edit/Animate/Video generations plus public/signed-out, Library/Viewer and read-only Settings/Profile/Preferences/session coverage. Artifact `10583333354` / `sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227` contains 38 human-reviewed screenshots; cleanup verified nine R2 objects and zero contracted DB/Auth residue.
+- QA-003 manual run `35374052822` remains accepted for fixture-safe Activity actions plus fresh-AAL2 read-only Admin; artifact `10559613086` contains 32 human-reviewed screenshots with exact cleanup.
+- QA-004 manual production run `35440028603` passed profile/avatar, preferences, session controls, password/recovery presentation, MFA assurance, export and fixture-only account deletion with no provider generation. Email change was correctly `skipped_gate_not_met`. Artifact `10584065519` / `sha256:36af1273b690c1bffe35b50a4bbd77752a4df638d7406d89f3e2e55ca914b38f` contains 11 human-reviewed screenshots; cleanup verified seven configured accounts and eight known R2 objects.
+- Combined QA-002/QA-004 Vercel grouped runtime-error inspection found no runtime errors. Per-entry logs remain billing-limited. No UI redesign, route change, deployment, schema/Auth-policy, R2 resource, provider/worker or routing mutation was authorized or performed by these audits.
+- The whole-product audit remains open only for QA-005 bounded provider/reconciliation failure presentation. No P0–P3 defect is currently reproduced in completed coverage.
 
 ## Superseded account/security production rollout — 2026-09-15
 **Status: `#216–#219 COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
