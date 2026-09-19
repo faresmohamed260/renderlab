@@ -35,6 +35,8 @@ test("QA-005 verifier keeps failure work fixture-scoped and real-provider-free",
   assert.match(verifier, /generation_orchestration_stalled/);
   assert.match(verifier, /providerBackedGenerationDispatched:false/);
   assert.match(verifier, /runOwnedMockWorkerUsed:true/);
+  assert.match(verifier, /trackKnownFailureOutputKeys/);
+  assert.match(verifier, /getUserById\(fixture\.id\)/);
   assert.match(verifier, /data-activity-live="true"/);
   assert.match(verifier, /Generation did not complete\. Retry when you’re ready\./);
   assert.match(verifier, /waitForTimeout\(6500\)/);
