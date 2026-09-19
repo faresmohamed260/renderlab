@@ -14,7 +14,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 ## Current production and whole-product audit — 2026-09-19
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 2fc64231f8aa0e5a2df8b2698824319a25c4e9f8 -->
-**Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-001–QA-004 COMPLETE / QA-005 OPEN`.**
+**Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-001–QA-005 COMPLETE / WHOLE-PRODUCT AUDIT COMPLETE`.**
 
 - Exact current production source remains `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` at READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`; automatic Git → Vercel deployment remains disabled.
 - QA-001 documentation synchronization is complete through permanent verifier merge `8028f8be33ef8760c55b7f796ed1a802f0199cd1` and proof run `35413607297`.
@@ -22,7 +22,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - QA-003 manual run `35374052822` remains accepted for fixture-safe Activity actions plus fresh-AAL2 read-only Admin; artifact `10559613086` contains 32 human-reviewed screenshots with exact cleanup.
 - QA-004 manual production run `35440028603` passed profile/avatar, preferences, session controls, password/recovery presentation, MFA assurance, export and fixture-only account deletion with no provider generation. Email change was correctly `skipped_gate_not_met`. Artifact `10584065519` / `sha256:36af1273b690c1bffe35b50a4bbd77752a4df638d7406d89f3e2e55ca914b38f` contains 11 human-reviewed screenshots; cleanup verified seven configured accounts and eight known R2 objects.
 - Combined QA-002/QA-004 Vercel grouped runtime-error inspection found no runtime errors. Per-entry logs remain billing-limited. No UI redesign, route change, deployment, schema/Auth-policy, R2 resource, provider/worker or routing mutation was authorized or performed by these audits.
-- The whole-product audit remains open only for QA-005 bounded provider/reconciliation failure presentation. No P0–P3 defect is currently reproduced in completed coverage.
+- QA-005 manual production run `35453752650` passed on the exact deployed source using owner-scoped loopback reconciliation and a run-local mock worker with zero real provider spend. The two bounded failure fixtures terminalized as sanitized `generation_provider_stalled` and `generation_orchestration_stalled`; real production Activity remained non-live and actionable before/after a refresh interval. Artifact `10587349110` / `sha256:941c7786707616a1b811e38f2d54da5b2deec3b4d391a176ae249e6eef343b8e` contains four human-reviewed desktop/focus/post-refresh/390px-reduced-motion screenshots; cleanup verified zero DB/Auth residue and two R2 objects. QA-001 through QA-005 are complete; the #278 whole-product production audit is complete. No P0–P3 defect is currently reproduced in completed coverage.
 
 ## Superseded account/security production rollout — 2026-09-15
 **Status: `#216–#219 COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
