@@ -14,13 +14,14 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 ## Current production and whole-product audit — 2026-09-18
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 2fc64231f8aa0e5a2df8b2698824319a25c4e9f8 -->
-**Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-003 COMPLETE / WHOLE-PRODUCT AUDIT OPEN`.**
+**Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-001 + QA-003 COMPLETE / WHOLE-PRODUCT AUDIT OPEN`.**
 
 - Exact current production source is `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. Guarded rollout `35373771751` checked out the pristine exact source, created READY deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz`, explicitly moved the custom-domain alias, passed smoke for root plus Create, Library, Activity, Settings, Password, Profile and Preferences, and did not invoke rollback.
 - QA-003 manual run `35374052822` passed the accepted fixture-only provider-work contract: Cancel reached `cancelled`; Retry and Run Again each reached `succeeded`; the run-owned administrator completed TOTP enrollment plus a fresh AAL2 challenge and exposed the read-only Admin surface on desktop and 390px.
 - Artifact `10559613086` / `sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c` contains 32 screenshots plus its manifest. Human review accepted responsive geometry, visible focus and reduced-motion behavior; exact pre/post DB/Auth cleanup passed and the manifest records verified cleanup with four R2 objects checked.
 - Vercel grouped runtime-error inspection found no runtime errors in the rollout/audit window. Per-entry log retrieval is billing-limited, so no unsupported warning/info-log claim is made.
-- The whole-product user audit remains open for the remaining #278 roadmap. QA-004 is eligible to begin after this closure but was not started here; QA-005 remains outstanding. No UI redesign is authorized by this audit.
+- QA-001 production-documentation synchronization is complete: permanent markers/verifier merged in PR #295 / `8028f8be33ef8760c55b7f796ed1a802f0199cd1`, merged-main Engineering Quality `35402927526` passed, and reusable proof run `35413607297` verified all four current-production authorities against exact deployed source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`.
+- The whole-product user audit remains open for the remaining #278 roadmap. QA-002 is next for execution-ready expansion; QA-004 still awaits its explicit manual production dispatch; QA-005 remains roadmap-only. No UI redesign is authorized by this audit.
 
 ## Superseded account/security production rollout — 2026-09-15
 **Status: `#216–#219 COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
