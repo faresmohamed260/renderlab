@@ -1,0 +1,199 @@
+name: QA-005 Production Reconciliation Failure Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_production_sha:
+        description: Exact 40-character Git SHA independently verified as production-live
+        required: true
+        type: string
+      confirm_fixture_only_failure_work:
+        description: Confirm all Auth/DB mutations are limited to the exact run-owned QA-005 fixture
+        required: true
+        type: boolean
+        default: false
+      confirm_zero_real_provider_work:
+        description: Confirm provider failure uses only the run-local mock worker and no real provider-backed generation
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-production-qa005-reconciliation-failure
+  cancel-in-progress: false
+
+jobs:
+  production-qa005:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: https://renderlab.faresuniform.uk
+      RENDERLAB_QA005_LOCAL_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_QA005_MOCK_WORKER_URL: http://127.0.0.1:4312
+      RENDERLAB_QA005_ARTIFACT_DIR: artifacts/qa005-production-reconciliation-failure
+      RENDERLAB_EXPECTED_PRODUCTION_SHA: ${{ inputs.expected_production_sha }}
+      RENDERLAB_CONFIRM_FIXTURE_ONLY_FAILURE_WORK: ${{ inputs.confirm_fixture_only_failure_work }}
+      RENDERLAB_CONFIRM_ZERO_REAL_PROVIDER_WORK: ${{ inputs.confirm_zero_real_provider_work }}
+      RENDERLAB_TEST_ACCOUNT_SCOPE: qa005-${{ github.run_id }}
+      RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS: "true"
+      RENDERLAB_TEST_RECONCILER_OWNER_SCOPE: "true"
+      RENDERLAB_GENERATION_RECONCILER_SECRET: qa005-local-reconciler-${{ github.run_id }}-${{ github.run_attempt }}
+      RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE: "true"
+      RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL: http://127.0.0.1:4312
+      RENDERLAB_TEST_NATIVE_WORKER_PORT: "4312"
+
+    steps:
+      - name: Validate manual production-audit dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "::error::QA-005 is manual production-audit only."
+            exit 1
+          fi
+          if [ "$RENDERLAB_CONFIRM_FIXTURE_ONLY_FAILURE_WORK" != "true" ]; then
+            echo "::error::QA-005 requires explicit fixture-only failure-work confirmation."
+            exit 1
+          fi
+          if [ "$RENDERLAB_CONFIRM_ZERO_REAL_PROVIDER_WORK" != "true" ]; then
+            echo "::error::QA-005 requires explicit zero-real-provider confirmation."
+            exit 1
+          fi
+          if ! printf "%s" "$RENDERLAB_EXPECTED_PRODUCTION_SHA" | grep -Eq "^[0-9a-fA-F]{40}$"; then
+            echo "::error::expected_production_sha must be an exact 40-character Git SHA."
+            exit 1
+          fi
+
+      - name: Checkout audit harness head
+        uses: actions/checkout@v4
+
+      - name: Checkout exact production source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_production_sha }}
+          path: production-source
+
+      - name: Verify exact production checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git -C production-source rev-parse HEAD)"
+          if [ "$actual" != "$RENDERLAB_EXPECTED_PRODUCTION_SHA" ]; then
+            echo "::error::Exact production checkout mismatch: expected $RENDERLAB_EXPECTED_PRODUCTION_SHA got $actual"
+            exit 1
+          fi
+          echo "RENDERLAB_QA005_LOCAL_SOURCE_SHA=$actual" >> "$GITHUB_ENV"
+
+      - name: Validate shared-resource secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install audit dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install exact-production dependencies
+        working-directory: production-source
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate QA-005 audit harness
+        run: |
+          node --check scripts/verify-production-qa005-reconciliation-failure.mjs
+          node --test tests/unit/production-qa005-audit-contract.test.mjs
+
+      - name: Resolve isolated QA-005 fixture owner
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE' >> "$GITHUB_ENV"
+          import { configuredTestAccountIdentity } from "./scripts/lib/configured-test-account.mjs";
+          console.log(`RENDERLAB_TEST_RECONCILER_OWNER_ID=${configuredTestAccountIdentity("qa005-reconciliation-failure").id}`);
+          NODE
+
+      - name: Clean exact QA-005 fixture before audit
+        run: node scripts/verify-production-qa005-reconciliation-failure.mjs --cleanup-only
+
+      - name: Build exact production source
+        working-directory: production-source
+        run: npm run build
+
+      - name: Start run-owned mock worker
+        shell: bash
+        run: |
+          node production-source/scripts/mock-native-generation-worker.mjs > /tmp/renderlab-qa005-worker.log 2>&1 &
+          echo $! > /tmp/renderlab-qa005-worker.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4312/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-qa005-worker.log
+          exit 1
+
+      - name: Start owner-scoped exact-production application
+        shell: bash
+        run: |
+          cd production-source
+          npm run start -- -p 3000 > /tmp/renderlab-qa005-next.log 2>&1 &
+          echo $! > /tmp/renderlab-qa005-next.pid
+          cd ..
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-qa005-next.log
+          exit 1
+
+      - name: Run QA-005 production reconciliation failure audit
+        run: node scripts/verify-production-qa005-reconciliation-failure.mjs
+
+      - name: Clean exact QA-005 fixture after audit
+        if: always()
+        run: node scripts/verify-production-qa005-reconciliation-failure.mjs --cleanup-only
+
+      - name: Print local exact-source logs on failure
+        if: failure()
+        run: |
+          echo "--- exact-production app ---"
+          cat /tmp/renderlab-qa005-next.log || true
+          echo "--- run-owned mock worker ---"
+          cat /tmp/renderlab-qa005-worker.log || true
+
+      - name: Upload QA-005 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-qa005-reconciliation-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/qa005-production-reconciliation-failure
+          if-no-files-found: warn
+          retention-days: 30

@@ -187,9 +187,11 @@ QA-002 run `35440027637` then completed exactly four run-owned provider generati
 
 ### QA-005 — Bound generation reconciliation/error presentation (P4)
 
+**Status:** **PERMANENT HARNESS IMPLEMENTED / PRODUCTION RUN NOT YET PERFORMED.** Authority is `docs/audits/QA_005_RECONCILIATION_FAILURE_PRODUCTION_AUDIT_CONTRACT.md`. The implementation uses an exact-production-source loopback process whose reconciler is restricted to one run-owned fixture account, a loopback mock worker with zero real provider spend, and the real production Activity UI for presentation-only verification. It never calls the deployed unscoped reconciler and never clicks Retry. Cleanup independently proves DB/Auth absence plus deterministic R2-output absence.
+
 **Outcome:** prove that provider/reconciliation failures do not leave Activity claiming indefinite refresh.
 
-**Acceptance:** controlled non-provider failure seams or run-owned failure fixtures exercise server reconciliation error handling and produce a bounded actionable state without exposing provider internals.
+**Acceptance:** one prolonged mock provider-status outage must terminalize as sanitized `generation_provider_stalled`, one stale incomplete-dispatch fixture must terminalize as `generation_orchestration_stalled`, and the real production Activity surface must show stable non-live Failed / Needs action / Retry presentation on desktop and reduced-motion 390px without provider internals.
 
 These items are the next QA roadmap and are tracked by GitHub issue #278. They do not authorize unrelated product implementation, production deployment, hosted Auth changes, or global Admin configuration changes.
 
