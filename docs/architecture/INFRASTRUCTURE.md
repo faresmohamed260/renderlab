@@ -32,14 +32,16 @@ Records durable RenderLab infrastructure decisions and verified shared-resource 
 - Pre-clean, in-run cleanup and unconditional post-clean all passed with exact known Auth/database/R2 absence. A bounded grouped Vercel runtime-error query over the combined QA-002/QA-004 window found no runtime errors; per-entry logs remain billing-limited.
 - QA-004 changed no deployment, hosted Auth policy, Supabase schema, R2 resource contract, provider/worker state or generation routing. QA-005 is now unblocked as the sole remaining #278 audit slice.
 
-## QA-005 production reconciliation/failure audit harness — 2026-09-19
-- Execution authority is `docs/audits/QA_005_RECONCILIATION_FAILURE_PRODUCTION_AUDIT_CONTRACT.md`.
-- The permanent workflow `.github/workflows/production-qa005-reconciliation-failure.yml` is `workflow_dispatch` only, `contents: read`, `cancel-in-progress: false`, and requires the exact production SHA plus explicit fixture-only and zero-real-provider acknowledgements.
-- The audit separately checks out the exact supplied production source and runs that source only on loopback. Its reconciler is restricted by the existing test-only owner scope to one deterministic run-owned QA-005 account; the deployed production reconciler is never called.
-- Provider-failure simulation uses only the repository mock worker on `127.0.0.1`. No real provider-backed generation is authorized. The second fixture is a directly seeded stale run-owned orchestration row.
-- The real custom domain is used only to verify the resulting Activity presentation. Retry is inspected but never clicked, so the audit cannot launch another live generation attempt.
-- Cleanup is unconditional. The verifier independently checks known DB/Auth absence and reconstructs deterministic generation-output keys from leftover fixture jobs before row deletion so R2 absence remains provable after interruption.
-- This harness does not deploy application code, change Vercel aliases/environment, mutate hosted Auth policy, alter Supabase schema/RLS, change R2 resource configuration, reset workers, or modify production provider routing. Manual production execution remains outstanding.
+## QA-005 production reconciliation/failure audit — 2026-09-19
+- Execution authority is `docs/audits/QA_005_RECONCILIATION_FAILURE_PRODUCTION_AUDIT_CONTRACT.md`. Contract PR #301 merged as `69eba224b4f3e6e939f288609828c2a8d3d4b5c2`; permanent harness PR #302 merged as `8930638f47219482b9b7a4fd8063c36197335e50`. Exact-head Engineering Quality `35453629899` and merged-main `35453684388` passed.
+- Manual production audit run `35453752650` executed against independently supplied production source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. The exact deployed source ran only on loopback; reconciliation was restricted to the deterministic QA-005 fixture owner; the deployed production reconciler was never called.
+- Provider-failure simulation used only the run-local mock worker and dispatched zero real provider-backed generation. The prolonged outage terminalized as `generation_provider_stalled`; a separate stale incomplete-dispatch fixture terminalized as `generation_orchestration_stalled`.
+- Real production Activity showed both rows as stable non-active failures with safe Retry guidance, no LIVE refresh state, visible keyboard focus and responsive 390px reduced-motion geometry. Retry was inspected but never clicked.
+- Artifact `10587349110` has digest `sha256:941c7786707616a1b811e38f2d54da5b2deec3b4d391a176ae249e6eef343b8e`; the downloaded ZIP matched the digest. Its manifest records zero real provider work, cleanup `verified=true`, zero contracted DB/Auth residue and two deterministic R2 objects checked. Four screenshots were human-reviewed clean.
+- The unconditional cleanup leg passed independently. The temporary dispatch branch was reset back to merged `main` after dispatch.
+- Vercel runtime inspection for `2026-09-19T16:04:30Z`–`16:07:00Z` found no grouped runtime errors and no production error/fatal log entries.
+- No deployment, alias/environment, hosted Auth policy, Supabase schema/RLS, R2 resource configuration, worker reset or production provider-routing change occurred. Latest production remains READY `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` at exact source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`. QA-005 closes the final #278 audit slice.
+
 
 ## Superseded account/security production rollout — 2026-09-15
 - Exact application source `d18ef8833d46c812dac6b43572b3f4f7069990f8` is production-live as READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7` (`https://renderlab-baa28u96o-faresmohamed260-6733s-projects.vercel.app`). Deployment metadata points to that exact Git SHA and has no dirty-source marker.
