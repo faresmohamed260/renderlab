@@ -2092,7 +2092,7 @@ Production rollout is complete: exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5
 The Settings Data & Privacy lifecycle slice is implemented and verified. The production UI now reflects real export/delete behavior, uses existing shared controls, preserves desktop/mobile usability, and does not imply unsupported provider-log deletion or model-training controls. Exact head `886a4722826b268ad156eda22e817002471cd04c` passed UI Shell Validation plus the configured Account Data Lifecycle desktop/mobile evidence. This closure does not authorize deployment.
 
 ## UI-082 media-first hierarchy / whole-site legibility correction — 2026-09-20
-**Status: `CHECKPOINT 2 COMPLETE / CHECKPOINT 3 NEXT`.**
+**Status: `CHECKPOINT 3 COMPLETE / CHECKPOINT 4 NEXT`.**
 
 - Tracker #305 records the user-authorized correction.
 - Baseline: `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
@@ -2113,3 +2113,14 @@ The Settings Data & Privacy lifecycle slice is implemented and verified. The pro
 - Exact source head `a9d80dce2f1c78f09cbe08537b5ef2108b08344b` passed all 19 attached workflows. Library History's first attempt hit a transient configured-session `401 authentication_required`; the one unchanged same-head retry passed, with fixture cleanup succeeding on both attempts.
 - Media Viewer Register Fold run `35530109364` passed and published artifact `10611305473` (`sha256:9d493fc6e057fb9c10d36dc7a121d5b746dac2a12ddcc176c0fb04910d851337`). Human review accepted the 1440px, 1920px and 390px long-prompt renders plus default, comparison and reduced-motion evidence: media remains primary, prompt is bounded/non-heading, desktop width is used, and no narrow overflow or detached action regression is visible.
 - No route, API, media, capability, ownership, storage, generation or deployment contract changes. Production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` while checkpoint 3 begins.
+
+### UI-082 checkpoint 3 — Activity + Library hierarchy
+**Status: `COMPLETE / VERIFIED ON CHECKPOINT BRANCH`.**
+
+- [x] Design authority: `design/rd/activity-library-hierarchy-v01.md`.
+- [x] Activity request summary is content preview rather than heading content; long primary/secondary summaries are bounded while 01/02/03 chronology, state, time, operation, Retry/Run Again/Cancel and result-link semantics remain unchanged.
+- [x] Library keeps Gallery Rail structure, media-card grammar, URL/server-owned state, search, filters, Favorites, Collections, sort, Select and upload behavior while reducing avoidable command-surface density and raising essential label legibility.
+- [x] Exact source `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all 18 attached workflows.
+- [x] Activity Visual `35531996901` / artifact `10611591672` (`sha256:4f1fd684ee6518315a93dda67622dc978a8232d6d3eb090469b23cfe8ac05b61`) and Library History Visual `35531996914` / artifact `10611526669` (`sha256:91e24628af5bd7af4d322d7d0a965ca8c5b16f7972367a9b79d4b31cbc12914c`) were human-reviewed across desktop, 390px and reduced-motion/selection states; no horizontal overflow, selection-origin or action-reachability regression reproduced.
+- [ ] Checkpoint 4 next: Create, Settings/Profile/Preferences and Admin legibility/rhythm corrections plus Landing/shell audit. Only evidence-backed defects should change pixels.
+- [ ] Production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`; deployment waits for checkpoint 5 acceptance and checkpoint 6 release.

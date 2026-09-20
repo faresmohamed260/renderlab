@@ -2115,7 +2115,7 @@ This corrective pass is now **production live** from exact source `0d584c5dab288
 - Production deployment remains separate and explicit.
 
 ## UI-082 media-first hierarchy correction — 2026-09-20
-**Status: `CHECKPOINT 2 COMPLETE / CHECKPOINT 3 NEXT`.**
+**Status: `CHECKPOINT 3 COMPLETE / CHECKPOINT 4 NEXT`.**
 
 Issue #305 opens a user-authorized application-wide visual hierarchy and legibility correction after direct production review exposed the Media Viewer long-prompt failure. Baseline repository main is `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; current production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` and is unchanged by this planning checkpoint.
 
@@ -2127,3 +2127,10 @@ The binding contract is `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`. 
 The Viewer checkpoint now separates durable asset identity from generation prompt content: display name or original filename is used when present, otherwise the page uses a stable Generated/Uploaded image/video label. Prompt content remains available as media description plus one bounded attached Prompt preview/disclosure, but no longer controls H1 height or the visible result-frame label. The Viewer workspace expands to a 1600px desktop ceiling, begins the media stage immediately after a compact context header, reduces equal-weight decorative chrome and raises essential microtype. Existing Favorite/Download, continuation, Manage, Source Fold, native video and reduced-motion behavior is unchanged.
 
 Design checkpoint: `design/rd/media-viewer-media-first-v01.md`. Exact source head `a9d80dce2f1c78f09cbe08537b5ef2108b08344b` passed all 19 attached workflows; Library History's first configured attempt hit a transient `401 authentication_required` and its one unchanged same-head retry passed. Media Viewer run `35530109364` / artifact `10611305473` (`sha256:9d493fc6e057fb9c10d36dc7a121d5b746dac2a12ddcc176c0fb04910d851337`) was human-reviewed clean at 1440px, 1920px and 390px, including the deliberately long prompt, comparison and reduced-motion states. Production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`; Activity + Library are next.
+
+### UI-082 checkpoint 3 — Activity + Library hierarchy
+**Status: `COMPLETE / VERIFIED ON CHECKPOINT BRANCH`.**
+
+Activity now treats generation request/prompt text as a bounded content preview rather than a heading: the primary Job Matrix summary is line-bounded, state/time/operation/action remain the operational scan path, and essential technical labels move toward the UI-082 legibility floor. Library retains the approved Gallery Rail structure and every current filter/search/Favorites/Collections/selection/sort behavior while modestly reducing command-surface density and raising essential label legibility. No route, lifecycle, query-state, ownership, schema, provider, storage or deployment behavior changed.
+
+Design checkpoint: `design/rd/activity-library-hierarchy-v01.md`. Exact source head `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all 18 attached workflows. Activity Visual `35531996901` / artifact `10611591672` (`sha256:4f1fd684ee6518315a93dda67622dc978a8232d6d3eb090469b23cfe8ac05b61`) and Library History Visual `35531996914` / artifact `10611526669` (`sha256:91e24628af5bd7af4d322d7d0a965ca8c5b16f7972367a9b79d4b31cbc12914c`) were human-reviewed across desktop, 390px and reduced-motion/selection evidence; long Activity summaries remain bounded, Library media remains visually primary, controls/actions remain reachable and no horizontal-overflow regression was observed. Production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`; checkpoint 4 now owns Create, Settings/Profile/Preferences, Admin and the evidence-only Landing/shell audit.
