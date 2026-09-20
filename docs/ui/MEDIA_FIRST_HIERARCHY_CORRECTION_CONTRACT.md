@@ -1,6 +1,6 @@
 # UI-082 — Media-first Hierarchy & Whole-site Legibility Correction
 
-**Status:** Checkpoint 4 in progress — 4A complete / 4B next
+**Status:** Checkpoint 4 complete / checkpoint 5 next
 **Tracker:** #305  
 **Baseline main:** `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`  
 **Current production application source:** `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`  
@@ -100,6 +100,10 @@ These are acceptance targets, not arbitrary global CSS overrides:
 - Library: audit command-rail density and title/control balance; make only evidence-backed reductions that keep media primary;
 - desktop + `390px` + reduced-motion evidence as applicable;
 - update docs before moving on.
+
+**Checkpoint 4B verification — 2026-09-21:** exact implementation head `700cc89e9d61063817208eabf76dfe48fe83cd6c` passed Account/Admin Operations `35544269607` and configured Account Profile Credential `35544753703`. The account run completed profile, credential, preferences and exact fixture cleanup; artifacts `10616291853` (`sha256:1af4bbfc1eabb0453a3bd9ed0fa8280d3b0f94a77532b4ce547fcb5feea4a197`) and `10616496595` (`sha256:50c6107a3869d834124c50aeb9682ca57fd6b3088d2a93ffaefb603873b3ab5c`) were human-reviewed across desktop, 390px and reduced-motion evidence with no reproduced defect, so Settings/Profile/Preferences remain pixel-unchanged. Admin artifact `10615716556` (`sha256:7922b507a83e6697873552ba86ae3c8995a5454e0afd3e2f7bca8f88c79c48d5`) was reviewed after the bounded microtype correction; user ID/identity metadata, self badge, metric labels and diagnostic titles now meet the 10px floor while the 01/02/03 structure and privileged product/security semantics are unchanged.
+
+**Checkpoint 4C verification — 2026-09-21:** Brand / Launch `35544269610` / artifact `10616680057` (`sha256:deeac330f648f0bcf8fae593feb7b57440293fc08c8ce4369d0f2e8d61b3d8d3`) and UI Shell `35544269606` / artifact `10615634368` (`sha256:9919e862f62ba5ba3d592a2396b6d703d8cc400b5d44707dd84d8c4de11d4018`) passed on `700cc89e9d61063817208eabf76dfe48fe83cd6c`. Desktop/mobile rendered review found no Landing or shell defect requiring a source change. Locked brand geometry, canonical quarter-circle, application navigation and UI-074 responsive shell remain unchanged. Checkpoint 4 is complete; checkpoint 5 now owns whole-product acceptance.
 
 **Checkpoint 4A verification — 2026-09-21:** Create keeps the approved Clear Composer composition. Essential active-lifecycle and persisted-result registration labels were the only reproduced Create microtype defects and now meet the 10px floor. Exact implementation head `b174eba5be1ec37c548f6f349e71d1cc0ea279c6` passed all nine attached workflows. Create Clear Composer Visual `35543744625` / artifact `10615174763` (`sha256:9611a0cd6eedacf08a0f2ab9e7b4199f947f460ba8686e6aeb7b1b7957d40670`) and Create Lifecycle Visual `35543744613` / artifact `10616030332` (`sha256:0b64377356df061af957aeeda89dc3087870fbd8474c76069dae95d8091f3260`) were human-reviewed across desktop, 390px, reduced-motion, active-generation and persisted-result evidence with no hierarchy, overflow, touch-target or semantics regression. Checkpoint 4B now owns account-family verification and Admin.
 

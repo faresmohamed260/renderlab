@@ -439,3 +439,16 @@ Verification: exact source `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all
 Create retains the approved Clear Composer order, lifecycle/result placement, model/settings behavior, continuation actions, touch targets and reduced-motion path. UI-082 changes only two essential registration labels that were below the technical-text floor: active-generation registration and persisted-result registration now render at 10px with slightly stronger muted contrast.
 
 Verification: exact implementation head `b174eba5be1ec37c548f6f349e71d1cc0ea279c6` passed all nine attached workflows. Create Clear Composer Visual `35543744625` / artifact `10615174763` (`sha256:9611a0cd6eedacf08a0f2ab9e7b4199f947f460ba8686e6aeb7b1b7957d40670`) and Create Lifecycle Visual `35543744613` / artifact `10616030332` (`sha256:0b64377356df061af957aeeda89dc3087870fbd8474c76069dae95d8091f3260`) were human-reviewed across desktop, 390px, reduced-motion, active-generation and persisted-result states; media still leads the persistent composer and no overflow or action regression was observed.
+
+### Settings / Profile / Preferences + Admin — UI-082 checkpoint 4B
+**Status:** COMPLETE / VERIFIED ON CHECKPOINT BRANCH
+**Design checkpoint:** `design/rd/create-account-admin-legibility-v01.md`
+
+Settings, Profile and Preferences retain their approved Trust Register/subordinate-page composition. Exact-head Account Profile Credential `35544753703` on `700cc89e9d61063817208eabf76dfe48fe83cd6c` passed profile, credential, preferences and exact fixture cleanup; profile/credential artifact `10616291853` (`sha256:1af4bbfc1eabb0453a3bd9ed0fa8280d3b0f94a77532b4ce547fcb5feea4a197`) and preferences artifact `10616496595` (`sha256:50c6107a3869d834124c50aeb9682ca57fd6b3088d2a93ffaefb603873b3ab5c`) were human-reviewed across desktop, 390px and reduced motion. No hierarchy, overflow, action-reachability or legibility defect reproduced, so UI-082 makes no account-family pixel change.
+
+Admin retains the UI-079 Settings-derived `01 Access / 02 Generation / 03 Health` structure and all fresh-admin, self-lockout, last-active-admin, invitation, generation-control and bounded-Health contracts. UI-082 raises only reproduced sub-10px operational identity/self-badge/metric/diagnostic labels to the technical-text floor. Account/Admin Operations `35544269607` / artifact `10615716556` (`sha256:7922b507a83e6697873552ba86ae3c8995a5454e0afd3e2f7bca8f88c79c48d5`) passed on the same head and preserved desktop/390px/reduced-motion no-overflow behavior.
+
+### Brand / Landing + AppShell — UI-082 checkpoint 4C
+**Status:** COMPLETE / VERIFIED NO-CHANGE AUDIT
+
+Brand / Launch `35544269610` / artifact `10616680057` (`sha256:deeac330f648f0bcf8fae593feb7b57440293fc08c8ce4369d0f2e8d61b3d8d3`) and UI Shell `35544269606` / artifact `10615634368` (`sha256:9919e862f62ba5ba3d592a2396b6d703d8cc400b5d44707dd84d8c4de11d4018`) passed on exact implementation head `700cc89e9d61063817208eabf76dfe48fe83cd6c`. Desktop/mobile rendered review found no hierarchy, collision, clipping, action-reachability or legibility defect requiring source changes. The locked RenderLabBrand geometry, canonical Landing quarter-circle and UI-074 compact application shell remain authoritative and pixel-unchanged by checkpoint 4C.

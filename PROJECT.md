@@ -2115,7 +2115,7 @@ This corrective pass is now **production live** from exact source `0d584c5dab288
 - Production deployment remains separate and explicit.
 
 ## UI-082 media-first hierarchy correction — 2026-09-20
-**Status: `CHECKPOINT 4A COMPLETE / CHECKPOINT 4B NEXT`.**
+**Status: `CHECKPOINT 4 COMPLETE / CHECKPOINT 5 NEXT`.**
 
 Issue #305 opens a user-authorized application-wide visual hierarchy and legibility correction after direct production review exposed the Media Viewer long-prompt failure. Baseline repository main is `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; current production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` and is unchanged by this planning checkpoint.
 
@@ -2141,3 +2141,13 @@ Design checkpoint: `design/rd/activity-library-hierarchy-v01.md`. Exact source h
 Design authority is `design/rd/create-account-admin-legibility-v01.md`. The approved Clear Composer structure is unchanged. The only reproduced Create legibility defects were essential active-lifecycle registration text and persisted-result registration text below the UI-082 technical-text floor; both now render at 10px with slightly stronger muted contrast, and the configured lifecycle verifier locks that minimum without changing generation state, result ordering, continuation, controls, touch targets or reduced-motion behavior.
 
 Implementation head `b174eba5be1ec37c548f6f349e71d1cc0ea279c6` passed all nine attached workflows. Create Clear Composer Visual `35543744625` / artifact `10615174763` (`sha256:9611a0cd6eedacf08a0f2ab9e7b4199f947f460ba8686e6aeb7b1b7957d40670`) and Create Lifecycle Visual `35543744613` / artifact `10616030332` (`sha256:0b64377356df061af957aeeda89dc3087870fbd8474c76069dae95d8091f3260`) were human-reviewed across desktop, 390px, reduced-motion, active-generation and persisted-result states. The composer hierarchy remains intact, result media still leads the composer and no overflow/action regression is visible. Production is unchanged; checkpoint 4B now owns Settings/Profile/Preferences no-change verification plus the bounded Admin microtype correction.
+
+### UI-082 checkpoint 4B — Account family + Admin legibility
+**Status: `COMPLETE / VERIFIED ON CHECKPOINT BRANCH`.**
+
+Exact implementation head `700cc89e9d61063817208eabf76dfe48fe83cd6c` preserves the approved Settings/Profile/Preferences Trust Register/subordinate-page compositions and changes only reproduced Admin operational microtype below the 10px UI-082 floor. Account Profile Credential run `35544753703` passed profile, credential, preferences and exact fixture cleanup on the same head; profile/credential artifact `10616291853` (`sha256:1af4bbfc1eabb0453a3bd9ed0fa8280d3b0f94a77532b4ce547fcb5feea4a197`) and preferences artifact `10616496595` (`sha256:50c6107a3869d834124c50aeb9682ca57fd6b3088d2a93ffaefb603873b3ab5c`) were reviewed across desktop, 390px and reduced-motion evidence with no hierarchy, overflow or action-reachability defect requiring a pixel change. Account/Admin Operations `35544269607` passed the full privileged contract and published artifact `10615716556` (`sha256:7922b507a83e6697873552ba86ae3c8995a5454e0afd3e2f7bca8f88c79c48d5`); account identity metadata/user IDs, the self badge, Health metric labels and diagnostic titles now meet the 10px technical-text floor while the 01/02/03 register, responsive grids, authorization, self-lockout and last-admin safeguards are unchanged.
+
+### UI-082 checkpoint 4C — Landing + shell audit
+**Status: `COMPLETE / VERIFIED NO-CHANGE AUDIT`.**
+
+The exact same implementation head passed Brand / Launch Visual `35544269610` / artifact `10616680057` (`sha256:deeac330f648f0bcf8fae593feb7b57440293fc08c8ce4369d0f2e8d61b3d8d3`) and UI Shell Validation `35544269606` / artifact `10615634368` (`sha256:9919e862f62ba5ba3d592a2396b6d703d8cc400b5d44707dd84d8c4de11d4018`). Human review of desktop/mobile evidence reproduced no Landing or AppShell hierarchy, collision, clipping or legibility defect. The locked RenderLabBrand and canonical Landing quarter-circle remain untouched; the desktop shell capture is pixel-identical to the accepted checkpoint-3 baseline and the mobile shell differs only by negligible edge-level raster noise. No Landing/shell source change is justified. Checkpoint 5 now owns whole-product exact-head acceptance; production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
