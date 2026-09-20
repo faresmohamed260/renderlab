@@ -415,3 +415,9 @@ The approved `/` product home at this phase used the reviewed Phase 22 Kinetic P
 **Baseline:** `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7` / production `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
 
 Current approved routes and product behaviors remain live while their visual hierarchy is audited. Viewer is first because the current prompt-fallback H1 can dominate the first viewport and duplicates Prompt content already available in the Viewer register. Activity is next for the analogous prompt-headline hierarchy. Library, Create, Settings/Profile/Preferences, Admin, Landing and AppShell are reviewed for corresponding space-use, chrome-density and legibility failures; unchanged surfaces remain unchanged when the issue does not reproduce. Locked RenderLabBrand and Landing canonical quarter-circle remain outside the redesign boundary.
+
+### Media Viewer — UI-082 hierarchy checkpoint candidate
+**Status:** IMPLEMENTED ON CHECKPOINT BRANCH / VERIFICATION PENDING  
+**Design checkpoint:** `design/rd/media-viewer-media-first-v01.md`
+
+UI-082 corrects the production long-prompt hierarchy without changing Viewer capability. The page H1 is now a stable durable-asset label (display name → original filename → generic Generated/Uploaded media label), never the prompt. The media object follows a compact context header; prompt copy moves to one bounded attached preview/full disclosure; the result caption uses stable asset identity; Favorite/Download remain context-attached; Source Fold and continuation/manage behavior are unchanged. Desktop content may use up to 1600px and essential microtype is raised while decorative registration remains subordinate. Checkpoint closure requires configured long-prompt 1440/1920/390 evidence plus existing Source Fold, native video, touch, reduced-motion and no-overflow assertions.
