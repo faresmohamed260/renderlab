@@ -394,6 +394,11 @@ try {
   const missingSourceId = randomUUID();
   const now = Date.now();
   const at = (minutes) => new Date(now - minutes * 60_000).toISOString();
+  const longActivityPrompt = [
+    "Full-body editorial generation request with a deliberately long descriptive prompt used to verify Activity hierarchy.",
+    "The request includes subject, wardrobe, environment, lighting, lens, material, composition, texture, motion and finishing details so the summary would span many lines if it were allowed to behave like an unbounded heading.",
+    "Keep the complete request available as job content while ensuring lifecycle state, operation and actions remain easier to scan than the prose itself.",
+  ].join(" ");
 
   await createMediaAsset(owner, resultAssetId, "Activity visible result");
   await createMediaAsset(owner, retryInputAssetId, "Retry active input");
@@ -406,7 +411,7 @@ try {
   const jobs = [];
   const runningJob = await createJob(owner, {
     status: "running",
-    prompt: "Nebula active study",
+    prompt: longActivityPrompt,
     createdAt: at(0),
   });
   jobs.push(runningJob);
@@ -611,7 +616,7 @@ try {
   const signedOutPage = await signedOutContext.newPage();
   await signedOutPage.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });
   await signedOutPage.getByRole("heading", { name: "Sign in to view Activity" }).waitFor({ state: "visible", timeout: 30_000 });
-  assert((await signedOutPage.getByText("Nebula active study").count()) === 0, "Signed-out Activity exposed private job data.");
+  assert((await signedOutPage.getByText(longActivityPrompt).count()) === 0, "Signed-out Activity exposed private job data.");
   assertRetryError(await postRetry(signedOutPage, retryImageJob.id), 401, "authentication_required", "Signed-out Retry");
   await signedOutPage.setViewportSize({ width: 390, height: 844 });
   await assertNoHorizontalOverflow(signedOutPage, "Signed-out narrow Activity");
@@ -628,11 +633,14 @@ try {
   assert(await page.locator('[data-activity-stage]').count() === 1, "Activity did not render one registered Activity stage.");
   const matrixJobs = page.locator('[data-activity-matrix] > li');
   assert(await matrixJobs.count() === 3, "Activity did not register exactly the three newest visible jobs in the Job Matrix.");
-  assert(await matrixJobs.nth(0).getByText("Nebula active study", { exact: true }).count() === 1, "Activity Job Matrix did not keep the newest job in position 01.");
+  const primarySummary = matrixJobs.nth(0).locator("[data-activity-summary]");
+  const primarySummaryBox = await primarySummary.boundingBox();
+  assert(primarySummaryBox && primarySummaryBox.height <= 112, `Activity primary summary exceeded its bounded desktop height: ${JSON.stringify(primarySummaryBox)}`);
+  assert(await matrixJobs.nth(0).getByText(longActivityPrompt, { exact: true }).count() === 1, "Activity Job Matrix did not keep the newest job in position 01.");
   assert(await matrixJobs.nth(1).getByText("Golden result study", { exact: true }).count() === 1, "Activity Job Matrix did not keep the second-newest job in position 02.");
   assert(await matrixJobs.nth(2).getByText("2× upscale", { exact: true }).count() === 1, "Activity Job Matrix did not keep the third-newest job in position 03.");
   assert(await page.locator('[data-activity-register]').count() === 1, "Activity did not continue remaining visible jobs in the attached History Register.");
-  await page.getByText("Nebula active study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText(longActivityPrompt, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Golden result study", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("Upscale image", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByText("2× upscale", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
@@ -650,7 +658,7 @@ try {
   await page.getByRole("link", { name: "Older", exact: true }).waitFor({ state: "visible" });
   assert(await page.getByRole("button", { name: "Retry", exact: true }).count() === 11, "Activity did not expose Retry exactly on failed first-page jobs.");
   assert(await page.getByRole("button", { name: /cancel/i }).count() === 0, "Phase 9 exposed a Cancel control.");
-  assert(await page.locator("li").filter({ hasText: "Nebula active study" }).getByRole("button", { name: "Retry" }).count() === 0, "Running job exposed Retry.");
+  assert(await page.locator("li").filter({ hasText: longActivityPrompt }).getByRole("button", { name: "Retry" }).count() === 0, "Running job exposed Retry.");
   assert(await page.locator("li").filter({ hasText: "Golden result study" }).getByRole("button", { name: "Retry" }).count() === 0, "Succeeded job exposed Retry.");
   await page.screenshot({ path: `${artifactDir}/activity-desktop.png`, fullPage: true });
   await page.screenshot({ path: `${artifactDir}/activity-retry-desktop.png`, fullPage: true });
@@ -668,7 +676,7 @@ try {
     },
   );
   assert(terminalResponse.ok, `Could not terminalize recurring-refresh fixture (${terminalResponse.status}).`);
-  const refreshedRunningRow = page.locator("li").filter({ hasText: "Nebula active study" }).first();
+  const refreshedRunningRow = page.locator("li").filter({ hasText: longActivityPrompt }).first();
   await refreshedRunningRow.locator('[data-state="succeeded"]').waitFor({ state: "visible", timeout: 12_000 });
   assert(
     (await refreshedRunningRow.getAttribute("data-activity-status")) === "succeeded",
@@ -679,7 +687,10 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await assertNoHorizontalOverflow(page, "Narrow reduced-motion Activity");
-  await page.getByText("Nebula active study", { exact: true }).waitFor({ state: "visible" });
+  const narrowPrimarySummary = page.locator("[data-activity-matrix] > li").first().locator("[data-activity-summary]");
+  const narrowPrimarySummaryBox = await narrowPrimarySummary.boundingBox();
+  assert(narrowPrimarySummaryBox && narrowPrimarySummaryBox.height <= 120, `Activity primary summary exceeded its bounded 390px height: ${JSON.stringify(narrowPrimarySummaryBox)}`);
+  await page.getByText(longActivityPrompt, { exact: true }).waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Retry", exact: true }).first().waitFor({ state: "visible" });
   const activityAnimations = await page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length);
   assert(activityAnimations === 0, `Reduced-motion Activity has ${activityAnimations} running animation(s).`);
@@ -689,7 +700,7 @@ try {
 
   await page.goto(`${baseUrl}/activity?offset=20`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByRole("link", { name: "Newer", exact: true }).waitFor({ state: "visible" });
-  assert((await page.getByText("Nebula active study", { exact: true }).count()) === 0, "Older Activity page retained newer-page jobs.");
+  assert((await page.getByText(longActivityPrompt, { exact: true }).count()) === 0, "Older Activity page retained newer-page jobs.");
   await page.getByText("Activity filler 20", { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });
 
@@ -808,7 +819,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.getByText("Nebula active study", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText(longActivityPrompt, { exact: true }).waitFor({ state: "visible" });
   await page.screenshot({ path: `${artifactDir}/activity-mobile.png`, fullPage: true });
   await page.screenshot({ path: `${artifactDir}/activity-retry-mobile.png`, fullPage: true });
   await page.locator("li").filter({ hasText: "Invalid retry study" }).getByText(
@@ -836,7 +847,7 @@ try {
   assert(!JSON.stringify(unavailable.body).includes("127.0.0.1"), "Retry backend-unavailable error exposed infrastructure detail.");
 
   console.log(
-    `Configured Activity Retry verified. owner=${owner.id} foreign=${foreign.id} historicalJobs=${jobs.length} backendRequests=${capturedBackendRequests.length}`,
+    `UI-082 Activity hierarchy + Retry verified. owner=${owner.id} foreign=${foreign.id} historicalJobs=${jobs.length} backendRequests=${capturedBackendRequests.length}`,
   );
 } catch (error) {
   primaryError = error;
