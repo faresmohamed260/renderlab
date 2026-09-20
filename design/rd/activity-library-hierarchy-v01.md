@@ -1,7 +1,7 @@
 # UI-082 Activity + Library — Hierarchy v0.1
 
-**Status:** Accepted implementation checkpoint  
-**Tracker:** #305  
+**Status:** Accepted implementation checkpoint
+**Tracker:** #305
 **Parent contract:** `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`
 
 ## Scope
