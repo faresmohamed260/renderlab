@@ -332,7 +332,7 @@ try {
   await routeLocalAppRequestsWithAccount(widePage, baseUrl, account);
   await widePage.goto(`${baseUrl}/library/${longPromptResult.id}`, { waitUntil: "networkidle", timeout: 60_000 });
   await widePage.getByRole("heading", { name: "Generated image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  const wideWorkspace = await widePage.locator("section").first().boundingBox();
+  const wideWorkspace = await widePage.locator("[data-media-viewer-workspace]").boundingBox();
   const wideStage = await widePage.locator("#media-viewer-comparison").boundingBox();
   assert(wideWorkspace && wideWorkspace.width >= 1500, `Viewer did not use wide desktop space: ${JSON.stringify(wideWorkspace)}`);
   assert(wideStage && wideStage.width >= 1450, `Viewer media stage remained cramped on wide desktop: ${JSON.stringify(wideStage)}`);
