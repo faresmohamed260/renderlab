@@ -9,7 +9,7 @@ import {
   verifyProductionDocumentationSync,
 } from "../../scripts/lib/production-documentation-sync.mjs";
 
-const currentSha = "2fc64231f8aa0e5a2df8b2698824319a25c4e9f8";
+const currentSha = "c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a";
 const oldSha = "d18ef8833d46c812dac6b43572b3f4f7069990f8";
 
 async function fixture(overrides = {}) {

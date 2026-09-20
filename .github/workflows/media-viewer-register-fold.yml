@@ -115,6 +115,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: renderlab-phase25-media-viewer-register-fold
-          path: artifacts/phase25-*.png
+          path: |
+            artifacts/phase25-*.png
+            artifacts/phase82-*.png
           if-no-files-found: warn
           retention-days: 14

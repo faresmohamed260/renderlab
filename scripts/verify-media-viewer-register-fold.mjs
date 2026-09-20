@@ -267,6 +267,25 @@ try {
   });
   const job = await createEditJob(account, source.id, result.id, prompt);
   await patchAssetJob(result.id, job.id);
+
+  const longPrompt = [
+    "Full-body high-fashion editorial photograph of an adult model wearing an elegant strapless evening gown.",
+    "The dress has a structured corset-inspired bodice with a clean curved neckline, fitted waist, and dramatic floor-length A-line skirt.",
+    "Realistic fabric folds, stitching, seams, boning structure, subtle embroidered floral motifs, natural cloth tension, soft diffused key light, gentle rim lighting, realistic skin texture, shallow depth of field, extremely detailed textile texture, photorealistic sophisticated couture aesthetic.",
+    "Full dress visible from head to floor, centered composition, neutral studio background, physically wearable construction.",
+  ].join(" ");
+  const longPromptResult = await createAsset(account, {
+    displayName: null,
+    kind: "image",
+    mimeType: "image/svg+xml",
+    body: Buffer.from(resultSvg),
+    width: 1200,
+    height: 800,
+    origin: "generated",
+    prompt: longPrompt,
+    operation: "create-image",
+  });
+
   const video = await createAsset(account, {
     displayName: "Phase 25 motion study",
     kind: "video",
@@ -289,6 +308,39 @@ try {
   assert((await page.getByText("Actions", { exact: true }).count()) === 0, "Viewer restored a generic Actions section.");
   assert((await page.locator("aside").count()) === 0, "Viewer restored a permanent sidebar/aside.");
   await shot(page, "phase25-viewer-image-default-desktop");
+
+  await page.goto(`${baseUrl}/library/${longPromptResult.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.getByRole("heading", { name: "Generated image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  assert(
+    (await page.getByRole("heading", { level: 1 }).textContent()) === "Generated image",
+    "Viewer allowed prompt content to become the page H1.",
+  );
+  assert(
+    (await page.getByRole("heading", { name: longPrompt, exact: true }).count()) === 0,
+    "Long prompt was exposed as a heading.",
+  );
+  const promptPreview = page.getByLabel("Prompt preview");
+  await promptPreview.waitFor({ state: "visible" });
+  const promptPreviewBox = await promptPreview.boundingBox();
+  assert(promptPreviewBox && promptPreviewBox.height <= 92, `Prompt preview exceeded bounded height: ${JSON.stringify(promptPreviewBox)}`);
+  const longStageBox = await page.locator("#media-viewer-comparison").boundingBox();
+  assert(longStageBox && longStageBox.y < 260, `Long-prompt media stage began too low in the desktop viewport: ${JSON.stringify(longStageBox)}`);
+  await shot(page, "phase82-viewer-long-prompt-desktop");
+
+  const wide = await browser.newContext({ viewport: { width: 1920, height: 1080 }, colorScheme: "dark" });
+  const widePage = await wide.newPage();
+  await routeLocalAppRequestsWithAccount(widePage, baseUrl, account);
+  await widePage.goto(`${baseUrl}/library/${longPromptResult.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await widePage.getByRole("heading", { name: "Generated image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  const wideWorkspace = await widePage.locator("[data-media-viewer-workspace]").boundingBox();
+  const wideStage = await widePage.locator("#media-viewer-comparison").boundingBox();
+  assert(wideWorkspace && wideWorkspace.width >= 1500, `Viewer did not use wide desktop space: ${JSON.stringify(wideWorkspace)}`);
+  assert(wideStage && wideStage.width >= 1450, `Viewer media stage remained cramped on wide desktop: ${JSON.stringify(wideStage)}`);
+  await shot(widePage, "phase82-viewer-long-prompt-wide-desktop");
+  await wide.close();
+
+  await page.goto(`${baseUrl}/library/${result.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.getByRole("heading", { name: "Aurora study — resolved", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
 
   const frame = page.locator("#media-viewer-comparison figure").first();
   const finePointer = await page.evaluate(() => matchMedia("(hover: hover) and (pointer: fine)").matches);
@@ -436,6 +488,15 @@ try {
   }
   await shot(narrow, "phase25-viewer-image-default-narrow");
 
+  await narrow.goto(`${baseUrl}/library/${longPromptResult.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await narrow.getByRole("heading", { name: "Generated image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  const narrowLongStage = await narrow.locator("#media-viewer-comparison").boundingBox();
+  assert(narrowLongStage && narrowLongStage.y < 260, `Long-prompt media stage began too low at 390px: ${JSON.stringify(narrowLongStage)}`);
+  await shot(narrow, "phase82-viewer-long-prompt-narrow");
+
+  await narrow.goto(`${baseUrl}/library/${result.id}`, { waitUntil: "networkidle", timeout: 60_000 });
+  await narrow.getByRole("heading", { name: "Aurora study — resolved", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+
   const touchFrame = narrow.locator("#media-viewer-comparison figure").first();
   const touchBox = await touchFrame.boundingBox();
   assert(touchBox, "Could not measure touch Viewer media frame.");
@@ -471,7 +532,7 @@ try {
   await shot(narrow, "phase25-viewer-compare-narrow");
 
   await mobile.close();
-  console.log("Phase 25 Media Viewer evidence passed: attached register, singular quick/manage actions, prompt/details disclosures, keyboard Source Fold, temporal/reversal/reduced-motion comparison, responsive narrow stacking, 44×44 quick actions, touch-static media, native video controls and no horizontal overflow.");
+  console.log("UI-082 Viewer evidence passed: media-first long-prompt hierarchy at 1440/1920/390, bounded canonical prompt preview, prompt-independent H1, wide-desktop stage use, attached register, singular quick/manage actions, keyboard Source Fold, temporal/reversal/reduced-motion comparison, 44×44 quick actions, touch-static media, native video controls and no horizontal overflow.");
 } catch (error) {
   primaryError = error;
 } finally {

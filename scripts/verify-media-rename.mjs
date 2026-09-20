@@ -220,7 +220,8 @@ try {
   await routeLocalAppRequestsWithAccount(page, baseUrl, account);
 
   await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "networkidle", timeout: 60_000 });
-  await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Generated image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByLabel("Prompt preview").getByText(generatedPrompt, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   await page.getByRole("button", { name: "Manage", exact: true }).click();
   await page.getByRole("button", { name: "Rename", exact: true }).click();
   const generatedNameInput = page.getByLabel("Media name", { exact: true });

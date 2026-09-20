@@ -415,3 +415,11 @@ The approved `/` product home at this phase used the reviewed Phase 22 Kinetic P
 **Baseline:** `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7` / production `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
 
 Current approved routes and product behaviors remain live while their visual hierarchy is audited. Viewer is first because the current prompt-fallback H1 can dominate the first viewport and duplicates Prompt content already available in the Viewer register. Activity is next for the analogous prompt-headline hierarchy. Library, Create, Settings/Profile/Preferences, Admin, Landing and AppShell are reviewed for corresponding space-use, chrome-density and legibility failures; unchanged surfaces remain unchanged when the issue does not reproduce. Locked RenderLabBrand and Landing canonical quarter-circle remain outside the redesign boundary.
+
+### Media Viewer — UI-082 hierarchy checkpoint
+**Status:** COMPLETE / VERIFIED ON CHECKPOINT BRANCH  
+**Design checkpoint:** `design/rd/media-viewer-media-first-v01.md`
+
+UI-082 corrects the production long-prompt hierarchy without changing Viewer capability. The page H1 is a stable durable-asset label (display name → original filename → generic Generated/Uploaded media label), never the prompt. The media object follows a compact context header; prompt copy lives in one bounded attached preview/full disclosure; the result caption uses stable asset identity; Favorite/Download remain context-attached; Source Fold and continuation/manage behavior are unchanged. Desktop content may use up to 1600px and essential microtype is raised while decorative registration remains subordinate.
+
+Verification: exact source `a9d80dce2f1c78f09cbe08537b5ef2108b08344b` passed all 19 attached workflows after one unchanged retry of a transient Library History authentication failure. Media Viewer run `35530109364`, artifact `10611305473` (`sha256:9d493fc6e057fb9c10d36dc7a121d5b746dac2a12ddcc176c0fb04910d851337`) passed long-prompt 1440/1920/390, Source Fold, native video, touch, reduced-motion, 44×44 actions and no-overflow assertions and was human-reviewed clean.

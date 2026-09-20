@@ -1,6 +1,6 @@
 # UI-082 — Media-first Hierarchy & Whole-site Legibility Correction
 
-**Status:** Planning checkpoint complete / implementation pending  
+**Status:** Checkpoint 2 complete / checkpoint 3 next  
 **Tracker:** #305  
 **Baseline main:** `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`  
 **Current production application source:** `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`  
@@ -92,6 +92,8 @@ These are acceptance targets, not arbitrary global CSS overrides:
 - keep Source Fold, native video, continuation, Manage and Compare behavior unchanged;
 - add deterministic desktop `1440px`, wide desktop, `390px`, long-prompt, reduced-motion and comparison evidence;
 - update UI decision, migration tracker and screen registry before moving on.
+
+**Checkpoint 2 verification — 2026-09-20:** exact source head `a9d80dce2f1c78f09cbe08537b5ef2108b08344b` passed all 19 attached workflows after one same-head retry of Library History recovered from a transient configured-session `401 authentication_required`; no implementation change was needed. Media Viewer Register Fold run `35530109364` passed the deterministic long-prompt, Source Fold, native video, touch, reduced-motion and no-overflow assertions. Artifact `10611305473` (`sha256:9d493fc6e057fb9c10d36dc7a121d5b746dac2a12ddcc176c0fb04910d851337`) was human-reviewed at 1440px, 1920px and 390px: media is the first strong object, prompt content is bounded and no longer controls H1 height, wide space is used intentionally, and quick actions remain attached to asset context. Checkpoint 3 is now the next runtime checkpoint; production is unchanged.
 
 ### Checkpoint 3 — Activity + Library
 - Activity: cap prompt-summary dominance, strengthen state/time/action hierarchy, preserve 01/02/03 chronology and History Register;

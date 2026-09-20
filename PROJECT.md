@@ -2115,8 +2115,15 @@ This corrective pass is now **production live** from exact source `0d584c5dab288
 - Production deployment remains separate and explicit.
 
 ## UI-082 media-first hierarchy correction — 2026-09-20
-**Status: `PLANNING CHECKPOINT COMPLETE / IMPLEMENTATION PENDING`.**
+**Status: `CHECKPOINT 2 COMPLETE / CHECKPOINT 3 NEXT`.**
 
 Issue #305 opens a user-authorized application-wide visual hierarchy and legibility correction after direct production review exposed the Media Viewer long-prompt failure. Baseline repository main is `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; current production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` and is unchanged by this planning checkpoint.
 
 The binding contract is `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`. Viewer is checkpoint 2; Activity/Library checkpoint 3; Create/account/Admin plus Landing/shell audit checkpoint 4; whole-product exact-head/render acceptance checkpoint 5; merge/production/documentation closure checkpoint 6. Product/security/backend contracts and locked brand geometry remain unchanged.
+
+### UI-082 checkpoint 2 — Viewer hierarchy
+**Status: `COMPLETE / VERIFIED ON CHECKPOINT BRANCH`.**
+
+The Viewer checkpoint now separates durable asset identity from generation prompt content: display name or original filename is used when present, otherwise the page uses a stable Generated/Uploaded image/video label. Prompt content remains available as media description plus one bounded attached Prompt preview/disclosure, but no longer controls H1 height or the visible result-frame label. The Viewer workspace expands to a 1600px desktop ceiling, begins the media stage immediately after a compact context header, reduces equal-weight decorative chrome and raises essential microtype. Existing Favorite/Download, continuation, Manage, Source Fold, native video and reduced-motion behavior is unchanged.
+
+Design checkpoint: `design/rd/media-viewer-media-first-v01.md`. Exact source head `a9d80dce2f1c78f09cbe08537b5ef2108b08344b` passed all 19 attached workflows; Library History's first configured attempt hit a transient `401 authentication_required` and its one unchanged same-head retry passed. Media Viewer run `35530109364` / artifact `10611305473` (`sha256:9d493fc6e057fb9c10d36dc7a121d5b746dac2a12ddcc176c0fb04910d851337`) was human-reviewed clean at 1440px, 1920px and 390px, including the deliberately long prompt, comparison and reduced-motion states. Production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`; Activity + Library are next.

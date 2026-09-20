@@ -42,12 +42,12 @@ export function MediaViewerCompareProvider({
   return <ComparisonContext.Provider value={value}>{children}</ComparisonContext.Provider>;
 }
 
-function ResultMedia({ asset, title }: { asset: PublicMediaAsset; title: string }) {
+function ResultMedia({ asset, description }: { asset: PublicMediaAsset; description: string }) {
   if (asset.kind === "image") {
     return (
       <img
         src={asset.contentUrl}
-        alt={title}
+        alt={description}
         className={`${styles.resultMedia} kinetic-viewer-media`}
       />
     );
@@ -60,7 +60,7 @@ function ResultMedia({ asset, title }: { asset: PublicMediaAsset; title: string 
       controls
       playsInline
       className={`${styles.resultMedia} kinetic-viewer-media`}
-      aria-label={title}
+      aria-label={description}
     />
   );
 }
@@ -68,13 +68,17 @@ function ResultMedia({ asset, title }: { asset: PublicMediaAsset; title: string 
 export function MediaViewerMediaStage({
   asset,
   title,
+  mediaDescription,
   source,
   sourceTitle,
+  sourceMediaDescription,
 }: {
   asset: PublicMediaAsset;
   title: string;
+  mediaDescription: string;
   source: PublicMediaAsset | null;
   sourceTitle: string | null;
+  sourceMediaDescription: string | null;
 }) {
   const { open } = useComparison();
   const reduceMotion = useReducedMotion();
@@ -124,7 +128,7 @@ export function MediaViewerMediaStage({
         transition={layoutTransition}
       >
         <div className={styles.mediaWell}>
-          <ResultMedia asset={asset} title={title} />
+          <ResultMedia asset={asset} description={mediaDescription} />
         </div>
         <figcaption className={styles.frameLabel}>
           <strong>RESULT</strong>
@@ -161,7 +165,7 @@ export function MediaViewerMediaStage({
             <div className={styles.mediaWell}>
               <img
                 src={source.contentUrl}
-                alt={sourceTitle || "Source image"}
+                alt={sourceMediaDescription || sourceTitle || "Source image"}
                 className={styles.sourceMedia}
               />
             </div>

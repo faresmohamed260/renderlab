@@ -10,11 +10,13 @@ type ViewerPanel = "prompt" | "details" | "manage";
 
 export function MediaViewerRegister({
   continuation,
+  promptPreview,
   prompt,
   details,
   manage,
 }: {
   continuation: ReactNode;
+  promptPreview: string | null;
   prompt: ReactNode | null;
   details: ReactNode | null;
   manage: ReactNode;
@@ -46,6 +48,13 @@ export function MediaViewerRegister({
           {continuation}
         </div>
       </div>
+
+      {promptPreview && activePanel !== "prompt" ? (
+        <div className={styles.promptSummary} aria-label="Prompt preview">
+          <span className={styles.promptSummaryLabel}>PROMPT</span>
+          <p>{promptPreview}</p>
+        </div>
+      ) : null}
 
       <div className={styles.modeStrip} aria-label="Viewer information and actions">
         {prompt ? (

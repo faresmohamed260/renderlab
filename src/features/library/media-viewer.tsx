@@ -48,13 +48,18 @@ function sizeLabel(sizeBytes: number | null) {
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function fallbackAssetTitle(asset: PublicMediaAsset) {
+  return asset.origin === "uploaded"
+    ? asset.kind === "image" ? "Uploaded image" : "Uploaded video"
+    : asset.kind === "image" ? "Generated image" : "Generated video";
+}
+
 function assetTitle(asset: PublicMediaAsset) {
-  return asset.displayName
-    || asset.prompt
-    || asset.originalFilename
-    || (asset.origin === "uploaded"
-      ? asset.kind === "image" ? "Uploaded image" : "Uploaded video"
-      : asset.kind === "image" ? "Generated image" : "Generated video");
+  return asset.displayName || asset.originalFilename || fallbackAssetTitle(asset);
+}
+
+function assetMediaDescription(asset: PublicMediaAsset) {
+  return asset.displayName || asset.originalFilename || asset.prompt || fallbackAssetTitle(asset);
 }
 
 function continuationHref(assetId: string, actionId: string) {
@@ -82,7 +87,9 @@ export function MediaViewer({
   const duration = durationLabel(asset.durationMs);
   const size = sizeLabel(asset.sizeBytes);
   const title = assetTitle(asset);
+  const mediaDescription = assetMediaDescription(asset);
   const sourceTitle = compareSource ? assetTitle(compareSource) : null;
+  const sourceMediaDescription = compareSource ? assetMediaDescription(compareSource) : null;
   const hasDetails = Boolean(dimensions || duration || asset.originalFilename || size || asset.origin === "uploaded");
   const mediaFact = dimensions || duration;
 
@@ -159,7 +166,7 @@ export function MediaViewer({
   );
 
   return (
-    <section className={styles.workspace}>
+    <section className={styles.workspace} data-media-viewer-workspace>
       <MediaViewerCompareProvider enabled={Boolean(compareSource)}>
         <header className={styles.context}>
           <div className={styles.returnRow}>
@@ -197,13 +204,16 @@ export function MediaViewer({
             <MediaViewerMediaStage
               asset={asset}
               title={title}
+              mediaDescription={mediaDescription}
               source={compareSource}
               sourceTitle={sourceTitle}
+              sourceMediaDescription={sourceMediaDescription}
             />
           </div>
 
           <MediaViewerRegister
             continuation={continuation}
+            promptPreview={asset.prompt}
             prompt={prompt}
             details={details}
             manage={(
