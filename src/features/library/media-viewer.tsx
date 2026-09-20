@@ -166,7 +166,7 @@ export function MediaViewer({
   );
 
   return (
-    <section className={styles.workspace}>
+    <section className={styles.workspace} data-media-viewer-workspace>
       <MediaViewerCompareProvider enabled={Boolean(compareSource)}>
         <header className={styles.context}>
           <div className={styles.returnRow}>
