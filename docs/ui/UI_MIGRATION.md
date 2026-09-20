@@ -2092,7 +2092,7 @@ Production rollout is complete: exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5
 The Settings Data & Privacy lifecycle slice is implemented and verified. The production UI now reflects real export/delete behavior, uses existing shared controls, preserves desktop/mobile usability, and does not imply unsupported provider-log deletion or model-training controls. Exact head `886a4722826b268ad156eda22e817002471cd04c` passed UI Shell Validation plus the configured Account Data Lifecycle desktop/mobile evidence. This closure does not authorize deployment.
 
 ## UI-082 media-first hierarchy / whole-site legibility correction — 2026-09-20
-**Status: `PLANNING CHECKPOINT COMPLETE / RUNTIME IMPLEMENTATION NOT STARTED`.**
+**Status: `CHECKPOINT 2 COMPLETE / CHECKPOINT 3 NEXT`.**
 
 - Tracker #305 records the user-authorized correction.
 - Baseline: `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
@@ -2102,7 +2102,7 @@ The Settings Data & Privacy lifecycle slice is implemented and verified. The pro
 - No source UI, backend, infrastructure or production state changes in this planning checkpoint.
 
 ### UI-082 checkpoint 2 — Viewer media-first hierarchy
-**Status: `IMPLEMENTATION CANDIDATE / VERIFICATION PENDING`.**
+**Status: `COMPLETE / VERIFIED ON CHECKPOINT BRANCH`.**
 
 - Design authority: `design/rd/media-viewer-media-first-v01.md`.
 - Viewer H1 no longer falls back to prompt text; stable asset identity is display name → original filename → truthful generic Generated/Uploaded image/video.
@@ -2110,4 +2110,6 @@ The Settings Data & Privacy lifecycle slice is implemented and verified. The pro
 - Wide Viewer ceiling increases to 1600px; the media stage follows the compact context header and decorative registration is visually quieter.
 - Essential Viewer labels move toward the UI-082 10–12px technical-text floor while media and continuation remain primary.
 - The Phase 25 Viewer verifier now creates a no-display-name long-prompt result and requires prompt-independent H1, bounded prompt preview, first-viewport stage geometry, wide-desktop use, 390px no-overflow, Source Fold, reduced motion, native video and 44×44 quick-action behavior.
-- No route, API, media, capability, ownership, storage, generation or deployment contract changes.
+- Exact source head `a9d80dce2f1c78f09cbe08537b5ef2108b08344b` passed all 19 attached workflows. Library History's first attempt hit a transient configured-session `401 authentication_required`; the one unchanged same-head retry passed, with fixture cleanup succeeding on both attempts.
+- Media Viewer Register Fold run `35530109364` passed and published artifact `10611305473` (`sha256:9d493fc6e057fb9c10d36dc7a121d5b746dac2a12ddcc176c0fb04910d851337`). Human review accepted the 1440px, 1920px and 390px long-prompt renders plus default, comparison and reduced-motion evidence: media remains primary, prompt is bounded/non-heading, desktop width is used, and no narrow overflow or detached action regression is visible.
+- No route, API, media, capability, ownership, storage, generation or deployment contract changes. Production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` while checkpoint 3 begins.
