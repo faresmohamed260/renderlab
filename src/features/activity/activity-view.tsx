@@ -140,7 +140,7 @@ function ActivityMatrixJob({ item, index }: { item: PublicGenerationActivity; in
       <ActivityState item={item} />
 
       <div className={styles.matrixCopy}>
-        <h2>{item.summary}</h2>
+        <p className={styles.jobSummary} data-activity-summary>{item.summary}</p>
         <ActivityKind item={item} />
       </div>
 
