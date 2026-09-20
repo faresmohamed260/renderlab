@@ -204,7 +204,8 @@ try {
   await verifyDownload(page, expectedUploadedFilename, "Uploaded media download");
 
   await page.goto(`${baseUrl}/library/${generated.id}`, { waitUntil: "networkidle", timeout: 60_000 });
-  await page.getByRole("heading", { name: generatedPrompt, exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByRole("heading", { name: "Generated image", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByLabel("Prompt preview").getByText(generatedPrompt, { exact: true }).waitFor({ state: "visible", timeout: 30_000 });
   const expectedGeneratedFilename = `renderlab-image-${generated.id.slice(0, 8)}.png`;
   await page.screenshot({ path: `${artifactDir}/media-download-desktop-generated.png`, fullPage: true });
   await verifyDownload(page, expectedGeneratedFilename, "Generated media download");
