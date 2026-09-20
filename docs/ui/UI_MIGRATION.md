@@ -2115,12 +2115,13 @@ The Settings Data & Privacy lifecycle slice is implemented and verified. The pro
 - No route, API, media, capability, ownership, storage, generation or deployment contract changes. Production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` while checkpoint 3 begins.
 
 ### UI-082 checkpoint 3 — Activity + Library hierarchy
-**Status: `COMPLETE / VERIFIED ON CHECKPOINT BRANCH`.**
+**Status: `COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED`.**
 
 - [x] Design authority: `design/rd/activity-library-hierarchy-v01.md`.
 - [x] Activity request summary is content preview rather than heading content; long primary/secondary summaries are bounded while 01/02/03 chronology, state, time, operation, Retry/Run Again/Cancel and result-link semantics remain unchanged.
 - [x] Library keeps Gallery Rail structure, media-card grammar, URL/server-owned state, search, filters, Favorites, Collections, sort, Select and upload behavior while reducing avoidable command-surface density and raising essential label legibility.
 - [x] Exact source `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all 18 attached workflows.
 - [x] Activity Visual `35531996901` / artifact `10611591672` (`sha256:4f1fd684ee6518315a93dda67622dc978a8232d6d3eb090469b23cfe8ac05b61`) and Library History Visual `35531996914` / artifact `10611526669` (`sha256:91e24628af5bd7af4d322d7d0a965ca8c5b16f7972367a9b79d4b31cbc12914c`) were human-reviewed across desktop, 390px and reduced-motion/selection states; no horizontal overflow, selection-origin or action-reachability regression reproduced.
+- [x] PR #308 squash-merged as `058b8d10b0dcbfc93e47657a2c6ed0cea4c2c7e1`; merged-main Engineering Quality `35543303501`, UI Shell Validation `35543303489`, Activity Cancel Visual `35543303603`, Creative Iteration `35543303491`, and Image Upscale Integration `35543303495` all passed.
 - [ ] Checkpoint 4 next: Create, Settings/Profile/Preferences and Admin legibility/rhythm corrections plus Landing/shell audit. Only evidence-backed defects should change pixels.
 - [ ] Production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`; deployment waits for checkpoint 5 acceptance and checkpoint 6 release.
