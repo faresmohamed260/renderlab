@@ -2100,3 +2100,14 @@ The Settings Data & Privacy lifecycle slice is implemented and verified. The pro
 - UI-082 and `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md` define the checkpointed route audit and acceptance gates.
 - First runtime checkpoint is Viewer: media-first first viewport, no prompt-derived H1, canonical bounded Prompt presentation, attached quick actions, reduced chrome weight and improved microtype legibility while preserving all media/product contracts.
 - No source UI, backend, infrastructure or production state changes in this planning checkpoint.
+
+### UI-082 checkpoint 2 — Viewer media-first hierarchy
+**Status: `IMPLEMENTATION CANDIDATE / VERIFICATION PENDING`.**
+
+- Design authority: `design/rd/media-viewer-media-first-v01.md`.
+- Viewer H1 no longer falls back to prompt text; stable asset identity is display name → original filename → truthful generic Generated/Uploaded image/video.
+- Prompt remains accessible to media description and appears once in the attached register as a bounded preview/full disclosure.
+- Wide Viewer ceiling increases to 1600px; the media stage follows the compact context header and decorative registration is visually quieter.
+- Essential Viewer labels move toward the UI-082 10–12px technical-text floor while media and continuation remain primary.
+- The Phase 25 Viewer verifier now creates a no-display-name long-prompt result and requires prompt-independent H1, bounded prompt preview, first-viewport stage geometry, wide-desktop use, 390px no-overflow, Source Fold, reduced motion, native video and 44×44 quick-action behavior.
+- No route, API, media, capability, ownership, storage, generation or deployment contract changes.
