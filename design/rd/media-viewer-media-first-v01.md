@@ -1,6 +1,6 @@
 # UI-082 Viewer — Media-first v0.1
 
-**Status:** Accepted direction / implementation checkpoint  
+**Status:** Accepted / implemented / verified checkpoint  
 **Tracker:** #305  
 **Parent contract:** `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`
 
