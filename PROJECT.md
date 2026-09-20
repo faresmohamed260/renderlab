@@ -2115,7 +2115,7 @@ This corrective pass is now **production live** from exact source `0d584c5dab288
 - Production deployment remains separate and explicit.
 
 ## UI-082 media-first hierarchy correction — 2026-09-20
-**Status: `CHECKPOINT 3 COMPLETE / CHECKPOINT 4 NEXT`.**
+**Status: `CHECKPOINT 4A COMPLETE / CHECKPOINT 4B NEXT`.**
 
 Issue #305 opens a user-authorized application-wide visual hierarchy and legibility correction after direct production review exposed the Media Viewer long-prompt failure. Baseline repository main is `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; current production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` and is unchanged by this planning checkpoint.
 
@@ -2134,3 +2134,10 @@ Design checkpoint: `design/rd/media-viewer-media-first-v01.md`. Exact source hea
 Activity now treats generation request/prompt text as a bounded content preview rather than a heading: the primary Job Matrix summary is line-bounded, state/time/operation/action remain the operational scan path, and essential technical labels move toward the UI-082 legibility floor. Library retains the approved Gallery Rail structure and every current filter/search/Favorites/Collections/selection/sort behavior while modestly reducing command-surface density and raising essential label legibility. No route, lifecycle, query-state, ownership, schema, provider, storage or deployment behavior changed.
 
 Design checkpoint: `design/rd/activity-library-hierarchy-v01.md`. Exact source head `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all 18 attached workflows. Activity Visual `35531996901` / artifact `10611591672` (`sha256:4f1fd684ee6518315a93dda67622dc978a8232d6d3eb090469b23cfe8ac05b61`) and Library History Visual `35531996914` / artifact `10611526669` (`sha256:91e24628af5bd7af4d322d7d0a965ca8c5b16f7972367a9b79d4b31cbc12914c`) were human-reviewed across desktop, 390px and reduced-motion/selection evidence; long Activity summaries remain bounded, Library media remains visually primary, controls/actions remain reachable and no horizontal-overflow regression was observed. PR #308 squash-merged as `058b8d10b0dcbfc93e47657a2c6ed0cea4c2c7e1`. All five workflows attached to merged `main` passed: Engineering Quality `35543303501`, UI Shell Validation `35543303489`, Activity Cancel Visual `35543303603`, Creative Iteration `35543303491`, and Image Upscale Integration `35543303495`. Production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`; checkpoint 4 now owns Create, Settings/Profile/Preferences, Admin and the evidence-only Landing/shell audit.
+
+### UI-082 checkpoint 4A — Create legibility
+**Status: `COMPLETE / VERIFIED ON CHECKPOINT BRANCH`.**
+
+Design authority is `design/rd/create-account-admin-legibility-v01.md`. The approved Clear Composer structure is unchanged. The only reproduced Create legibility defects were essential active-lifecycle registration text and persisted-result registration text below the UI-082 technical-text floor; both now render at 10px with slightly stronger muted contrast, and the configured lifecycle verifier locks that minimum without changing generation state, result ordering, continuation, controls, touch targets or reduced-motion behavior.
+
+Implementation head `b174eba5be1ec37c548f6f349e71d1cc0ea279c6` passed all nine attached workflows. Create Clear Composer Visual `35543744625` / artifact `10615174763` (`sha256:9611a0cd6eedacf08a0f2ab9e7b4199f947f460ba8686e6aeb7b1b7957d40670`) and Create Lifecycle Visual `35543744613` / artifact `10616030332` (`sha256:0b64377356df061af957aeeda89dc3087870fbd8474c76069dae95d8091f3260`) were human-reviewed across desktop, 390px, reduced-motion, active-generation and persisted-result states. The composer hierarchy remains intact, result media still leads the composer and no overflow/action regression is visible. Production is unchanged; checkpoint 4B now owns Settings/Profile/Preferences no-change verification plus the bounded Admin microtype correction.

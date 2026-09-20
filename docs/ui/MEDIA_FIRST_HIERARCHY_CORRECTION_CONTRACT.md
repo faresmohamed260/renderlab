@@ -1,6 +1,6 @@
 # UI-082 — Media-first Hierarchy & Whole-site Legibility Correction
 
-**Status:** Checkpoint 3 complete / checkpoint 4 next
+**Status:** Checkpoint 4 in progress — 4A complete / 4B next
 **Tracker:** #305  
 **Baseline main:** `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`  
 **Current production application source:** `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`  
@@ -100,6 +100,8 @@ These are acceptance targets, not arbitrary global CSS overrides:
 - Library: audit command-rail density and title/control balance; make only evidence-backed reductions that keep media primary;
 - desktop + `390px` + reduced-motion evidence as applicable;
 - update docs before moving on.
+
+**Checkpoint 4A verification — 2026-09-21:** Create keeps the approved Clear Composer composition. Essential active-lifecycle and persisted-result registration labels were the only reproduced Create microtype defects and now meet the 10px floor. Exact implementation head `b174eba5be1ec37c548f6f349e71d1cc0ea279c6` passed all nine attached workflows. Create Clear Composer Visual `35543744625` / artifact `10615174763` (`sha256:9611a0cd6eedacf08a0f2ab9e7b4199f947f460ba8686e6aeb7b1b7957d40670`) and Create Lifecycle Visual `35543744613` / artifact `10616030332` (`sha256:0b64377356df061af957aeeda89dc3087870fbd8474c76069dae95d8091f3260`) were human-reviewed across desktop, 390px, reduced-motion, active-generation and persisted-result evidence with no hierarchy, overflow, touch-target or semantics regression. Checkpoint 4B now owns account-family verification and Admin.
 
 **Checkpoint 3 verification — 2026-09-20:** exact source head `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all 18 attached workflows after the prior head's sole whitespace-audit failure was corrected without runtime change. Activity Visual `35531996901` / artifact `10611591672` (`sha256:4f1fd684ee6518315a93dda67622dc978a8232d6d3eb090469b23cfe8ac05b61`) was human-reviewed at desktop and 390px reduced motion: the deliberately long request summary is bounded and no longer participates in heading hierarchy, while lifecycle state, timestamp, operation and actions remain scannable. Library History Visual `35531996914` / artifact `10611526669` (`sha256:91e24628af5bd7af4d322d7d0a965ca8c5b16f7972367a9b79d4b31cbc12914c`) was human-reviewed across desktop, selection/reduced-motion and 390px: media remains primary, the command rail is slightly less visually dominant, controls remain complete/reachable and no overflow or selection-origin regression is present. Job Matrix chronology/lifecycle semantics and Library query/filter/selection/media semantics are unchanged. PR #308 squash-merged as `058b8d10b0dcbfc93e47657a2c6ed0cea4c2c7e1`; merged-main Engineering Quality `35543303501`, UI Shell Validation `35543303489`, Activity Cancel Visual `35543303603`, Creative Iteration `35543303491`, and Image Upscale Integration `35543303495` all passed. Checkpoint 4 is next; production is unchanged.
 

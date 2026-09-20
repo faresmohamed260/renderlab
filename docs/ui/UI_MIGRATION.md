@@ -2092,7 +2092,7 @@ Production rollout is complete: exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5
 The Settings Data & Privacy lifecycle slice is implemented and verified. The production UI now reflects real export/delete behavior, uses existing shared controls, preserves desktop/mobile usability, and does not imply unsupported provider-log deletion or model-training controls. Exact head `886a4722826b268ad156eda22e817002471cd04c` passed UI Shell Validation plus the configured Account Data Lifecycle desktop/mobile evidence. This closure does not authorize deployment.
 
 ## UI-082 media-first hierarchy / whole-site legibility correction — 2026-09-20
-**Status: `CHECKPOINT 3 COMPLETE / CHECKPOINT 4 NEXT`.**
+**Status: `CHECKPOINT 4A COMPLETE / CHECKPOINT 4B NEXT`.**
 
 - Tracker #305 records the user-authorized correction.
 - Baseline: `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
@@ -2123,5 +2123,7 @@ The Settings Data & Privacy lifecycle slice is implemented and verified. The pro
 - [x] Exact source `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all 18 attached workflows.
 - [x] Activity Visual `35531996901` / artifact `10611591672` (`sha256:4f1fd684ee6518315a93dda67622dc978a8232d6d3eb090469b23cfe8ac05b61`) and Library History Visual `35531996914` / artifact `10611526669` (`sha256:91e24628af5bd7af4d322d7d0a965ca8c5b16f7972367a9b79d4b31cbc12914c`) were human-reviewed across desktop, 390px and reduced-motion/selection states; no horizontal overflow, selection-origin or action-reachability regression reproduced.
 - [x] PR #308 squash-merged as `058b8d10b0dcbfc93e47657a2c6ed0cea4c2c7e1`; merged-main Engineering Quality `35543303501`, UI Shell Validation `35543303489`, Activity Cancel Visual `35543303603`, Creative Iteration `35543303491`, and Image Upscale Integration `35543303495` all passed.
-- [ ] Checkpoint 4 next: Create, Settings/Profile/Preferences and Admin legibility/rhythm corrections plus Landing/shell audit. Only evidence-backed defects should change pixels.
+- [x] **Checkpoint 4A Create — COMPLETE / VERIFIED ON CHECKPOINT BRANCH.** Design authority `design/rd/create-account-admin-legibility-v01.md`; exact implementation head `b174eba5be1ec37c548f6f349e71d1cc0ea279c6` passed all nine attached workflows.
+- [x] Create Clear Composer Visual `35543744625` / artifact `10615174763` (`sha256:9611a0cd6eedacf08a0f2ab9e7b4199f947f460ba8686e6aeb7b1b7957d40670`) and Create Lifecycle Visual `35543744613` / artifact `10616030332` (`sha256:0b64377356df061af957aeeda89dc3087870fbd8474c76069dae95d8091f3260`) were human-reviewed across desktop, 390px, reduced-motion, active-generation and persisted-result states. Essential lifecycle/result registration now meets the 10px floor with no structure, semantics, overflow or touch-target regression.
+- [ ] Checkpoint 4B next: Settings/Profile/Preferences no-change verification plus bounded Admin microtype correction.
 - [ ] Production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`; deployment waits for checkpoint 5 acceptance and checkpoint 6 release.
