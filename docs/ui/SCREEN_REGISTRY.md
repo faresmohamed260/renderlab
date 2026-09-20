@@ -408,3 +408,10 @@ The approved `/` product home at this phase used the reviewed Phase 22 Kinetic P
 ## #219 Settings Data & Privacy state
 
 `/settings` now includes the implemented Data & Privacy account-lifecycle surface rather than a placeholder: truthful data-use/processing disclosure, account-data export status/action/download affordance, durable-media manifest explanation, and a visually separated destructive account-deletion flow with pending/progress treatment. The surface remains available within the established Settings authorization model and uses the real server-owned lifecycle APIs. Desktop and 390px configured verification passed. No fake training opt-out toggle is present.
+
+## UI-082 active redesign cycle — planning checkpoint 2026-09-20
+**Tracker:** #305  
+**Contract:** `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`  
+**Baseline:** `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7` / production `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
+
+Current approved routes and product behaviors remain live while their visual hierarchy is audited. Viewer is first because the current prompt-fallback H1 can dominate the first viewport and duplicates Prompt content already available in the Viewer register. Activity is next for the analogous prompt-headline hierarchy. Library, Create, Settings/Profile/Preferences, Admin, Landing and AppShell are reviewed for corresponding space-use, chrome-density and legibility failures; unchanged surfaces remain unchanged when the issue does not reproduce. Locked RenderLabBrand and Landing canonical quarter-circle remain outside the redesign boundary.

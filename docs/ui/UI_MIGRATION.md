@@ -2090,3 +2090,13 @@ Production rollout is complete: exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5
 ## #219 Settings lifecycle closure
 
 The Settings Data & Privacy lifecycle slice is implemented and verified. The production UI now reflects real export/delete behavior, uses existing shared controls, preserves desktop/mobile usability, and does not imply unsupported provider-log deletion or model-training controls. Exact head `886a4722826b268ad156eda22e817002471cd04c` passed UI Shell Validation plus the configured Account Data Lifecycle desktop/mobile evidence. This closure does not authorize deployment.
+
+## UI-082 media-first hierarchy / whole-site legibility correction — 2026-09-20
+**Status: `PLANNING CHECKPOINT COMPLETE / RUNTIME IMPLEMENTATION NOT STARTED`.**
+
+- Tracker #305 records the user-authorized correction.
+- Baseline: `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
+- Evidence baseline: QA-002 production run `35440027637`, artifact `10583333354`, plus direct user review of the live Viewer.
+- UI-082 and `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md` define the checkpointed route audit and acceptance gates.
+- First runtime checkpoint is Viewer: media-first first viewport, no prompt-derived H1, canonical bounded Prompt presentation, attached quick actions, reduced chrome weight and improved microtype legibility while preserving all media/product contracts.
+- No source UI, backend, infrastructure or production state changes in this planning checkpoint.
