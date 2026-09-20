@@ -270,7 +270,7 @@
   margin: 0.28rem 0 0;
   overflow-wrap: anywhere;
   color: #727e90;
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   line-height: 1.45;
   letter-spacing: 0.025em;
 }
@@ -288,7 +288,7 @@
   padding: 0.1rem 0.45rem;
   background: rgb(129 114 246 / 5%);
   color: rgb(190 181 255 / 85%);
-  font-size: 0.58rem;
+  font-size: 0.625rem;
   font-weight: 750;
   letter-spacing: 0.09em;
 }
@@ -371,7 +371,7 @@
 .metricLabel {
   margin: 0;
   color: #788495;
-  font-size: 0.58rem;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.09em;
 }
@@ -411,7 +411,7 @@
 .diagnosticTitle {
   margin: 0 0 0.65rem;
   color: #909aa8;
-  font-size: 0.58rem;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
