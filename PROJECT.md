@@ -2113,3 +2113,10 @@ This corrective pass is now **production live** from exact source `0d584c5dab288
 - In scope is evidence-backed shell/content clearance, typography/spacing drift, responsive overflow/clipping, empty/loading/error presentation, focus/touch reachability, reduced-motion equivalence and cross-surface continuity. New capabilities, routes, account/Admin work, backend/infrastructure changes, new UI runtimes and deployment remain out of scope.
 - Same-product-tree Phase 28 Release Candidate Matrix evidence provides the initial integrated visual baseline. A possible 390px Create fixed-header/content-clearance issue is explicitly a candidate to reproduce geometrically before any correction.
 - Production deployment remains separate and explicit.
+
+## UI-082 media-first hierarchy correction — 2026-09-20
+**Status: `PLANNING CHECKPOINT COMPLETE / IMPLEMENTATION PENDING`.**
+
+Issue #305 opens a user-authorized application-wide visual hierarchy and legibility correction after direct production review exposed the Media Viewer long-prompt failure. Baseline repository main is `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; current production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` and is unchanged by this planning checkpoint.
+
+The binding contract is `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`. Viewer is checkpoint 2; Activity/Library checkpoint 3; Create/account/Admin plus Landing/shell audit checkpoint 4; whole-product exact-head/render acceptance checkpoint 5; merge/production/documentation closure checkpoint 6. Product/security/backend contracts and locked brand geometry remain unchanged.
