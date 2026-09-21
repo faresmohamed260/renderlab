@@ -2,13 +2,14 @@
 
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
-## Current production rollout — 2026-09-19
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a -->
-- Exact repository source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` is production-live as READY Vercel deployment `dpl_6Z8LTAE8g91FvT4TaB7NQaX4dBNM` (`https://renderlab-ougwjh7s6-faresmohamed260-6733s-projects.vercel.app`).
-- Guarded rollout `35455778821` checked out the exact pristine candidate, deployed through pinned Vercel CLI `59.11.7`, explicitly assigned `renderlab.faresuniform.uk`, passed smoke for root, Create, Library, Activity, Settings, Password, Profile and Preferences, and skipped rollback. The temporary rollout branch deleted itself after completion.
-- The previous accepted deployment `dpl_Cssdq7grVd6eGkN4Y1xqdWPqV8bz` / source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8` is the immediate known-good alias rollback anchor.
-- Repository comparison from `2fc64231…` to `c00664d9…` is 15 commits and changes only GitHub workflow definitions, audit/verifier scripts, tests and documentation. There are no `src/**`, package/config, Supabase migration or other runtime application changes, so the deployment advances repository provenance without changing application behavior or pixels.
-- Vercel deployment metadata reports exact Git SHA `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`, READY state, production target and CLI source. Bounded post-cutover inspection found no runtime-error clusters and no error/fatal log entries.
+## Current production rollout — 2026-09-21
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 986aab269551a4c6e7d3af3a259cfa955c975d91 -->
+- Exact repository source `986aab269551a4c6e7d3af3a259cfa955c975d91` is production-live as READY Vercel deployment `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR` (`https://renderlab-8k6imydly-faresmohamed260-6733s-projects.vercel.app`).
+- UI-082 PR #310 squash-merged as `986aab269551a4c6e7d3af3a259cfa955c975d91` after exact-candidate Release Candidate Matrix `35545344706` passed 23/23 configured children. Merged-main Engineering Quality `35547496591`, UI Shell Validation `35547496574`, and Activity Cancel Visual `35547496556` all passed.
+- Guarded deployment run `35547701381` checked out the exact pristine current main and created `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR` through pinned Vercel CLI `59.11.7`. The first smoke self-rolled back because the generic 2xx route loop treated RenderLab's established signed-out `/admin` 404 concealment as failure; no application defect reproduced. Follow-up run `35547882359` stopped before aliasing when the protected immutable Vercel URL redirected `/admin` to Vercel SSO, again leaving the rollback deployment active.
+- Final cutover `35548015570` guarded the same exact current main, assigned the independently verified READY deployment to `renderlab.faresuniform.uk`, passed custom-domain smoke for root, Create, Library, Activity, Settings, Password, Profile and Preferences, explicitly accepted signed-out Admin only at the expected 404 concealment boundary, skipped rollback, and deleted its temporary branch.
+- Vercel deployment metadata reports exact Git SHA `986aab269551a4c6e7d3af3a259cfa955c975d91`, READY state, production target and CLI source. Bounded post-cutover inspection returned no runtime-error clusters and no error/fatal log entries.
+- Prior accepted deployment `dpl_6Z8LTAE8g91FvT4TaB7NQaX4dBNM` / source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` remains the immediate known-good alias rollback anchor.
 - No Supabase schema/RLS/Auth-policy, Cloudflare R2 configuration, worker/provider routing, scheduler or environment-variable mutation occurred. Automatic Git → Vercel deployment remains disabled.
 
 ## QA-002 permanent production user journey — 2026-09-19
