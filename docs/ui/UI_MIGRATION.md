@@ -12,11 +12,11 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Validate rendered UI, not only compilation.
 - Keep repository documentation synchronized with verified implementation.
 
-## Current production and whole-product audit — 2026-09-19
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a -->
-**Status: `VERIFIED APPLICATION SOURCE PRODUCTION-LIVE / QA-001–QA-005 COMPLETE / WHOLE-PRODUCT AUDIT COMPLETE`.**
+## Current production and whole-product audit — 2026-09-21
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 986aab269551a4c6e7d3af3a259cfa955c975d91 -->
+**Status: `UI-082 PRODUCTION-LIVE / QA-001–QA-005 HISTORICAL ACCEPTANCE RETAINED / DOCUMENTATION SYNC PENDING`.**
 
-- Exact current production source is `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a` at READY deployment `dpl_6Z8LTAE8g91FvT4TaB7NQaX4dBNM`, deployed by guarded rollout `35455778821`. The custom domain was explicitly reassigned and root/Create/Library/Activity/Settings/Password/Profile/Preferences smoke passed. Compared with audited application source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`, the deployed delta contains no runtime application files, so the approved UI/product behavior is unchanged. Post-cutover Vercel inspection found no runtime errors and no error/fatal logs. Automatic Git → Vercel deployment remains disabled.
+- Exact current production source is `986aab269551a4c6e7d3af3a259cfa955c975d91` at READY deployment `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR` (`https://renderlab-8k6imydly-faresmohamed260-6733s-projects.vercel.app`). PR #310 merged as the exact deployed SHA after checkpoint-5 acceptance; merged-main Engineering Quality `35547496591`, UI Shell Validation `35547496574`, and Activity Cancel Visual `35547496556` passed. Final cutover `35548015570` explicitly assigned `renderlab.faresuniform.uk`, passed root/Create/Library/Activity/Settings/Password/Profile/Preferences smoke and the expected signed-out Admin 404 boundary, and skipped rollback. Vercel metadata confirms exact SHA/READY/production/CLI provenance; bounded post-cutover inspection found no runtime errors and no error/fatal logs. Automatic Git → Vercel deployment remains disabled.
 - QA-001 documentation synchronization is complete through permanent verifier merge `8028f8be33ef8760c55b7f796ed1a802f0199cd1` and proof run `35413607297`.
 - QA-002 manual production run `35440027637` passed exactly four fixture-owned Image/Edit/Animate/Video generations plus public/signed-out, Library/Viewer and read-only Settings/Profile/Preferences/session coverage. Artifact `10583333354` / `sha256:4e6208f8a223fb68c8eccc6a327fdb65e377075222729da60beb2128fad0b227` contains 38 human-reviewed screenshots; cleanup verified nine R2 objects and zero contracted DB/Auth residue.
 - QA-003 manual run `35374052822` remains accepted for fixture-safe Activity actions plus fresh-AAL2 read-only Admin; artifact `10559613086` contains 32 human-reviewed screenshots with exact cleanup.
@@ -2092,10 +2092,10 @@ Production rollout is complete: exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5
 The Settings Data & Privacy lifecycle slice is implemented and verified. The production UI now reflects real export/delete behavior, uses existing shared controls, preserves desktop/mobile usability, and does not imply unsupported provider-log deletion or model-training controls. Exact head `886a4722826b268ad156eda22e817002471cd04c` passed UI Shell Validation plus the configured Account Data Lifecycle desktop/mobile evidence. This closure does not authorize deployment.
 
 ## UI-082 media-first hierarchy / whole-site legibility correction — 2026-09-20
-**Status: `CHECKPOINT 5 COMPLETE / CHECKPOINT 6 NEXT`.**
+**Status: `CHECKPOINT 6 PRODUCTION LIVE / DOCUMENTATION SYNC PENDING`.**
 
 - Tracker #305 records the user-authorized correction.
-- Baseline: `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; production remains `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
+- Cycle-start baseline: `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; production at cycle start was `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
 - Evidence baseline: QA-002 production run `35440027637`, artifact `10583333354`, plus direct user review of the live Viewer.
 - UI-082 and `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md` define the checkpointed route audit and acceptance gates.
 - First runtime checkpoint is Viewer: media-first first viewport, no prompt-derived H1, canonical bounded Prompt presentation, attached quick actions, reduced chrome weight and improved microtype legibility while preserving all media/product contracts.
@@ -2131,5 +2131,6 @@ The Settings Data & Privacy lifecycle slice is implemented and verified. The pro
 - [x] **Checkpoint 5 whole-product acceptance — COMPLETE / VERIFIED ON EXACT CANDIDATE.** Exact candidate `c194ae299f0bdee2243c54eb2be00612c86f03e2` passed all ten PR-attached workflows: Engineering Quality `35545111587`, Brand / Launch Visual `35545111542`, Account Identity Visual `35545111615`, Create Clear Composer Visual `35545111611`, Activity Cancel Visual `35545111592`, Integrated Release `35545111555`, Account/Admin Operations `35545111584`, UI Shell Validation `35545111605`, Create Lifecycle Visual `35545111606`, and Activity Visual `35545111569`.
 - [x] Dedicated Media Viewer Register Fold `35545120954` / artifact `10616312242` (`sha256:026a06d1585537b4beaedaf31d557b9a334420af18a2631f18a516f490a5de89`) passed the same-SHA long-prompt desktop/wide/390px regression. Release Candidate Matrix `35545344706` passed 23/23 configured child workflows and published manifest artifact `10615743591` (`sha256:699ee1de823e3f0f6355fa3095a2114cb43651bd6614800ef6d55e5e25a68cee`).
 - [x] Exact-candidate rendered review covered Landing, AppShell, Create, Library, Viewer, Activity, Settings/account and Admin across desktop, 390px and changed-path reduced-motion states. No prompt-as-title regression, horizontal overflow, action-reachability defect or accidental hierarchy drift was observed. `COMPONENT_CATALOG.md` requires no change because no reusable component contract changed.
-- [ ] Checkpoint 6 next: merge PR #310, verify merged-main attached workflows, run guarded exact-source production rollout, then synchronize production documentation.
-- [ ] Production remains exact source `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`; deployment is now gated only by checkpoint 6 merge and merged-main verification before the already authorized guarded rollout.
+- [x] **Checkpoint 6 merge/production — PRODUCTION LIVE.** PR #310 squash-merged as `986aab269551a4c6e7d3af3a259cfa955c975d91`; merged-main Engineering Quality `35547496591`, UI Shell Validation `35547496574`, and Activity Cancel Visual `35547496556` passed.
+- [x] Deployment `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR` was built from exact pristine `986aab269551a4c6e7d3af3a259cfa955c975d91` and is READY. Final cutover `35548015570` assigned `renderlab.faresuniform.uk`, passed root/Create/Library/Activity/Settings/Password/Profile/Preferences plus expected signed-out Admin 404 smoke, and skipped rollback. Bounded Vercel inspection found no runtime-error clusters and no error/fatal logs.
+- [ ] This docs branch updates the four authoritative production records to `986aab269551a4c6e7d3af3a259cfa955c975d91`; after merge, run Production Documentation Sync with that exact SHA to close UI-082.
