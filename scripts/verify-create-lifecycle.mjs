@@ -321,6 +321,10 @@ try {
     ["queued", "preparing", "running", "persisting"].includes(activeLifecycleState),
     `Create did not expose a truthful active lifecycle state after acceptance: ${activeLifecycleState}`,
   );
+  const activeStageKickerSize = await page.locator(".clear-create-stage-kicker").evaluate(
+    (element) => Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  assert(activeStageKickerSize >= 10, `Create lifecycle registration fell below the UI-082 legibility floor: ${activeStageKickerSize}px`);
   const activeGenerate = page.locator(".kinetic-generate");
   assert((await activeGenerate.getAttribute("data-active")) === "true", "Generate actuator did not expose its active-generation treatment.");
   assert((await activeGenerate.textContent())?.includes("Generating"), "Generate actuator did not communicate the active generation state.");
@@ -366,6 +370,10 @@ try {
   const animate = page.getByRole("button", { name: "Animate", exact: true });
   assert(await edit.isVisible(), "Persisted image result did not expose the Edit continuation action.");
   assert(await animate.isVisible(), "Persisted image result did not expose the Animate continuation action.");
+  const resultKickerSize = await page.locator(".clear-result-kicker").evaluate(
+    (element) => Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  assert(resultKickerSize >= 10, `Create result registration fell below the UI-082 legibility floor: ${resultKickerSize}px`);
 
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${artifactDir}/create-lifecycle-desktop-result.png`, fullPage: true });

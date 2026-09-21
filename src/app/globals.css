@@ -1321,8 +1321,8 @@ a {
 }
 
 .clear-create-stage-kicker {
-  color: rgb(255 255 255 / 38%);
-  font-size: 0.58rem;
+  color: #8490a0;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
 }
@@ -1817,8 +1817,8 @@ a {
 
 .clear-result-kicker {
   margin: 0;
-  color: #7c8797;
-  font-size: 9px;
+  color: #8490a0;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: .17em;
 }

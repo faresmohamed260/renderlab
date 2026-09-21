@@ -555,6 +555,17 @@ try {
   assert(await page.locator(`[id="role-${adminAccount.id}"]`).isDisabled(), "Acting admin role control must remain disabled.");
   assert(await page.locator(`[id="status-${adminAccount.id}"]`).isDisabled(), "Acting admin status control must remain disabled.");
 
+  const adminMicrotype = await Promise.all([
+    page.getByText(adminAccount.id, { exact: true }).evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
+    page.locator(`[data-admin-account="${adminAccount.id}"]`).getByText("You", { exact: true }).evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
+    page.getByText("Completion p50", { exact: true }).evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
+    page.getByText("Active state age", { exact: true }).evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
+  ]);
+  assert(
+    adminMicrotype.every((fontSize) => fontSize >= 10),
+    `Admin operational microtype fell below the UI-082 legibility floor: ${JSON.stringify(adminMicrotype)}`,
+  );
+
   assert(
     (await page.getByRole("navigation", { name: "Application navigation" }).getByRole("link", { name: "Admin", exact: true }).count()) === 0,
     "Admin was added to ordinary application navigation.",
