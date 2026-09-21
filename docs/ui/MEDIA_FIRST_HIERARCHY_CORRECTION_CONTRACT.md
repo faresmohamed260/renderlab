@@ -1,6 +1,6 @@
 # UI-082 — Media-first Hierarchy & Whole-site Legibility Correction
 
-**Status:** Checkpoint 4 complete / checkpoint 5 next
+**Status:** Checkpoint 5 complete / checkpoint 6 next
 **Tracker:** #305  
 **Baseline main:** `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`  
 **Current production application source:** `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`  
@@ -123,6 +123,8 @@ These are acceptance targets, not arbitrary global CSS overrides:
 - reduced-motion review covers every changed temporal path;
 - add regression checks for long prompt / prompt-as-title behavior and no horizontal overflow;
 - update PROJECT, UI_MIGRATION, UI_DECISIONS, SCREEN_REGISTRY and COMPONENT_CATALOG only if reusable component state changed.
+
+**Checkpoint 5 verification — 2026-09-21:** exact candidate `c194ae299f0bdee2243c54eb2be00612c86f03e2` passed every workflow GitHub attached to PR #310: Engineering Quality `35545111587`, Brand / Launch Visual `35545111542`, Account Identity Visual `35545111615`, Create Clear Composer Visual `35545111611`, Activity Cancel Visual `35545111592`, Integrated Release `35545111555`, Account/Admin Operations `35545111584`, UI Shell Validation `35545111605`, Create Lifecycle Visual `35545111606`, and Activity Visual `35545111569`. Dedicated Media Viewer Register Fold `35545120954` / artifact `10616312242` (`sha256:026a06d1585537b4beaedaf31d557b9a334420af18a2631f18a516f490a5de89`) passed the same-SHA 1440px/wide/390px long-prompt acceptance. Release Candidate Matrix `35545344706` passed all 23 configured child workflows and published manifest artifact `10615743591` (`sha256:699ee1de823e3f0f6355fa3095a2114cb43651bd6614800ef6d55e5e25a68cee`). Exact-candidate rendered review covered Landing, AppShell, Create, Library, Viewer, Activity, Settings/account and Admin using Brand / Launch `35545111542` / artifact `10616292213` (`sha256:47b2403535695f872bc9ef1dc95dcedf73bd28c2c047c237eb284134557cc342`), UI Shell `35545111605` / artifact `10616302419` (`sha256:4eb2ff9c8c8fbf5f9ab63ce17903cd2038e8773ac75ab89b5d7a7d2a13d06b05`), Create Lifecycle `35545111606` / artifact `10616137801` (`sha256:22323e751a907513aa3a0efe6fb5bc594d026b8a78f24d4737cd429cedcb7b25`), Library History `35545393522` / artifact `10616731894` (`sha256:80f8ede3b749a09db958fc4159c5b993d4c7ed48edaa32d2aab0f6d28c0c854d`), Activity Visual `35545111569` / artifact `10616502062` (`sha256:83423c7e8ce0587005eea8513136410b42331f358eb6d28309b4a2a5c3b87dee`), Account Identity `35545111615` / artifact `10615832262` (`sha256:b31b946e3da82c318f8c6a9df0e224cf90177012bb2c544bf63cab9cc6288b6d`) and Account/Admin Operations `35545111584` / artifact `10616442086` (`sha256:cb4fa83fee599346095a56a6efefbb3d8b281fbfbf643861f14bedd479fd0c0f`); desktop, 390px and changed-path reduced-motion states showed no prompt-as-title recurrence, horizontal overflow, action-reachability defect, accidental visual flattening or essential-text regression. No reusable component state changed, so `COMPONENT_CATALOG.md` was intentionally not modified. Checkpoint 6 now owns merge and production.
 
 ### Checkpoint 6 — Merge and production
 - merge only verified exact implementation head;
