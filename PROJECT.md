@@ -72,6 +72,12 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 
 ## Account & Settings capability program — active work
 
+## DaSiWa MiniMax H3 video model — draft / provider-blocked
+
+Draft PR #313 prepares the `minimax-h3-dasiwa-4turbo` product contract and a separate `renderlab-minimax-h3-gateway` Modal application. No H3 worker is deployed, the model is not production-exposed, and the PR must remain draft until live worker acceptance succeeds.
+
+The provider boundary is now verified across H100, A100-80GB, L40S and A10 attempts. Most importantly, bounded run `36784054872` tested H3 on `modal-02` with the same NVIDIA A10 class used by the still-working `saga-ltx25-video` standby, while retaining a separate H3 app name, model volume, state dictionary and gateway. Modal rejected the new H3 application during object initialization with `Please add a payment method to use A10G GPU functions`; model prefetch, deployment and real generation therefore never ran. A post-attempt health check confirmed the existing `ltx-standby-02` worker remained ready/active on `NVIDIA A10`. This closes the remaining same-workspace/same-GPU question without modifying the working LTX application or its model store.
+
 ### Superseded account/security rollout — 2026-09-15
 - Workstreams #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 data export/retention/account deletion are now **PRODUCTION-LIVE** from exact repository source `d18ef8833d46c812dac6b43572b3f4f7069990f8`.
 - Guarded clean-provenance rollout `35022243427` produced READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7` (`https://renderlab-baa28u96o-faresmohamed260-6733s-projects.vercel.app`). Root, `/create`, `/library`, `/activity`, `/settings`, and `/settings/password` smoke passed on `renderlab.faresuniform.uk`; post-cutover Vercel inspection found no runtime-error clusters and no error/fatal logs in the rollout window.

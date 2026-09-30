@@ -7,6 +7,7 @@ import type {
   GenerationModel,
   GenerationRequest,
   OutputKind,
+  VideoGenerationModel,
 } from "@/lib/capabilities/generation";
 import {
   defaultGenerationModelForOutput,
@@ -22,6 +23,9 @@ import {
   qwenImageFixedGuidance,
   qwenImageFixedSteps,
   unresolvedGenerationPromptReferenceAliases,
+  videoDurationsForModel,
+  videoFrameRatesForModel,
+  videoResolutionsForModel,
   videoAspectRatios,
   videoDurations,
   videoResolutions,
@@ -58,7 +62,6 @@ const videoAspectRatioSet = new Set<AspectRatio>(videoAspectRatios);
 const outputKinds = new Set<OutputKind>(["image", "video"]);
 const inputRoles = new Set<GenerationInput["role"]>(["reference", "primary-image", "first-frame"]);
 const inputSourceTypes = new Set<GenerationInput["source"]["type"]>(["temporary-source", "media-asset"]);
-const frameRates = new Set<number>(generationAdvancedCapabilities.video.frameRates);
 const videoDurationSet = new Set<number>(videoDurations);
 const videoResolutionSet = new Set<string>(videoResolutions);
 
@@ -140,7 +143,12 @@ function parseAdvanced(
   }
   if (value.frameRate !== undefined) {
     if (kind !== "video") return null;
-    if (typeof value.frameRate !== "number" || !frameRates.has(value.frameRate)) return null;
+    if (
+      typeof value.frameRate !== "number"
+      || !videoFrameRatesForModel(model as VideoGenerationModel).includes(
+        value.frameRate as GenerationFrameRate,
+      )
+    ) return null;
     advanced.frameRate = value.frameRate as GenerationFrameRate;
   }
 
@@ -244,14 +252,25 @@ export function parseGenerationRequest(value: unknown):
 
   let normalizedVideoResolution: VideoResolution | undefined;
   if (kind === "video") {
+    const videoModel = model as VideoGenerationModel;
+    const supportedResolutions = videoResolutionsForModel(videoModel);
+    const supportedDurations = videoDurationsForModel(videoModel);
     if (resolution === undefined) {
       normalizedVideoResolution = defaultVideoResolution;
-    } else if (typeof resolution === "string" && videoResolutionSet.has(resolution)) {
+    } else if (
+      typeof resolution === "string"
+      && videoResolutionSet.has(resolution)
+      && supportedResolutions.includes(resolution as VideoResolution)
+    ) {
       normalizedVideoResolution = resolution as VideoResolution;
     } else {
       return { ok: false, error: { code: "invalid_request", message: "Unsupported video resolution." } };
     }
-    if (typeof durationSeconds !== "number" || !videoDurationSet.has(durationSeconds)) {
+    if (
+      typeof durationSeconds !== "number"
+      || !videoDurationSet.has(durationSeconds)
+      || !supportedDurations.includes(durationSeconds as (typeof videoDurations)[number])
+    ) {
       return { ok: false, error: { code: "invalid_request", message: "Unsupported video duration." } };
     }
     if (audioEnabled !== undefined && typeof audioEnabled !== "boolean") {

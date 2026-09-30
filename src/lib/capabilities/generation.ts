@@ -1,7 +1,7 @@
 export type OutputKind = "image" | "video";
 
 export const imageGenerationModels = ["flux2-klein-9b", "qwen-image-edit-2511"] as const;
-export const videoGenerationModels = ["ltx25-redgraft"] as const;
+export const videoGenerationModels = ["ltx25-redgraft", "minimax-h3-dasiwa-4turbo"] as const;
 export type ImageGenerationModel = (typeof imageGenerationModels)[number];
 export type VideoGenerationModel = (typeof videoGenerationModels)[number];
 export type GenerationModel = ImageGenerationModel | VideoGenerationModel;
@@ -18,6 +18,7 @@ export const generationModelDefinitions: Record<
   "flux2-klein-9b": { label: "FLUX.2 Klein", version: "9B", outputKind: "image" },
   "qwen-image-edit-2511": { label: "Qwen Image Edit", version: "2511", outputKind: "image" },
   "ltx25-redgraft": { label: "REDGraft LTX", version: "2.5", outputKind: "video" },
+  "minimax-h3-dasiwa-4turbo": { label: "DaSiWa MiniMax H3", version: "4Turbo v1", outputKind: "video" },
 };
 
 export function generationModelsForOutput(kind: OutputKind): readonly GenerationModel[] {
@@ -30,6 +31,10 @@ export function defaultGenerationModelForOutput(kind: OutputKind): GenerationMod
 
 export function isImageGenerationModel(model: string | undefined): model is ImageGenerationModel {
   return imageGenerationModels.includes(model as ImageGenerationModel);
+}
+
+export function isVideoGenerationModel(model: string | undefined): model is VideoGenerationModel {
+  return videoGenerationModels.includes(model as VideoGenerationModel);
 }
 
 export type PromptGenerationOperation =
@@ -242,6 +247,26 @@ export const videoAspectRatios: PresetAspectRatio[] = [
   "1:1", "4:5", "3:4", "2:3", "9:16", "5:4", "4:3", "3:2", "16:10", "16:9", "21:9",
 ];
 export const videoDurations = [5, 10, 15, 20, 30] as const;
+
+export function videoResolutionsForModel(model: VideoGenerationModel): readonly VideoResolution[] {
+  return model === "minimax-h3-dasiwa-4turbo"
+    ? ["480p", "720p"]
+    : videoResolutions;
+}
+
+export function videoDurationsForModel(
+  model: VideoGenerationModel,
+): readonly (typeof videoDurations)[number][] {
+  return model === "minimax-h3-dasiwa-4turbo"
+    ? [5, 10, 15]
+    : videoDurations;
+}
+
+export function videoFrameRatesForModel(model: VideoGenerationModel): readonly GenerationFrameRate[] {
+  return model === "minimax-h3-dasiwa-4turbo"
+    ? [24]
+    : generationAdvancedCapabilities.video.frameRates;
+}
 
 const imageContinuationActions: ContinuationAction[] = [
   { id: "edit-image", label: "Edit", outputKind: "image", inputRole: "primary-image" },

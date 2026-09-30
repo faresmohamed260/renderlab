@@ -30,13 +30,20 @@ test("healthy Qwen routing preserves primary then standby order", () => {
   );
 });
 
+test("MiniMax H3 routing uses RenderLab-owned primary then standby capacity", () => {
+  assert.deepEqual(
+    workersForEcosystem("minimax-h3-dasiwa-4turbo").map((worker) => worker.id),
+    ["h3-dasiwa-primary-01", "h3-dasiwa-standby-01"],
+  );
+});
+
 test("all routed workers are explicitly active", () => {
   for (const worker of generationWorkers) {
     if (worker.routingStatus === "disabled") continue;
     assert.equal(worker.routingStatus, "active");
   }
 
-  for (const ecosystem of ["flux2-klein-9b", "ltx25-redgraft", "qwen-image-edit-2511"]) {
+  for (const ecosystem of ["flux2-klein-9b", "ltx25-redgraft", "minimax-h3-dasiwa-4turbo", "qwen-image-edit-2511"]) {
     for (const worker of workersForEcosystem(ecosystem)) {
       assert.equal(worker.routingStatus, "active");
     }

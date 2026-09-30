@@ -76,7 +76,11 @@ async function hasIndexedDurableOutput(ownerId: string, jobId: string) {
 
 function cancellationGatewayForWorker(workerId: string) {
   const worker = findWorker(workerId);
-  if (worker && (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft")) {
+  if (worker && (
+    worker.ecosystem === "flux2-klein-9b"
+    || worker.ecosystem === "ltx25-redgraft"
+    || worker.ecosystem === "minimax-h3-dasiwa-4turbo"
+  )) {
     return worker.gatewayUrl;
   }
   const upscaleWorker = getImageUpscaleWorker();
