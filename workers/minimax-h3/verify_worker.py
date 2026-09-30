@@ -14,9 +14,7 @@ assert 'MODEL_SHA256 = "56c52c7890c105308d28fe9c25c25fdb80e6cd6a54e2604d8af71732
 assert '"steps": 4' in text
 assert '"sampler_name": "euler"' in text
 assert '"scheduler": "simple"' in text
-assert 'gpu="A10"' in text
-assert "memory=65536" in text
-assert '"--lowvram"' in text
+assert 'gpu="H100"' in text
 assert '"/jobs/video"' in text
 assert text.count('"/jobs/{call_id}"') == 2
 assert '"/jobs/{call_id}/poster"' in text

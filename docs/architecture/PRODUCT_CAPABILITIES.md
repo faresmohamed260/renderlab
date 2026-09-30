@@ -432,3 +432,9 @@ Exact reconciled head `a81c02e82abb0cec6b386e4cfb69f1075f377e33` passed 30/30 at
 
 ### Post-Cycle 4 Retry seed correction — verified contract target
 User-directed production review changes failed-job Retry seed behavior only. A failed prompt-generation Retry still reconstructs and current-revalidates persisted product intent, preserves the original historical row, and creates a new job; immediately before submission it replaces the historical seed with a newly generated non-negative 31-bit seed that differs from the prior seed. Other current-valid advanced settings remain unchanged. Advanced Create exposes the same conservative randomization through a die-style Seed action. Successful Run Again and Reuse Settings keep their existing semantics.
+
+## Draft MiniMax H3 capability — not deployed
+
+PR #313 prepares DaSiWa MiniMax H3 4Turbo v1 as a second Video/Animate model with 480p/720p, 5/10/15-second, 24 fps and optional-audio intent. Repository contracts and offline worker verification do not make that capability available: no H3 gateway has passed health or real generation, the PR remains draft, and production continues to expose only the currently deployed model set.
+
+The final same-GPU audit used a separate low-VRAM H3 app on `modal-02`, alongside but not inside the existing NVIDIA A10 LTX application. Run `36784054872` was rejected by Modal before model prefetch with `Please add a payment method to use A10G GPU functions`; the existing LTX worker remained healthy. H3 must not be promoted or described as available until a funded, RenderLab-owned workspace passes the separate worker's health identity and one bounded real 480p generation.
