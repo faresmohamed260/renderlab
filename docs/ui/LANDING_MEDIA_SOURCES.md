@@ -32,3 +32,14 @@ Releases/trademarks guidance: https://help.unsplash.com/en/articles/2612329-rele
 The exact photographs are not part of the RenderLab brand identity and may be replaced later with RenderLab-owned/generated media, but any replacement must preserve the accepted Landing composition, crop density, visual hierarchy and creative-state story and must have a documented right-to-use basis before production use.
 
 Changing the imagery does not reopen the locked Lab Grid geometry. In particular, the lower-right Hero/Resolve media module continues to use the canonical quarter-circle / large-arc mask recorded in `LANDING_IMPLEMENTATION_CONTRACT.md`.
+
+## Repository-owned generated atmosphere plates — 2026-09-29
+
+The local visual-elevation candidate adds two raster atmosphere plates generated with OpenAI's built-in image-generation tool. They contain no text, logos, people or third-party brand marks and are used only as decorative Landing backgrounds; the six authored media tiles above remain the product-story content.
+
+| RenderLab role | Repository path | Prompt summary |
+|---|---|---|
+| Hero, Thread and Library atmosphere | `public/landing/hero-atmosphere-v2.png` | Cinematic dark alpine lake and rocky shoreline at night, cool blue light, restrained mist, large dark copy-safe area on the left, no interface or text. |
+| Resolve-to-Create atmosphere | `public/landing/resolve-atmosphere-v2.png` | Dark reflective floor with sweeping blue, violet and warm amber light trails, copy-safe darkness on the left, luminous creative energy on the right, no interface or text. |
+
+These generated plates are repository-owned project assets. Replacing them later must preserve copy contrast, media hierarchy, reduced-motion behavior and the approved continuous section atmosphere.

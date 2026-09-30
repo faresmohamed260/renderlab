@@ -37,6 +37,12 @@ Merged-main verification also passed Engineering Quality `34540955036` and Integ
 
 No production deployment was performed. Automatic Git → Vercel deployment remains disabled; rollout remains a separate explicit user-authorized operation.
 
+### 2026-09-29 local visual-elevation candidate
+
+The current local candidate refines only the presentation of the four approved Landing sections. It preserves the route boundary, truthful CTAs and admission copy, six-media story, locked `RenderLabBrand`, canonical lower-right quarter-circle geometry, Motion for React behavior, reduced-motion resolution and existing application-shell isolation.
+
+Implementation changes are bounded to `src/features/landing/landing-experience.tsx`, `src/features/landing/landing-experience.module.css`, and two generated raster background plates under `public/landing/`. Production-mode `scripts/verify-brand-launch.mjs` and `npm run build` pass locally. The comparison record is `design-qa.md`. No deployment is authorized or performed by this refinement.
+
 ## Approved complete-surface evidence
 The complete Landing design was assembled from the four individually approved R&D sections and reviewed as one surface.
 

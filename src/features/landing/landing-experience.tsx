@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
 import {
   motion,
   useMotionValueEvent,
@@ -53,7 +53,7 @@ const libraryItems = [
     actions: ["Edit", "Animate", "Upscale 2×"],
     image: media.mountain,
     type: "IMAGE / RESULT",
-    style: { left: "2%", top: "10%", width: "32%", height: "44%" },
+    style: { left: "0%", top: "4%", width: "44%", height: "47%" },
   },
   {
     title: "Glass reference",
@@ -61,7 +61,7 @@ const libraryItems = [
     actions: ["Use in Create", "Edit", "Animate"],
     image: media.glass,
     type: "IMAGE / REFERENCE",
-    style: { left: "36%", top: "2%", width: "20%", height: "34%" },
+    style: { left: "42%", top: "0%", width: "24%", height: "33%" },
   },
   {
     title: "Motion test",
@@ -69,7 +69,7 @@ const libraryItems = [
     actions: ["Open", "Download"],
     image: media.ocean,
     type: "VIDEO / 00:05",
-    style: { left: "58%", top: "13%", width: "38%", height: "35%" },
+    style: { left: "61%", top: "8%", width: "37%", height: "30%" },
   },
   {
     title: "Atmosphere study",
@@ -77,7 +77,7 @@ const libraryItems = [
     actions: ["Edit", "Animate", "Favorite"],
     image: media.jelly,
     type: "IMAGE / COLLECTION",
-    style: { left: "7%", top: "58%", width: "26%", height: "31%" },
+    style: { left: "11%", top: "56%", width: "28%", height: "28%" },
   },
   {
     title: "Material study",
@@ -85,7 +85,7 @@ const libraryItems = [
     actions: ["Edit", "Upscale 2×", "Download"],
     image: media.material,
     type: "IMAGE / SAVED",
-    style: { left: "36%", top: "44%", width: "28%", height: "43%" },
+    style: { left: "40%", top: "43%", width: "30%", height: "39%" },
   },
   {
     title: "Forest study",
@@ -93,15 +93,15 @@ const libraryItems = [
     actions: ["Use in Create", "Rename", "Download"],
     image: media.forest,
     type: "IMAGE / SAVED",
-    style: { left: "67%", top: "54%", width: "28%", height: "35%" },
+    style: { left: "69%", top: "47%", width: "30%", height: "28%" },
   },
 ] as const;
 
 const resolveTiles = [
-  { image: media.mountain, label: "01 · IMAGE", dx: -118, dy: 76, scale: 0.86, rotate: -7 },
-  { image: media.glass, label: "02 · REFERENCE", dx: 102, dy: -92, scale: 0.74, rotate: 6 },
-  { image: media.ocean, label: "03 · MOTION", dx: -136, dy: -72, scale: 1.04, rotate: -5 },
-  { image: media.jelly, label: "04 · SAVED", dx: 120, dy: 95, scale: 0.8, rotate: 7 },
+  { image: media.mountain, label: "01 · IMAGE", dx: -48, dy: 24, scale: 0.94, rotate: -3 },
+  { image: media.glass, label: "02 · REFERENCE", dx: 58, dy: -30, scale: 0.9, rotate: 3 },
+  { image: media.ocean, label: "03 · MOTION", dx: -54, dy: 42, scale: 0.94, rotate: -2 },
+  { image: media.jelly, label: "04 · SAVED", dx: 54, dy: 34, scale: 0.92, rotate: 3 },
 ] as const;
 
 function clamp(value: number, min = 0, max = 1) {
@@ -165,7 +165,7 @@ export function LandingExperience() {
   });
 
   useMotionValueEvent(resolveScrollProgress, "change", (value) => {
-    setResolveProgress(reduceMotion ? 1 : clamp(value));
+    setResolveProgress(reduceMotion ? 1 : clamp(value / 0.82));
   });
 
   const heroStyle = {
@@ -208,7 +208,7 @@ export function LandingExperience() {
             <p className={styles.dek}>Create images. Shape them with references. Put them in motion. Keep the thread alive.</p>
             <div className={styles.heroActions}>
               <Button asChild size="lg" className={styles.heroPrimary}>
-                <Link href="/create">Open Create</Link>
+                <Link href="/create">Open Create <ArrowRight aria-hidden="true" /></Link>
               </Button>
               <span className={styles.truth}>Closed beta · invitation only</span>
             </div>
@@ -285,7 +285,12 @@ export function LandingExperience() {
                 </ThreadState>
                 <ThreadState index={2} current={threadStep} className={styles.threadMotion} label="03 / MOTION">
                   <div className={styles.motionPath} aria-hidden="true"><i /><i /><i /></div>
-                  <div className={styles.timeline} aria-hidden="true"><span>00:00</span><b><i /></b><span>00:05</span></div>
+                  <div className={styles.timeline} aria-hidden="true">
+                    <Play className={styles.timelinePlay} fill="currentColor" />
+                    <span>00:00</span>
+                    <b><i /><em /><em /><em /><em /><em /></b>
+                    <span>00:05</span>
+                  </div>
                 </ThreadState>
                 <ThreadState index={3} current={threadStep} className={styles.threadContinue} label="04 / LIBRARY">
                   <div className={styles.libraryStackMini} aria-hidden="true"><i /><i /><i /></div>
@@ -360,7 +365,7 @@ export function LandingExperience() {
             </Link>
             <div className={styles.resolveCopyBody}>
               <p className={styles.eyebrow}>Resolve to Create</p>
-              <h2 id="resolve-title">Keep the thread<br /><span>moving.</span></h2>
+              <h2 id="resolve-title">Keep the<br />thread<br /><span>moving.</span></h2>
               <p className={styles.dek}>Your work stays ready for what comes next. Open Create to keep shaping it, or sign in to return to your workspace.</p>
               <div className={styles.accessTruth}><i /><span>Closed beta · invitation only</span></div>
               <div className={styles.resolveActions}>
@@ -398,8 +403,6 @@ export function LandingExperience() {
                   );
                 })}
               </div>
-              <motion.div className={`${styles.peripheral} ${styles.peripheralA}`} style={{ opacity: 1 - resolveProgress }} aria-hidden="true"><img src={media.material} alt="" /></motion.div>
-              <motion.div className={`${styles.peripheral} ${styles.peripheralB}`} style={{ opacity: 1 - resolveProgress }} aria-hidden="true"><img src={media.forest} alt="" /></motion.div>
             </div>
             <div className={styles.resolveCaption} aria-hidden="true"><span>CREATE</span><i /><span>SHAPE</span><i /><span>MOTION</span><i /><span>KEEP</span></div>
           </div>
