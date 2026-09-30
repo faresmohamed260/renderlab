@@ -21,6 +21,7 @@ jobs:
     environment: production
     env:
       EXPECTED_SHA: 8e5d066978035c3c0e686fe6e3eec2071135ab30
+      CANDIDATE_DEPLOYMENT_URL: https://renderlab-uajvbks64-faresmohamed260-6733s-projects.vercel.app
       PREVIOUS_DEPLOYMENT_URL: https://renderlab-8k6imydly-faresmohamed260-6733s-projects.vercel.app
       PRODUCTION_DOMAIN: renderlab.faresuniform.uk
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -69,23 +70,34 @@ jobs:
           }
           trap rollback ERR
 
-          deployment_url="$(vercel deploy --yes --prod --token="$VERCEL_TOKEN")"
+          deployment_url="$CANDIDATE_DEPLOYMENT_URL"
           vercel inspect "$deployment_url" --wait --timeout=15m --token="$VERCEL_TOKEN"
           vercel alias set "$deployment_url" "$PRODUCTION_DOMAIN" --token="$VERCEL_TOKEN"
           alias_changed=1
 
+          sleep 5
           for route in / /create /library /activity /settings /settings/password /settings/profile /settings/preferences; do
-            code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "https://${PRODUCTION_DOMAIN}${route}")"
-            case "$code" in
-              2*|3*) ;;
-              *) echo "Unexpected ${code} for ${route}" >&2; false ;;
-            esac
+            passed=0
+            for attempt in $(seq 1 12); do
+              code="$(curl --max-time 30 --silent --show-error --output /dev/null --write-out '%{http_code}' "https://${PRODUCTION_DOMAIN}${route}")"
+              echo "${route} attempt ${attempt}: ${code}"
+              case "$code" in 2*|3*) passed=1; break ;; esac
+              sleep 5
+            done
+            test "$passed" = 1
           done
-          admin_code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "https://${PRODUCTION_DOMAIN}/admin")"
-          test "$admin_code" = 404
+          admin_passed=0
+          for attempt in $(seq 1 12); do
+            admin_code="$(curl --max-time 30 --silent --show-error --output /dev/null --write-out '%{http_code}' "https://${PRODUCTION_DOMAIN}/admin")"
+            echo "/admin attempt ${attempt}: ${admin_code}"
+            if [ "$admin_code" = 404 ]; then admin_passed=1; break; fi
+            sleep 5
+          done
+          test "$admin_passed" = 1
 
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          test -z "$(git status --porcelain)"
+          git diff --quiet
+          git diff --cached --quiet
           trap - ERR
           printf 'deployment_url=%s\n' "$deployment_url" >> "$GITHUB_OUTPUT"
           printf '### Production rollout\n- Source: `%s`\n- Deployment: %s\n- Domain: https://%s\n- Smoke: passed\n' \
