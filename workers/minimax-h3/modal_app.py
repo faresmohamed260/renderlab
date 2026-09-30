@@ -231,7 +231,7 @@ def _result_descriptor(history: dict[str, Any]) -> dict[str, Any]:
 
 @app.cls(
     image=runtime_image,
-    gpu="H100",
+    gpu="A100-80GB",
     memory=131072,
     timeout=3600,
     scaledown_window=300,

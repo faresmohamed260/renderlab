@@ -1170,7 +1170,7 @@ export function CreateWorkspace({
                   {outputKind === "video" ? (
                     <motion.div
                       key="video-model"
-                      data-create-motion="mode-control"
+                      data-create-motion="model-control"
                       className="shrink-0"
                       initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
                       animate={{ opacity: 1, scale: 1 }}
