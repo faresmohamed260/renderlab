@@ -6,6 +6,7 @@ on:
       - work/minimax-h3-video-model
     paths:
       - .github/workflows/minimax-h3-worker-deploy.yml
+      - workers/minimax-h3/**
   workflow_dispatch:
     inputs:
       deploy:
