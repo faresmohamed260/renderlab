@@ -1,0 +1,94 @@
+name: Landing Production Rollout 2026-09-30
+
+on:
+  push:
+    branches:
+      - ops/landing-production-20260930
+    paths:
+      - .github/workflows/landing-production-rollout-20260930.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-production-rollout
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: production
+    env:
+      EXPECTED_SHA: 8e5d066978035c3c0e686fe6e3eec2071135ab30
+      PREVIOUS_DEPLOYMENT_URL: https://renderlab-8k6imydly-faresmohamed260-6733s-projects.vercel.app
+      PRODUCTION_DOMAIN: renderlab.faresuniform.uk
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out the exact merged release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          test "$(git rev-parse origin/main)" = "$EXPECTED_SHA"
+          git checkout --detach "$EXPECTED_SHA"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test -z "$(git status --porcelain)"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies and pinned Vercel CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm install --global vercel@59.11.7
+
+      - name: Build, deploy, cut over, and smoke the exact source
+        id: rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+          alias_changed=0
+          rollback() {
+            status=$?
+            if [ "$alias_changed" = 1 ]; then
+              vercel alias set "$PREVIOUS_DEPLOYMENT_URL" "$PRODUCTION_DOMAIN" --token="$VERCEL_TOKEN" || true
+            fi
+            exit "$status"
+          }
+          trap rollback ERR
+
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          deployment_url="$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")"
+          vercel inspect "$deployment_url" --wait --timeout=15m --token="$VERCEL_TOKEN"
+          vercel alias set "$deployment_url" "$PRODUCTION_DOMAIN" --token="$VERCEL_TOKEN"
+          alias_changed=1
+
+          for route in / /create /library /activity /settings /settings/password /settings/profile /settings/preferences; do
+            code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "https://${PRODUCTION_DOMAIN}${route}")"
+            case "$code" in
+              2*|3*) ;;
+              *) echo "Unexpected ${code} for ${route}" >&2; false ;;
+            esac
+          done
+          admin_code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "https://${PRODUCTION_DOMAIN}/admin")"
+          test "$admin_code" = 404
+
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test -z "$(git status --porcelain)"
+          trap - ERR
+          printf 'deployment_url=%s\n' "$deployment_url" >> "$GITHUB_OUTPUT"
+          printf '### Production rollout\n- Source: `%s`\n- Deployment: %s\n- Domain: https://%s\n- Smoke: passed\n' \
+            "$EXPECTED_SHA" "$deployment_url" "$PRODUCTION_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
