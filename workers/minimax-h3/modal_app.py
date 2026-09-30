@@ -231,8 +231,8 @@ def _result_descriptor(history: dict[str, Any]) -> dict[str, Any]:
 
 @app.cls(
     image=runtime_image,
-    gpu="A10",
-    memory=65536,
+    gpu="H100",
+    memory=131072,
     timeout=3600,
     scaledown_window=300,
     min_containers=0,
@@ -255,7 +255,7 @@ class MiniMaxH3Worker:
             raise RuntimeError(f"Required models are not prefetched: {missing}")
         _set_state("loading", comfyui_commit=COMFYUI_COMMIT, model_sha256=MODEL_SHA256)
         self.process = subprocess.Popen(
-            ["python", "main.py", "--listen", "127.0.0.1", "--port", "8188", "--disable-auto-launch", "--lowvram"],
+            ["python", "main.py", "--listen", "127.0.0.1", "--port", "8188", "--disable-auto-launch"],
             cwd=COMFYUI_DIR,
         )
         for _ in range(180):
