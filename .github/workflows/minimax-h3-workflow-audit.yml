@@ -1,0 +1,65 @@
+name: MiniMax H3 Model Metadata Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/minimax-h3-workflow-audit.yml
+      - workers/minimax-h3/**
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate the authorized Civitai model metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/minimax-h3-model-audit
+          curl --fail --location --silent --show-error \
+            --output artifacts/minimax-h3-model-audit/version.json \
+            'https://civitai.red/api/v1/model-versions/3272675'
+          node <<'NODE'
+          const fs = require('node:fs');
+          const payload = JSON.parse(fs.readFileSync('artifacts/minimax-h3-model-audit/version.json', 'utf8'));
+          const file = payload.files?.find((candidate) => candidate.id === 3156813);
+          if (!file) throw new Error('Authorized Civitai file 3156813 is missing.');
+          if (payload.id !== 3272675 || payload.modelId !== 2877206) throw new Error('Unexpected model identity.');
+          if (payload.name !== 'DaSiWa Hybrid 4Turbo v1' || payload.baseModel !== 'MiniMax H3') {
+            throw new Error('Unexpected model version metadata.');
+          }
+          if (file.name !== 'DasiwaMinimaxH3_dasiwaHybrid4turboV1.safetensors' || file.type !== 'Model') {
+            throw new Error('Unexpected file metadata.');
+          }
+          if (file.hashes?.SHA256 !== '56C52C7890C105308D28FE9C25C25FDB80E6CD6A54E2604D8AF71732BA4ED74F') {
+            throw new Error('Unexpected model SHA256.');
+          }
+          if (Math.round(Number(file.sizeKB)) !== 20_476_213) throw new Error('Unexpected model size.');
+          const summary = {
+            modelId: payload.modelId,
+            modelVersionId: payload.id,
+            version: payload.name,
+            baseModel: payload.baseModel,
+            fileId: file.id,
+            fileName: file.name,
+            fileType: file.type,
+            sizeKB: file.sizeKB,
+            sha256: file.hashes.SHA256,
+            note: 'The supplied fileId is the model checkpoint, not a JSON workflow.',
+          };
+          fs.writeFileSync('artifacts/minimax-h3-model-audit/summary.json', `${JSON.stringify(summary, null, 2)}\n`);
+          console.log(JSON.stringify(summary));
+          NODE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: minimax-h3-model-audit-${{ github.run_id }}
+          path: artifacts/minimax-h3-model-audit/summary.json
+          if-no-files-found: error
+          retention-days: 14

@@ -134,6 +134,24 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
     };
   }
 
+  if (requestedModel === "minimax-h3-dasiwa-4turbo") {
+    return {
+      id: "minimax-h3-dasiwa-4turbo-video",
+      model: "DaSiWa MiniMax H3 · 4Turbo v1",
+      ecosystem: "minimax-h3-dasiwa-4turbo",
+      kind: "video",
+      submitPath: "/jobs/video",
+      outputMimeType: "video/mp4",
+      defaults: {
+        seed: 42,
+        megapixels: 1,
+        resolution: "480p",
+        durationSeconds: 5,
+        audioEnabled: defaultVideoAudioEnabled,
+        frameRate: 24,
+      },
+    };
+  }
   if (requestedModel !== "ltx25-redgraft") {
     throw new Error("The selected model does not support video generation.");
   }

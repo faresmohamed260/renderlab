@@ -47,6 +47,7 @@ import type {
   ImageGenerationModel,
   OutputKind,
   PresetAspectRatio,
+  VideoGenerationModel,
   VideoResolution,
 } from "@/lib/capabilities/generation";
 import {
@@ -61,11 +62,15 @@ import {
   imageAspectRatios,
   imageGenerationModels,
   isImageGenerationModel,
+  isVideoGenerationModel,
   maxGenerationInputsForOutput,
   unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
   videoDurations,
-  videoResolutions,
+  videoDurationsForModel,
+  videoFrameRatesForModel,
+  videoGenerationModels,
+  videoResolutionsForModel,
 } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 
@@ -99,6 +104,10 @@ const createMotionSpring = { type: "spring", stiffness: 420, damping: 38, mass: 
 const imageModelTriggerLabels: Record<ImageGenerationModel, string> = {
   "flux2-klein-9b": "FLUX",
   "qwen-image-edit-2511": "Qwen",
+};
+const videoModelTriggerLabels: Record<VideoGenerationModel, string> = {
+  "ltx25-redgraft": "LTX",
+  "minimax-h3-dasiwa-4turbo": "H3 Turbo",
 };
 
 function ImageModelMenu({
@@ -138,6 +147,54 @@ function ImageModelMenu({
                   <span>{definition.label}</span>
                   <span className="text-xs text-text-muted">
                     {definition.version}{model === defaultImageGenerationModel ? " · Default" : ""}
+                  </span>
+                </span>
+              </DropdownMenuRadioItem>
+            );
+          })}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function VideoModelMenu({
+  value,
+  onValueChange,
+}: {
+  value: VideoGenerationModel;
+  onValueChange: (value: VideoGenerationModel) => void;
+}) {
+  const selected = generationModelDefinitions[value];
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="secondary"
+          size="xs"
+          aria-label={`Video model ${selected.label}`}
+          className="shrink-0 gap-1 !px-1.5"
+        >
+          <span className="clear-setting-label">Model</span>
+          <strong>{videoModelTriggerLabels[value]}</strong>
+          <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-72">
+        <DropdownMenuLabel>Video model</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={value}
+          onValueChange={(next) => onValueChange(next as VideoGenerationModel)}
+        >
+          {videoGenerationModels.map((model) => {
+            const definition = generationModelDefinitions[model];
+            return (
+              <DropdownMenuRadioItem key={model} value={model}>
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                  <span>{definition.label}</span>
+                  <span className="text-xs text-text-muted">
+                    {definition.version}{model === defaultVideoGenerationModel ? " · Default" : ""}
                   </span>
                 </span>
               </DropdownMenuRadioItem>
@@ -197,6 +254,8 @@ function AspectRatioMenu({
 }
 
 function VideoSettingsMenu({
+  resolutions,
+  durations,
   resolution,
   durationSeconds,
   audioEnabled,
@@ -204,6 +263,8 @@ function VideoSettingsMenu({
   onDurationChange,
   onAudioChange,
 }: {
+  resolutions: readonly VideoResolution[];
+  durations: readonly (typeof videoDurations)[number][];
   resolution: VideoResolution;
   durationSeconds: (typeof videoDurations)[number];
   audioEnabled: boolean;
@@ -236,7 +297,7 @@ function VideoSettingsMenu({
           value={resolution}
           onValueChange={(next) => onResolutionChange(next as VideoResolution)}
         >
-          {videoResolutions.map((option) => (
+          {resolutions.map((option) => (
             <DropdownMenuRadioItem key={option} value={option}>
               {option}
             </DropdownMenuRadioItem>
@@ -248,7 +309,7 @@ function VideoSettingsMenu({
           value={String(durationSeconds)}
           onValueChange={(next) => onDurationChange(Number(next) as (typeof videoDurations)[number])}
         >
-          {videoDurations.map((duration) => (
+          {durations.map((duration) => (
             <DropdownMenuRadioItem key={duration} value={String(duration)}>
               {duration} seconds
             </DropdownMenuRadioItem>
@@ -314,6 +375,11 @@ export function CreateWorkspace({
       ? initialRecipe.request.model
       : defaultImageGenerationModel,
   );
+  const [videoModel, setVideoModel] = useState<VideoGenerationModel>(() =>
+    initialRecipe?.request.output.kind === "video" && isVideoGenerationModel(initialRecipe.request.model)
+      ? initialRecipe.request.model
+      : defaultVideoGenerationModel,
+  );
   const [imageAspect, setImageAspect] = useState<AspectRatio>(() =>
     initialRecipe?.request.output.kind === "image"
       ? initialRecipe.request.output.aspectRatio
@@ -374,6 +440,17 @@ export function CreateWorkspace({
       ? advancedDraftFromParameters("video", initialRecipe.request.advanced)
       : createAdvancedDraft("video"),
   );
+
+  useEffect(() => {
+    const resolutions = videoResolutionsForModel(videoModel);
+    if (!resolutions.includes(videoResolution)) setVideoResolution(resolutions[0]!);
+    const durations = videoDurationsForModel(videoModel);
+    if (!durations.includes(durationSeconds)) setDurationSeconds(durations[0]!);
+    const frameRates = videoFrameRatesForModel(videoModel);
+    if (!frameRates.includes(videoAdvanced.frameRate)) {
+      setVideoAdvanced((current) => ({ ...current, frameRate: frameRates[0]! }));
+    }
+  }, [durationSeconds, videoAdvanced.frameRate, videoModel, videoResolution]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(initialContinuationError);
   const [job, setJob] = useState<GenerationJob | null>(null);
@@ -788,7 +865,7 @@ export function CreateWorkspace({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          model: outputKind === "image" ? imageModel : defaultVideoGenerationModel,
+          model: outputKind === "image" ? imageModel : videoModel,
           prompt,
           output: {
             kind: outputKind,
@@ -1089,6 +1166,28 @@ export function CreateWorkspace({
                   ) : null}
                 </AnimatePresence>
 
+                <AnimatePresence initial={false} mode="wait">
+                  {outputKind === "video" ? (
+                    <motion.div
+                      key="video-model"
+                      data-create-motion="mode-control"
+                      className="shrink-0"
+                      initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
+                      transition={contextTransition}
+                    >
+                      <VideoModelMenu
+                        value={videoModel}
+                        onValueChange={(value) => {
+                          setVideoModel(value);
+                          setError(null);
+                        }}
+                      />
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+
                 <AspectRatioMenu
                   value={aspectRatio}
                   options={outputKind === "image" ? imageAspectRatios : videoAspectRatios}
@@ -1112,6 +1211,8 @@ export function CreateWorkspace({
                       transition={contextTransition}
                     >
                       <VideoSettingsMenu
+                        resolutions={videoResolutionsForModel(videoModel)}
+                        durations={videoDurationsForModel(videoModel)}
                         resolution={videoResolution}
                         durationSeconds={durationSeconds}
                         audioEnabled={audioEnabled}
@@ -1170,6 +1271,7 @@ export function CreateWorkspace({
             <CreateAdvancedPanel
               outputKind={outputKind}
               imageModel={imageModel}
+              videoModel={videoModel}
               draft={advancedDraft}
               onDraftChange={setAdvancedDraft}
               onReset={resetAdvanced}
@@ -1263,7 +1365,7 @@ export function CreateWorkspace({
                   <p>Generated from this composer. Keep going without rebuilding the request.</p>
                 </div>
                 <dl className="clear-result-specs">
-                  <div><dt>Model</dt><dd>{resultAsset.kind === "image" ? imageModelTriggerLabels[imageModel] : generationModelDefinitions[defaultVideoGenerationModel].label}</dd></div>
+                  <div><dt>Model</dt><dd>{resultAsset.kind === "image" ? imageModelTriggerLabels[imageModel] : generationModelDefinitions[videoModel].label}</dd></div>
                   <div><dt>Ratio</dt><dd>{aspectRatio === "original" ? "Original" : aspectRatio}</dd></div>
                   <div><dt>Source</dt><dd>{references.length ? String(references.length) + " reference" + (references.length === 1 ? "" : "s") : "Prompt only"}</dd></div>
                 </dl>

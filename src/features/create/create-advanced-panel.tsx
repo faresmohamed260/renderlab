@@ -12,12 +12,15 @@ import type {
   GenerationFrameRate,
   ImageGenerationModel,
   OutputKind,
+  VideoGenerationModel,
 } from "@/lib/capabilities/generation";
 import {
   advancedDefaultsForOutput,
   defaultImageGenerationModel,
+  defaultVideoGenerationModel,
   generationAdvancedCapabilities,
   randomGenerationSeed,
+  videoFrameRatesForModel,
 } from "@/lib/capabilities/generation";
 
 export type AdvancedDraft = {
@@ -96,12 +99,14 @@ export function advancedParametersFromDraft(
 export function CreateAdvancedPanel({
   outputKind,
   imageModel = defaultImageGenerationModel,
+  videoModel = defaultVideoGenerationModel,
   draft,
   onDraftChange,
   onReset,
 }: {
   outputKind: OutputKind;
   imageModel?: ImageGenerationModel;
+  videoModel?: VideoGenerationModel;
   draft: AdvancedDraft;
   onDraftChange: (next: AdvancedDraft) => void;
   onReset: () => void;
@@ -124,7 +129,7 @@ export function CreateAdvancedPanel({
 
       <AnimatePresence initial={false} mode="wait">
         <motion.div
-          key={`${outputKind}:${imageModel}`}
+          key={`${outputKind}:${imageModel}:${videoModel}`}
           data-create-motion="advanced-fields"
           initial={reduceMotion ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -227,7 +232,7 @@ export function CreateAdvancedPanel({
                   })
                 }
               >
-                {generationAdvancedCapabilities.video.frameRates.map((frameRate) => (
+                {videoFrameRatesForModel(videoModel).map((frameRate) => (
                   <NativeSelectOption key={frameRate} value={frameRate}>
                     {frameRate} fps
                   </NativeSelectOption>
