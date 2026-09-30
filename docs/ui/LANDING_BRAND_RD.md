@@ -186,3 +186,13 @@ Verified production implementation:
 The Landing redesign/R&D and repository implementation are complete. The merged source on `main` is ready for a separately authorized deployment operation, but deployment is **not** implied by approval or merge.
 
 Any future material change to the locked Lab Grid mark, the canonical lower-right quarter-circle module, the accepted four-section visual grammar, product routes/claims, or public-admission behavior requires a new explicit product/design decision and the normal exact-head validation process.
+
+## 2026-09-29 visual-elevation candidate
+
+The user explicitly authorized a section-by-section visual refinement against four generated design references. The local implementation keeps the approved four-section sequence, routes, closed-beta truth, interaction contracts, locked identity and canonical quarter-circle module while bringing the rendered surface closer to those references.
+
+The candidate adds a continuous night-water atmosphere, larger and brighter media geometry, a clearer Motion playback treatment, a denser Living Library composition with an emphasized active asset, and a more luminous Resolve-to-Create conclusion. Two repository-owned generated background plates support the atmosphere; their provenance is recorded in `docs/ui/LANDING_MEDIA_SOURCES.md`.
+
+Local production-mode Brand / Launch Visual verification passed at 1440px and 390px, including motion progression/reversal, keyboard and touch Library selection, reduced motion, route truth, locked geometry, media loading, focus, horizontal overflow and runtime-console checks. Detailed reference-to-render comparison is recorded in `design-qa.md`. This local candidate has not been committed, merged or deployed.
+
+The 2026-09-30 widescreen refinement was also inspected in the user's live 2560×1440 browser. It removes fixed-width gutters, reduces excessive pinned-section travel, preserves atmospheric continuity across section boundaries, scales the approved compositions for large desktops, keeps the Library context panel registered inside the mosaic, and simplifies Resolve entrance choreography to the four canonical media modules.
