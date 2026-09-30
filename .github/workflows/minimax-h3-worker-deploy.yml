@@ -1,6 +1,11 @@
 name: MiniMax H3 Worker Deploy
 
 on:
+  push:
+    branches:
+      - work/minimax-h3-video-model
+    paths:
+      - .github/workflows/minimax-h3-worker-deploy.yml
   workflow_dispatch:
     inputs:
       deploy:
@@ -33,7 +38,7 @@ jobs:
       - run: node scripts/verify-modal-project-ownership.mjs
 
   deploy:
-    if: inputs.deploy
+    if: github.event_name == 'push' || inputs.deploy
     needs: offline-contract
     runs-on: ubuntu-24.04
     timeout-minutes: 360
@@ -89,7 +94,7 @@ jobs:
           NODE
 
   real-generation:
-    if: inputs.deploy && inputs.run_real_generation
+    if: github.event_name == 'push' || (inputs.deploy && inputs.run_real_generation)
     needs: deploy
     runs-on: ubuntu-24.04
     timeout-minutes: 90
