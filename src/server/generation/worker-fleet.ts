@@ -89,7 +89,7 @@ export const generationWorkers: GenerationWorker[] = [
   {
     id: "h3-dasiwa-primary-01",
     ecosystem: "minimax-h3-dasiwa-4turbo",
-    gatewayUrl: gatewayUrl("https://grimcircuit--renderlab-minimax-h3-gateway-web.modal.run"),
+    gatewayUrl: gatewayUrl("https://faresmohamed260--renderlab-minimax-h3-gateway-web.modal.run"),
     displayName: "DaSiWa MiniMax H3 4Turbo · Primary",
     role: "primary",
     routingStatus: "active",
@@ -97,7 +97,7 @@ export const generationWorkers: GenerationWorker[] = [
   {
     id: "h3-dasiwa-standby-01",
     ecosystem: "minimax-h3-dasiwa-4turbo",
-    gatewayUrl: gatewayUrl("https://dreadcipher67--renderlab-minimax-h3-gateway-web.modal.run"),
+    gatewayUrl: gatewayUrl("https://bplay2086--renderlab-minimax-h3-gateway-web.modal.run"),
     displayName: "DaSiWa MiniMax H3 4Turbo · Standby",
     role: "standby",
     routingStatus: "active",

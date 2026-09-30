@@ -47,12 +47,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - account: modal-44
+          - account: modal-01
             worker_id: h3-dasiwa-primary-01
-            gateway: https://grimcircuit--renderlab-minimax-h3-gateway-web.modal.run
-          - account: modal-46
+            gateway: https://faresmohamed260--renderlab-minimax-h3-gateway-web.modal.run
+          - account: modal-02
             worker_id: h3-dasiwa-standby-01
-            gateway: https://dreadcipher67--renderlab-minimax-h3-gateway-web.modal.run
+            gateway: https://bplay2086--renderlab-minimax-h3-gateway-web.modal.run
     env:
       MODAL_ROSTER_JSON: ${{ secrets.SAGA_MODAL_TOKENS_JSON }}
       CIVITAI_API_TOKEN: ${{ secrets.CIVITAI_API_TOKEN }}
@@ -104,7 +104,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gateway='https://grimcircuit--renderlab-minimax-h3-gateway-web.modal.run'
+          gateway='https://faresmohamed260--renderlab-minimax-h3-gateway-web.modal.run'
           curl --fail --silent --show-error -X POST "$gateway/jobs/video" \
             -F 'prompt=A calm cinematic blue ocean at sunrise, subtle natural wave motion, no text, no logo.' \
             -F 'aspect_ratio=16:9' -F 'resolution=480p' -F 'duration_seconds=5' \
