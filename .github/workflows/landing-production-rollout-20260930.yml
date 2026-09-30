@@ -54,7 +54,7 @@ jobs:
           npm install --no-audit --no-fund
           npm install --global vercel@59.11.7
 
-      - name: Build, deploy, cut over, and smoke the exact source
+      - name: Deploy, cut over, and smoke the exact source
         id: rollout
         shell: bash
         run: |
@@ -69,9 +69,7 @@ jobs:
           }
           trap rollback ERR
 
-          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-          vercel build --prod --token="$VERCEL_TOKEN"
-          deployment_url="$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")"
+          deployment_url="$(vercel deploy --yes --prod --token="$VERCEL_TOKEN")"
           vercel inspect "$deployment_url" --wait --timeout=15m --token="$VERCEL_TOKEN"
           vercel alias set "$deployment_url" "$PRODUCTION_DOMAIN" --token="$VERCEL_TOKEN"
           alias_changed=1
