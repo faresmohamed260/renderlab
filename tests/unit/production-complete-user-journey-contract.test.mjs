@@ -38,7 +38,7 @@ test("QA-002 verifier covers exact provenance, account read-only surfaces, manif
   assert.match(verifier, /renderlab-explorer-reference\.webp/);
   assert.match(verifier, /element\.currentTime = 0/);
   assert.match(verifier, /await element\.play\(\)/);
-  assert.match(verifier, /await page\.setViewportSize\(desktop\);\n  await page\.goto\(baseUrl \+ "\\\/library"/);
+  assert.match(verifier, /await page\.setViewportSize\(desktop\);\n  await page\.goto\(baseUrl \+ "\/library"/);
   assert.match(verifier, /passed: !primaryError && cleanup\?\.verified === true && generations\.length === 8/);
   assert.match(verifier, /exactly eight contracted provider-backed generations/);
   assert.doesNotMatch(verifier, /\/api\/account\/delete/);
