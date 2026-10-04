@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout repository documentation
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate exact production SHA input
         shell: bash

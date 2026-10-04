@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout audit harness head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate manual production-audit dispatch
         shell: bash

@@ -76,10 +76,10 @@ jobs:
           fi
 
       - name: Checkout audit harness head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Checkout exact production source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.expected_production_sha }}
           path: production-source
