@@ -28,19 +28,13 @@
 
 ## Made with RenderLab
 
-The gallery below comes from real production generations created through RenderLab. The examples deliberately span different visual directions—cinematic editorial photography, painterly fantasy, graphic science fiction, surreal architecture, and stylized 3D—to show the range of the same product surface rather than one hand-picked aesthetic.
+The gallery below comes from real production generations created through RenderLab. The examples deliberately span different visual directions to show the range of the same product surface rather than one hand-picked aesthetic.
 
 <p align="center">
   <img src="docs/readme/showcase-grid.webp" alt="RenderLab production generations: cinematic explorer, white stag fantasy scene, science-fiction courier, surreal observatory, and stylized red-panda astronomer" />
 </p>
 
-| Direction | Example |
-| --- | --- |
-| **Cinematic editorial** | Explorer crossing a black volcanic coastline at blue hour. |
-| **Painterly fantasy** | White stag guardian beside a bioluminescent forest shrine. |
-| **Graphic science fiction** | Masked courier beneath a fractured holographic moon. |
-| **Surreal architecture** | Brutalist observatory surrounded by monumental chrome rings. |
-| **Stylized 3D** | Red-panda astronomer discovering a glowing miniature planet. |
+<p align="center"><em>Cinematic editorial · Painterly fantasy · Graphic sci-fi · Surreal architecture · Stylized 3D</em></p>
 
 These were generated as production media—not mocked product art—so the showcase reflects the same generation pipeline exposed through Create, Activity, Viewer, and Library.
 
