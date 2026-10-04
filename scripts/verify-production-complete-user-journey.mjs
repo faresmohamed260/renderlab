@@ -316,7 +316,19 @@ async function verifyViewerBothViewports(page, kind, label) {
   await page.setViewportSize(desktop);
   await page.waitForTimeout(300);
   await assertNoOverflow(page, `${label} desktop Viewer`);
-  await screenshot(page, `${label}-viewer-desktop`);
+  if (kind === "video") {
+    const video = page.locator("video").first();
+    await video.evaluate(async (element) => {
+      element.muted = true;
+      element.currentTime = 0;
+      await element.play();
+    });
+    await page.waitForTimeout(3_000);
+    await screenshot(page, `${label}-viewer-desktop`);
+    await video.evaluate((element) => element.pause());
+  } else {
+    await screenshot(page, `${label}-viewer-desktop`);
+  }
   await page.setViewportSize(mobile);
   await page.waitForTimeout(300);
   await assertNoOverflow(page, `${label} mobile Viewer`);
