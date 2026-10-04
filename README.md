@@ -168,9 +168,9 @@ Start here for substantial work:
 
 ## Current direction
 
-The production product already covers the full creative thread, durable media, lifecycle control, closed-beta operations, and account/security foundation. Ongoing work should deepen creative capability and product quality without exposing ComfyUI complexity or weakening ownership, accessibility, cleanup, and exact-head release gates.
+The production closed beta already covers the full creative thread, durable media, lifecycle control, closed-beta operations, and account/security foundation. Draft PR #313 adds product contracts and UI support for a MiniMax H3 video workflow, but its real worker deployment is blocked by the tested Modal workspaces' payment-method/spend limits. It is not merged, deployed, or part of the production capability set.
 
-See [PROJECT.md](PROJECT.md) for the current live SHA, verified evidence, active work, and immediate handoff.
+Ongoing work should deepen creative capability and product quality without exposing ComfyUI complexity or weakening ownership, accessibility, cleanup, and exact-head release gates. See [PROJECT.md](PROJECT.md) for the current live SHA and [PR #313](https://github.com/faresmohamed260/renderlab/pull/313) for the blocked draft capability.
 
 ---
 
