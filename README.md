@@ -28,27 +28,65 @@
 
 ## Made with RenderLab
 
-Real production generations from the same RenderLab creative surface, spanning cinematic editorial photography, painterly fantasy, graphic science fiction, surreal architecture, and stylized 3D.
+Real outputs generated through RenderLab, shown individually at source capture quality.
+
+### Cinematic editorial
 
 <p align="center">
-  <img src="docs/readme/showcase-grid.webp" alt="RenderLab production generations: cinematic explorer, white stag fantasy scene, science-fiction courier, surreal observatory, and stylized red-panda astronomer" />
+  <img src="docs/readme/showcase/cinematic-editorial.png" alt="Cinematic editorial RenderLab generation: explorer on a volcanic coastline" width="900" />
 </p>
 
-<p align="center"><em>Cinematic editorial · Painterly fantasy · Graphic sci-fi · Surreal architecture · Stylized 3D</em></p>
-
-These are actual production outputs—not mock product art.
-
-## Product in action
-
-RenderLab keeps one creative thread across creation, job lifecycle, result inspection, and durable reuse. The capture below uses the same artistic production media rather than synthetic QA fixtures.
+### Painterly fantasy
 
 <p align="center">
-  <img src="docs/readme/product-ui-grid.webp" alt="RenderLab production UI showing Create, Activity, Media Viewer, and Library with real artistic generations" />
+  <img src="docs/readme/showcase/painterly-fantasy.png" alt="Painterly fantasy RenderLab generation: white stag beside a bioluminescent forest shrine" width="900" />
 </p>
 
-<p align="center"><strong>Create · Activity · Media Viewer · Library</strong></p>
+### Graphic sci-fi
 
-**Create** keeps generation controls contextual. **Activity** exposes truthful job state. **Media Viewer** turns a finished result into the starting point for the next creative step. **Library** keeps generations and uploads durable, searchable, and reusable.
+<p align="center">
+  <img src="docs/readme/showcase/graphic-scifi.png" alt="Graphic science-fiction RenderLab generation: masked courier beneath a fractured moon" width="450" />
+</p>
+
+### Surreal architecture
+
+<p align="center">
+  <img src="docs/readme/showcase/surreal-architecture.png" alt="Surreal architecture RenderLab generation: brutalist observatory with chrome rings" width="900" />
+</p>
+
+### Stylized 3D
+
+<p align="center">
+  <img src="docs/readme/showcase/stylized-3d.png" alt="Stylized 3D RenderLab generation: red-panda astronomer in an observatory greenhouse" width="900" />
+</p>
+
+## Product screenshots
+
+The screenshots below are separate captures from the real product flow rather than a stitched collage.
+
+### Create
+
+![RenderLab Create screen generating the graphic sci-fi example](docs/readme/screenshots/create.png)
+
+Create keeps image/video intent, references, model choice, aspect ratio, and advanced controls in one focused workspace.
+
+### Activity
+
+![RenderLab Activity screen showing completed artistic generations](docs/readme/screenshots/activity.png)
+
+Activity exposes the real lifecycle of accepted work and keeps completed results actionable.
+
+### Media Viewer
+
+![RenderLab Media Viewer showing the cinematic explorer result](docs/readme/screenshots/viewer.png)
+
+Media Viewer keeps the finished asset central while preserving prompt context and continuation actions such as Edit and Animate.
+
+### Library
+
+![RenderLab Library desktop screen](docs/readme/screenshots/library.png)
+
+Library provides durable organization for uploads and generated media with search, filtering, favorites, collections, and reuse.
 
 ## What RenderLab does
 
