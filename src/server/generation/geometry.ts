@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 import type { PresetAspectRatio } from "@/lib/capabilities/generation";
 
 const executionMegapixels = 1;
@@ -22,7 +22,7 @@ function executionDimensions(aspectRatio: PresetAspectRatio) {
   };
 }
 
-function displayDimensions(metadata: sharp.Metadata) {
+function displayDimensions(metadata: Metadata) {
   let width = metadata.width ?? 0;
   let height = metadata.height ?? 0;
   if (metadata.orientation && metadata.orientation >= 5 && metadata.orientation <= 8) {

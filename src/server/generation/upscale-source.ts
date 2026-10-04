@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 import {
   imageUpscaleLimits,
   imageUpscaleSupportedMimeTypes,
@@ -50,7 +50,7 @@ export async function inspectUpscaleImageBytes(
   if (!mimeType) unavailable("Upscale supports active PNG, JPEG, or WebP images only.");
   validateImageUpscaleGeometry(1, 1, bytes.byteLength);
 
-  let metadata: sharp.Metadata;
+  let metadata: Metadata;
   try {
     metadata = await sharp(Buffer.from(bytes), { animated: true, limitInputPixels: false }).metadata();
   } catch {
