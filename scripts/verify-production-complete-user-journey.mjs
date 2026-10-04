@@ -553,7 +553,7 @@ const manifest = {
   accountRoutes,
   cleanup,
   evidenceFiles: await evidenceFiles(),
-  passed: !primaryError && cleanup?.verified === true && generations.length === 4,
+  passed: !primaryError && cleanup?.verified === true && generations.length === 8,
   completedAt: new Date().toISOString(),
 };
 await writeFile(artifactDir + "/manifest.json", JSON.stringify(manifest, null, 2) + "\n", "utf8");
