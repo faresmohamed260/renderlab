@@ -270,7 +270,8 @@ async function waitForViewerMedia(page, kind) {
 
   const image = page.locator("main img").first();
   await image.waitFor({ state: "visible", timeout: 60_000 });
-  await image.evaluate((element) => {
+  await image.evaluate(async (element) => {
+    if (element instanceof HTMLImageElement) await element.decode();
     if (!(element instanceof HTMLImageElement) || !element.complete || element.naturalWidth <= 0) {
       throw new Error("Viewer image did not load durable pixels.");
     }
