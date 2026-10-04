@@ -28,7 +28,7 @@
 
 ## Made with RenderLab
 
-The gallery below comes from real production generations created through RenderLab. The examples deliberately span different visual directions to show the range of the same product surface rather than one hand-picked aesthetic.
+Real production generations from the same RenderLab creative surface, spanning cinematic editorial photography, painterly fantasy, graphic science fiction, surreal architecture, and stylized 3D.
 
 <p align="center">
   <img src="docs/readme/showcase-grid.webp" alt="RenderLab production generations: cinematic explorer, white stag fantasy scene, science-fiction courier, surreal observatory, and stylized red-panda astronomer" />
@@ -36,47 +36,19 @@ The gallery below comes from real production generations created through RenderL
 
 <p align="center"><em>Cinematic editorial · Painterly fantasy · Graphic sci-fi · Surreal architecture · Stylized 3D</em></p>
 
-These were generated as production media—not mocked product art—so the showcase reflects the same generation pipeline exposed through Create, Activity, Viewer, and Library.
+These are actual production outputs—not mock product art.
 
-## Product walkthrough
+## Product in action
 
-A short walkthrough shows the core user journey inside the live product: upload or create media, submit creative work, follow it through Activity, inspect the durable result, and continue from that asset.
+RenderLab keeps one creative thread across creation, job lifecycle, result inspection, and durable reuse. The capture below uses the same artistic production media rather than synthetic QA fixtures.
 
 <p align="center">
-  <a href="docs/readme/renderlab-product-walkthrough.mp4">
-    <img src="docs/readme/renderlab-product-walkthrough-preview.webp" alt="RenderLab walkthrough covering Create, Activity, Media Viewer, Library, and continuation actions" />
-  </a>
+  <img src="docs/readme/product-ui-grid.webp" alt="RenderLab production UI showing Create, Activity, Media Viewer, and Library with real artistic generations" />
 </p>
 
-<p align="center"><strong><a href="docs/readme/renderlab-product-walkthrough.mp4">Watch the 44-second product walkthrough</a></strong></p>
+<p align="center"><strong>Create · Activity · Media Viewer · Library</strong></p>
 
-## From prompt to reusable media
-
-RenderLab is designed around one continuous creative thread. Work begins in Create, becomes a server-owned job, progresses truthfully through Activity, resolves into durable media, and remains reusable from Viewer or Library.
-
-### 1. Create
-
-![RenderLab Create workspace](docs/readme/create.webp)
-
-Create is an adaptive composer for image generation, reference-backed editing, animation, and text-to-video. Controls appear only when they are relevant to the current operation, keeping the default workflow simple while preserving advanced capability.
-
-### 2. Track work in Activity
-
-![RenderLab Activity view](docs/readme/activity.webp)
-
-Activity exposes the real lifecycle of accepted work: queued, preparing, running, persisting, succeeded, failed, or cancelled. Users can cancel eligible jobs, retry failed intent, rerun successful work, and open completed results.
-
-### 3. Inspect and continue from the result
-
-![RenderLab Media Viewer](docs/readme/viewer.webp)
-
-Media Viewer keeps the asset central while preserving prompt context, provenance, and compatible continuation actions. A generated image can become the starting point for another edit, animation, upscale, or related creative step.
-
-### 4. Keep the thread alive in Library
-
-![RenderLab Library](docs/readme/library.webp)
-
-Library combines generated media and uploads in one durable workspace with search, favorites, collections, ordering, rename, download, deletion, and reusable continuation entry points.
+**Create** keeps generation controls contextual. **Activity** exposes truthful job state. **Media Viewer** turns a finished result into the starting point for the next creative step. **Library** keeps generations and uploads durable, searchable, and reusable.
 
 ## What RenderLab does
 
