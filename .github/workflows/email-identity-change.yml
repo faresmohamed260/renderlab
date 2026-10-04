@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload sanitized email identity evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: email-identity-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/email-identity

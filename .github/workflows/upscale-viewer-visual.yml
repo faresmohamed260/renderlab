@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload Upscale Viewer screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: renderlab-phase18e-upscale-viewer-screenshots
           path: artifacts/phase18e-*.png

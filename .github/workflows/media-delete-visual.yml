@@ -110,7 +110,7 @@ jobs:
 
       - name: Upload media delete screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: renderlab-media-delete-screenshots
           path: artifacts/media-delete-*.png

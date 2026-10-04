@@ -69,7 +69,7 @@ jobs:
         run: cat /tmp/renderlab-next.log || true
       - name: Upload launch screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: renderlab-brand-launch-screenshots
           path: artifacts/brand-launch-*.png

@@ -221,7 +221,7 @@ jobs:
 
       - name: Upload Phase 18F evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase18f-image-upscale-evidence
           path: artifacts/phase18f-image-upscale

@@ -165,7 +165,7 @@ jobs:
 
       - name: Upload creative iteration screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: renderlab-phase16-creative-iteration-screenshots
           path: artifacts/phase16-*.png

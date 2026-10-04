@@ -385,7 +385,7 @@ jobs:
 
       - name: Upload release run manifest
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: renderlab-release-candidate-run-manifest
           path: /tmp/renderlab-release-runs.tsv

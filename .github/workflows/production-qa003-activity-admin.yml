@@ -97,7 +97,7 @@ jobs:
 
       - name: Upload QA-003 evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: production-qa003-activity-admin-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/qa003-production-activity-admin
