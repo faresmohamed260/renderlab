@@ -3,6 +3,11 @@ name: Production Complete User Journey
 on:
   workflow_dispatch:
     inputs:
+      record_walkthrough:
+        description: Capture real browser video and a durable image upload for the product walkthrough
+        required: false
+        type: boolean
+        default: false
       expected_production_sha:
         description: Exact 40-character Git SHA independently verified as production-live
         required: true
@@ -25,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
+      RENDERLAB_RECORD_WALKTHROUGH: ${{ inputs.record_walkthrough }}
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co

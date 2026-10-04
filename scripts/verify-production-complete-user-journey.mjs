@@ -1,5 +1,6 @@
 import { HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
+import sharp from "sharp";
 import { chromium } from "@playwright/test";
 import {
   configuredTestAccountIdentity,
@@ -10,6 +11,7 @@ import {
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "https://renderlab.faresuniform.uk").replace(/\/$/, "");
 const artifactDir = process.env.RENDERLAB_COMPLETE_JOURNEY_ARTIFACT_DIR || "artifacts/production-complete-user-journey";
+const recordWalkthrough = process.env.RENDERLAB_RECORD_WALKTHROUGH === "true";
 const cleanupOnly = process.argv.includes("--cleanup-only");
 const namespace = "production-complete-user-journey";
 const desktop = { width: 1440, height: 1024 };
@@ -268,7 +270,8 @@ async function waitForViewerMedia(page, kind) {
 
   const image = page.locator("main img").first();
   await image.waitFor({ state: "visible", timeout: 60_000 });
-  await image.evaluate((element) => {
+  await image.evaluate(async (element) => {
+    if (element instanceof HTMLImageElement) await element.decode();
     if (!(element instanceof HTMLImageElement) || !element.complete || element.naturalWidth <= 0) {
       throw new Error("Viewer image did not load durable pixels.");
     }
@@ -388,9 +391,27 @@ try {
   publicRoutes = await verifyPublicCoverage(browser);
 
   account = await createConfiguredTestAccount(namespace);
-  const context = await browser.newContext({ viewport: desktop, colorScheme: "dark", reducedMotion: "no-preference" });
+  const context = await browser.newContext({ viewport: desktop, colorScheme: "dark", reducedMotion: "no-preference", ...(recordWalkthrough ? { recordVideo: { dir: artifactDir + "/video", size: desktop } } : {}) });
   const page = await context.newPage();
   await routeLocalAppRequestsWithAccount(page, baseUrl, account);
+
+
+  if (recordWalkthrough) {
+    await page.goto(baseUrl + "/library?tab=uploads", { waitUntil: "networkidle", timeout: 60_000 });
+    const buffer = await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900"><defs><radialGradient id="g"><stop stop-color="#619dff"/><stop offset="1" stop-color="#123b80"/></radialGradient></defs><rect width="1200" height="900" fill="#d2cfca"/><ellipse cx="600" cy="720" rx="260" ry="45" fill="#aaa69f"/><circle cx="600" cy="430" r="240" fill="url(#g)"/></svg>')).png().toBuffer();
+    const completion = page.waitForResponse(response => new URL(response.url()).pathname === "/api/media/uploads/upload-completions" && response.request().method() === "POST", { timeout: 60_000 });
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByRole("button", { name: "Upload", exact: true }).click();
+    await (await chooser).setFiles({ name: "Cobalt studio reference.png", mimeType: "image/png", buffer });
+    const response = await completion;
+    const payload = await response.json();
+    assert(response.ok() && payload?.ok && payload.asset?.id, "Walkthrough upload did not persist a real asset.");
+    await page.locator('a[href="/library/' + payload.asset.id + '"]').first().waitFor({ state: "visible", timeout: 30_000 });
+    await screenshot(page, "00-walkthrough-library-upload");
+    await page.locator('a[href="/library/' + payload.asset.id + '"]').first().click();
+    await waitForViewerMedia(page, "image");
+    await screenshot(page, "00-walkthrough-upload-viewer");
+  }
 
   await page.goto(baseUrl + "/create", { waitUntil: "networkidle", timeout: 60_000 });
   const image = await submitCurrentCreate(page, {
@@ -470,6 +491,7 @@ const manifest = {
   runAttempt,
   baseUrl,
   expectedProductionSource: expectedSource,
+  walkthroughRecordingRequested: recordWalkthrough,
   boundedFixtureProviderWorkAcknowledged: providerWorkAcknowledged,
   providerGenerationCount: generations.length,
   fixtureAccountId: ownerIdentity.id,
