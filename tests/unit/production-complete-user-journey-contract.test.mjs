@@ -36,6 +36,7 @@ test("QA-002 verifier covers exact provenance, account read-only surfaces, manif
   assert.match(verifier, /create-image-surreal-architecture/);
   assert.match(verifier, /create-image-stylized-3d/);
   assert.match(verifier, /renderlab-explorer-reference\.webp/);
+  assert.match(verifier, /passed: !primaryError && cleanup\?\.verified === true && generations\.length === 8/);
   assert.match(verifier, /exactly eight contracted provider-backed generations/);
   assert.doesNotMatch(verifier, /\/api\/account\/delete/);
   assert.doesNotMatch(verifier, /sign out other devices/i);
