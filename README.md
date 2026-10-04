@@ -5,7 +5,7 @@
 <h1 align="center">RenderLab</h1>
 
 <p align="center">
-  A production-grade creative workspace for generating, shaping, animating, and reusing AI media—without exposing the complexity of the underlying workflow engine.
+  A production creative workspace for generating, shaping, animating, organizing, and reusing AI media—without exposing the complexity of the underlying workflow engine.
 </p>
 
 <p align="center">
@@ -26,38 +26,67 @@
 
 > **Live status:** RenderLab is a closed-beta, invitation-only product. The public landing page is available; private workspace access requires an authorized account.
 
-## Production walkthrough
+## Made with RenderLab
 
-The walkthrough below was captured against the live closed-beta domain with an isolated test account. It uploads a real image, submits four provider-backed jobs, follows their lifecycle through Activity, opens the durable image and video results, and verifies Library and account surfaces. The capture run finished with independent cleanup across authentication, database rows, and eleven tracked storage objects.
+The gallery below comes from real production generations created through RenderLab. The examples deliberately span different visual directions—cinematic editorial photography, painterly fantasy, graphic science fiction, surreal architecture, and stylized 3D—to show the range of the same product surface rather than one hand-picked aesthetic.
+
+<p align="center">
+  <img src="docs/readme/showcase-grid.webp" alt="RenderLab production generations: cinematic explorer, white stag fantasy scene, science-fiction courier, surreal observatory, and stylized red-panda astronomer" />
+</p>
+
+| Direction | Example |
+| --- | --- |
+| **Cinematic editorial** | Explorer crossing a black volcanic coastline at blue hour. |
+| **Painterly fantasy** | White stag guardian beside a bioluminescent forest shrine. |
+| **Graphic science fiction** | Masked courier beneath a fractured holographic moon. |
+| **Surreal architecture** | Brutalist observatory surrounded by monumental chrome rings. |
+| **Stylized 3D** | Red-panda astronomer discovering a glowing miniature planet. |
+
+These were generated as production media—not mocked product art—so the showcase reflects the same generation pipeline exposed through Create, Activity, Viewer, and Library.
+
+## Product walkthrough
+
+A short walkthrough shows the core user journey inside the live product: upload or create media, submit creative work, follow it through Activity, inspect the durable result, and continue from that asset.
 
 <p align="center">
   <a href="docs/readme/renderlab-product-walkthrough.mp4">
-    <img src="docs/readme/renderlab-product-walkthrough-preview.webp" alt="RenderLab production walkthrough covering upload, Create, Activity, Media Viewer, Library, video, and account surfaces" />
+    <img src="docs/readme/renderlab-product-walkthrough-preview.webp" alt="RenderLab walkthrough covering Create, Activity, Media Viewer, Library, and continuation actions" />
   </a>
 </p>
 
 <p align="center"><strong><a href="docs/readme/renderlab-product-walkthrough.mp4">Watch the 44-second product walkthrough</a></strong></p>
 
-### Create and track real work
+## From prompt to reusable media
 
-| Create | Activity |
-| --- | --- |
-| ![A real image generation running in RenderLab Create](docs/readme/create.webp) | ![The accepted generation job running in Activity](docs/readme/activity.webp) |
-| One adaptive workspace handles image creation, reference-backed editing, animation, and text-to-video. The composer resolves the operation from output intent and supplied media while advanced controls remain contextual. | Activity exposes truthful queued, running, persisting, succeeded, failed, and cancelled states. Users can cancel eligible work, retry failed intent, rerun successful jobs, and open completed results. |
+RenderLab is designed around one continuous creative thread. Work begins in Create, becomes a server-owned job, progresses truthfully through Activity, resolves into durable media, and remains reusable from Viewer or Library.
 
-### Inspect and continue results
+### 1. Create
 
-| Media Viewer | Library |
-| --- | --- |
-| ![A durable generated image in RenderLab Media Viewer](docs/readme/viewer.webp) | ![Four real generated image and video results in RenderLab Library](docs/readme/library.webp) |
-| Media Viewer keeps the generated asset central, exposes provenance and prompt context, and derives compatible continuation actions such as Edit, Animate, and 2× Upscale. | Library combines durable generated media and uploads with search, favorites, collections, ordering, rename, download, deletion, and reusable continuation entry points. |
+![RenderLab Create workspace](docs/readme/create.webp)
 
-The verified journey produced an image, an edited image, an animation, and a text-to-video result. Its test identity and media were removed after evidence capture; the screenshots above show actual production output from that bounded run.
+Create is an adaptive composer for image generation, reference-backed editing, animation, and text-to-video. Controls appear only when they are relevant to the current operation, keeping the default workflow simple while preserving advanced capability.
 
+### 2. Track work in Activity
+
+![RenderLab Activity view](docs/readme/activity.webp)
+
+Activity exposes the real lifecycle of accepted work: queued, preparing, running, persisting, succeeded, failed, or cancelled. Users can cancel eligible jobs, retry failed intent, rerun successful work, and open completed results.
+
+### 3. Inspect and continue from the result
+
+![RenderLab Media Viewer](docs/readme/viewer.webp)
+
+Media Viewer keeps the asset central while preserving prompt context, provenance, and compatible continuation actions. A generated image can become the starting point for another edit, animation, upscale, or related creative step.
+
+### 4. Keep the thread alive in Library
+
+![RenderLab Library](docs/readme/library.webp)
+
+Library combines generated media and uploads in one durable workspace with search, favorites, collections, ordering, rename, download, deletion, and reusable continuation entry points.
 
 ## What RenderLab does
 
-RenderLab turns cloud-hosted ComfyUI workflows into a coherent creative product. Users work with understandable creative operations—create an image, shape it with references, put it in motion, save it, and continue from it—while worker routing, storage keys, provider identifiers, and node graphs remain behind server-owned contracts.
+RenderLab turns cloud-hosted ComfyUI workflows into a coherent product experience. Users work with understandable creative operations—create an image, shape it with references, animate it, generate video, save the result, and continue from it—while provider identifiers, storage keys, node graphs, retries, and worker routing remain behind server-owned contracts.
 
 The governing product principle is **simple by default, powerful when needed**.
 
@@ -76,19 +105,20 @@ The governing product principle is **simple by default, powerful when needed**.
 
 ~~~mermaid
 flowchart LR
-    A["Idea or media"] --> B["Creative operation"]
+    A["Idea or media"] --> B["Create"]
     B --> C["Server-owned job"]
-    C --> D["Durable result"]
-    D --> E["Library"]
-    E --> F["Continue: edit · animate · upscale · reuse"]
+    C --> D["Activity lifecycle"]
+    D --> E["Durable result"]
+    E --> F["Viewer / Library"]
+    F --> G["Edit · Animate · Upscale · Reuse"]
 ~~~
 
 Accepted work does not depend on the initiating browser remaining open. Server-owned reconciliation and idempotent finalization carry jobs to truthful terminal states and durable outputs.
 
-## Highlights
+## Product highlights
 
-- Product-level generation contracts over a cloud ComfyUI/Modal worker fleet.
 - Image generation, reference-backed editing, video generation, image animation, and contextual model choice.
+- Product-level generation contracts over a cloud ComfyUI/Modal worker fleet.
 - Multi-reference addressing with stable media identities instead of provider-specific inputs.
 - Durable uploads, generated media, search, favorites, collections, ordering, rename, download, and deletion.
 - Browser-independent job reconciliation, bounded maintenance, cancellation, retry, failover, and sanitized failures.
@@ -136,13 +166,13 @@ RenderLab is developed contract-first and evidence-first:
 
 1. Re-establish repository, production, capability, and dependency reality.
 2. Define the immediate phase contract and explicit non-goals.
-3. Design product behavior and, when authorized, interaction choreography.
+3. Design product behavior and interaction choreography.
 4. Implement behind RenderLab-owned domain and authorization boundaries.
 5. Validate the exact commit with static, unit, integration, lifecycle, browser, responsive, and cleanup evidence.
 6. Update durable documentation before declaring repository closure.
 7. Deploy only through a separately authorized guarded rollout.
 
-State labels are used precisely: implemented, validated, merged, deployed, and production-verified are not interchangeable.
+State labels are used precisely: **implemented**, **validated**, **merged**, **deployed**, and **production-verified** are not interchangeable.
 
 ## Local development
 
@@ -169,15 +199,15 @@ Do not invent environment values or create replacement Supabase/R2 resources. St
 
 | Path | Owns |
 | --- | --- |
-| src/app | Routes and server/client boundaries |
-| src/features | Product features and domain-facing UI |
-| src/components/ui | Approved shared primitives |
-| workers | Generation adapters and worker entrypoints |
-| supabase | RenderLab-owned schema migrations |
-| scripts | Verification, maintenance, and operational tooling |
-| tests | Unit, integration, and browser contracts |
-| docs/ui | Product/UI decisions, system, screens, and migration state |
-| docs/architecture | Frontend, capability, infrastructure, and security contracts |
+| `src/app` | Routes and server/client boundaries |
+| `src/features` | Product features and domain-facing UI |
+| `src/components/ui` | Approved shared primitives |
+| `workers` | Generation adapters and worker entrypoints |
+| `supabase` | RenderLab-owned schema migrations |
+| `scripts` | Verification, maintenance, and operational tooling |
+| `tests` | Unit, integration, and browser contracts |
+| `docs/ui` | Product/UI decisions, system, screens, and migration state |
+| `docs/architecture` | Frontend, capability, infrastructure, and security contracts |
 
 ## Documentation
 
@@ -193,11 +223,20 @@ Start here for substantial work:
 8. [Visual design workflow](docs/ui/DESIGN_WORKFLOW.md)
 9. [Visual north star](docs/ui/VISUAL_NORTH_STAR.md)
 
-## Current direction
+## Current status and future work
 
-The production closed beta already covers the full creative thread, durable media, lifecycle control, closed-beta operations, and account/security foundation. Draft PR #313 adds product contracts and UI support for a MiniMax H3 video workflow, but its real worker deployment is blocked by the tested Modal workspaces' payment-method/spend limits. It is not merged, deployed, or part of the production capability set.
+The production closed beta already covers the full creative thread, durable media, lifecycle control, closed-beta operations, and the account/security foundation.
 
-Ongoing work should deepen creative capability and product quality without exposing ComfyUI complexity or weakening ownership, accessibility, cleanup, and exact-head release gates. See [PROJECT.md](PROJECT.md) for the current live SHA and [PR #313](https://github.com/faresmohamed260/renderlab/pull/313) for the blocked draft capability.
+Current and future work is focused on deepening creative capability rather than exposing more infrastructure:
+
+- broaden supported image and video workflows while keeping one coherent Create experience;
+- improve continuation between generated assets, edits, animation, and video;
+- deepen media organization and creative project workflows;
+- continue refining responsive interaction quality, motion, and accessibility;
+- expand worker capability only when provider availability and production ownership boundaries are verified;
+- preserve exact-head qualification, cleanup, security, and release evidence as the product grows.
+
+Draft or blocked capabilities are not presented as production features. See [PROJECT.md](PROJECT.md) for the current repository handoff and production state.
 
 ---
 
