@@ -4,25 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - "src/**"
-      - "scripts/**"
-      - "tests/unit/**"
-      - "config/modal-project-ownership.json"
-      - ".oxlintrc.json"
-      - "package.json"
-      - "tsconfig.json"
-      - ".github/workflows/engineering-quality.yml"
   pull_request:
-    paths:
-      - "src/**"
-      - "scripts/**"
-      - "tests/unit/**"
-      - "config/modal-project-ownership.json"
-      - ".oxlintrc.json"
-      - "package.json"
-      - "tsconfig.json"
-      - ".github/workflows/engineering-quality.yml"
 
 permissions:
   contents: read
@@ -66,3 +48,6 @@ jobs:
 
       - name: Verify maintained UI primitive usage
         run: npm run verify:ui-purity
+
+      - name: Production build
+        run: npm run build
