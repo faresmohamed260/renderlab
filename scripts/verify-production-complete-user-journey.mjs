@@ -1,5 +1,5 @@
 import { HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 import { chromium } from "@playwright/test";
 import {
@@ -323,8 +323,19 @@ async function verifyViewerBothViewports(page, kind, label) {
   await screenshot(page, `${label}-viewer-mobile`);
 }
 
-async function submitCurrentCreate(page, { kind, prompt, label, submitViewport }) {
+async function chooseAspectRatio(page, ratio) {
+  const trigger = page.getByRole("button", { name: /^Aspect ratio / });
+  await trigger.waitFor({ state: "visible", timeout: 60_000 });
+  if ((await trigger.getAttribute("aria-label"))?.includes(ratio)) return;
+  await trigger.click();
+  const option = page.getByRole("menuitemradio", { name: ratio, exact: true });
+  await option.waitFor({ state: "visible", timeout: 30_000 });
+  await option.click();
+}
+
+async function submitCurrentCreate(page, { kind, prompt, label, submitViewport, aspectRatio }) {
   await page.setViewportSize(submitViewport);
+  if (aspectRatio) await chooseAspectRatio(page, aspectRatio);
   const promptField = page.getByRole("textbox", { name: "Prompt" });
   await promptField.waitFor({ state: "visible", timeout: 60_000 });
   await promptField.fill(prompt);
@@ -391,51 +402,94 @@ try {
   publicRoutes = await verifyPublicCoverage(browser);
 
   account = await createConfiguredTestAccount(namespace);
-  const context = await browser.newContext({ viewport: desktop, colorScheme: "dark", reducedMotion: "no-preference", ...(recordWalkthrough ? { recordVideo: { dir: artifactDir + "/video", size: desktop } } : {}) });
+  const galleryContext = await browser.newContext({ viewport: desktop, colorScheme: "dark", reducedMotion: "no-preference" });
+  const galleryPage = await galleryContext.newPage();
+  await routeLocalAppRequestsWithAccount(galleryPage, baseUrl, account);
+
+  const galleryExamples = [
+    {
+      operation: "create-image-cinematic-editorial",
+      label: "01-cinematic-editorial-image",
+      aspectRatio: "16:9",
+      prompt: "Wide cinematic editorial photograph of a fictional explorer in a cobalt raincoat crossing a black volcanic shoreline at blue hour. Wind, ocean mist, wet basalt, restrained amber light at the horizon, realistic fabric and natural human proportions, premium outdoor campaign photography, no text or logos.",
+    },
+    {
+      operation: "create-image-painterly-fantasy",
+      label: "02-painterly-fantasy-image",
+      aspectRatio: "16:9",
+      prompt: "An ancient white stag guardian standing before a moss-covered shrine in a bioluminescent forest after rain. Giant ferns, wet stone steps, floating spores, a reflective stream, cool cyan fungi and one warm shrine lantern. Richly textured painterly fantasy illustration with cinematic depth and sophisticated book-cover finish. Landscape composition, no text or logos.",
+    },
+    {
+      operation: "create-image-graphic-scifi",
+      label: "03-graphic-scifi-image",
+      aspectRatio: "4:5",
+      prompt: "A masked courier in a long vermilion coat standing on a rain-slick skybridge beneath an enormous fractured holographic moon. Dense retro-futurist city canyon, cyan and violet light, reflective pavement, clean cel shading with a detailed painted background, premium animation key art, original character, no readable text or logos.",
+    },
+    {
+      operation: "create-image-surreal-architecture",
+      label: "04-surreal-architecture-image",
+      aspectRatio: "16:9",
+      prompt: "A monumental brutalist observatory rising from a pale salt desert, surrounded by three enormous floating chrome rings casting curved shadows across the sand. Distant black mountains, hard late-afternoon light, board-formed concrete, brushed chrome, restrained surreal architectural concept art with editorial realism, no people, text, or logos.",
+    },
+    {
+      operation: "create-image-stylized-3d",
+      label: "05-stylized-3d-image",
+      aspectRatio: "16:9",
+      prompt: "A small red panda astronomer discovering a glowing miniature blue planet inside an overgrown observatory greenhouse at night. Brass telescope, fogged curved glass, oversized leaves, warm lamps, tactile fur and handcrafted miniature-set materials, premium stylized 3D animated-film still, charming but sophisticated, no text or logos.",
+    },
+  ];
+
+  for (const example of galleryExamples) {
+    await galleryPage.goto(baseUrl + "/create", { waitUntil: "networkidle", timeout: 60_000 });
+    const result = await submitCurrentCreate(galleryPage, {
+      kind: "image",
+      label: example.label,
+      prompt: example.prompt,
+      submitViewport: desktop,
+      aspectRatio: example.aspectRatio,
+    });
+    generations.push({ operation: example.operation, jobId: result.jobId, assetId: result.assetId });
+  }
+  await galleryContext.close();
+
+  const context = await browser.newContext({
+    viewport: desktop,
+    colorScheme: "dark",
+    reducedMotion: "no-preference",
+    ...(recordWalkthrough ? { recordVideo: { dir: artifactDir + "/video", size: desktop } } : {}),
+  });
   const page = await context.newPage();
   await routeLocalAppRequestsWithAccount(page, baseUrl, account);
 
-
-  if (recordWalkthrough) {
-    await page.goto(baseUrl + "/library?tab=uploads", { waitUntil: "networkidle", timeout: 60_000 });
-    const buffer = await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900"><defs><radialGradient id="g"><stop stop-color="#619dff"/><stop offset="1" stop-color="#123b80"/></radialGradient></defs><rect width="1200" height="900" fill="#d2cfca"/><ellipse cx="600" cy="720" rx="260" ry="45" fill="#aaa69f"/><circle cx="600" cy="430" r="240" fill="url(#g)"/></svg>')).png().toBuffer();
-    const completion = page.waitForResponse(response => new URL(response.url()).pathname === "/api/media/uploads/upload-completions" && response.request().method() === "POST", { timeout: 60_000 });
-    const chooser = page.waitForEvent("filechooser");
-    await page.getByRole("button", { name: "Upload", exact: true }).click();
-    await (await chooser).setFiles({ name: "Cobalt studio reference.png", mimeType: "image/png", buffer });
-    const response = await completion;
-    const payload = await response.json();
-    assert(response.ok() && payload?.ok && payload.asset?.id, "Walkthrough upload did not persist a real asset.");
-    await page.locator('a[href="/library/' + payload.asset.id + '"]').first().waitFor({ state: "visible", timeout: 30_000 });
-    await screenshot(page, "00-walkthrough-library-upload");
-    await page.locator('a[href="/library/' + payload.asset.id + '"]').first().click();
-    await waitForViewerMedia(page, "image");
-    await screenshot(page, "00-walkthrough-upload-viewer");
-  }
-
-  await page.goto(baseUrl + "/create", { waitUntil: "networkidle", timeout: 60_000 });
-  const image = await submitCurrentCreate(page, {
-    kind: "image",
-    label: "01-create-image-desktop",
-    prompt: "QA journey 01: a matte cobalt-blue sphere centered in a warm gray studio, soft light, no text",
-    submitViewport: desktop,
-  });
-  generations.push({ operation: "create-image", jobId: image.jobId, assetId: image.assetId });
+  await page.goto(baseUrl + "/library?tab=uploads", { waitUntil: "networkidle", timeout: 60_000 });
+  const referenceBuffer = await readFile(new URL("../tests/fixtures/renderlab-explorer-reference.webp", import.meta.url));
+  const completion = page.waitForResponse(response => new URL(response.url()).pathname === "/api/media/uploads/upload-completions" && response.request().method() === "POST", { timeout: 60_000 });
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "Upload", exact: true }).click();
+  await (await chooser).setFiles({ name: "Volcanic coast explorer reference.webp", mimeType: "image/webp", buffer: referenceBuffer });
+  const response = await completion;
+  const payload = await response.json();
+  assert(response.ok() && payload?.ok && payload.asset?.id, "Walkthrough upload did not persist the explorer reference.");
+  await page.locator('a[href="/library/' + payload.asset.id + '"]').first().waitFor({ state: "visible", timeout: 30_000 });
+  await screenshot(page, "00-walkthrough-library-upload");
+  await page.locator('a[href="/library/' + payload.asset.id + '"]').first().click();
+  await waitForViewerMedia(page, "image");
+  await screenshot(page, "00-walkthrough-upload-viewer");
 
   await beginContinuation(page, "Edit", "image");
   const edited = await submitCurrentCreate(page, {
     kind: "image",
-    label: "02-edit-image-mobile",
-    prompt: "QA journey 02: keep the cobalt sphere composition and add a narrow amber rim light, no text",
-    submitViewport: mobile,
+    label: "06-explorer-reference-edit",
+    prompt: "Preserve @image1's fictional subject, face, pose, framing, and cobalt raincoat. Transform the atmosphere into a sudden coastal rainstorm with denser sea spray, rain droplets, wet fabric highlights, and a narrow amber rim light from frame right. Keep the result photorealistic and editorial. No text or logos.",
+    submitViewport: desktop,
   });
   generations.push({ operation: "edit-image", jobId: edited.jobId, assetId: edited.assetId });
 
   await beginContinuation(page, "Animate", "video");
   const animated = await submitCurrentCreate(page, {
     kind: "video",
-    label: "03-animate-image-desktop",
-    prompt: "QA journey 03: slowly rotate the sphere with a steady camera and subtle light movement, no text",
+    label: "07-explorer-animation",
+    prompt: "Slow cinematic dolly-in. Preserve @image1's face, anatomy, framing, and clothing. Add subtle natural breathing, wind moving the short hair and raincoat fabric, rain and sea spray moving behind the subject, and realistic waves. One continuous shot, steady camera, no cuts, no text.",
     submitViewport: desktop,
   });
   generations.push({ operation: "animate-image", jobId: animated.jobId, assetId: animated.assetId });
@@ -445,23 +499,22 @@ try {
   await page.waitForTimeout(500);
   const video = await submitCurrentCreate(page, {
     kind: "video",
-    label: "04-create-video-mobile",
-    prompt: "QA journey 04: a cobalt glass sphere rotating slowly on a neutral studio background, steady camera, no text",
-    submitViewport: mobile,
+    label: "08-explorer-text-video",
+    prompt: "Wide establishing shot of a lone fictional explorer in a cobalt raincoat moving carefully across a black volcanic shoreline at blue hour. Ocean mist, wind and sea spray, slow lateral tracking camera, realistic cinematic movement, restrained amber horizon light, one continuous shot, no text or logos.",
+    submitViewport: desktop,
   });
   generations.push({ operation: "create-video", jobId: video.jobId, assetId: video.assetId });
 
-  await page.setViewportSize(desktop);
   await page.goto(baseUrl + "/library", { waitUntil: "networkidle", timeout: 60_000 });
   for (const generation of generations) {
     await page.locator('a[href="/library/' + generation.assetId + '"]').first().waitFor({ state: "visible", timeout: 30_000 });
   }
   await assertNoOverflow(page, "Library desktop");
-  await screenshot(page, "05-library-desktop");
+  await screenshot(page, "09-library-artistic-range-desktop");
   await page.setViewportSize(mobile);
   await page.waitForTimeout(250);
   await assertNoOverflow(page, "Library mobile");
-  await screenshot(page, "05-library-mobile");
+  await screenshot(page, "09-library-artistic-range-mobile");
 
   accountRoutes = await verifyReadOnlyAccountSurfaces(page);
   await assertReadOnlyAccountMetadata(account.id);
@@ -506,5 +559,5 @@ const manifest = {
 await writeFile(artifactDir + "/manifest.json", JSON.stringify(manifest, null, 2) + "\n", "utf8");
 
 if (primaryError) throw primaryError;
-assert(generations.length === 4, "QA-002 did not complete exactly four contracted provider-backed generations.");
+assert(generations.length === 8, "QA-002 did not complete exactly eight contracted provider-backed generations.");
 console.log("QA-002 permanent production user journey passed.");

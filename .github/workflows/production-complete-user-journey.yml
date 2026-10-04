@@ -13,7 +13,7 @@ on:
         required: true
         type: string
       confirm_bounded_fixture_provider_work:
-        description: Confirm this run may dispatch exactly four provider-backed generations owned by the QA-002 fixture
+        description: Confirm this run may dispatch exactly eight provider-backed generations owned by the README media fixture
         required: true
         type: boolean
         default: false
