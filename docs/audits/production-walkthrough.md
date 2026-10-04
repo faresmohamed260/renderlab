@@ -1,7 +1,19 @@
 # Production product walkthrough
 
-Authorized by Fares on 2026-10-04. Use the manual Production Complete User Journey workflow with record_walkthrough=true, the independently verified production SHA, and bounded provider-work acknowledgement. The optional mode adds a real browser image upload and Playwright video of the authenticated journey. The existing four-generation ceiling, member fixture ownership, serialized execution, and independent cleanup remain in force. No application deployment or worker change is involved.
+Authorized by Fares on 2026-10-04 and completed against the live closed-beta domain.
 
-The raw video is source footage, not a finished product walkthrough. Review the manifest and cleanup before editing. Cut provider wait time, add chapter titles for Create, Activity, Viewer, Library and image/video continuation, and use only real captured production pixels. Publish screenshots and the finished video only after successful generation and cleanup. Do not include tokens, passwords, headers, or private customer content.
+## Verified capture
 
-Current state: capture support prepared; production capture has not been launched or verified. README screenshot replacement and finished video remain pending.
+- Workflow run: [Production Complete User Journey #4](https://github.com/faresmohamed260/renderlab/actions/runs/37212557558)
+- Harness commit: `88acf6c5c563b4a5919b4aecd4026135934e30b3`
+- Verified production source: `8e5d066978035c3c0e686fe6e3eec2071135ab30`
+- Real operations: create image, edit image, animate image, create video
+- Real durable upload: one PNG uploaded through the production Library flow
+- Cleanup: passed; eleven tracked R2 objects checked and zero contracted database/Auth residue
+- Evidence artifact: `production-complete-user-journey-37212557558-1`, digest `sha256:5d0c6e88d6ce808147f50a1ea6a664fe0dc5da566e94e8bcdf692c844b4a58a7`
+
+## Published media
+
+The repository README uses four production screenshots and a 44-second silent walkthrough assembled exclusively from the verified production capture. It covers the landing page, upload, Create, Activity, Media Viewer, image editing, animation, text-to-video, Library, and account surfaces. No credentials, access tokens, request headers, or customer content appear in the published assets.
+
+The optional recording mode remains manual-only. It preserves the workflow's exact production-SHA input, explicit four-generation acknowledgement, serialized execution, isolated member fixture, and unconditional cleanup.

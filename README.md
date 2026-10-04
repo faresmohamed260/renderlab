@@ -26,7 +26,34 @@
 
 > **Live status:** RenderLab is a closed-beta, invitation-only product. The public landing page is available; private workspace access requires an authorized account.
 
-![RenderLab visual atmosphere](public/landing/hero-atmosphere-v2.png)
+## Production walkthrough
+
+The walkthrough below was captured against the live closed-beta domain with an isolated test account. It uploads a real image, submits four provider-backed jobs, follows their lifecycle through Activity, opens the durable image and video results, and verifies Library and account surfaces. The capture run finished with independent cleanup across authentication, database rows, and eleven tracked storage objects.
+
+<p align="center">
+  <a href="docs/readme/renderlab-product-walkthrough.mp4">
+    <img src="docs/readme/renderlab-product-walkthrough-preview.webp" alt="RenderLab production walkthrough covering upload, Create, Activity, Media Viewer, Library, video, and account surfaces" />
+  </a>
+</p>
+
+<p align="center"><strong><a href="docs/readme/renderlab-product-walkthrough.mp4">Watch the 44-second product walkthrough</a></strong></p>
+
+### Create and track real work
+
+| Create | Activity |
+| --- | --- |
+| ![A real image generation running in RenderLab Create](docs/readme/create.webp) | ![The accepted generation job running in Activity](docs/readme/activity.webp) |
+| One adaptive workspace handles image creation, reference-backed editing, animation, and text-to-video. The composer resolves the operation from output intent and supplied media while advanced controls remain contextual. | Activity exposes truthful queued, running, persisting, succeeded, failed, and cancelled states. Users can cancel eligible work, retry failed intent, rerun successful jobs, and open completed results. |
+
+### Inspect and continue results
+
+| Media Viewer | Library |
+| --- | --- |
+| ![A durable generated image in RenderLab Media Viewer](docs/readme/viewer.webp) | ![Four real generated image and video results in RenderLab Library](docs/readme/library.webp) |
+| Media Viewer keeps the generated asset central, exposes provenance and prompt context, and derives compatible continuation actions such as Edit, Animate, and 2× Upscale. | Library combines durable generated media and uploads with search, favorites, collections, ordering, rename, download, deletion, and reusable continuation entry points. |
+
+The verified journey produced an image, an edited image, an animation, and a text-to-video result. Its test identity and media were removed after evidence capture; the screenshots above show actual production output from that bounded run.
+
 
 ## What RenderLab does
 
