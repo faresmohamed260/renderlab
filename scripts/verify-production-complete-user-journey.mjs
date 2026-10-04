@@ -505,6 +505,7 @@ try {
   });
   generations.push({ operation: "create-video", jobId: video.jobId, assetId: video.assetId });
 
+  await page.setViewportSize(desktop);
   await page.goto(baseUrl + "/library", { waitUntil: "networkidle", timeout: 60_000 });
   for (const generation of generations) {
     await page.locator('a[href="/library/' + generation.assetId + '"]').first().waitFor({ state: "visible", timeout: 30_000 });
