@@ -5,30 +5,79 @@
 <h1 align="center">RenderLab</h1>
 
 <p align="center">
-  A production creative workspace for generating, shaping, animating, organizing, and reusing AI media—without exposing the complexity of the underlying workflow engine.
+  <strong>A production AI media workspace that turns complex ComfyUI pipelines into durable image and video workflows.</strong>
 </p>
 
 <p align="center">
-  <a href="https://renderlab.faresuniform.uk"><strong>Explore the live product</strong></a>
-  · <a href="PROJECT.md">Project status</a>
+  Create, edit, animate, organize, and continue from generated media while RenderLab handles workers, job state, storage, retries, and provider complexity.
+</p>
+
+<p align="center">
+  <a href="https://renderlab.faresuniform.uk"><strong>Live product</strong></a>
+  · <a href="docs/STATUS.md">Status</a>
   · <a href="docs/architecture/PRODUCT_CAPABILITIES.md">Capabilities</a>
-  · <a href="docs/ui/VISUAL_NORTH_STAR.md">Design direction</a>
+  · <a href="SECURITY.md">Security</a>
+  · <a href="LICENSE">License</a>
 </p>
 
 <p align="center">
-  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs" />
-  <img alt="React" src="https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white" />
-  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3FCF8E?logo=supabase&logoColor=white" />
-  <img alt="Cloudflare R2" src="https://img.shields.io/badge/Cloudflare-R2-F38020?logo=cloudflare&logoColor=white" />
-  <img alt="Vercel" src="https://img.shields.io/badge/Vercel-Production-black?logo=vercel" />
+  <a href="https://github.com/faresmohamed260/renderlab/actions/workflows/engineering-quality.yml"><img alt="Engineering Quality" src="https://github.com/faresmohamed260/renderlab/actions/workflows/engineering-quality.yml/badge.svg" /></a>
+  <img alt="Closed beta" src="https://img.shields.io/badge/status-closed%20beta-6f42c1" />
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs" />
+  <img alt="TypeScript 7" src="https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white" />
 </p>
 
-> **Live status:** RenderLab is a closed-beta, invitation-only product. The public landing page is available; private workspace access requires an authorized account.
+> **Access:** RenderLab is a closed-beta, invitation-only product. The public landing page is available; private workspace access requires authorization.
+
+## What RenderLab is
+
+RenderLab is the product layer between a creator and a cloud-hosted generation stack. Users work with understandable operations—generate an image, edit with references, animate a still, create video, organize results, and continue from an existing asset—while RenderLab owns provider routing, job state, durable persistence, retries, cancellation, and authorization.
+
+### Why RenderLab
+
+- **Durable creative lifecycle.** Accepted work becomes a server-owned job and does not depend on the initiating browser remaining open.
+- **Provider complexity stays behind product contracts.** ComfyUI graphs, worker identifiers, storage keys, and backend routing are not exposed as the user experience.
+- **Media stays actionable.** A finished asset remains connected to prompt/provenance context and compatible next steps such as edit, animate, upscale, or reuse.
+
+## Product surfaces
+
+| Surface | Production role |
+| --- | --- |
+| **Create** | Image generation, reference-backed editing, animation, video generation, model choice, and contextual advanced controls. |
+| **Activity** | Truthful queued/running/persisting/terminal job state with retry, rerun, cancellation, and result access. |
+| **Media Viewer** | Asset inspection, provenance, prompt context, download/favorite actions, and compatible continuation paths. |
+| **Library** | Durable generated media and uploads with search, favorites, collections, ordering, rename, download, deletion, and reuse. |
+| **Settings** | Profile, preferences, credentials, sessions, MFA, export, and account lifecycle. |
+| **Admin** | Authorized closed-beta operations with recent-authentication boundaries where required. |
+
+## Product in action
+
+### Create
+
+![RenderLab Create screen editing an explorer reference image](docs/readme/screenshots/create.png)
+
+Create keeps creative intent, references, model choice, aspect ratio, and advanced controls in one focused workspace.
+
+<details>
+<summary><strong>See Activity, Media Viewer, and Library</strong></summary>
+
+### Activity
+
+![RenderLab Activity screen showing the explorer edit job completed](docs/readme/screenshots/activity.png)
+
+### Media Viewer
+
+![RenderLab Media Viewer showing the completed explorer edit result](docs/readme/screenshots/viewer.png)
+
+### Library
+
+![RenderLab Library desktop screen showing the explorer source upload](docs/readme/screenshots/library.png)
+
+</details>
 
 ## Made with RenderLab
 
-Real outputs generated through RenderLab, shown individually at source capture quality.
+The examples below are **production-capture crops of real provider-backed RenderLab outputs**. The original QA fixture intentionally removed its generated R2 objects during cleanup, so these are not presented as retained raw model files.
 
 ### Cinematic editorial
 
@@ -42,6 +91,15 @@ Real outputs generated through RenderLab, shown individually at source capture q
   <img src="docs/readme/showcase/painterly-fantasy.png" alt="Painterly fantasy RenderLab generation: white stag beside a bioluminescent forest shrine" width="900" />
 </p>
 
+### Stylized 3D
+
+<p align="center">
+  <img src="docs/readme/showcase/stylized-3d.png" alt="Stylized 3D RenderLab generation: red-panda astronomer in an observatory greenhouse" width="900" />
+</p>
+
+<details>
+<summary><strong>More production examples</strong></summary>
+
 ### Graphic sci-fi
 
 <p align="center">
@@ -54,60 +112,28 @@ Real outputs generated through RenderLab, shown individually at source capture q
   <img src="docs/readme/showcase/surreal-architecture.png" alt="Surreal architecture RenderLab generation: brutalist observatory with chrome rings" width="900" />
 </p>
 
-### Stylized 3D
+</details>
 
-<p align="center">
-  <img src="docs/readme/showcase/stylized-3d.png" alt="Stylized 3D RenderLab generation: red-panda astronomer in an observatory greenhouse" width="900" />
-</p>
+## Video workflows
 
-## Product screenshots
+The same bounded production verification created both an image-animation result and a text-to-video result. The retained evidence contains the completed video results in RenderLab's Media Viewer; the fixture cleanup removed the generated R2 media afterward, so this repository does not claim a retained raw motion file from that run.
 
-The screenshots below are separate captures from the real product flow rather than a stitched collage.
+<details>
+<summary><strong>See provider-backed video result evidence</strong></summary>
 
-### Create
+### Image animation result
 
-![RenderLab Create screen generating the graphic sci-fi example](docs/readme/screenshots/create.png)
+![RenderLab Media Viewer showing a completed image-animation result](docs/readme/screenshots/video-animation.png)
 
-Create keeps image/video intent, references, model choice, aspect ratio, and advanced controls in one focused workspace.
+### Text-to-video result
 
-### Activity
+![RenderLab Media Viewer showing a completed text-to-video result](docs/readme/screenshots/video-text-to-video.png)
 
-![RenderLab Activity screen showing completed artistic generations](docs/readme/screenshots/activity.png)
+</details>
 
-Activity exposes the real lifecycle of accepted work and keeps completed results actionable.
+## How the creative lifecycle works
 
-### Media Viewer
-
-![RenderLab Media Viewer showing the cinematic explorer result](docs/readme/screenshots/viewer.png)
-
-Media Viewer keeps the finished asset central while preserving prompt context and continuation actions such as Edit and Animate.
-
-### Library
-
-![RenderLab Library desktop screen](docs/readme/screenshots/library.png)
-
-Library provides durable organization for uploads and generated media with search, filtering, favorites, collections, and reuse.
-
-## What RenderLab does
-
-RenderLab turns cloud-hosted ComfyUI workflows into a coherent product experience. Users work with understandable creative operations—create an image, shape it with references, animate it, generate video, save the result, and continue from it—while provider identifiers, storage keys, node graphs, retries, and worker routing remain behind server-owned contracts.
-
-The governing product principle is **simple by default, powerful when needed**.
-
-### Core product surfaces
-
-| Surface | Purpose |
-| --- | --- |
-| **Create** | Generate images and video, edit with references, animate stills, and expose advanced controls only when relevant. |
-| **Library** | Search, organize, upload, favorite, collect, and revisit durable creative media. |
-| **Media Viewer** | Inspect an asset and continue it through compatible actions such as edit, animate, or 2× upscale. |
-| **Activity** | Follow generation state, cancel eligible work, retry failed intent, and run successful work again. |
-| **Settings** | Manage identity, profile, preferences, credentials, sessions, MFA, exports, and account lifecycle. |
-| **Admin** | Operate the closed beta through fresh-authorized, concealed administrative surfaces. |
-
-## Creative workflow
-
-~~~mermaid
+```mermaid
 flowchart LR
     A["Idea or media"] --> B["Create"]
     B --> C["Server-owned job"]
@@ -115,31 +141,19 @@ flowchart LR
     D --> E["Durable result"]
     E --> F["Viewer / Library"]
     F --> G["Edit · Animate · Upscale · Reuse"]
-~~~
+```
 
-Accepted work does not depend on the initiating browser remaining open. Server-owned reconciliation and idempotent finalization carry jobs to truthful terminal states and durable outputs.
-
-## Product highlights
-
-- Image generation, reference-backed editing, video generation, image animation, and contextual model choice.
-- Product-level generation contracts over a cloud ComfyUI/Modal worker fleet.
-- Multi-reference addressing with stable media identities instead of provider-specific inputs.
-- Durable uploads, generated media, search, favorites, collections, ordering, rename, download, and deletion.
-- Browser-independent job reconciliation, bounded maintenance, cancellation, retry, failover, and sanitized failures.
-- Owner-scoped authorization across media, jobs, profiles, preferences, invitations, and account lifecycle.
-- Closed-beta admission, branded transactional email, MFA, session control, secure email change, data export, and deletion.
-- Responsive, reduced-motion-aware **Kinetic Precision** interface built on maintained accessible primitives.
-- Production qualification through exact-head CI, browser journeys, fixture cleanup, release manifests, and guarded cutover.
+Accepted work is reconciled independently of the browser. Finalization is designed to be idempotent so terminal job state and durable media do not depend on one client request surviving end to end.
 
 ## Architecture
 
-~~~mermaid
+```mermaid
 flowchart TB
-    UI["Next.js App Router<br/>Server Components by default"]
+    UI["Next.js App Router\nServer Components by default"]
     API["RenderLab domain + API contracts"]
-    DB["Supabase<br/>Auth · Postgres · RLS"]
-    OBJ["Cloudflare R2<br/>Durable media"]
-    JOB["Generation lifecycle<br/>Reconciliation · retry · cancel"]
+    DB["Supabase\nAuth · Postgres · RLS"]
+    OBJ["Cloudflare R2\nDurable media"]
+    JOB["Generation lifecycle\nReconciliation · retry · cancel"]
     GPU["ComfyUI / Modal workers"]
 
     UI --> API
@@ -150,54 +164,62 @@ flowchart TB
     GPU --> JOB
     JOB --> DB
     JOB --> OBJ
-~~~
+```
 
-RenderLab deliberately reuses selected Saga-era infrastructure resources while keeping its schema, storage prefixes, orchestration, ownership rules, and product contracts independently named and governed.
+RenderLab keeps schema ownership, storage prefixes, orchestration, authorization, and product contracts explicitly separated from underlying shared infrastructure. See [Infrastructure](docs/architecture/INFRASTRUCTURE.md) and [Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md) for the deeper contracts.
+
+## Security and reliability
+
+| Concern | RenderLab approach |
+| --- | --- |
+| **Authorization** | Owner-scoped resource access backed by Supabase Auth/RLS and server-side ownership checks. |
+| **Privileged account actions** | MFA/session controls and recent-authentication boundaries for sensitive operations. |
+| **Media delivery** | Server-owned storage access and presigned delivery/upload boundaries. |
+| **Long-running generation** | Browser-independent reconciliation with bounded retry/cancellation behavior. |
+| **Finalization** | Idempotent persistence and explicit terminal-state handling. |
+| **Failures** | Sanitized user-facing failures while operational detail remains server-side. |
+| **Data lifecycle** | Account export/deletion and fixture cleanup workflows. |
+| **Security reporting** | Private reporting guidance in [SECURITY.md](SECURITY.md). |
 
 ## Technology
 
 - **Application:** Next.js 16, React 19, TypeScript 7, Tailwind CSS 4
 - **Interface:** Radix/shadcn-derived primitives, Motion for React, Lucide
-- **Data and identity:** Supabase Auth, PostgreSQL, RLS
-- **Media:** Cloudflare R2 with presigned server-owned delivery boundaries
+- **Data and identity:** Supabase Auth, PostgreSQL, Row Level Security
+- **Media:** Cloudflare R2
 - **Generation:** curated ComfyUI workflows on a partitioned Modal worker fleet
 - **Quality:** Oxlint, TypeScript, Node test runner, Playwright, repository-specific contract verifiers
-- **Delivery:** Vercel with explicit, guarded production cutovers
-
-## Engineering method
-
-RenderLab is developed contract-first and evidence-first:
-
-1. Re-establish repository, production, capability, and dependency reality.
-2. Define the immediate phase contract and explicit non-goals.
-3. Design product behavior and interaction choreography.
-4. Implement behind RenderLab-owned domain and authorization boundaries.
-5. Validate the exact commit with static, unit, integration, lifecycle, browser, responsive, and cleanup evidence.
-6. Update durable documentation before declaring repository closure.
-7. Deploy only through a separately authorized guarded rollout.
-
-State labels are used precisely: **implemented**, **validated**, **merged**, **deployed**, and **production-verified** are not interchangeable.
+- **Delivery:** Vercel with guarded production qualification
 
 ## Local development
 
-A local checkout is suitable for ordinary RenderLab engineering. Production and shared-resource operations require the documented credentials and ownership boundaries.
+### Prerequisites
 
-~~~bash
-npm install
+- Node.js **24** (see `.nvmrc`)
+- npm **11**
+- Access to the infrastructure required by the workflow you intend to run
+
+```bash
+cp .env.example .env.local
+npm ci
 npm run dev
-~~~
+```
 
-Common checks:
+`.env.example` documents the supported variable names without containing credentials. Ordinary UI/static work can be performed locally; provider-backed, production, and shared-resource operations require explicitly authorized credentials and ownership boundaries.
 
-~~~bash
+### Quality checks
+
+```bash
 npm run lint
 npm run typecheck
 npm run test:unit
+npm run verify:engineering-quality
+npm run verify:modal-project-ownership
 npm run verify:ui-purity
 npm run build
-~~~
+```
 
-Do not invent environment values or create replacement Supabase/R2 resources. Start with the infrastructure contract before configuring integrations.
+The repository also contains feature-specific Playwright, integration, account lifecycle, generation, media, cleanup, and production-verification workflows under `.github/workflows`.
 
 ## Repository map
 
@@ -205,42 +227,54 @@ Do not invent environment values or create replacement Supabase/R2 resources. St
 | --- | --- |
 | `src/app` | Routes and server/client boundaries |
 | `src/features` | Product features and domain-facing UI |
-| `src/components/ui` | Approved shared primitives |
-| `workers` | Generation adapters and worker entrypoints |
+| `src/components/ui` | Approved shared UI primitives |
+| `src/server` | Server-owned domain, generation, storage, account, and operational logic |
+| `workers` | Generation adapters and worker entry points |
 | `supabase` | RenderLab-owned schema migrations |
 | `scripts` | Verification, maintenance, and operational tooling |
 | `tests` | Unit, integration, and browser contracts |
-| `docs/ui` | Product/UI decisions, system, screens, and migration state |
-| `docs/architecture` | Frontend, capability, infrastructure, and security contracts |
+| `docs/architecture` | Architecture, infrastructure, security, and capability contracts |
+| `docs/ui` | UI decisions, system, screens, and migration state |
 
 ## Documentation
 
-Start here for substantial work:
+For engineering work, start with:
 
-1. [AI development instructions](AGENTS.md)
-2. [Current project handoff](PROJECT.md)
-3. [Product and UI foundation](docs/ui/UI_MIGRATION.md)
-4. [Durable UI decisions](docs/ui/UI_DECISIONS.md)
-5. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
-6. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
-7. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
-8. [Visual design workflow](docs/ui/DESIGN_WORKFLOW.md)
-9. [Visual north star](docs/ui/VISUAL_NORTH_STAR.md)
+1. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
+2. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
+3. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
+4. [Current public status](docs/STATUS.md)
+5. [Product/UI foundation](docs/ui/UI_MIGRATION.md)
+6. [Durable UI decisions](docs/ui/UI_DECISIONS.md)
+7. [Visual north star](docs/ui/VISUAL_NORTH_STAR.md)
+8. [AI-agent development instructions](AGENTS.md)
+9. [Detailed project handoff/history](PROJECT.md)
 
-## Current status and future work
+## Known limitations
 
-The production closed beta already covers the full creative thread, durable media, lifecycle control, closed-beta operations, and the account/security foundation.
+- RenderLab is closed beta; private workspace access is not public self-service.
+- There is no supported public API or community plugin contract yet.
+- Provider-backed generation depends on configured worker/provider availability and admission controls.
+- Some model/workflow routes remain capability-gated until production ownership and readiness are verified.
+- The retained artistic QA fixture cleaned its generated R2 objects, so the current public gallery uses verified production-capture crops rather than raw downloadable model outputs.
+- The project currently uses exact production commit qualification rather than a public semantic-release stream.
 
-Current and future work is focused on deepening creative capability rather than exposing more infrastructure:
+## Current direction
 
-- broaden supported image and video workflows while keeping one coherent Create experience;
-- improve continuation between generated assets, edits, animation, and video;
+Current work is focused on deeper creative capability rather than exposing more infrastructure:
+
+- broaden image and video workflows while preserving one coherent Create experience;
+- improve continuation among generation, editing, animation, video, and upscale operations;
 - deepen media organization and creative project workflows;
-- continue refining responsive interaction quality, motion, and accessibility;
-- expand worker capability only when provider availability and production ownership boundaries are verified;
-- preserve exact-head qualification, cleanup, security, and release evidence as the product grows.
+- continue responsive, motion, and accessibility refinement;
+- expand provider/worker capability only when ownership and production readiness are verified;
+- preserve lifecycle, cleanup, security, and exact-commit qualification as the product grows.
 
-Draft or blocked capabilities are not presented as production features. See [PROJECT.md](PROJECT.md) for the current repository handoff and production state.
+See [STATUS.md](docs/STATUS.md) for the concise current state and `PROJECT.md` for detailed implementation history.
+
+## Contributing, security, and license
+
+RenderLab is source-visible for portfolio/evaluation purposes and is **not currently an open-source community project**. See [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes, [SECURITY.md](SECURITY.md) for vulnerability reporting, and [LICENSE](LICENSE) for usage rights.
 
 ---
 
