@@ -593,10 +593,16 @@ try {
   assert(!Object.hasOwn(fixtureDiagnostic, "jobId"), "Admin diagnostic projection exposed the server-only job ID field.");
   assert(health?.recentDiagnostics?.lookbackHours === 24, "Admin diagnostic default lookback is not 24 hours.");
   assert(health?.recentDiagnostics?.limit === 20, "Admin diagnostic default row limit is not 20.");
-  const fixtureAlert = health?.operationalAlerts?.find(
-    (alert) => alert?.family === "maintenance-failure" && alert?.lastSeenAt === healthFixture.alertLastSeenAt,
+  const fixtureAlerts = health?.operationalAlerts ?? [];
+  assert(fixtureAlerts.length === 1, `Admin Health did not expose exactly one run-owned operational alert: ${JSON.stringify(fixtureAlerts)}.`);
+  const fixtureAlert = fixtureAlerts[0];
+  assert(
+    fixtureAlert?.family === "maintenance-failure"
+      && fixtureAlert?.severity === "warning"
+      && fixtureAlert?.occurrenceCount === 2
+      && Date.parse(fixtureAlert.lastSeenAt) === Date.parse(healthFixture.alertLastSeenAt),
+    `Admin operational alert projection was not exact: ${JSON.stringify(fixtureAlert)}.`,
   );
-  assert(fixtureAlert?.severity === "warning" && fixtureAlert?.occurrenceCount === 2, `Admin operational alert projection was not exact: ${JSON.stringify(fixtureAlert)}.`);
   const healthJson = JSON.stringify(healthPayload);
   for (const forbidden of [
     healthFixture.secretMarker,
