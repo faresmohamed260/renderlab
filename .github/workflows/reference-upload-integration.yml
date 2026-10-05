@@ -18,6 +18,7 @@ on:
       - "supabase/migrations/0017_staging_cleanup_claims.sql"
       - "supabase/migrations/0024_renderlab_upload_admission.sql"
       - "supabase/migrations/0025_renderlab_upload_admission_account_lifecycle.sql"
+      - "supabase/migrations/0026_renderlab_upload_admission_concurrency_fix.sql"
       - "package.json"
   push:
     branches: [main]

@@ -71,6 +71,11 @@ export async function createMediaUploadTicket(
 
   const reservation = await reserveUploadAdmission(ownerId, "media");
   try {
+    const uploadId = randomUUID();
+    if (!await bindUploadAdmission(ownerId, reservation, uploadId)) {
+      throw new Error("Media upload admission could not be finalized.");
+    }
+
     const now = new Date();
     const key = [
       "renderlab",
@@ -84,6 +89,7 @@ export async function createMediaUploadTicket(
       method: "POST",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
+        id: uploadId,
         owner_id: ownerId,
         storage_key: key,
         filename: originalFilenameFor(request),
@@ -97,11 +103,6 @@ export async function createMediaUploadTicket(
 
     const row = rows?.[0];
     if (!row) throw new Error("Media upload session could not be created.");
-
-    if (!await bindUploadAdmission(ownerId, reservation, row.id)) {
-      await markUploadFailed(ownerId, row, "Upload admission reservation could not be bound.").catch(() => null);
-      throw new Error("Media upload admission could not be finalized.");
-    }
 
     const expiresInSeconds = 300;
     try {

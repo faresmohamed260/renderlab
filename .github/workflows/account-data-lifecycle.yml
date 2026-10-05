@@ -20,6 +20,7 @@ on:
       - "supabase/migrations/0022_renderlab_account_profiles.sql"
       - "supabase/migrations/0024_renderlab_upload_admission.sql"
       - "supabase/migrations/0025_renderlab_upload_admission_account_lifecycle.sql"
+      - "supabase/migrations/0027_renderlab_upload_admission_account_finalizer_fix.sql"
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/mock-native-generation-worker.mjs"
       - "scripts/verify-account-data-lifecycle.mjs"

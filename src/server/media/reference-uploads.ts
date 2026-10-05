@@ -96,6 +96,11 @@ export async function createReferenceUploadTicket(
   const reservation = await reserveUploadAdmission(ownerId, "reference");
   let row: SourceRow | null = null;
   try {
+    const sourceId = randomUUID();
+    if (!await bindUploadAdmission(ownerId, reservation, sourceId)) {
+      throw new Error("Reference upload admission could not be finalized.");
+    }
+
     const now = new Date();
     const key = [
       "sources",
@@ -108,6 +113,7 @@ export async function createReferenceUploadTicket(
       method: "POST",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
+        id: sourceId,
         owner_id: ownerId,
         storage_key: key,
         filename: safeFilename(request.filename),
@@ -121,10 +127,6 @@ export async function createReferenceUploadTicket(
 
     row = rows?.[0] ?? null;
     if (!row) throw new Error("Reference source record could not be created.");
-
-    if (!await bindUploadAdmission(ownerId, reservation, row.id)) {
-      throw new Error("Reference upload admission could not be finalized.");
-    }
 
     const expiresInSeconds = 300;
     injectUploadAdmissionSigningTestFault("reference", request.filename);

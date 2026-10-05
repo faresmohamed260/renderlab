@@ -19,6 +19,8 @@ on:
       - "src/server/storage/r2.ts"
       - "supabase/migrations/0024_renderlab_upload_admission.sql"
       - "supabase/migrations/0025_renderlab_upload_admission_account_lifecycle.sql"
+      - "supabase/migrations/0026_renderlab_upload_admission_concurrency_fix.sql"
+      - "supabase/migrations/0027_renderlab_upload_admission_account_finalizer_fix.sql"
   push:
     branches: [main]
     paths:
