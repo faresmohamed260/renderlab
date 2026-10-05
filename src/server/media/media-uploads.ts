@@ -6,12 +6,14 @@ import type {
 } from "@/lib/api/media-upload-contract";
 import { maxMediaUploadBytes } from "@/lib/api/media-upload-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
+import { inspectUploadedImageBytes } from "@/server/media/image-upload-validation";
 import { ensureMediaAssetThumbnail, getMediaAsset } from "@/server/media/media-assets";
 import {
   createSignedUploadUrl,
   deleteR2Object,
   headR2Object,
   isR2Configured,
+  readR2Object,
 } from "@/server/storage/r2";
 
 type MediaUploadSessionRow = {
@@ -199,12 +201,6 @@ export async function completeMediaUpload(ownerId: string, request: CompleteMedi
   }
   if (row.status === "failed") throw new Error("This media upload can no longer be completed.");
 
-  const existingAsset = await findAssetByStorageKey(ownerId, row.storage_key);
-  if (existingAsset) {
-    await markUploadCompleted(ownerId, row, existingAsset.id, null);
-    return withBestEffortImageThumbnail(existingAsset);
-  }
-
   const object = await headR2Object(row.storage_key);
   const expectedSize = Number(row.size_bytes);
   if (
@@ -217,6 +213,26 @@ export async function completeMediaUpload(ownerId: string, request: CompleteMedi
     throw new Error("Uploaded media did not match the signed upload ticket.");
   }
 
+  const body = await readR2Object(row.storage_key);
+  if (body.contentType !== row.mime_type || body.bytes.byteLength !== object.sizeBytes) {
+    await markUploadFailed(ownerId, row, "Uploaded object changed during content verification.");
+    throw new Error("Uploaded media changed during verification.");
+  }
+
+  let verifiedImage: Awaited<ReturnType<typeof inspectUploadedImageBytes>>;
+  try {
+    verifiedImage = await inspectUploadedImageBytes(body.bytes, row.mime_type);
+  } catch {
+    await markUploadFailed(ownerId, row, "Uploaded image content validation failed.");
+    throw new Error("Uploaded media could not be verified as a supported image.");
+  }
+
+  const existingAsset = await findAssetByStorageKey(ownerId, row.storage_key);
+  if (existingAsset) {
+    await markUploadCompleted(ownerId, row, existingAsset.id, object.etag || null);
+    return withBestEffortImageThumbnail(existingAsset);
+  }
+
   let assetId: string = randomUUID();
   try {
     await supabaseRest("media_assets", {
@@ -227,14 +243,14 @@ export async function completeMediaUpload(ownerId: string, request: CompleteMedi
         generation_job_id: null,
         origin: "uploaded",
         kind: "image",
-        mime_type: row.mime_type,
+        mime_type: verifiedImage.mimeType,
         storage_key: row.storage_key,
         thumbnail_storage_key: null,
         original_filename: row.filename,
         display_name: row.display_name,
-        size_bytes: expectedSize,
-        width: request.width ?? null,
-        height: request.height ?? null,
+        size_bytes: verifiedImage.sizeBytes,
+        width: verifiedImage.width,
+        height: verifiedImage.height,
         duration_ms: null,
         provenance: { source: "user-upload" },
         metadata: { etag: object.etag || null },
