@@ -11,10 +11,10 @@ const fixtureFilename = "renderlab-integration-1x1.png";
 const fixtureAccount = configuredTestAccountIdentity("reference-upload");
 const cleanupOnly = process.argv.includes("--cleanup-only");
 
-// 1×1 transparent PNG. Completion deliberately submits false client geometry so
+// Fully decodable 1×1 PNG. Completion deliberately submits false client geometry so
 // the integration proves RenderLab derives dimensions from decoded server-side bytes.
 const pngBytes = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z5ZsAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC",
   "base64",
 );
 
