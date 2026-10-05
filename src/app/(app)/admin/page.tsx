@@ -4,8 +4,35 @@ import { AdminOperations } from "@/features/admin/admin-operations";
 import styles from "@/features/admin/admin-operations.module.css";
 import { getCurrentRenderLabAdminAuthorization } from "@/server/admin/admin-auth";
 import { getAdminDashboard } from "@/server/admin/admin-operations";
+import {
+  isDiagnosticCode,
+  isDiagnosticEventName,
+  isDiagnosticLevel,
+} from "@/server/observability/diagnostics";
+import type { AdminDiagnosticQuery } from "@/server/observability/diagnostic-store";
 
 export const dynamic = "force-dynamic";
+
+type AdminSearchParams = Record<string, string | string[] | undefined>;
+
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function diagnosticQueryFromSearchParams(params: AdminSearchParams): AdminDiagnosticQuery {
+  const event = firstParam(params.diagEvent);
+  const level = firstParam(params.diagLevel);
+  const code = firstParam(params.diagCode);
+  const lookback = Number(firstParam(params.diagLookback));
+  const limit = Number(firstParam(params.diagLimit));
+  return {
+    event: isDiagnosticEventName(event) ? event : undefined,
+    level: isDiagnosticLevel(level) ? level : undefined,
+    code: isDiagnosticCode(code) ? code : undefined,
+    lookbackHours: Number.isFinite(lookback) ? lookback : undefined,
+    limit: Number.isFinite(limit) ? limit : undefined,
+  };
+}
 
 function AdminIntro({ unavailable = false }: { unavailable?: boolean }) {
   return (
@@ -21,7 +48,12 @@ function AdminIntro({ unavailable = false }: { unavailable?: boolean }) {
   );
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<AdminSearchParams>;
+}) {
+  const diagnosticQuery = diagnosticQueryFromSearchParams(await searchParams);
   const authorization = await getCurrentRenderLabAdminAuthorization();
   if (authorization.status === "mfa_enrollment_required") redirect("/settings/mfa");
   if (authorization.status === "mfa_challenge_required") redirect("/settings/mfa/challenge?next=/admin");
@@ -29,7 +61,7 @@ export default async function AdminPage() {
   const admin = authorization.admin;
 
   try {
-    const snapshot = await getAdminDashboard(admin.identity.id);
+    const snapshot = await getAdminDashboard(admin.identity.id, diagnosticQuery);
     return (
       <section className={styles.workspace} data-admin-system="settings-continuity" data-admin-decision="UI-079">
         <AdminIntro />

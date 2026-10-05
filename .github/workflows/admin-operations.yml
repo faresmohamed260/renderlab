@@ -16,11 +16,14 @@ on:
       - "src/server/admin/**"
       - "src/server/maintenance/**"
       - "src/server/observability/**"
+      - "supabase/migrations/0028_renderlab_operational_observability.sql"
+      - "supabase/migrations/0029_renderlab_operational_observability_privilege_hardening.sql"
       - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "supabase/migrations/0011_renderlab_admin_access_control.sql"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-admin-operations.mjs"
+      - "scripts/verify-operational-observability.mjs"
       - ".github/workflows/admin-operations.yml"
   workflow_dispatch:
 
@@ -45,6 +48,7 @@ jobs:
       RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE: "true"
       RENDERLAB_TEST_MAINTENANCE_OWNER_SCOPE: "true"
       RENDERLAB_TEST_MFA_NAMESPACE: admin-operations-admin
+      RENDERLAB_TEST_OBSERVABILITY_NAMESPACE: r${{ github.run_id }}a${{ github.run_attempt }}
 
     steps:
       - name: Checkout
@@ -104,7 +108,12 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Verify Admin verifier syntax
-        run: node --check scripts/verify-admin-operations.mjs
+        run: |
+          node --check scripts/verify-admin-operations.mjs
+          node --check scripts/verify-operational-observability.mjs
+
+      - name: Verify configured operational observability
+        run: node scripts/verify-operational-observability.mjs
 
       - name: Build
         run: npm run build
@@ -128,6 +137,10 @@ jobs:
 
       - name: Verify configured Admin Operations
         run: node scripts/verify-admin-operations.mjs
+
+      - name: Cleanup operational observability fixtures
+        if: always()
+        run: node scripts/verify-operational-observability.mjs --cleanup-only
 
       - name: Cleanup Admin Operations fixtures
         if: always()

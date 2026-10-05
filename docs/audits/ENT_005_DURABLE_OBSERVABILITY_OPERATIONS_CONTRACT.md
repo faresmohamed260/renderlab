@@ -1,7 +1,7 @@
 # ENT-005 — Durable observability and operations hardening contract
 
 Date: 2026-10-05
-Status: EXECUTION CONTRACT / NOT IMPLEMENTED
+Status: IMPLEMENTATION IN VERIFICATION / SHARED MIGRATION APPLIED / NOT DEPLOYED
 
 ## Goal
 Raise RenderLab's weakest enterprise-maturity areas by making the existing privacy-safe server diagnostics durable and operator-searchable, adding bounded actionable operational alerting, and documenting an evidence-backed incident/recovery runbook without changing product UX, provider routing, production billing plan, or deployment state.
@@ -303,3 +303,16 @@ ENT-005 is complete only when:
 10. no production deployment, plan upgrade, new backup secret/resource, new production scheduler, or unrelated refactor occurred.
 
 After closure, choose the next enterprise phase from the remaining weakest areas—likely server-only module boundaries + developer parity/coverage, then workflow/module maintainability—based on the updated scorecard rather than expanding ENT-005 retroactively.
+
+## Implementation verification checkpoint — 2026-10-05
+
+- Planning/contract PR #338 merged as `06e52d0ba27d8792347cb98ff982fd487931ab41`; implementation started from that exact authoritative merge.
+- Additive shared migration `0028_renderlab_operational_observability.sql` is applied to the approved Supabase project as `20261005181527 renderlab_operational_observability`. A later effective-privilege audit found Supabase default grants had left broader `service_role` table rights than intended, so forward-only `0029_renderlab_operational_observability_privilege_hardening.sql` was applied as `20261005202352 renderlab_operational_observability_privilege_hardening`; applied migration history was not rewritten. Both migrations are backward-compatible with the currently deployed older application and do not activate ENT-005 runtime behavior by themselves.
+- Post-`0029` live inspection verifies RLS/browser revocation and the exact effective service-role boundary: diagnostics table `SELECT, INSERT`; diagnostic identity sequence `USAGE`; operational-alert table `SELECT`; prune, alert mutation and exact `test.<namespace>.` cleanup through service-role-only `SECURITY DEFINER` RPCs. A service-role diagnostic insert → alert-record RPC → test-prefix cleanup smoke left zero residue. The earlier rollback-only behavior exercise also verified 30-day pruning, first-notification claim, one-minute same-family cooldown/deduplication with occurrence count 2, and rejection of a non-allowlisted raw diagnostic code.
+- The application candidate preserves console diagnostics and adds best-effort durable persistence through Next.js `after()`. Durable writes and Resend notification are observational/non-fatal. In GitHub Actions, shared durable writes are off by default; the dedicated verifier uses a run-owned namespace so existing fault-injection workflows cannot contaminate global alert state.
+- Alert classification is limited to the three contracted families. Generation/provider degradation requires three qualifying failures within 15 minutes, maintenance alerts on category failure, and account deletion opens a critical alert on the third retry. Ordinary input/admission/rate-limit rejection remains non-alerting. Alert-key updates are serialized and notification cooldown is 60 minutes unless severity escalates.
+- Existing `/admin` Health remains the only operator UI and keeps UI-079's Access / Generation / Health hierarchy. The candidate adds retained diagnostics with bounded server-side filters plus operational-alert state inside Health; durable `job_id` is never projected to the browser.
+- `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` now defines incident triage, provider/app/Supabase/R2/Resend handling, credential-compromise response, exact-fixture safety, exact-SHA rollback discipline and truthful recovery objectives. Supabase/R2 destructive-loss RPO/RTO remain unestablished pending a separately authorized verified backup/restore capability.
+- Latest implementation-head local validation is green for `git diff --check`, TypeScript and **87/87** unit tests; the earlier full pre-PR pass additionally covered lint with zero errors, verifier syntax, production build, and Linux/WSL Engineering Quality. Exact-head configured/browser/live-provider checks, human Admin review, implementation merge and merged-main gates remain required before this contract can be marked complete.
+- `docs/audits/ENT_005_DURABLE_OBSERVABILITY_OPERATIONS_ASSESSMENT.md` records the same-rubric candidate reassessment. The authoritative score remains **8.3/10** until closure evidence passes; the candidate post-closure score is **8.5/10** (8.45 arithmetic mean).
+- No production Vercel deployment, plan upgrade, new production schedule, backup secret/resource, R2 replication, telemetry vendor, provider-routing change or broad refactor has occurred or is authorized by this checkpoint.

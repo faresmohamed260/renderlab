@@ -35,7 +35,7 @@ function displayDate(value: string) {
 
 function titleCase(value: string) {
   return value
-    .replace(/[-_]/g, " ")
+    .replace(/[-_.]/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
@@ -308,6 +308,129 @@ export function AdminOperations({
                   "Pending media purges": displayBoundedCount(snapshot.health.maintenanceBacklog.pendingMediaPurges),
                 }}
               />
+            </div>
+
+            <div className={styles.healthDetailBlock}>
+              <SubsectionHeader
+                title="Operational alerts"
+                description="Deduplicated high-signal incidents retained server-side; alert mail contains the same sanitized metadata only."
+                meta={`${snapshot.health.operationalAlerts.length} retained`}
+              />
+              {snapshot.health.operationalAlerts.length ? (
+                <div className={styles.recordList} data-admin-list="operational-alerts">
+                  {snapshot.health.operationalAlerts.map((alert) => (
+                    <div className={styles.pendingRow} key={`${alert.family}:${alert.firstSeenAt}:${alert.lastSeenAt}`}>
+                      <div className={styles.identity}>
+                        <p className={styles.identityTitle}>{titleCase(alert.family)}</p>
+                        <p className={styles.identityMeta}>
+                          {titleCase(alert.state)} · first {displayDate(alert.firstSeenAt)} · last {displayDate(alert.lastSeenAt)} · {alert.occurrenceCount} occurrences
+                        </p>
+                        {alert.lastCode ? <p className={styles.userId}>Last code: {alert.lastCode}</p> : null}
+                      </div>
+                      <p className={styles.meta}>{titleCase(alert.severity)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptyState}>No retained operational alerts.</p>
+              )}
+            </div>
+
+            <div className={styles.healthDetailBlock}>
+              <SubsectionHeader
+                title="Recent diagnostics"
+                description="Privacy-bounded server lifecycle events. Filters are server-validated and capped at 30 days / 100 rows."
+                meta={`${snapshot.health.recentDiagnostics.events.length}${snapshot.health.recentDiagnostics.truncated ? "+" : ""} shown`}
+              />
+              <form className={styles.diagnosticFilterGrid} action="/admin" method="get">
+                <Field>
+                  <FieldLabel htmlFor="diagnostic-event">Event</FieldLabel>
+                  <NativeSelect
+                    id="diagnostic-event"
+                    name="diagEvent"
+                    defaultValue={snapshot.health.recentDiagnostics.eventFilter ?? ""}
+                  >
+                    <NativeSelectOption value="">All events</NativeSelectOption>
+                    <NativeSelectOption value="generation.submission">Generation submission</NativeSelectOption>
+                    <NativeSelectOption value="generation.reconciliation">Generation reconciliation</NativeSelectOption>
+                    <NativeSelectOption value="generation.cancellation">Generation cancellation</NativeSelectOption>
+                    <NativeSelectOption value="maintenance.pass">Maintenance pass</NativeSelectOption>
+                    <NativeSelectOption value="account.data_lifecycle">Account lifecycle</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="diagnostic-level">Level</FieldLabel>
+                  <NativeSelect
+                    id="diagnostic-level"
+                    name="diagLevel"
+                    defaultValue={snapshot.health.recentDiagnostics.levelFilter ?? ""}
+                  >
+                    <NativeSelectOption value="">All levels</NativeSelectOption>
+                    <NativeSelectOption value="info">Info</NativeSelectOption>
+                    <NativeSelectOption value="warn">Warn</NativeSelectOption>
+                    <NativeSelectOption value="error">Error</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="diagnostic-code">Code</FieldLabel>
+                  <Input
+                    id="diagnostic-code"
+                    name="diagCode"
+                    defaultValue={snapshot.health.recentDiagnostics.codeFilter ?? ""}
+                    placeholder="Any sanitized code"
+                    autoComplete="off"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="diagnostic-lookback">Lookback</FieldLabel>
+                  <NativeSelect
+                    id="diagnostic-lookback"
+                    name="diagLookback"
+                    defaultValue={String(snapshot.health.recentDiagnostics.lookbackHours)}
+                  >
+                    <NativeSelectOption value="1">1 hour</NativeSelectOption>
+                    <NativeSelectOption value="6">6 hours</NativeSelectOption>
+                    <NativeSelectOption value="24">24 hours</NativeSelectOption>
+                    <NativeSelectOption value="168">7 days</NativeSelectOption>
+                    <NativeSelectOption value="720">30 days</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="diagnostic-limit">Rows</FieldLabel>
+                  <NativeSelect
+                    id="diagnostic-limit"
+                    name="diagLimit"
+                    defaultValue={String(snapshot.health.recentDiagnostics.limit)}
+                  >
+                    <NativeSelectOption value="20">20</NativeSelectOption>
+                    <NativeSelectOption value="50">50</NativeSelectOption>
+                    <NativeSelectOption value="100">100</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+                <Button type="submit" variant="secondary">Filter diagnostics</Button>
+              </form>
+
+              {snapshot.health.recentDiagnostics.events.length ? (
+                <div className={styles.recordList} data-admin-list="recent-diagnostics">
+                  {snapshot.health.recentDiagnostics.events.map((event) => (
+                    <div className={styles.pendingRow} key={`${event.timestamp}:${event.correlationId}:${event.event}:${event.phase ?? "none"}`}>
+                      <div className={styles.identity}>
+                        <p className={styles.identityTitle}>{titleCase(event.event)} · {titleCase(event.level)}</p>
+                        <p className={styles.identityMeta}>
+                          {displayDate(event.timestamp)}
+                          {event.operation ? ` · ${titleCase(event.operation)}` : ""}
+                          {event.phase ? ` · ${titleCase(event.phase)}` : ""}
+                          {event.status ? ` · ${titleCase(event.status)}` : ""}
+                        </p>
+                        <p className={styles.userId}>Correlation {event.correlationId}</p>
+                      </div>
+                      <p className={styles.meta}>{event.code ? titleCase(event.code) : "No code"}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptyState}>No matching diagnostics in this bounded window.</p>
+              )}
             </div>
 
             <div className={styles.healthFooter}>

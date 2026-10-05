@@ -30,6 +30,34 @@ export type AdminGenerationSettings = {
 
 export type AdminBoundedCount = { count: number; truncated: boolean };
 
+export type AdminDiagnosticEvent = {
+  timestamp: string;
+  event: string;
+  level: "info" | "warn" | "error";
+  correlationId: string;
+  operation: string | null;
+  phase: string | null;
+  status: string | null;
+  code: string | null;
+  durationMs: number | null;
+  count: number | null;
+  successCount: number | null;
+  failureCount: number | null;
+  attempt: number | null;
+};
+
+export type AdminOperationalAlert = {
+  family: string;
+  severity: "warning" | "critical";
+  state: "open" | "resolved";
+  firstSeenAt: string;
+  lastSeenAt: string;
+  occurrenceCount: number;
+  lastEvent: string;
+  lastCode: string | null;
+  lastNotifiedAt: string | null;
+};
+
 export type AdminHealthSnapshot = {
   windowHours: number;
   since: string;
@@ -64,6 +92,16 @@ export type AdminHealthSnapshot = {
     cleaningUploads: AdminBoundedCount;
     pendingMediaPurges: AdminBoundedCount;
   };
+  recentDiagnostics: {
+    lookbackHours: number;
+    limit: number;
+    eventFilter: string | null;
+    levelFilter: string | null;
+    codeFilter: string | null;
+    truncated: boolean;
+    events: AdminDiagnosticEvent[];
+  };
+  operationalAlerts: AdminOperationalAlert[];
 };
 
 export type AdminDashboardSnapshot = {

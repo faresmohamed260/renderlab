@@ -13,6 +13,7 @@ import { supabaseRest } from "@/server/data/supabase-rest";
 import { requestGenerationCancellation } from "@/server/generation/cancel-generation";
 import { generationStorageCandidates, type GenerationStorageKeyRow } from "@/server/generation/generation-storage-keys";
 import { reconcileNativeGeneration } from "@/server/generation/reconcile-generation";
+import { correlationIdForAccountLifecycle, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 import {
   createSignedDownloadUrl,
   deleteR2Object,
@@ -24,7 +25,6 @@ const EXPORT_SCHEMA_VERSION = 4;
 const EXPORT_PAGE_SIZE = 200;
 const EXPORT_TTL_MS = 24 * 60 * 60 * 1000;
 const STALE_EXPORT_PROCESSING_MS = 15 * 60 * 1000;
-const ACTIVE_JOB_STATUSES = new Set(["queued", "preparing", "running", "cancelling", "persisting"]);
 
 export type AccountLifecycleRow = {
   user_id: string;
@@ -568,18 +568,21 @@ async function verifyDatabaseResidue(ownerId: string) {
 }
 
 async function recordDeletionRetry(row: AccountLifecycleRow, code: string) {
-  await supabaseRest(
-    `renderlab_account_lifecycle?user_id=eq.${encodeURIComponent(row.user_id)}&state=eq.deleting`,
+  const attemptedAt = new Date().toISOString();
+  const rows = await supabaseRest<Array<{ retry_count: number }>>(
+    `renderlab_account_lifecycle?user_id=eq.${encodeURIComponent(row.user_id)}&state=eq.deleting&select=retry_count`,
     {
       method: "PATCH",
+      headers: { Prefer: "return=representation" },
       body: JSON.stringify({
         retry_count: row.retry_count + 1,
         last_error_code: code,
-        last_attempt_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        last_attempt_at: attemptedAt,
+        updated_at: attemptedAt,
       }),
     },
-  ).catch(() => null);
+  ).catch(() => []);
+  return rows[0]?.retry_count ?? null;
 }
 
 async function attemptDeletionNotification(row: AccountLifecycleRow) {
@@ -608,6 +611,16 @@ async function attemptDeletionNotification(row: AccountLifecycleRow) {
       }),
     },
   ).catch(() => null);
+
+  if (result.state === "failed" && result.errorCode) {
+    await emitDiagnosticEvent({
+      event: "account.data_lifecycle",
+      level: "warn",
+      correlationId: correlationIdForAccountLifecycle(row.user_id),
+      phase: "notification-failed",
+      code: result.errorCode,
+    });
+  }
 }
 
 async function hardDeleteAuthUser(userId: string) {
@@ -641,12 +654,25 @@ export async function processAccountDeletion(ownerId: string): Promise<AccountDe
       if (await r2ObjectExists(key)) throw new Error("account_storage_residue");
     }
     await hardDeleteAuthUser(ownerId);
+    await emitDiagnosticEvent({
+      event: "account.data_lifecycle",
+      correlationId: correlationIdForAccountLifecycle(ownerId),
+      phase: "deletion-complete",
+    });
     return { state: "complete" };
   } catch (error) {
     const code = error instanceof Error && /^[a-z0-9_]+$/i.test(error.message)
       ? error.message.slice(0, 80)
       : "account_deletion_retryable";
-    await recordDeletionRetry(lifecycle, code);
+    const retryCount = await recordDeletionRetry(lifecycle, code);
+    await emitDiagnosticEvent({
+      event: "account.data_lifecycle",
+      level: retryCount !== null && retryCount >= 3 ? "error" : "warn",
+      correlationId: correlationIdForAccountLifecycle(ownerId),
+      phase: "deletion-retry",
+      code,
+      attempt: retryCount ?? undefined,
+    });
     return { state: "retry", code };
   }
 }

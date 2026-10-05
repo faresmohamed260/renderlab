@@ -453,6 +453,26 @@
   line-height: 1.5;
 }
 
+.healthDetailBlock {
+  margin-top: 1.25rem;
+}
+
+.healthDetailBlock .subHead {
+  margin-bottom: 0.8rem;
+}
+
+.diagnosticFilterGrid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr 1.15fr 0.75fr 0.6fr auto;
+  align-items: end;
+  gap: 0.65rem;
+  margin-bottom: 0.9rem;
+}
+
+.diagnosticFilterGrid [data-slot="button"] {
+  min-height: 2.5rem;
+}
+
 .healthFooter {
   margin-top: 0.9rem;
   border-left: 1px solid rgb(115 215 255 / 20%);
@@ -495,6 +515,15 @@
 
   .overrideRow > .rowAction {
     grid-column: 2 / -1;
+    width: 100%;
+  }
+
+  .diagnosticFilterGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .diagnosticFilterGrid [data-slot="button"] {
+    grid-column: 1 / -1;
     width: 100%;
   }
 }
@@ -555,13 +584,15 @@
 
   .inviteGrid,
   .generationGrid,
-  .overrideRow {
+  .overrideRow,
+  .diagnosticFilterGrid {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .inviteGrid [data-slot="button"],
   .generationGrid > .rowAction,
   .overrideRow > .rowAction,
+  .diagnosticFilterGrid [data-slot="button"],
   .pendingRow [data-slot="button"] {
     grid-column: auto;
     width: 100%;

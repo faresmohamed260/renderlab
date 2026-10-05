@@ -1,6 +1,7 @@
 import { chromium } from "@playwright/test";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { currentObservabilityTestPrefix, scopeObservabilityIdentifier } from "../src/server/observability/diagnostics.ts";
 import {
   createConfiguredTestAccount,
   configuredTestAccountIdentity,
@@ -40,6 +41,9 @@ const outsider = {
   email: `renderlab-admin-outsider-${runToken}@example.com`,
   password: `RenderLab-Admin-Outsider-${runToken}-Pass!`,
 };
+const diagnosticCorrelation = scopeObservabilityIdentifier(`admin-health-${runToken}`, 64);
+const diagnosticJobMarker = `private-diagnostic-job-${runToken}`;
+const operationalAlertKey = scopeObservabilityIdentifier(`admin-health-${runToken}`, 80);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -94,6 +98,18 @@ async function deleteOutsider() {
   if (!response.ok && response.status !== 404) {
     throw new Error(`Could not clean outsider Auth fixture (${response.status}): ${await response.text()}`);
   }
+}
+
+async function deleteObservabilityFixtures() {
+  const testPrefix = currentObservabilityTestPrefix();
+  if (!testPrefix) throw new Error("Admin observability cleanup requires a configured test namespace.");
+  await expectOk(
+    await serviceRest("rpc/renderlab_cleanup_test_operational_observability", {
+      method: "POST",
+      body: JSON.stringify({ p_prefix: testPrefix }),
+    }),
+    "Could not clean Admin observability fixtures",
+  );
 }
 
 async function createOutsider() {
@@ -365,11 +381,76 @@ async function seedHealthJobs(ownerId) {
     "Could not seed Admin health purge backlog fixture",
   );
 
-  return { secretMarker, storageMarker, contentMarker, completionMs: 20_000 };
+  await deleteObservabilityFixtures();
+  const diagnosticAt = new Date(now - 5 * 60_000).toISOString();
+  await expectOk(
+    await serviceRest("renderlab_diagnostic_events", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify([
+        {
+          occurred_at: diagnosticAt,
+          event: "generation.submission",
+          level: "info",
+          correlation_id: diagnosticCorrelation,
+          job_id: diagnosticJobMarker,
+          operation: "create-image",
+          phase: "accepted",
+          status: "queued",
+          code: null,
+          duration_ms: 120,
+          attempt: null,
+        },
+        {
+          occurred_at: new Date(now - 4 * 60_000).toISOString(),
+          event: "generation.reconciliation",
+          level: "warn",
+          correlation_id: diagnosticCorrelation,
+          job_id: diagnosticJobMarker,
+          operation: "create-video",
+          phase: "stalled",
+          status: "running",
+          code: "generation_provider_stalled",
+          duration_ms: 30_000,
+          attempt: 3,
+        },
+      ]),
+    }),
+    "Could not seed Admin diagnostic fixtures",
+  );
+  const alertLastSeenAt = new Date(now - 3 * 60_000).toISOString();
+  for (const seenAt of [diagnosticAt, alertLastSeenAt]) {
+    await expectOk(
+      await serviceRest("rpc/renderlab_record_operational_alert", {
+        method: "POST",
+        body: JSON.stringify({
+          p_alert_key: operationalAlertKey,
+          p_family: "maintenance-failure",
+          p_severity: "warning",
+          p_event: "maintenance.pass",
+          p_code: null,
+          p_seen_at: seenAt,
+        }),
+      }),
+      "Could not seed Admin operational-alert fixture",
+    );
+  }
+
+  return {
+    secretMarker,
+    storageMarker,
+    contentMarker,
+    completionMs: 20_000,
+    diagnosticCorrelation,
+    diagnosticJobMarker,
+    diagnosticAt,
+    alertLastSeenAt,
+  };
 }
 
 if (cleanupOnly) {
   await restoreGenerationSettingsBaselineFromFile();
+  await deleteObservabilityFixtures();
   await deleteInvitationEmail(outsider.email).catch(() => {});
   await deleteOutsider().catch(() => {});
   await deleteConfiguredTestAccount(configuredTestAccountIdentity("admin-operations-member")).catch(() => {});
@@ -502,6 +583,23 @@ try {
     assert(JSON.stringify(value) === JSON.stringify({ count: 1, truncated: false }), `Admin health maintenance backlog ${label} was not exact: ${JSON.stringify(value)}.`);
   }
   assert(Object.keys(health?.maintenanceBacklog ?? {}).length === 5, "Admin health maintenance backlog did not expose exactly five bounded categories.");
+  const fixtureDiagnostic = health?.recentDiagnostics?.events?.find(
+    (event) => event?.correlationId === healthFixture.diagnosticCorrelation && event?.code === "generation_provider_stalled",
+  );
+  assert(fixtureDiagnostic, `Admin health did not expose the run-owned diagnostic correlation: ${JSON.stringify(health?.recentDiagnostics)}.`);
+  assert(!Object.hasOwn(fixtureDiagnostic, "jobId"), "Admin diagnostic projection exposed the server-only job ID field.");
+  assert(health?.recentDiagnostics?.lookbackHours === 24, "Admin diagnostic default lookback is not 24 hours.");
+  assert(health?.recentDiagnostics?.limit === 20, "Admin diagnostic default row limit is not 20.");
+  const fixtureAlerts = health?.operationalAlerts ?? [];
+  assert(fixtureAlerts.length === 1, `Admin Health did not expose exactly one run-owned operational alert: ${JSON.stringify(fixtureAlerts)}.`);
+  const fixtureAlert = fixtureAlerts[0];
+  assert(
+    fixtureAlert?.family === "maintenance-failure"
+      && fixtureAlert?.severity === "warning"
+      && fixtureAlert?.occurrenceCount === 2
+      && Date.parse(fixtureAlert.lastSeenAt) === Date.parse(healthFixture.alertLastSeenAt),
+    `Admin operational alert projection was not exact: ${JSON.stringify(fixtureAlert)}.`,
+  );
   const healthJson = JSON.stringify(healthPayload);
   for (const forbidden of [
     healthFixture.secretMarker,
@@ -511,6 +609,7 @@ try {
     `private-model-${runToken}`,
     `private-worker-${runToken}`,
     `private-provider-job-${runToken}`,
+    healthFixture.diagnosticJobMarker,
     "WORKER_CREDIT_EXHAUSTED",
     "raw backend error",
   ]) {
@@ -545,6 +644,11 @@ try {
   await page.getByText("Completion p50", { exact: true }).waitFor({ state: "visible" });
   await page.getByText("Active state age", { exact: true }).waitFor({ state: "visible" });
   await page.getByText("Maintenance backlog", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Operational alerts", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Recent diagnostics", { exact: true }).waitFor({ state: "visible" });
+  await page.getByText("Maintenance Failure", { exact: true }).first().waitFor({ state: "visible" });
+  await page.getByText(`Correlation ${healthFixture.diagnosticCorrelation}`, { exact: true }).first().waitFor({ state: "visible" });
+  assert((await page.getByText(healthFixture.diagnosticJobMarker, { exact: false }).count()) === 0, "Admin UI exposed the server-only diagnostic job ID.");
   await page.getByText("Default or blank means inherit the global value.", { exact: true }).waitFor({ state: "visible" });
 
   assert((await page.locator('[data-admin-register="system-continuity"]').count()) === 1, "Admin must render one Settings-derived registered surface.");
@@ -571,6 +675,24 @@ try {
     "Admin was added to ordinary application navigation.",
   );
 
+  const filteredUrl = `${baseUrl}/admin?diagEvent=generation.reconciliation&diagLevel=warn&diagCode=generation_provider_stalled&diagLookback=24&diagLimit=20`;
+  await page.goto(filteredUrl, { waitUntil: "networkidle", timeout: 60_000 });
+  await page.locator("#diagnostic-event").waitFor({ state: "visible" });
+  assert(await page.locator("#diagnostic-event").inputValue() === "generation.reconciliation", "Admin diagnostic event filter was not preserved.");
+  assert(await page.locator("#diagnostic-level").inputValue() === "warn", "Admin diagnostic level filter was not preserved.");
+  assert(await page.locator("#diagnostic-code").inputValue() === "generation_provider_stalled", "Admin diagnostic code filter was not preserved.");
+  assert(await page.locator("#diagnostic-lookback").inputValue() === "24", "Admin diagnostic lookback filter was not preserved.");
+  assert(await page.locator("#diagnostic-limit").inputValue() === "20", "Admin diagnostic limit filter was not preserved.");
+  const filteredCorrelation = page.getByText(`Correlation ${healthFixture.diagnosticCorrelation}`, { exact: true });
+  await filteredCorrelation.waitFor({ state: "visible" });
+  const filteredDiagnosticRowText = await filteredCorrelation.locator("../..").innerText();
+  assert(
+    filteredDiagnosticRowText.includes("Generation Reconciliation") && filteredDiagnosticRowText.includes("Warn"),
+    `Filtered Admin diagnostic row did not preserve event/level identity: ${filteredDiagnosticRowText}.`,
+  );
+  assert((await page.getByText(healthFixture.diagnosticJobMarker, { exact: false }).count()) === 0, "Filtered Admin diagnostics exposed the server-only job ID.");
+
+  await page.goto(`${baseUrl}/admin`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.getByLabel("Invite email").fill(outsider.email);
   await page.locator("#admin-invite-role").selectOption("member");
   await page.getByRole("button", { name: "Create invitation", exact: true }).click();
@@ -717,6 +839,7 @@ await revokeInvitationButton.click();
     } else {
       await restoreGenerationSettingsBaselineFromFile();
     }
+    await deleteObservabilityFixtures();
     await deleteInvitationEmail(outsider.email);
     await deleteOutsider();
     if (memberAccount) await deleteConfiguredTestAccount(memberAccount);
