@@ -70,7 +70,7 @@ async function markReferenceFailed(ownerId: string, row: SourceRow, message: str
         status: "failed",
         updated_at: new Date().toISOString(),
         metadata: {
-          ...(row.metadata ?? {}),
+          ...row.metadata,
           verificationError: message,
         },
       }),
@@ -198,7 +198,7 @@ export async function completeReferenceUpload(
         height: verifiedImage.height,
         updated_at: new Date().toISOString(),
         metadata: {
-          ...(row.metadata ?? {}),
+          ...row.metadata,
           etag: object.etag || null,
         },
       }),
