@@ -144,7 +144,7 @@ The browser never submits R2 keys. Phase 7A PR #46 extracted one persistent brow
 - authenticated owner-scoped `media_upload_sessions` → durable `media_assets`;
 - persisted server-verified dimensions plus ordinary Library/Viewer/search/organization semantics immediately after successful completion, independent of whether a generation is ever submitted.
 
-Browser-originated state-changing API requests additionally use a shared same-origin boundary: explicit `Sec-Fetch-Site` metadata must be `same-origin`, explicit `Origin` must exactly match the request origin, and explicit cross-origin requests fail with `cross_origin_request_blocked`. Metadata-less server/CLI/Bearer callers remain compatible, while the two server-secret internal maintenance/reconciliation routes retain their dedicated authorization boundary.
+Browser-originated state-changing API requests additionally use a shared same-origin boundary: explicit `Sec-Fetch-Site` metadata must be `same-origin`, explicit `Origin` must exactly match a server-observed destination origin derived from the request URL and destination host/protocol metadata, and explicit cross-origin requests fail with `cross_origin_request_blocked`. This preserves reverse-proxy/Next.js host normalization without accepting an arbitrary origin. Metadata-less server/CLI/Bearer callers remain compatible, while the two server-secret internal maintenance/reconciliation routes retain their dedicated authorization boundary.
 
 Generation request text is also explicitly resource-bounded at the server contract: prompt and negative prompt each accept at most 8,000 characters before persistence or provider dispatch.
 

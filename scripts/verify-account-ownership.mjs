@@ -106,6 +106,7 @@ async function cleanupFixtures() {
     await deleteOwnerRows("media_assets", ownerId);
     await deleteOwnerRows("generation_jobs", ownerId);
     await deleteOwnerRows("generation_sources", ownerId);
+    await deleteOwnerRows("upload_admission_reservations", ownerId);
   }
   await deleteAccountAccess(ownerA);
   await deleteAccountAccess(ownerB);
@@ -341,7 +342,7 @@ try {
   const renameRows = await renameCheck.json();
   assert(renameRows?.[0]?.display_name === `Owner A ${runToken}`, "Foreign rename changed Owner A media.");
 
-  for (const table of ["generation_sources", "generation_jobs", "media_assets", "media_upload_sessions"]) {
+  for (const table of ["generation_sources", "generation_jobs", "media_assets", "media_upload_sessions", "upload_admission_reservations"]) {
     const rawDataApi = await rawUserRest(`${table}?select=*&limit=1`, tokenA);
     assert(
       !rawDataApi.ok,

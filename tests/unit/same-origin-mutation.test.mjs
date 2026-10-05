@@ -3,8 +3,8 @@ import test from "node:test";
 
 import { validateSameOriginMutation } from "../../src/server/security/same-origin-validation.ts";
 
-function mutationRequest(headers = {}) {
-  return new Request("https://renderlab.example/api/media/uploads/upload-tickets", {
+function mutationRequest(headers = {}, url = "https://renderlab.example/api/media/uploads/upload-tickets") {
+  return new Request(url, {
     method: "POST",
     headers,
   });
@@ -17,9 +17,34 @@ test("matching Origin is accepted", () => {
   );
 });
 
+test("server-observed Host accepts a genuine same-origin browser request when request.url host is normalized", () => {
+  const request = mutationRequest(
+    {
+      Host: "127.0.0.1:3000",
+      Origin: "http://127.0.0.1:3000",
+      "Sec-Fetch-Site": "same-origin",
+    },
+    "http://localhost:3000/api/media/uploads/upload-tickets",
+  );
+  assert.deepEqual(validateSameOriginMutation(request), { ok: true });
+});
+
+test("forwarded protocol preserves the browser-visible HTTPS destination behind a reverse proxy", () => {
+  const request = mutationRequest(
+    {
+      Host: "renderlab.example",
+      Origin: "https://renderlab.example",
+      "Sec-Fetch-Site": "same-origin",
+      "X-Forwarded-Proto": "https",
+    },
+    "http://localhost:3000/api/media/uploads/upload-tickets",
+  );
+  assert.deepEqual(validateSameOriginMutation(request), { ok: true });
+});
+
 test("mismatched and invalid Origin values are rejected without echoing header details", () => {
   for (const origin of ["https://evil.example", "null", "not a URL"]) {
-    const decision = validateSameOriginMutation(mutationRequest({ Origin: origin }));
+    const decision = validateSameOriginMutation(mutationRequest({ Origin: origin, Host: "renderlab.example" }));
     assert.equal(decision.ok, false);
     assert.equal(decision.error.code, "cross_origin_request_blocked");
     assert(!decision.error.message.includes(origin));
@@ -42,11 +67,18 @@ test("non-browser callers without Origin or fetch metadata remain compatible", (
 });
 
 test("explicit fetch metadata and Origin must both satisfy the boundary", () => {
-  const decision = validateSameOriginMutation(mutationRequest({
+  const crossSite = validateSameOriginMutation(mutationRequest({
     Origin: "https://renderlab.example",
     "Sec-Fetch-Site": "cross-site",
   }));
-  assert.equal(decision.ok, false);
+  assert.equal(crossSite.ok, false);
+
+  const mismatchedOrigin = validateSameOriginMutation(mutationRequest({
+    Host: "renderlab.example",
+    Origin: "https://evil.example",
+    "Sec-Fetch-Site": "same-origin",
+  }));
+  assert.equal(mismatchedOrigin.ok, false);
 });
 
 test("rejection contract remains stable and header-safe", () => {
