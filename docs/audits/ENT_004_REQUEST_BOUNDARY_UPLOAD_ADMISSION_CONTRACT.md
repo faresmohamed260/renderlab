@@ -1,7 +1,7 @@
 # ENT-004 — Request-boundary and upload-admission hardening contract
 
 Date: 2026-10-05
-Status: execution contract
+Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
 
 ## Goal
 Close the next highest-risk application-security gaps after ENT-001 through ENT-003 by bounding signed upload-ticket abuse and rejecting explicit cross-origin browser mutations, without changing RenderLab product UX, generation routing, durable media semantics, or deployment state.
@@ -209,3 +209,21 @@ ENT-004 is complete only when:
 10. no deployment or unrelated refactor occurred.
 
 After closure, rerun the enterprise scorecard conservatively and choose the next phase from the remaining weakest areas rather than expanding ENT-004 retroactively.
+
+## Verified closure
+
+ENT-004 implementation PR #336 squash-merged as `fd146a0e411519992f6570bcc6764c2b44e24222` from exact implementation head `902f6c43f6ec6d8672297811b246b06d65757997`.
+
+The accepted implementation provides one PostgreSQL-serialized account upload-admission boundary across persistent and temporary-reference ticket flows, stable active/rate 429 contracts, centralized explicit browser same-origin mutation defense, static route-coverage enforcement, account-export/deletion integration, and the documented dependency-version correction. Verification also exposed and corrected two implementation defects before closure through forward-only migrations: `0026` closes the reservation/staging double-count race, and `0027` restores the latest account-deletion finalizer including profile, preferences and upload-admission cleanup after the first lifecycle migration had replaced it with an older function body.
+
+Verification completed successfully:
+
+- local lint, TypeScript, 72/72 unit tests, production build, Linux/WSL Engineering Quality and `git diff --check` passed on the corrective implementation head;
+- all 40/40 exact-head pull-request workflows reached success, including Engineering Quality, CodeQL, Upload Admission Integration, Persistent Media Upload, Reference Upload, Account Ownership, Generation Admission, Account Profile Credential, Maintenance, generation lifecycle and provider-backed video verification;
+- Account Data Lifecycle had one transient first-attempt retry-path failure, then passed unchanged on the exact same SHA without a product-code change;
+- merged-main Engineering Quality `37336469452`, CodeQL `37336469559`, Upload Admission `37336469359`, Account Data Lifecycle `37336469375`, Account Profile Credential `37336469631` and the rest of the non-video affected push matrix passed on exact merge SHA `fd146a0e411519992f6570bcc6764c2b44e24222`;
+- merged-main Video Generation Integration run `37336469427` completed 480p and 1080p real-provider cases on attempt 1 before one transient provider-status 503 during the 720p audio case; unchanged attempt 2 passed on the exact same merge SHA, so all 19 affected push workflows have accepted success.
+
+Shared Supabase migration history is applied through `0027`: `20261005113026 renderlab_upload_admission`, `20261005113423 renderlab_upload_admission_account_lifecycle`, `20261005150908 renderlab_upload_admission_concurrency_fix`, and `20261005150930 renderlab_upload_admission_account_finalizer_fix`.
+
+No Vercel deployment, production alias/environment change, R2 resource configuration change, provider/worker routing change, secret/scheduler mutation, or unrelated refactor was performed. The authoritative post-ENT-004 reassessment is `ENT_004_REQUEST_BOUNDARY_UPLOAD_ADMISSION_ASSESSMENT.md`, with a conservative enterprise score of **8.3/10** versus **8.2/10** after ENT-003.
