@@ -1,7 +1,8 @@
 # ENT-002 — CI and supply-chain hardening reassessment
 
 Date: 2026-10-05
-Status: post-implementation assessment
+Status: post-implementation assessment / superseded for current dependency baseline by ENT-003
+Current follow-on assessment: `ENT_003_NEXTJS_SECURITY_PATCH_ASSESSMENT.md` (8.2/10 after Next.js 16.3.8 security patch)
 Implementation PR: #330
 Implementation merge: `99a8db8c8038262114d5b5da535cf2e7dea56ad1`
 Prior authoritative score: **8.1/10** after ENT-001
