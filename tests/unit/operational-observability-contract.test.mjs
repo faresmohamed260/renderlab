@@ -49,10 +49,13 @@ test("diagnostic filters are allowlisted before PostgREST query construction", a
   assert.match(page, /getAdminDashboard\(admin\.identity\.id, diagnosticQuery\)/);
 });
 
-test("configured Admin observability reads stay run-owned when a test namespace is active", async () => {
+test("configured Admin observability reads and direct fixtures stay run-owned when a test namespace is active", async () => {
   const store = await source("src/server/observability/diagnostic-store.ts");
+  const verifier = await source("scripts/verify-admin-operations.mjs");
   assert.match(store, /params\.set\("correlation_id", `like\.\$\{testPrefix\}\*`\)/);
   assert.match(store, /params\.set\("alert_key", `like\.\$\{testPrefix\}\*`\)/);
+  assert.match(verifier, /scopeObservabilityIdentifier\(`admin-health-\$\{runToken\}`, 64\)/);
+  assert.match(verifier, /scopeObservabilityIdentifier\(`admin-health-\$\{runToken\}`, 80\)/);
 });
 
 test("durable persistence remains background observational work", async () => {

@@ -1,6 +1,7 @@
 import { chromium } from "@playwright/test";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { scopeObservabilityIdentifier } from "../src/server/observability/diagnostics.ts";
 import {
   createConfiguredTestAccount,
   configuredTestAccountIdentity,
@@ -40,9 +41,9 @@ const outsider = {
   email: `renderlab-admin-outsider-${runToken}@example.com`,
   password: `RenderLab-Admin-Outsider-${runToken}-Pass!`,
 };
-const diagnosticCorrelation = `admin-health-${runToken}`;
+const diagnosticCorrelation = scopeObservabilityIdentifier(`admin-health-${runToken}`, 64);
 const diagnosticJobMarker = `private-diagnostic-job-${runToken}`;
-const operationalAlertKey = `admin-health-${runToken}`;
+const operationalAlertKey = scopeObservabilityIdentifier(`admin-health-${runToken}`, 80);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
