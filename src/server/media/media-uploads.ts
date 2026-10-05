@@ -149,7 +149,7 @@ async function markUploadFailed(ownerId: string, row: MediaUploadSessionRow, mes
         status: "failed",
         updated_at: new Date().toISOString(),
         metadata: {
-          ...(row.metadata ?? {}),
+          ...row.metadata,
           verificationError: message,
         },
       }),
@@ -173,7 +173,7 @@ async function markUploadCompleted(
         media_asset_id: assetId,
         updated_at: new Date().toISOString(),
         metadata: {
-          ...(row.metadata ?? {}),
+          ...row.metadata,
           etag,
         },
       }),
