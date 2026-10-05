@@ -6,14 +6,14 @@ Defines approved RenderLab frontend architecture and verified implementation sta
 RenderLab is remotely built and validated through GitHub Actions.
 
 Core stack from `package.json`:
-- Next.js `16.3.3`
+- Next.js `16.3.8`
 - React / React DOM `19.2.8`
 - TypeScript `7.0.2`
 - Tailwind CSS `4.3.3`
 - Lucide React `1.34.0`
 - `radix-ui` `1.6.7`
 - Motion for React `13.1.1`
-- `sharp` `0.34.3` — server-side execution geometry preparation/inspection, never a browser media store
+- `sharp` `0.35.4` — server-side execution geometry preparation/inspection, never a browser media store
 - `@supabase/ssr` `0.12.5`
 - `@supabase/supabase-js` `2.112.4`
 - `class-variance-authority` `0.7.1`
