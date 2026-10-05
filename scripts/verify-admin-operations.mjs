@@ -397,6 +397,7 @@ async function seedHealthJobs(ownerId) {
           status: "queued",
           code: null,
           duration_ms: 120,
+          attempt: null,
         },
         {
           occurred_at: new Date(now - 4 * 60_000).toISOString(),
