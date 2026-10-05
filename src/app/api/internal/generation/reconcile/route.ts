@@ -1,3 +1,4 @@
+// ENT-004 same-origin exemption: server-secret internal route authenticated by a dedicated bearer secret.
 import { NextResponse } from "next/server";
 import { reconcileActiveNativeGenerations } from "@/server/generation/reconcile-generation";
 

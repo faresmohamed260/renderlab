@@ -1,10 +1,13 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import { authorizeRenderLabAdminApi } from "@/app/api/admin/admin-api-authorization";
 import { AdminOperationError, revokeAdminInvitation } from "@/server/admin/admin-operations";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function DELETE(_request: Request, context: { params: Promise<{ invitationId: string }> }) {
+export async function DELETE(request: Request, context: { params: Promise<{ invitationId: string }> }) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const authorization = await authorizeRenderLabAdminApi();
   if (!authorization.ok) return authorization.response;
 

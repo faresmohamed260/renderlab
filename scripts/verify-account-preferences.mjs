@@ -367,13 +367,13 @@ async function verifyExportDeletion(accountDelete, accountB, bBefore) {
   assert(exportResult.response.status === 200 && exportResult.payload?.export?.status === "ready", `#220 export did not become ready: ${JSON.stringify(exportResult.payload)}`);
   const exportRows = await serviceRows(`renderlab_account_exports?owner_id=eq.${encodeURIComponent(accountDelete.id)}&select=id,storage_key,schema_version&order=requested_at.desc,id.desc&limit=1`);
   const exportRow = exportRows[0];
-  assert(exportRow?.schema_version === 3 && exportRow.storage_key, "#220 export row did not record schema v3/private storage.");
+  assert(exportRow?.schema_version === 4 && exportRow.storage_key, "#220 export row did not record schema v4/private storage.");
   const download = await appFetch("/api/account/data-export/download", accountDelete.accessToken);
   assert(download.status === 302 && download.headers.get("location"), `#220 export download expected 302, got ${download.status}.`);
   const signed = await fetch(download.headers.get("location"));
   assert(signed.ok, `#220 signed export could not be read (${signed.status}).`);
   const exported = await signed.json();
-  assert(exported.schemaVersion === 3 && exported.preferences?.source === "saved", "#220 export omitted preference source/version.");
+  assert(exported.schemaVersion === 4 && exported.preferences?.source === "saved", "#220 export omitted preference source/version.");
   assert(JSON.stringify(exported.preferences?.create) === JSON.stringify(deletePrefs), `#220 export preference payload mismatch: ${JSON.stringify(exported.preferences?.create)}`);
 
   const accepted = await appJson("/api/account/delete", accountDelete.accessToken, {

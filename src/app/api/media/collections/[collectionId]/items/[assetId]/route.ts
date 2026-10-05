@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
@@ -66,15 +67,19 @@ async function updateMembership(
 }
 
 export async function PUT(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ collectionId: string; assetId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   return updateMembership(context, true);
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ collectionId: string; assetId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   return updateMembership(context, false);
 }

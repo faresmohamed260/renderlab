@@ -6,6 +6,10 @@ const preferences = fs.readFileSync("src/server/account/account-preferences.ts",
 const createPage = fs.readFileSync("src/app/(app)/create/page.tsx", "utf8");
 const lifecycle = fs.readFileSync("src/server/account/account-data-lifecycle.ts", "utf8");
 const migration = fs.readFileSync("supabase/migrations/0023_renderlab_account_preferences.sql", "utf8");
+const latestFinalizerMigration = fs.readFileSync(
+  "supabase/migrations/0027_renderlab_upload_admission_account_finalizer_fix.sql",
+  "utf8",
+);
 
 test("account preferences remain capability-backed and owner scoped", () => {
   assert.match(preferences, /imageAspectRatios\.includes/);
@@ -27,10 +31,12 @@ test("Create preferences seed only a clean new workspace", () => {
   assert.match(createPage, /audioEnabled: preferences\.videoAudioEnabled/);
 });
 
-test("account lifecycle exports and proves preference cleanup", () => {
-  assert.match(lifecycle, /const EXPORT_SCHEMA_VERSION = 3/);
+test("account lifecycle exports and newest finalizer proves owner cleanup", () => {
+  assert.match(lifecycle, /const EXPORT_SCHEMA_VERSION = 4/);
   assert.match(lifecycle, /getRenderLabAccountPreferencesRow/);
   assert.match(lifecycle, /preferences: preferences/);
   assert.match(lifecycle, /renderlab_account_preferences/);
-  assert.match(migration, /delete from public\.renderlab_account_preferences where owner_id = p_user_id/);
+  assert.match(latestFinalizerMigration, /delete from public\.renderlab_account_profiles where owner_id = p_user_id/);
+  assert.match(latestFinalizerMigration, /delete from public\.renderlab_account_preferences where owner_id = p_user_id/);
+  assert.match(latestFinalizerMigration, /delete from public\.upload_admission_reservations where owner_id = p_user_id/);
 });

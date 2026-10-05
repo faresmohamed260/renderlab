@@ -88,6 +88,7 @@ const ids = {
   assetA: fixtureUuid("asset-a"),
   collectionA: fixtureUuid("collection-a"),
   reservationA: fixtureUuid("reservation-a"),
+  uploadReservationA: fixtureUuid("upload-reservation-a"),
   invitationA: fixtureUuid("invitation-a"),
   jobB: fixtureUuid("job-b"),
   assetB: fixtureUuid("asset-b"),
@@ -315,6 +316,7 @@ async function cleanupOwner(ownerId) {
     "media_upload_sessions",
     "media_assets",
     "generation_sources",
+    "upload_admission_reservations",
     "generation_admission_reservations",
     "generation_jobs",
     "renderlab_account_exports",
@@ -537,6 +539,18 @@ async function seedProductData() {
     }),
   }), "Could not seed admission reservation");
 
+  await expectOk(await serviceRest("upload_admission_reservations", {
+    method: "POST",
+    body: JSON.stringify({
+      id: ids.uploadReservationA,
+      owner_id: accountA.id,
+      upload_kind: "media",
+      admitted_at: now,
+      lease_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      released_at: now,
+    }),
+  }), "Could not seed upload admission reservation");
+
   await expectOk(await serviceRest("renderlab_beta_invitations", {
     method: "POST",
     body: JSON.stringify({
@@ -652,7 +666,7 @@ try {
   const signedExportResponse = await fetch(aDownload.headers.get("location"));
   assert(signedExportResponse.ok, `Signed export object could not be read (${signedExportResponse.status}).`);
   const exported = await signedExportResponse.json();
-  assert(exported.schemaVersion === 3, "Export schema version mismatch.");
+  assert(exported.schemaVersion === 4, "Export schema version mismatch.");
   assert(exported.account?.userId === accountA.id && exported.account?.email === accountA.email, "Export identity mismatch.");
   assert(exported.profile?.displayName === "Profile Owner A", "Export is missing profile display identity.");
   assert(exported.profile?.avatar?.state === "active", "Export is missing active profile-avatar state.");
@@ -664,7 +678,8 @@ try {
   assert(exported.mediaUploadSessions?.length >= 1, "Export is missing upload-session state.");
   assert(exported.collections?.some((row) => row.id === ids.collectionA), "Export is missing Collections.");
   assert(exported.collectionItems?.some((row) => row.collection_id === ids.collectionA && row.media_asset_id === ids.assetA), "Export is missing Collection membership.");
-  assert(exported.generationAdmissionReservations?.some((row) => row.id === ids.reservationA), "Export is missing admission reservation state.");
+  assert(exported.generationAdmissionReservations?.some((row) => row.id === ids.reservationA), "Export is missing generation admission reservation state.");
+  assert(exported.uploadAdmissionReservations?.some((row) => row.id === ids.uploadReservationA && row.upload_kind === "media"), "Export is missing upload admission history.");
   assert(Array.isArray(exported.sessions) && exported.sessions.length >= 1, "Export is missing current session metadata.");
   assert(Array.isArray(exported.mfa) && exported.mfa.length === 1 && exported.mfa[0].type === "totp", "Export is missing sanitized MFA metadata.");
   assert(exported.claimedInvitations?.some((row) => row.id === ids.invitationA), "Export is missing claimed invitation state.");
@@ -783,6 +798,7 @@ try {
     "media_upload_sessions",
     "media_collections",
     "media_collection_items",
+    "upload_admission_reservations",
     "generation_admission_reservations",
     "renderlab_account_exports",
     "renderlab_account_profiles",
@@ -840,6 +856,7 @@ try {
     "media_upload_sessions",
     "media_collections",
     "media_collection_items",
+    "upload_admission_reservations",
     "generation_admission_reservations",
     "renderlab_account_exports",
     "renderlab_account_profiles",

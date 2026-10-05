@@ -1,9 +1,12 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import { validateReferenceCompletionRequest } from "@/lib/api/reference-upload-contract";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { completeReferenceUpload, isReferenceUploadConfigured } from "@/server/media/reference-uploads";
 
 export async function POST(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const body: unknown = await request.json().catch(() => null);
   const parsed = validateReferenceCompletionRequest(body);
 

@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import { parseGenerationRequest, type SubmitGenerationErrorCode } from "@/lib/api/generation-contract";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
@@ -17,6 +18,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const body: unknown = await request.json().catch(() => null);
   const parsed = parseGenerationRequest(body);
 

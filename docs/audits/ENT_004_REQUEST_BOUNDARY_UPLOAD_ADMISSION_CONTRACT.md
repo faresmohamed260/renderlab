@@ -81,7 +81,7 @@ Add one reusable server request-boundary helper for browser-facing state-changin
 For `POST`, `PUT`, `PATCH`, and `DELETE` browser-facing routes:
 
 - if `Sec-Fetch-Site` is present, only `same-origin` is accepted; `same-site`, `cross-site`, and other explicit non-origin values are rejected;
-- if `Origin` is present, its normalized origin must exactly equal the request URL origin;
+- if `Origin` is present, its normalized origin must exactly equal one of the server-observed destination origins derived from the request URL and destination host/protocol metadata; this accounts for reverse-proxy/Next.js URL normalization without accepting an arbitrary origin;
 - if both headers are absent, allow the request to proceed so verified non-browser Bearer/CLI/CI/server-to-server callers remain compatible;
 - explicit cross-origin rejection must occur before application mutation logic;
 - return a stable 403 JSON error such as `cross_origin_request_blocked` without leaking request-header details.

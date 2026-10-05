@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import { MEDIA_ASSET_BATCH_MAX_ITEMS } from "@/lib/api/media-assets-contract";
 import type {
@@ -31,6 +32,8 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ collectionId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const { collectionId } = await context.params;
   if (!uuidPattern.test(collectionId)) return invalidRequest("A valid collection ID is required.");
 

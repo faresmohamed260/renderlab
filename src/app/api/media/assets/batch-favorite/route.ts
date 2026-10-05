@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import {
   MEDIA_ASSET_BATCH_MAX_ITEMS,
@@ -24,6 +25,8 @@ function authenticationRequired() {
 }
 
 export async function POST(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const account = await getCurrentRenderLabAccount();
   if (!account) return authenticationRequired();
 

@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -98,6 +99,8 @@ async function mutateSignInEmail(request: NextRequest, nextEmail: string): Promi
 }
 
 export async function POST(request: NextRequest) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   let body: unknown;
   try {
     body = await request.json();

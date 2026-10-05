@@ -9,6 +9,12 @@ import { maxReferenceUploadBytes } from "@/lib/api/reference-upload-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { inspectUploadedImageBytes } from "@/server/media/image-upload-validation";
 import {
+  bindUploadAdmission,
+  injectUploadAdmissionSigningTestFault,
+  releaseUploadAdmission,
+  reserveUploadAdmission,
+} from "@/server/media/upload-admission";
+import {
   createSignedReadUrl,
   createSignedUploadUrl,
   deleteR2Object,
@@ -87,47 +93,65 @@ export async function createReferenceUploadTicket(
     throw new Error("Reference upload storage is not configured.");
   }
 
-  const now = new Date();
-  const key = [
-    "sources",
-    now.getUTCFullYear(),
-    String(now.getUTCMonth() + 1).padStart(2, "0"),
-    `${randomUUID()}.${extensionFor(request.mimeType)}`,
-  ].join("/");
+  const reservation = await reserveUploadAdmission(ownerId, "reference");
+  let row: SourceRow | null = null;
+  try {
+    const sourceId = randomUUID();
+    if (!await bindUploadAdmission(ownerId, reservation, sourceId)) {
+      throw new Error("Reference upload admission could not be finalized.");
+    }
 
-  const rows = await supabaseRest<SourceRow[]>("generation_sources?select=*", {
-    method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify({
-      owner_id: ownerId,
-      storage_key: key,
-      filename: safeFilename(request.filename),
-      mime_type: request.mimeType,
-      size_bytes: request.sizeBytes,
-      purpose: "reference",
-      status: "pending",
-      metadata: {},
-    }),
-  });
+    const now = new Date();
+    const key = [
+      "sources",
+      now.getUTCFullYear(),
+      String(now.getUTCMonth() + 1).padStart(2, "0"),
+      `${randomUUID()}.${extensionFor(request.mimeType)}`,
+    ].join("/");
 
-  const row = rows?.[0];
-  if (!row) throw new Error("Reference source record could not be created.");
+    const rows = await supabaseRest<SourceRow[]>("generation_sources?select=*", {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        id: sourceId,
+        owner_id: ownerId,
+        storage_key: key,
+        filename: safeFilename(request.filename),
+        mime_type: request.mimeType,
+        size_bytes: request.sizeBytes,
+        purpose: "reference",
+        status: "pending",
+        metadata: {},
+      }),
+    });
 
-  const expiresInSeconds = 300;
-  const uploadUrl = await createSignedUploadUrl({
-    key,
-    contentType: request.mimeType,
-    expiresIn: expiresInSeconds,
-  });
+    row = rows?.[0] ?? null;
+    if (!row) throw new Error("Reference source record could not be created.");
 
-  return {
-    sourceId: row.id,
-    uploadUrl,
-    method: "PUT",
-    headers: { "content-type": request.mimeType },
-    expiresInSeconds,
-    maxBytes: maxReferenceUploadBytes,
-  };
+    const expiresInSeconds = 300;
+    injectUploadAdmissionSigningTestFault("reference", request.filename);
+    const uploadUrl = await createSignedUploadUrl({
+      key,
+      contentType: request.mimeType,
+      expiresIn: expiresInSeconds,
+    });
+
+    return {
+      sourceId: row.id,
+      uploadUrl,
+      method: "PUT",
+      headers: { "content-type": request.mimeType },
+      expiresInSeconds,
+      maxBytes: maxReferenceUploadBytes,
+    };
+  } catch (error) {
+    if (row?.status === "pending") {
+      await markReferenceFailed(ownerId, row, "Reference upload ticket preparation failed.").catch(() => null);
+    }
+    throw error;
+  } finally {
+    await releaseUploadAdmission(ownerId, reservation.id);
+  }
 }
 
 export async function completeReferenceUpload(

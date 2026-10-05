@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import {
   MEDIA_ASSET_DISPLAY_NAME_MAX_LENGTH,
@@ -24,7 +25,7 @@ function authenticationRequired() {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ assetId: string }> },
 ) {
   const { assetId } = await context.params;
@@ -51,6 +52,8 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ assetId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const { assetId } = await context.params;
   if (!uuidPattern.test(assetId)) return invalidRequest("A valid media asset ID is required.");
 
@@ -88,9 +91,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ assetId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const { assetId } = await context.params;
   if (!uuidPattern.test(assetId)) return invalidRequest("A valid media asset ID is required.");
 

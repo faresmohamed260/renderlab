@@ -57,6 +57,15 @@ ENT-003 restores the current framework security baseline without changing applic
 - The enterprise score remains **8.2/10** because ENT-003 restores required dependency-security currency rather than changing architecture or broader enterprise maturity.
 - ENT-003 was not deployed. Production remains whatever exact source is recorded in the authoritative production blocks.
 
+ENT-004 hardens request and upload-admission boundaries without changing provider routing or the signed direct-R2 upload model:
+
+- Persistent Library uploads and temporary generation-reference uploads share one server-owned per-account admission budget: at most 8 unresolved/provisional tickets and 30 ticket grants per rolling 60 minutes, serialized by owner in PostgreSQL with 10-minute provisional leases.
+- Stable 429 contracts distinguish active-cap and rolling-rate rejection, and failed signing/preparation paths release provisional capacity while retaining recent admission history.
+- Browser-facing state-changing API routes use one same-origin policy based on explicit `Sec-Fetch-Site` / `Origin` metadata; metadata-less server, CLI and CI callers remain compatible, and server-secret internal maintenance/reconciliation routes keep explicit exemptions.
+- Engineering Quality statically checks mutation-route guard coverage, while a dedicated configured integration workflow exercises concurrency, shared Library/reference accounting, stale leases, rate history, signing failure, origin rejection and cross-account isolation.
+- Shared migrations `20261005113026 renderlab_upload_admission` and `20261005113423 renderlab_upload_admission_account_lifecycle` are applied to the approved Supabase project. The new server-owned table is RLS-enabled/browser-revoked and is included in account export schema v4 plus transactional account deletion.
+- ENT-004 application behavior is not production-deployed. Exact-head acceptance and enterprise-score reassessment are recorded only after the implementation merge is verified.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
@@ -64,7 +73,7 @@ ENT-003 restores the current framework security baseline without changing applic
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- Enterprise-hardening follow-ons remain for upload admission/rate limiting, centralized same-origin mutation defense, server-only module boundaries, cross-platform dev/test parity, conventional coverage measurement, durable observability, operations/disaster-recovery runbooks, CI workflow consolidation, and large-module decomposition.
+- Enterprise-hardening follow-ons remain for server-only module boundaries, cross-platform dev/test parity, conventional coverage measurement, durable observability, operations/disaster-recovery runbooks, CI workflow consolidation, and large-module decomposition.
 
 ## Current direction
 

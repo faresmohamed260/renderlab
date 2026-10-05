@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import type { UpdateMediaCollectionRequest } from "@/lib/api/media-collections-contract";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
@@ -35,6 +36,8 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ collectionId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const { collectionId } = await context.params;
   if (!uuidPattern.test(collectionId)) return invalidRequest();
 
@@ -78,9 +81,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ collectionId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const { collectionId } = await context.params;
   if (!uuidPattern.test(collectionId)) return invalidRequest();
 
