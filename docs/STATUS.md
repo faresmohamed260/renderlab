@@ -50,6 +50,13 @@ ENT-002 strengthens repository CI and software-supply-chain controls without cha
 - PR #330 merged as `99a8db8c8038262114d5b5da535cf2e7dea56ad1`; all 68 exact-head workflow runs passed, followed by merged-main Engineering Quality `37289968963` and CodeQL `37289968955`.
 - The authoritative enterprise reassessment is now **8.2/10**, up from 8.1 after ENT-001 and 7.8 at the original audit baseline. ENT-002 was not deployed and required no application/shared-infrastructure mutation.
 
+ENT-003 restores the current framework security baseline without changing application behavior:
+
+- Next.js is pinned to **16.3.8**, the patched September 2026 Active-LTS security release, with no other direct or development dependency version change.
+- PR #333 merged as `2546978ab19a00bc6c76f6273d66d995d4fdc2e8` after all 24 attached PR workflows and the dedicated exact-SHA release-candidate matrix passed; merged-main Engineering Quality `37300494262` and CodeQL `37300494398` also passed.
+- The enterprise score remains **8.2/10** because ENT-003 restores required dependency-security currency rather than changing architecture or broader enterprise maturity.
+- ENT-003 was not deployed. Production remains whatever exact source is recorded in the authoritative production blocks.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.

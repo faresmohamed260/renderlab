@@ -1,7 +1,7 @@
 # ENT-003 — Next.js security patch contract
 
 Date: 2026-10-05
-Status: execution contract
+Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
 
 ## Goal
 Move RenderLab from Next.js 16.3.6 to the current patched 16.3 Active-LTS security release, 16.3.8, before continuing broader request-admission hardening.
@@ -97,3 +97,20 @@ ENT-003 is complete only when:
 5. merged-main Engineering Quality and CodeQL pass;
 6. authoritative documentation reflects the verified patched dependency state; and
 7. no deployment, application behavior change, shared-resource mutation, or unrelated refactor occurred.
+
+
+## Verified closure
+
+ENT-003 implementation PR #333 squash-merged as `2546978ab19a00bc6c76f6273d66d995d4fdc2e8` from exact implementation head `5cbc470c05894518da26f74355a4b1a2bdf009c0`. The final committed dependency diff changes only the direct `next` dependency from 16.3.6 to 16.3.8 and the corresponding Next.js lockfile package entries; no unrelated direct or development dependency version changed.
+
+Verification completed successfully:
+
+- local `npm ci`, lint, TypeScript, 62/62 unit tests and production build on Next.js 16.3.8;
+- unchanged Engineering Quality verifier passed under Linux/WSL; the Windows `.cmd` `spawnSync` limitation is recorded as existing developer-portability debt, not a Next.js regression;
+- all 24/24 pull-request-attached workflows passed at the exact implementation SHA;
+- dedicated Release Candidate Matrix run `37298177693` and its exact-SHA child set passed, with 48/48 visible same-head runs successful and 0 failures;
+- merged-main Engineering Quality `37300494262` and CodeQL `37300494398` both passed on the exact merge SHA.
+
+No application behavior, configuration, Supabase schema/RLS/Auth policy, R2 resource configuration, provider/worker routing, secrets, scheduler, or production deployment changed.
+
+The authoritative post-ENT-003 assessment is `ENT_003_NEXTJS_SECURITY_PATCH_ASSESSMENT.md`. The enterprise score remains **8.2/10**: this phase restores the current vendor-patched Active-LTS dependency baseline without claiming maturity uplift merely for applying a required security patch.
