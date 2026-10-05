@@ -686,8 +686,13 @@ try {
   assert(await page.locator("#diagnostic-code").inputValue() === "generation_provider_stalled", "Admin diagnostic code filter was not preserved.");
   assert(await page.locator("#diagnostic-lookback").inputValue() === "24", "Admin diagnostic lookback filter was not preserved.");
   assert(await page.locator("#diagnostic-limit").inputValue() === "20", "Admin diagnostic limit filter was not preserved.");
-  await page.getByText(`Correlation ${healthFixture.diagnosticCorrelation}`, { exact: true }).waitFor({ state: "visible" });
-  await page.getByText("Generation Reconciliation · Warn", { exact: true }).first().waitFor({ state: "visible" });
+  const filteredCorrelation = page.getByText(`Correlation ${healthFixture.diagnosticCorrelation}`, { exact: true });
+  await filteredCorrelation.waitFor({ state: "visible" });
+  const filteredDiagnosticRowText = await filteredCorrelation.locator("../..").innerText();
+  assert(
+    filteredDiagnosticRowText.includes("Generation Reconciliation") && filteredDiagnosticRowText.includes("Warn"),
+    `Filtered Admin diagnostic row did not preserve event/level identity: ${filteredDiagnosticRowText}.`,
+  );
   assert((await page.getByText(healthFixture.diagnosticJobMarker, { exact: false }).count()) === 0, "Filtered Admin diagnostics exposed the server-only job ID.");
 
   await page.goto(`${baseUrl}/admin`, { waitUntil: "networkidle", timeout: 60_000 });
