@@ -12,6 +12,13 @@ import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest"
 import { getAdminGenerationSettings } from "@/server/admin/admin-settings";
 import { summarizeActiveAdminJobAge, summarizeRecentAdminJobs, summarizeScopedAdminHealthBase, type AdminHealthJobSample } from "@/server/admin/admin-health-summary";
 import { getRenderLabMaintenanceBacklog } from "@/server/maintenance/renderlab-maintenance";
+import {
+  adminDiagnosticProjection,
+  adminOperationalAlertProjection,
+  listOperationalAlerts,
+  listRecentDiagnosticEvents,
+  type AdminDiagnosticQuery,
+} from "@/server/observability/diagnostic-store";
 
 const pendingInvitationLimit = 100;
 const accountListLimit = 100;
@@ -318,7 +325,10 @@ export async function updateAdminAccount(
   }
 }
 
-export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSnapshot> {
+export async function getAdminHealth(
+  actorUserId: string,
+  diagnosticQuery: AdminDiagnosticQuery = {},
+): Promise<AdminHealthSnapshot> {
   try {
     const base = await supabaseRest<Pick<AdminHealthSnapshot, "windowHours" | "since" | "activeJobs" | "statusCounts" | "operationCounts" | "errorCodeCounts">>("rpc/renderlab_admin_health", {
       method: "POST",
@@ -354,12 +364,22 @@ export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSn
       reservationParams.set("owner_id", `eq.${testOwnerId}`);
     }
 
-    const [recentRowsRaw, activeRowsRaw, reservationRows, settings, maintenanceBacklog] = await Promise.all([
+    const [
+      recentRowsRaw,
+      activeRowsRaw,
+      reservationRows,
+      settings,
+      maintenanceBacklog,
+      recentDiagnostics,
+      operationalAlerts,
+    ] = await Promise.all([
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${recentParams.toString()}`),
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${activeParams.toString()}`),
       supabaseRest<Array<{ id: string }>>(`generation_admission_reservations?${reservationParams.toString()}`),
       getAdminGenerationSettings(),
       getRenderLabMaintenanceBacklog(),
+      listRecentDiagnosticEvents(diagnosticQuery),
+      listOperationalAlerts(),
     ]);
 
     const recentTruncated = recentRowsRaw.length > healthSampleLimit;
@@ -386,6 +406,16 @@ export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSn
         maxJobsPerHourPerAccount: settings.maxJobsPerHour,
       },
       maintenanceBacklog,
+      recentDiagnostics: {
+        lookbackHours: recentDiagnostics.lookbackHours,
+        limit: recentDiagnostics.limit,
+        eventFilter: recentDiagnostics.eventFilter,
+        levelFilter: recentDiagnostics.levelFilter,
+        codeFilter: recentDiagnostics.codeFilter,
+        truncated: recentDiagnostics.truncated,
+        events: recentDiagnostics.rows.map(adminDiagnosticProjection),
+      },
+      operationalAlerts: operationalAlerts.map(adminOperationalAlertProjection),
     };
   } catch (error) {
     const classified = classifyAccountMutationError(error);
@@ -394,12 +424,15 @@ export async function getAdminHealth(actorUserId: string): Promise<AdminHealthSn
   }
 }
 
-export async function getAdminDashboard(actorUserId: string): Promise<AdminDashboardSnapshot> {
+export async function getAdminDashboard(
+  actorUserId: string,
+  diagnosticQuery: AdminDiagnosticQuery = {},
+): Promise<AdminDashboardSnapshot> {
   const [accounts, invitations, settings, health] = await Promise.all([
     listAdminAccounts(),
     listPendingAdminInvitations(),
     getAdminGenerationSettings(),
-    getAdminHealth(actorUserId),
+    getAdminHealth(actorUserId, diagnosticQuery),
   ]);
   return { accounts, invitations, settings, health };
 }

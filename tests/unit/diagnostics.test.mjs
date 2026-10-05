@@ -2,15 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  correlationIdForAccountLifecycle,
   correlationIdForGenerationJob,
   createDiagnosticCorrelationId,
   emitDiagnosticEvent,
   normalizeDiagnosticEvent,
 } from "../../src/server/observability/diagnostics.ts";
 
-test("diagnostic correlation is stable per job and distinct per operation", () => {
+test("diagnostic correlation is stable per job/account lifecycle and distinct per operation", () => {
   assert.equal(correlationIdForGenerationJob("job-a"), correlationIdForGenerationJob("job-a"));
   assert.notEqual(correlationIdForGenerationJob("job-a"), correlationIdForGenerationJob("job-b"));
+  assert.equal(correlationIdForAccountLifecycle("user-a"), correlationIdForAccountLifecycle("user-a"));
+  assert.notEqual(correlationIdForAccountLifecycle("user-a"), correlationIdForAccountLifecycle("user-b"));
+  assert(!correlationIdForAccountLifecycle("user-a").includes("user-a"));
   assert.notEqual(createDiagnosticCorrelationId(), createDiagnosticCorrelationId());
 });
 
@@ -24,14 +28,12 @@ test("diagnostic normalization only emits explicit typed bounded fields", () => 
     code: "RAW_PROVIDER_SECRET",
     durationMs: -5,
     count: 2.8,
-    ...({
-      prompt: "SECRET_PROMPT",
-      email: "secret@example.com",
-      signedUrl: "https://signed.example/SECRET_QUERY",
-      storageKey: "SECRET_R2_KEY",
-      token: "SECRET_SESSION_TOKEN",
-      rawProviderBody: "SECRET_PROVIDER_BODY",
-    }),
+    prompt: "SECRET_PROMPT",
+    email: "secret@example.com",
+    signedUrl: "https://signed.example/SECRET_QUERY",
+    storageKey: "SECRET_R2_KEY",
+    token: "SECRET_SESSION_TOKEN",
+    rawProviderBody: "SECRET_PROVIDER_BODY",
   });
   const serialized = JSON.stringify(event);
   for (const forbidden of [
@@ -58,6 +60,29 @@ test("known diagnostic machine fields survive normalization", () => {
   assert.equal(event.phase, "provider-ready");
   assert.equal(event.status, "persisting");
   assert.equal(event.code, "WORKER_UNAVAILABLE");
+});
+
+test("unknown diagnostic event and level values are rejected", () => {
+  assert.throws(
+    () => normalizeDiagnosticEvent({ event: "unknown.event", correlationId: "safe" }),
+    /known diagnostic event/i,
+  );
+  assert.throws(
+    () => normalizeDiagnosticEvent({ event: "maintenance.pass", level: "debug", correlationId: "safe" }),
+    /known diagnostic level/i,
+  );
+});
+
+test("configured observability namespace scopes retained correlation identity", () => {
+  const previous = process.env.RENDERLAB_TEST_OBSERVABILITY_NAMESPACE;
+  process.env.RENDERLAB_TEST_OBSERVABILITY_NAMESPACE = "r123a1";
+  try {
+    const event = normalizeDiagnosticEvent({ event: "maintenance.pass", correlationId: "maintenance-run" });
+    assert.equal(event.correlationId, "test.r123a1.maintenance-run");
+  } finally {
+    if (previous === undefined) delete process.env.RENDERLAB_TEST_OBSERVABILITY_NAMESPACE;
+    else process.env.RENDERLAB_TEST_OBSERVABILITY_NAMESPACE = previous;
+  }
 });
 
 test("diagnostic sink failure is non-fatal", async () => {

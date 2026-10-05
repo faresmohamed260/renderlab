@@ -12,6 +12,7 @@ on:
       - "src/server/storage/**"
       - "src/app/api/internal/maintenance/**"
       - "supabase/migrations/0017_staging_cleanup_claims.sql"
+      - "supabase/migrations/0028_renderlab_operational_observability.sql"
       - ".github/workflows/maintenance-integration.yml"
   push:
     branches: [main]
@@ -24,6 +25,7 @@ on:
       - "src/server/storage/**"
       - "src/app/api/internal/maintenance/**"
       - "supabase/migrations/0017_staging_cleanup_claims.sql"
+      - "supabase/migrations/0028_renderlab_operational_observability.sql"
       - ".github/workflows/maintenance-integration.yml"
 
 permissions:
