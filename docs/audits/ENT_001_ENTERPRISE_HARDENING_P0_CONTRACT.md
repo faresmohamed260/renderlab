@@ -1,7 +1,7 @@
 # ENT-001 — Enterprise hardening P0 contract
 
 Date: 2026-10-05
-Status: execution contract
+Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
 
 ## Goal
 Close the highest-risk application-boundary findings from the 2026-10-04 enterprise engineering audit without changing RenderLab's product UX, generation lifecycle ownership, shared infrastructure topology, or deployment state.
@@ -110,3 +110,9 @@ ENT-001 is complete only when:
 8. no deployment, shared-resource mutation, or unrelated refactor occurred.
 
 After closure, rerun the enterprise scorecard against the original audit baseline and record remaining P1/P2 gaps separately rather than inflating ENT-001 scope.
+
+## Verified closure — 2026-10-05
+
+ENT-001 implementation PR #326 merged as `966f2813c8a2bc6551310d17d0791752ca09c6d5` after exact-head validation. The three contracted hardening areas are implemented and verified, authoritative architecture/infrastructure documentation reflects the new trust boundary, and no production deployment or shared-resource mutation was performed.
+
+The detailed before/after scorecard, verification evidence, and remaining P1/P2 gaps are recorded in `docs/audits/ENT_001_ENTERPRISE_HARDENING_P0_ASSESSMENT.md`. That reassessment is the authority for the post-ENT-001 enterprise score and records **8.1/10** versus the original **7.8/10** baseline. This contract intentionally does not duplicate the scorecard.
