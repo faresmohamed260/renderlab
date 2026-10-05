@@ -49,6 +49,11 @@ test("diagnostic filters are allowlisted before PostgREST query construction", a
   assert.match(page, /getAdminDashboard\(admin\.identity\.id, diagnosticQuery\)/);
 });
 
+test("Admin renders dotted diagnostic machine identifiers as readable labels", async () => {
+  const adminUi = await source("src/features/admin/admin-operations.tsx");
+  assert(adminUi.includes('.replace(/[-_.]/g, " ")'));
+});
+
 test("configured Admin observability reads and direct fixtures stay run-owned when a test namespace is active", async () => {
   const store = await source("src/server/observability/diagnostic-store.ts");
   const verifier = await source("scripts/verify-admin-operations.mjs");
