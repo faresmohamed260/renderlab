@@ -1,8 +1,9 @@
 # ENT-001 — Enterprise hardening P0 reassessment
 
 Date: 2026-10-05
-Status: post-implementation assessment
+Status: post-implementation assessment / superseded for current enterprise score by ENT-002
 Implementation merge: `966f2813c8a2bc6551310d17d0791752ca09c6d5`
+Current follow-on assessment: `ENT_002_CI_SUPPLY_CHAIN_HARDENING_ASSESSMENT.md` (8.2/10 after ENT-002)
 Baseline audit head: `f9bebb81bff8c7f0b2046f977a693a2b58c12091`
 
 ## Executive result

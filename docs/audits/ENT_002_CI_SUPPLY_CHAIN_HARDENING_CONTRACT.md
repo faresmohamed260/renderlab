@@ -1,7 +1,7 @@
 # ENT-002 — CI and supply-chain hardening contract
 
 Date: 2026-10-05
-Status: execution contract
+Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
 
 ## Goal
 Reduce RenderLab's CI reproducibility and GitHub Actions supply-chain risk without changing application behavior, product UX, shared infrastructure, provider routing, or deployment state.
@@ -108,3 +108,16 @@ ENT-002 is complete only when:
 7. no deployment, shared-resource mutation, application behavior change, or unrelated refactor occurred.
 
 After closure, rerun the enterprise scorecard conservatively and plan the next phase from the remaining weakest areas rather than expanding ENT-002 retroactively.
+
+## Verified closure
+
+ENT-002 implementation PR #330 squash-merged as `99a8db8c8038262114d5b5da535cf2e7dea56ad1` after exact implementation head `8ea553579c801d25fb3de23739d4d53803020851` completed all **68** same-head workflow runs successfully, including Engineering Quality, CodeQL JavaScript/TypeScript, the release-candidate matrix and provider-backed Video Generation Integration.
+
+Merged-main verification also passed on the exact merge SHA:
+
+- Engineering Quality `37289968963` — success;
+- CodeQL `37289968955` — success.
+
+The implementation closes deterministic root workflow installs, immutable external Action pinning, JavaScript/TypeScript CodeQL, and regression enforcement for those controls. It changed no application/runtime behavior, UI, Supabase schema/RLS/Auth policy, R2 resource configuration, provider/worker routing, secrets, scheduler, or production deployment.
+
+The authoritative detailed post-ENT-002 reassessment is `ENT_002_CI_SUPPLY_CHAIN_HARDENING_ASSESSMENT.md`, which records the conservative enterprise score moving from **8.1/10 to 8.2/10** and lists the remaining P1/P2 gaps. This contract remains execution/history evidence rather than a competing current architecture source.

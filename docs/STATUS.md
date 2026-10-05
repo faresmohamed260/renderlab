@@ -23,9 +23,11 @@ This page is the concise public status summary. `PROJECT.md` remains the detaile
 
 ## Engineering controls
 
-- Static analysis and TypeScript checks
+- Static analysis, TypeScript checks, and JavaScript/TypeScript CodeQL scanning
 - Unit and Playwright/browser validation
 - Feature-specific integration and lifecycle workflows
+- Deterministic GitHub Actions dependency installation from the checked-in lockfile
+- Immutable SHA-pinned external GitHub Actions with Dependabot maintenance
 - Server-owned job reconciliation, retry, cancellation, and persistence
 - Exact-commit production qualification and cleanup evidence
 
@@ -39,6 +41,15 @@ ENT-001 strengthens application boundaries without changing RenderLab's product 
 - The Next.js application disables `X-Powered-By` and defines CSP, anti-framing, MIME-sniffing, referrer, and permissions-policy headers.
 - ENT-001 changes no Supabase schema/Auth policy, Cloudflare R2 resource configuration, provider/worker routing, secrets, scheduler, or production deployment. Production remains whatever exact source is recorded in the authoritative production blocks.
 
+ENT-002 strengthens repository CI and software-supply-chain controls without changing application runtime behavior:
+
+- Applicable workflows install root dependencies with `npm ci --no-audit --no-fund` from the checked-in lockfile.
+- All current external GitHub Action references under `.github/workflows` are pinned to immutable 40-character commit SHAs, with Dependabot's monthly `github-actions` maintenance retained.
+- JavaScript/TypeScript CodeQL runs on pull requests and protected-main pushes with least-privilege publication permissions.
+- Engineering Quality rejects executable workflow `npm install`, non-immutable external action references, loss of Dependabot GitHub Actions maintenance, and CodeQL language/permission drift.
+- PR #330 merged as `99a8db8c8038262114d5b5da535cf2e7dea56ad1`; all 68 exact-head workflow runs passed, followed by merged-main Engineering Quality `37289968963` and CodeQL `37289968955`.
+- The authoritative enterprise reassessment is now **8.2/10**, up from 8.1 after ENT-001 and 7.8 at the original audit baseline. ENT-002 was not deployed and required no application/shared-infrastructure mutation.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
@@ -46,7 +57,7 @@ ENT-001 strengthens application boundaries without changing RenderLab's product 
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- Enterprise-hardening follow-ons remain for CI/workflow simplification, CodeQL/action pinning, conventional coverage measurement, durable observability, operations/disaster-recovery runbooks, and large-module decomposition.
+- Enterprise-hardening follow-ons remain for upload admission/rate limiting, centralized same-origin mutation defense, server-only module boundaries, cross-platform dev/test parity, conventional coverage measurement, durable observability, operations/disaster-recovery runbooks, CI workflow consolidation, and large-module decomposition.
 
 ## Current direction
 
