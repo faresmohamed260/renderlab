@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -12,6 +12,54 @@ function expectFailure(result, label) {
   if (result.error) throw result.error;
   if (result.status === 0) {
     throw new Error(`${label} unexpectedly accepted its negative fixture.`);
+  }
+}
+
+async function verifyWorkflowSecurity() {
+  const workflowsDirectory = path.join(root, ".github", "workflows");
+  const workflowFiles = (await readdir(workflowsDirectory)).filter(
+    (name) => name.endsWith(".yml") || name.endsWith(".yaml"),
+  );
+  const violations = [];
+
+  for (const workflowFile of workflowFiles) {
+    const workflow = await readFile(path.join(workflowsDirectory, workflowFile), "utf8");
+    const lines = workflow.split(/\r?\n/);
+
+    for (const [index, line] of lines.entries()) {
+      if (/\bnpm install\b/.test(line) && !/^\s*#/.test(line)) {
+        violations.push(`${workflowFile}:${index + 1} uses npm install instead of deterministic npm ci`);
+      }
+
+      const usesMatch = line.match(/\buses:\s*([^\s#]+)/);
+      if (!usesMatch) continue;
+
+      const actionRef = usesMatch[1];
+      if (actionRef.startsWith("./") || actionRef.startsWith("docker://")) continue;
+
+      const atIndex = actionRef.lastIndexOf("@");
+      const revision = atIndex >= 0 ? actionRef.slice(atIndex + 1) : "";
+      if (!/^[0-9a-f]{40}$/i.test(revision)) {
+        violations.push(`${workflowFile}:${index + 1} uses a non-immutable external action ref: ${actionRef}`);
+      }
+    }
+  }
+
+  const dependabot = await readFile(path.join(root, ".github", "dependabot.yml"), "utf8");
+  if (!/package-ecosystem:\s*["']?github-actions["']?/.test(dependabot)) {
+    violations.push(".github/dependabot.yml must keep the github-actions update ecosystem enabled");
+  }
+
+  const codeql = await readFile(path.join(workflowsDirectory, "codeql.yml"), "utf8");
+  if (!/languages:\s*javascript-typescript/.test(codeql)) {
+    violations.push("codeql.yml must analyze javascript-typescript");
+  }
+  if (!/security-events:\s*write/.test(codeql)) {
+    violations.push("codeql.yml must grant security-events: write for result publication");
+  }
+
+  if (violations.length > 0) {
+    throw new Error(`Workflow security verification failed:\n- ${violations.join("\n- ")}`);
   }
 }
 
@@ -42,4 +90,6 @@ try {
   await rm(typeFixture, { force: true });
 }
 
-console.log("Engineering quality negative fixtures were rejected as expected.");
+await verifyWorkflowSecurity();
+
+console.log("Engineering quality negative fixtures and workflow security checks passed.");
