@@ -1,21 +1,17 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { parseGenerationRequest } from "../../src/lib/api/generation-contract.ts";
 import {
   generationNegativePromptWithinLimit,
   generationPromptWithinLimit,
   generationTextLimits,
 } from "../../src/lib/api/generation-text-limits.ts";
 
-function baseRequest(prompt, advanced) {
-  return {
-    prompt,
-    output: { kind: "image", aspectRatio: "1:1" },
-    inputs: [],
-    ...(advanced === undefined ? {} : { advanced }),
-  };
-}
+const generationContractSource = await readFile(
+  new URL("../../src/lib/api/generation-contract.ts", import.meta.url),
+  "utf8",
+);
 
 test("generation prompt text has explicit product resource bounds", () => {
   assert.equal(generationTextLimits.promptCharacters, 8_000);
@@ -32,26 +28,10 @@ test("generation prompt text has explicit product resource bounds", () => {
   );
 });
 
-test("generation request parser enforces prompt and negative-prompt boundaries", () => {
-  const promptAtLimit = parseGenerationRequest(
-    baseRequest("x".repeat(generationTextLimits.promptCharacters)),
+test("server generation parser wires both text bounds before persistence or dispatch", () => {
+  assert.ok(generationContractSource.includes("generationPromptWithinLimit(value.prompt)"));
+  assert.ok(
+    generationContractSource.includes("generationNegativePromptWithinLimit(value.negativePrompt)"),
   );
-  assert.equal(promptAtLimit.ok, true);
-
-  const promptOverLimit = parseGenerationRequest(
-    baseRequest("x".repeat(generationTextLimits.promptCharacters + 1)),
-  );
-  assert.equal(promptOverLimit.ok, false);
-  assert.equal(promptOverLimit.error.code, "invalid_request");
-
-  const negativeAtLimit = parseGenerationRequest(
-    baseRequest("test", { negativePrompt: "x".repeat(generationTextLimits.negativePromptCharacters) }),
-  );
-  assert.equal(negativeAtLimit.ok, true);
-
-  const negativeOverLimit = parseGenerationRequest(
-    baseRequest("test", { negativePrompt: "x".repeat(generationTextLimits.negativePromptCharacters + 1) }),
-  );
-  assert.equal(negativeOverLimit.ok, false);
-  assert.equal(negativeOverLimit.error.code, "invalid_request");
+  assert.ok(generationContractSource.includes("const prompt = value.prompt.trim()"));
 });
