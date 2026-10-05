@@ -49,6 +49,12 @@ test("diagnostic filters are allowlisted before PostgREST query construction", a
   assert.match(page, /getAdminDashboard\(admin\.identity\.id, diagnosticQuery\)/);
 });
 
+test("configured Admin observability reads stay run-owned when a test namespace is active", async () => {
+  const store = await source("src/server/observability/diagnostic-store.ts");
+  assert.match(store, /params\.set\("correlation_id", `like\.\$\{testPrefix\}\*`\)/);
+  assert.match(store, /params\.set\("alert_key", `like\.\$\{testPrefix\}\*`\)/);
+});
+
 test("durable persistence remains background observational work", async () => {
   const diagnostics = await source("src/server/observability/diagnostics.ts");
   assert.match(diagnostics, /await import\("next\/server"\)/);

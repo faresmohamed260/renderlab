@@ -159,6 +159,8 @@ export async function listRecentDiagnosticEvents(query: AdminDiagnosticQuery = {
   if (bounded.event) params.set("event", `eq.${bounded.event}`);
   if (bounded.level) params.set("level", `eq.${bounded.level}`);
   if (bounded.code) params.set("code", `eq.${bounded.code}`);
+  const testPrefix = currentObservabilityTestPrefix();
+  if (testPrefix) params.set("correlation_id", `like.${testPrefix}*`);
 
   const rows = await supabaseRest<StoredDiagnosticEventRow[]>(
     `renderlab_diagnostic_events?${params.toString()}`,
@@ -181,6 +183,8 @@ export async function listOperationalAlerts(limit = 20) {
     order: "state.asc,severity.desc,last_seen_at.desc,alert_key.asc",
     limit: String(safeLimit),
   });
+  const testPrefix = currentObservabilityTestPrefix();
+  if (testPrefix) params.set("alert_key", `like.${testPrefix}*`);
   return supabaseRest<OperationalAlertRow[]>(`renderlab_operational_alerts?${params.toString()}`);
 }
 
