@@ -68,14 +68,14 @@ ENT-004 hardens request and upload-admission boundaries without changing provide
 - The authoritative post-ENT-004 enterprise reassessment is **8.3/10**, up from 8.2 after ENT-003. The remaining enterprise ceiling is concentrated in durable observability, operations/DR, developer portability, conventional coverage visibility, workflow/module maintainability, and explicit server-only boundaries.
 - ENT-004 application behavior is not production-deployed. Production remains the separately recorded exact release; repository merge and shared backward-compatible migrations do not authorize or imply a Vercel rollout.
 
-ENT-005 durable observability and operations hardening is currently **IMPLEMENTED LOCALLY / SHARED MIGRATION APPLIED / EXACT-HEAD PR VERIFICATION PENDING**:
+ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED / MERGED / NOT DEPLOYED**:
 
 - Shared migrations `20261005181527 renderlab_operational_observability` and forward hardening `20261005202352 renderlab_operational_observability_privilege_hardening` add privacy-bounded 30-day diagnostic retention plus deduplicated operational-alert state. Both tables are RLS-enabled/browser-revoked. Live effective-privilege audit after `0028` found Supabase default grants broader than intended, so `0029` narrows `service_role` to diagnostic `SELECT, INSERT`, diagnostic-sequence `USAGE`, and alert `SELECT`; prune/alert mutation and exact `test.<namespace>.` cleanup are service-role-only `SECURITY DEFINER` RPCs. Live role inspection and run-owned insert → alert → cleanup smoke passed with zero residue.
-- The application candidate preserves immediate structured logging and schedules durable persistence as best-effort Next.js `after()` work. Product correctness does not depend on diagnostic storage or Resend notification success.
+- The merged implementation preserves immediate structured logging and schedules durable persistence as best-effort Next.js `after()` work. Product correctness does not depend on diagnostic storage or Resend notification success.
 - Initial alert families are repeated generation/provider degradation, maintenance failure, and third-retry account deletion stuck. Ordinary input/admission/rate-limit rejection does not alert. Notification fanout reuses active Admin emails and existing Resend infrastructure with sanitized content only.
 - Existing `/admin` Health remains the only operator UI and the UI-079 three-row hierarchy is unchanged. ENT-005 adds bounded retained-diagnostic filters and compact operational-alert state inside Health; diagnostic `job_id` remains server-only.
 - `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` records current incident handling, exact-SHA rollback discipline, credential-compromise steps, shared-fixture safety and truthful recovery objectives. Supabase/R2 destructive-loss RPO/RTO remain **not established** because no verified recoverable database backup/PITR or R2 replica/version/backup path exists.
-- Latest implementation-head local verification passes TypeScript, **87/87** unit tests, verifier syntax and `git diff --check`; the earlier full pre-PR pass also covered production build, lint with zero errors and the Linux Engineering Quality verifier. The authoritative enterprise score remains **8.3/10 until exact-head and merged-main ENT-005 closure is complete**; the post-phase assessment is tracked separately and must not be credited early.
+- PR #339 exact head `9a52c51339cfbe33b39f2f668e0132e527bd235e` passed all 20 attached PR workflows, and Account/Admin artifact `11371566032` was human-reviewed clean across desktop, 390px and reduced motion. The implementation squash-merged as `895910e0bb1f683202113592f0c03429b87bdde5`; all 14 affected merged-main push workflows reached accepted success, including unchanged retries after one shared provider-availability window. Final run-owned observability/Auth cleanup is zero-residue. The authoritative post-ENT-005 enterprise score is **8.5/10**.
 - ENT-005 does not authorize a production Vercel deployment, paid-plan change, new scheduler, database-backup credential/path, R2 replication resource, telemetry vendor, provider-routing change, or broad refactor.
 
 ## Known boundaries
@@ -85,7 +85,7 @@ ENT-005 durable observability and operations hardening is currently **IMPLEMENTE
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- After ENT-005 closure, enterprise-hardening follow-ons remain for explicit server-only module boundaries, cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, large-module decomposition, and an actual verified Supabase/R2 backup-and-restore capability. The ENT-005 runbook does not establish destructive-loss RPO/RTO by itself.
+- Enterprise-hardening follow-ons remain for explicit server-only module boundaries, cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, large-module decomposition, and an actual verified Supabase/R2 backup-and-restore capability. The ENT-005 runbook does not establish destructive-loss RPO/RTO by itself.
 
 ## Current direction
 

@@ -1,13 +1,13 @@
 # ENT-005 — Durable observability and operations hardening assessment
 
 Date: 2026-10-05
-Status: IMPLEMENTATION ASSESSMENT / EXACT-HEAD + MERGED-MAIN CLOSURE PENDING
+Status: AUTHORITATIVE POST-ENT-005 ASSESSMENT / VERIFIED / NOT DEPLOYED
 
 ## Executive result
 
-The authoritative pre-ENT-005 enterprise score remains **8.3/10** until this implementation passes exact-head configured/browser/live-provider validation, human Admin review, merge and merged-main gates.
+ENT-005 is verified and repository-closed at **8.5/10**, up from the authoritative **8.3/10** post-ENT-004 baseline. The application changes are merged but not production-deployed.
 
-On the same 18-category rubric used by ENT-004, the implemented ENT-005 state supports a **candidate post-phase score of 8.5/10** (arithmetic mean 8.45) once the remaining closure evidence passes. This is intentionally conservative: observability improves substantially and operations readiness improves meaningfully, but RenderLab still has no verified destructive-loss database or R2 recovery path.
+On the same 18-category rubric used by ENT-004, the verified ENT-005 state scores **8.5/10** (arithmetic mean 8.45). This is intentionally conservative: observability improves substantially and operations readiness improves meaningfully, but RenderLab still has no verified destructive-loss database or R2 recovery path.
 
 ENT-005 therefore removes the former “ephemeral logs only / no incident runbook” weaknesses without pretending that documentation, a primary diagnostic table, or an alert email is a backup system.
 
@@ -27,7 +27,7 @@ ENT-005 implements only the merged contract in `ENT_005_DURABLE_OBSERVABILITY_OP
 
 It does not add a telemetry vendor, client RUM/session replay, new production schedule, plan upgrade, database-backup credential/job, R2 replica/versioning, provider routing change, or production Vercel deployment.
 
-## Verified implementation evidence so far
+## Verified implementation and closure evidence
 
 ### Repository/local evidence
 
@@ -106,7 +106,7 @@ It distinguishes operator targets from provider SLAs and explicitly refuses unsu
 
 ## Category scorecard
 
-| Category | ENT-004 | ENT-005 candidate | Reason |
+| Category | ENT-004 | ENT-005 | Reason |
 |---|---:|---:|---|
 | Architecture | 8.8 | 8.8 | Durable observability fits existing server-owned boundaries; no topology redesign |
 | Authentication / identity | 9.1 | 9.1 | No identity-policy change |
@@ -127,7 +127,7 @@ It distinguishes operator targets from provider SLAs and explicitly refuses unsu
 | Documentation | 8.1 | **8.4** | Current architecture, status, assessment and operator runbook are synchronized |
 | Release governance | 8.2 | 8.2 | Exact-SHA/no-implicit-deploy discipline unchanged |
 
-Arithmetic mean: **8.45**, rounded to **8.5/10** once closure evidence is complete.
+Arithmetic mean: **8.45**, authoritative rounded score **8.5/10**.
 
 The +0.2 rounded improvement is deliberately smaller than the observability category jump because enterprise maturity is still capped by developer portability, coverage visibility, maintainability and—most importantly—unverified destructive data recovery.
 
@@ -170,19 +170,11 @@ Highest-value remaining work is expected to be:
 
 The updated scorecard—not phase momentum—should choose the next enterprise contract.
 
-## Closure evidence still required
+## Verified closure evidence
 
-This assessment is not authoritative at 8.5 until all of the following are recorded against one exact implementation head and its merge:
-
-- exact-head Engineering Quality and CodeQL;
-- exact-head Account/Admin Operations including dedicated observability verification and screenshot artifact;
-- exact-head Generation Reconciliation, Generation Cancellation, Generation Integration and Video Generation Integration where attached;
-- exact-head Maintenance Integration and Account Data Lifecycle;
-- any additional affected path-triggered workflows attached by GitHub;
-- human review of Admin desktop, 390px and reduced-motion evidence;
-- exact run-owned observability/Auth/database/R2 cleanup verification;
-- implementation merge SHA;
-- merged-main Engineering Quality and CodeQL plus affected push workflows;
-- final contract/status synchronization.
-
-No production deployment is part of ENT-005 closure.
+- Exact implementation head `9a52c51339cfbe33b39f2f668e0132e527bd235e` passed all 20 attached PR workflows, including Engineering Quality, CodeQL, Account/Admin Operations with dedicated observability verification, Maintenance, Account Data Lifecycle, Reconciliation, Cancellation, Generation Integration, Video Generation and Integrated Release.
+- Account/Admin screenshot artifact `11371566032` (`sha256:3ec7a23f48aa6a80cbfb1bede284b5cb996d59830044d1d919ea46017e9c4ecb`) was human-reviewed on desktop, 390px and reduced-motion evidence with no corrective UI change required.
+- PR #339 squash-merged as `895910e0bb1f683202113592f0c03429b87bdde5`. All 14 affected merged-main push workflows reached accepted success; Engineering Quality `37385805769` and CodeQL `37385805676` are green. Provider-dependent initial failures were rerun unchanged after the shared outage window and passed on the same merge SHA.
+- Post-merge shared-state cleanup is exact: the one stale namespace from failed PR run `37367463510` attempt 2 was removed through the constrained cleanup RPC (9 diagnostics, 3 alerts), after which `test.*` diagnostic rows, `test.*` alerts, and ENT-005 observability/Admin/video fixture Auth users all count zero.
+- Live migration history includes `20261005181527 renderlab_operational_observability` and forward hardening `20261005202352 renderlab_operational_observability_privilege_hardening`; post-hardening effective privileges and empty-search-path `SECURITY DEFINER` RPC boundaries were reverified.
+- No Vercel production deployment, paid-plan upgrade, production scheduler, backup/replication resource, telemetry vendor, or provider-routing change occurred. Supabase/R2 destructive-loss RPO/RTO remain explicitly unestablished.
