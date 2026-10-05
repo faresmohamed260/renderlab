@@ -7,7 +7,15 @@ import type {
 } from "@/lib/api/reference-upload-contract";
 import { maxReferenceUploadBytes } from "@/lib/api/reference-upload-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
-import { createSignedReadUrl, createSignedUploadUrl, headR2Object, isR2Configured } from "@/server/storage/r2";
+import { inspectUploadedImageBytes } from "@/server/media/image-upload-validation";
+import {
+  createSignedReadUrl,
+  createSignedUploadUrl,
+  deleteR2Object,
+  headR2Object,
+  isR2Configured,
+  readR2Object,
+} from "@/server/storage/r2";
 
 type SourceRow = {
   id: string;
@@ -51,6 +59,24 @@ function extensionFor(mimeType: CreateReferenceUploadTicketRequest["mimeType"]) 
   if (mimeType === "image/jpeg") return "jpg";
   if (mimeType === "image/webp") return "webp";
   return "png";
+}
+
+async function markReferenceFailed(ownerId: string, row: SourceRow, message: string) {
+  await supabaseRest(
+    `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "failed",
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...row.metadata,
+          verificationError: message,
+        },
+      }),
+    },
+  );
+  await deleteR2Object(row.storage_key).catch(() => null);
 }
 
 export async function createReferenceUploadTicket(
@@ -133,6 +159,7 @@ export async function completeReferenceUpload(
       status: "ready",
     };
   }
+  if (row.status === "failed") throw new Error("This reference upload can no longer be completed.");
 
   const object = await headR2Object(row.storage_key);
   const expectedSize = Number(row.size_bytes);
@@ -142,21 +169,22 @@ export async function completeReferenceUpload(
     object.sizeBytes !== expectedSize ||
     object.contentType !== row.mime_type
   ) {
-    await supabaseRest(
-      `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          status: "failed",
-          updated_at: new Date().toISOString(),
-          metadata: {
-            ...(row.metadata ?? {}),
-            verificationError: "Uploaded object did not match the ticket.",
-          },
-        }),
-      },
-    );
+    await markReferenceFailed(ownerId, row, "Uploaded object did not match the ticket.");
     throw new Error("Uploaded reference did not match the signed upload ticket.");
+  }
+
+  const body = await readR2Object(row.storage_key);
+  if (body.contentType !== row.mime_type || body.bytes.byteLength !== object.sizeBytes) {
+    await markReferenceFailed(ownerId, row, "Uploaded object changed during content verification.");
+    throw new Error("Uploaded reference changed during verification.");
+  }
+
+  let verifiedImage: Awaited<ReturnType<typeof inspectUploadedImageBytes>>;
+  try {
+    verifiedImage = await inspectUploadedImageBytes(body.bytes, row.mime_type);
+  } catch {
+    await markReferenceFailed(ownerId, row, "Uploaded image content validation failed.");
+    throw new Error("Uploaded reference could not be verified as a supported image.");
   }
 
   const updated = await supabaseRest<SourceRow[]>(
@@ -166,11 +194,11 @@ export async function completeReferenceUpload(
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
         status: "ready",
-        width: request.width ?? null,
-        height: request.height ?? null,
+        width: verifiedImage.width,
+        height: verifiedImage.height,
         updated_at: new Date().toISOString(),
         metadata: {
-          ...(row.metadata ?? {}),
+          ...row.metadata,
           etag: object.etag || null,
         },
       }),

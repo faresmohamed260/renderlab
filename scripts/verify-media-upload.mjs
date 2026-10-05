@@ -140,7 +140,7 @@ try {
   const completionRequest = () => request("/api/media/uploads/upload-completions", account, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ uploadId: ticket.uploadId, width: 1, height: 1 }),
+    body: JSON.stringify({ uploadId: ticket.uploadId, width: 999, height: 777 }),
   });
   const [completion, concurrentCompletion] = await Promise.all([completionRequest(), completionRequest()]);
   assert(completion.response.ok && completion.payload?.ok, `Persistent upload completion failed (${completion.response.status}): ${JSON.stringify(completion.payload)}`);
@@ -154,7 +154,7 @@ try {
   assert(asset.displayName === fixtureDisplayName, "Persistent upload display name was not preserved.");
   assert(asset.originalFilename === fixtureFilename, "Persistent upload filename was not preserved.");
   assert(asset.sizeBytes === pngBytes.length, "Persistent upload size was not persisted.");
-  assert(asset.width === 1 && asset.height === 1, "Persistent upload dimensions were not persisted.");
+  assert(asset.width === 1 && asset.height === 1, "Persistent upload trusted client geometry instead of decoded bytes.");
   assert(asset.thumbnailUrl?.endsWith(`/api/media/assets/${asset.id}/thumbnail`), "Persistent upload did not expose its durable image thumbnail.");
 
   const repeated = await completionRequest();

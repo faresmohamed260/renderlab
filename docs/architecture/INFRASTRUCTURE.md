@@ -309,6 +309,9 @@ Deployment Readiness PR #18 merged as `2b8a5170df0675a691deb8d5a7031f1dc14d803b`
 
 The first separately authorized rollout attempts after PR #18 did **not** become live. Probe deployment `dpl_6jG1VKYMWimBtZMgyr75b2EKtK9i` failed with the stale-project output condition, and exact-main bootstrap deployment `dpl_FHeEYsHjERijXcoHSaTdV7MUCvdu` exposed the mismatch between the repository's then-expected environment names and the Vercel project's established names. PR #19 aligned the repository contract to `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and `CLOUDFLARE_R2_*` while preserving GitHub CI aliases. After the current Vercel secret values were refreshed, the project preset was corrected to Next.js and the stale `dist` override removed, explicit Git deployment `dpl_DYs48pvBEvzDuDbHwcEn4f9LGabE` became READY on exact SHA `5f5d3cee9b45af175f072050f48da4549d5f416c`. Automatic Git deployments remain disabled.
 
+## HTTP/browser hardening baseline — ENT-001
+The Next.js application disables `X-Powered-By` and applies an enforced compatibility-conscious Content Security Policy together with `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and a restrictive `Permissions-Policy`. The CSP blocks objects and framing, constrains base/form/worker/manifest origins, permits only self plus HTTPS/WSS where current Supabase/R2/application behavior requires it, and keeps inline styles/scripts for current Next.js compatibility. Development alone additionally permits `unsafe-eval`. This is an application-response posture only; ENT-001 changes no Vercel environment variables, shared resource policy, or deployment state.
+
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
 
@@ -330,13 +333,16 @@ Library
   -> short-lived signed R2 PUT
   -> browser direct PUT
   -> POST completion
-  -> server HEAD verifies MIME + exact bytes
+  -> server HEAD verifies ticket MIME + exact bytes
+  -> server reads object + fully decodes with Sharp
+  -> verify actual PNG/JPEG/WebP format, single-frame media, and decoded geometry bounds
+  -> persist server-derived width/height
   -> create media_assets(origin=uploaded)
   -> complete session + media_asset_id
   -> Library / Viewer / Create reuse opaque media-asset ID
 ```
 
-Initial persistent upload types: PNG/JPEG/WebP up to 25 MB. Human filenames preserve legitimate Unicode after path/control cleanup and length bounding. `media_assets.storage_key` is unique; completion is sequentially idempotent and recovers concurrent insert races.
+Initial persistent upload types: PNG/JPEG/WebP up to 25 MB compressed bytes. Completion fails closed unless the stored object fully decodes as the declared format, is single-frame, stays within 8,192 px per edge and 33,554,432 decoded pixels, and remains byte/MIME-stable across HEAD/read verification. Width/height are derived only from decoded bytes; client completion geometry is non-authoritative. Invalid run-owned upload objects are marked failed and deleted best-effort. Human filenames preserve legitimate Unicode after path/control cleanup and length bounding. `media_assets.storage_key` is unique; completion is sequentially idempotent and recovers concurrent insert races.
 
 ### Browser upload CORS
 Presigned browser PUT requires an exact-origin R2 bucket CORS rule.

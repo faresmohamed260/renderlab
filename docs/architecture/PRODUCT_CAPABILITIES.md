@@ -133,11 +133,16 @@ The browser never submits R2 keys. Phase 7A PR #46 extracted one persistent brow
 
 ### Current supported reference upload behavior
 - PNG, JPEG, WebP;
-- ≤25 MB;
+- ≤25 MB compressed bytes;
 - signed direct-R2 upload;
-- server HEAD verification before promotion;
+- server HEAD verification of ticket MIME + exact byte count before promotion;
+- server reads and fully decodes the uploaded object with Sharp before durable registration/readiness, verifies actual format matches the ticket MIME type, rejects animated/multi-page images, and bounds decoded geometry to 8,192 px per edge and 33,554,432 pixels;
+- width/height are derived from decoded bytes; completion-request geometry is compatibility input only and is never authoritative;
+- malformed/mismatched uploads fail closed, are marked failed, and their run-owned R2 object is deleted best-effort;
 - authenticated owner-scoped `media_upload_sessions` → durable `media_assets`;
-- persisted dimensions plus ordinary Library/Viewer/search/organization semantics immediately after successful completion, independent of whether a generation is ever submitted.
+- persisted server-verified dimensions plus ordinary Library/Viewer/search/organization semantics immediately after successful completion, independent of whether a generation is ever submitted.
+
+Generation request text is also explicitly resource-bounded at the server contract: prompt and negative prompt each accept at most 8,000 characters before persistence or provider dispatch.
 
 Configured Create Durable Upload run `33256497167` verified that a Create upload persisted with `generation_job_id = null`, appeared in Library, and was subsequently referenced by the generation request as the same owner-scoped `{ type: "media-asset", id }`; exact R2/database/Auth cleanup passed.
 

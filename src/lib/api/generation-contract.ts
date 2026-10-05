@@ -1,3 +1,8 @@
+import {
+  generationNegativePromptWithinLimit,
+  generationPromptWithinLimit,
+  generationTextLimits,
+} from "@/lib/api/generation-text-limits";
 import type {
   AspectRatio,
   GenerationAdvancedParameters,
@@ -108,7 +113,10 @@ function parseAdvanced(
   const advanced: GenerationAdvancedParameters = {};
 
   if (value.negativePrompt !== undefined) {
-    if (typeof value.negativePrompt !== "string") return null;
+    if (
+      typeof value.negativePrompt !== "string"
+      || !generationNegativePromptWithinLimit(value.negativePrompt)
+    ) return null;
     advanced.negativePrompt = value.negativePrompt;
   }
   if (value.seed !== undefined) {
@@ -156,6 +164,15 @@ export function parseGenerationRequest(value: unknown):
 
   if (typeof value.prompt !== "string" || !value.prompt.trim()) {
     return { ok: false, error: { code: "invalid_request", message: "A prompt is required." } };
+  }
+  if (!generationPromptWithinLimit(value.prompt)) {
+    return {
+      ok: false,
+      error: {
+        code: "invalid_request",
+        message: `Prompt must be ${generationTextLimits.promptCharacters.toLocaleString("en-US")} characters or fewer.`,
+      },
+    };
   }
   const prompt = value.prompt.trim();
 
