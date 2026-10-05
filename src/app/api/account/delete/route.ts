@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import {
   hasRecentRenderLabTotpStepUp,
@@ -44,7 +45,9 @@ export async function GET() {
   }
 }
 
-export async function PUT() {
+export async function PUT(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const authentication = await getFreshCurrentRenderLabAuthentication();
   if (!authentication) return unauthorized();
   try {
@@ -66,6 +69,8 @@ export async function PUT() {
 }
 
 export async function POST(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const authentication = await getFreshCurrentRenderLabAuthentication();
   if (!authentication) return unauthorized();
 

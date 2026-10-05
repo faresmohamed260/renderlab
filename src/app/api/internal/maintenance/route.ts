@@ -1,3 +1,4 @@
+// ENT-004 same-origin exemption: server-secret internal route authenticated by a dedicated bearer secret.
 import { NextResponse } from "next/server";
 import { runAccountDataLifecycleMaintenance } from "@/server/account/account-data-lifecycle";
 import { runRenderLabMaintenance } from "@/server/maintenance/renderlab-maintenance";

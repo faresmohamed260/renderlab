@@ -1,0 +1,124 @@
+name: Upload Admission Integration
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/upload-admission-integration.yml"
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/verify-upload-admission.mjs"
+      - "src/app/api/assets/reference/upload-tickets/route.ts"
+      - "src/app/api/media/uploads/upload-tickets/route.ts"
+      - "src/lib/api/media-upload-contract.ts"
+      - "src/lib/api/reference-upload-contract.ts"
+      - "src/server/data/supabase-rest.ts"
+      - "src/server/media/media-uploads.ts"
+      - "src/server/media/reference-uploads.ts"
+      - "src/server/media/upload-admission.ts"
+      - "src/server/security/**"
+      - "src/server/storage/r2.ts"
+      - "supabase/migrations/0024_renderlab_upload_admission.sql"
+      - "supabase/migrations/0025_renderlab_upload_admission_account_lifecycle.sql"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/upload-admission-integration.yml"
+      - "scripts/lib/configured-test-account.mjs"
+      - "scripts/verify-upload-admission.mjs"
+      - "src/app/api/assets/reference/upload-tickets/route.ts"
+      - "src/app/api/media/uploads/upload-tickets/route.ts"
+      - "src/lib/api/media-upload-contract.ts"
+      - "src/lib/api/reference-upload-contract.ts"
+      - "src/server/data/supabase-rest.ts"
+      - "src/server/media/media-uploads.ts"
+      - "src/server/media/reference-uploads.ts"
+      - "src/server/media/upload-admission.ts"
+      - "src/server/security/**"
+      - "src/server/storage/r2.ts"
+      - "supabase/migrations/0024_renderlab_upload_admission.sql"
+      - "supabase/migrations/0025_renderlab_upload_admission_account_lifecycle.sql"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-upload-admission-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  configured-upload-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      RENDERLAB_TEST_BASE_URL: http://127.0.0.1:3000
+      RENDERLAB_TEST_UPLOAD_ADMISSION_FAULTS: "true"
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Validate configured secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured for RenderLab."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify configured verifier syntax
+        run: node --check scripts/verify-upload-admission.mjs
+
+      - name: Clean exact configured fixtures before verification
+        run: node scripts/verify-upload-admission.mjs --cleanup-only
+
+      - name: Build exact head
+        run: npm run build
+
+      - name: Start configured application
+        shell: bash
+        run: |
+          npm run start -- -p 3000 > /tmp/renderlab-ent004-next.log 2>&1 &
+          echo $! > /tmp/renderlab-ent004-next.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/api/media/uploads/upload-tickets > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/renderlab-ent004-next.log
+          exit 1
+
+      - name: Verify upload admission and request boundary
+        run: node scripts/verify-upload-admission.mjs
+
+      - name: Clean exact configured fixtures after verification
+        if: always()
+        run: node scripts/verify-upload-admission.mjs --cleanup-only
+
+      - name: Print server log on failure
+        if: failure()
+        run: cat /tmp/renderlab-ent004-next.log || true

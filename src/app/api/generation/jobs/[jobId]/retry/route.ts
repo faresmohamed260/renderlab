@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import type { RetryGenerationErrorCode } from "@/lib/api/generation-retry-contract";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
@@ -15,9 +16,11 @@ function retryStatus(code: RetryGenerationErrorCode) {
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ jobId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const { jobId } = await context.params;
   if (!uuidPattern.test(jobId)) {
     return NextResponse.json(

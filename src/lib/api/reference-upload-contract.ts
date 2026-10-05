@@ -41,6 +41,8 @@ export type ReferenceUploadError = {
   error: {
     code:
       | "invalid_upload"
+      | "upload_active_limit_reached"
+      | "upload_rate_limit_reached"
       | "upload_backend_unavailable"
       | "upload_verification_failed"
       | "upload_not_found";

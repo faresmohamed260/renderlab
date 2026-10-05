@@ -139,8 +139,12 @@ The browser never submits R2 keys. Phase 7A PR #46 extracted one persistent brow
 - server reads and fully decodes the uploaded object with Sharp before durable registration/readiness, verifies actual format matches the ticket MIME type, rejects animated/multi-page images, and bounds decoded geometry to 8,192 px per edge and 33,554,432 pixels;
 - width/height are derived from decoded bytes; completion-request geometry is compatibility input only and is never authoritative;
 - malformed/mismatched uploads fail closed, are marked failed, and their run-owned R2 object is deleted best-effort;
+- ticket creation shares a server-owned per-account admission boundary across persistent Library uploads and temporary generation-reference uploads: at most 8 unresolved/provisional tickets at once and 30 granted tickets per rolling 60 minutes, with race-safe owner serialization and 10-minute provisional leases;
+- admission-limit failures return stable `upload_active_limit_reached` / `upload_rate_limit_reached` 429 contracts before a new staging row or signed R2 upload URL is granted;
 - authenticated owner-scoped `media_upload_sessions` → durable `media_assets`;
 - persisted server-verified dimensions plus ordinary Library/Viewer/search/organization semantics immediately after successful completion, independent of whether a generation is ever submitted.
+
+Browser-originated state-changing API requests additionally use a shared same-origin boundary: explicit `Sec-Fetch-Site` metadata must be `same-origin`, explicit `Origin` must exactly match the request origin, and explicit cross-origin requests fail with `cross_origin_request_blocked`. Metadata-less server/CLI/Bearer callers remain compatible, while the two server-secret internal maintenance/reconciliation routes retain their dedicated authorization boundary.
 
 Generation request text is also explicitly resource-bounded at the server contract: prompt and negative prompt each accept at most 8,000 characters before persistence or provider dispatch.
 

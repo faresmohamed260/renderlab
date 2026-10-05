@@ -9,6 +9,12 @@ import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest"
 import { inspectUploadedImageBytes } from "@/server/media/image-upload-validation";
 import { ensureMediaAssetThumbnail, getMediaAsset } from "@/server/media/media-assets";
 import {
+  bindUploadAdmission,
+  injectUploadAdmissionSigningTestFault,
+  releaseUploadAdmission,
+  reserveUploadAdmission,
+} from "@/server/media/upload-admission";
+import {
   createSignedUploadUrl,
   deleteR2Object,
   headR2Object,
@@ -63,63 +69,74 @@ export async function createMediaUploadTicket(
 ): Promise<MediaUploadTicket> {
   if (!isMediaUploadConfigured()) throw new Error("Media upload storage is not configured.");
 
-  const now = new Date();
-  const key = [
-    "renderlab",
-    "uploads",
-    now.getUTCFullYear(),
-    String(now.getUTCMonth() + 1).padStart(2, "0"),
-    `${randomUUID()}.${extensionFor(request.mimeType)}`,
-  ].join("/");
-
-  const rows = await supabaseRest<MediaUploadSessionRow[]>("media_upload_sessions?select=*", {
-    method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify({
-      owner_id: ownerId,
-      storage_key: key,
-      filename: originalFilenameFor(request),
-      display_name: displayNameFor(request),
-      mime_type: request.mimeType,
-      size_bytes: request.sizeBytes,
-      status: "pending",
-      metadata: {},
-    }),
-  });
-
-  const row = rows?.[0];
-  if (!row) throw new Error("Media upload session could not be created.");
-
-  const expiresInSeconds = 300;
+  const reservation = await reserveUploadAdmission(ownerId, "media");
   try {
-    const uploadUrl = await createSignedUploadUrl({
-      key,
-      contentType: request.mimeType,
-      expiresIn: expiresInSeconds,
+    const now = new Date();
+    const key = [
+      "renderlab",
+      "uploads",
+      now.getUTCFullYear(),
+      String(now.getUTCMonth() + 1).padStart(2, "0"),
+      `${randomUUID()}.${extensionFor(request.mimeType)}`,
+    ].join("/");
+
+    const rows = await supabaseRest<MediaUploadSessionRow[]>("media_upload_sessions?select=*", {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        owner_id: ownerId,
+        storage_key: key,
+        filename: originalFilenameFor(request),
+        display_name: displayNameFor(request),
+        mime_type: request.mimeType,
+        size_bytes: request.sizeBytes,
+        status: "pending",
+        metadata: {},
+      }),
     });
-    return {
-      uploadId: row.id,
-      uploadUrl,
-      method: "PUT",
-      headers: { "content-type": request.mimeType },
-      expiresInSeconds,
-      maxBytes: maxMediaUploadBytes,
-    };
-  } catch (error) {
-    await supabaseRest(
-      `media_upload_sessions?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          status: "failed",
-          updated_at: new Date().toISOString(),
-          metadata: {
-            signingError: error instanceof Error ? error.message : "Upload signing failed.",
-          },
-        }),
-      },
-    ).catch(() => null);
-    throw error;
+
+    const row = rows?.[0];
+    if (!row) throw new Error("Media upload session could not be created.");
+
+    if (!await bindUploadAdmission(ownerId, reservation, row.id)) {
+      await markUploadFailed(ownerId, row, "Upload admission reservation could not be bound.").catch(() => null);
+      throw new Error("Media upload admission could not be finalized.");
+    }
+
+    const expiresInSeconds = 300;
+    try {
+      injectUploadAdmissionSigningTestFault("media", request.filename);
+      const uploadUrl = await createSignedUploadUrl({
+        key,
+        contentType: request.mimeType,
+        expiresIn: expiresInSeconds,
+      });
+      return {
+        uploadId: row.id,
+        uploadUrl,
+        method: "PUT",
+        headers: { "content-type": request.mimeType },
+        expiresInSeconds,
+        maxBytes: maxMediaUploadBytes,
+      };
+    } catch (error) {
+      await supabaseRest(
+        `media_upload_sessions?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(row.id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: "failed",
+            updated_at: new Date().toISOString(),
+            metadata: {
+              signingError: error instanceof Error ? error.message : "Upload signing failed.",
+            },
+          }),
+        },
+      ).catch(() => null);
+      throw error;
+    }
+  } finally {
+    await releaseUploadAdmission(ownerId, reservation.id);
   }
 }
 

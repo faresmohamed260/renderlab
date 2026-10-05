@@ -28,7 +28,7 @@ test("Create preferences seed only a clean new workspace", () => {
 });
 
 test("account lifecycle exports and proves preference cleanup", () => {
-  assert.match(lifecycle, /const EXPORT_SCHEMA_VERSION = 3/);
+  assert.match(lifecycle, /const EXPORT_SCHEMA_VERSION = 4/);
   assert.match(lifecycle, /getRenderLabAccountPreferencesRow/);
   assert.match(lifecycle, /preferences: preferences/);
   assert.match(lifecycle, /renderlab_account_preferences/);

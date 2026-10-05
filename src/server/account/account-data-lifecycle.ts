@@ -20,7 +20,7 @@ import {
   writeR2Object,
 } from "@/server/storage/r2";
 
-const EXPORT_SCHEMA_VERSION = 3;
+const EXPORT_SCHEMA_VERSION = 4;
 const EXPORT_PAGE_SIZE = 200;
 const EXPORT_TTL_MS = 24 * 60 * 60 * 1000;
 const STALE_EXPORT_PROCESSING_MS = 15 * 60 * 1000;
@@ -210,6 +210,7 @@ async function buildAccountExport(ownerId: string) {
     collections,
     collectionItems,
     reservations,
+    uploadAdmissionReservations,
     sessions,
     mfa,
     profile,
@@ -251,6 +252,12 @@ async function buildAccountExport(ownerId: string) {
       "generation_admission_reservations",
       ownerId,
       "id,admitted_at,expires_at,job_id,released_at",
+      "admitted_at.asc,id.asc",
+    ),
+    pagedOwnerRows<Record<string, unknown>>(
+      "upload_admission_reservations",
+      ownerId,
+      "id,upload_kind,admitted_at,lease_expires_at,bound_resource_id,bound_at,released_at",
       "admitted_at.asc,id.asc",
     ),
     accountSessionExport(ownerId),
@@ -327,6 +334,7 @@ async function buildAccountExport(ownerId: string) {
     collections,
     collectionItems,
     generationAdmissionReservations: reservations,
+    uploadAdmissionReservations,
     sessions,
     mfa,
     claimedInvitations: invitations,
@@ -540,6 +548,7 @@ async function verifyDatabaseResidue(ownerId: string) {
     "media_assets",
     "media_upload_sessions",
     "media_collections",
+    "upload_admission_reservations",
     "generation_admission_reservations",
     "renderlab_account_exports",
     "renderlab_account_profiles",

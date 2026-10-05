@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import { authorizeRenderLabAdminApi } from "@/app/api/admin/admin-api-authorization";
 import type { AdminAccessRole } from "@/lib/api/admin-contract";
@@ -21,6 +22,8 @@ function errorResponse(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const authorization = await authorizeRenderLabAdminApi();
   if (!authorization.ok) return authorization.response;
 

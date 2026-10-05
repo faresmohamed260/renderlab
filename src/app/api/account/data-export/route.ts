@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import {
   getPublicAccountExport,
@@ -32,7 +33,9 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const authentication = await getFreshCurrentRenderLabAuthentication();
   if (!authentication) return unauthorized();
   if (isRenderLabMfaChallengeRequired(authentication.assurance)) return mfaRequired();

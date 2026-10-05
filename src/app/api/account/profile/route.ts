@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getRenderLabAccountProfile,
@@ -37,6 +38,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const owner = await getRenderLabProfileRequestOwner();
   if (!owner.ok) return accessError(owner);
 

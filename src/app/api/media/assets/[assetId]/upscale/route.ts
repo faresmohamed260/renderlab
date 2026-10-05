@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import type { SubmitGenerationErrorCode } from "@/lib/api/generation-contract";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
@@ -38,6 +39,8 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ assetId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const { assetId } = await context.params;
   if (!uuidPattern.test(assetId)) return invalidRequest("A valid media asset ID is required.");
 

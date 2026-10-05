@@ -15,6 +15,57 @@ function expectFailure(result, label) {
   }
 }
 
+async function verifyMutationOriginCoverage() {
+  const apiDirectory = path.join(root, "src", "app", "api");
+  const mutationPattern = /export async function (POST|PUT|PATCH|DELETE)\s*\(/g;
+  const guardImport = 'from "@/server/security/same-origin-mutation"';
+  const exemptionMarker = "ENT-004 same-origin exemption: server-secret internal route authenticated by a dedicated bearer secret.";
+  const approvedExemptions = new Set([
+    "src/app/api/internal/generation/reconcile/route.ts",
+    "src/app/api/internal/maintenance/route.ts",
+  ]);
+  const routeFiles = [];
+  const violations = [];
+
+  async function collect(directory) {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) await collect(fullPath);
+      else if (entry.isFile() && entry.name === "route.ts") routeFiles.push(fullPath);
+    }
+  }
+
+  await collect(apiDirectory);
+
+  for (const routeFile of routeFiles) {
+    const source = await readFile(routeFile, "utf8");
+    const mutations = [...source.matchAll(mutationPattern)];
+    if (mutations.length === 0) continue;
+
+    const relative = path.relative(root, routeFile).split(path.sep).join("/");
+    if (approvedExemptions.has(relative)) {
+      if (!source.includes(exemptionMarker)) {
+        violations.push(`${relative} is an approved mutation-origin exemption but is missing its security rationale marker`);
+      }
+      continue;
+    }
+
+    if (!source.includes(guardImport)) {
+      violations.push(`${relative} has mutation handlers but does not import the shared same-origin guard`);
+      continue;
+    }
+
+    const guardCalls = source.match(/enforceSameOriginMutation\s*\(/g)?.length ?? 0;
+    if (guardCalls < mutations.length) {
+      violations.push(`${relative} has ${mutations.length} mutation handler(s) but only ${guardCalls} same-origin guard call(s)`);
+    }
+  }
+
+  if (violations.length > 0) {
+    throw new Error(`Mutation origin coverage verification failed:\n- ${violations.join("\n- ")}`);
+  }
+}
+
 async function verifyWorkflowSecurity() {
   const workflowsDirectory = path.join(root, ".github", "workflows");
   const workflowFiles = (await readdir(workflowsDirectory)).filter(
@@ -91,5 +142,6 @@ try {
 }
 
 await verifyWorkflowSecurity();
+await verifyMutationOriginCoverage();
 
-console.log("Engineering quality negative fixtures and workflow security checks passed.");
+console.log("Engineering quality negative fixtures, workflow security, and mutation-origin coverage checks passed.");

@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { publicMediaAsset, setMediaAssetFavorite } from "@/server/media/media-assets";
@@ -52,15 +53,19 @@ async function updateFavorite(
 }
 
 export async function PUT(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ assetId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   return updateFavorite(context, true);
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ assetId: string }> },
 ) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   return updateFavorite(context, false);
 }

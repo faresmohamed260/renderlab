@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import {
   type CreateMediaCollectionRequest,
@@ -51,6 +52,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   let body: CreateMediaCollectionRequest;
   try {
     body = await request.json() as CreateMediaCollectionRequest;

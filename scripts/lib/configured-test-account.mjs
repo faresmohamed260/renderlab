@@ -206,6 +206,7 @@ async function verifyConfiguredTestAccountAbsent(id) {
   const encodedId = encodeURIComponent(id);
   const checks = await Promise.all([
     serviceRows(`generation_admission_reservations?owner_id=eq.${encodedId}&select=id&limit=1`),
+    serviceRows(`upload_admission_reservations?owner_id=eq.${encodedId}&select=id&limit=1`),
     serviceRows(`renderlab_account_access?user_id=eq.${encodedId}&select=user_id&limit=1`),
     serviceRows(`generation_jobs?owner_id=eq.${encodedId}&select=id&limit=1`),
     serviceRows(`generation_sources?owner_id=eq.${encodedId}&select=id&limit=1`),
@@ -232,12 +233,14 @@ export async function deleteConfiguredTestAccount(accountOrId) {
   await retryConfiguredCleanup("Configured account owner rows", () => cleanupOwnedRenderLabRows(id));
 
   await retryConfiguredCleanup("Configured account admission reservations", async () => {
-    const admissionResponse = await serviceRest(`generation_admission_reservations?owner_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (!admissionResponse.ok) {
-      const detail = await admissionResponse.text();
-      const relationMissing = admissionResponse.status === 404 && detail.includes("generation_admission_reservations");
-      if (!relationMissing) {
-        throw new Error(`Could not clean configured account admission reservations (${admissionResponse.status}): ${detail}`);
+    for (const table of ["generation_admission_reservations", "upload_admission_reservations"]) {
+      const admissionResponse = await serviceRest(`${table}?owner_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!admissionResponse.ok) {
+        const detail = await admissionResponse.text();
+        const relationMissing = admissionResponse.status === 404 && detail.includes(table);
+        if (!relationMissing) {
+          throw new Error(`Could not clean configured account ${table} rows (${admissionResponse.status}): ${detail}`);
+        }
       }
     }
   });

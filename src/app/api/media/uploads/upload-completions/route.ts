@@ -1,3 +1,4 @@
+import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import { validateMediaUploadCompletionRequest } from "@/lib/api/media-upload-contract";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
@@ -5,6 +6,8 @@ import { publicMediaAsset } from "@/server/media/media-assets";
 import { completeMediaUpload, isMediaUploadConfigured } from "@/server/media/media-uploads";
 
 export async function POST(request: Request) {
+  const originFailure = enforceSameOriginMutation(request);
+  if (originFailure) return originFailure;
   const body: unknown = await request.json().catch(() => null);
   const parsed = validateMediaUploadCompletionRequest(body);
 
