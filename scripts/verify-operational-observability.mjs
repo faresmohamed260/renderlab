@@ -87,10 +87,10 @@ async function recordAlert({ key, family, severity, event, code, seenAt }) {
 }
 
 async function cleanup() {
-  const diagnosticFilter = new URLSearchParams({ correlation_id: `like.${prefix}*` });
-  const alertFilter = new URLSearchParams({ alert_key: `like.${prefix}*` });
-  await expectOk(await rest(`renderlab_diagnostic_events?${diagnosticFilter}`, { method: "DELETE" }), "Clean observability diagnostics").catch(() => {});
-  await expectOk(await rest(`renderlab_operational_alerts?${alertFilter}`, { method: "DELETE" }), "Clean observability alerts").catch(() => {});
+  await expectOk(await rest("rpc/renderlab_cleanup_test_operational_observability", {
+    method: "POST",
+    body: JSON.stringify({ p_prefix: prefix }),
+  }), "Clean run-owned observability fixtures");
   await deleteConfiguredTestAccount(memberIdentity).catch(() => {});
 }
 

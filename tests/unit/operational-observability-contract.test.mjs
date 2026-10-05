@@ -8,7 +8,7 @@ async function source(relativePath) {
   return readFile(new URL(relativePath, root), "utf8");
 }
 
-test("operational observability migration stays server-owned and privacy bounded", async () => {
+test("base operational observability migration stays server-owned and privacy bounded", async () => {
   const migration = await source("supabase/migrations/0028_renderlab_operational_observability.sql");
 
   for (const table of ["renderlab_diagnostic_events", "renderlab_operational_alerts"]) {
@@ -30,6 +30,23 @@ test("operational observability migration stays server-owned and privacy bounded
   for (const forbiddenColumn of ["prompt", "email", "owner_id", "storage_key", "provider_job_id", "worker_id", "user_agent", "ip_address"]) {
     assert(!new RegExp(`\\b${forbiddenColumn}\\b`, "i").test(diagnosticTable), `Diagnostic table must not store ${forbiddenColumn}.`);
   }
+});
+
+test("observability privilege hardening removes broad service-role table rights", async () => {
+  const migration = await source("supabase/migrations/0029_renderlab_operational_observability_privilege_hardening.sql");
+
+  assert.match(migration, /revoke all on table public\.renderlab_diagnostic_events from service_role/i);
+  assert.match(migration, /revoke all on table public\.renderlab_operational_alerts from service_role/i);
+  assert.match(migration, /revoke all on sequence public\.renderlab_diagnostic_events_id_seq from service_role/i);
+  assert.match(migration, /grant select, insert on table public\.renderlab_diagnostic_events to service_role/i);
+  assert.match(migration, /grant usage on sequence public\.renderlab_diagnostic_events_id_seq to service_role/i);
+  assert.match(migration, /grant select on table public\.renderlab_operational_alerts to service_role/i);
+  assert.match(migration, /alter function public\.renderlab_prune_diagnostic_events\(integer\)\s+security definer/i);
+  assert.match(migration, /alter function public\.renderlab_record_operational_alert\(text, text, text, text, text, timestamptz\)\s+security definer/i);
+  assert.match(migration, /create or replace function public\.renderlab_cleanup_test_operational_observability/i);
+  assert.match(migration, /v_diagnostic_deleted integer := 0;\s+v_alert_deleted integer := 0;/i);
+  assert(migration.includes("p_prefix !~ '^test\\.[a-z0-9_.:-]{1,20}\\.$'"));
+  assert.match(migration, /grant execute on function public\.renderlab_cleanup_test_operational_observability\(text\)\s+to service_role/i);
 });
 
 test("Admin diagnostic projection omits server-only job identity", async () => {
@@ -54,13 +71,15 @@ test("Admin renders dotted diagnostic machine identifiers as readable labels", a
   assert(adminUi.includes('.replace(/[-_.]/g, " ")'));
 });
 
-test("configured Admin observability reads and direct fixtures stay run-owned when a test namespace is active", async () => {
+test("configured Admin observability stays run-owned behind the test cleanup RPC", async () => {
   const store = await source("src/server/observability/diagnostic-store.ts");
   const verifier = await source("scripts/verify-admin-operations.mjs");
   assert.match(store, /params\.set\("correlation_id", `like\.\$\{testPrefix\}\*`\)/);
   assert.match(store, /params\.set\("alert_key", `like\.\$\{testPrefix\}\*`\)/);
   assert.match(verifier, /scopeObservabilityIdentifier\(`admin-health-\$\{runToken\}`, 64\)/);
   assert.match(verifier, /scopeObservabilityIdentifier\(`admin-health-\$\{runToken\}`, 80\)/);
+  assert.match(verifier, /rpc\/renderlab_cleanup_test_operational_observability/);
+  assert(!verifier.includes('renderlab_operational_alerts?alert_key='));
 });
 
 test("durable persistence remains background observational work", async () => {

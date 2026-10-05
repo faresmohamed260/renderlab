@@ -1,7 +1,7 @@
 import { chromium } from "@playwright/test";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { scopeObservabilityIdentifier } from "../src/server/observability/diagnostics.ts";
+import { currentObservabilityTestPrefix, scopeObservabilityIdentifier } from "../src/server/observability/diagnostics.ts";
 import {
   createConfiguredTestAccount,
   configuredTestAccountIdentity,
@@ -101,13 +101,14 @@ async function deleteOutsider() {
 }
 
 async function deleteObservabilityFixtures() {
+  const testPrefix = currentObservabilityTestPrefix();
+  if (!testPrefix) throw new Error("Admin observability cleanup requires a configured test namespace.");
   await expectOk(
-    await serviceRest(`renderlab_diagnostic_events?correlation_id=eq.${encodeURIComponent(diagnosticCorrelation)}`, { method: "DELETE" }),
-    "Could not clean Admin diagnostic fixtures",
-  );
-  await expectOk(
-    await serviceRest(`renderlab_operational_alerts?alert_key=eq.${encodeURIComponent(operationalAlertKey)}`, { method: "DELETE" }),
-    "Could not clean Admin operational-alert fixture",
+    await serviceRest("rpc/renderlab_cleanup_test_operational_observability", {
+      method: "POST",
+      body: JSON.stringify({ p_prefix: testPrefix }),
+    }),
+    "Could not clean Admin observability fixtures",
   );
 }
 
@@ -418,26 +419,22 @@ async function seedHealthJobs(ownerId) {
     "Could not seed Admin diagnostic fixtures",
   );
   const alertLastSeenAt = new Date(now - 3 * 60_000).toISOString();
-  await expectOk(
-    await serviceRest("renderlab_operational_alerts", {
-      method: "POST",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({
-        alert_key: operationalAlertKey,
-        family: "maintenance-failure",
-        severity: "warning",
-        state: "open",
-        first_seen_at: diagnosticAt,
-        last_seen_at: alertLastSeenAt,
-        occurrence_count: 2,
-        last_event: "maintenance.pass",
-        last_code: null,
-        last_notified_at: null,
-        resolved_at: null,
+  for (const seenAt of [diagnosticAt, alertLastSeenAt]) {
+    await expectOk(
+      await serviceRest("rpc/renderlab_record_operational_alert", {
+        method: "POST",
+        body: JSON.stringify({
+          p_alert_key: operationalAlertKey,
+          p_family: "maintenance-failure",
+          p_severity: "warning",
+          p_event: "maintenance.pass",
+          p_code: null,
+          p_seen_at: seenAt,
+        }),
       }),
-    }),
-    "Could not seed Admin operational-alert fixture",
-  );
+      "Could not seed Admin operational-alert fixture",
+    );
+  }
 
   return {
     secretMarker,
@@ -453,7 +450,7 @@ async function seedHealthJobs(ownerId) {
 
 if (cleanupOnly) {
   await restoreGenerationSettingsBaselineFromFile();
-  await deleteObservabilityFixtures().catch(() => {});
+  await deleteObservabilityFixtures();
   await deleteInvitationEmail(outsider.email).catch(() => {});
   await deleteOutsider().catch(() => {});
   await deleteConfiguredTestAccount(configuredTestAccountIdentity("admin-operations-member")).catch(() => {});

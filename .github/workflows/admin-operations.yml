@@ -17,6 +17,7 @@ on:
       - "src/server/maintenance/**"
       - "src/server/observability/**"
       - "supabase/migrations/0028_renderlab_operational_observability.sql"
+      - "supabase/migrations/0029_renderlab_operational_observability_privilege_hardening.sql"
       - "supabase/migrations/0010_renderlab_account_admission.sql"
       - "supabase/migrations/0011_renderlab_admin_access_control.sql"
       - "supabase/migrations/0012_renderlab_generation_admission.sql"

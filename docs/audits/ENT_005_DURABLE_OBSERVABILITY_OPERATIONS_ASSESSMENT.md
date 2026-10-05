@@ -31,29 +31,29 @@ It does not add a telemetry vendor, client RUM/session replay, new production sc
 
 ### Repository/local evidence
 
-Before opening the implementation PR:
+Implementation-head local evidence now includes:
 
 - `git diff --check` passed after restoring repository LF line endings;
 - TypeScript no-emit passed;
-- Node unit suite passed **84/84**;
-- Oxlint completed with **0 errors**;
+- Node unit suite passed **87/87** after the later Admin-label and privilege-hardening guards were added;
+- Oxlint completed with **0 errors** on the earlier full pre-PR pass;
 - `scripts/verify-admin-operations.mjs` and `scripts/verify-operational-observability.mjs` passed syntax validation;
-- Next.js 16.3.8 production build passed;
-- the supported Linux/WSL `npm run verify:engineering-quality` gate passed.
+- Next.js 16.3.8 production build passed on the earlier full pre-PR pass;
+- the supported Linux/WSL `npm run verify:engineering-quality` gate passed on the earlier full pre-PR pass.
 
 ### Shared Supabase evidence
 
-Migration `0028_renderlab_operational_observability.sql` was applied to the already-approved shared project as:
+Migration `0028_renderlab_operational_observability.sql` was applied to the already-approved shared project as `20261005181527 renderlab_operational_observability`. A subsequent **effective** role audit found Supabase default grants had left broader `service_role` table privileges than the source migration intended. That discrepancy was corrected forward-only with `0029_renderlab_operational_observability_privilege_hardening.sql`, applied as `20261005202352 renderlab_operational_observability_privilege_hardening`; `0028` was not rewritten.
 
-`20261005181527 renderlab_operational_observability`
-
-Live privilege inspection verified:
+Post-`0029` live inspection verifies:
 
 - RLS enabled on `renderlab_diagnostic_events` and `renderlab_operational_alerts`;
-- no `anon`/`authenticated` direct table reads;
-- only required service-role table capabilities;
-- diagnostic identity-sequence browser access revoked and service-role sequence access present;
-- prune and alert-record RPC execution revoked from `anon`/`authenticated` and granted to `service_role`.
+- no `anon`/`authenticated` direct table access or privileged-RPC execute;
+- effective `service_role` table capabilities narrowed to diagnostics `INSERT, SELECT` and alerts `SELECT`;
+- diagnostic identity sequence narrowed to `USAGE` for `service_role`;
+- prune and alert-record functions are `SECURITY DEFINER`, empty-search-path RPC boundaries executable only by `service_role`;
+- configured cleanup uses a separate service-role-only RPC that accepts only exact `test.<namespace>.` prefixes, avoiding general table DELETE capability;
+- a live service-role diagnostic insert → alert-record RPC → prefix-cleanup smoke finished with zero diagnostic and alert residue.
 
 A rollback-only database behavior exercise verified:
 
