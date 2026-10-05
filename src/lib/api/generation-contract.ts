@@ -280,13 +280,7 @@ export function parseGenerationRequest(value: unknown):
 
   const advanced = parseAdvanced(value.advanced, outputKind, model);
   if (advanced === null) {
-    return {
-      ok: false,
-      error: {
-        code: "invalid_request",
-        message: `Advanced generation parameters are invalid. Negative prompt must be ${generationTextLimits.negativePromptCharacters.toLocaleString("en-US")} characters or fewer.`,
-      },
-    };
+    return { ok: false, error: { code: "invalid_request", message: "Advanced generation parameters are invalid." } };
   }
 
   return {

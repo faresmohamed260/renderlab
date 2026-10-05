@@ -11,8 +11,8 @@ const fixtureFilename = "renderlab-integration-1x1.png";
 const fixtureAccount = configuredTestAccountIdentity("reference-upload");
 const cleanupOnly = process.argv.includes("--cleanup-only");
 
-// 1×1 transparent PNG. The integration verifies RenderLab's signed-upload/storage
-// contract rather than image processing, so a tiny deterministic fixture is enough.
+// 1×1 transparent PNG. Completion deliberately submits false client geometry so
+// the integration proves RenderLab derives dimensions from decoded server-side bytes.
 const pngBytes = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z5ZsAAAAASUVORK5CYII=",
   "base64",
@@ -129,7 +129,7 @@ try {
   const completion = await request("/api/assets/reference/upload-completions", account, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ sourceId, width: 1, height: 1 }),
+    body: JSON.stringify({ sourceId, width: 999, height: 777 }),
   });
 
   if (!completion.response.ok) {
@@ -139,6 +139,9 @@ try {
   const source = completion.payload?.source;
   if (!source || source.id !== sourceId || source.status !== "ready" || source.mimeType !== "image/png") {
     throw new Error(`Upload completion returned an invalid source: ${JSON.stringify(completion.payload)}`);
+  }
+  if (source.width !== 1 || source.height !== 1) {
+    throw new Error(`Reference upload trusted client geometry instead of decoded bytes: ${JSON.stringify(source)}`);
   }
 
   const ownerResponse = await supabase(`generation_sources?id=eq.${encodeURIComponent(sourceId)}&select=owner_id&limit=1`);
