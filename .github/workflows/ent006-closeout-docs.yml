@@ -1,0 +1,40 @@
+name: ENT-006 Closeout Docs
+
+on:
+  push:
+    branches:
+      - docs/ent-006-closeout
+    paths:
+      - scripts/close-ent006-docs.mjs
+      - .github/workflows/ent006-closeout-docs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout closeout branch
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          ref: docs/ent-006-closeout
+          fetch-depth: 0
+      - name: Apply verified closeout documentation
+        run: node scripts/close-ent006-docs.mjs
+      - name: Validate documentation patch
+        run: |
+          git diff --check
+          test -s docs/audits/ENT_006_SERVER_ONLY_BOUNDARIES_ASSESSMENT.md
+          grep -q 'Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED' docs/audits/ENT_006_SERVER_ONLY_BOUNDARIES_CONTRACT.md
+          grep -q 'Current authoritative score: \*\*8.5/10\*\*' docs/audits/ENT_006_SERVER_ONLY_BOUNDARIES_ASSESSMENT.md
+          grep -q 'typescript@7.0.2' PROJECT.md
+      - name: Commit durable closeout and remove helper
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm scripts/close-ent006-docs.mjs .github/workflows/ent006-closeout-docs.yml
+          git add PROJECT.md docs/STATUS.md docs/architecture/FRONTEND_ARCHITECTURE.md docs/architecture/INFRASTRUCTURE.md docs/audits/ENT_006_SERVER_ONLY_BOUNDARIES_CONTRACT.md docs/audits/ENT_006_SERVER_ONLY_BOUNDARIES_ASSESSMENT.md
+          git commit -m 'close ENT-006 repository handoff'
+          git push origin HEAD:docs/ent-006-closeout
