@@ -1,7 +1,7 @@
 # ENT-006 — Explicit server-only module boundaries contract
 
 Date: 2026-10-06
-Status: EXECUTION CONTRACT / IMPLEMENTATION NOT STARTED / NOT DEPLOYED
+Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
 
 ## Goal
 Close the highest-value post-ENT-005 application-boundary weakness by making RenderLab's privileged server modules explicit build-time server-only boundaries and by enforcing that Client Components cannot acquire runtime dependencies on `src/server` or the privileged Supabase server client.
@@ -151,6 +151,21 @@ ENT-006 may be marked complete only when:
 - merged-main Engineering Quality and CodeQL pass;
 - temporary implementation/closure branches are removed;
 - repository documentation records only verified reality.
+
+## Closure evidence — 2026-10-06
+
+ENT-006 is complete in repository source and remains **not deployed**.
+
+- Implementation PR #342 final head `8b9d87b9ce70f63f5c755a10de19975d7acdc36a` passed Engineering Quality run `37490780105` and CodeQL run `37490780138`.
+- Engineering Quality proved deterministic dependency installation, lint, TypeScript no-emit using repository-owned TypeScript `7.0.2`, the full unit suite, negative quality fixtures including the server-boundary verifier, and the production Next.js build.
+- The final-head Library Lifecycle pull-request run was cancelled before useful execution and was superseded by unchanged exact-head workflow-dispatch run `37493401969`, which passed. The remaining affected exact-head integration, lifecycle, account, upload, generation, UI and release-readiness workflows passed.
+- PR #342 squash-merged to protected `main` as `6c80535737fb67a0239ac8cc05a2feaf014d49bf`.
+- Merged-main Engineering Quality run `37494017112` and CodeQL run `37494017131` passed on that exact merge SHA; affected merged-main push workflows were also accepted.
+- The implementation pins dev-only `@babel/parser@7.29.9`; `typescript@7.0.2` remains the normal compiler and owner of `tsc`.
+- The canonical 11 privileged leaf modules carry the `server-only` marker; Client Component runtime imports from server-owned namespaces and unmarked direct high-risk credential reads are statically rejected while genuine type-only imports remain allowed.
+- No Supabase/R2 mutation, provider-routing change, credential change, Vercel production deployment, alias movement or other shared-runtime mutation was performed by ENT-006.
+
+The same-rubric reassessment is recorded in `docs/audits/ENT_006_SERVER_ONLY_BOUNDARIES_ASSESSMENT.md`. The official rounded enterprise score remains **8.5/10**: ENT-006 materially strengthens architecture and application security, but the dominant score ceilings remain destructive-loss recovery, developer portability, coverage visibility and maintainability debt.
 
 ## Deployment boundary
 

@@ -314,6 +314,18 @@ Use for Create workspace/polling, temporary reference interaction, Library uploa
 
 Library picker/drop interactions share feature-owned `library-upload-client.ts`; that client owns validation and the existing ticket → signed PUT → completion transaction, while the Library dataset itself remains server-owned and is refreshed after successful completion. `LibraryDropUploadSurface` owns only transient DragEvent/DataTransfer state and local feedback; it does not copy Library media into a global client store or create a second upload contract. Library search remains a URL-owned native GET form while its visible input/actions use maintained primitives and its hidden kind/sort state remains native plumbing. `LibrarySortMenu` uses a small client component only for Radix menu interaction + URL navigation; actual ordering remains server-owned. Media Viewer Download uses normal product-route navigation. Rename uses one small Viewer-owned client component, submits to the product API, then calls router refresh so the server-rendered Viewer title/metadata stays authoritative. AccountSettings calls Supabase Auth through the public browser client for sign-in/create-account/sign-out, then refreshes the server-rendered Settings account state. No global media-management or auth client store exists.
 
+### Explicit server-only ownership — ENT-006
+
+Privileged server ownership is an enforced module boundary, not a naming convention:
+
+- canonical credential/data-bearing leaf modules declare top-level `import "server-only";`;
+- a file with a top-level `"use client"` directive must not runtime-import `@/server/*` or `@/lib/supabase/server`, statically or dynamically;
+- genuine type-only imports from server-owned modules remain allowed because they erase from the browser graph;
+- newly direct credential-bearing modules under the scanned server-owned source boundary must carry the same marker;
+- `scripts/verify-server-boundaries.mjs`, integrated into Engineering Quality, enforces those rules with `@babel/parser@7.29.9` while the repository compiler remains `typescript@7.0.2`.
+
+Do not add `server-only` mechanically to pure deterministic `src/server` helpers intentionally executed directly by Node unit tests. Higher-level server modules inherit the browser build barrier transitively from marked privileged leaves.
+
 ## State Architecture
 ### URL state
 - Library `kind` / `q` / `sort` / `favorite` / `collection` / `offset`;
