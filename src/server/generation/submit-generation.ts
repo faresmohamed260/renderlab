@@ -1,3 +1,5 @@
+import "server-only";
+
 import { resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";

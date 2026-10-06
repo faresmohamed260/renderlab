@@ -1,3 +1,5 @@
+import "server-only";
+
 import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";
 
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "").trim();
