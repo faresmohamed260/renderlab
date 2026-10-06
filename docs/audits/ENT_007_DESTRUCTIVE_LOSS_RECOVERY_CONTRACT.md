@@ -3,7 +3,7 @@
 Date: 2026-10-07
 Status: CONTRACT / FREE-PLAN IMPLEMENTATION AUTHORIZED / ACTIVE
 Tracking: #347
-Baseline `main`: `929cd0e5183d6b07201e0b2884134bd1407061c7`
+Baseline `main`: `192e0720b41ee46ff050b9159325f5ff4e67762d`
 
 ## Goal
 
@@ -15,10 +15,13 @@ ENT-007 is a disaster-recovery phase. It is not a production release or product 
 
 - ENT-006 is complete/verified/merged/not deployed. The authoritative enterprise score remains **8.5/10**; disaster recovery/business continuity remains **5.9/10** and is the largest single score ceiling.
 - ENT-007 contract PR #349 merged and verified on `main` as `929cd0e5183d6b07201e0b2884134bd1407061c7`; exact-head and merged-main Engineering Quality/CodeQL passed.
+- Free-plan amendment PR #350 merged and verified on `main` as `192e0720b41ee46ff050b9159325f5ff4e67762d`; merged-main Engineering Quality `37541270364` and CodeQL `37541270367` passed.
 - Shared Supabase project `rashyleshocuvpgcooxy` (`AI Studio`, `eu-west-1`) is live and `ACTIVE_HEALTHY`; current database engine is PostgreSQL 17 (`17.6.1.155`). The connected `Fares Home Lab` organization remains on the Free plan by explicit owner decision.
 - The Supabase project is deliberately shared with S.A.G.A. RenderLab owns its own application tables/contracts but does not own the entire shared database/Auth estate independently.
 - Current Supabase documentation recommends regular logical exports for Free-plan projects because downloadable managed backups are not available. Current CLI `supabase db dump` excludes managed schemas such as `auth` by default; Supabase separately documents SQL/`pg_dump` migration of Auth users and hashed passwords between projects.
 - The current incident/recovery authority records no verified independently restorable logical backup or measured Supabase destructive-loss RPO/RTO.
+- Branch-only bootstrap run `37541773882` verified incoming database SSL enforcement is currently off and JIT/temporary Postgres access is unavailable. Enabling JIT would require changing SSL enforcement and rebooting the deliberately shared database; ENT-007 will not introduce that shared-runtime change merely to obtain a dump connection.
+- Branch-only capability run `37542331619` verified the existing protected `SUPABASE_ACCESS_TOKEN` can query `public.media_assets`, `auth.users`, and `supabase_migrations.schema_migrations` through Supabase Management API database-query surfaces without exposing a database password or changing shared runtime state.
 - Read-only sizing on 2026-10-07 measured the shared database at roughly 14.9 MB. RenderLab active durable primary media was roughly 5.7 MB across 8 active assets plus 8 thumbnails, so current recovery-storage cost is negligible.
 - RenderLab reuses one private Cloudflare R2 resource. Authoritative durable namespaces include generated media, thumbnails, persistent uploads, and deterministic private account-profile avatars. Temporary references, test fixtures, tombstoned/staging objects and regenerable account-export artifacts are not equivalent to durable recovery assets.
 - Cloudflare R2 provides private buckets, S3-compatible copy/read/write and bucket-lock retention. Repository CI already has Cloudflare account-management and R2 credential paths; WANDA-616 is also an owner-authorized control plane for Cloudflare operations.
@@ -33,20 +36,24 @@ The owner explicitly chose to remain on Supabase Free. ENT-007 therefore accepts
 Minimum accepted backup generation:
 
 - run on an approved schedule plus `workflow_dispatch`;
-- capture user-managed database roles, schema and data with pinned Supabase/Postgres tooling;
-- capture the managed `auth` **data** explicitly with `pg_dump` because ordinary `supabase db dump` excludes `auth`; do not replace the target project's provider-owned Auth schema DDL blindly;
+- use the existing protected `SUPABASE_ACCESS_TOKEN` only through Supabase Management API database-query surfaces; do not add or rotate a long-lived database password merely for backup;
+- treat the checked-in RenderLab migration chain plus verified hosted migration history as schema/RLS/routine reconstruction authority rather than scraping provider-managed DDL;
+- export deterministic, versioned logical data for every RenderLab-owned durable/account/operations table required by current product state;
+- derive the RenderLab owner/user identity set from RenderLab-owned rows, then export only the bounded managed Auth rows required to reconstruct those identities rather than copying unrelated S.A.G.A. Auth state;
+- keep Management API queries read-only and schema-qualified; use the beta read-only endpoint where its `supabase_read_only_user` can see the required relation, and the generic query endpoint with `read_only: true` only for provider-managed relations such as `auth` that were explicitly verified but are not exposed to `supabase_read_only_user`;
 - capture migration-head/history evidence needed to prove which RenderLab migrations are represented by the backup;
 - hash every backup payload and publish only a secret-safe manifest;
 - store backup payloads only in the dedicated private retained backup destination, never Git or ordinary short-lived Actions artifacts.
 
-The logical backup may contain shared S.A.G.A. database/Auth state because the source project is shared. That does not make RenderLab runtime-dependent on S.A.G.A.; it means the recovery artifact must be treated as sensitive shared-project data and drills must report only RenderLab-owned invariants.
+The logical backup must minimize shared-project blast radius: it backs up RenderLab-owned application state plus only the Auth identity rows needed by RenderLab. It must not become a general S.A.G.A. database export. Auth secrets/tokens/session material are included only when a later restore requirement proves they are necessary and safe; otherwise the recovery contract requires fresh authentication after restoration and records the omitted continuity explicitly.
 
 Minimum accepted restore proof:
 
 - restore into a separate isolated Supabase project or other isolated Postgres/Supabase-compatible target; never overwrite/reset the live shared project for a drill;
-- restore user-managed schema/data and Auth data using a documented order compatible with the target's provider-managed schemas;
+- apply the checked-in RenderLab migration chain to reconstruct RenderLab schema/RLS/routines, then import the versioned logical snapshot in a documented dependency-safe order;
+- import only the bounded Auth identity records carried by the backup and preserve provider-owned Auth schema ownership;
 - verify representative RenderLab rows, ownership/foreign-key integrity, RLS/grants, migration state and Auth identity continuity needed by RenderLab;
-- require fresh sign-in after restore unless the drill separately proves compatible JWT-signing configuration; active JWT continuity is not assumed;
+- require fresh sign-in after restore unless the drill separately proves compatible JWT-signing/session configuration; active JWT/session continuity is not assumed;
 - measure the age of the restored backup and elapsed restore/verification time.
 
 Explicit Free-plan limitations that remain after a successful drill:
@@ -189,6 +196,8 @@ ENT-007 does **not** authorize:
 - repurposing or mutating legacy S.A.G.A. application tables;
 - restoring a drill over the live Supabase project or live R2 keys;
 - broad R2 prefix sweeps/deletes;
+- enabling Supabase SSL enforcement/JIT or rebooting the shared database solely to obtain backup connectivity;
+- rotating or introducing a persistent shared Postgres password solely for ENT-007 backup;
 - treating GitHub artifacts or repository commits as the long-term backup store;
 - claiming provider/account-failure independence from a same-provider/same-account backup;
 - developer portability, test-coverage tooling, workflow consolidation or large-module decomposition except where narrowly necessary for the recovery workflow itself.
