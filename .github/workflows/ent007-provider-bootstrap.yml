@@ -1,0 +1,128 @@
+name: ENT-007 Provider Bootstrap
+
+on:
+  push:
+    branches:
+      - work/ent-007-free-recovery
+    paths:
+      - ".github/workflows/ent007-provider-bootstrap.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-ent007-provider-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PROJECT_REF: rashyleshocuvpgcooxy
+      BACKUP_BUCKET_NAME: renderlab-dr-backup
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_SOURCE_BUCKET: ${{ secrets.R2_BUCKET_NAME }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in SUPABASE_ACCESS_TOKEN CLOUDFLARE_API_TOKEN R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_SOURCE_BUCKET; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not configured."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Inspect Supabase Free-plan recovery prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssl_json="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/ssl-enforcement")"
+          jit_json="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/jit-access")"
+          printf 'supabase_ssl_enforced=%s\n' "$(jq -r '.currentConfig.database // false' <<<"$ssl_json")"
+          printf 'supabase_jit_state=%s\n' "$(jq -r '.state // "unknown"' <<<"$jit_json")"
+          if mapping_json="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/jit" 2>/dev/null)"; then
+            printf 'supabase_jit_roles=%s\n' "$(jq -c '[.user_roles[]?.role]' <<<"$mapping_json")"
+          else
+            echo 'supabase_jit_roles=unavailable'
+          fi
+
+      - name: Create or verify retained R2 backup bucket
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/$R2_ACCOUNT_ID/r2/buckets"
+          auth=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          source_json="$(curl --fail-with-body --silent --show-error "${auth[@]}" "$api/$R2_SOURCE_BUCKET")"
+          location="$(jq -r '.result.location // empty' <<<"$source_json")"
+          if bucket_json="$(curl --silent --show-error "${auth[@]}" "$api/$BACKUP_BUCKET_NAME")" && [ "$(jq -r '.success // false' <<<"$bucket_json")" = true ]; then
+            echo "backup_bucket=existing"
+          else
+            payload="$(jq -cn --arg name "$BACKUP_BUCKET_NAME" --arg location "$location" '{name:$name,storage_class:"Standard"} + (if $location == "" then {} else {locationHint:$location} end)')"
+            create_json="$(curl --fail-with-body --silent --show-error -X POST "${auth[@]}" -H 'Content-Type: application/json' -d "$payload" "$api")"
+            test "$(jq -r '.success' <<<"$create_json")" = true
+            echo "backup_bucket=created"
+          fi
+
+      - name: Verify existing S3 credentials against backup bucket before lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --quiet boto3
+          python - <<'PY'
+          import os, uuid
+          import boto3
+          from botocore.config import Config
+          endpoint = f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com"
+          client = boto3.client(
+              "s3",
+              endpoint_url=endpoint,
+              aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+              region_name="auto",
+              config=Config(signature_version="s3v4"),
+          )
+          bucket = os.environ["BACKUP_BUCKET_NAME"]
+          key = f"ent007-provisioning/{uuid.uuid4()}.txt"
+          body = b"renderlab-ent007-credential-check\n"
+          client.put_object(Bucket=bucket, Key=key, Body=body, ContentType="text/plain")
+          got = client.get_object(Bucket=bucket, Key=key)["Body"].read()
+          if got != body:
+              raise SystemExit("R2 credential round-trip mismatch")
+          client.delete_object(Bucket=bucket, Key=key)
+          print("backup_bucket_s3_credentials=verified")
+          PY
+
+      - name: Apply and verify 7-day bucket lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/$R2_ACCOUNT_ID/r2/buckets/$BACKUP_BUCKET_NAME/lock"
+          payload='{"rules":[{"id":"renderlab-ent007-retain-7d","enabled":true,"prefix":"","condition":{"type":"Age","maxAgeSeconds":604800}}]}'
+          response="$(curl --fail-with-body --silent --show-error -X PUT \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d "$payload" "$api")"
+          test "$(jq -r '.success' <<<"$response")" = true
+          verify="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api")"
+          jq -e '.result.rules[] | select(.id == "renderlab-ent007-retain-7d" and .enabled == true and .condition.type == "Age" and .condition.maxAgeSeconds == 604800)' <<<"$verify" >/dev/null
+          echo "backup_bucket_lock=verified_7d"
