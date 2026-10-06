@@ -69,6 +69,15 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - ENT-005 is COMPLETE / VERIFIED / MERGED / NOT DEPLOYED. Account/Admin artifact `11371566032` (`sha256:3ec7a23f48aa6a80cbfb1bede284b5cb996d59830044d1d919ea46017e9c4ecb`) was human-reviewed clean on desktop, 390px and reduced-motion evidence. All 14 affected merged-main push workflows reached accepted success on `895910e0bb1f683202113592f0c03429b87bdde5`; provider-dependent initial failures reran unchanged after the shared outage window and passed. Final shared-state audit reports zero `test.*` diagnostics/alerts and zero ENT-005 observability/Admin/video fixture Auth users. The authoritative enterprise reassessment is **8.5/10**.
 - No ENT-005 Vercel production deployment, paid-plan upgrade, new scheduler, backup secret/resource, R2 replication, telemetry vendor or provider-routing change is authorized or implied by the implementation/shared migration.
 
+## ENT-006 explicit server-only boundaries — closed 2026-10-06
+
+- ENT-006 is **COMPLETE / VERIFIED / MERGED / NOT DEPLOYED**. Implementation PR #342 final head `8b9d87b9ce70f63f5c755a10de19975d7acdc36a` passed exact-head Engineering Quality `37490780105`, CodeQL `37490780138`, and the affected workflow matrix; the cancelled Library Lifecycle PR allocation was superseded by unchanged exact-head run `37493401969`, which passed.
+- The implementation squash-merged as `6c80535737fb67a0239ac8cc05a2feaf014d49bf`. Merged-main Engineering Quality `37494017112` and CodeQL `37494017131` passed on that exact SHA.
+- Eleven credential/data-bearing leaf modules now declare `import "server-only";`. Engineering Quality statically rejects Client Component runtime imports from `@/server/*` or `@/lib/supabase/server`, preserves genuine type-only imports, and rejects direct covered credential reads in scanned server-owned modules unless the module carries the marker.
+- The AST verifier uses dev-only `@babel/parser@7.29.9`; the ordinary compiler remains exactly `typescript@7.0.2` and continues to own `tsc`.
+- The authoritative enterprise reassessment remains **8.5/10**. ENT-006 improves explicit application boundaries but does not resolve the larger recovery, portability, coverage-visibility or maintainability ceilings.
+- ENT-006 did **not** deploy application source, move a Vercel alias, change Supabase/R2 resources, alter provider routing or mutate shared runtime configuration. Production authority remains the separately recorded exact production SHA below.
+
 ## Production user audit and current live source — 2026-09-21
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 986aab269551a4c6e7d3af3a259cfa955c975d91 -->
 

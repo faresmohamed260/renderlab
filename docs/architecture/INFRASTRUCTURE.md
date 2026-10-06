@@ -300,6 +300,16 @@ Validation consequences:
 - final exact-head validation remains mandatory; a future runner outage still does not waive required gates;
 - connector-driven writes should continue to batch cohesive changes into as few commits as practical.
 
+## Credential-bearing source boundary — ENT-006
+
+RenderLab treats private environment-variable naming as necessary but insufficient isolation. Credential/data-bearing source modules must also be explicit server-only import-graph boundaries.
+
+- Canonical privileged leaves for Supabase service-role access, account/admin privileged data, generation backend access, operational-alert delivery and Cloudflare R2 access declare `import "server-only";`.
+- Engineering Quality scans server-owned source for direct reads of `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RENDERLAB_GENERATION_BACKEND_TOKEN`, `CLOUDFLARE_R2_*` and compatibility `R2_*` names; a covered direct read without the marker fails the gate.
+- Client Components cannot acquire runtime imports from `@/server/*` or the privileged Supabase server client. Type-only browser contracts remain allowed.
+- The boundary verifier depends only on dev-only `@babel/parser@7.29.9`; ordinary compilation remains `typescript@7.0.2`.
+- ENT-006 changed source ownership and repository verification only. It created no schema migration, secret, environment variable, provider route, R2 resource, scheduler, Vercel deployment or alias movement.
+
 ## Vercel deployment boundary
 Vercel is the production deployment target, but Git pushes are **not** deployment authorization. Repository `vercel.json` sets `git.deploymentEnabled=false`, so GitHub development/merge activity does not automatically create Vercel deployments. An explicit deployment action is required.
 

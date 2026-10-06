@@ -78,6 +78,15 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - PR #339 exact head `9a52c51339cfbe33b39f2f668e0132e527bd235e` passed all 20 attached PR workflows, and Account/Admin artifact `11371566032` was human-reviewed clean across desktop, 390px and reduced motion. The implementation squash-merged as `895910e0bb1f683202113592f0c03429b87bdde5`; all 14 affected merged-main push workflows reached accepted success, including unchanged retries after one shared provider-availability window. Final run-owned observability/Auth cleanup is zero-residue. The authoritative post-ENT-005 enterprise score is **8.5/10**.
 - ENT-005 does not authorize a production Vercel deployment, paid-plan change, new scheduler, database-backup credential/path, R2 replication resource, telemetry vendor, provider-routing change, or broad refactor.
 
+### ENT-006 — explicit server-only module boundaries
+
+- **Complete / verified / merged / not deployed** as merge SHA `6c80535737fb67a0239ac8cc05a2feaf014d49bf` from PR #342.
+- Canonical privileged leaf modules are explicitly marked `server-only`; Engineering Quality rejects Client Component runtime imports from server-owned namespaces and unmarked direct reads of covered high-risk credentials while permitting erased type-only imports.
+- Exact-head Engineering Quality `37490780105` and CodeQL `37490780138` passed; merged-main Engineering Quality `37494017112` and CodeQL `37494017131` also passed.
+- Dev-only `@babel/parser@7.29.9` is the verifier parser. TypeScript remains exactly `7.0.2` and retains normal compiler ownership.
+- Enterprise score remains **8.5/10**. The largest unresolved enterprise gap remains verified destructive-loss recovery/RPO-RTO for Supabase and R2; developer portability, coverage visibility and maintainability debt also remain material.
+- No production deployment or shared-runtime mutation was authorized or performed.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
