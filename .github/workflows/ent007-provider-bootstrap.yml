@@ -20,9 +20,13 @@ jobs:
     timeout-minutes: 10
     env:
       PROJECT_REF: rashyleshocuvpgcooxy
+      BACKUP_BUCKET_NAME: renderlab-dr-backup
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_SOURCE_BUCKET: ${{ secrets.R2_BUCKET_NAME }}
 
     steps:
       - name: Checkout
@@ -33,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for name in SUPABASE_ACCESS_TOKEN CLOUDFLARE_API_TOKEN R2_ACCOUNT_ID; do
+          for name in SUPABASE_ACCESS_TOKEN CLOUDFLARE_API_TOKEN R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_SOURCE_BUCKET; do
             if [ -z "${!name:-}" ]; then
               echo "::error::$name is not configured."
               missing=1
@@ -41,66 +45,87 @@ jobs:
           done
           exit "$missing"
 
-      - name: Prove Supabase Management API logical-export access
+      - name: Reconfirm Supabase Management API logical-export access
         shell: bash
         run: |
           set -euo pipefail
           api="https://api.supabase.com/v1/projects/$PROJECT_REF/database/query"
-          ro_api="$api/read-only"
           auth=(-H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json')
+          for spec in \
+            'public|select count(*)::bigint as row_count from public.media_assets|read-only' \
+            'auth|select count(*)::bigint as row_count from auth.users|generic' \
+            'migrations|select count(*)::bigint as row_count from supabase_migrations.schema_migrations|read-only'; do
+            IFS='|' read -r label query mode <<<"$spec"
+            payload="$(jq -cn --arg query "$query" --argjson ro true '{query:$query} + (if $ro then {read_only:true} else {} end)')"
+            endpoint="$api/read-only"
+            if [ "$mode" = generic ]; then endpoint="$api"; fi
+            code="$(curl --silent --show-error -o /tmp/supabase-query.json -w '%{http_code}' -X POST "${auth[@]}" -d "$payload" "$endpoint")"
+            if [ "$code" != 201 ]; then
+              echo "::error::Supabase $label query failed (HTTP $code)."
+              exit 1
+            fi
+            echo "supabase_${label}_query=verified"
+          done
 
-          public_payload="$(jq -cn '{query:"select count(*)::bigint as row_count from public.media_assets"}')"
-          public_out="$(mktemp)"
-          public_code="$(curl --silent --show-error -o "$public_out" -w '%{http_code}' -X POST "${auth[@]}" -d "$public_payload" "$ro_api")"
-          if [ "$public_code" != 201 ]; then
-            echo "::error::Supabase read-only query endpoint rejected public-table access (HTTP $public_code)."
-            jq -c '{error:(.message // .error // "unknown")}' "$public_out" 2>/dev/null || true
-            exit 1
-          fi
-          echo 'supabase_public_readonly_query=verified'
-
-          auth_payload="$(jq -cn '{query:"select count(*)::bigint as row_count from auth.users",read_only:true}')"
-          auth_out="$(mktemp)"
-          auth_code="$(curl --silent --show-error -o "$auth_out" -w '%{http_code}' -X POST "${auth[@]}" -d "$auth_payload" "$api")"
-          if [ "$auth_code" = 201 ]; then
-            echo 'supabase_auth_readonly_query=verified'
-          else
-            echo "supabase_auth_readonly_query=unavailable_http_$auth_code"
-          fi
-
-          migration_payload="$(jq -cn '{query:"select count(*)::bigint as row_count from supabase_migrations.schema_migrations"}')"
-          migration_out="$(mktemp)"
-          migration_code="$(curl --silent --show-error -o "$migration_out" -w '%{http_code}' -X POST "${auth[@]}" -d "$migration_payload" "$ro_api")"
-          if [ "$migration_code" = 201 ]; then
-            echo 'supabase_migration_history_query=verified'
-          else
-            echo "supabase_migration_history_query=unavailable_http_$migration_code"
-          fi
-
-      - name: Probe Cloudflare token-provisioning authority
+      - name: Verify Cloudflare REST token remains under-scoped
         shell: bash
         run: |
           set -euo pipefail
-          auth=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
-          account_url="https://api.cloudflare.com/client/v4/accounts/$R2_ACCOUNT_ID/tokens/permission_groups?name=Workers%20R2%20Storage%20Write"
-          user_url="https://api.cloudflare.com/client/v4/user/tokens/permission_groups?name=Workers%20R2%20Storage%20Write"
-
-          account_out="$(mktemp)"
-          account_code="$(curl --silent --show-error -o "$account_out" -w '%{http_code}' "${auth[@]}" "$account_url")"
-          user_out="$(mktemp)"
-          user_code="$(curl --silent --show-error -o "$user_out" -w '%{http_code}' "${auth[@]}" "$user_url")"
-
-          echo "cloudflare_account_token_permission_groups_http=$account_code"
-          echo "cloudflare_user_token_permission_groups_http=$user_code"
-
-          if [ "$account_code" = 200 ]; then
-            jq -c '{account_r2_groups:[.result[]? | {id,name,is_selectable,scopes}]}' "$account_out"
-          fi
-          if [ "$user_code" = 200 ]; then
-            jq -c '{user_r2_groups:[.result[]? | {id,name,is_selectable,scopes}]}' "$user_out"
+          code="$(curl --silent --show-error -o /tmp/cloudflare-r2.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$R2_ACCOUNT_ID/r2/buckets")"
+          echo "cloudflare_rest_r2_http=$code"
+          if [ "$code" = 200 ]; then
+            echo 'cloudflare_rest_r2_management=available'
+          else
+            echo 'cloudflare_rest_r2_management=under_scoped'
           fi
 
-          if [ "$account_code" != 200 ] && [ "$user_code" != 200 ]; then
-            echo '::error::Current Cloudflare token cannot enumerate account-owned or user-owned token permission groups.'
-            exit 1
-          fi
+      - name: Probe S3 bucket-management authority and create private backup bucket if authorized
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --quiet boto3
+          python - <<'PY'
+          import os
+          import boto3
+          from botocore.config import Config
+          from botocore.exceptions import ClientError
+
+          endpoint = f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com"
+          client = boto3.client(
+              "s3",
+              endpoint_url=endpoint,
+              aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+              region_name="auto",
+              config=Config(signature_version="s3v4"),
+          )
+          source = os.environ["R2_SOURCE_BUCKET"]
+          target = os.environ["BACKUP_BUCKET_NAME"]
+
+          try:
+              buckets = [item.get("Name") for item in client.list_buckets().get("Buckets", [])]
+              print(f"r2_s3_list_buckets=verified_count_{len(buckets)}")
+          except ClientError as exc:
+              code = exc.response.get("Error", {}).get("Code", "unknown")
+              print(f"r2_s3_list_buckets=unavailable_{code}")
+
+          location = client.get_bucket_location(Bucket=source).get("LocationConstraint") or "auto"
+          print(f"r2_source_location={location}")
+
+          try:
+              client.head_bucket(Bucket=target)
+              print("r2_backup_bucket=existing")
+          except ClientError as exc:
+              status = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+              if status not in (403, 404):
+                  raise
+              try:
+                  client.create_bucket(Bucket=target)
+              except ClientError as create_exc:
+                  code = create_exc.response.get("Error", {}).get("Code", "unknown")
+                  raise SystemExit(f"R2 S3 credentials cannot create backup bucket: {code}")
+              client.head_bucket(Bucket=target)
+              print("r2_backup_bucket=created_private_unlocked")
+          PY
