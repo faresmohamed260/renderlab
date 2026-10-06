@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const PASSWORD_RECOVERY_COOKIE_NAME = "renderlab_password_recovery";

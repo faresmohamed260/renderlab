@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { GenerationJob } from "@/lib/capabilities/generation";
 import { getJobRow, isNativeGenerationConfigured } from "@/server/generation/native-generation";
 import { reconcileNativeGeneration } from "@/server/generation/reconcile-generation";

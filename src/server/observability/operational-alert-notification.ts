@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";
 import { supabaseRest } from "@/server/data/supabase-rest";

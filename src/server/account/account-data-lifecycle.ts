@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient, type User } from "@supabase/supabase-js";
 import { normalizeRenderLabSessionClient } from "@/lib/auth/session-client-label";
 import { getSupabaseAuthConfig } from "@/lib/supabase/config";

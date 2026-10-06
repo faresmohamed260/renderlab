@@ -1,3 +1,5 @@
+import "server-only";
+
 const deletionNoticeSubject = "Your RenderLab account deletion was accepted";
 const deletionNoticeSender = "RenderLab Security <security@mail.renderlab.faresuniform.uk>";
 

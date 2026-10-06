@@ -143,5 +143,6 @@ try {
 
 await verifyWorkflowSecurity();
 await verifyMutationOriginCoverage();
+await import("./verify-server-boundaries.mjs");
 
-console.log("Engineering quality negative fixtures, workflow security, and mutation-origin coverage checks passed.");
+console.log("Engineering quality negative fixtures, workflow security, mutation-origin coverage, and server-boundary checks passed.");
