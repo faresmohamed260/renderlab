@@ -1,0 +1,85 @@
+name: ENT-007 Snapshot Integration
+
+on:
+  push:
+    branches:
+      - work/ent-007-recovery-implementation
+    paths:
+      - "scripts/create-ent007-recovery-snapshot.mjs"
+      - "scripts/lib/ent007-recovery.mjs"
+      - "tests/unit/ent007-recovery.test.mjs"
+      - ".github/workflows/ent007-snapshot-integration.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-ent007-snapshot-integration
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      ENT007_BACKUP_ENCRYPTION_KEY: ${{ secrets.ENT007_BACKUP_ENCRYPTION_KEY }}
+      ENT007_OUTPUT_DIR: artifacts/ent007-recovery
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run focused recovery unit tests
+        run: node --test tests/unit/ent007-recovery.test.mjs
+
+      - name: Create encrypted logical snapshot
+        run: node scripts/create-ent007-recovery-snapshot.mjs
+
+      - name: Verify encrypted snapshot and secret-safe manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readdir, readFile } from "node:fs/promises";
+          import { join } from "node:path";
+          import { decodeBackupKey, decryptSnapshot } from "./scripts/lib/ent007-recovery.mjs";
+
+          const dir = process.env.ENT007_OUTPUT_DIR;
+          const files = await readdir(dir);
+          const encrypted = files.find((name) => name.endsWith(".snapshot.enc.json"));
+          const manifestName = files.find((name) => name.endsWith(".manifest.json"));
+          if (!encrypted || !manifestName) throw new Error("ENT-007 snapshot outputs are incomplete.");
+
+          const envelope = JSON.parse(await readFile(join(dir, encrypted), "utf8"));
+          const manifest = JSON.parse(await readFile(join(dir, manifestName), "utf8"));
+          const plaintext = decryptSnapshot(envelope, decodeBackupKey(process.env.ENT007_BACKUP_ENCRYPTION_KEY));
+          const snapshot = JSON.parse(plaintext.toString("utf8"));
+          if (snapshot.sourceProjectRef !== "rashyleshocuvpgcooxy") throw new Error("Unexpected source project.");
+          if (Object.keys(snapshot.tables).some((name) => name.startsWith("studio_"))) throw new Error("Legacy Studio data entered ENT-007 snapshot.");
+          if (!snapshot.tables.media_assets || !snapshot.auth?.users || !snapshot.auth?.identities) throw new Error("Required recovery state is missing.");
+          if (manifest.authUserCount !== snapshot.auth.users.length) throw new Error("Auth count mismatch.");
+          console.log(JSON.stringify({
+            generationId: manifest.generationId,
+            tableCount: Object.keys(snapshot.tables).length,
+            authUserCount: manifest.authUserCount,
+            authIdentityCount: manifest.authIdentityCount,
+            durableObjectCount: manifest.durableObjectCount,
+            migrationHead: manifest.migrationHead,
+          }));
+          NODE
+
+      - name: Remove sensitive runner-local snapshot
+        if: always()
+        shell: bash
+        run: rm -rf artifacts/ent007-recovery
