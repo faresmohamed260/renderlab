@@ -18,7 +18,6 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       BACKUP_BUCKET: renderlab-dr-backup
-      R2_JURISDICTION: eu
     steps:
       - name: Classify Cloudflare token
         shell: bash
@@ -55,7 +54,6 @@ jobs:
           api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${BACKUP_BUCKET}/lock"
           code=$(curl -sS -o lock-before.json -w '%{http_code}' \
             -H "Authorization: Bearer ${TOKEN}" \
-            -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
             "$api")
           echo "r2_lock_read_http=${code}"
           if [ "$code" != "200" ]; then
@@ -72,7 +70,6 @@ jobs:
             code=$(curl -sS -o lock-put-response.json -w '%{http_code}' -X PUT \
               -H "Authorization: Bearer ${TOKEN}" \
               -H "Content-Type: application/json" \
-              -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
               --data-binary @lock-put.json \
               "$api")
             echo "r2_lock_write_http=${code}"
@@ -85,7 +82,6 @@ jobs:
 
           code=$(curl -sS -o lock-after.json -w '%{http_code}' \
             -H "Authorization: Bearer ${TOKEN}" \
-            -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
             "$api")
           test "$code" = "200"
           jq -e '.success == true' lock-after.json >/dev/null
