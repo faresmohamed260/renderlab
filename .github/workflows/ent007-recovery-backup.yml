@@ -1,6 +1,15 @@
 name: ENT-007 Recovery Backup
 
 on:
+  push:
+    branches:
+      - work/ent-007-recovery-implementation
+    paths:
+      - ".github/workflows/ent007-recovery-backup.yml"
+      - "scripts/create-ent007-recovery-snapshot.mjs"
+      - "scripts/lib/ent007-recovery.mjs"
+      - "scripts/persist-ent007-recovery-backup.mjs"
+      - "tests/unit/ent007-recovery.test.mjs"
   schedule:
     - cron: "17 2 * * *"
   workflow_dispatch:
