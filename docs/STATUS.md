@@ -74,7 +74,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - The merged implementation preserves immediate structured logging and schedules durable persistence as best-effort Next.js `after()` work. Product correctness does not depend on diagnostic storage or Resend notification success.
 - Initial alert families are repeated generation/provider degradation, maintenance failure, and third-retry account deletion stuck. Ordinary input/admission/rate-limit rejection does not alert. Notification fanout reuses active Admin emails and existing Resend infrastructure with sanitized content only.
 - Existing `/admin` Health remains the only operator UI and the UI-079 three-row hierarchy is unchanged. ENT-005 adds bounded retained-diagnostic filters and compact operational-alert state inside Health; diagnostic `job_id` remains server-only.
-- `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` records current incident handling, exact-SHA rollback discipline, credential-compromise steps, shared-fixture safety and truthful recovery objectives. Supabase/R2 destructive-loss RPO/RTO remain **not established** because no verified recoverable database backup/PITR or R2 replica/version/backup path exists.
+- At ENT-005 closure, `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` recorded incident handling and truthful recovery-objective limits while destructive-loss recovery was still unestablished. ENT-007 supersedes that historical recovery state below with verified retained logical database/Auth + R2 restore evidence.
 - PR #339 exact head `9a52c51339cfbe33b39f2f668e0132e527bd235e` passed all 20 attached PR workflows, and Account/Admin artifact `11371566032` was human-reviewed clean across desktop, 390px and reduced motion. The implementation squash-merged as `895910e0bb1f683202113592f0c03429b87bdde5`; all 14 affected merged-main push workflows reached accepted success, including unchanged retries after one shared provider-availability window. Final run-owned observability/Auth cleanup is zero-residue. The authoritative post-ENT-005 enterprise score is **8.5/10**.
 - ENT-005 does not authorize a production Vercel deployment, paid-plan change, new scheduler, database-backup credential/path, R2 replication resource, telemetry vendor, provider-routing change, or broad refactor.
 
@@ -84,17 +84,17 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Canonical privileged leaf modules are explicitly marked `server-only`; Engineering Quality rejects Client Component runtime imports from server-owned namespaces and unmarked direct reads of covered high-risk credentials while permitting erased type-only imports.
 - Exact-head Engineering Quality `37490780105` and CodeQL `37490780138` passed; merged-main Engineering Quality `37494017112` and CodeQL `37494017131` also passed.
 - Dev-only `@babel/parser@7.29.9` is the verifier parser. TypeScript remains exactly `7.0.2` and retains normal compiler ownership.
-- Enterprise score remains **8.5/10**. The largest unresolved enterprise gap remains verified destructive-loss recovery/RPO-RTO for Supabase and R2; developer portability, coverage visibility and maintainability debt also remain material.
+- At ENT-006 closure the enterprise score remained **8.5/10** and destructive-loss recovery was the largest unresolved gap. ENT-007 supersedes that historical recovery status below; developer portability, coverage visibility and maintainability debt remain material.
 - No production deployment or shared-runtime mutation was authorized or performed.
 
 ### ENT-007 — destructive-loss recovery
 
-- **Active / retained backup + cross-store restore verified / PR+merge pending / not deployed.** Provider/bootstrap and recovery evidence are complete; repository closure still requires exact-head implementation PR gates, merge, merged-main verification and reassessment.
+- **Complete / verified / merged / not deployed.** Implementation PR #352 exact head `b6decaa6d895e616436861446cd8bfaaaef7e846` passed Engineering Quality `37632681295`, CodeQL `37632681300`, Account Data Lifecycle `37632910417`, Library Lifecycle Visual `37632916211`, and Media Delete Visual `37632921771`. PR #352 squash-merged as `7f7a95a21f403e99095a19b94db39255311cf4d3`; merged-main Engineering Quality `37642455946` and CodeQL `37642455870` passed.
 - Cloudflare run `37623562234` configured/read back whole-bucket 7-day lock on private `renderlab-dr-backup`; run `37629604734` re-verified the lock and configured/read back 8-day lifecycle expiry for `ent007/`. The protected Cloudflare credential is an active account token, not the previously inferred DNS-only token.
 - Backup run `37630201440` created steady-state retained generation `20261007133932-9f1aa3bd` after verifying both provider policies and minting a one-hour bucket-scoped temporary R2 Object Read & Write credential. It retained 1 durable object / 39,974 bytes plus the encrypted logical database/Auth snapshot and wrote completion last.
 - Restore run `37630554797` restored that generation into isolated PostgreSQL 17 and a run-owned R2 prefix: 10 contracted tables, 1 bounded Auth user/identity, 1 object, zero restored sessions, zero missing RLS/browser-grant violations, zero tested orphans, coherent cross-store reference, successful primary-delete simulation and cleanup. Observed backup age was 177 s; DB verification 2,437 ms; R2 verification 1,682 ms; combined verification 5,253 ms. These are drill observations, not SLAs.
 - Completed account deletion still removes active primary state; encrypted pre-deletion backup state may remain until the `ent007/` 8-day lifecycle threshold and provider cleanup complete. Disaster cutover requires deletion/reconciliation review before restored state is served.
-- Supabase stays on Free; logical recovery is not managed physical backup/PITR and does not preserve active sessions/MFA continuity. Enterprise score remains **8.5/10** pending merged-main ENT-007 closure/reassessment.
+- Supabase stays on Free; logical recovery is not managed physical backup/PITR and does not preserve active sessions/MFA continuity. The authoritative post-ENT-007 enterprise score is **8.7/10** (8.68 arithmetic mean).
 
 ## Known boundaries
 
@@ -103,7 +103,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- Enterprise-hardening follow-ons remain for cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, large-module decomposition, and final repository closure of ENT-007. Retained database/R2/cross-store recovery is now technically verified; published recovery objectives still wait for merge plus repeated scheduled evidence rather than being inferred from one drill.
+- Enterprise-hardening follow-ons remain for cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, and large-module decomposition. ENT-007 repository closure is complete; published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
 
 ## Current direction
 

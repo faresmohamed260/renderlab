@@ -331,7 +331,7 @@ The Next.js application disables `X-Powered-By` and applies an enforced compatib
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
 
-### ENT-007 recovery destination checkpoint — 2026-10-07
+### ENT-007 recovery destination — verified closure 2026-10-07
 
 - Authorized private backup bucket `renderlab-dr-backup` exists in the same default-jurisdiction Cloudflare R2 account/WEUR placement family as the primary. It is recovery-only; production application reads/writes continue to use the established primary bucket.
 - Cloudflare run `37623562234` configured and read back enabled whole-bucket lock `ent007-minimum-7d` with `maxAgeSeconds=604800`. Run `37629604734` re-verified that lock and configured/read back lifecycle rule `ent007-expire-after-8d` for prefix `ent007/` with `maxAge=691200`. Do not confuse R2 location hint `WEUR` with Cloudflare's separate `eu` jurisdiction header; this bucket is on the default jurisdiction API surface.
@@ -578,7 +578,7 @@ The canonical Vercel names intentionally match the variables already configured 
 
 R2 credentials currently require Admin Read & Write because configured browser upload verification reconciles bucket CORS.
 
-### Recovery CI only — ENT-007 active implementation
+### Recovery CI only — ENT-007 verified operation
 - `SUPABASE_ACCESS_TOKEN` — protected GitHub CI management credential used only for bounded schema-qualified logical reads; not a browser/runtime credential.
 - `ENT007_BACKUP_ENCRYPTION_KEY` — protected GitHub CI 32-byte backup-encryption key; never committed or emitted in evidence.
 - `CLOUDFLARE_API_TOKEN` — pre-existing protected Cloudflare account control-plane token. ENT-007 uses it only in GitHub Actions to verify the retained-backup bucket policy and mint one-hour bucket-scoped temporary R2 credentials. It is **not** used as an S3 data credential and its value is never emitted.
