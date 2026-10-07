@@ -89,6 +89,23 @@ jobs:
           jq '{rules: (.result.rules // [])}' lock-after.json
           echo "ent007_retention_verified=true"
 
+      - name: Inspect active account-token policy
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
+          verify=$(curl -sS -H "Authorization: Bearer ${TOKEN}" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/verify")
+          token_id=$(printf '%s' "$verify" | jq -r '.result.id // empty')
+          test -n "$token_id"
+          code=$(curl -sS -o token-details.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/${token_id}")
+          echo "account_token_details_http=${code}"
+          test "$code" = "200"
+          jq -e '.success == true' token-details.json >/dev/null
+          jq '{id: .result.id, name: .result.name, status: .result.status, policies: [.result.policies[]? | {id, effect, resources, permission_groups: [.permission_groups[]? | {id, name}]}]}' token-details.json
+
       - name: Probe account-token provisioning authority
         if: always()
         shell: bash
