@@ -96,6 +96,13 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Completed account deletion still removes active primary state; encrypted pre-deletion backup state may remain until the `ent007/` 8-day lifecycle threshold and provider cleanup complete. Disaster cutover requires deletion/reconciliation review before restored state is served.
 - Supabase stays on Free; logical recovery is not managed physical backup/PITR and does not preserve active sessions/MFA continuity. The authoritative post-ENT-007 enterprise score is **8.7/10** (8.68 arithmetic mean).
 
+### ENT-008 — developer portability and clean-room reproducibility
+
+- **Contract active / implementation not started / not deployed.** Tracking issue #354; execution-ready contract: `docs/audits/ENT_008_DEVELOPER_PORTABILITY_CONTRACT.md`.
+- Current-`main` native-Windows audit reproduced the portability debt: the engine range permits Node 25 while docs/CI target Node 24; no repository EOL policy exists; 517 tracked text files check out CRLF under WANDA's `core.autocrlf=true`; unit tests are 91/93 because two workflow-file assertions are LF-only; and Engineering Quality fails on direct `.cmd` spawning with `EINVAL`.
+- Planned scope is limited to canonical Node 24/npm 11 preflight, deterministic LF text policy, newline-neutral contract assertions, portable Engineering Quality negative fixtures, and one credential-free Windows + Linux clean-room matrix.
+- Coverage measurement, CI workflow consolidation, large-module decomposition, product/runtime changes, shared-resource mutations and deployment are excluded. The enterprise score remains **8.7/10** until verified implementation reassessment.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
@@ -103,7 +110,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- Enterprise-hardening follow-ons remain for cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, and large-module decomposition. ENT-007 repository closure is complete; published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
+- ENT-008 now owns cross-platform dev/test parity under #354. Conventional coverage measurement, CI workflow consolidation, and large-module decomposition remain separate follow-ons. ENT-007 repository closure is complete; published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
 
 ## Current direction
 

@@ -89,6 +89,13 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Supabase remains on Free. ENT-007 still does not provide managed physical backups, PITR, project-level Auth/configuration restoration, active session continuity or MFA continuity; restored users authenticate fresh and re-enroll MFA where required. No Vercel deployment/alias movement, production application change, Supabase hosted-runtime mutation, provider routing change or paid-plan upgrade occurred.
 - The authoritative same-rubric post-ENT-007 enterprise score is **8.7/10** (8.68 arithmetic mean). The largest remaining numerical weakness is developer portability/clean-room reproducibility; recovery maturity still remains below managed-PITR/provider-independent enterprise targets.
 
+## ENT-008 developer portability / clean-room reproducibility — contract 2026-10-07
+
+- Tracking issue #354. The execution-ready contract is `docs/audits/ENT_008_DEVELOPER_PORTABILITY_CONTRACT.md`.
+- Verified native-Windows baseline on current `main` `d7037abf4c4b1e2cbafef9265584f5fae5a9acef`: Node `25.2.1` is allowed by the existing `>=24 <26` engine range even though `.nvmrc`, README and GitHub CI target Node 24; the repository has no `.gitattributes`; WANDA with global `core.autocrlf=true` checks out 517 tracked text files as `i/lf w/crlf`; `npm run test:unit` is 91/93 because two workflow-file contract tests assume LF-only content; and `npm run verify:engineering-quality` fails on native Windows with `spawnSync ...\oxlint.cmd EINVAL`.
+- ENT-008 is deliberately bounded to canonical Node 24/npm 11 preflight, deterministic repository text/EOL policy, newline-neutral file-content assertions, portable Engineering Quality negative-fixture subprocesses, and one credential-free Linux + native-Windows clean-room matrix. Coverage measurement, CI workflow consolidation, large-module decomposition, product/runtime changes, shared-resource mutations and deployment are separate work.
+- Status: **CONTRACT / IMPLEMENTATION NOT STARTED / NOT DEPLOYED**. The authoritative enterprise score remains **8.7/10** until ENT-008 implementation is exact-head verified, merged, merged-main verified and reassessed on the same rubric.
+
 ## Production user audit and current live source — 2026-09-21
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 986aab269551a4c6e7d3af3a259cfa955c975d91 -->
 
