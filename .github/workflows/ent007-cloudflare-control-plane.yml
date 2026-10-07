@@ -106,6 +106,35 @@ jobs:
           jq -e '.success == true' token-details.json >/dev/null
           jq '{id: .result.id, name: .result.name, status: .result.status, policies: [.result.policies[]? | {id, effect, resources, permission_groups: [.permission_groups[]? | {id, name}]}]}' token-details.json
 
+      - name: Enforce bounded ENT-007 lifecycle expiry
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
+          api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${BACKUP_BUCKET}/lifecycle"
+          code=$(curl -sS -o lifecycle-before.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "$api")
+          echo "r2_lifecycle_read_http=${code}"
+          test "$code" = "200"
+          jq -e '.success == true' lifecycle-before.json >/dev/null
+          jq '{rules: (((.result.rules // []) | map(select(.id != "ent007-expire-after-8d"))) + [{id:"ent007-expire-after-8d", enabled:true, conditions:{prefix:"ent007/"}, deleteObjectsTransition:{condition:{type:"Age", maxAge:691200}}}])}' lifecycle-before.json > lifecycle-put.json
+          code=$(curl -sS -o lifecycle-put-response.json -w '%{http_code}' -X PUT \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-binary @lifecycle-put.json \
+            "$api")
+          echo "r2_lifecycle_write_http=${code}"
+          test "$code" = "200"
+          jq -e '.success == true' lifecycle-put-response.json >/dev/null
+          code=$(curl -sS -o lifecycle-after.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "$api")
+          test "$code" = "200"
+          jq -e '.success == true' lifecycle-after.json >/dev/null
+          jq -e 'any((.result.rules // [])[]; .id == "ent007-expire-after-8d" and .enabled == true and .conditions.prefix == "ent007/" and .deleteObjectsTransition.condition.type == "Age" and .deleteObjectsTransition.condition.maxAge == 691200)' lifecycle-after.json >/dev/null
+          jq '{rules: [.result.rules[]? | select(.id == "ent007-expire-after-8d") ]}' lifecycle-after.json
+          echo "ent007_lifecycle_expiry_verified=true"
       - name: Probe account-token provisioning authority
         if: always()
         shell: bash
