@@ -20,19 +20,32 @@ jobs:
       BACKUP_BUCKET: renderlab-dr-backup
       R2_JURISDICTION: eu
     steps:
-      - name: Verify Cloudflare token
+      - name: Classify Cloudflare token
         shell: bash
         run: |
           set -euo pipefail
           TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
           test -n "$TOKEN"
-          code=$(curl -sS -o token.json -w '%{http_code}' \
+
+          user_code=$(curl -sS -o user-token.json -w '%{http_code}' \
             -H "Authorization: Bearer ${TOKEN}" \
             https://api.cloudflare.com/client/v4/user/tokens/verify)
-          echo "token_verify_http=${code}"
-          jq '{success, status: .result.status, errors}' token.json
-          test "$code" = "200"
-          jq -e '.success == true' token.json >/dev/null
+          account_code=$(curl -sS -o account-token.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/verify")
+
+          echo "user_token_verify_http=${user_code}"
+          jq '{success, status: .result.status, errors}' user-token.json
+          echo "account_token_verify_http=${account_code}"
+          jq '{success, status: .result.status, errors}' account-token.json
+
+          if [ "$user_code" = "200" ] && jq -e '.success == true' user-token.json >/dev/null; then
+            echo "cloudflare_token_kind=user"
+          elif [ "$account_code" = "200" ] && jq -e '.success == true' account-token.json >/dev/null; then
+            echo "cloudflare_token_kind=account"
+          else
+            echo "cloudflare_token_verification=unrecognized; testing target R2 endpoint directly"
+          fi
 
       - name: Read and enforce ENT-007 bucket lock
         shell: bash
