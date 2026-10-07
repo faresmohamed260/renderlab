@@ -134,7 +134,7 @@ function verifyMigrationHead(snapshot) {
 }
 
 async function writeRestoreData(tempDir, snapshot) {
-  const chunks = ["begin;"];
+  const chunks = ["begin;", "delete from public.renderlab_beta_settings;"];
   const usersSql = insertRowsSql("auth", "users", snapshot.auth.users ?? []);
   const identitiesSql = insertRowsSql("auth", "identities", snapshot.auth.identities ?? []);
   if (usersSql) chunks.push(usersSql);
