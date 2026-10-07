@@ -331,6 +331,14 @@ The Next.js application disables `X-Powered-By` and applies an enforced compatib
 ## Cloudflare R2
 RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuration and must not be committed.
 
+### ENT-007 recovery destination checkpoint — 2026-10-07
+
+- Authorized private backup bucket `renderlab-dr-backup` exists in the same WEUR R2 account/region family as the primary. It is a recovery destination only; production application reads/writes continue to use the established primary bucket.
+- The bucket is currently **unlocked**. No valid backup generation is stored there. The branch persistence verifier writes a run-owned retention probe and refuses all backup copying when that probe can be deleted; runs `37544648876` and `37608353935` proved the fail-closed path.
+- Existing GitHub/Vercel R2 S3 credentials have account-level bucket list/create capability, which allowed the private destination to be bootstrapped, but they are application/runtime credentials and do not satisfy the final separate backup-credential boundary by themselves.
+- The repository `CLOUDFLARE_API_TOKEN` remains deliberately DNS-scoped and returns R2 administration/token-provisioning authorization failure. Cloudflare bucket lock is not exposed by the S3-compatible API used by the existing R2 credentials; the final retention setup therefore requires an authorized Cloudflare R2 control-plane session/token, followed by read-back/probe verification.
+- ENT-007 requires at least 7-day bucket lock plus backup-scoped R2 credentials before the destination may receive/promote retained recovery generations. Do not weaken this by persisting to the unlocked bucket merely because S3 writes are available.
+
 Storage namespaces:
 - generated media: `renderlab/generations/YYYY/MM/...`;
 - generated thumbnails: `renderlab/thumbnails/YYYY/MM/...`;
@@ -567,6 +575,11 @@ The canonical Vercel names intentionally match the variables already configured 
 - `CLOUDFLARE_R2_BUCKET`
 
 R2 credentials currently require Admin Read & Write because configured browser upload verification reconciles bucket CORS.
+
+### Recovery CI only — ENT-007 active implementation
+- `SUPABASE_ACCESS_TOKEN` — protected GitHub CI management credential used only for bounded schema-qualified logical reads; not a browser/runtime credential.
+- `ENT007_BACKUP_ENCRYPTION_KEY` — protected GitHub CI 32-byte backup-encryption key; never committed or emitted in evidence.
+- Final retained-backup activation still requires dedicated backup-scoped R2 credentials. Existing application R2 credentials are bootstrap/integration authority only and must not become the accepted long-term backup authority.
 
 ### Optional
 - `CLOUDFLARE_R2_PUBLIC_BASE_URL` — existing project variable; not required by current private signed-R2 delivery paths

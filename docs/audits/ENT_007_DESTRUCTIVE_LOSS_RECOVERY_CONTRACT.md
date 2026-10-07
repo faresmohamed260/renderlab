@@ -1,9 +1,9 @@
 # ENT-007 — Verified destructive-loss recovery contract
 
 Date: 2026-10-07
-Status: CONTRACT / FREE-PLAN IMPLEMENTATION AUTHORIZED / ACTIVE
+Status: CONTRACT / ACTIVE / DATABASE RESTORE VERIFIED / R2 RETENTION BLOCKED
 Tracking: #347
-Baseline `main`: `192e0720b41ee46ff050b9159325f5ff4e67762d`
+Baseline `main`: `49f2090eb7fbd78c801726dd0327aaaa3d660c6b`
 
 ## Goal
 
@@ -24,8 +24,22 @@ ENT-007 is a disaster-recovery phase. It is not a production release or product 
 - Branch-only capability run `37542331619` verified the existing protected `SUPABASE_ACCESS_TOKEN` can query `public.media_assets`, `auth.users`, and `supabase_migrations.schema_migrations` through Supabase Management API database-query surfaces without exposing a database password or changing shared runtime state.
 - Read-only sizing on 2026-10-07 measured the shared database at roughly 14.9 MB. RenderLab active durable primary media was roughly 5.7 MB across 8 active assets plus 8 thumbnails, so current recovery-storage cost is negligible.
 - RenderLab reuses one private Cloudflare R2 resource. Authoritative durable namespaces include generated media, thumbnails, persistent uploads, and deterministic private account-profile avatars. Temporary references, test fixtures, tombstoned/staging objects and regenerable account-export artifacts are not equivalent to durable recovery assets.
-- Cloudflare R2 provides private buckets, S3-compatible copy/read/write and bucket-lock retention. Repository CI already has Cloudflare account-management and R2 credential paths; WANDA-616 is also an owner-authorized control plane for Cloudflare operations.
+- Cloudflare R2 provides private buckets, S3-compatible copy/read/write and bucket-lock retention. Repository CI has working R2 S3 credentials, while the existing `CLOUDFLARE_API_TOKEN` is DNS-scoped rather than R2-admin capable; WANDA-616 remains an owner-authorized control plane when an authenticated Cloudflare session is available.
 - Production remains the exact separately recorded deployment source. ENT-007 does not authorize Vercel deployment or alias movement.
+
+## Implementation checkpoint — 2026-10-07
+
+Current implementation evidence is **partial and non-promotional**. It proves the database logical-recovery mechanism but does not satisfy ENT-007 exit criteria yet.
+
+- Exact implementation checkpoint: `c15426fb68cfda3a445fc4841838765d5a17b601` on `work/ent-007-recovery-implementation`.
+- Live integration run `37608353935` completed successfully. A bounded encrypted snapshot was collected from `rashyleshocuvpgcooxy` through the Management API, decrypted/validated only on the disposable runner, and removed after the drill. The safe manifest recorded 10 contracted public tables, 1 RenderLab Auth user, 1 Auth identity, migration head `20261005202352 renderlab_operational_observability_privilege_hardening`, and the currently active durable-object set selected from RenderLab state.
+- The same run reconstructed all 29 checked-in RenderLab migrations in isolated PostgreSQL 17 and restored the bounded logical snapshot. Verification reported `restoredSessionCount=0`, `rlsMissingCount=0`, `browserPrivilegeViolationCount=0`, `orphanMediaReferenceCount=0`, and `ownerOrphanCount=0`. Restore verification elapsed 4,123 ms. This elapsed time is drill evidence only; it is **not** credited as destructive-loss RTO while no retained recovery generation exists.
+- The restore deliberately replaces migration-seeded `renderlab_beta_settings` with the backed-up authoritative singleton. Active sessions and MFA state are not restored; fresh sign-in and MFA re-enrollment remain the accepted Free-plan recovery behavior.
+- Authorized provider mutation created private WEUR bucket `renderlab-dr-backup` through the existing R2 S3 credentials. No backup payload has been promoted into it.
+- Existing `CLOUDFLARE_API_TOKEN` is verified under-scoped for R2 bucket administration/token provisioning. Existing R2 S3 credentials can list/create buckets, but Cloudflare's S3-compatible API cannot configure bucket lock. Wrangler OAuth on WANDA reached browser authorization and timed out without establishing an authenticated session.
+- `scripts/persist-ent007-recovery-backup.mjs` fails closed: it writes a retention probe and attempts deletion before any backup copy. Runs `37544648876` and `37608353935` proved deletion currently succeeds, so the unlocked destination is rejected and no completion marker/valid recovery generation is written.
+- Separate backup-scoped R2 credentials and at least 7-day bucket lock therefore remain blockers before retained database/object backup, R2 restore, cross-store restore, RPO/RTO measurement, account-deletion retention documentation, implementation PR closure, or enterprise-score reassessment.
+- No Vercel deployment, alias movement, Supabase hosted-runtime mutation, paid-plan/PITR change, provider routing change, or production schedule activation occurred.
 
 ## Recovery architecture decision
 

@@ -87,6 +87,14 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Enterprise score remains **8.5/10**. The largest unresolved enterprise gap remains verified destructive-loss recovery/RPO-RTO for Supabase and R2; developer portability, coverage visibility and maintainability debt also remain material.
 - No production deployment or shared-runtime mutation was authorized or performed.
 
+### ENT-007 — destructive-loss recovery
+
+- **Active / database restore verified / R2 retention blocked / not deployed** at implementation checkpoint `c15426fb68cfda3a445fc4841838765d5a17b601`.
+- Exact live integration run `37608353935` encrypted a bounded Free-plan Management-API snapshot, reconstructed the checked-in migration chain in isolated PostgreSQL 17, restored 10 contracted RenderLab tables plus the bounded Auth user/identity, and verified zero restored sessions, zero missing RLS/browser-grant violations, and zero tested ownership/media-reference orphans. Restore verification elapsed 4,123 ms; no destructive-loss RTO is claimed from this non-retained drill.
+- Authorized private backup bucket `renderlab-dr-backup` exists in WEUR. It is currently **unlocked**. The DNS-scoped `CLOUDFLARE_API_TOKEN` cannot administer R2; existing S3 credentials can create/list the bucket but Cloudflare's S3 compatibility surface cannot configure bucket lock.
+- The persistence path fails closed until retention is real. Runs `37544648876` and `37608353935` verified the unlocked-bucket refusal, so no valid retained backup generation or object-store recovery point exists yet. Backup-scoped R2 credentials and at least 7-day bucket lock remain required before retained database/object and cross-store restore drills.
+- Supabase remains on the Free plan by owner decision. ENT-007 does not enable SSL/JIT, rotate/add a persistent Postgres password, purchase PITR, or deploy application source. Destructive-loss Supabase/R2 RPO/RTO remain **not established** and the enterprise score remains **8.5/10** pending full closure.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
@@ -94,7 +102,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- Enterprise-hardening follow-ons remain for explicit server-only module boundaries, cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, large-module decomposition, and an actual verified Supabase/R2 backup-and-restore capability. The ENT-005 runbook does not establish destructive-loss RPO/RTO by itself.
+- Enterprise-hardening follow-ons remain for cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, large-module decomposition, and completion of ENT-007 retained R2/cross-store recovery. The database logical snapshot/isolated-restore path is now verified, but the unlocked backup bucket means destructive-loss RPO/RTO is still not established.
 
 ## Current direction
 
