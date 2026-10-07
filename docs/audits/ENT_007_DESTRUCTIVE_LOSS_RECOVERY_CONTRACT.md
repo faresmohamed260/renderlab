@@ -1,7 +1,7 @@
 # ENT-007 — Verified destructive-loss recovery contract
 
 Date: 2026-10-07
-Status: CONTRACT / ACTIVE / DATABASE RESTORE VERIFIED / R2 RETENTION BLOCKED
+Status: CONTRACT / IMPLEMENTATION VERIFIED / PR+MERGE PENDING
 Tracking: #347
 Baseline `main`: `49f2090eb7fbd78c801726dd0327aaaa3d660c6b`
 
@@ -24,22 +24,22 @@ ENT-007 is a disaster-recovery phase. It is not a production release or product 
 - Branch-only capability run `37542331619` verified the existing protected `SUPABASE_ACCESS_TOKEN` can query `public.media_assets`, `auth.users`, and `supabase_migrations.schema_migrations` through Supabase Management API database-query surfaces without exposing a database password or changing shared runtime state.
 - Read-only sizing on 2026-10-07 measured the shared database at roughly 14.9 MB. RenderLab active durable primary media was roughly 5.7 MB across 8 active assets plus 8 thumbnails, so current recovery-storage cost is negligible.
 - RenderLab reuses one private Cloudflare R2 resource. Authoritative durable namespaces include generated media, thumbnails, persistent uploads, and deterministic private account-profile avatars. Temporary references, test fixtures, tombstoned/staging objects and regenerable account-export artifacts are not equivalent to durable recovery assets.
-- Cloudflare R2 provides private buckets, S3-compatible copy/read/write and bucket-lock retention. Repository CI has working R2 S3 credentials, while the existing `CLOUDFLARE_API_TOKEN` is DNS-scoped rather than R2-admin capable; WANDA-616 remains an owner-authorized control plane when an authenticated Cloudflare session is available.
+- Cloudflare R2 provides private buckets, S3-compatible copy/read/write, bucket-lock retention and lifecycle expiry. Later implementation evidence corrected the initial token assumption: the protected `CLOUDFLARE_API_TOKEN` is an active account token with R2 control-plane authority, while R2 S3 credentials remain separate application/source authority.
 - Production remains the exact separately recorded deployment source. ENT-007 does not authorize Vercel deployment or alias movement.
 
-## Implementation checkpoint — 2026-10-07
+## Implementation verification checkpoint — 2026-10-07
 
-Current implementation evidence is **partial and non-promotional**. It proves the database logical-recovery mechanism but does not satisfy ENT-007 exit criteria yet.
+Current implementation evidence satisfies the technical backup/restore exit criteria. ENT-007 remains open only for reviewed PR exact-head gates, merge, merged-main verification and the same-rubric reassessment.
 
-- Exact repository-side retained-recovery checkpoint: `bbff89377ceb6086006b3ea17a76d01f5e439fbc` on `work/ent-007-recovery-implementation`; exact-head run `37620760683` passed the live snapshot, isolated database restore, non-promotable backup refusal and cleanup workflow.
-- Live integration run `37608353935` completed successfully. A bounded encrypted snapshot was collected from `rashyleshocuvpgcooxy` through the Management API, decrypted/validated only on the disposable runner, and removed after the drill. The safe manifest recorded 10 contracted public tables, 1 RenderLab Auth user, 1 Auth identity, migration head `20261005202352 renderlab_operational_observability_privilege_hardening`, and the currently active durable-object set selected from RenderLab state.
-- Latest exact-head run `37620760683` reconstructed all 29 checked-in RenderLab migrations in isolated PostgreSQL 17 and restored the bounded logical snapshot. Verification reported `restoredSessionCount=0`, `rlsMissingCount=0`, `browserPrivilegeViolationCount=0`, `orphanMediaReferenceCount=0`, and `ownerOrphanCount=0`; restore verification elapsed 2,291 ms. This is drill evidence only, **not** destructive-loss RTO while no retained recovery generation exists.
-- The restore deliberately replaces migration-seeded `renderlab_beta_settings` with the backed-up authoritative singleton. Active sessions and MFA state are not restored; fresh sign-in and MFA re-enrollment remain the accepted Free-plan recovery behavior.
-- Authorized provider mutation created private WEUR bucket `renderlab-dr-backup` through the existing R2 S3 credentials. No backup payload has been promoted into it.
-- Existing `CLOUDFLARE_API_TOKEN` is verified under-scoped for R2 bucket administration/token provisioning. Existing R2 S3 credentials can list/create buckets, but Cloudflare's S3-compatible API cannot configure bucket lock. Wrangler 4.148.0 device OAuth on WANDA again reached the Cloudflare authorization page on 2026-10-07 and timed out after five minutes without establishing a session; no control-plane mutation occurred.
-- `scripts/persist-ent007-recovery-backup.mjs` now requires separately scoped backup credentials, writes a retention probe before copying, streams source bytes with primary-read authority, writes with backup authority, verifies SHA-256 bytes/content type, and writes `complete.json` only after all checks. Exact-head run `37620760683` proved the current unlocked destination is still rejected for the intended retention reason. Permanent daily/manual backup and manual selected-generation retained-restore workflows are now checked in; the restore path verifies retained snapshot identity/hash, isolated PostgreSQL recovery, run-owned R2 byte restore, cross-store reference count, primary-delete simulation and cleanup.
-- Separate backup-scoped R2 credentials and at least 7-day bucket lock therefore remain blockers before retained database/object backup, R2 restore, cross-store restore, RPO/RTO measurement, account-deletion retention documentation, implementation PR closure, or enterprise-score reassessment.
-- No Vercel deployment, alias movement, Supabase hosted-runtime mutation, paid-plan/PITR change, provider routing change, or production schedule activation occurred.
+- Provider control plane: run `37623562234` on `21a539059837d348de05f97dbffd5427760ea361` verified the protected Cloudflare credential as an active account token and configured/read back whole-bucket `ent007-minimum-7d` lock at 604,800 seconds. Run `37629604734` on `4a3254070ac2e940af2b129abe6d7919007341c8` re-verified the lock and configured/read back `ent007-expire-after-8d` lifecycle expiry for prefix `ent007/` at 691,200 seconds while preserving unrelated lifecycle rules.
+- Credential boundary: permanent backup/drill workflows use the protected account token only to mint one-hour `object-read-write` temporary R2 credentials scoped to `renderlab-dr-backup`. The temporary access key, secret and session token stay masked in the runner and expire; application R2 credentials remain source/read or isolated restore-target authority and cannot qualify as the retained-backup write identity.
+- Steady-state retained backup: run `37630201440` on `42a56c699ecb97931a5726ae756c23563e58eda7` verified lock+lifecycle policy, created encrypted generation `20261007133932-9f1aa3bd`, retained 1 durable R2 object / 39,974 bytes, verified exact SHA-256 bytes/content type, wrote `complete.json` last, and removed runner-local sensitive snapshot files.
+- Steady-state retained restore: run `37630554797` on `de30c7ae1e9e437700e66f9e0b685f750f90d503` downloaded and hash-verified that exact generation, reconstructed all 29 checked-in RenderLab migrations in isolated PostgreSQL 17, restored 10 contracted public tables plus 1 bounded Auth user/identity, and reported `restoredSessionCount=0`, `rlsMissingCount=0`, `browserPrivilegeViolationCount=0`, `orphanMediaReferenceCount=0`, and `ownerOrphanCount=0`.
+- The same run restored the retained R2 object into an exact run-owned primary prefix, verified 39,974 bytes and content type, verified one cross-store reference, deleted the isolated primary copy, confirmed the retained backup copy still existed, and cleaned the remaining restore objects.
+- Observed measurements for that drill: backup age / database observed RPO = 177 seconds; isolated database verification = 2,437 ms; isolated R2 verification = 1,682 ms; combined retained recovery verification = 5,253 ms. These are bounded observations from one retained drill. No published recovery SLA/objective is inferred until repeated scheduled evidence exists.
+- Privacy/retention boundary: the whole-bucket lock prevents deletion for at least seven days. The `ent007/` lifecycle requests deletion at object age eight days; Cloudflare lifecycle processing may take additional time. Successful account deletion still removes active primary state under #219, while encrypted pre-deletion recovery generations may persist through this retention/expiry window. Any real disaster restoration requires an operator-authorized deletion/reconciliation review before serving restored state.
+- Free-plan capability disclaimer remains binding: this logical recovery does not restore complete Supabase project configuration, API keys, provider encryption roots/Vault state, active JWT/session continuity or MFA continuity and is not equivalent to managed physical backup/PITR.
+- No Vercel deployment/alias movement, production application mutation, Supabase hosted-runtime mutation, paid-plan/PITR change or generation/provider routing change occurred.
 
 ## Recovery architecture decision
 
@@ -184,7 +184,7 @@ Any published objective must be no stronger than repeated observed evidence plus
 Backups necessarily change the meaning of immediate physical erasure. ENT-007 must update the account-data/deletion and incident-recovery authorities before claiming completion:
 
 - successful account deletion continues to remove active primary RenderLab state according to the existing lifecycle contract;
-- retained backups may contain pre-deletion state until the documented backup-retention window expires;
+- retained backups may contain pre-deletion state through the verified 7-day minimum lock and until the `ent007/` lifecycle deletion requested at object age 8 days is processed; provider lifecycle delay means this is not represented as a hard exact-day physical-erasure guarantee;
 - restore drills never promote restored user data to production;
 - a real disaster cutover requires a separately authorized operator decision and a documented deletion/reconciliation review before serving restored state;
 - no backup implementation may silently weaken existing primary account-deletion convergence or fixture cleanup guarantees.

@@ -333,11 +333,13 @@ RenderLab reuses shared R2. Credentials remain server/GitHub-secret configuratio
 
 ### ENT-007 recovery destination checkpoint — 2026-10-07
 
-- Authorized private backup bucket `renderlab-dr-backup` exists in the same WEUR R2 account/region family as the primary. It is a recovery destination only; production application reads/writes continue to use the established primary bucket.
-- The bucket is currently **unlocked**. No valid backup generation is stored there. The branch persistence verifier writes a run-owned retention probe and refuses all backup copying when that probe can be deleted; exact implementation run `37620760683` on `bbff89377ceb6086006b3ea17a76d01f5e439fbc` again proved the fail-closed path.
-- Existing GitHub/Vercel R2 S3 credentials have account-level bucket list/create capability, which allowed the private destination to be bootstrapped, but they are application/runtime credentials and no longer qualify as retained-backup write authority. `scripts/persist-ent007-recovery-backup.mjs` requires separate `ENT007_R2_BACKUP_ACCESS_KEY_ID` / `ENT007_R2_BACKUP_SECRET_ACCESS_KEY`; shared credentials are permitted only in the branch retention-probe gate and can never promote a generation.
-- The repository `CLOUDFLARE_API_TOKEN` remains deliberately DNS-scoped and returns R2 administration/token-provisioning authorization failure. Cloudflare bucket lock is not exposed by the S3-compatible API used by the existing R2 credentials; the final retention setup therefore requires an authorized Cloudflare R2 control-plane session/token, followed by read-back/probe verification.
-- ENT-007 requires at least 7-day bucket lock plus backup-scoped R2 credentials before the destination may receive/promote retained recovery generations. `.github/workflows/ent007-recovery-backup.yml` is daily + manual and writes completion last; `.github/workflows/ent007-recovery-drill.yml` is manual-only and restores a selected generation into isolated PostgreSQL 17 plus exact run-owned R2 restore keys before cleanup. These workflows are repository-ready but cannot produce accepted recovery evidence until the provider prerequisites exist.
+- Authorized private backup bucket `renderlab-dr-backup` exists in the same default-jurisdiction Cloudflare R2 account/WEUR placement family as the primary. It is recovery-only; production application reads/writes continue to use the established primary bucket.
+- Cloudflare run `37623562234` configured and read back enabled whole-bucket lock `ent007-minimum-7d` with `maxAgeSeconds=604800`. Run `37629604734` re-verified that lock and configured/read back lifecycle rule `ent007-expire-after-8d` for prefix `ent007/` with `maxAge=691200`. Do not confuse R2 location hint `WEUR` with Cloudflare's separate `eu` jurisdiction header; this bucket is on the default jurisdiction API surface.
+- The pre-existing protected `CLOUDFLARE_API_TOKEN` is an active Cloudflare **account token** with account/R2 control-plane permissions; earlier documentation that inferred a DNS-only token was incorrect. ENT-007 did not rewrite or narrow that parent token policy because it may serve external account operations. Recovery workflows use it only inside GitHub Actions to verify lock/lifecycle policy and mint one-hour `object-read-write` temporary R2 credentials scoped to `renderlab-dr-backup`.
+- Existing application R2 S3 credentials remain the primary/source authority and isolated restore-target authority. They are not accepted as retained-backup write identity. No long-lived `ENT007_R2_BACKUP_*` GitHub secrets are required in the final design; temporary access key, secret and session token exist only inside the runner environment and are masked/expired.
+- `.github/workflows/ent007-recovery-backup.yml` is daily (`02:17 UTC`) plus manual. Every run verifies the 7-day lock and 8-day lifecycle rule before creating a snapshot, mints a bucket-scoped one-hour credential, copies only durable keys derived from authoritative RenderLab state, verifies SHA-256 bytes/content type, and writes `complete.json` last. Steady-state run `37630201440` retained generation `20261007133932-9f1aa3bd` with 1 object / 39,974 bytes plus encrypted database/Auth state.
+- `.github/workflows/ent007-recovery-drill.yml` is manual selected-generation recovery only. Run `37630554797` restored `20261007133932-9f1aa3bd` into isolated PostgreSQL 17 plus run-owned primary R2 restore keys, verified one cross-store reference, proved the isolated primary copy could be deleted while the retained copy survived, and cleaned the restore target.
+- The 7-day lock is a minimum immutability control; the `ent007/` lifecycle requests deletion at object age 8 days. Provider lifecycle processing may take additional time, so documentation must not promise a hard physical-erasure maximum at exactly eight days. Primary account deletion behavior remains immediate-on-completion under #219; recovery copies are reconciled/expired separately.
 
 Storage namespaces:
 - generated media: `renderlab/generations/YYYY/MM/...`;
@@ -579,11 +581,11 @@ R2 credentials currently require Admin Read & Write because configured browser u
 ### Recovery CI only — ENT-007 active implementation
 - `SUPABASE_ACCESS_TOKEN` — protected GitHub CI management credential used only for bounded schema-qualified logical reads; not a browser/runtime credential.
 - `ENT007_BACKUP_ENCRYPTION_KEY` — protected GitHub CI 32-byte backup-encryption key; never committed or emitted in evidence.
-- Final retained-backup activation still requires dedicated backup-scoped R2 credentials. Existing application R2 credentials are bootstrap/integration authority only and must not become the accepted long-term backup authority.
+- `CLOUDFLARE_API_TOKEN` — pre-existing protected Cloudflare account control-plane token. ENT-007 uses it only in GitHub Actions to verify the retained-backup bucket policy and mint one-hour bucket-scoped temporary R2 credentials. It is **not** used as an S3 data credential and its value is never emitted.
+- No long-lived ENT-007 backup access-key pair is stored. `ENT007_R2_BACKUP_ACCESS_KEY_ID`, `ENT007_R2_BACKUP_SECRET_ACCESS_KEY`, and `ENT007_R2_BACKUP_SESSION_TOKEN` are ephemeral runner variables populated from Cloudflare temporary credentials and expire after one hour.
 
 ### Optional
 - `CLOUDFLARE_R2_PUBLIC_BASE_URL` — existing project variable; not required by current private signed-R2 delivery paths
-- `CLOUDFLARE_API_TOKEN` — optional zone-DNS token for Cloudflare-managed custom-domain records; its presence does not imply R2 administration authority
 - `RENDERLAB_GENERATION_BACKEND_URL` — optional external RenderLab generation service; only active together with the token below
 - `RENDERLAB_GENERATION_BACKEND_TOKEN` — server-only bearer secret required to authenticate the optional external generation service before `x-renderlab-owner-id` is trusted
 
@@ -721,10 +723,10 @@ PR #36 adds `https://renderlab.faresuniform.uk` to the canonical `RENDERLAB_BROW
 
 This maintenance changes no Supabase schema, browser credential boundary, R2 key exposure, upload data model or account ownership semantics. Future public browser origins still require deliberate CORS addition and configured validation before use.
 
-### Custom-domain DNS and Cloudflare credential roles — 2026-08-29
+### Custom-domain DNS and Cloudflare credential roles — 2026-08-29 historical baseline, superseded token classification 2026-10-07
 `renderlab.faresuniform.uk` is configured in the Cloudflare `faresuniform.uk` zone as a **DNS-only** `CNAME` to Vercel's assigned target `736ea4abfec91fb9.vercel-dns-017.com`. Cloudflare API read-back and public DNS-over-HTTPS both verified that exact record after creation.
 
-The repository secret `CLOUDFLARE_API_TOKEN` is deliberately scoped for zone DNS editing and must not be treated as proof of R2 administration authority. `scripts/ensure-r2-browser-cors.mjs` may try the Cloudflare R2 API when that token is present, but an R2 authorization `401`/`403` is a credential-role mismatch, not an upload/CORS failure; the script must fall back to the existing R2 S3 credentials and continue exact-origin reconciliation/probing. Non-authorization Cloudflare API errors remain hard failures.
+The 2026-08-29 operating assumption treated repository secret `CLOUDFLARE_API_TOKEN` as a zone-DNS credential and therefore did not rely on it for R2 administration. ENT-007 live control-plane inspection on 2026-10-07 supersedes that classification: Cloudflare account-token verification reports the protected token active and its effective account policy includes R2/account capabilities. The token remains protected in GitHub Actions and is not an application S3 credential. `scripts/ensure-r2-browser-cors.mjs` still keeps its S3 fallback for compatibility when REST authorization is unavailable; that fallback behavior does not redefine the now-verified token role.
 
 This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
 
