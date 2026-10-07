@@ -685,6 +685,14 @@ Do not disable browser security, use broad wildcard upload CORS, proxy transfers
 ## Remote Validation Architecture
 GitHub-based iteration; no Vercel preview dependency. The repository is public so the normal mid-development GitHub-hosted Actions path is not constrained by private-repository minute exhaustion; Actions secrets remain private.
 
+### ENT-008 developer portability boundary — implementation candidate
+
+The supported secret-free repository engineering path is Node **24.x** + npm **11.x** on native Windows or Linux/WSL2. `.nvmrc`, package engines, README/CONTRIBUTING, `npm run doctor`, and GitHub setup-node declarations must agree on that boundary. Provider/shared-resource credentials are not bootstrap dependencies for lint, typecheck, unit tests, repository verifiers, or production build.
+
+Repository text checkout is controlled by `.gitattributes`: tracked text uses LF independently of global `core.autocrlf`, while binary media is explicitly non-text. `npm run verify:text-policy` checks the Git index, working-tree EOL, and canonical `eol=lf` attribute from a fresh checkout. Tests that inspect workflow/configuration structure normalize CRLF to LF before semantic assertions so both positive and negative line-boundary checks retain identical meaning across OSes.
+
+Engineering Quality executes the Oxlint and TypeScript negative fixtures through `process.execPath` + each package's JavaScript CLI entrypoint, preserving argument boundaries without shell strings or Windows `.cmd` execution. `.github/workflows/developer-portability.yml` provides the fresh Ubuntu/Windows proof for doctor, EOL policy, `npm ci`, lint, typecheck, unit tests, Engineering Quality, Modal ownership, UI purity, and production build with `contents: read` only and no shared-resource credentials.
+
 Key workflows:
 - `.github/workflows/ui-shell.yml` — UI purity audit, production build, credential-free signed-out UI/API behavior and responsive screenshots;
 - `.github/workflows/account-ownership.yml` — configured two-account private-record isolation, signed-out denial, foreign opaque-ID denial, raw-table denial and cleanup;

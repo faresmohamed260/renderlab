@@ -1,7 +1,7 @@
 # ENT-008 — Developer portability and clean-room reproducibility contract
 
 Date: 2026-10-07
-Status: CONTRACT / IMPLEMENTATION NOT STARTED
+Status: IMPLEMENTATION CANDIDATE / EXACT-HEAD VERIFICATION PENDING
 Tracking: #354
 Baseline `main`: `d7037abf4c4b1e2cbafef9265584f5fae5a9acef`
 

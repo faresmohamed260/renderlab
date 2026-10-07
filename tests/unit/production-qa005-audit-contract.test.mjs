@@ -6,7 +6,7 @@ const workflowPath = ".github/workflows/production-qa005-reconciliation-failure.
 const verifierPath = "scripts/verify-production-qa005-reconciliation-failure.mjs";
 
 test("QA-005 production failure workflow is manual-only and exact-source scoped", async () => {
-  const workflow = await readFile(workflowPath, "utf8");
+  const workflow = (await readFile(workflowPath, "utf8")).replace(/\r\n/g, "\n");
 
   assert.match(workflow, /on:\n  workflow_dispatch:/);
   assert.doesNotMatch(workflow, /\n  push:/);

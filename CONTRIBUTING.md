@@ -20,18 +20,27 @@ Before proposing a change:
 
 ## Quality checks
 
-For ordinary application changes, run at minimum:
+The supported local engineering boundary is Node 24.x + npm 11.x on native Windows or Linux/WSL2. Start with the repository-owned preflights, then install from the lockfile:
 
 ```bash
-npm ci
+npm run doctor
+npm run verify:text-policy
+npm ci --no-audit --no-fund
+```
+
+For ordinary application changes, run the secret-free quality path at minimum:
+
+```bash
 npm run lint
 npm run typecheck
 npm run test:unit
+npm run verify:engineering-quality
+npm run verify:modal-project-ownership
 npm run verify:ui-purity
 npm run build
 ```
 
-Feature-specific browser, integration, lifecycle, cleanup, and production-verification workflows may also be required.
+These commands require no production/shared-resource credentials. Feature-specific browser, integration, lifecycle, cleanup, provider-backed, and production-verification workflows may require protected credentials and explicit authorization; do not copy real secrets into the repository merely to satisfy local bootstrap.
 
 ## Licensing
 

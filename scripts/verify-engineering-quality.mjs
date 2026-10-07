@@ -4,9 +4,15 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
-const executableSuffix = process.platform === "win32" ? ".cmd" : "";
-const oxlint = path.join(root, "node_modules", ".bin", `oxlint${executableSuffix}`);
-const tsc = path.join(root, "node_modules", ".bin", `tsc${executableSuffix}`);
+const oxlint = path.join(root, "node_modules", "oxlint", "bin", "oxlint");
+const tsc = path.join(root, "node_modules", "typescript", "bin", "tsc");
+
+function spawnNodeCli(entrypoint, args) {
+  return spawnSync(process.execPath, [entrypoint, ...args], {
+    cwd: root,
+    encoding: "utf8",
+  });
+}
 
 function expectFailure(result, label) {
   if (result.error) throw result.error;
@@ -121,19 +127,13 @@ const typeFixture = path.join(root, "tests", "unit", `quality-type-negative-${pr
 try {
   await writeFile(lintFixture, "debugger;\n", "utf8");
   expectFailure(
-    spawnSync(oxlint, ["--config", path.join(root, ".oxlintrc.json"), lintFixture], {
-      cwd: root,
-      encoding: "utf8",
-    }),
+    spawnNodeCli(oxlint, ["--config", path.join(root, ".oxlintrc.json"), lintFixture]),
     "Oxlint",
   );
 
   await writeFile(typeFixture, "const qualityGateNumber: number = 'not-a-number';\n", "utf8");
   expectFailure(
-    spawnSync(tsc, ["--noEmit", "--pretty", "false", "--incremental", "false", "-p", "tsconfig.json"], {
-      cwd: root,
-      encoding: "utf8",
-    }),
+    spawnNodeCli(tsc, ["--noEmit", "--pretty", "false", "--incremental", "false", "-p", "tsconfig.json"]),
     "TypeScript",
   );
 } finally {

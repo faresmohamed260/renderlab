@@ -4,10 +4,12 @@
   "private": true,
   "packageManager": "npm@11.6.2",
   "engines": {
-    "node": ">=24 <26",
+    "node": "24.x",
     "npm": "11.x"
   },
   "scripts": {
+    "doctor": "node scripts/verify-developer-toolchain.mjs",
+    "verify:text-policy": "node scripts/verify-text-policy.mjs",
     "dev": "next dev",
     "prebuild": "node scripts/verify-vercel-env.mjs",
     "build": "next build",

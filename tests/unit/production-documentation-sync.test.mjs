@@ -113,7 +113,7 @@ test("checked-in authorities currently agree with the verified production SHA", 
 });
 
 test("permanent production documentation workflow is manual/reusable only", () => {
-  const body = readFileSync(".github/workflows/production-documentation-sync.yml", "utf8");
+  const body = readFileSync(".github/workflows/production-documentation-sync.yml", "utf8").replace(/\r\n/g, "\n");
   assert.match(body, /workflow_dispatch:/);
   assert.match(body, /workflow_call:/);
   assert.doesNotMatch(body, /\npush:/);
