@@ -87,6 +87,15 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Enterprise score remains **8.5/10**. The largest unresolved enterprise gap remains verified destructive-loss recovery/RPO-RTO for Supabase and R2; developer portability, coverage visibility and maintainability debt also remain material.
 - No production deployment or shared-runtime mutation was authorized or performed.
 
+### ENT-007 — destructive-loss recovery
+
+- **Active / retained backup + cross-store restore verified / PR+merge pending / not deployed.** Provider/bootstrap and recovery evidence are complete; repository closure still requires exact-head implementation PR gates, merge, merged-main verification and reassessment.
+- Cloudflare run `37623562234` configured/read back whole-bucket 7-day lock on private `renderlab-dr-backup`; run `37629604734` re-verified the lock and configured/read back 8-day lifecycle expiry for `ent007/`. The protected Cloudflare credential is an active account token, not the previously inferred DNS-only token.
+- Backup run `37630201440` created steady-state retained generation `20261007133932-9f1aa3bd` after verifying both provider policies and minting a one-hour bucket-scoped temporary R2 Object Read & Write credential. It retained 1 durable object / 39,974 bytes plus the encrypted logical database/Auth snapshot and wrote completion last.
+- Restore run `37630554797` restored that generation into isolated PostgreSQL 17 and a run-owned R2 prefix: 10 contracted tables, 1 bounded Auth user/identity, 1 object, zero restored sessions, zero missing RLS/browser-grant violations, zero tested orphans, coherent cross-store reference, successful primary-delete simulation and cleanup. Observed backup age was 177 s; DB verification 2,437 ms; R2 verification 1,682 ms; combined verification 5,253 ms. These are drill observations, not SLAs.
+- Completed account deletion still removes active primary state; encrypted pre-deletion backup state may remain until the `ent007/` 8-day lifecycle threshold and provider cleanup complete. Disaster cutover requires deletion/reconciliation review before restored state is served.
+- Supabase stays on Free; logical recovery is not managed physical backup/PITR and does not preserve active sessions/MFA continuity. Enterprise score remains **8.5/10** pending merged-main ENT-007 closure/reassessment.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
@@ -94,7 +103,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- Enterprise-hardening follow-ons remain for explicit server-only module boundaries, cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, large-module decomposition, and an actual verified Supabase/R2 backup-and-restore capability. The ENT-005 runbook does not establish destructive-loss RPO/RTO by itself.
+- Enterprise-hardening follow-ons remain for cross-platform dev/test parity, conventional coverage measurement, CI workflow consolidation, large-module decomposition, and final repository closure of ENT-007. Retained database/R2/cross-store recovery is now technically verified; published recovery objectives still wait for merge plus repeated scheduled evidence rather than being inferred from one drill.
 
 ## Current direction
 

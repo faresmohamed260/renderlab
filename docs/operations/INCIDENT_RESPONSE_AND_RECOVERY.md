@@ -1,6 +1,6 @@
 # RenderLab incident response and recovery
 
-Date: 2026-10-05
+Date: 2026-10-07
 Status: operational runbook / current repository and shared-infrastructure truth
 
 ## Purpose
@@ -77,7 +77,7 @@ Operator recovery target for source/config tracked in Git: restore service from 
 2. Prefer fail-closed behavior for private/authenticated mutations; do not bypass owner/access checks or expose raw browser table access to keep the product partially available.
 3. Do not apply speculative schema repairs during a provider outage. Confirm current migration history and advisor/privilege state first.
 4. If the issue is a bad RenderLab migration, use forward-compatible repository-authorized correction rather than silently rewriting migration history already applied to the shared project.
-5. If destructive database loss is suspected, stop destructive recovery claims and move to the recovery-objectives section below. The current Free-plan project has no verified recoverable database snapshot/PITR path in RenderLab operations.
+5. If destructive database loss is suspected, stop writes and move to the recovery-objectives section below. ENT-007 now has retained encrypted logical generations in `renderlab-dr-backup`; select only a generation with a valid `complete.json`, restore it into an isolated target first, and require operator authorization plus deletion/reconciliation review before any real cutover. This remains logical Free-plan recovery, not PITR or full Supabase-project recovery; active sessions/MFA continuity are not restored.
 
 ## Cloudflare R2/storage failure
 
@@ -85,7 +85,7 @@ Operator recovery target for source/config tracked in Git: restore service from 
 2. Keep opaque product media identity authoritative; never promote raw R2 keys or signed URLs into user-facing durable identity.
 3. For temporary staging or tombstoned-media cleanup, use only the established row-owned object contract and idempotent maintenance/delete semantics. Never sweep arbitrary prefixes during an incident.
 4. For suspected credential failure, rotate/restore credentials through the approved secret stores and verify only exact-origin/private object operations needed by RenderLab.
-5. If durable object loss is suspected, do not claim recovery from Supabase metadata. The current R2 resource has no independently verified replica/version/backup restore path.
+5. If durable object loss is suspected, use only a complete retained ENT-007 generation from private `renderlab-dr-backup`. The destination has a verified 7-day whole-bucket lock and `ent007/` lifecycle expiry at object age 8 days. Restore into an isolated/run-owned prefix first and verify exact bytes/content type plus cross-store references; never overwrite live primary keys as the first recovery action.
 
 ## Resend/operational email outage
 
@@ -154,8 +154,8 @@ These are evidence-backed current objectives, not provider SLAs.
 | Asset/state | Current recovery basis | Current objective |
 |---|---|---|
 | Application source and repository-tracked configuration | Git history + exact-SHA validation + known-good Vercel deployments/explicit alias control | Recoverable in principle; operator target is same-incident-window restoration from a verified known-good deployment |
-| Supabase RenderLab data and Supabase Auth data | Primary shared Supabase Free project only; no verified RenderLab-managed logical backup credential/path and no managed PITR/daily-backup guarantee under the current plan | **Destructive-loss RPO: not established. Destructive-loss RTO: not established.** |
-| Cloudflare R2 durable media bytes | Primary shared R2 resource; no separately verified versioning/replication/backup restore path | **Destructive-loss RPO: not established. Destructive-loss RTO: not established.** |
+| Supabase RenderLab data and bounded Supabase Auth identity | Primary shared Supabase Free project plus retained encrypted ENT-007 logical generations in `renderlab-dr-backup`. Run `37630554797` restored generation `20261007133932-9f1aa3bd` through all 29 migrations with 10 contracted tables + 1 Auth user/identity and zero tested integrity/security violations. | **Observed drill RPO: 177 s. Observed isolated DB verification: 2.437 s.** These are single-drill observations, not a published SLA/objective. No managed PITR/full-project guarantee exists on Free. |
+| Cloudflare R2 durable media bytes | Private recovery bucket `renderlab-dr-backup` with verified whole-bucket 7-day lock, `ent007/` expiry at 8 days, and one-hour bucket-scoped temporary backup credentials. Run `37630554797` restored the retained object, verified exact bytes/content type and cross-store coherence, proved primary-delete simulation, and cleaned the isolated target. | **Observed drill RPO: 177 s. Observed R2 verification: 1.682 s. Combined retained recovery verification: 5.253 s.** Single-drill observations only; published objective awaits repeated scheduled evidence. |
 | Worker/provider runtime | Repository registration + external provider/workspace deployments; product truth remains in Supabase/R2 | Availability recovery only; no product-data RPO applies. No provider RTO is claimed. |
 | Operational diagnostics | 30-day primary Supabase diagnostic store after ENT-005 deployment | Operational evidence only; loss must not affect product correctness and has no product-data RPO promise |
 
@@ -163,10 +163,12 @@ A runbook is not a backup. Do not raise the database/storage recovery assessment
 
 ## DR maturity promotion gate
 
-RenderLab may claim verified database or object-store destructive-loss RPO/RTO only after a separately authorized phase establishes and tests a real recoverable path. Acceptable directions include:
+ENT-007 has crossed the **technical retained-recovery promotion gate** in branch evidence: a retained database/Auth + R2 generation exists, both stores were restored into isolated targets, cross-store coherence and cleanup passed, and observed recovery point/time were measured. Repository closure is still pending exact-head PR gates, merge and merged-main verification; do not describe the phase as complete until those pass.
 
-- a paid managed Supabase backup/PITR capability with verified restore procedure and measured restore evidence; or
-- an approved encrypted off-site logical database export workflow with required backup credential, retention, independent restore target and successful restore verification;
-- for R2, a separately approved versioning/replication/backup destination with a verified object restore exercise.
+The accepted operating boundary remains:
 
-Any such phase must define retention, encryption/key ownership, backup credential scope, restore isolation, fixture safety, restore verification, cost, RPO/RTO measurement and operator escalation before being credited as DR maturity.
+- Free-plan Supabase recovery is repository-managed logical recovery, not managed physical backup/PITR or whole-project restoration;
+- the R2 recovery destination is same-provider/same-account protection against bounded application/credential/primary-object loss, not Cloudflare account/provider-failure independence;
+- whole-bucket immutability is at least 7 days, while `ent007/` lifecycle deletion is requested at object age 8 days and provider processing may extend physical presence;
+- every real disaster cutover requires operator authorization and a deletion/reconciliation review before restored data can be served;
+- published RPO/RTO objectives require repeated scheduled evidence. The current 177 s / 2.437 s DB / 1.682 s R2 / 5.253 s combined values are observations from one retained drill, not SLAs.

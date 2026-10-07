@@ -1,0 +1,125 @@
+name: ENT-007 Recovery Drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      generation_id:
+        description: Retained ENT-007 generation ID to restore
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-ent007-recovery-drill
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ent007-restore
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      ENT007_GENERATION_ID: ${{ inputs.generation_id }}
+      ENT007_BACKUP_ENCRYPTION_KEY: ${{ secrets.ENT007_BACKUP_ENCRYPTION_KEY }}
+      ENT007_OUTPUT_DIR: artifacts/ent007-retained-restore
+      ENT007_R2_BACKUP_BUCKET: renderlab-dr-backup
+      ENT007_RESTORE_RUN_ID: ${{ github.run_id }}
+      ENT007_RESTORE_DATABASE_URL: postgresql://postgres:ent007-restore@127.0.0.1:54329/postgres
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Mint bucket-scoped temporary backup credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
+          test -n "$TOKEN"
+          verify=$(curl -sS -H "Authorization: Bearer ${TOKEN}" "https://api.cloudflare.com/client/v4/accounts/${R2_ACCOUNT_ID}/tokens/verify")
+          parent_id=$(printf '%s' "$verify" | jq -r '.result.id // empty')
+          test -n "$parent_id"
+          jq -n --arg bucket "$ENT007_R2_BACKUP_BUCKET" --arg parent "$parent_id" \
+            '{bucket:$bucket,parentAccessKeyId:$parent,permission:"object-read-write",ttlSeconds:3600}' > temp-credentials-request.json
+          code=$(curl -sS -o temp-credentials-response.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-binary @temp-credentials-request.json \
+            "https://api.cloudflare.com/client/v4/accounts/${R2_ACCOUNT_ID}/r2/temp-access-credentials")
+          if [ "$code" != "200" ]; then
+            echo "temporary_credential_http=${code}"
+            jq '{success, errors}' temp-credentials-response.json
+            exit 1
+          fi
+          access_key=$(jq -r '.result.accessKeyId // empty' temp-credentials-response.json)
+          secret_key=$(jq -r '.result.secretAccessKey // empty' temp-credentials-response.json)
+          session_token=$(jq -r '.result.sessionToken // empty' temp-credentials-response.json)
+          test -n "$access_key" && test -n "$secret_key" && test -n "$session_token"
+          echo "::add-mask::${access_key}"
+          echo "::add-mask::${secret_key}"
+          echo "::add-mask::${session_token}"
+          {
+            echo "ENT007_R2_BACKUP_ACCESS_KEY_ID=${access_key}"
+            echo "ENT007_R2_BACKUP_SECRET_ACCESS_KEY=${secret_key}"
+            echo "ENT007_R2_BACKUP_SESSION_TOKEN=${session_token}"
+          } >> "$GITHUB_ENV"
+          rm -f temp-credentials-request.json temp-credentials-response.json
+          echo "ent007_temporary_backup_credentials=ready"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Start combined recovery timer
+        shell: bash
+        run: echo "ENT007_COMBINED_STARTED_MS=$(date +%s%3N)" >> "$GITHUB_ENV"
+
+      - name: Download and verify retained generation
+        id: retained
+        run: node scripts/download-ent007-retained-generation.mjs
+
+      - name: Restore retained snapshot into isolated PostgreSQL 17
+        run: node scripts/verify-ent007-restore-drill.mjs
+
+      - name: Restore retained R2 objects into isolated run-owned prefix
+        run: node scripts/verify-ent007-retained-r2-restore.mjs
+
+      - name: Record secret-safe recovery evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          finished_ms=$(date +%s%3N)
+          combined_ms=$((finished_ms - ENT007_COMBINED_STARTED_MS))
+          echo "ent007_generation_id=${{ steps.retained.outputs.generation_id }}"
+          echo "ent007_generated_at=${{ steps.retained.outputs.generated_at }}"
+          echo "ent007_backup_age_seconds=${{ steps.retained.outputs.backup_age_seconds }}"
+          echo "ent007_combined_recovery_elapsed_ms=${combined_ms}"
+
+      - name: Remove sensitive runner-local retained snapshot
+        if: always()
+        shell: bash
+        run: rm -rf artifacts/ent007-retained-restore

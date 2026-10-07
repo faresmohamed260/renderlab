@@ -1,0 +1,115 @@
+name: ENT-007 Recovery Backup
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-ent007-recovery-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      ENT007_BACKUP_ENCRYPTION_KEY: ${{ secrets.ENT007_BACKUP_ENCRYPTION_KEY }}
+      ENT007_OUTPUT_DIR: artifacts/ent007-recovery
+      ENT007_R2_BACKUP_BUCKET: renderlab-dr-backup
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Mint bucket-scoped temporary backup credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
+          test -n "$TOKEN"
+          verify=$(curl -sS -H "Authorization: Bearer ${TOKEN}" "https://api.cloudflare.com/client/v4/accounts/${R2_ACCOUNT_ID}/tokens/verify")
+          parent_id=$(printf '%s' "$verify" | jq -r '.result.id // empty')
+          test -n "$parent_id"
+          jq -n --arg bucket "$ENT007_R2_BACKUP_BUCKET" --arg parent "$parent_id" \
+            '{bucket:$bucket,parentAccessKeyId:$parent,permission:"object-read-write",ttlSeconds:3600}' > temp-credentials-request.json
+          code=$(curl -sS -o temp-credentials-response.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-binary @temp-credentials-request.json \
+            "https://api.cloudflare.com/client/v4/accounts/${R2_ACCOUNT_ID}/r2/temp-access-credentials")
+          if [ "$code" != "200" ]; then
+            echo "temporary_credential_http=${code}"
+            jq '{success, errors}' temp-credentials-response.json
+            exit 1
+          fi
+          access_key=$(jq -r '.result.accessKeyId // empty' temp-credentials-response.json)
+          secret_key=$(jq -r '.result.secretAccessKey // empty' temp-credentials-response.json)
+          session_token=$(jq -r '.result.sessionToken // empty' temp-credentials-response.json)
+          test -n "$access_key" && test -n "$secret_key" && test -n "$session_token"
+          echo "::add-mask::${access_key}"
+          echo "::add-mask::${secret_key}"
+          echo "::add-mask::${session_token}"
+          {
+            echo "ENT007_R2_BACKUP_ACCESS_KEY_ID=${access_key}"
+            echo "ENT007_R2_BACKUP_SECRET_ACCESS_KEY=${secret_key}"
+            echo "ENT007_R2_BACKUP_SESSION_TOKEN=${session_token}"
+          } >> "$GITHUB_ENV"
+          rm -f temp-credentials-request.json temp-credentials-response.json
+          echo "ent007_temporary_backup_credentials=ready"
+
+      - name: Verify retained-backup policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
+          base="https://api.cloudflare.com/client/v4/accounts/${R2_ACCOUNT_ID}/r2/buckets/${ENT007_R2_BACKUP_BUCKET}"
+          curl -fsS -H "Authorization: Bearer ${TOKEN}" "${base}/lock" -o lock-policy.json
+          jq -e '.success == true and any((.result.rules // [])[]; .enabled == true and ((.prefix // "") == "") and .condition.type == "Age" and (.condition.maxAgeSeconds // 0) >= 604800)' lock-policy.json >/dev/null
+          curl -fsS -H "Authorization: Bearer ${TOKEN}" "${base}/lifecycle" -o lifecycle-policy.json
+          jq -e '.success == true and any((.result.rules // [])[]; .id == "ent007-expire-after-8d" and .enabled == true and .conditions.prefix == "ent007/" and .deleteObjectsTransition.condition.type == "Age" and .deleteObjectsTransition.condition.maxAge == 691200)' lifecycle-policy.json >/dev/null
+          rm -f lock-policy.json lifecycle-policy.json
+          echo "ent007_retained_backup_policy=verified"
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run focused recovery unit tests
+        run: node --test tests/unit/ent007-recovery.test.mjs
+
+      - name: Create encrypted logical snapshot
+        run: node scripts/create-ent007-recovery-snapshot.mjs
+
+      - name: Persist retained recovery generation
+        id: persist
+        run: node scripts/persist-ent007-recovery-backup.mjs
+
+      - name: Record secret-safe completion evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ent007_generation_id=${{ steps.persist.outputs.generation_id }}"
+          echo "ent007_completed_at=${{ steps.persist.outputs.completed_at }}"
+          echo "ent007_object_backup_count=${{ steps.persist.outputs.object_backup_count }}"
+          echo "ent007_object_backup_bytes=${{ steps.persist.outputs.object_backup_bytes }}"
+
+      - name: Remove sensitive runner-local snapshot
+        if: always()
+        shell: bash
+        run: rm -rf artifacts/ent007-recovery
