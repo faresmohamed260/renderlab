@@ -1,0 +1,21 @@
+{
+  "all": true,
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "src/**/*.d.ts"
+  ],
+  "extension": [
+    ".ts",
+    ".tsx"
+  ],
+  "reporter": [
+    "text-summary",
+    "json-summary",
+    "lcovonly"
+  ],
+  "reports-dir": "coverage",
+  "clean": true
+}
