@@ -84,6 +84,18 @@ jobs:
           rm -f temp-credentials-request.json temp-credentials-response.json
           echo "ent007_temporary_backup_credentials=ready"
 
+      - name: Verify retained-backup policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
+          base="https://api.cloudflare.com/client/v4/accounts/${R2_ACCOUNT_ID}/r2/buckets/${ENT007_R2_BACKUP_BUCKET}"
+          curl -fsS -H "Authorization: Bearer ${TOKEN}" "${base}/lock" -o lock-policy.json
+          jq -e '.success == true and any((.result.rules // [])[]; .enabled == true and ((.prefix // "") == "") and .condition.type == "Age" and (.condition.maxAgeSeconds // 0) >= 604800)' lock-policy.json >/dev/null
+          curl -fsS -H "Authorization: Bearer ${TOKEN}" "${base}/lifecycle" -o lifecycle-policy.json
+          jq -e '.success == true and any((.result.rules // [])[]; .id == "ent007-expire-after-8d" and .enabled == true and .conditions.prefix == "ent007/" and .deleteObjectsTransition.condition.type == "Age" and .deleteObjectsTransition.condition.maxAge == 691200)' lifecycle-policy.json >/dev/null
+          rm -f lock-policy.json lifecycle-policy.json
+          echo "ent007_retained_backup_policy=verified"
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
