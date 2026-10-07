@@ -1,7 +1,7 @@
 # ENT-007 — Verified destructive-loss recovery contract
 
 Date: 2026-10-07
-Status: CONTRACT / IMPLEMENTATION VERIFIED / PR+MERGE PENDING
+Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
 Tracking: #347
 Baseline `main`: `49f2090eb7fbd78c801726dd0327aaaa3d660c6b`
 
@@ -29,7 +29,7 @@ ENT-007 is a disaster-recovery phase. It is not a production release or product 
 
 ## Implementation verification checkpoint — 2026-10-07
 
-Current implementation evidence satisfies the technical backup/restore exit criteria. ENT-007 remains open only for reviewed PR exact-head gates, merge, merged-main verification and the same-rubric reassessment.
+This implementation checkpoint satisfied the technical backup/restore exit criteria before PR/merge closure. Final reviewed exact-head, merge, merged-main and reassessment evidence is recorded in the verified closure section below.
 
 - Provider control plane: run `37623562234` on `21a539059837d348de05f97dbffd5427760ea361` verified the protected Cloudflare credential as an active account token and configured/read back whole-bucket `ent007-minimum-7d` lock at 604,800 seconds. Run `37629604734` on `4a3254070ac2e940af2b129abe6d7919007341c8` re-verified the lock and configured/read back `ent007-expire-after-8d` lifecycle expiry for prefix `ent007/` at 691,200 seconds while preserving unrelated lifecycle rules.
 - Credential boundary: permanent backup/drill workflows use the protected account token only to mint one-hour `object-read-write` temporary R2 credentials scoped to `renderlab-dr-backup`. The temporary access key, secret and session token stay masked in the runner and expire; application R2 credentials remain source/read or isolated restore-target authority and cannot qualify as the retained-backup write identity.
@@ -40,6 +40,14 @@ Current implementation evidence satisfies the technical backup/restore exit crit
 - Privacy/retention boundary: the whole-bucket lock prevents deletion for at least seven days. The `ent007/` lifecycle requests deletion at object age eight days; Cloudflare lifecycle processing may take additional time. Successful account deletion still removes active primary state under #219, while encrypted pre-deletion recovery generations may persist through this retention/expiry window. Any real disaster restoration requires an operator-authorized deletion/reconciliation review before serving restored state.
 - Free-plan capability disclaimer remains binding: this logical recovery does not restore complete Supabase project configuration, API keys, provider encryption roots/Vault state, active JWT/session continuity or MFA continuity and is not equivalent to managed physical backup/PITR.
 - No Vercel deployment/alias movement, production application mutation, Supabase hosted-runtime mutation, paid-plan/PITR change or generation/provider routing change occurred.
+
+## Verified closure — 2026-10-07
+
+- Implementation PR #352 exact head `b6decaa6d895e616436861446cd8bfaaaef7e846` passed Engineering Quality `37632681295`, CodeQL `37632681300`, Account Data Lifecycle `37632910417`, Library Lifecycle Visual `37632916211`, and Media Delete Visual `37632921771`; configured account/storage fixtures cleaned successfully.
+- PR #352 squash-merged as `7f7a95a21f403e99095a19b94db39255311cf4d3`. Merged-main Engineering Quality `37642455946` and CodeQL `37642455870` passed on that exact SHA.
+- Provider/resource evidence remains the verified 7-day whole-bucket lock, 8-day `ent007/` lifecycle expiry, one-hour backup-bucket-scoped temporary R2 credentials, steady-state retained generation `20261007133932-9f1aa3bd`, and isolated database/R2/cross-store restore run `37630554797`.
+- The same-rubric reassessment is `docs/audits/ENT_007_DESTRUCTIVE_LOSS_RECOVERY_ASSESSMENT.md`: authoritative score **8.7/10** (8.68 arithmetic mean), up from 8.5 after ENT-006.
+- ENT-007 performed no Vercel deployment/alias movement, paid Supabase/PITR upgrade, Supabase hosted-runtime reboot/SSL/JIT mutation, generation/provider routing change, or production application cutover. Production remains the separately recorded exact SHA.
 
 ## Recovery architecture decision
 

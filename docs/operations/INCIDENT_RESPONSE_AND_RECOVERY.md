@@ -163,7 +163,7 @@ A runbook is not a backup. Do not raise the database/storage recovery assessment
 
 ## DR maturity promotion gate
 
-ENT-007 has crossed the **technical retained-recovery promotion gate** in branch evidence: a retained database/Auth + R2 generation exists, both stores were restored into isolated targets, cross-store coherence and cleanup passed, and observed recovery point/time were measured. Repository closure is still pending exact-head PR gates, merge and merged-main verification; do not describe the phase as complete until those pass.
+ENT-007 has crossed and repository-closed the **technical retained-recovery promotion gate**: a retained database/Auth + R2 generation exists, both stores were restored into isolated targets, cross-store coherence and cleanup passed, observed recovery point/time were measured, implementation PR #352 merged as `7f7a95a21f403e99095a19b94db39255311cf4d3`, and merged-main Engineering Quality `37642455946` plus CodeQL `37642455870` passed. These facts establish tested recovery capability, not a published SLA.
 
 The accepted operating boundary remains:
 
