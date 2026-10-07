@@ -40,7 +40,16 @@ npm run verify:ui-purity
 npm run build
 ```
 
-These commands require no production/shared-resource credentials. Feature-specific browser, integration, lifecycle, cleanup, provider-backed, and production-verification workflows may require protected credentials and explicit authorization; do not copy real secrets into the repository merely to satisfy local bootstrap.
+For Node unit-coverage visibility, run:
+
+```bash
+npm run test:unit:coverage
+npm run verify:unit-coverage
+```
+
+The coverage command includes all tracked eligible `src/**/*.ts` and `src/**/*.tsx` product source in the denominator even when a file is never imported by the unit process; declaration-only `.d.ts` files are excluded. Reports are written under ignored `coverage/`. CI's **Unit Coverage** workflow publishes the same Node 24 unit totals in its job summary and retains only `coverage-summary.json` plus `lcov.info` as bounded evidence.
+
+These commands require no production/shared-resource credentials. Unit coverage is a risk-discovery signal, not a substitute for feature-specific browser, integration, lifecycle, cleanup, provider-backed, release-candidate, or production-verification workflows. Those workflows may require protected credentials and explicit authorization; do not copy real secrets into the repository merely to satisfy local bootstrap, and do not weaken them to raise the unit percentage.
 
 ## Licensing
 
