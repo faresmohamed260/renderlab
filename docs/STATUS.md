@@ -98,10 +98,10 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 
 ### ENT-008 — developer portability and clean-room reproducibility
 
-- **Contract active / implementation not started / not deployed.** Tracking issue #354; execution-ready contract: `docs/audits/ENT_008_DEVELOPER_PORTABILITY_CONTRACT.md`.
-- Current-`main` native-Windows audit reproduced the portability debt: the engine range permits Node 25 while docs/CI target Node 24; no repository EOL policy exists; 517 tracked text files check out CRLF under WANDA's `core.autocrlf=true`; unit tests are 91/93 because two workflow-file assertions are LF-only; and Engineering Quality fails on direct `.cmd` spawning with `EINVAL`.
-- Planned scope is limited to canonical Node 24/npm 11 preflight, deterministic LF text policy, newline-neutral contract assertions, portable Engineering Quality negative fixtures, and one credential-free Windows + Linux clean-room matrix.
-- Coverage measurement, CI workflow consolidation, large-module decomposition, product/runtime changes, shared-resource mutations and deployment are excluded. The enterprise score remains **8.7/10** until verified implementation reassessment.
+- **Implementation candidate / exact-head verification pending / not deployed.** Tracking issue #354; execution contract: `docs/audits/ENT_008_DEVELOPER_PORTABILITY_CONTRACT.md`.
+- The candidate pins the supported engine to Node 24.x + npm 11.x, adds `npm run doctor`, enforces repository LF text checkout with `.gitattributes` + `npm run verify:text-policy`, normalizes workflow-contract test input before line-structural assertions, and runs Oxlint/TypeScript negative fixtures through their JavaScript entrypoints instead of Windows `.cmd` shims.
+- `.github/workflows/developer-portability.yml` is a credential-free Ubuntu + Windows fresh-checkout matrix for doctor/text policy, deterministic `npm ci`, lint, typecheck, unit tests, Engineering Quality, Modal ownership, UI purity, and production build. The ordinary Engineering Quality workflow also runs toolchain/text preflights.
+- Coverage measurement, CI workflow consolidation, large-module decomposition, product/runtime changes, shared-resource mutations and deployment remain excluded. The enterprise score stays **8.7/10** until exact-head + merged-main verification and same-rubric reassessment complete.
 
 ## Known boundaries
 

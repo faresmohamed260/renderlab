@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const workflow = readFileSync(".github/workflows/production-qa003-activity-admin.yml", "utf8");
+const workflow = readFileSync(".github/workflows/production-qa003-activity-admin.yml", "utf8").replace(/\r\n/g, "\n");
 const verifier = readFileSync("scripts/verify-production-qa003-activity-admin.mjs", "utf8");
 
 test("QA-003 production audit is manual-only and requires exact source acknowledgement", () => {

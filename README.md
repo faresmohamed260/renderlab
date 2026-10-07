@@ -195,21 +195,33 @@ RenderLab keeps schema ownership, storage prefixes, orchestration, authorization
 
 ### Prerequisites
 
-- Node.js **24** (see `.nvmrc`)
-- npm **11**
-- Access to the infrastructure required by the workflow you intend to run
+- Node.js **24.x** (see `.nvmrc`)
+- npm **11.x** (`packageManager` remains pinned to npm 11.6.2)
+- Git on native Windows or Linux/WSL2. macOS is expected-compatible but is not an ENT-008 verified exit platform.
+
+Verify the active toolchain before installing dependencies:
 
 ```bash
-cp .env.example .env.local
-npm ci
+npm run doctor
+npm run verify:text-policy
+npm ci --no-audit --no-fund
+```
+
+The repository's ordinary lint/type/unit/static/build path is intentionally **secret-free**. You do not need a real `.env.local`, Supabase/R2/Vercel/Resend/Modal credentials, or provider access to run it. `.env.example` documents supported runtime variable names only; create `.env.local` when a specifically authorized configured/shared-resource workflow requires it.
+
+For local product development after the toolchain/install checks:
+
+```bash
 npm run dev
 ```
 
-`.env.example` documents the supported variable names without containing credentials. Ordinary UI/static work can be performed locally; provider-backed, production, and shared-resource operations require explicitly authorized credentials and ownership boundaries.
+`.gitattributes` makes repository-owned text LF on both native Windows and Linux/WSL, independent of a developer's global `core.autocrlf` setting. If `npm run verify:text-policy` reports CRLF in an existing checkout, use a fresh checkout after the policy is present rather than mass-editing file contents.
 
-### Quality checks
+### Secret-free quality checks
 
 ```bash
+npm run doctor
+npm run verify:text-policy
 npm run lint
 npm run typecheck
 npm run test:unit
@@ -219,7 +231,7 @@ npm run verify:ui-purity
 npm run build
 ```
 
-The repository also contains feature-specific Playwright, integration, account lifecycle, generation, media, cleanup, and production-verification workflows under `.github/workflows`.
+The Developer Portability workflow runs that same path from fresh Linux and Windows checkouts. Feature-specific Playwright, integration, account lifecycle, generation, media, cleanup, provider-backed, and production-verification workflows under `.github/workflows` remain separate and may require protected credentials, run-owned fixtures, cleanup, and explicit authorization.
 
 ## Repository map
 

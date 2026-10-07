@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const workflow = readFileSync(".github/workflows/production-complete-user-journey.yml", "utf8");
+const workflow = readFileSync(".github/workflows/production-complete-user-journey.yml", "utf8").replace(/\r\n/g, "\n");
 const verifier = readFileSync("scripts/verify-production-complete-user-journey.mjs", "utf8");
 
 test("QA-002 permanent production journey is explicit manual-only bounded provider work", () => {
