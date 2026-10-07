@@ -20,7 +20,19 @@ concurrency:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ent007-restore
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       SUPABASE_PROJECT_REF: rashyleshocuvpgcooxy
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -31,6 +43,7 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      ENT007_RESTORE_DATABASE_URL: postgresql://postgres:ent007-restore@127.0.0.1:54329/postgres
 
     steps:
       - name: Checkout
@@ -83,6 +96,9 @@ jobs:
             migrationHead: manifest.migrationHead,
           }));
           NODE
+
+      - name: Restore snapshot into isolated PostgreSQL 17
+        run: node scripts/verify-ent007-restore-drill.mjs
 
       - name: Prove unlocked backup bucket is rejected
         shell: bash
