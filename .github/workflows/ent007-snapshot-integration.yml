@@ -7,6 +7,8 @@ on:
     paths:
       - "scripts/create-ent007-recovery-snapshot.mjs"
       - "scripts/lib/ent007-recovery.mjs"
+      - "scripts/persist-ent007-recovery-backup.mjs"
+      - "scripts/verify-ent007-restore-drill.mjs"
       - "tests/unit/ent007-recovery.test.mjs"
       - ".github/workflows/ent007-snapshot-integration.yml"
 
