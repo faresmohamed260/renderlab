@@ -1,0 +1,90 @@
+name: ENT-007 Recovery Drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      generation_id:
+        description: Retained ENT-007 generation ID to restore
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-ent007-recovery-drill
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ent007-restore
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      ENT007_GENERATION_ID: ${{ inputs.generation_id }}
+      ENT007_BACKUP_ENCRYPTION_KEY: ${{ secrets.ENT007_BACKUP_ENCRYPTION_KEY }}
+      ENT007_OUTPUT_DIR: artifacts/ent007-retained-restore
+      ENT007_R2_BACKUP_BUCKET: renderlab-dr-backup
+      ENT007_RESTORE_RUN_ID: ${{ github.run_id }}
+      ENT007_RESTORE_DATABASE_URL: postgresql://postgres:ent007-restore@127.0.0.1:54329/postgres
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      ENT007_R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.ENT007_R2_BACKUP_ACCESS_KEY_ID }}
+      ENT007_R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.ENT007_R2_BACKUP_SECRET_ACCESS_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Start combined recovery timer
+        shell: bash
+        run: echo "ENT007_COMBINED_STARTED_MS=$(date +%s%3N)" >> "$GITHUB_ENV"
+
+      - name: Download and verify retained generation
+        id: retained
+        run: node scripts/download-ent007-retained-generation.mjs
+
+      - name: Restore retained snapshot into isolated PostgreSQL 17
+        run: node scripts/verify-ent007-restore-drill.mjs
+
+      - name: Restore retained R2 objects into isolated run-owned prefix
+        run: node scripts/verify-ent007-retained-r2-restore.mjs
+
+      - name: Record secret-safe recovery evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          finished_ms=$(date +%s%3N)
+          combined_ms=$((finished_ms - ENT007_COMBINED_STARTED_MS))
+          echo "ent007_generation_id=${{ steps.retained.outputs.generation_id }}"
+          echo "ent007_generated_at=${{ steps.retained.outputs.generated_at }}"
+          echo "ent007_backup_age_seconds=${{ steps.retained.outputs.backup_age_seconds }}"
+          echo "ent007_combined_recovery_elapsed_ms=${combined_ms}"
+
+      - name: Remove sensitive runner-local retained snapshot
+        if: always()
+        shell: bash
+        run: rm -rf artifacts/ent007-retained-restore

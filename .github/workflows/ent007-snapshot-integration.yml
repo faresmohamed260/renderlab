@@ -8,9 +8,13 @@ on:
       - "scripts/create-ent007-recovery-snapshot.mjs"
       - "scripts/lib/ent007-recovery.mjs"
       - "scripts/persist-ent007-recovery-backup.mjs"
+      - "scripts/download-ent007-retained-generation.mjs"
       - "scripts/verify-ent007-restore-drill.mjs"
+      - "scripts/verify-ent007-retained-r2-restore.mjs"
       - "tests/unit/ent007-recovery.test.mjs"
       - ".github/workflows/ent007-snapshot-integration.yml"
+      - ".github/workflows/ent007-recovery-backup.yml"
+      - ".github/workflows/ent007-recovery-drill.yml"
 
 permissions:
   contents: read
@@ -45,6 +49,9 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      ENT007_R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      ENT007_R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      ENT007_ALLOW_SHARED_BACKUP_CREDENTIALS_FOR_PROBE: "1"
       ENT007_RESTORE_DATABASE_URL: postgresql://postgres:ent007-restore@127.0.0.1:54329/postgres
 
     steps:
@@ -57,6 +64,7 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: package.json
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
@@ -102,15 +110,15 @@ jobs:
       - name: Restore snapshot into isolated PostgreSQL 17
         run: node scripts/verify-ent007-restore-drill.mjs
 
-      - name: Prove unlocked backup bucket is rejected
+      - name: Prove unretained or shared-credential backup cannot be promoted
         shell: bash
         run: |
           set -euo pipefail
           if node scripts/persist-ent007-recovery-backup.mjs; then
-            echo "::error::ENT-007 persistence unexpectedly accepted an unlocked backup bucket."
+            echo "::error::ENT-007 persistence unexpectedly accepted a non-promotable backup path."
             exit 1
           fi
-          echo "ent007_unlocked_bucket_refusal=verified"
+          echo "ent007_nonpromotable_backup_refusal=verified"
 
       - name: Remove sensitive runner-local snapshot
         if: always()
