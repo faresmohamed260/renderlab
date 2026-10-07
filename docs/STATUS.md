@@ -103,6 +103,13 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - PR #356 squash-merged as `e6ea8210c47a2d49531daaa0cd80f7267ff488f4`. Merged-main Engineering Quality `37655904404`, CodeQL `37655904054`, and Developer Portability `37655903920` all passed, with both clean-room OS jobs green again.
 - The authoritative post-ENT-008 enterprise score is **8.8/10** (8.80 arithmetic mean). Coverage visibility, workflow/module maintainability, performance evidence, and higher-maturity DR remain separate follow-ons. No product/runtime/shared-resource mutation or deployment occurred.
 
+### ENT-009 — conventional unit coverage visibility
+
+- **Contract active / implementation not started / not deployed.** Tracking issue #358; execution-ready contract: `docs/audits/ENT_009_COVERAGE_VISIBILITY_CONTRACT.md`; baseline `main`: `ec79581136349e7d3866dbdea24a63daeff6eb4a`.
+- The phase measures unit coverage across all eligible `src/**` TypeScript/TSX source, including zero-covered files. A loaded-file-only Node probe looked artificially high, while an exploratory all-source c8 probe was roughly 5.54% lines / 24.16% functions / 56.31% branches; the accepted baseline must be reproduced on exact-head Node 24 CI.
+- Planned scope is dev-only `c8@12.0.0`, a deterministic all-source unit coverage command, report-integrity verification, and one secret-free least-privilege Unit Coverage workflow publishing text, JSON summary and LCOV evidence.
+- Initial ENT-009 acceptance is **visibility and denominator integrity first**. No arbitrary percentage threshold, browser/provider coverage instrumentation, CI consolidation, module decomposition, product/runtime/shared-resource mutation or deployment is authorized. The enterprise score remains **8.8/10** until verified implementation reassessment.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
@@ -110,7 +117,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- ENT-008 has closed cross-platform dev/test parity with verified Windows + Linux clean-room evidence. Conventional coverage measurement, CI workflow consolidation, large-module decomposition, performance evidence, and higher-maturity DR remain separate follow-ons; published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
+- ENT-008 has closed cross-platform dev/test parity with verified Windows + Linux clean-room evidence. ENT-009 now owns conventional all-source unit coverage visibility; CI workflow consolidation, large-module decomposition, performance evidence, and higher-maturity DR remain separate follow-ons. Published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
 
 ## Current direction
 
