@@ -98,6 +98,14 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - The authoritative same-rubric enterprise score is now **8.8/10** (8.80 arithmetic mean), up from 8.7 after ENT-007. Developer experience/local reproducibility moves from 6.8 to 8.5; coverage visibility, maintainability, performance evidence and higher-maturity DR remain separate gaps.
 - ENT-008 changed no product/runtime behavior and performed no Vercel deployment/alias movement, Supabase/R2 mutation, provider routing change, secret addition or production configuration change. Production authority remains the separately recorded exact production SHA below.
 
+## ENT-009 conventional unit coverage visibility — contract active 2026-10-07
+
+- ENT-009 is **CONTRACT ACTIVE / IMPLEMENTATION NOT STARTED / NOT DEPLOYED**. Tracking issue #358 and execution-ready contract `docs/audits/ENT_009_COVERAGE_VISIBILITY_CONTRACT.md` own this phase from baseline `main` `ec79581136349e7d3866dbdea24a63daeff6eb4a`.
+- The verified starting state has 185 `src/**` TypeScript/TSX files, 27 Node unit-test files / 97 passing unit tests, 60 top-level verification scripts and 55 GitHub workflow files, but no repository-owned all-source line/function/branch coverage report or retained coverage artifact.
+- Planning probes exposed why denominator integrity matters: Node's loaded-file-only coverage can look roughly 91.6% line-covered while omitting most untouched source, whereas an exploratory `c8 --all` probe over all `src/**/*.ts(x)` reported roughly 5.54% lines, 24.16% functions and 56.31% branches. Those local Node-25 values are directional only; the accepted baseline must come from exact-head Node-24 CI.
+- Planned implementation is deliberately visibility-first: exact dev-only `c8@12.0.0`, one all-source unit coverage command, a report-integrity verifier that proves zero-covered files remain in the denominator, and a secret-free least-privilege Unit Coverage workflow publishing text summary, machine-readable summary and LCOV evidence.
+- ENT-009 will **not** add arbitrary percentage gates before the exact Node-24 baseline is measured, and it does not absorb browser/provider coverage, CI consolidation, module decomposition, performance work, DR maturity, product/runtime changes, shared-resource mutation or deployment. The authoritative enterprise score remains **8.8/10** until verified implementation and merged-main reassessment.
+
 ## Production user audit and current live source — 2026-09-21
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 986aab269551a4c6e7d3af3a259cfa955c975d91 -->
 
