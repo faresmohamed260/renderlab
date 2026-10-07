@@ -26,8 +26,7 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-      ENT007_R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.ENT007_R2_BACKUP_ACCESS_KEY_ID }}
-      ENT007_R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.ENT007_R2_BACKUP_SECRET_ACCESS_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
     steps:
       - name: Checkout
@@ -39,6 +38,42 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: package.json
+
+      - name: Mint bucket-scoped temporary backup credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
+          test -n "$TOKEN"
+          verify=$(curl -sS -H "Authorization: Bearer ${TOKEN}" "https://api.cloudflare.com/client/v4/accounts/${R2_ACCOUNT_ID}/tokens/verify")
+          parent_id=$(printf '%s' "$verify" | jq -r '.result.id // empty')
+          test -n "$parent_id"
+          jq -n --arg bucket "$ENT007_R2_BACKUP_BUCKET" --arg parent "$parent_id" \
+            '{bucket:$bucket,parentAccessKeyId:$parent,permission:"object-read-write",ttlSeconds:3600}' > temp-credentials-request.json
+          code=$(curl -sS -o temp-credentials-response.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-binary @temp-credentials-request.json \
+            "https://api.cloudflare.com/client/v4/accounts/${R2_ACCOUNT_ID}/r2/temp-access-credentials")
+          if [ "$code" != "200" ]; then
+            echo "temporary_credential_http=${code}"
+            jq '{success, errors}' temp-credentials-response.json
+            exit 1
+          fi
+          access_key=$(jq -r '.result.accessKeyId // empty' temp-credentials-response.json)
+          secret_key=$(jq -r '.result.secretAccessKey // empty' temp-credentials-response.json)
+          session_token=$(jq -r '.result.sessionToken // empty' temp-credentials-response.json)
+          test -n "$access_key" && test -n "$secret_key" && test -n "$session_token"
+          echo "::add-mask::${access_key}"
+          echo "::add-mask::${secret_key}"
+          echo "::add-mask::${session_token}"
+          {
+            echo "ENT007_R2_BACKUP_ACCESS_KEY_ID=${access_key}"
+            echo "ENT007_R2_BACKUP_SECRET_ACCESS_KEY=${secret_key}"
+            echo "ENT007_R2_BACKUP_SESSION_TOKEN=${session_token}"
+          } >> "$GITHUB_ENV"
+          rm -f temp-credentials-request.json temp-credentials-response.json
+          echo "ent007_temporary_backup_credentials=ready"
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
