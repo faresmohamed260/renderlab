@@ -98,10 +98,10 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 
 ### ENT-008 — developer portability and clean-room reproducibility
 
-- **Implementation candidate / exact-head verification pending / not deployed.** Tracking issue #354; execution contract: `docs/audits/ENT_008_DEVELOPER_PORTABILITY_CONTRACT.md`.
-- The candidate pins the supported engine to Node 24.x + npm 11.x, adds `npm run doctor`, enforces repository LF text checkout with `.gitattributes` + `npm run verify:text-policy`, normalizes workflow-contract test input before line-structural assertions, and runs Oxlint/TypeScript negative fixtures through their JavaScript entrypoints instead of Windows `.cmd` shims.
-- `.github/workflows/developer-portability.yml` is a credential-free Ubuntu + Windows fresh-checkout matrix for doctor/text policy, deterministic `npm ci`, lint, typecheck, unit tests, Engineering Quality, Modal ownership, UI purity, and production build. The ordinary Engineering Quality workflow also runs toolchain/text preflights.
-- Coverage measurement, CI workflow consolidation, large-module decomposition, product/runtime changes, shared-resource mutations and deployment remain excluded. The enterprise score stays **8.7/10** until exact-head + merged-main verification and same-rubric reassessment complete.
+- **Complete / verified / merged / not deployed.** PR #356 exact head `82bcf35d7d5ce3f5d3b8309f12457fae9a582d15` passed all 27 attached checks; Developer Portability `37654689761` passed both Node-24 Ubuntu and Windows clean-room jobs, Engineering Quality `37654689460` passed, and CodeQL `37654689450` passed.
+- The supported engineering boundary is now Node 24.x + npm 11.x. `npm run doctor` fails closed on incompatible majors; `.gitattributes` + `npm run verify:text-policy` make tracked text LF independent of global Git defaults; workflow-contract assertions normalize CRLF before semantic line checks; Engineering Quality invokes Oxlint/TypeScript through Node package entrypoints rather than Windows `.cmd` shims.
+- PR #356 squash-merged as `e6ea8210c47a2d49531daaa0cd80f7267ff488f4`. Merged-main Engineering Quality `37655904404`, CodeQL `37655904054`, and Developer Portability `37655903920` all passed, with both clean-room OS jobs green again.
+- The authoritative post-ENT-008 enterprise score is **8.8/10** (8.80 arithmetic mean). Coverage visibility, workflow/module maintainability, performance evidence, and higher-maturity DR remain separate follow-ons. No product/runtime/shared-resource mutation or deployment occurred.
 
 ## Known boundaries
 
@@ -110,7 +110,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- ENT-008 now owns cross-platform dev/test parity under #354. Conventional coverage measurement, CI workflow consolidation, and large-module decomposition remain separate follow-ons. ENT-007 repository closure is complete; published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
+- ENT-008 has closed cross-platform dev/test parity with verified Windows + Linux clean-room evidence. Conventional coverage measurement, CI workflow consolidation, large-module decomposition, performance evidence, and higher-maturity DR remain separate follow-ons; published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
 
 ## Current direction
 
