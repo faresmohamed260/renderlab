@@ -37,7 +37,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      ENT007_GENERATION_ID: ${{ inputs.generation_id || '20261007125709-4890980b' }}
+      ENT007_GENERATION_ID: ${{ inputs.generation_id || '20261007133932-9f1aa3bd' }}
       ENT007_BACKUP_ENCRYPTION_KEY: ${{ secrets.ENT007_BACKUP_ENCRYPTION_KEY }}
       ENT007_OUTPUT_DIR: artifacts/ent007-retained-restore
       ENT007_R2_BACKUP_BUCKET: renderlab-dr-backup
