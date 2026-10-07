@@ -1,7 +1,7 @@
 # ENT-008 — Developer portability and clean-room reproducibility contract
 
 Date: 2026-10-07
-Status: IMPLEMENTATION CANDIDATE / EXACT-HEAD VERIFICATION PENDING
+Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
 Tracking: #354
 Baseline `main`: `d7037abf4c4b1e2cbafef9265584f5fae5a9acef`
 
@@ -185,3 +185,10 @@ Passing only on Linux does not count. Making Windows green by weakening workflow
 ## Next-phase dependency
 
 After ENT-008 closes and the scorecard is reassessed, choose the next enterprise phase from verified remaining weakness. **Coverage visibility** is currently the likely candidate, but it stays roadmap-level until ENT-008 evidence shows the new baseline. Do not expand coverage tooling into ENT-008 retroactively.
+## Implementation and repository closure — 2026-10-07
+
+- Implementation PR #356 exact head `82bcf35d7d5ce3f5d3b8309f12457fae9a582d15` passed all **27/27 attached checks**. Developer Portability `37654689761` passed fresh Node-24 Ubuntu and Windows clean-room jobs; Engineering Quality `37654689460` and CodeQL `37654689450` passed; every package-triggered configured regression reached accepted success, including Generation Admission `37654689427` with cleanup.
+- Native WANDA verification additionally proved the reproduced Windows defects are closed: 97/97 unit tests and Engineering Quality pass, the former `.cmd EINVAL` is gone, and a fresh checkout under global `core.autocrlf=true` reports 524 tracked text files LF/LF plus 35 non-text binaries. `npm run doctor` correctly rejects unsupported Node 25.2.1.
+- PR #356 squash-merged as `e6ea8210c47a2d49531daaa0cd80f7267ff488f4`. Merged-main Engineering Quality `37655904404`, CodeQL `37655904054`, and Developer Portability `37655903920` all passed on that exact SHA; the portability run again passed both Windows and Ubuntu jobs.
+- The authoritative same-rubric reassessment is `docs/audits/ENT_008_DEVELOPER_PORTABILITY_ASSESSMENT.md`: arithmetic mean **8.80**, authoritative rounded enterprise score **8.8/10**, up from 8.7 after ENT-007.
+- No production/shared-runtime mutation occurred. ENT-008 did not deploy Vercel application source, move aliases, mutate Supabase/R2, change provider routing, add secrets, or expand into coverage/CI consolidation/module decomposition.
