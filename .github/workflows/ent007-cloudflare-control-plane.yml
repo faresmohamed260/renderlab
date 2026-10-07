@@ -24,8 +24,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
+          test -n "$TOKEN"
           code=$(curl -sS -o token.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Authorization: Bearer ${TOKEN}" \
             https://api.cloudflare.com/client/v4/user/tokens/verify)
           echo "token_verify_http=${code}"
           jq '{success, status: .result.status, errors}' token.json
@@ -36,9 +38,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
           api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${BACKUP_BUCKET}/lock"
           code=$(curl -sS -o lock-before.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Authorization: Bearer ${TOKEN}" \
             -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
             "$api")
           echo "r2_lock_read_http=${code}"
@@ -54,7 +57,7 @@ jobs:
           else
             jq '{rules: (((.result.rules // []) | map(select(.id != "ent007-minimum-7d"))) + [{id:"ent007-minimum-7d", enabled:true, prefix:"", condition:{type:"Age", maxAgeSeconds:604800}}])}' lock-before.json > lock-put.json
             code=$(curl -sS -o lock-put-response.json -w '%{http_code}' -X PUT \
-              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Authorization: Bearer ${TOKEN}" \
               -H "Content-Type: application/json" \
               -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
               --data-binary @lock-put.json \
@@ -68,7 +71,7 @@ jobs:
           fi
 
           code=$(curl -sS -o lock-after.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Authorization: Bearer ${TOKEN}" \
             -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
             "$api")
           test "$code" = "200"
@@ -82,9 +85,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          TOKEN=$(node -e 'process.stdout.write((process.env.CLOUDFLARE_API_TOKEN || "").trim())')
           url="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/permission_groups"
           code=$(curl -sS -o permission-groups.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Authorization: Bearer ${TOKEN}" \
             "$url")
           echo "account_token_permission_groups_http=${code}"
           if [ "$code" = "200" ] && jq -e '.success == true' permission-groups.json >/dev/null; then
