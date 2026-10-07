@@ -233,6 +233,19 @@ npm run build
 
 The Developer Portability workflow runs that same path from fresh Linux and Windows checkouts. Feature-specific Playwright, integration, account lifecycle, generation, media, cleanup, provider-backed, and production-verification workflows under `.github/workflows` remain separate and may require protected credentials, run-owned fixtures, cleanup, and explicit authorization.
 
+### Unit coverage visibility
+
+Run the existing Node unit suite with all-source coverage, then verify the report boundary:
+
+```bash
+npm run test:unit:coverage
+npm run verify:unit-coverage
+```
+
+Coverage is written to the ignored `coverage/` directory as a text summary, `coverage-summary.json`, and `lcov.info`. The denominator is every tracked product-source `.ts`/`.tsx` file under `src/**`, including files the unit process never imports; declaration-only `.d.ts` files are excluded. The verifier fails closed if eligible files disappear, metrics are malformed, or retained paths escape the repository boundary.
+
+GitHub's secret-free **Unit Coverage** workflow runs the same Node 24 path, publishes the unit totals in the job summary, and retains only the JSON summary plus LCOV as a bounded artifact. These percentages describe the Node unit suite only. A low unit-coverage number does not mean RenderLab lacks browser, configured integration, shared-resource, provider-backed, release-candidate, or production acceptance; those remain independent required verification layers and must not be weakened to improve the unit percentage.
+
 ## Repository map
 
 | Path | Owns |

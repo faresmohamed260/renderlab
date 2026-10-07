@@ -35,6 +35,14 @@ Approved product state includes Application Shell, Create, Library v0.1, persist
 
 Deployment configuration: repository `vercel.json` pins the Vercel framework to `nextjs` and disables automatic Git-triggered deployments. `scripts/verify-vercel-env.mjs` runs as a Vercel-only prebuild guard for required Supabase/R2 configuration and the approved shared Supabase URL. GitHub remains the development/validation path; production deployment is an explicit operation.
 
+### ENT-009 unit coverage visibility boundary
+
+ENT-009 adds a repository-only validation layer; it does not change frontend runtime architecture. Dev-only `c8@12.0.0` runs the existing Node unit suite with all eligible tracked `src/**/*.ts` and `src/**/*.tsx` product files in the denominator, excluding declaration-only `.d.ts` files. `scripts/verify-unit-coverage-report.mjs` fails closed if the per-file denominator narrows, required metrics are malformed, a known zero-import source disappears, or report paths cannot be normalized safely to repository-relative evidence.
+
+The secret-free **Unit Coverage** workflow runs on Node 24 with `contents: read`, immutable Action pins, deterministic `npm ci`, cancellable concurrency, and no Supabase/R2/Resend/Modal/Vercel/provider credentials. It publishes statements/lines/functions/branches as explicitly labeled **unit coverage** and retains only `coverage-summary.json` plus `lcov.info`. Coverage is not merged with Playwright, configured integration, provider-backed, release-candidate, or production acceptance, and ENT-009 introduces no arbitrary percentage threshold.
+
+PR #360 candidate `ca08cad4a89d2470930c414eeb364499fc6ef8f2` / Unit Coverage `37665532447` measured 184 eligible source files with 172 at zero line coverage: 5.54% statements/lines, 24.16% functions, and 56.31% branches. The low baseline is therefore visible architecture risk, not evidence that the separate system-level verification matrix is absent.
+
 ### Phase 7A premium interaction/motion boundary
 `motion` `13.1.1` is adopted under UI-043 as a feature-local Create interaction mechanic, imported from `motion/react`. `CreateWorkspace` uses reduced-motion-aware presence/layout transitions for operation/context copy, stable-key reference add/remove/reorder, Image↔Video contextual controls and saved-result arrival; `CreateAdvancedPanel` uses the same boundary for verified field-set changes. Stable product identities, request state, ownership and routing stay in existing React/product contracts—Motion is not a data store, authorization boundary or generic application framework. `prefers-reduced-motion` resolves these transitions to static/zero-duration behavior. The pass changes no route, product API, server orchestration, schema, provider or deployment boundary. Exact head `51c293dad114c98754933ab192b13427a90d9570` passed UI Shell `33273370797`, Create Lifecycle `33273370720` and all 19 affected workflows.
 

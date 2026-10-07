@@ -105,10 +105,11 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 
 ### ENT-009 — conventional unit coverage visibility
 
-- **Contract active / implementation not started / not deployed.** Tracking issue #358; execution-ready contract: `docs/audits/ENT_009_COVERAGE_VISIBILITY_CONTRACT.md`; baseline `main`: `ec79581136349e7d3866dbdea24a63daeff6eb4a`.
-- The phase measures unit coverage across all eligible `src/**` TypeScript/TSX source, including zero-covered files. A loaded-file-only Node probe looked artificially high, while an exploratory all-source c8 probe was roughly 5.54% lines / 24.16% functions / 56.31% branches; the accepted baseline must be reproduced on exact-head Node 24 CI.
-- Planned scope is dev-only `c8@12.0.0`, a deterministic all-source unit coverage command, report-integrity verification, and one secret-free least-privilege Unit Coverage workflow publishing text, JSON summary and LCOV evidence.
-- Initial ENT-009 acceptance is **visibility and denominator integrity first**. No arbitrary percentage threshold, browser/provider coverage instrumentation, CI consolidation, module decomposition, product/runtime/shared-resource mutation or deployment is authorized. The enterprise score remains **8.8/10** until verified implementation reassessment.
+- **Implementation PR active / not merged / not deployed.** Tracking issue #358; contract `docs/audits/ENT_009_COVERAGE_VISIBILITY_CONTRACT.md`; implementation PR #360.
+- Exact candidate `ca08cad4a89d2470930c414eeb364499fc6ef8f2` passed Unit Coverage `37665532447` on Node 24.21.0 with 102/102 unit tests. The integrity verifier reports **184 eligible tracked source files**, **172 at zero line coverage**, and a truthful all-source baseline of **5.54% statements/lines, 24.16% functions, 56.31% branches**.
+- The zero-line distribution is `src/app` 57/57, `src/components` 18/18, `src/features` 37/37, `src/lib` 18/22, and `src/server` 42/50. This makes the unit-test gap visible without pretending RenderLab's independent browser/configured/provider acceptance is unit coverage.
+- Dev-only `c8@12.0.0`, repository-owned all-source config, fail-closed report-integrity verification, and a secret-free least-privilege **Unit Coverage** workflow now implement the contract. Candidate artifact `11503370623` retains only normalized `coverage-summary.json` + `lcov.info` for 14 days; its SHA-256 is `ae8ecd52b5de6722e3ba0f49344fe95b1c860ef945a950c4d63a7689e07f23de`.
+- Candidate Engineering Quality `37665532356`, CodeQL `37665532633`, and Developer Portability `37665532560` passed. No arbitrary percentage threshold, browser/provider coverage aggregation, product/runtime/shared-resource mutation, or deployment is authorized. The enterprise score remains **8.8/10** until final exact-head verification, merge, merged-main verification, and same-rubric reassessment.
 
 ## Known boundaries
 

@@ -1,7 +1,7 @@
 # ENT-009 — Conventional unit coverage visibility contract
 
 Date: 2026-10-07
-Status: CONTRACT / IMPLEMENTATION NOT STARTED
+Status: IMPLEMENTATION PR ACTIVE / NOT MERGED
 Tracking: #358
 Baseline `main`: `ec79581136349e7d3866dbdea24a63daeff6eb4a`
 
@@ -30,6 +30,24 @@ The result must be explicit that unit coverage is one engineering signal. It doe
 - An exploratory `c8@12.0.0 --all` probe over current `src/**/*.ts` and `src/**/*.tsx` instead reported approximately **5.54% lines/statements, 24.16% functions, and 56.31% branches**. That probe ran on the local unsupported Node 25 machine and is planning evidence only; the accepted ENT-009 baseline must come from exact-head Node 24 CI.
 - `c8@12.0.0` is a small ISC-licensed dev tool built on native V8 coverage, supports Node 24 through its declared engine range, can include unexecuted files with `--all`, and can emit text, JSON summary, and LCOV reports.
 - Existing enterprise assessments have repeatedly called for coverage **measurement first** and realistic gates only after a baseline is known. ENT-009 follows that order.
+
+## Implementation checkpoint — PR #360
+
+Implementation is active on `work/ent-009-coverage-visibility` with PR #360. Exact candidate `ca08cad4a89d2470930c414eeb364499fc6ef8f2` produced the first supported-toolchain baseline in Unit Coverage run `37665532447` on Node 24.21.0 / npm 11.19.0:
+
+- 102/102 Node unit tests passed under coverage;
+- 184 tracked eligible `src/**` `.ts`/`.tsx` product files are in the denominator after excluding declaration-only `.d.ts`;
+- 172 files currently have zero line coverage;
+- statements: 5.54% (1,295/23,357);
+- lines: 5.54% (1,295/23,357);
+- functions: 24.16% (58/240);
+- branches: 56.31% (290/515).
+
+The zero-line distribution is `src/app` 57/57, `src/components` 18/18, `src/features` 37/37, `src/lib` 18/22, and `src/server` 42/50. The earlier 185-file planning count included the declaration-only file excluded from the accepted denominator.
+
+The candidate report-integrity verifier passed and the Unit Coverage workflow retained only normalized `coverage-summary.json` and `lcov.info` as artifact `11503370623` (19,253 bytes, SHA-256 `ae8ecd52b5de6722e3ba0f49344fe95b1c860ef945a950c4d63a7689e07f23de`, 14-day retention). Candidate Engineering Quality `37665532356`, CodeQL `37665532633`, and Developer Portability `37665532560` also passed.
+
+This is a visibility baseline, not a quality threshold. Browser/configured/shared-resource/provider/release/production workflows remain separate acceptance layers. The final PR documentation head must reproduce the exact all-source boundary and pass every automatically attached workflow before merge; merged-main verification and same-rubric enterprise reassessment remain required afterward.
 
 ## Coverage boundary
 
