@@ -1,0 +1,94 @@
+name: ENT-007 Cloudflare Control Plane
+
+on:
+  push:
+    branches:
+      - work/ent-007-recovery-implementation
+    paths:
+      - ".github/workflows/ent007-cloudflare-control-plane.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  r2-control-plane:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      BACKUP_BUCKET: renderlab-dr-backup
+      R2_JURISDICTION: eu
+    steps:
+      - name: Verify Cloudflare token
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o token.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify)
+          echo "token_verify_http=${code}"
+          jq '{success, status: .result.status, errors}' token.json
+          test "$code" = "200"
+          jq -e '.success == true' token.json >/dev/null
+
+      - name: Read and enforce ENT-007 bucket lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${BACKUP_BUCKET}/lock"
+          code=$(curl -sS -o lock-before.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
+            "$api")
+          echo "r2_lock_read_http=${code}"
+          if [ "$code" != "200" ]; then
+            jq '{success, errors}' lock-before.json
+            exit 1
+          fi
+          jq -e '.success == true' lock-before.json >/dev/null
+          jq '{rules: (.result.rules // [])}' lock-before.json
+
+          if jq -e 'any((.result.rules // [])[]; .enabled == true and ((.prefix // "") == "") and ((.condition.type == "Indefinite") or (.condition.type == "Age" and (.condition.maxAgeSeconds // 0) >= 604800)))' lock-before.json >/dev/null; then
+            echo "ent007_retention_already_satisfied=true"
+          else
+            jq '{rules: (((.result.rules // []) | map(select(.id != "ent007-minimum-7d"))) + [{id:"ent007-minimum-7d", enabled:true, prefix:"", condition:{type:"Age", maxAgeSeconds:604800}}])}' lock-before.json > lock-put.json
+            code=$(curl -sS -o lock-put-response.json -w '%{http_code}' -X PUT \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
+              --data-binary @lock-put.json \
+              "$api")
+            echo "r2_lock_write_http=${code}"
+            if [ "$code" != "200" ]; then
+              jq '{success, errors}' lock-put-response.json
+              exit 1
+            fi
+            jq -e '.success == true' lock-put-response.json >/dev/null
+          fi
+
+          code=$(curl -sS -o lock-after.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "cf-r2-jurisdiction: ${R2_JURISDICTION}" \
+            "$api")
+          test "$code" = "200"
+          jq -e '.success == true' lock-after.json >/dev/null
+          jq -e 'any((.result.rules // [])[]; .enabled == true and ((.prefix // "") == "") and ((.condition.type == "Indefinite") or (.condition.type == "Age" and (.condition.maxAgeSeconds // 0) >= 604800)))' lock-after.json >/dev/null
+          jq '{rules: (.result.rules // [])}' lock-after.json
+          echo "ent007_retention_verified=true"
+
+      - name: Probe account-token provisioning authority
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/permission_groups"
+          code=$(curl -sS -o permission-groups.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "$url")
+          echo "account_token_permission_groups_http=${code}"
+          if [ "$code" = "200" ] && jq -e '.success == true' permission-groups.json >/dev/null; then
+            jq '[.result[] | select((.name // "") | test("R2|API Token"; "i")) | {id, name, scopes: .meta.scopes}]' permission-groups.json
+          else
+            jq '{success, errors}' permission-groups.json
+          fi
