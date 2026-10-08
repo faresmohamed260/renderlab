@@ -107,6 +107,14 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 - Merged-main coverage artifact `11504874549` retains only normalized `coverage-summary.json` + `lcov.info` for 14 days, is 19,253 bytes, and has SHA-256 `8b8b6d4f999ce6d581c0cefe42b9fb5eb8aff063a9d1a56d3418d7c434e3b0e4`.
 - ENT-009 adds **no percentage threshold** and does not combine browser/provider/configured workflows into a synthetic percentage. The authoritative same-rubric enterprise score remains **8.8/10** (8.81 arithmetic mean): coverage visibility and auditability improved, while the measured 172/184 zero-line files keep unit-test breadth an explicit risk rather than hiding it.
 - ENT-009 changed no product/runtime behavior and performed no Vercel deployment/alias movement, Supabase/R2 mutation, provider routing change, secret addition, or production configuration change. Production authority remains the separately recorded exact production SHA below.
+## ENT-010 CI workflow maintainability - contract active 2026-10-09
+
+- ENT-010 is **CONTRACT ACTIVE / IMPLEMENTATION NOT STARTED / NOT DEPLOYED**. Tracking issue #362; execution contract `docs/audits/ENT_010_CI_WORKFLOW_MAINTAINABILITY_CONTRACT.md`; baseline `main` is `5ffb0ea2631a1ded4bb3481c4c3765a15252fe49`.
+- The verified starting point has **56** GitHub workflow files and no `.github/actions` directory. Create Lifecycle Visual, Activity Visual, Library Lifecycle Visual and Account Identity Visual repeat Node-24/npm/build/Chromium/configured-app startup mechanics while retaining distinct path filters, secrets, fixture ownership, cleanup, artifacts and concurrency contracts.
+- The planned first implementation slice is deliberately bounded: one secret-free repository-local Node/npm setup action, one validated loopback configured-app startup helper, fail-closed CI contract verification, and migration of only the four audited cohort workflows. Workflow-specific permissions, secrets, concurrency/cancellation, verifier commands and `if: always()` cleanup remain caller-owned.
+- Large application-module decomposition is explicitly deferred. Current measured hotspots include `create-workspace.tsx` (1,306 lines), `native-generation.ts` (939), `account-data-lifecycle.ts` (763), and `library-batch-selection.tsx` (546); ENT-010 does not refactor product/runtime source.
+- The phase authorizes no product/runtime/UI/API/schema/Auth change, no Supabase/R2/provider/worker mutation, no secret or permission broadening, and no Vercel deployment/production alias movement. Implementation begins only after the contract merges and exact-head contract validation passes.
+
 ## Production user audit and current live source — 2026-09-21
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 986aab269551a4c6e7d3af3a259cfa955c975d91 -->
 

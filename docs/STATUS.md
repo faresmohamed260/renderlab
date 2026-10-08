@@ -110,6 +110,13 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - The accepted Node-24 unit baseline reproduced after merge: **184 eligible tracked source files**, **172 at zero line coverage**, **5.54% statements/lines (1,295/23,357), 24.16% functions (58/240), and 56.31% branches (290/515)**. Zero-line distribution is `src/app` 57/57, `src/components` 18/18, `src/features` 37/37, `src/lib` 18/22, and `src/server` 42/50.
 - Merged-main artifact `11504874549` retains normalized `coverage-summary.json` + `lcov.info` for 14 days (19,253 bytes; SHA-256 `8b8b6d4f999ce6d581c0cefe42b9fb5eb8aff063a9d1a56d3418d7c434e3b0e4`). Dev-only `c8@12.0.0`, the all-source config, and fail-closed report-integrity verifier remain the repository-owned measurement boundary.
 - No arbitrary percentage threshold or browser/provider synthetic coverage percentage was introduced. The authoritative same-rubric enterprise score remains **8.8/10** (8.81 arithmetic mean): evidence quality improved, while low unit-test breadth is now explicit. No product/runtime/shared-resource mutation or deployment occurred.
+### ENT-010 - CI workflow maintainability
+
+- **Contract active / implementation not started / not deployed.** Tracking issue #362; execution contract `docs/audits/ENT_010_CI_WORKFLOW_MAINTAINABILITY_CONTRACT.md`; baseline `main` is `5ffb0ea2631a1ded4bb3481c4c3765a15252fe49`.
+- The verified repository has 56 workflow files and no `.github/actions` directory. Four configured-browser workflows were audited as a bounded first cohort because they repeat supported Node/npm/build/Chromium/app-start mechanics while retaining materially different secrets, fixtures, health routes, artifacts and concurrency behavior.
+- ENT-010 plans only a secret-free local Node/npm setup action, a validated loopback configured-app startup helper, fail-closed CI-contract verification, and bounded cohort migration. Fixture ownership, permissions, secret references, concurrency/cancellation, verifier commands and cleanup guarantees remain workflow-owned.
+- Large-module decomposition, unit-coverage thresholds, performance/DR work, product/runtime/shared-resource changes and deployment remain outside this phase.
+
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
@@ -117,7 +124,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - Some workflows and model routes remain capability-gated until their ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- ENT-008 has closed cross-platform dev/test parity with verified Windows + Linux clean-room evidence. ENT-009 now owns conventional all-source unit coverage visibility; CI workflow consolidation, large-module decomposition, performance evidence, and higher-maturity DR remain separate follow-ons. Published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
+- ENT-008 has closed cross-platform dev/test parity with verified Windows + Linux clean-room evidence. ENT-009 now owns conventional all-source unit coverage visibility. ENT-010 now owns a bounded CI-workflow-maintainability slice; large-module decomposition, performance evidence, targeted Node-unit breadth, and higher-maturity DR remain separate follow-ons. Published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
 
 ## Current direction
 
