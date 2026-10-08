@@ -6,6 +6,8 @@ on:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-activity.mjs"
       - ".github/workflows/activity-visual.yml"
+      - ".github/actions/setup-node-project/action.yml"
+      - "scripts/start-ci-app.mjs"
       - "components.json"
       - "package.json"
       - "src/app/globals.css"
@@ -68,15 +70,8 @@ jobs:
             exit 1
           fi
 
-      - name: Set up Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: package.json
-
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+      - name: Set up Node project
+        uses: ./.github/actions/setup-node-project
 
       - name: Build
         run: npm run build
@@ -86,17 +81,13 @@ jobs:
 
       - name: Start configured application
         shell: bash
-        run: |
-          npm run start -- -p 3000 > /tmp/renderlab-next.log 2>&1 &
-          echo $! > /tmp/renderlab-next.pid
-          for i in {1..60}; do
-            if curl --fail --silent http://127.0.0.1:3000/activity > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat /tmp/renderlab-next.log || true
-          exit 1
+        run: >-
+          node scripts/start-ci-app.mjs
+          --port 3000
+          --health-url http://127.0.0.1:3000/activity
+          --log-file "$RUNNER_TEMP/renderlab-next.log"
+          --pid-file "$RUNNER_TEMP/renderlab-next.pid"
+          --timeout-ms 60000
 
       - name: Render configured Activity lifecycle
         run: node scripts/verify-activity.mjs
@@ -107,7 +98,7 @@ jobs:
 
       - name: Print server log on failure
         if: failure()
-        run: cat /tmp/renderlab-next.log || true
+        run: cat "$RUNNER_TEMP/renderlab-next.log" || true
 
       - name: Upload Activity screenshots
         if: always()

@@ -702,6 +702,16 @@ Engineering Quality executes the Oxlint and TypeScript negative fixtures through
 
 PR #356 exact head `82bcf35d7d5ce3f5d3b8309f12457fae9a582d15` passed 27/27 attached checks, including Developer Portability `37654689761`, Engineering Quality `37654689460`, and CodeQL `37654689450`. The implementation squash-merged as `e6ea8210c47a2d49531daaa0cd80f7267ff488f4`; merged-main Engineering Quality `37655904404`, CodeQL `37655904054`, and Developer Portability `37655903920` all passed on that exact SHA. ENT-008 changes no runtime/product architecture and remains not deployed.
 
+### ENT-010 CI workflow maintainability boundary
+
+Repository-local CI abstractions are deliberately smaller than workflow ownership. `.github/actions/setup-node-project/action.yml` owns only the immutable `actions/setup-node` invocation for Node 24, npm cache keyed by `package.json`, and deterministic `npm ci --no-audit --no-fund`. Checkout/ref selection, permissions, secrets, build, Chromium, fixtures, verifier commands, cleanup, artifacts and concurrency remain caller-owned. The local action is credential-agnostic and must not accumulate product or shared-resource behavior.
+
+`scripts/start-ci-app.mjs` owns only configured production-server startup and bounded readiness: it invokes the fixed RenderLab `npm run start -- -p <port>` command, accepts validated port/timeout/log/PID parameters, permits HTTP readiness only on loopback with the health URL bound to the same port, treats existing curl-compatible 2xx/3xx readiness as success, writes caller-selected local diagnostic files, and fails closed with the captured server log. It does not accept arbitrary shell commands, credentials, fixture ownership or cleanup responsibilities.
+
+Engineering Quality scans immutable external `uses:` references under both `.github/workflows/**` and `.github/actions/**`, then applies an explicit ENT-010 contract to the migrated cohort. The contract prevents direct setup-node/npm-install drift, protects helper/action trigger coverage, preserves verifier and `if: always()` cleanup commands, keeps Activity and Library non-cancellable concurrency intact, and checks artifact/secret/startup invariants. Focused unit negative fixtures must reject mutable external actions, lost cleanup guards and lost protected concurrency; startup-helper tests cover real loopback readiness, timeout failure, input rejection and child/log/PID cleanup without shared services.
+
+The bounded first cohort is Create Lifecycle Visual, Activity Visual, Library Lifecycle Visual and Account Identity Visual only. Their existing secrets, fixture lifecycle, R2 reconciliation, health routes, artifacts and scheduling semantics remain independent even though setup/startup plumbing is shared. This abstraction is not permission to merge unrelated configured workflows or broaden cancellation.
+
 Key workflows:
 - `.github/workflows/ui-shell.yml` — UI purity audit, production build, credential-free signed-out UI/API behavior and responsive screenshots;
 - `.github/workflows/account-ownership.yml` — configured two-account private-record isolation, signed-out denial, foreign opaque-ID denial, raw-table denial and cleanup;
