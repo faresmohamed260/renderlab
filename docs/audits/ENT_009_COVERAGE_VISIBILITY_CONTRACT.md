@@ -1,7 +1,7 @@
 # ENT-009 — Conventional unit coverage visibility contract
 
 Date: 2026-10-07
-Status: IMPLEMENTATION PR ACTIVE / NOT MERGED
+Status: COMPLETE / VERIFIED / MERGED / NOT DEPLOYED
 Tracking: #358
 Baseline `main`: `ec79581136349e7d3866dbdea24a63daeff6eb4a`
 
@@ -31,13 +31,15 @@ The result must be explicit that unit coverage is one engineering signal. It doe
 - `c8@12.0.0` is a small ISC-licensed dev tool built on native V8 coverage, supports Node 24 through its declared engine range, can include unexecuted files with `--all`, and can emit text, JSON summary, and LCOV reports.
 - Existing enterprise assessments have repeatedly called for coverage **measurement first** and realistic gates only after a baseline is known. ENT-009 follows that order.
 
-## Implementation checkpoint — PR #360
+## Implementation and closure evidence - PR #360
 
-Implementation is active on `work/ent-009-coverage-visibility` with PR #360. Exact candidate `ca08cad4a89d2470930c414eeb364499fc6ef8f2` produced the first supported-toolchain baseline in Unit Coverage run `37665532447` on Node 24.21.0 / npm 11.19.0:
+Implementation PR #360 closed the contract without product/runtime/shared-resource changes. The final exact implementation head `657522dfcd9dfcbdc92d710ec082a62d9fca040e` passed every attached check before merge, including Unit Coverage `37666725572`, Engineering Quality `37666725574`, CodeQL `37666725658`, Developer Portability `37666725517`, and all configured workflows attached to that head. Account Identity, Integrated Release, and Creative Iteration each encountered an infrastructure-only Ubuntu/Azure package-mirror cancellation while installing Chromium dependencies; unchanged same-head reruns passed their real configured verification and cleanup. No code change, head movement, skipped product assertion, or weakened gate was used to obtain acceptance.
+
+The exact-head baseline remained:
 
 - 102/102 Node unit tests passed under coverage;
-- 184 tracked eligible `src/**` `.ts`/`.tsx` product files are in the denominator after excluding declaration-only `.d.ts`;
-- 172 files currently have zero line coverage;
+- 184 tracked eligible `src/**` `.ts`/`.tsx` product files in the denominator after excluding declaration-only `.d.ts`;
+- 172 files at zero line coverage;
 - statements: 5.54% (1,295/23,357);
 - lines: 5.54% (1,295/23,357);
 - functions: 24.16% (58/240);
@@ -45,10 +47,11 @@ Implementation is active on `work/ent-009-coverage-visibility` with PR #360. Exa
 
 The zero-line distribution is `src/app` 57/57, `src/components` 18/18, `src/features` 37/37, `src/lib` 18/22, and `src/server` 42/50. The earlier 185-file planning count included the declaration-only file excluded from the accepted denominator.
 
-The candidate report-integrity verifier passed and the Unit Coverage workflow retained only normalized `coverage-summary.json` and `lcov.info` as artifact `11503370623` (19,253 bytes, SHA-256 `ae8ecd52b5de6722e3ba0f49344fe95b1c860ef945a950c4d63a7689e07f23de`, 14-day retention). Candidate Engineering Quality `37665532356`, CodeQL `37665532633`, and Developer Portability `37665532560` also passed.
+PR #360 squash-merged as `6a4e91973aa0870dfa75b840b28d6860a60825a5`. Contract-required merged-main verification then passed on that exact SHA: Unit Coverage `37673099294`, Engineering Quality `37673099400`, CodeQL `37673099281`, and Developer Portability `37673099239`; Developer Portability again passed both Ubuntu and Windows clean-room jobs.
 
-This is a visibility baseline, not a quality threshold. Browser/configured/shared-resource/provider/release/production workflows remain separate acceptance layers. The final PR documentation head must reproduce the exact all-source boundary and pass every automatically attached workflow before merge; merged-main verification and same-rubric enterprise reassessment remain required afterward.
+Merged-main Unit Coverage reproduced the baseline exactly on Node 24.21.0 / npm 11.19.0 and retained artifact `11504874549`, containing only normalized `coverage-summary.json` and `lcov.info` for 14 days (19,253 bytes; SHA-256 `8b8b6d4f999ce6d581c0cefe42b9fb5eb8aff063a9d1a56d3418d7c434e3b0e4`). This is a visibility baseline, not a quality threshold. Browser/configured/shared-resource/provider/release/production workflows remain separate acceptance layers.
 
+The authoritative same-rubric reassessment is `docs/audits/ENT_009_COVERAGE_VISIBILITY_ASSESSMENT.md`. ENT-009 is complete/verified/merged/not deployed and changed no Vercel alias, production application source, Supabase/R2 resource, provider routing, secret, or production configuration.
 ## Coverage boundary
 
 ENT-009 defines **unit coverage visibility**, not whole-system coverage.
