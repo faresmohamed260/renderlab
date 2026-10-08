@@ -103,14 +103,13 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - PR #356 squash-merged as `e6ea8210c47a2d49531daaa0cd80f7267ff488f4`. Merged-main Engineering Quality `37655904404`, CodeQL `37655904054`, and Developer Portability `37655903920` all passed, with both clean-room OS jobs green again.
 - The authoritative post-ENT-008 enterprise score is **8.8/10** (8.80 arithmetic mean). Coverage visibility, workflow/module maintainability, performance evidence, and higher-maturity DR remain separate follow-ons. No product/runtime/shared-resource mutation or deployment occurred.
 
-### ENT-009 — conventional unit coverage visibility
+### ENT-009 - conventional unit coverage visibility
 
-- **Implementation PR active / not merged / not deployed.** Tracking issue #358; contract `docs/audits/ENT_009_COVERAGE_VISIBILITY_CONTRACT.md`; implementation PR #360.
-- Exact candidate `ca08cad4a89d2470930c414eeb364499fc6ef8f2` passed Unit Coverage `37665532447` on Node 24.21.0 with 102/102 unit tests. The integrity verifier reports **184 eligible tracked source files**, **172 at zero line coverage**, and a truthful all-source baseline of **5.54% statements/lines, 24.16% functions, 56.31% branches**.
-- The zero-line distribution is `src/app` 57/57, `src/components` 18/18, `src/features` 37/37, `src/lib` 18/22, and `src/server` 42/50. This makes the unit-test gap visible without pretending RenderLab's independent browser/configured/provider acceptance is unit coverage.
-- Dev-only `c8@12.0.0`, repository-owned all-source config, fail-closed report-integrity verification, and a secret-free least-privilege **Unit Coverage** workflow now implement the contract. Candidate artifact `11503370623` retains only normalized `coverage-summary.json` + `lcov.info` for 14 days; its SHA-256 is `ae8ecd52b5de6722e3ba0f49344fe95b1c860ef945a950c4d63a7689e07f23de`.
-- Candidate Engineering Quality `37665532356`, CodeQL `37665532633`, and Developer Portability `37665532560` passed. No arbitrary percentage threshold, browser/provider coverage aggregation, product/runtime/shared-resource mutation, or deployment is authorized. The enterprise score remains **8.8/10** until final exact-head verification, merge, merged-main verification, and same-rubric reassessment.
-
+- **Complete / verified / merged / not deployed.** Implementation PR #360 final exact head `657522dfcd9dfcbdc92d710ec082a62d9fca040e` passed every attached check and squash-merged as `6a4e91973aa0870dfa75b840b28d6860a60825a5`.
+- Merged-main Unit Coverage `37673099294`, Engineering Quality `37673099400`, CodeQL `37673099281`, and Developer Portability `37673099239` passed on the exact merge SHA; the portability run passed both Ubuntu and Windows clean-room jobs.
+- The accepted Node-24 unit baseline reproduced after merge: **184 eligible tracked source files**, **172 at zero line coverage**, **5.54% statements/lines (1,295/23,357), 24.16% functions (58/240), and 56.31% branches (290/515)**. Zero-line distribution is `src/app` 57/57, `src/components` 18/18, `src/features` 37/37, `src/lib` 18/22, and `src/server` 42/50.
+- Merged-main artifact `11504874549` retains normalized `coverage-summary.json` + `lcov.info` for 14 days (19,253 bytes; SHA-256 `8b8b6d4f999ce6d581c0cefe42b9fb5eb8aff063a9d1a56d3418d7c434e3b0e4`). Dev-only `c8@12.0.0`, the all-source config, and fail-closed report-integrity verifier remain the repository-owned measurement boundary.
+- No arbitrary percentage threshold or browser/provider synthetic coverage percentage was introduced. The authoritative same-rubric enterprise score remains **8.8/10** (8.81 arithmetic mean): evidence quality improved, while low unit-test breadth is now explicit. No product/runtime/shared-resource mutation or deployment occurred.
 ## Known boundaries
 
 - The workspace is not publicly self-service; access requires authorization.
