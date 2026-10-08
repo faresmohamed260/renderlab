@@ -1,7 +1,7 @@
 # ENT-010 — CI workflow maintainability contract
 
 Date: 2026-10-09
-Status: CONTRACT ACTIVE / IMPLEMENTATION NOT STARTED / NOT DEPLOYED
+Status: COMPLETE / VERIFIED / MERGED / NOT YET DEPLOYED
 Tracking: #362
 Baseline `main`: `5ffb0ea2631a1ded4bb3481c4c3765a15252fe49`
 
@@ -223,6 +223,16 @@ Update existing authorities rather than creating competing truth:
 ENT-010 is complete when the bounded cohort uses one audited secret-free Node/npm setup boundary and one validated configured-app startup helper, the existing per-workflow fixture/concurrency/cleanup contracts are unchanged, immutable external-action pinning covers local composite actions, focused negative tests fail closed, exact-head and merged-main configured verification pass, and no product/shared-resource/production mutation occurred.
 
 Reducing YAML while weakening cleanup does not count. Hiding mutable external actions inside a local action does not count. Merging independent fixture lifecycles for cosmetic line reduction does not count.
+
+## Verified completion evidence
+
+- Implementation PR #364 exact head `cfbffdb3725f2dd1d862e1a12bccda13d7124b4c` changed only the four audited workflow callers, repository-local CI tooling/tests and frontend-architecture documentation; no `src/**` application/runtime file changed.
+- Exact-head PR evidence passed: Engineering Quality `37852283336`, Unit Coverage `37852284599`, Developer Portability `37852283459` (Ubuntu + Windows), CodeQL `37852284568`, Create Lifecycle Visual `37852283452`, Activity Visual `37852283481`, Library Lifecycle Visual `37852284476`, and Account Identity Visual `37852283390`.
+- PR #364 squash-merged as `4b38c0d17ff2e03683f5bb160ba5ded2b6d81588`.
+- Merged-main evidence passed on that exact SHA: Engineering Quality `37857367143`, Unit Coverage `37857367162`, Developer Portability `37857367142` (Ubuntu + Windows), and CodeQL `37857367144`.
+- The four configured cohort workflows were explicitly dispatched against exact merged `main` because their push path filters do not all attach to the squash merge. Create `37857410281`, Activity `37857413881`, and Account Identity `37857420956` passed on attempt 1 with cleanup. Library `37857417090` first reached its real verifier but timed out waiting for the existing `Added to Library.` status assertion; that attempt still completed fixture cleanup successfully. The same job was rerun unchanged against the same merge SHA and passed on attempt 2, including R2 CORS reconciliation, configured upload verification, cleanup and artifact handling.
+- The authoritative same-rubric reassessment is `docs/audits/ENT_010_CI_WORKFLOW_MAINTAINABILITY_ASSESSMENT.md`: **8.8/10** authoritative, **8.82** arithmetic mean.
+- ENT-010 itself changed no product/runtime behavior, schema/Auth/storage/provider routing, production configuration or deployment state. The later cumulative production rollout is governed and recorded separately by the current-production authorities.
 
 ## Next-phase dependency
 
