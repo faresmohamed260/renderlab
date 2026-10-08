@@ -1,7 +1,13 @@
+import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+
+import {
+  assessCiWorkflowContract,
+  ciWorkflowContractPaths,
+  findImmutableActionRefProblems,
+} from "./lib/ci-workflow-contract.mjs";
 
 const root = process.cwd();
 const oxlint = path.join(root, "node_modules", "oxlint", "bin", "oxlint");
@@ -72,32 +78,40 @@ async function verifyMutationOriginCoverage() {
   }
 }
 
+async function collectYamlSources(directory) {
+  const sources = [];
+
+  async function collect(current) {
+    for (const entry of await readdir(current, { withFileTypes: true })) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        await collect(fullPath);
+      } else if (entry.isFile() && (entry.name.endsWith(".yml") || entry.name.endsWith(".yaml"))) {
+        sources.push({
+          path: path.relative(root, fullPath).split(path.sep).join("/"),
+          content: await readFile(fullPath, "utf8"),
+        });
+      }
+    }
+  }
+
+  await collect(directory);
+  return sources;
+}
+
 async function verifyWorkflowSecurity() {
   const workflowsDirectory = path.join(root, ".github", "workflows");
-  const workflowFiles = (await readdir(workflowsDirectory)).filter(
-    (name) => name.endsWith(".yml") || name.endsWith(".yaml"),
-  );
-  const violations = [];
+  const actionsDirectory = path.join(root, ".github", "actions");
+  const workflowSources = await collectYamlSources(workflowsDirectory);
+  const actionSources = await collectYamlSources(actionsDirectory);
+  const allActionYaml = [...workflowSources, ...actionSources];
+  const violations = findImmutableActionRefProblems(allActionYaml);
 
-  for (const workflowFile of workflowFiles) {
-    const workflow = await readFile(path.join(workflowsDirectory, workflowFile), "utf8");
-    const lines = workflow.split(/\r?\n/);
-
+  for (const source of allActionYaml) {
+    const lines = source.content.split(/\r?\n/);
     for (const [index, line] of lines.entries()) {
       if (/\bnpm install\b/.test(line) && !/^\s*#/.test(line)) {
-        violations.push(`${workflowFile}:${index + 1} uses npm install instead of deterministic npm ci`);
-      }
-
-      const usesMatch = line.match(/\buses:\s*([^\s#]+)/);
-      if (!usesMatch) continue;
-
-      const actionRef = usesMatch[1];
-      if (actionRef.startsWith("./") || actionRef.startsWith("docker://")) continue;
-
-      const atIndex = actionRef.lastIndexOf("@");
-      const revision = atIndex >= 0 ? actionRef.slice(atIndex + 1) : "";
-      if (!/^[0-9a-f]{40}$/i.test(revision)) {
-        violations.push(`${workflowFile}:${index + 1} uses a non-immutable external action ref: ${actionRef}`);
+        violations.push(`${source.path}:${index + 1} uses npm install instead of deterministic npm ci`);
       }
     }
   }
@@ -114,6 +128,18 @@ async function verifyWorkflowSecurity() {
   if (!/security-events:\s*write/.test(codeql)) {
     violations.push("codeql.yml must grant security-events: write for result publication");
   }
+
+  const setupAction = await readFile(path.join(root, ciWorkflowContractPaths.setupActionPath), "utf8");
+  const cohortWorkflows = Object.fromEntries(
+    await Promise.all(
+      ciWorkflowContractPaths.cohortFiles.map(async (filename) => [
+        filename,
+        await readFile(path.join(workflowsDirectory, filename), "utf8"),
+      ]),
+    ),
+  );
+  const ciContract = assessCiWorkflowContract({ setupAction, workflows: cohortWorkflows });
+  violations.push(...ciContract.problems);
 
   if (violations.length > 0) {
     throw new Error(`Workflow security verification failed:\n- ${violations.join("\n- ")}`);
@@ -145,4 +171,6 @@ await verifyWorkflowSecurity();
 await verifyMutationOriginCoverage();
 await import("./verify-server-boundaries.mjs");
 
-console.log("Engineering quality negative fixtures, workflow security, mutation-origin coverage, and server-boundary checks passed.");
+console.log(
+  "Engineering quality negative fixtures, workflow/action security, ENT-010 CI contract, mutation-origin coverage, and server-boundary checks passed.",
+);
