@@ -1,0 +1,122 @@
+name: Governance Checkpoint 1 Clean Branch
+
+on:
+  push:
+    branches:
+      - docs/governance-hardening-checkpoint-1
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch and main without external actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init repo
+          cd repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=100 origin "${GITHUB_REF_NAME}" main
+          git checkout -B source "origin/${GITHUB_REF_NAME}"
+
+      - name: Build one-commit docs-only branch from authoritative main
+        run: |
+          set -euo pipefail
+          cd repo
+          SOURCE_REF="origin/${GITHUB_REF_NAME}"
+          CLEAN_BRANCH="docs/governance-hardening-checkpoint-1-clean"
+
+          git checkout -B clean origin/main
+          git checkout "${SOURCE_REF}" -- \
+            docs/STATUS.md \
+            docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md \
+            docs/ui/DESIGN_WORKFLOW.md \
+            docs/ui/SCREEN_REGISTRY.md \
+            docs/ui/UI_DECISIONS.md \
+            docs/ui/UI_MIGRATION.md \
+            docs/ui/VISUAL_NORTH_STAR.md
+
+          expected=$(cat <<'EOF'
+docs/STATUS.md
+docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md
+docs/ui/DESIGN_WORKFLOW.md
+docs/ui/SCREEN_REGISTRY.md
+docs/ui/UI_DECISIONS.md
+docs/ui/UI_MIGRATION.md
+docs/ui/VISUAL_NORTH_STAR.md
+EOF
+          )
+          actual=$(git diff --name-only origin/main | sort)
+          if [ "${actual}" != "$(printf '%s\n' "${expected}" | sort)" ]; then
+            echo "Unexpected clean-branch file set:"
+            printf '%s\n' "${actual}"
+            exit 1
+          fi
+
+          git diff origin/main --check
+
+          python - <<'PY'
+          from pathlib import Path
+          checks = {
+              'docs/ui/UI_MIGRATION.md': [
+                  '## Historical Cycle 3 handoff snapshot — superseded',
+                  'Historical implementation checklist (all items completed by the verified closure immediately below):',
+              ],
+              'docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md': [
+                  '#223 PRODUCTION-LIVE',
+                  'included in the cumulative 2026-10-09 production release',
+              ],
+              'docs/ui/DESIGN_WORKFLOW.md': ['## Future Authorized Redesign R&D Guidance'],
+              'docs/ui/VISUAL_NORTH_STAR.md': ['## Future visual R&D application'],
+              'docs/ui/UI_DECISIONS.md': [
+                  '**Status:** Superseded in part / Implemented / Verified / Merged / Production Live',
+                  "UI-074 supersedes UI-071's desktop-rail/mobile-dock shell geometry",
+              ],
+              'docs/STATUS.md': [
+                  'All completed application/runtime changes through exact production application source `d7571a230b3f1c5719552628db020823adb4da73` are production-live'
+              ],
+          }
+          for path, needles in checks.items():
+              text = Path(path).read_text()
+              for needle in needles:
+                  if needle not in text:
+                      raise SystemExit(f'{path}: missing expected checkpoint text: {needle}')
+
+          screen = Path('docs/ui/SCREEN_REGISTRY.md').read_text()
+          for forbidden in ['MERGE PENDING', 'UI-082 active redesign cycle', 'ON CHECKPOINT BRANCH']:
+              if forbidden in screen:
+                  raise SystemExit(f'SCREEN_REGISTRY stale signature remains: {forbidden}')
+
+          phase15 = Path('docs/ui/UI_MIGRATION.md').read_text().split(
+              '## Cycle 3 Phase 15 — Generation Control & Maintenance\n', 1
+          )[1].split(
+              '## Cycle 3 Phase 15 — Generation Control & Maintenance — COMPLETE / VERIFIED\n', 1
+          )[0]
+          if '- [ ]' in phase15:
+              raise SystemExit('Phase 15 historical planning block still contains unchecked tasks')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs
+          git commit -m "docs: harden current-state governance checkpoint 1"
+          git push --force-with-lease origin "HEAD:refs/heads/${CLEAN_BRANCH}"
+
+      - name: Remove temporary helper from source branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd repo
+          git checkout -B source "origin/${GITHUB_REF_NAME}"
+          rm .github/workflows/governance-checkpoint-1-clean-branch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/governance-checkpoint-1-clean-branch.yml
+          git commit -m "chore: remove clean-branch helper"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
