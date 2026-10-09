@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "applicationSha": "d7571a230b3f1c5719552628db020823adb4da73",
+  "deploymentId": "dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF",
+  "deploymentUrl": "https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app",
+  "domain": "renderlab.faresuniform.uk",
+  "rollbackDeploymentId": "dpl_4E38yZarWfooA4wfEuW5USmPnNsN",
+  "rollbackApplicationSha": "bcb2de305b15f4be15ed42674d22998c30b8c811",
+  "releaseQualification": {
+    "deploymentReadinessRunId": 37930497565,
+    "releaseMatrixRunId": 37934750620,
+    "releaseMatrixAttempt": 1,
+    "acceptedChildren": 23,
+    "expectedChildren": 23,
+    "qualifiedAt": "2026-10-09T13:22:15.000Z"
+  },
+  "cutoverAt": "2026-10-09T13:25:40.464Z"
+}

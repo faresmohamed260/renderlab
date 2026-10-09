@@ -4,6 +4,8 @@ Records durable RenderLab infrastructure decisions and verified shared-resource 
 
 ## Current production rollout - 2026-10-09
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
+**Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
+
 - Exact repository source `d7571a230b3f1c5719552628db020823adb4da73` is production-live as READY Vercel deployment `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` (`https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`), with `renderlab.faresuniform.uk` explicitly mapped to that deployment.
 - Exact-main release qualification passed Engineering Quality `37930497585`, Unit Coverage `37930497751`, CodeQL `37930497674`, Developer Portability `37930497688`, Deployment Readiness `37930497565`, UI Shell Validation `37930497739`, Creative Iteration `37930497900`, and Reference Upload Integration `37930497803`. Release Candidate Matrix `37934750620` attempt 1 accepted all 23 configured exact-SHA child workflows.
 - The authenticated Vercel deployment API created the production-target deployment directly from exact Git source. Vercel build logs confirm the exact `d7571a2` clone, successful production environment verification, Next.js 16.3.8 compilation, TypeScript/static generation, and READY state before custom-domain cutover.
@@ -22,8 +24,8 @@ Records durable RenderLab infrastructure decisions and verified shared-resource 
 
 ## QA-001 production documentation synchronization — 2026-09-19
 - QA-001 is complete. Contract PR #294 merged as `772b19269a4d27a43e75407c148adb252717a627`; implementation PR #295 merged as `8028f8be33ef8760c55b7f796ed1a802f0199cd1`.
-- `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and this file now each carry exactly one machine-readable `RENDERLAB_CURRENT_PRODUCTION_SHA` marker inside the authoritative current-production H2 block. `AGENTS.md` requires future cutovers to synchronize those four records and pass the permanent checker before repository closure is claimed.
-- Permanent workflow `.github/workflows/production-documentation-sync.yml` is non-mutating, `contents: read` only, and supports explicit `workflow_dispatch` plus reusable `workflow_call`. It has no push/pull-request trigger and therefore cannot infer production truth merely from a repository change.
+- QA-001 originally synchronized four `RENDERLAB_CURRENT_PRODUCTION_SHA` markers. Governance hardening Checkpoint 4 supersedes that current mechanism by making `docs/production/current.json` canonical and validating the four marker blocks plus `docs/STATUS.md` as human-readable mirrors; historical QA-001 proof remains valid evidence for the earlier mechanism.
+- Permanent workflow `.github/workflows/production-documentation-sync.yml` remains explicit/manual-or-reusable and non-mutating. It now uses only read permissions (`contents: read`, `actions: read`) plus the existing Vercel token for authenticated GETs, validates the manifest/mirrors, and compares deployment/alias/rollback/release metadata read-only against Vercel/GitHub. It has no push/pull-request trigger and performs no deploy, alias, environment, or shared-resource mutation.
 - Exact implementation-head Engineering Quality `35402854810` and merged-main Engineering Quality `35402927526` passed. Reusable proof run `35413607297` supplied exact deployed source `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`; input validation and the four-authority synchronization check passed. The temporary branch-only caller commit `c65be461aa0b8a602fe06996e12afd8c5129f9f9` was never merged and its branch ref was reset to `main` immediately after proof.
 - No Vercel deployment/alias/environment, Supabase, R2, provider/worker, scheduler, or application runtime state changed in QA-001.
 

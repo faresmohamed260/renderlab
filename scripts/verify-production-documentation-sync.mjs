@@ -6,7 +6,8 @@ const expectedSha =
   "";
 
 try {
-  const results = await verifyProductionDocumentationSync({ expectedSha });
+  const { manifest, results } = await verifyProductionDocumentationSync({ expectedSha });
+  console.log(`PRODUCTION_MANIFEST ${manifest.applicationSha} ${manifest.deploymentId} ${manifest.domain}`);
   for (const result of results) {
     console.log(`PRODUCTION_DOC_SYNC ${result.path} ${result.sha} [${result.heading}]`);
   }

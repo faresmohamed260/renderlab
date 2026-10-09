@@ -7,7 +7,7 @@ Status: operational runbook / current repository and shared-infrastructure truth
 
 This runbook is the operator handoff for RenderLab incidents. It covers detection, containment, verification, rollback and recovery using capabilities that are actually present today. It does not convert an unverified backup path into a recovery guarantee.
 
-The repository is the application source of truth. Production application changes use exact Git SHAs and explicit Vercel deployment/alias operations; Git merge alone is not deployment authorization. The current production SHA remains recorded in the authoritative production blocks in `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md`.
+The repository is the application source of truth. Production application changes use exact Git SHAs and explicit Vercel deployment/alias operations; Git merge alone is not deployment authorization. Canonical current deployment state is recorded in `docs/production/current.json`; `PROJECT.md`, `docs/STATUS.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md` are validated human-readable mirrors of that production record.
 
 ## Severity and triage
 
