@@ -7,11 +7,11 @@ This page is the concise public status summary. `PROJECT.md` remains the detaile
 - Public product: https://renderlab.faresuniform.uk
 - Access model: closed beta / invitation only
 - Default branch: `main`
-- Exact production application source: `bcb2de305b15f4be15ed42674d22998c30b8c811`
-- READY Vercel deployment: `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` (`https://renderlab-d4p54xeow-faresmohamed260-6733s-projects.vercel.app`)
-- Release qualification: Deployment Readiness `37858668167` and Release Candidate Matrix `37858664995` attempt 2 passed on the exact production SHA; the matrix accepted 23/23 configured children.
-- All completed/verified/merged repository work through ENT-010 is production-live in this cumulative release. Historical phase-level `NOT DEPLOYED` statements below record closure-time state and are superseded for current production status by this section.
-- The immediately previous verified live rollback anchor is `dpl_E6qShd6Pw3qAN5Zz2axMdmsWTGyG` at source `8e5d066978035c3c0e686fe6e3eec2071135ab30`.
+- Exact production application source: `d7571a230b3f1c5719552628db020823adb4da73`
+- READY Vercel deployment: `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` (`https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`)
+- Release qualification: Deployment Readiness `37930497565` and Release Candidate Matrix `37934750620` attempt 1 passed on the exact production SHA; the matrix accepted 23/23 configured children.
+- Every completed/verified/merged change on protected `main` is production-live in this cumulative release, including UI-082/ENT-010 closure reconciliation and `sharp@0.35.5`. Historical phase-level `NOT DEPLOYED` statements below retain their closure-time meaning; unfinished draft/research work is excluded.
+- The immediately previous verified live rollback anchor is `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` at source `bcb2de305b15f4be15ed42674d22998c30b8c811`.
 - Automatic Git -> Vercel deployment remains disabled; production releases are qualified and cut over explicitly against exact commit SHAs.
 
 ## Production capabilities
