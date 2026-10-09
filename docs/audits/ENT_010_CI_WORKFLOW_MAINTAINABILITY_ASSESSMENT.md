@@ -1,7 +1,7 @@
 # ENT-010 - CI workflow maintainability enterprise reassessment
 
 Date: 2026-10-09
-Status: AUTHORITATIVE POST-ENT-010 ASSESSMENT / VERIFIED / MERGED / NOT YET DEPLOYED
+Status: AUTHORITATIVE POST-ENT-010 ASSESSMENT / VERIFIED / MERGED / PRODUCTION-LIVE VIA CUMULATIVE 2026-10-09 ROLLOUT
 Implementation PR: #364
 Implementation head: `cfbffdb3725f2dd1d862e1a12bccda13d7124b4c`
 Implementation merge: `4b38c0d17ff2e03683f5bb160ba5ded2b6d81588`
@@ -13,6 +13,8 @@ Current authoritative score: **8.8/10**
 ENT-010 closes the first bounded CI-workflow-maintainability slice without flattening the distinct fixture, secret, cleanup or concurrency contracts that make RenderLab's configured acceptance trustworthy. Four representative configured workflows now share one secret-free local Node/npm setup action and one fixed-command loopback startup helper. Engineering Quality treats local actions as supply-chain code, scans immutable external action pins in both workflow and local-action trees, and fails closed when the migrated cohort loses required trigger, verifier, cleanup, artifact, secret or protected-concurrency semantics.
 
 The phase improves maintainability and auditability rather than product capability. No `src/**` application/runtime source changed, and no schema/Auth/storage/provider routing or production configuration changed. Large mixed-responsibility product modules remain, the Node-unit baseline remains intentionally sparse, no dedicated performance/capacity evidence was added, and disaster-recovery maturity remains below managed-PITR/provider-independent targets. The same 18-category rubric yields an arithmetic mean of **8.82/10**, which keeps the authoritative rounded score at **8.8/10**.
+
+The subsequent cumulative production rollout strengthens evidence that the scored release-safety, operational and reliability controls work in practice, but it does not add a new control or close any remaining rubric ceiling. Reapplying the same rubric after deployment therefore leaves every category score unchanged: **158.8 / 18 = 8.82**, authoritative **8.8/10**.
 
 ## Same-rubric scorecard
 
@@ -54,7 +56,15 @@ Arithmetic mean: **8.82**, authoritative rounded score **8.8/10**.
 2. **The abstraction is deliberately small.** ENT-010 does not authorize a generic fixture-owning mega-workflow or migration of all workflow files.
 3. **A rerun did not erase failure evidence.** The first merged-main Library attempt is retained as a timing failure with successful cleanup; the unchanged second attempt proves the same exact code can satisfy the original assertion.
 4. **Node-unit breadth did not suddenly improve.** The source denominator remains the ENT-009 baseline: 184 eligible product-source files with 172 at zero line coverage; ENT-010's extra tests target repository tooling.
-5. **Production status is separate.** ENT-010 repository closure precedes the separately authorized cumulative production rollout; production authority changes only after a verified cutover and documentation sync.
+5. **Production status is now reconciled.** ENT-010 repository closure preceded the separately authorized cumulative production rollout. Exact application source `bcb2de305b15f4be15ed42674d22998c30b8c811` is now production-live, while later docs-only repository commits remain newer than the deployed application SHA by design.
+
+## Post-closure production verification
+
+- Repository closure PR #365 merged the assessed source as `bcb2de305b15f4be15ed42674d22998c30b8c811`. Exact-source release qualification then passed Engineering Quality `37858427171`, Unit Coverage `37858427155`, CodeQL `37858427128`, Developer Portability `37858427152`, Deployment Readiness `37858668167`, and Release Candidate Matrix `37858664995` attempt 2 with 23/23 configured child successes. Attempt 1's only blocker was a transient provider-status 503 in Video Generation Integration; the unchanged same-SHA rerun passed before the full second matrix passed.
+- READY Vercel deployment `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` was built directly from exact Git SHA `bcb2de305b15f4be15ed42674d22998c30b8c811`. The custom domain remained on the previous known-good deployment until READY, then explicit cutover passed signed-out smoke for root, Create, Library, Activity, Settings, Password, Profile and Preferences; signed-out Admin remained concealed as 404.
+- Bounded post-cutover inspection found no runtime-error clusters and no error/fatal logs for the new deployment. No Supabase schema/RLS/Auth-policy, R2 resource configuration, provider/worker routing, scheduler or production environment-variable mutation accompanied the rollout.
+- Production-authority synchronization PR #366 merged as docs-only `0b8110976d87ffa1e73e9340d3001386ab81f21f`. Permanent Production Documentation Sync run `37863995081` passed against expected deployed SHA `bcb2de305b15f4be15ed42674d22998c30b8c811`, followed by merged-main Engineering Quality `37863953014`, Unit Coverage `37863953061`, CodeQL `37863953010`, and Developer Portability `37863952997`.
+- **Same-rubric result after rollout: unchanged.** The deployment validates previously scored controls but introduces no new architectural, testing, performance, DR, observability or product-readiness capability. Category scores therefore remain exactly those in the table above, arithmetic mean **8.82/10**, authoritative **8.8/10**.
 
 ## Remaining enterprise ceilings
 
@@ -67,4 +77,4 @@ The natural repository-local maintainability follow-on is bounded application-mo
 
 ## Deployment status
 
-**NOT YET DEPLOYED AS PART OF THIS CLOSURE RECORD.** ENT-010 changes repository CI/tooling/tests/documentation only. A separately authorized cumulative RenderLab application rollout may later deploy the current verified `main`; that cutover must be recorded by the four current-production authorities and the permanent Production Documentation Sync workflow.
+**PRODUCTION-LIVE VIA THE SEPARATELY AUTHORIZED CUMULATIVE 2026-10-09 ROLLOUT.** Exact application source `bcb2de305b15f4be15ed42674d22998c30b8c811` is live as READY Vercel deployment `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` on `renderlab.faresuniform.uk`. Production-documentation closure is verified by PR #366 / `0b8110976d87ffa1e73e9340d3001386ab81f21f` and Production Documentation Sync run `37863995081`. ENT-010 itself remains repository CI/tooling/tests/documentation work; deployment was a later release operation, not retroactive ENT-010 implementation scope.

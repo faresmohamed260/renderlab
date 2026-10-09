@@ -1,7 +1,7 @@
 # ENT-010 — CI workflow maintainability contract
 
 Date: 2026-10-09
-Status: COMPLETE / VERIFIED / MERGED / NOT YET DEPLOYED
+Status: COMPLETE / VERIFIED / MERGED / PRODUCTION-LIVE VIA CUMULATIVE 2026-10-09 ROLLOUT
 Tracking: #362
 Baseline `main`: `5ffb0ea2631a1ded4bb3481c4c3765a15252fe49`
 
@@ -233,6 +233,13 @@ Reducing YAML while weakening cleanup does not count. Hiding mutable external ac
 - The four configured cohort workflows were explicitly dispatched against exact merged `main` because their push path filters do not all attach to the squash merge. Create `37857410281`, Activity `37857413881`, and Account Identity `37857420956` passed on attempt 1 with cleanup. Library `37857417090` first reached its real verifier but timed out waiting for the existing `Added to Library.` status assertion; that attempt still completed fixture cleanup successfully. The same job was rerun unchanged against the same merge SHA and passed on attempt 2, including R2 CORS reconciliation, configured upload verification, cleanup and artifact handling.
 - The authoritative same-rubric reassessment is `docs/audits/ENT_010_CI_WORKFLOW_MAINTAINABILITY_ASSESSMENT.md`: **8.8/10** authoritative, **8.82** arithmetic mean.
 - ENT-010 itself changed no product/runtime behavior, schema/Auth/storage/provider routing, production configuration or deployment state. The later cumulative production rollout is governed and recorded separately by the current-production authorities.
+
+## Post-closure production reconciliation
+
+- Repository closure PR #365 merged the authoritative assessment as `bcb2de305b15f4be15ed42674d22998c30b8c811` before deployment. The later release qualification ran against that exact application source: Engineering Quality `37858427171`, Unit Coverage `37858427155`, CodeQL `37858427128`, Developer Portability `37858427152`, Deployment Readiness `37858668167`, and Release Candidate Matrix `37858664995` attempt 2 all passed; the accepted matrix cohort was 23/23 configured children.
+- Vercel deployment `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` reached READY from exact Git source `bcb2de305b15f4be15ed42674d22998c30b8c811` before `renderlab.faresuniform.uk` was reassigned. Signed-out custom-domain smoke returned 200 for `/`, `/create`, `/library`, `/activity`, `/settings`, `/settings/password`, `/settings/profile`, and `/settings/preferences`; `/admin` retained the expected concealed 404 boundary. Bounded post-cutover inspection found no runtime-error clusters and no error/fatal logs for the new deployment.
+- Production-documentation PR #366 merged as docs-only `main` `0b8110976d87ffa1e73e9340d3001386ab81f21f`. Permanent Production Documentation Sync run `37863995081` passed with expected production SHA `bcb2de305b15f4be15ed42674d22998c30b8c811`; merged-main Engineering Quality `37863953014`, Unit Coverage `37863953061`, CodeQL `37863953010`, and Developer Portability `37863952997` also passed. The newer docs-only `main` commit is intentionally not the deployed application SHA.
+- This later rollout supersedes the contract's closure-time `NOT YET DEPLOYED` status only for current production state. It does not retroactively make deployment part of ENT-010 implementation scope, nor does it weaken the historical evidence that ENT-010 itself performed no deployment/shared-resource mutation.
 
 ## Next-phase dependency
 
