@@ -7,7 +7,12 @@ This page is the concise public status summary. `PROJECT.md` remains the detaile
 - Public product: https://renderlab.faresuniform.uk
 - Access model: closed beta / invitation only
 - Default branch: `main`
-- Production releases are qualified against exact commit SHAs rather than a public semantic-release stream.
+- Exact production application source: `bcb2de305b15f4be15ed42674d22998c30b8c811`
+- READY Vercel deployment: `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` (`https://renderlab-d4p54xeow-faresmohamed260-6733s-projects.vercel.app`)
+- Release qualification: Deployment Readiness `37858668167` and Release Candidate Matrix `37858664995` attempt 2 passed on the exact production SHA; the matrix accepted 23/23 configured children.
+- All completed/verified/merged repository work through ENT-010 is production-live in this cumulative release. Historical phase-level `NOT DEPLOYED` statements below record closure-time state and are superseded for current production status by this section.
+- The immediately previous verified live rollback anchor is `dpl_E6qShd6Pw3qAN5Zz2axMdmsWTGyG` at source `8e5d066978035c3c0e686fe6e3eec2071135ab30`.
+- Automatic Git -> Vercel deployment remains disabled; production releases are qualified and cut over explicitly against exact commit SHAs.
 
 ## Production capabilities
 
@@ -112,7 +117,7 @@ ENT-005 durable observability and operations hardening is **COMPLETE / VERIFIED 
 - No arbitrary percentage threshold or browser/provider synthetic coverage percentage was introduced. The authoritative same-rubric enterprise score remains **8.8/10** (8.81 arithmetic mean): evidence quality improved, while low unit-test breadth is now explicit. No product/runtime/shared-resource mutation or deployment occurred.
 ### ENT-010 - CI workflow maintainability
 
-- **Complete / verified / merged / not yet deployed.** Tracking issue #362; implementation PR #364 exact head `cfbffdb3725f2dd1d862e1a12bccda13d7124b4c` passed all eight attached workflows and squash-merged as `4b38c0d17ff2e03683f5bb160ba5ded2b6d81588`.
+- **Complete / verified / merged / production-live via the cumulative 2026-10-09 rollout.** Tracking issue #362; implementation PR #364 exact head `cfbffdb3725f2dd1d862e1a12bccda13d7124b4c` passed all eight attached workflows and squash-merged as `4b38c0d17ff2e03683f5bb160ba5ded2b6d81588`.
 - Merged-main Engineering Quality `37857367143`, Unit Coverage `37857367162`, Developer Portability `37857367142`, and CodeQL `37857367144` passed on the exact merge SHA. Explicit exact-main Create `37857410281`, Activity `37857413881`, Account Identity `37857420956`, and Library `37857417090` configured runs also passed with cleanup; Library passed unchanged on attempt 2 after a first-attempt status-toast timeout that still completed cleanup.
 - `.github/actions/setup-node-project/action.yml` now owns only immutable Node-24 setup/npm cache/deterministic install. `scripts/start-ci-app.mjs` owns only fixed-command loopback startup/readiness/log/PID plumbing. Permissions, secrets, build/Chromium ordering, fixtures, verifiers, cleanup, artifacts and concurrency remain workflow-owned.
 - Engineering Quality scans immutable external action references in workflows and local actions and enforces fail-closed ENT-010 cohort invariants. Focused startup/negative tests are included in the now-109-test Node unit suite.
