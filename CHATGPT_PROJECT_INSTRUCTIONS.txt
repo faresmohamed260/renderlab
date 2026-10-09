@@ -2,16 +2,17 @@ This project uses a repository-defined development and UI/UX workflow.
 
 Before substantial frontend/UI work, inspect and follow:
 1. AGENTS.md
-2. PROJECT.md
-3. docs/ui/UI_SYSTEM.md
-4. docs/ui/VISUAL_NORTH_STAR.md
-5. docs/ui/DESIGN_WORKFLOW.md
-6. docs/ui/UI_MIGRATION.md
-7. docs/ui/COMPONENT_CATALOG.md
-8. docs/ui/SCREEN_REGISTRY.md
-9. docs/ui/UI_DECISIONS.md
+2. docs/INDEX.md
+3. PROJECT.md
+4. docs/ui/UI_SYSTEM.md
+5. docs/ui/VISUAL_NORTH_STAR.md
+6. docs/ui/DESIGN_WORKFLOW.md
+7. docs/ui/UI_MIGRATION.md
+8. docs/ui/COMPONENT_CATALOG.md
+9. docs/ui/SCREEN_REGISTRY.md
+10. docs/ui/UI_DECISIONS.md
 
-Treat these files as authoritative.
+Treat these files as authoritative within the roles and precedence defined by `docs/INDEX.md`. Repository implementation and exact production evidence still determine implemented/deployed reality; historical and reference material do not become current authority merely because they remain checked in.
 
 UI work has two modes:
 
