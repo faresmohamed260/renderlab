@@ -11,11 +11,15 @@ import {
   generationModelDefinitions,
   generationModelsForOutput,
   generationPromptReferenceAliases,
+  isVideoGenerationModel,
   isImageGenerationModel,
   isPromptGenerationOperation,
   maxGenerationInputsForOutput,
   resolveCreativeOperation,
   unresolvedGenerationPromptReferenceAliases,
+  videoDurationsForModel,
+  videoFrameRatesForModel,
+  videoResolutionsForModel,
 } from "../../src/lib/capabilities/generation.ts";
 import {
   createUpscaleImageCommand,
@@ -42,10 +46,14 @@ test("generation model capability exposes contextual choices with stable default
   assert.equal(defaultGenerationModelForOutput("image"), "flux2-klein-9b");
   assert.equal(defaultGenerationModelForOutput("video"), "ltx25-redgraft");
   assert.deepEqual(generationModelsForOutput("image"), ["flux2-klein-9b", "qwen-image-edit-2511"]);
-  assert.deepEqual(generationModelsForOutput("video"), ["ltx25-redgraft"]);
+  assert.deepEqual(generationModelsForOutput("video"), ["ltx25-redgraft", "minimax-h3-dasiwa-4turbo"]);
   assert.equal(generationModelDefinitions["qwen-image-edit-2511"].label, "Qwen Image Edit");
   assert.equal(isImageGenerationModel("qwen-image-edit-2511"), true);
   assert.equal(isImageGenerationModel("ltx25-redgraft"), false);
+  assert.equal(isVideoGenerationModel("minimax-h3-dasiwa-4turbo"), true);
+  assert.deepEqual(videoResolutionsForModel("minimax-h3-dasiwa-4turbo"), ["480p", "720p"]);
+  assert.deepEqual(videoDurationsForModel("minimax-h3-dasiwa-4turbo"), [5, 10, 15]);
+  assert.deepEqual(videoFrameRatesForModel("minimax-h3-dasiwa-4turbo"), [24]);
 });
 
 test("generation input capabilities preserve bounded roles", () => {

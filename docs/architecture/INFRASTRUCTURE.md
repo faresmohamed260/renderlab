@@ -1107,6 +1107,18 @@ Changing this partition requires an explicit owner decision recorded in both rep
 
 The 2026-09-13 recovery details for `modal-45`, active FLUX on `modal-44`, and Image Upscale on `modal-46` are recorded in the preceding **2026-09-13 Modal Worker Recovery** section.
 
+### MiniMax H3 deployment boundary — 2026-10-01
+
+Draft PR #313 defines H3 as a new Modal application rather than modifying an existing ComfyUI worker. Its application name, H3 model volume, worker-state dictionary and public gateway are separate from the deployed FLUX, LTX, Qwen and Upscale resources. The workflow never redeploys an existing worker app.
+
+Live deployment attempts established that the blocker is Modal's current authorization of newly declared GPU functions, not the choice of H3 GPU alone:
+
+- H100 on `modal-44` / `modal-46`, A100-80GB on `modal-44` / `modal-46`, L40S on `modal-01` / `modal-02` and `modal-42` / `modal-43`, and A10 on `modal-42` / `modal-43` were rejected before H3 deployment; `modal-01` additionally reported its spend limit.
+- Exact head `d76da016b84b87c8a72c906c30d307617c6d4e62` then tested the remaining meaningful combination: a separate low-VRAM H3 A10 app on `modal-02`, the workspace already hosting the working A10 LTX standby. Manual run `36784054872` passed the offline contract and ownership gates, created no H3 deployment, and failed during Modal object initialization before model prefetch with `Please add a payment method to use A10G GPU functions`.
+- The existing `saga-ltx25-video` app was not named by the deployment workflow and was not redeployed. Its post-attempt health response remained live as `ltx-standby-02` / `ltx25-redgraft` on `NVIDIA A10`.
+
+Existing GPU applications continue to run because they were already deployed. A new app or a changed app that declares a GPU function is evaluated under Modal's current requirement. Do not repeat GPU substitutions or reuse a working app's name/model volume as a workaround. H3 remains provider-blocked until the selected RenderLab-owned workspace has a valid payment method and the separate H3 health plus bounded real-generation acceptance both pass.
+
 ## Full UI/UX redesign production rollout — 2026-09-14
 The user explicitly authorized rollout after Phase 29 repository closure. Guarded GitHub Actions run `34795391075` checked out exact source `b6deedad8a229b34828da0c3760b62fa147c1981`, required a pristine tree and a configured `VERCEL_TOKEN`, and deployed with the established pinned Vercel CLI path while `VERCEL_ORG_ID=team_r09C6RLmb2acHapENECQIn9T` and `VERCEL_PROJECT_ID=prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU` were prebound.
 

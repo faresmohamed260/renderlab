@@ -1,6 +1,6 @@
 export type GenerationWorker = {
   id: string;
-  ecosystem: "flux2-klein-9b" | "ltx25-redgraft" | "qwen-image-edit-2511";
+  ecosystem: "flux2-klein-9b" | "ltx25-redgraft" | "minimax-h3-dasiwa-4turbo" | "qwen-image-edit-2511";
   gatewayUrl: string;
   displayName: string;
   role: "primary" | "standby";
@@ -83,6 +83,22 @@ export const generationWorkers: GenerationWorker[] = [
     ecosystem: "qwen-image-edit-2511",
     gatewayUrl: gatewayUrl("https://nyxprotocol--saga-qwen-image-edit-2511-gateway-web.modal.run"),
     displayName: "Qwen Image Edit 2511 · Standby",
+    role: "standby",
+    routingStatus: "active",
+  },
+  {
+    id: "h3-dasiwa-primary-01",
+    ecosystem: "minimax-h3-dasiwa-4turbo",
+    gatewayUrl: gatewayUrl("https://voidtrek--renderlab-minimax-h3-gateway-web.modal.run"),
+    displayName: "DaSiWa MiniMax H3 4Turbo · Primary",
+    role: "primary",
+    routingStatus: "active",
+  },
+  {
+    id: "h3-dasiwa-standby-01",
+    ecosystem: "minimax-h3-dasiwa-4turbo",
+    gatewayUrl: gatewayUrl("https://nyxprotocol--renderlab-minimax-h3-gateway-web.modal.run"),
+    displayName: "DaSiWa MiniMax H3 4Turbo · Standby",
     role: "standby",
     routingStatus: "active",
   },

@@ -1,0 +1,127 @@
+name: MiniMax H3 Worker Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy the verified workers
+        required: true
+        default: false
+        type: boolean
+      run_real_generation:
+        description: Run one real 480p generation on the primary
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-minimax-h3-worker-deploy
+  cancel-in-progress: false
+
+jobs:
+  offline-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python workers/minimax-h3/verify_worker.py
+      - run: node scripts/verify-modal-project-ownership.mjs
+
+  deploy:
+    if: inputs.deploy
+    needs: offline-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - account: modal-42
+            worker_id: h3-dasiwa-primary-01
+            gateway: https://voidtrek--renderlab-minimax-h3-gateway-web.modal.run
+          - account: modal-43
+            worker_id: h3-dasiwa-standby-01
+            gateway: https://nyxprotocol--renderlab-minimax-h3-gateway-web.modal.run
+    env:
+      MODAL_ROSTER_JSON: ${{ secrets.SAGA_MODAL_TOKENS_JSON }}
+      CIVITAI_API_TOKEN: ${{ secrets.CIVITAI_API_TOKEN }}
+      RENDERLAB_H3_WORKER_ID: ${{ matrix.worker_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install modal==1.4.2
+      - name: Create the account-local Civitai secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CIVITAI_API_TOKEN:-}"
+          node scripts/with-renderlab-modal-account.mjs '${{ matrix.account }}' -- \
+            python -m modal secret create renderlab-civitai "CIVITAI_API_TOKEN=${CIVITAI_API_TOKEN}" --force
+      - name: Prefetch and verify all model files
+        run: node scripts/with-renderlab-modal-account.mjs '${{ matrix.account }}' -- python -m modal run workers/minimax-h3/modal_app.py::prefetch_models
+      - name: Deploy the worker
+        run: node scripts/with-renderlab-modal-account.mjs '${{ matrix.account }}' -- python -m modal deploy workers/minimax-h3/modal_app.py
+      - name: Verify public health identity
+        shell: bash
+        env:
+          GATEWAY: ${{ matrix.gateway }}
+          EXPECTED_WORKER: ${{ matrix.worker_id }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error "$GATEWAY/health" -o health.json; then break; fi
+            sleep 10
+          done
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const health = JSON.parse(fs.readFileSync('health.json', 'utf8'));
+          if (!health.ready || health.worker_id !== process.env.EXPECTED_WORKER) throw new Error(JSON.stringify(health));
+          if (health.ecosystem !== 'minimax-h3-dasiwa-4turbo') throw new Error(JSON.stringify(health));
+          if (health.model?.sha256 !== '56c52c7890c105308d28fe9c25c25fdb80e6cd6a54e2604d8af71732ba4ed74f') throw new Error(JSON.stringify(health));
+          console.log(JSON.stringify({ready: health.ready, worker_id: health.worker_id, ecosystem: health.ecosystem, model: health.model}));
+          NODE
+
+  real-generation:
+    if: inputs.deploy && inputs.run_real_generation
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Submit one bounded real generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          gateway='https://voidtrek--renderlab-minimax-h3-gateway-web.modal.run'
+          curl --fail --silent --show-error -X POST "$gateway/jobs/video" \
+            -F 'prompt=A calm cinematic blue ocean at sunrise, subtle natural wave motion, no text, no logo.' \
+            -F 'aspect_ratio=16:9' -F 'resolution=480p' -F 'duration_seconds=5' \
+            -F 'audio_enabled=false' -F 'seed=42' -F 'frame_rate=24' -o submit.json
+          call_id="$(node -p "JSON.parse(require('fs').readFileSync('submit.json')).call_id")"
+          test -n "$call_id"
+          for attempt in $(seq 1 180); do
+            status="$(curl --silent --show-error -o result.bin -w '%{http_code}' "$gateway/jobs/$call_id")"
+            if [ "$status" = 200 ]; then break; fi
+            if [ "$status" != 202 ]; then cat result.bin; exit 1; fi
+            sleep 20
+          done
+          test "$status" = 200
+          file result.bin | grep -E 'ISO Media|MP4'
+          test "$(stat -c '%s' result.bin)" -gt 100000
+          curl --fail --silent --show-error "$gateway/jobs/$call_id/poster" -o poster.jpg
+          file poster.jpg | grep JPEG
+          echo "REAL_GENERATION_BYTES=$(stat -c '%s' result.bin)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: minimax-h3-real-generation-${{ github.run_id }}
+          path: |
+            submit.json
+            result.bin
+            poster.jpg
+          retention-days: 7
