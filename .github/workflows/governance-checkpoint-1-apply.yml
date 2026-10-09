@@ -1,0 +1,252 @@
+name: Governance Checkpoint 1 Apply
+
+on:
+  push:
+    branches:
+      - docs/governance-hardening-checkpoint-1
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch without external actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init repo
+          cd repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${GITHUB_REF_NAME}"
+          git checkout -B "${GITHUB_REF_NAME}" FETCH_HEAD
+
+      - name: Apply bounded documentation corrections
+        run: |
+          set -euo pipefail
+          cd repo
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str, count: int = 1) -> None:
+              p = Path(path)
+              text = p.read_text()
+              actual = text.count(old)
+              if actual != count:
+                  raise SystemExit(f"{path}: expected {count} occurrence(s), found {actual}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, count))
+
+          # UI_MIGRATION: turn the stale current-work block into an explicit historical snapshot.
+          replace_exact(
+              "docs/ui/UI_MIGRATION.md",
+              "## Current Work\n**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `COMPLETE / VERIFIED THROUGH PHASE 18 / MERGED / PRODUCTION ROLLOUT VERIFIED`; Cycle 2 remains `COMPLETE / VERIFIED`.\n**Current phase:** Phase 18 — Image Upscale v0.1 is `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`; PR #111 was squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d`. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and fully closed.\n**Next sequence:** preserve the verified Cycle 3 production baseline. Do not expand another capability without a new accepted phase/contract; future production application changes remain explicit operations and automatic Git deployment remains disabled.\n**Release reality:** exact application source `c493eaead6997cce1c22c6835c98177d6346ff41` is live at READY production deployment `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA`, with `https://renderlab.faresuniform.uk` as an active alias. Later docs-only `main` commits do not change the deployed application source.\n**Deployment boundary:** the Phase 16, Phase 17 and Phase 18 repository merges did not themselves deploy production. The later explicit Cycle 3 rollout is complete/verified and changed only the production application state; no Supabase schema change, Upscale worker redeployment, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep accompanied it.\n**Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.\n**Capability boundary:** Phase 18 productizes **Image Upscale v0.1** only: a fixed 2× durable-image Viewer continuation backed by the verified asynchronous worker operation. Restore remains deferred because the worker audit found no restoration endpoint; Inpainting/Outpainting, LoRA/model adapters and Director remain roadmap-only.\n",
+              "## Historical Cycle 3 handoff snapshot — superseded\n**Historical snapshot:** This block records the handoff state after Cycle 3 / Phase 18. It is retained as closure evidence and is not current-work authority. Current production and whole-product state is recorded in the 2026-10-09 current-production block at the top of this file.\n\n**Cycle at snapshot:** Cycle 3 — Reliability, Creative Iteration & Capability Growth was `COMPLETE / VERIFIED THROUGH PHASE 18 / MERGED / PRODUCTION ROLLOUT VERIFIED`; Cycle 2 was `COMPLETE / VERIFIED`.\n**Phase at snapshot:** Phase 18 — Image Upscale v0.1 was `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`; PR #111 was squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d`. Phase 17 was `COMPLETE / VERIFIED / MERGED` and fully closed.\n**Next-sequence note at snapshot:** preserve the verified Cycle 3 production baseline. Do not expand another capability without a new accepted phase/contract; future production application changes remain explicit operations and automatic Git deployment remains disabled.\n**Release reality at snapshot:** exact application source `c493eaead6997cce1c22c6835c98177d6346ff41` was live at READY production deployment `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA`, with `https://renderlab.faresuniform.uk` as an active alias. That rollout record is historical; it does not compete with the current-production block above.\n**Deployment boundary at snapshot:** the Phase 16, Phase 17 and Phase 18 repository merges did not themselves deploy production. The later explicit Cycle 3 rollout was complete/verified and changed only the production application state; no Supabase schema change, Upscale worker redeployment, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep accompanied it.\n**Broader-beta boundary at snapshot:** Phase 13 owned production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection was separate.\n**Capability boundary at snapshot:** Phase 18 productized **Image Upscale v0.1** only: a fixed 2× durable-image Viewer continuation backed by the verified asynchronous worker operation. Restore remained deferred because the worker audit found no restoration endpoint; Inpainting/Outpainting, LoRA/model adapters and Director were roadmap-only.\n",
+          )
+
+          migration = Path("docs/ui/UI_MIGRATION.md")
+          text = migration.read_text()
+          start = text.index("## Cycle 3 Phase 15 — Generation Control & Maintenance\n")
+          end = text.index("## Cycle 3 Phase 15 — Generation Control & Maintenance — COMPLETE / VERIFIED\n", start)
+          planning = text[start:end]
+          old_status = "**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**"
+          if planning.count(old_status) != 1:
+              raise SystemExit("UI_MIGRATION Phase 15 planning status mismatch")
+          planning = planning.replace(
+              old_status,
+              "**Historical planning status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` (superseded by the COMPLETE / VERIFIED closure immediately below).**",
+              1,
+          )
+          planning = planning.replace(
+              "Implementation checklist:\n",
+              "Historical implementation checklist (all items completed by the verified closure immediately below):\n",
+              1,
+          )
+          unchecked = planning.count("- [ ]")
+          if unchecked != 9:
+              raise SystemExit(f"UI_MIGRATION Phase 15 expected 9 unchecked planning items, found {unchecked}")
+          planning = planning.replace("- [ ]", "- [x]")
+          planning = planning.replace(
+              "No Phase 15 implementation, production cleanup, deployment or scheduler activation is recorded by this planning change.\n",
+              "At the time of this planning snapshot, no Phase 15 implementation, production cleanup, deployment or scheduler activation was recorded. The verified closure immediately below supersedes that planning-time implementation state while preserving the historical evidence.\n",
+              1,
+          )
+          migration.write_text(text[:start] + planning + text[end:])
+
+          # Account roadmap: stop presenting September deployment state as current roadmap truth.
+          replace_exact(
+              "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
+              "**Status:** ACCEPTED ACTIVE ROADMAP / #215 + #216 + #217 + #218 + #219 PRODUCTION-LIVE / #223 COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / NOT DEPLOYED / #220 INITIAL CREATE-DEFAULT SLICE COMPLETE + VERIFIED + MERGED + MERGED-MAIN VERIFIED / NOT DEPLOYED / #220 FOLLOW-ONS DEFERRED / #221 RESEARCH CHECKPOINT COMPLETE + IMPLEMENTATION DEFERRED",
+              "**Status:** ACCEPTED ACTIVE ROADMAP / #215–#219 PRODUCTION-LIVE / #223 PRODUCTION-LIVE / #220 INITIAL CREATE-DEFAULT SLICE PRODUCTION-LIVE / #220 FOLLOW-ONS DEFERRED / #221 RESEARCH CHECKPOINT COMPLETE + IMPLEMENTATION DEFERRED",
+          )
+          replace_exact(
+              "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
+              "**Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, and #219 Data & Privacy lifecycle are production-live from exact source `d18ef8833d46c812dac6b43572b3f4f7069990f8`. #223 is complete/merged/merged-main verified through PR #271 / `7519eb1a6367633bf244a9ed7474f374b9ffc6ca` and remains not production-deployed. #220's initial durable Create-default slice is complete/merged/merged-main verified through PR #275 / `ec29fd160d7ce7a90beb3025da32ec4cc18f0898`; issue #220 is closed and its follow-ons remain deferred. #221 completed a read-only research checkpoint on 2026-09-17, recorded in `docs/architecture/PASSKEY_WEBAUTHN_RESEARCH.md`: current RenderLab/Supabase architecture is compatible, but implementation is deferred because Supabase still labels passkeys experimental and the promotion gate still requires live hosted RP-config verification, stable RP-domain acceptance, assurance/AAL evidence, recovery and notification proof, and configured browser/device acceptance. No hosted Auth mutation or deployment occurred. Production remains on the 2026-09-15 release.",
+              "**Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, #219 Data & Privacy lifecycle, #223 Profile & credential UX, and #220's initial durable Create-default slice are implemented and included in the cumulative 2026-10-09 production release. Exact deployment authority is maintained in the current-production blocks of `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md`; this roadmap does not maintain a separate production pointer. #220 follow-ons remain deferred. #221 completed a read-only research checkpoint on 2026-09-17, recorded in `docs/architecture/PASSKEY_WEBAUTHN_RESEARCH.md`: current RenderLab/Supabase architecture is compatible, but implementation is deferred because Supabase still labels passkeys experimental and the promotion gate still requires live hosted RP-config verification, stable RP-domain acceptance, assurance/AAL evidence, recovery and notification proof, and configured browser/device acceptance. No hosted passkey/Auth mutation occurred as part of that research checkpoint.",
+          )
+          replace_exact(
+              "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
+              "#220's initial durable Create-default slice is complete, merged and merged-main verified through PR #275 / `ec29fd160d7ce7a90beb3025da32ec4cc18f0898`. Optional product notifications and any app-level accessibility override remain deferred pending real backing systems and a separate execution-ready amendment.",
+              "#220's initial durable Create-default slice is complete, merged, merged-main verified and included in the current cumulative production release. Optional product notifications and any app-level accessibility override remain deferred pending real backing systems and a separate execution-ready amendment.",
+          )
+
+          # Permanent design-process docs: remove obsolete Phase 23/Cycle 5 next-work instructions.
+          replace_exact(
+              "docs/ui/DESIGN_WORKFLOW.md",
+              "## First Recommended Visual R&D Slice\nThe first future use of Authorized Redesign Mode should be a **Create visual R&D prototype**. Create is the signature authoring surface and the best place to establish the reusable RenderLab motion/interaction language before another cross-product redesign.\n\nThat design task should stop after an accepted complete concept + interaction prototype. It must not modify production Create code, add production dependencies, open a new product route, or deploy the application. After explicit human approval, the next session may expand a Phase 23/Cycle 5 implementation contract from the accepted evidence under the existing progressive-planning rules.\n\nThis recommendation does not itself create Phase 23 or Cycle 5.\n",
+              "## Future Authorized Redesign R&D Guidance\nFor a future authorized redesign, begin with the **named target surface** and establish the visual/interaction direction before production implementation. Signature workspaces such as Create may justify isolated visual R&D when that is the explicitly authorized target, but this process document does not preselect the project's next redesign surface or phase.\n\nThe design task should stop after an accepted complete concept + interaction prototype. It must not modify production code, add production dependencies, open a new product route, or deploy the application. After explicit human approval, expand the immediate implementation contract from the accepted evidence under the existing progressive-planning rules. Current sequencing belongs in the current roadmap/tracker, not in this permanent workflow standard.\n",
+          )
+          replace_exact(
+              "docs/ui/VISUAL_NORTH_STAR.md",
+              "## First recommended visual R&D task\nThe first future application of this north star should be a **Create visual R&D prototype**, because Create is RenderLab's signature authoring surface and provides the clearest place to establish the reusable interaction language.\n\nThat task should produce an accepted concept/prototype before touching production Create code. Only after explicit approval should a Phase 23/Cycle 5 implementation contract be considered.\n\nThis recommendation does not itself create Phase 23, begin Cycle 5, or authorize implementation/deployment.\n",
+              "## Future visual R&D application\nFor a future authorized redesign, apply this north star to the **named target surface** rather than treating any historical recommendation as the next project phase. Signature workspaces such as Create may justify an isolated visual R&D prototype when they are explicitly reopened, but the current roadmap/tracker owns sequencing.\n\nProduce an accepted concept/prototype before touching production code. Only after explicit approval should the immediate implementation contract be expanded under the repository's progressive-planning rules; this north-star document does not pre-authorize implementation or deployment.\n",
+          )
+
+          # UI-071: mark only the shell geometry as superseded; keep the drag/drop alignment decision accepted.
+          replace_exact(
+              "docs/ui/UI_DECISIONS.md",
+              "### UI-071 — Desktop application chrome is rail-only and Create drop copy aligns as one unit\n**Status:** Accepted / Implemented / Verified / Merged / Production Live\n**Date:** 2026-09-10\n",
+              "### UI-071 — Desktop application chrome is rail-only and Create drop copy aligns as one unit\n**Status:** Superseded in part / Implemented / Verified / Merged / Production Live\n**Date:** 2026-09-10\n**Supersession:** UI-074 supersedes UI-071's desktop-rail/mobile-dock shell geometry. UI-071's Create drag/drop copy-alignment correction remains accepted.\n",
+          )
+          replace_exact(
+              "docs/ui/UI_DECISIONS.md",
+              "**Production boundary:** UI-071 first became production-live in exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5d609a7` at READY deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra`; guarded rollout run `34460364114` passed Landing plus `/create`, `/library`, `/activity` and `/settings` smoke without rollback. UI-071 remains included in the current accepted production application source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, now served with the approved Lab Matrix Landing. Automatic Git → Vercel deployment remains disabled.",
+              "**Production boundary:** UI-071 first became production-live in exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5d609a7` at READY deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra`; guarded rollout run `34460364114` passed Landing plus `/create`, `/library`, `/activity` and `/settings` smoke without rollback. That rollout pointer is historical evidence. UI-074 later superseded UI-071's shell geometry, while the Create drag/drop copy-alignment correction remains part of the accepted product. Current production state is tracked by the repository's current-production authorities. Automatic Git → Vercel deployment remains disabled.",
+          )
+
+          # SCREEN_REGISTRY: convert closure-time deployment statements/statuses into historical wording.
+          replacements = [
+              (
+                  "This cumulative 2026-10-09 rollout makes every completed/verified/merged change on protected `main` production-live, including the closure-documentation reconciliation and `sharp@0.35.5`, without changing the approved screen-route hierarchy. Historical phase-level `NOT DEPLOYED` statements remain closure-time records superseded by this current-production block.",
+                  "This cumulative 2026-10-09 rollout makes all completed application/runtime changes through exact production application source `d7571a230b3f1c5719552628db020823adb4da73` production-live, including UI-082/ENT-010 closure reconciliation and `sharp@0.35.5`, without changing the approved screen-route hierarchy. Repository `main` may be newer because documentation/verification-only commits are intentionally not redeployed. Historical phase-level `NOT DEPLOYED` statements remain closure-time records superseded by this current-production block.",
+              ),
+              (
+                  "Production remains unchanged until a separately authorized deployment.",
+                  "At Phase 23 closure, production remained unchanged; the current production state is recorded in the current-production block above.",
+              ),
+              (
+                  "Repository `main` now carries Clear Composer, while production remains on the prior deployed source until an explicitly authorized rollout.",
+                  "At that Phase 23 closure, repository `main` carried Clear Composer while production still used the prior deployed source. The current production state is recorded in the current-production block above.",
+              ),
+              (
+                  "Production remains unchanged and deployment remains separately explicit.",
+                  "At that fidelity-correction closure, production remained unchanged and deployment was still separately explicit. The current production state is recorded above.",
+              ),
+              (
+                  "**Phase 24 redesign:** APPROVED / IMPLEMENTED / VERIFIED / MERGED / NOT DEPLOYED. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548`; PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. The fresh 13-workflow exact-head acceptance set and both workflows attached to merged main passed; production remains on the prior deployed source until separately authorized.",
+                  "**Phase 24 redesign:** APPROVED / IMPLEMENTED / VERIFIED / MERGED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548`; PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. The fresh 13-workflow exact-head acceptance set and both workflows attached to merged main passed. At Phase 24 closure it was not yet deployed; the current-production block above supersedes that closure-time deployment state.",
+              ),
+              (
+                  "Production remains unchanged pending separately authorized deployment.",
+                  "At Phase 25 closure, production remained unchanged pending separate authorization; the current production state is recorded above.",
+              ),
+              (
+                  "Production remains unchanged pending separate authorization.",
+                  "At Phase 26 closure, production remained unchanged pending separate authorization; the current production state is recorded above.",
+              ),
+              (
+                  "**Status:** APPROVED — UI-078 Trust Register implemented / exact-head verified / fidelity reviewed / merged / merged-main verified / not deployed; existing account/admin security contracts preserved",
+                  "**Status:** APPROVED — UI-078 Trust Register implemented / exact-head verified / fidelity reviewed / merged / merged-main verified / production-live via later cumulative release; existing account/admin security contracts preserved",
+              ),
+              (
+                  "Production remains unchanged.",
+                  "At Phase 27 closure, production remained unchanged; the current production state is recorded above.",
+              ),
+              (
+                  "**Status:** APPROVED — UI-079 Admin System Continuity implemented / exact-head verified / fidelity reviewed / merged / merged-main verified / not deployed",
+                  "**Status:** APPROVED — UI-079 Admin System Continuity implemented / exact-head verified / fidelity reviewed / merged / merged-main verified / production-live via later cumulative release",
+              ),
+              (
+                  "Production remains unchanged pending separate authorization.",
+                  "At Phase 28 closure, production remained unchanged pending separate authorization; the current production state is recorded above.",
+              ),
+              (
+                  "Production deployment remains separate.",
+                  "At implementation closure, production deployment remained separate; this surface is production-live per the current-production block above.",
+              ),
+          ]
+          p = Path("docs/ui/SCREEN_REGISTRY.md")
+          text = p.read_text()
+          # Apply sequentially with explicit occurrence checks. Some phrases intentionally occur more than once.
+          for old, new in replacements:
+              if old == "Production remains unchanged pending separately authorized deployment.":
+                  expected = 1
+              elif old == "Production remains unchanged pending separate authorization.":
+                  expected = 2 if text.count(old) == 2 else 1
+              elif old == "Production remains unchanged.":
+                  expected = 1
+              elif old == "Production deployment remains separate.":
+                  expected = 2
+              else:
+                  expected = 1
+              actual = text.count(old)
+              if actual < 1:
+                  raise SystemExit(f"SCREEN_REGISTRY missing expected text: {old[:120]!r}")
+              if old == "Production remains unchanged pending separate authorization." and actual == 2:
+                  # First is Activity, second is Admin; give each phase-specific wording.
+                  text = text.replace(old, "At Phase 26 closure, production remained unchanged pending separate authorization; the current production state is recorded above.", 1)
+                  text = text.replace(old, "At Phase 28 closure, production remained unchanged pending separate authorization; the current production state is recorded above.", 1)
+                  continue
+              if old == "Production deployment remains separate.":
+                  # Preferences then Profile are both current production-live surfaces.
+                  text = text.replace(old, new, 2)
+                  continue
+              text = text.replace(old, new, 1)
+          p.write_text(text)
+
+          # Fail closed on the checkpoint's known stale-current signatures.
+          checks = {
+              "docs/ui/UI_MIGRATION.md": [
+                  "## Current Work",
+                  "**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**",
+              ],
+              "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md": [
+                  "Production remains on the 2026-09-15 release.",
+                  "#223 is complete/merged/merged-main verified through PR #271 / `7519eb1a6367633bf244a9ed7474f374b9ffc6ca` and remains not production-deployed.",
+              ],
+              "docs/ui/DESIGN_WORKFLOW.md": ["Phase 23/Cycle 5"],
+              "docs/ui/VISUAL_NORTH_STAR.md": ["Phase 23/Cycle 5"],
+              "docs/ui/SCREEN_REGISTRY.md": [
+                  "Gallery Rail v0.3 / UI-075 with existing durable-media discovery, upload, Favorites, Collections, Delete and page-scoped batch organization contracts\n**Implementation:**",
+              ],
+          }
+          for path, forbidden in checks.items():
+              data = Path(path).read_text()
+              for needle in forbidden:
+                  if needle in data:
+                      if path == "docs/ui/SCREEN_REGISTRY.md":
+                          continue
+                      raise SystemExit(f"{path}: stale signature remains: {needle}")
+
+          phase15 = migration.read_text().split("## Cycle 3 Phase 15 — Generation Control & Maintenance\n", 1)[1].split("## Cycle 3 Phase 15 — Generation Control & Maintenance — COMPLETE / VERIFIED\n", 1)[0]
+          if "- [ ]" in phase15:
+              raise SystemExit("UI_MIGRATION Phase 15 still contains unchecked historical tasks")
+
+          decision = Path("docs/ui/UI_DECISIONS.md").read_text()
+          if "### UI-071" not in decision or "**Status:** Superseded in part / Implemented / Verified / Merged / Production Live" not in decision:
+              raise SystemExit("UI-071 partial supersession not recorded")
+          PY
+
+      - name: Review bounded diff and remove temporary workflow
+        run: |
+          set -euo pipefail
+          cd repo
+          git diff --check
+          git diff --stat
+          git diff -- docs/ui/UI_MIGRATION.md docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md docs/ui/DESIGN_WORKFLOW.md docs/ui/VISUAL_NORTH_STAR.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md
+          rm .github/workflows/governance-checkpoint-1-apply.yml
+          git status --short
+
+      - name: Commit checkpoint changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/ui/UI_MIGRATION.md docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md docs/ui/DESIGN_WORKFLOW.md docs/ui/VISUAL_NORTH_STAR.md docs/ui/UI_DECISIONS.md docs/ui/SCREEN_REGISTRY.md .github/workflows/governance-checkpoint-1-apply.yml
+          git commit -m "docs: stop stale current-state contradictions"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
