@@ -1,6 +1,6 @@
 # RenderLab Status
 
-This page is the concise public status summary. `PROJECT.md` remains the detailed internal handoff/history document.
+This page is the concise public current-status summary. `PROJECT.md` is the compact internal current handoff; detailed execution chronology is retained under `docs/audits/**` and `docs/archive/**`.
 
 Lifecycle/status terminology follows `docs/INDEX.md`. Enterprise workstream status statements below preserve their original closure-time repository/deployment provenance unless explicitly labeled as current; they do not override the exact current-production block.
 
@@ -38,6 +38,7 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Enterprise workstream stat
 - Deterministic GitHub Actions dependency installation from the checked-in lockfile
 - Immutable SHA-pinned external GitHub Actions with Dependabot maintenance
 - Credential-free documentation governance linting for metadata/schema, supersession, production-manifest mirrors, canonical status enums, closed-contract checklists, current-section uniqueness, local documentation references, and review-date policy
+- Mandatory Project/UI migration handoffs are current-only; full pre-history-separation journals are preserved in `docs/archive/**` as non-authoritative provenance
 - Server-owned job reconciliation, retry, cancellation, and persistence
 - Exact-commit production qualification and cleanup evidence
 
@@ -141,4 +142,4 @@ ENT-005 durable observability and operations hardening — **Closure-time status
 
 Current work focuses on expanding creative workflows, improving continuation between media operations, strengthening organization/project workflows, and preserving production reliability as provider capability grows.
 
-For detailed implementation history, current phase notes, and operational handoff information, see [`PROJECT.md`](../PROJECT.md).
+For the current internal handoff, see [`PROJECT.md`](../PROJECT.md). For exact historical phase/run chronology, use `docs/audits/**` and `docs/archive/**` rather than inferring current work from old checklists.

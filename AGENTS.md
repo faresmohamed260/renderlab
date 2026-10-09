@@ -196,6 +196,14 @@ Update existing authoritative documentation rather than creating competing sourc
 
 For documentation/governance changes, run credential-free `npm run verify:docs-governance` before closure. `docs/governance/documents.json` owns machine-readable role/lifecycle/owner/review metadata for the high-authority document set; its `lastReviewed` date records governance classification/review, not automatic re-verification of every embedded historical fact or external provider claim.
 
+### History separation
+Current authority files must optimize for present state, binding rules and explicitly active work. Do not append closed phase journals or run-by-run closure evidence back into `PROJECT.md` or `docs/ui/UI_MIGRATION.md`.
+
+- Preserve detailed closure evidence under `docs/audits/**`, completed contract records, or `docs/archive/**` as appropriate.
+- After a bounded contract closes, treat it as historical evidence unless a current authority explicitly carries a constraint forward.
+- Archived checklists are not backlog authority; an unchecked historical item is not active work unless a current tracker/accepted contract explicitly promotes it.
+- When a current tracker closes a phase, retain only the current outcome/constraint needed for future decisions and move detailed chronology out of mandatory context.
+
 ## Production Release Documentation Closure
 Any production alias cutover is not repository-closed merely because deployment and smoke passed.
 
