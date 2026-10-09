@@ -14,17 +14,17 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 ## Current production and whole-product audit - 2026-10-09
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
-**Status: `CURRENT PROTECTED MAIN PRODUCTION-LIVE / QA-001-QA-005 HISTORICAL ACCEPTANCE RETAINED`.**
+**Deployment:** `PRODUCTION-LIVE`. **Verification:** `PRODUCTION-VERIFIED`. **Historical evidence:** QA-001–QA-005 acceptance retained.
 
 - Exact current production source is `d7571a230b3f1c5719552628db020823adb4da73` at READY deployment `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` (`https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`), explicitly serving `renderlab.faresuniform.uk`.
 - Pre-cutover exact-main qualification passed Engineering Quality `37930497585`, Unit Coverage `37930497751`, CodeQL `37930497674`, Developer Portability `37930497688`, Deployment Readiness `37930497565`, UI Shell Validation `37930497739`, Creative Iteration `37930497900`, and Reference Upload Integration `37930497803`. Release Candidate Matrix `37934750620` attempt 1 accepted all 23 configured exact-SHA children.
 - The authenticated Vercel Git-source build cloned the exact SHA, passed the production environment contract and production build, reached READY, and only then received the custom-domain alias. Signed-out custom-domain smoke passed root/Create/Library/Activity/Settings/Password/Profile/Preferences with the established Admin 404 concealment boundary. Post-cutover Vercel inspection found no runtime-error clusters and no error/fatal logs for the new deployment.
 - The immediately previous verified live deployment `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` / source `bcb2de305b15f4be15ed42674d22998c30b8c811` remains the immediate rollback anchor.
-- Every completed/verified/merged change on protected `main` is now included in production, including UI-082/ENT-010 closure reconciliation and `sharp@0.35.5`. Historical `NOT DEPLOYED` statements retain their original closure-time meaning; draft PRs #313/#316 and research issue #221 remain outside this release. Automatic Git -> Vercel deployment remains disabled.
+- All completed application/runtime changes through exact production source `d7571a230b3f1c5719552628db020823adb4da73` are `PRODUCTION-LIVE`, including the UI-082 application changes and `sharp@0.35.5`. The exact repository source also contains CI/tooling/documentation changes such as ENT-010 closure, but those are repository state rather than application deployment state. Protected `main` may be newer because documentation, verification, CI/tooling, or other non-deployed commits do not automatically change production. Historical `NOT DEPLOYED` statements retain their original closure-time meaning; draft PRs #313/#316 and research issue #221 remain outside this release. Automatic Git -> Vercel deployment remains disabled.
 - QA-001 through QA-005 and the #278 whole-product production acceptance remain retained historical evidence; no new destructive production QA campaign was implied by this cumulative rollout.
 
 ## Superseded account/security production rollout — 2026-09-15
-**Status: `#216–#219 COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
+**Disposition:** `SUPERSEDED`. **Record class:** `HISTORICAL`. **Deployment at this checkpoint:** `PRODUCTION-LIVE` for #216–#219; present deployment truth is the current-production block above.
 
 - Exact current production source is `d18ef8833d46c812dac6b43572b3f4f7069990f8`, deployed by guarded clean-provenance run `35022243427` as READY Vercel deployment `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`.
 - The rollout makes the already-approved Settings surfaces for live session controls, MFA/step-up, secure sign-in email change, and Data & Privacy export/deletion available in production; it does not reopen UI-078 composition or the Phase 23–29 visual system.
@@ -32,7 +32,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Historical #216–#219 `NOT DEPLOYED` statements record their implementation-closure state and are superseded for current production status by this rollout record. Automatic Git → Vercel deployment remains disabled.
 
 ## UI-081 / #223 Profile & credential UX baseline — implementation closure
-**Status: `IMPLEMENTATION VERIFIED / MERGED / MERGED-MAIN VERIFIED / HUMAN-REVIEWED / NOT DEPLOYED`.**
+**Closure-time status:** Execution=`COMPLETE`; Repository=`MERGED`; Verification=`EXACT-HEAD VERIFIED`, `MERGED-MAIN VERIFIED`, `HUMAN-REVIEWED`; Deployment=`NOT DEPLOYED`. **Current deployment:** `PRODUCTION-LIVE` via the cumulative 2026-10-09 release.
 
 - PR #271 implements the merged #223/UI-081 contract without reopening UI-078: private optional display name, deterministic private avatar, subordinate `/settings/profile`, and Profile-before-sign-in-identity composition inside Account.
 - Shared `AccountPasswordField` owns current password-entry interaction across signed-out sign-in, password change/recovery, email-change reauthentication and account-deletion reauthentication: hidden by default, accessible Show/Hide state, independent reveal state, Caps Lock advisory, paste/password-manager-safe behavior, correct autocomplete semantics, real 15-character new-password guidance and textual confirmation matching.
@@ -43,7 +43,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - PR #271 squash-merged to `main` as `7519eb1a6367633bf244a9ed7474f374b9ffc6ca`. All 17 workflows GitHub attached to that merged-main SHA passed, including Account Data Lifecycle and Video Generation Integration. Issue #223 is closed as completed.
 - Username/handle remains deliberately deferred. Production application deployment remains unchanged at source `d18ef8833d46c812dac6b43572b3f4f7069990f8` / READY `dpl_BYvrAU1W3sPzSjJ5VHpa5p5P7jP7`; automatic Git → Vercel deployment remains disabled.
 ## #220 Product preferences initial Create-default slice — closure
-**Status: `COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED / RENDERED-EVIDENCE REVIEWED / NOT DEPLOYED`.**
+**Closure-time status:** Execution=`COMPLETE`; Repository=`MERGED`; Verification=`EXACT-HEAD VERIFIED`, `MERGED-MAIN VERIFIED`, `HUMAN-REVIEWED`; Deployment=`NOT DEPLOYED`. **Current deployment:** `PRODUCTION-LIVE` via the cumulative 2026-10-09 release.
 
 - PR #275 extends UI-078 in Integration Mode rather than reopening Settings: admitted accounts gain one quiet `Create defaults` row and subordinate `/settings/preferences`; no top-level navigation destination or Settings redesign is introduced.
 - The subordinate form manages only Default Create mode, fixed Image aspect ratio, Video resolution, Video duration and Video audio. `Save defaults` persists owner-scoped server state; `Reset to RenderLab defaults` deletes the row so future product defaults remain authoritative.
@@ -59,10 +59,10 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - [x] Independent post-rollout Vercel checks found no runtime-error clusters and no error/fatal logs for the new production deployment.
 - [x] Automatic Git → Vercel deployment remains disabled; future production releases still require explicit authorization.
 
-**Landing production status: `APPROVED / PRODUCTION-LIVE`.**
+**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`.
 
 ## Phase 23–29 UI/UX redesign production rollout — 2026-09-14
-**Status: `COMPLETE / VERIFIED / PRODUCTION-LIVE`.**
+**Execution:** `COMPLETE`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 
 - Explicit user authorization deployed exact repository source `b6deedad8a229b34828da0c3760b62fa147c1981` through guarded GitHub Actions rollout `34795391075`. The deployed application tree contains the fully closed Phase 23–29 redesign; the Phase 29 implementation itself made no production-pixel changes beyond regression verification.
 - Vercel production deployment `dpl_CB145taZqMd6r7MqAoMweYTJzmvh` (`https://renderlab-6r28s40a8-faresmohamed260-6733s-projects.vercel.app`) reached `READY` with exact Git metadata `b6deedad8a229b34828da0c3760b62fa147c1981` and the production environment contract passed during the Vercel build.

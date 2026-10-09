@@ -2,12 +2,17 @@
 
 Tracks approved product surfaces and actual route/status/component composition.
 
-## Statuses
-- `PLANNED` — approved surface, not yet implemented beyond temporary scaffolding
-- `UNAUDITED` — implementation exists but has not been audited
-- `MIGRATING` — implementation is actively being brought to the approved RenderLab design
-- `APPROVED` — rendered implementation has been reviewed and approved
-- `LOCKED` — approved surface whose established design should not change without explicit product reason
+## UI maturity statuses
+
+These labels describe **screen/design maturity**, not repository lifecycle or deployment. Current lifecycle/deployment terminology follows `docs/INDEX.md`. In particular, `APPROVED` or `LOCKED` never implies `MERGED` or `PRODUCTION-LIVE`.
+
+- `PLANNED` — local screen-maturity shorthand for an approved surface intent not yet implemented beyond temporary scaffolding; use `Execution: PLANNED` when expressing repository lifecycle.
+- `UNAUDITED` — implementation exists but has not been audited.
+- `MIGRATING` — implementation is actively being brought to the approved RenderLab design.
+- `APPROVED` — rendered implementation has been reviewed and accepted for its stated scope.
+- `LOCKED` — approved surface whose established design should not change without explicit product reason.
+
+When an entry needs both maturity and lifecycle truth, prefer separate fields such as `UI maturity: APPROVED` and `Deployment: PRODUCTION-LIVE` rather than a slash-chain that mixes dimensions.
 
 ## Initial Information Architecture
 Primary: **Create**, **Library**. Utility: **Activity**, **Settings**. Contextual: **Media Viewer**.
@@ -21,7 +26,7 @@ Current production runs exact repository source `d7571a230b3f1c5719552628db02082
 Whole-product audit `docs/audits/2026-09-17-production-user-audit/REPORT.md` remains historical accepted evidence for QA-001 through QA-005. This cumulative 2026-10-09 rollout makes all completed application/runtime changes through exact production application source `d7571a230b3f1c5719552628db020823adb4da73` production-live, including UI-082/ENT-010 closure reconciliation and `sharp@0.35.5`, without changing the approved screen-route hierarchy. Repository `main` may be newer because documentation/verification-only commits are intentionally not redeployed. Historical phase-level `NOT DEPLOYED` statements remain closure-time records superseded by this current-production block.
 
 ## Application Shell
-**Status:** APPROVED  
+**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`.
 **Implementation:** `src/components/shell/app-shell.tsx`
 
 Approved behavior:
@@ -42,7 +47,7 @@ Approved behavior:
 
 ### Settings Preferences
 **Route:** `/settings/preferences`
-**Status:** APPROVED — #220 initial slice production-live
+**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** #220 initial Create-default slice.
 **Implementation:** `src/app/(app)/settings/preferences/page.tsx`, `src/features/account/account-preferences-form.tsx`, `src/app/api/account/preferences/route.ts`, `src/server/account/account-preferences.ts`
 **Purpose:** Manage the admitted account's durable defaults for new Create drafts without changing existing generations, media, history, recipes, continuations, admission, role, ownership or security state.
 **Composition:** subordinate UI-078 Trust Register continuation with Default Create mode, fixed Image aspect ratio, Video resolution, Video duration and Video audio. Save persists the complete curated set; Reset deletes the owner row and follows current RenderLab product defaults. Product notifications, theme/language/timezone, model/provider defaults, Advanced tuning persistence and app-level accessibility overrides are absent by design.
@@ -50,7 +55,7 @@ Approved behavior:
 **Verification:** implementation head `f01399bac0a50fef82ac55cf2c9a088c18443415`; Account Profile Credential `35138292468`; dedicated artifact `10463549435` (`sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`); desktop, 390px reduced-motion Settings and mobile Create evidence reviewed clean. Account Data Lifecycle `35138293298` proves export-v3/deletion integration. At implementation closure, production deployment remained separate; this surface is production-live per the current-production block above.
 ### Settings Profile
 **Route:** `/settings/profile`
-**Status:** APPROVED — UI-081 production-live
+**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** UI-081.
 **Implementation:** `src/app/(app)/settings/profile/page.tsx`, `src/features/account/account-profile-form.tsx`, `src/features/account/account-profile-identity.tsx`
 **Purpose:** Edit optional private display name and private account avatar without changing sign-in identity, admission, role, ownership or public visibility.
 **Composition:** subordinate UI-078 Trust Register continuation; square avatar crop supports pointer/touch pan plus keyboard controls, zoom/reset, deterministic replacement/removal and neutral fallback when no display identity exists. Username/handle, public profile and social identity are intentionally absent.
@@ -58,7 +63,7 @@ Approved behavior:
 
 ### Brand / Landing
 **Route:** `/`
-**Status:** APPROVED — Lab Matrix redesign merged and production-live
+**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** merged Lab Matrix redesign.
 **Implementation:** `src/app/page.tsx`, `src/features/landing/landing-experience.tsx`, `src/features/landing/landing-experience.module.css`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`
 **Design / implementation authority:** `docs/ui/LANDING_BRAND_RD.md`, `docs/ui/LANDING_IMPLEMENTATION_CONTRACT.md`, `docs/ui/LANDING_MEDIA_SOURCES.md`
 
@@ -80,7 +85,7 @@ Approved behavior:
 
 ### Create
 **Route:** `/create`
-**Status:** APPROVED  
+**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`.
 **Implementation:** `src/features/create/create-workspace.tsx`  
 **Supporting:** `src/features/create/create-advanced-panel.tsx`  
 **Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
@@ -128,7 +133,7 @@ Approved behavior:
 
 ### Library
 **Route:** `/library`  
-**Status:** APPROVED — Gallery Rail v0.3 / UI-075 with existing durable-media discovery, upload, Favorites, Collections, Delete and page-scoped batch organization contracts
+**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** Gallery Rail v0.3 / UI-075 with existing durable-media discovery, upload, Favorites, Collections, Delete and page-scoped batch organization contracts.
 **Implementation:** `src/features/library/library-view.tsx`  
 **Collection management:** `src/features/library/library-collection-menu.tsx`, `src/features/library/library-collection-manager.tsx`
 **Batch selection:** `src/features/library/library-batch-selection.tsx`
@@ -137,7 +142,7 @@ Approved behavior:
 **Shared browser upload transaction:** `src/features/library/library-upload-client.ts`  
 **Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `src/server/media/media-collections.ts`, `GET /api/media/assets`, `POST /api/media/assets/batch-delete`, `POST /api/media/assets/batch-favorite`, `GET|POST /api/media/collections`, `PATCH|DELETE /api/media/collections/[collectionId]`, single-asset collection membership routes, `POST /api/media/collections/[collectionId]/items/batch`, media-upload ticket/completion routes
 **Approved design artifacts:** `design/penpot/library-v0.1.svg`, `design/penpot/library-v0.2-upload.svg`
-**Phase 24 redesign:** APPROVED / IMPLEMENTED / VERIFIED / MERGED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548`; PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. The fresh 13-workflow exact-head acceptance set and both workflows attached to merged main passed. At Phase 24 closure it was not yet deployed; the current-production block above supersedes that closure-time deployment state.
+**Phase 24 lifecycle:** Execution=`COMPLETE`; Repository=`MERGED`; Verification=`EXACT-HEAD VERIFIED`, `MERGED-MAIN VERIFIED`; Deployment=`PRODUCTION-LIVE` via the later cumulative release. **UI maturity:** `APPROVED`. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548`; PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. The fresh 13-workflow exact-head acceptance set and both workflows attached to merged main passed. At Phase 24 closure it was not yet deployed; the current-production block above supersedes that closure-time deployment state.
 
 **Purpose:** Find, inspect, reuse and continue from durable RenderLab media. Library is a reusable creative-asset workspace, not merely generation history.
 
@@ -200,7 +205,7 @@ Approved behavior:
 
 ### Media Viewer
 **Route:** `/library/[assetId]`  
-**Status:** APPROVED — UI-076 Media Register + Source Fold v0.2 / Phase 25 merged and merged-main verified, plus existing Viewer behavior contracts
+**UI maturity:** `APPROVED`. **Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `MERGED-MAIN VERIFIED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** UI-076 Media Register + Source Fold v0.2 plus existing Viewer behavior contracts.
 **Implementation:** `src/features/library/media-viewer.tsx`, `src/features/library/media-viewer-comparison.tsx`, `src/features/library/media-viewer-register.tsx`, `src/features/library/media-viewer.module.css`, `src/features/library/media-viewer-upscale-action.tsx`
 **Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
 **Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts` (GET/PATCH/DELETE), `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/app/api/media/collections/route.ts`, collection membership route, `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-collections.ts`
@@ -256,7 +261,7 @@ Approved behavior:
 
 ### Activity
 **Route:** `/activity`  
-**Status:** APPROVED — Job Matrix + History Register v0.2 / UI-077; existing Retry / Run Again / Cancel / Upscale lifecycle contracts preserved
+**UI maturity:** `APPROVED`. **Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `MERGED-MAIN VERIFIED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** Job Matrix + History Register v0.2 / UI-077; existing Retry / Run Again / Cancel / Upscale lifecycle contracts preserved.
 **Implementation:** `src/app/(app)/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`, `src/features/activity/activity-retry-button.tsx`, `src/features/activity/activity-cancel-button.tsx`, `src/features/activity/activity-run-again-button.tsx`
 **Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/lib/api/generation-retry-contract.ts`, `src/lib/api/generation-cancel-contract.ts`, `src/lib/api/generation-run-again-contract.ts`, `src/server/generation/generation-activity.ts`, `src/server/generation/retry-generation.ts`, `src/server/generation/run-again-generation.ts`, `src/server/generation/cancel-generation.ts`, `POST /api/generation/jobs/[jobId]/retry`, `POST /api/generation/jobs/[jobId]/run-again`, `POST /api/generation/jobs/[jobId]/cancel`, server-owned reconciliation
 **Purpose:** Show current/recent account-owned RenderLab `generation_jobs`, real execution state and actionable product recovery/control without exposing worker infrastructure as user responsibility.
@@ -275,7 +280,7 @@ Approved behavior:
 
 ### Settings
 **Route:** `/settings`  
-**Status:** APPROVED — UI-078 Trust Register implemented / exact-head verified / fidelity reviewed / merged / merged-main verified / production-live via later cumulative release; existing account/admin security contracts preserved
+**UI maturity:** `APPROVED`. **Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `EXACT-HEAD VERIFIED`, `MERGED-MAIN VERIFIED`, `HUMAN-REVIEWED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** UI-078 Trust Register; existing account/admin security contracts preserved.
 **Implementation:** `src/app/(app)/settings/page.tsx`
 **Account surface:** `src/features/account/account-settings.tsx`; password security: `src/features/account/account-password-form.tsx`
 **Session boundary:** `src/lib/supabase/config.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/proxy.ts`, root `proxy.ts`
@@ -305,7 +310,7 @@ Approved behavior:
 
 ### Admin
 **Route:** `/admin`
-**Status:** APPROVED — UI-079 Admin System Continuity implemented / exact-head verified / fidelity reviewed / merged / merged-main verified / production-live via later cumulative release
+**UI maturity:** `APPROVED`. **Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `EXACT-HEAD VERIFIED`, `MERGED-MAIN VERIFIED`, `HUMAN-REVIEWED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** UI-079 Admin System Continuity.
 **Implementation:** `src/app/(app)/admin/page.tsx`, `src/features/admin/admin-operations.tsx`, `src/features/admin/admin-operations.module.css`, `src/server/admin/*`, `src/app/api/admin/**`
 
 **Purpose:** Operate the controlled RenderLab beta without exposing provider infrastructure or the shared Supabase Auth namespace.
