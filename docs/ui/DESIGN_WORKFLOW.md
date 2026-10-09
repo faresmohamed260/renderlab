@@ -190,9 +190,7 @@ Any production implementation still requires the relevant existing gates, includ
 
 Do not weaken a functional or security test because it makes a redesign harder. If an accepted concept cannot satisfy an invariant, revise the concept or implementation architecture.
 
-## First Recommended Visual R&D Slice
-The first future use of Authorized Redesign Mode should be a **Create visual R&D prototype**. Create is the signature authoring surface and the best place to establish the reusable RenderLab motion/interaction language before another cross-product redesign.
+## Future Authorized Redesign R&D Guidance
+For a future authorized redesign, begin with the **named target surface** and establish the visual/interaction direction before production implementation. Signature workspaces such as Create may justify isolated visual R&D when that is the explicitly authorized target, but this process document does not preselect the project's next redesign surface or phase.
 
-That design task should stop after an accepted complete concept + interaction prototype. It must not modify production Create code, add production dependencies, open a new product route, or deploy the application. After explicit human approval, the next session may expand a Phase 23/Cycle 5 implementation contract from the accepted evidence under the existing progressive-planning rules.
-
-This recommendation does not itself create Phase 23 or Cycle 5.
+The design task should stop after an accepted complete concept + interaction prototype. It must not modify production code, add production dependencies, open a new product route, or deploy the application. After explicit human approval, expand the immediate implementation contract from the accepted evidence under the existing progressive-planning rules. Current sequencing belongs in the current roadmap/tracker, not in this permanent workflow standard.
