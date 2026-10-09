@@ -1,7 +1,7 @@
 # MFA & Privileged Step-Up Contract — Amendment 2
 
 **Tracker:** #217  
-**Amends:** `docs/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md` and `docs/architecture/MFA_PRIVILEGED_STEP_UP_CONTRACT_AMENDMENT_1.md`  
+**Amends:** `docs/history/contracts/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md` and `docs/history/contracts/architecture/MFA_PRIVILEGED_STEP_UP_CONTRACT_AMENDMENT_1.md`
 **Audit date:** 2026-09-14  
 **Status:** BINDING CONTRACT AMENDMENT — supersedes conflicting operator-recovery text in the original #217 contract and Amendment 1  
 **Reason:** Hosted Supabase operator-reset/session behavior discovered and verified during #217 implementation

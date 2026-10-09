@@ -8,7 +8,6 @@ on:
       - "src/components/ui/**"
       - "scripts/verify-create-clear-composer.mjs"
       - ".github/workflows/create-clear-composer-visual.yml"
-      - "docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md"
   workflow_dispatch:
 
 permissions:

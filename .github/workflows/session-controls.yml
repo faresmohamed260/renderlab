@@ -12,7 +12,6 @@ on:
       - "scripts/cleanup-stale-session-control-fixtures.mjs"
       - "scripts/verify-session-controls.mjs"
       - ".github/workflows/session-controls.yml"
-      - "docs/architecture/SESSION_CONTROLS_SECURITY_ACTIVITY_IMPLEMENTATION_CONTRACT.md"
   workflow_dispatch:
 
 permissions:

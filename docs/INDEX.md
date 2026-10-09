@@ -16,7 +16,7 @@ A document has one **primary class** based on its repository role. Individual se
 | **Normative policy** | Accepted rules, decisions, constraints, implementation contracts, or operating procedures that future work must follow until explicitly superseded. | `docs/ui/UI_DECISIONS.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/DESIGN_WORKFLOW.md`, `docs/ui/VISUAL_NORTH_STAR.md`, `docs/ui/BRAND_SYSTEM.md`, accepted `*_IMPLEMENTATION_CONTRACT.md` / `*_CONTRACT.md` files, `CONTRIBUTING.md`, `SECURITY.md` |
 | **Current-state registry** | Verified inventory or operational record describing what currently exists, is approved, is owned, or is deployed. | `docs/STATUS.md`, `docs/ui/SCREEN_REGISTRY.md`, `docs/ui/COMPONENT_CATALOG.md`, `docs/architecture/PRODUCT_CAPABILITIES.md`, current-state/current-production sections of `docs/architecture/INFRASTRUCTURE.md` |
 | **Current-state tracker** | Active sequence/progress record for a migration, roadmap, or bounded workstream. | `docs/ui/UI_MIGRATION.md`, `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` |
-| **Historical evidence** | Provenance, prior state, completed-checkpoint evidence, superseded records, audits, or closure material retained so decisions can be traced. Historical evidence does not become current instruction merely because it remains in the repository. | `docs/archive/**`, dated audit evidence, completed/superseded contract and closure records, historical sections explicitly labeled inside current authorities |
+| **Historical evidence** | Provenance, prior state, completed-checkpoint evidence, superseded records, audits, or closure material retained so decisions can be traced. Historical evidence does not become current instruction merely because it remains in the repository. | `docs/archive/**`, `docs/history/contracts/**`, dated audit evidence, superseded/closure records, historical sections explicitly labeled inside current authorities |
 | **Reference guide** | Explanatory research, source lists, examples, media, or background material that helps implementation but does not independently define current state or policy. | `README.md`, `docs/architecture/PASSKEY_WEBAUTHN_RESEARCH.md` unless promoted by a normative authority, `docs/ui/LANDING_MEDIA_SOURCES.md`, `docs/readme/**` assets |
 
 ### Mixed and lifecycle-sensitive documents
@@ -34,8 +34,8 @@ Current authority answers **what is true now**. Historical evidence answers **ho
 
 - `PROJECT.md` is a compact current handoff, not the execution journal.
 - `docs/ui/UI_MIGRATION.md` is a current UI foundation/migration tracker, not the Phase 0+ chronology.
-- Detailed closed-phase chronology, exact run/artifact evidence and prior production pointers belong in `docs/audits/**`, completed contract records, or `docs/archive/**`.
-- Completed contracts are historical after closure unless a current authority explicitly carries a requirement forward. Their filesystem location does not make them current.
+- Detailed closed-phase chronology, exact run/artifact evidence and prior production pointers belong in `docs/audits/**` or `docs/archive/**`; completed bounded architecture/UI execution contracts belong in `docs/history/contracts/**`.
+- Completed contracts are historical after closure unless a current authority explicitly carries a requirement forward. Closed bounded architecture/UI execution contracts are stored under `docs/history/contracts/**`; active contracts remain with their current domain authority only while execution requires them.
 - Archive records preserve closure-time wording; update current authorities instead of rewriting history when present state changes.
 - Archived checkboxes and plans do not create backlog authority.
 
@@ -49,7 +49,7 @@ Governance hardening Checkpoint 6 preserved the prior mandatory journals verbati
 - Current managed documents have a bounded `reviewIntervalDays`; `npm run verify:docs-governance` fails when that governance review becomes stale.
 - Document-level `supersedes` / `supersededBy` links must be reciprocal. UI decision-level supersession is also linted from the explicit fields in `docs/ui/UI_DECISIONS.md`.
 - The managed registry is intentionally narrower than the complete historical corpus. Historical evidence remains governed by the taxonomy in this index until it is explicitly cataloged or archived; metadata absence does not promote historical text into current authority.
-- Physical history/archive separation is a separate repository-organization concern; this linting layer does not move files merely to satisfy metadata.
+- Journal snapshots use `docs/archive/**`; closed bounded architecture/UI execution contracts use `docs/history/contracts/**`. Location reinforces lifecycle but does not replace metadata/reference linting.
 
 The credential-free verifier also checks canonical structured status enums, closed-contract unchecked task boxes, duplicate normalized `Current ...` H2 sections, broken local documentation references, and consistency between `docs/production/current.json` and all five human production mirrors. The dedicated **Documentation Governance** workflow runs the same command on documentation/governance pull requests and pushes to `main` with `contents: read` only and no protected service credentials.
 
@@ -182,7 +182,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/architecture/PRODUCT_CAPABILITIES.md` — capability/current product contract registry.
 - `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` — bounded account/settings roadmap and current workstream tracker.
 - `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` — accepted incident/recovery operating procedure.
-- `docs/architecture/*_IMPLEMENTATION_CONTRACT.md`, `*_CONTRACT*.md`, and comparable scoped contracts — normative while active; historical evidence after closure/supersession unless a current authority carries a constraint forward.
+- Active architecture contracts remain beside current architecture while execution requires them. Closed bounded implementation contracts are historical evidence under `docs/history/contracts/architecture/**`; current architecture/roadmaps carry forward any still-binding constraints.
 
 ### UI and design system
 
@@ -194,14 +194,15 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
 - `docs/ui/VISUAL_NORTH_STAR.md` — normative visual direction for authorized redesign work.
 - `docs/ui/BRAND_SYSTEM.md` and `docs/ui/CREATIVE_DEVELOPMENT.md` — accepted brand/creative-development guidance within their stated scopes.
-- `docs/ui/*_IMPLEMENTATION_CONTRACT.md` and comparable scoped contracts — normative while active; historical evidence after closure/supersession unless explicitly carried forward.
+- Active UI contracts remain beside current UI authority while execution requires them. Closed bounded UI implementation contracts are historical evidence under `docs/history/contracts/ui/**`; `UI_DECISIONS.md`, `SCREEN_REGISTRY.md`, and other current authorities carry forward accepted constraints.
 
 ### Status, audits, archives, and supporting material
 
 - `docs/production/current.json` — canonical machine-readable current-production application/deployment record.
 - `docs/STATUS.md` — concise current status/deployment summary validated against the production manifest; detailed domain authorities still govern their own non-production facts.
 - `docs/audits/**` — evidence and assessments. A current authority must explicitly identify an audit/assessment if its finding is meant to represent current accepted state.
-- `docs/archive/**` — historical evidence only, including the pre-Checkpoint-6 Project/UI migration journal snapshots listed in `docs/archive/README.md`.
+- `docs/archive/**` — historical journal/snapshot evidence only, including the pre-Checkpoint-6 Project/UI snapshots listed in `docs/archive/README.md`.
+- `docs/history/contracts/**` — relocated closed architecture/UI execution contracts; historical evidence only.
 - `docs/readme/**` — README media/supporting assets, not governance authority.
 - Research/source-list/reference documents remain advisory unless a normative/current authority explicitly promotes a finding.
 

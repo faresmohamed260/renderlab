@@ -2,7 +2,7 @@
 
 **Status:** Accepted / implemented / checkpoint 4 verified
 **Tracker:** #305
-**Parent contract:** `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`
+**Parent contract:** `docs/history/contracts/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`
 **Baseline main:** `a305bf39ec6b2c4969eafaec9b749c41bb2fbf2e`
 
 ## Scope
