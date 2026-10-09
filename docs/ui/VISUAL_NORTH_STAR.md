@@ -1,7 +1,7 @@
 # RenderLab Visual North Star
 
-**Status:** Accepted design-governance baseline
-**Scope:** visual/interaction direction only
+**Status:** Accepted design-governance baseline  
+**Scope:** visual/interaction direction only  
 **Does not authorize:** product implementation, route changes, backend/schema/infrastructure changes, dependency adoption, production deployment, or a new Cycle/Phase by itself
 
 ## Purpose

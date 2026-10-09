@@ -21,7 +21,7 @@ Current production runs exact repository source `d7571a230b3f1c5719552628db02082
 Whole-product audit `docs/audits/2026-09-17-production-user-audit/REPORT.md` remains historical accepted evidence for QA-001 through QA-005. This cumulative 2026-10-09 rollout makes all completed application/runtime changes through exact production application source `d7571a230b3f1c5719552628db020823adb4da73` production-live, including UI-082/ENT-010 closure reconciliation and `sharp@0.35.5`, without changing the approved screen-route hierarchy. Repository `main` may be newer because documentation/verification-only commits are intentionally not redeployed. Historical phase-level `NOT DEPLOYED` statements remain closure-time records superseded by this current-production block.
 
 ## Application Shell
-**Status:** APPROVED
+**Status:** APPROVED  
 **Implementation:** `src/components/shell/app-shell.tsx`
 
 Approved behavior:
@@ -80,9 +80,9 @@ Approved behavior:
 
 ### Create
 **Route:** `/create`
-**Status:** APPROVED
-**Implementation:** `src/features/create/create-workspace.tsx`
-**Supporting:** `src/features/create/create-advanced-panel.tsx`
+**Status:** APPROVED  
+**Implementation:** `src/features/create/create-workspace.tsx`  
+**Supporting:** `src/features/create/create-advanced-panel.tsx`  
 **Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
 **Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; fidelity correction PR #188 is merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076` and the corrected Clear Composer/UI-074 shell is the repository-authoritative Create surface. At Phase 23 closure, production still used the prior deployed source; the current-production block above supersedes that historical deployment boundary.
 
@@ -127,14 +127,14 @@ Approved behavior:
 **Do not change:** Do not turn Create into a generic ComfyUI form, expose worker/provider/R2 implementation or add fake runtime behavior.
 
 ### Library
-**Route:** `/library`
+**Route:** `/library`  
 **Status:** APPROVED — Gallery Rail v0.3 / UI-075 with existing durable-media discovery, upload, Favorites, Collections, Delete and page-scoped batch organization contracts
-**Implementation:** `src/features/library/library-view.tsx`
+**Implementation:** `src/features/library/library-view.tsx`  
 **Collection management:** `src/features/library/library-collection-menu.tsx`, `src/features/library/library-collection-manager.tsx`
 **Batch selection:** `src/features/library/library-batch-selection.tsx`
 **Sort control:** `src/features/library/library-sort-toggle.tsx`
-**Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`
-**Shared browser upload transaction:** `src/features/library/library-upload-client.ts`
+**Persistent upload interactions:** `src/features/library/library-upload-button.tsx`, `src/features/library/library-drop-upload-surface.tsx`  
+**Shared browser upload transaction:** `src/features/library/library-upload-client.ts`  
 **Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `src/server/media/media-collections.ts`, `GET /api/media/assets`, `POST /api/media/assets/batch-delete`, `POST /api/media/assets/batch-favorite`, `GET|POST /api/media/collections`, `PATCH|DELETE /api/media/collections/[collectionId]`, single-asset collection membership routes, `POST /api/media/collections/[collectionId]/items/batch`, media-upload ticket/completion routes
 **Approved design artifacts:** `design/penpot/library-v0.1.svg`, `design/penpot/library-v0.2-upload.svg`
 **Phase 24 redesign:** APPROVED / IMPLEMENTED / VERIFIED / MERGED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548`; PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. The fresh 13-workflow exact-head acceptance set and both workflows attached to merged main passed. At Phase 24 closure it was not yet deployed; the current-production block above supersedes that closure-time deployment state.
@@ -199,10 +199,10 @@ Approved behavior:
 **Do not change:** Do not couple Library to legacy `studio_*` or expose temporary `generation_sources` as durable media. UI-060's approved Creatives/Uploads sections are origin-scoped views over the same durable media identity; do not split them into parallel asset stores or add a third section without an explicit product contract. Do not turn search/history ordering into a Saga-style filter console without an explicit product contract.
 
 ### Media Viewer
-**Route:** `/library/[assetId]`
+**Route:** `/library/[assetId]`  
 **Status:** APPROVED — UI-076 Media Register + Source Fold v0.2 / Phase 25 merged and merged-main verified, plus existing Viewer behavior contracts
 **Implementation:** `src/features/library/media-viewer.tsx`, `src/features/library/media-viewer-comparison.tsx`, `src/features/library/media-viewer-register.tsx`, `src/features/library/media-viewer.module.css`, `src/features/library/media-viewer-upscale-action.tsx`
-**Viewer actions:** `src/features/library/media-viewer-actions.tsx`
+**Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
 **Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts` (GET/PATCH/DELETE), `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/app/api/media/collections/route.ts`, collection membership route, `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-collections.ts`
 **Design authority:** historical `design/penpot/media-viewer-v0.1.svg`, `design/penpot/media-viewer-v0.2-compare-source.md`; current UI-076 authority is approved R&D `design/rd/media-viewer-register-fold-v02.md` at `639aef25e57e166be8d8b3d226b3e83930e05a25` plus `docs/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md`
 
@@ -255,7 +255,7 @@ Approved behavior:
 **Do not change:** Provider/worker/R2 identity stays internal. Viewer continuation and recipe reuse remain capability/current-validation derived. Favorite/Collections/Download/Rename remain contextual product actions; UI-033 Delete follows its explicit tombstone/purge contract; UI-056 Source stays contextual and exposes only its ordinary Viewer link. Do not expose raw R2 keys/signed URLs as durable product links, revive unavailable historical sources, or infer collection management/batch actions from the single-asset Viewer/comparison context.
 
 ### Activity
-**Route:** `/activity`
+**Route:** `/activity`  
 **Status:** APPROVED — Job Matrix + History Register v0.2 / UI-077; existing Retry / Run Again / Cancel / Upscale lifecycle contracts preserved
 **Implementation:** `src/app/(app)/activity/page.tsx`, `src/features/activity/activity-view.tsx`, `src/features/activity/activity-auto-refresh.tsx`, `src/features/activity/activity-retry-button.tsx`, `src/features/activity/activity-cancel-button.tsx`, `src/features/activity/activity-run-again-button.tsx`
 **Supporting:** `src/lib/api/generation-activity-contract.ts`, `src/lib/api/generation-retry-contract.ts`, `src/lib/api/generation-cancel-contract.ts`, `src/lib/api/generation-run-again-contract.ts`, `src/server/generation/generation-activity.ts`, `src/server/generation/retry-generation.ts`, `src/server/generation/run-again-generation.ts`, `src/server/generation/cancel-generation.ts`, `POST /api/generation/jobs/[jobId]/retry`, `POST /api/generation/jobs/[jobId]/run-again`, `POST /api/generation/jobs/[jobId]/cancel`, server-owned reconciliation
@@ -274,7 +274,7 @@ Approved behavior:
 **Do not change:** Activity remains a utility/history surface, not a worker/provider administration console. Keep failed Retry, successful Run Again and active Cancel eligibility distinct; do not add in-row recipe editing, provider replay/identity, or a shell-global client job store.
 
 ### Settings
-**Route:** `/settings`
+**Route:** `/settings`  
 **Status:** APPROVED — UI-078 Trust Register implemented / exact-head verified / fidelity reviewed / merged / merged-main verified / production-live via later cumulative release; existing account/admin security contracts preserved
 **Implementation:** `src/app/(app)/settings/page.tsx`
 **Account surface:** `src/features/account/account-settings.tsx`; password security: `src/features/account/account-password-form.tsx`
@@ -414,8 +414,8 @@ The approved `/` product home at this phase used the reviewed Phase 22 Kinetic P
 `/settings` now includes the implemented Data & Privacy account-lifecycle surface rather than a placeholder: truthful data-use/processing disclosure, account-data export status/action/download affordance, durable-media manifest explanation, and a visually separated destructive account-deletion flow with pending/progress treatment. The surface remains available within the established Settings authorization model and uses the real server-owned lifecycle APIs. Desktop and 390px configured verification passed. No fake training opt-out toggle is present.
 
 ## Historical UI-082 redesign cycle — planning and closure record
-**Tracker:** #305
-**Contract:** `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`
+**Tracker:** #305  
+**Contract:** `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`  
 **Historical cycle-start baseline:** `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7` / production `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
 
 At cycle start, approved routes and product behaviors remained live while their visual hierarchy was audited. Viewer was first because the then-current prompt-fallback H1 could dominate the first viewport and duplicated Prompt content already available in the Viewer register. Activity followed for the analogous prompt-headline hierarchy. Library, Create, Settings/Profile/Preferences, Admin, Landing and AppShell were reviewed for corresponding space-use, chrome-density and legibility failures; unchanged surfaces remained unchanged when the issue did not reproduce. Locked RenderLabBrand and Landing canonical quarter-circle remained outside the redesign boundary.
