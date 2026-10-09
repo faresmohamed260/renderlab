@@ -1,0 +1,70 @@
+name: Governance Checkpoint 1 Decision Diff Cleanup v2
+
+on:
+  push:
+    branches:
+      - docs/governance-hardening-checkpoint-1
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch and main without external actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init repo
+          cd repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=50 origin "${GITHUB_REF_NAME}" main
+          git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}"
+
+      - name: Rebuild UI decision edit from pristine main
+        run: |
+          set -euo pipefail
+          cd repo
+          git show origin/main:docs/ui/UI_DECISIONS.md > docs/ui/UI_DECISIONS.md
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/ui/UI_DECISIONS.md')
+          text = path.read_text()
+
+          old_header = "### UI-071 — Desktop application chrome is rail-only and Create drop copy aligns as one unit\n**Status:** Accepted / Implemented / Verified / Merged / Production Live\n**Date:** 2026-09-10\n"
+          new_header = "### UI-071 — Desktop application chrome is rail-only and Create drop copy aligns as one unit\n**Status:** Superseded in part / Implemented / Verified / Merged / Production Live\n**Date:** 2026-09-10\n**Supersession:** UI-074 supersedes UI-071's desktop-rail/mobile-dock shell geometry. UI-071's Create drag/drop copy-alignment correction remains accepted.\n"
+          if text.count(old_header) != 1:
+              raise SystemExit(f'UI-071 header occurrence mismatch: {text.count(old_header)}')
+          text = text.replace(old_header, new_header, 1)
+
+          old_boundary = "**Production boundary:** UI-071 first became production-live in exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5d609a7` at READY deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra`; guarded rollout run `34460364114` passed Landing plus `/create`, `/library`, `/activity` and `/settings` smoke without rollback. UI-071 remains included in the current accepted production application source `0173c4c5ba08360b6352331118abc81978cfa774` at READY deployment `dpl_3Smw21pn4PPQ1DzN7aaWmTuuf991`, now served with the approved Lab Matrix Landing. Automatic Git → Vercel deployment remains disabled."
+          new_boundary = "**Production boundary:** UI-071 first became production-live in exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5d609a7` at READY deployment `dpl_5U3URZkAjMqB3gZMS3pnXP7by2Ra`; guarded rollout run `34460364114` passed Landing plus `/create`, `/library`, `/activity` and `/settings` smoke without rollback. That rollout pointer is historical evidence. UI-074 later superseded UI-071's shell geometry, while the Create drag/drop copy-alignment correction remains part of the accepted product. Current production state is tracked by the repository's current-production authorities. Automatic Git → Vercel deployment remains disabled."
+          if text.count(old_boundary) != 1:
+              raise SystemExit(f'UI-071 boundary occurrence mismatch: {text.count(old_boundary)}')
+          text = text.replace(old_boundary, new_boundary, 1)
+
+          path.write_text(text)
+          PY
+
+          # Validate the actual semantic delta against authoritative main, not the
+          # temporary whitespace-stripped branch version being replaced.
+          git diff origin/main --check -- docs/ui/UI_DECISIONS.md
+          git diff --stat origin/main -- docs/ui/UI_DECISIONS.md
+          rm .github/workflows/governance-checkpoint-1-dechurn.yml
+          rm .github/workflows/governance-checkpoint-1-dechurn-v2.yml
+
+      - name: Commit semantic-only decision diff and remove helpers
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/ui/UI_DECISIONS.md .github/workflows/governance-checkpoint-1-dechurn.yml .github/workflows/governance-checkpoint-1-dechurn-v2.yml
+          git commit -m "docs: keep decision supersession diff semantic"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
