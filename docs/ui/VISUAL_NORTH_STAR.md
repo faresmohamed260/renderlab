@@ -256,9 +256,7 @@ Prefer:
 
 Any second animation runtime, smooth-scroll layer, canvas/WebGL scene, continuous pointer loop, or similarly material effect requires an explicit dependency/performance rationale in the implementation contract and must degrade cleanly.
 
-## First recommended visual R&D task
-The first future application of this north star should be a **Create visual R&D prototype**, because Create is RenderLab's signature authoring surface and provides the clearest place to establish the reusable interaction language.
+## Future visual R&D application
+For a future authorized redesign, apply this north star to the **named target surface** rather than treating any historical recommendation as the next project phase. Signature workspaces such as Create may justify an isolated visual R&D prototype when they are explicitly reopened, but the current roadmap/tracker owns sequencing.
 
-That task should produce an accepted concept/prototype before touching production Create code. Only after explicit approval should a Phase 23/Cycle 5 implementation contract be considered.
-
-This recommendation does not itself create Phase 23, begin Cycle 5, or authorize implementation/deployment.
+Produce an accepted concept/prototype before touching production code. Only after explicit approval should the immediate implementation contract be expanded under the repository's progressive-planning rules; this north-star document does not pre-authorize implementation or deployment.

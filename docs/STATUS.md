@@ -10,7 +10,7 @@ This page is the concise public status summary. `PROJECT.md` remains the detaile
 - Exact production application source: `d7571a230b3f1c5719552628db020823adb4da73`
 - READY Vercel deployment: `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` (`https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`)
 - Release qualification: Deployment Readiness `37930497565` and Release Candidate Matrix `37934750620` attempt 1 passed on the exact production SHA; the matrix accepted 23/23 configured children.
-- Every completed/verified/merged change on protected `main` is production-live in this cumulative release, including UI-082/ENT-010 closure reconciliation and `sharp@0.35.5`. Historical phase-level `NOT DEPLOYED` statements below retain their closure-time meaning; unfinished draft/research work is excluded.
+- All completed application/runtime changes through exact production application source `d7571a230b3f1c5719552628db020823adb4da73` are production-live in this cumulative release, including UI-082/ENT-010 closure reconciliation and `sharp@0.35.5`. Repository `main` may be newer because documentation- and verification-only commits are intentionally not redeployed. Historical phase-level `NOT DEPLOYED` statements below retain their closure-time meaning; unfinished draft/research work is excluded.
 - The immediately previous verified live rollback anchor is `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` at source `bcb2de305b15f4be15ed42674d22998c30b8c811`.
 - Automatic Git -> Vercel deployment remains disabled; production releases are qualified and cut over explicitly against exact commit SHAs.
 
