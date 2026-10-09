@@ -1583,14 +1583,16 @@ Phase 13 is complete under Cycle 3 — Beta Operations & Access Reliability. 13A
 
 **Desired outcome:** supported mailbox clients show the RenderLab mark beside the sender name, similar to established branded senders, while email authentication and unrelated `faresuniform.uk` mail remain safe.
 
-## Current Work
-**Current cycle:** Cycle 3 — Reliability, Creative Iteration & Capability Growth is `COMPLETE / VERIFIED THROUGH PHASE 18 / MERGED / PRODUCTION ROLLOUT VERIFIED`; Cycle 2 remains `COMPLETE / VERIFIED`.
-**Current phase:** Phase 18 — Image Upscale v0.1 is `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`; PR #111 was squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d`. Phase 17 remains `COMPLETE / VERIFIED / MERGED` and fully closed.
-**Next sequence:** preserve the verified Cycle 3 production baseline. Do not expand another capability without a new accepted phase/contract; future production application changes remain explicit operations and automatic Git deployment remains disabled.
-**Release reality:** exact application source `c493eaead6997cce1c22c6835c98177d6346ff41` is live at READY production deployment `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA`, with `https://renderlab.faresuniform.uk` as an active alias. Later docs-only `main` commits do not change the deployed application source.
-**Deployment boundary:** the Phase 16, Phase 17 and Phase 18 repository merges did not themselves deploy production. The later explicit Cycle 3 rollout is complete/verified and changed only the production application state; no Supabase schema change, Upscale worker redeployment, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep accompanied it.
-**Broader-beta boundary:** Phase 13 owns production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection remains separate.
-**Capability boundary:** Phase 18 productizes **Image Upscale v0.1** only: a fixed 2× durable-image Viewer continuation backed by the verified asynchronous worker operation. Restore remains deferred because the worker audit found no restoration endpoint; Inpainting/Outpainting, LoRA/model adapters and Director remain roadmap-only.
+## Historical Cycle 3 handoff snapshot — superseded
+**Historical snapshot:** This block records the handoff state after Cycle 3 / Phase 18. It is retained as closure evidence and is not current-work authority. Current production and whole-product state is recorded in the 2026-10-09 current-production block at the top of this file.
+
+**Cycle at snapshot:** Cycle 3 — Reliability, Creative Iteration & Capability Growth was `COMPLETE / VERIFIED THROUGH PHASE 18 / MERGED / PRODUCTION ROLLOUT VERIFIED`; Cycle 2 was `COMPLETE / VERIFIED`.
+**Phase at snapshot:** Phase 18 — Image Upscale v0.1 was `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE`; PR #111 was squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d`. Phase 17 was `COMPLETE / VERIFIED / MERGED` and fully closed.
+**Next-sequence note at snapshot:** preserve the verified Cycle 3 production baseline. Do not expand another capability without a new accepted phase/contract; future production application changes remain explicit operations and automatic Git deployment remains disabled.
+**Release reality at snapshot:** exact application source `c493eaead6997cce1c22c6835c98177d6346ff41` was live at READY production deployment `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA`, with `https://renderlab.faresuniform.uk` as an active alias. That rollout record is historical; it does not compete with the current-production block above.
+**Deployment boundary at snapshot:** the Phase 16, Phase 17 and Phase 18 repository merges did not themselves deploy production. The later explicit Cycle 3 rollout was complete/verified and changed only the production application state; no Supabase schema change, Upscale worker redeployment, reconciliation/maintenance scheduler activation, `pg_cron`/`pg_net`, telemetry-vendor configuration or production maintenance sweep accompanied it.
+**Broader-beta boundary at snapshot:** Phase 13 owned production-capable invite/recovery delivery, sender-domain authentication, templates, rate limits and live mailbox evidence. Free-plan leaked-password protection was separate.
+**Capability boundary at snapshot:** Phase 18 productized **Image Upscale v0.1** only: a fixed 2× durable-image Viewer continuation backed by the verified asynchronous worker operation. Restore remained deferred because the worker audit found no restoration endpoint; Inpainting/Outpainting, LoRA/model adapters and Director were roadmap-only.
 ## Session Handoff Rule
 Before ending meaningful work, keep this tracker aligned with verified repository state. Do not mark an item complete because it was planned, compiled or partially exercised.
 
@@ -1615,7 +1617,7 @@ No visual approval state changed in this phase. User-facing Cancel and broader s
 
 
 ## Cycle 3 Phase 15 — Generation Control & Maintenance
-**Status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED`.**  
+**Historical planning status: `CONTRACT ACCEPTED / IMPLEMENTATION NOT STARTED` (superseded by the COMPLETE / VERIFIED closure immediately below).**
 **Decision:** UI-055.  
 **Execution contract:** `PROJECT.md` Phase 15.
 
@@ -1626,18 +1628,18 @@ Verified planning baseline on `main` `aa633175d4f8ec278f3ad9181d0a0105d9328163` 
 - [x] Audit maintenance residue: 4 non-fixture temporary sources older than 24h (3 unreferenced, 1 referenced/protected), 0 upload sessions, 0 pending media purges.
 - [x] Preserve no-deployment/no-scheduler boundary; `pg_cron`/`pg_net` remain disabled.
 
-Implementation checklist:
-- [ ] Add `cancelling` lifecycle state and owner-scoped Cancel contract with claim-token/CAS serialization.
-- [ ] Prevent failover/finalization after accepted cancellation intent; reject cancellation once `persisting` wins.
-- [ ] Add bounded cancellation reconciliation and exact admission settlement.
-- [ ] Add Activity Cancel confirmation/cancelling states using maintained primitives; preserve Retry/View Result behavior.
-- [ ] Add bounded stale source/upload/pending-purge maintenance with reference-aware deletion safety.
-- [ ] Verify exhaustive mock race/fault matrix plus bounded exact-head FLUX and REDGraft live cancellation cases.
-- [ ] Verify affected responsive/browser/regression matrix and exact shared-resource cleanup.
-- [ ] Update authoritative architecture/screen docs from implemented reality before Phase 15 completion.
-- [ ] Keep production deployment and any scheduler/secret activation separate and explicitly authorized.
+Historical implementation checklist (all items completed by the verified closure immediately below):
+- [x] Add `cancelling` lifecycle state and owner-scoped Cancel contract with claim-token/CAS serialization.
+- [x] Prevent failover/finalization after accepted cancellation intent; reject cancellation once `persisting` wins.
+- [x] Add bounded cancellation reconciliation and exact admission settlement.
+- [x] Add Activity Cancel confirmation/cancelling states using maintained primitives; preserve Retry/View Result behavior.
+- [x] Add bounded stale source/upload/pending-purge maintenance with reference-aware deletion safety.
+- [x] Verify exhaustive mock race/fault matrix plus bounded exact-head FLUX and REDGraft live cancellation cases.
+- [x] Verify affected responsive/browser/regression matrix and exact shared-resource cleanup.
+- [x] Update authoritative architecture/screen docs from implemented reality before Phase 15 completion.
+- [x] Keep production deployment and any scheduler/secret activation separate and explicitly authorized.
 
-No Phase 15 implementation, production cleanup, deployment or scheduler activation is recorded by this planning change.
+At the time of this planning snapshot, no Phase 15 implementation, production cleanup, deployment or scheduler activation was recorded. The verified closure immediately below supersedes that planning-time implementation state while preserving the historical evidence.
 
 ## Cycle 3 Phase 15 — Generation Control & Maintenance — COMPLETE / VERIFIED
 **Verified implementation head:** `9cd0528ff50ef55a3ad3e09080980a71234af096`
