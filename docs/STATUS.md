@@ -37,6 +37,7 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Enterprise workstream stat
 - Feature-specific integration and lifecycle workflows
 - Deterministic GitHub Actions dependency installation from the checked-in lockfile
 - Immutable SHA-pinned external GitHub Actions with Dependabot maintenance
+- Credential-free documentation governance linting for metadata/schema, supersession, production-manifest mirrors, canonical status enums, closed-contract checklists, current-section uniqueness, local documentation references, and review-date policy
 - Server-owned job reconciliation, retry, cancellation, and persistence
 - Exact-commit production qualification and cleanup evidence
 

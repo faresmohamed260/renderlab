@@ -1,6 +1,6 @@
 # Documentation Index and Authority Taxonomy
 
-Updated: 2026-10-09
+Updated: 2026-10-10
 
 This file is the repository-wide navigation and documentation taxonomy for RenderLab. It explains what each class of document means, how apparently conflicting records are resolved, and what does or does not establish backlog authority. It does not replace the domain-specific authorities it points to.
 
@@ -27,6 +27,18 @@ Some documents legitimately change role over time:
 - An audit or assessment is **historical evidence** by default. A current authority may explicitly name a particular assessment as the current accepted finding or score; that reference does not make every older audit current.
 - Architecture documents may contain both normative rules and current-state registries. Use the section that is authoritative for the question being answered rather than treating the entire file as one undifferentiated state record.
 - A roadmap or tracker can contain historical rows for completed work. Its current-work/current-state section governs active sequencing; old rows remain evidence only.
+
+## Machine-readable governance metadata
+
+`docs/governance/documents.json` is the lint-managed metadata registry for RenderLab's high-authority documentation set. `docs/governance/document-metadata.schema.json` defines the accepted shape and enums. The registry records document kind, authority class, lifecycle, owner role, governance review date/interval, and explicit document-level supersession links.
+
+- `lastReviewed` means the document's governance role/lifecycle/ownership classification was reviewed on that date. It does **not** silently re-verify every historical evidence statement or external-provider fact inside the document.
+- Current managed documents have a bounded `reviewIntervalDays`; `npm run verify:docs-governance` fails when that governance review becomes stale.
+- Document-level `supersedes` / `supersededBy` links must be reciprocal. UI decision-level supersession is also linted from the explicit fields in `docs/ui/UI_DECISIONS.md`.
+- The managed registry is intentionally narrower than the complete historical corpus. Historical evidence remains governed by the taxonomy in this index until it is explicitly cataloged or archived; metadata absence does not promote historical text into current authority.
+- Physical history/archive separation is a separate repository-organization concern; this linting layer does not move files merely to satisfy metadata.
+
+The credential-free verifier also checks canonical structured status enums, closed-contract unchecked task boxes, duplicate normalized `Current ...` H2 sections, broken local documentation references, and consistency between `docs/production/current.json` and all five human production mirrors. The dedicated **Documentation Governance** workflow runs the same command on documentation/governance pull requests and pushes to `main` with `contents: read` only and no protected service credentials.
 
 ## Content-state vocabulary
 
@@ -147,6 +159,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `AGENTS.md` — repository-specific AI/development operating rules.
 - `PROJECT.md` — compact project handoff, product direction, major current-state context, and current-production pointer.
 - `docs/INDEX.md` — this taxonomy, source-precedence rule, and backlog semantics.
+- `docs/governance/documents.json` — machine-readable governance metadata for the high-authority document set; schema: `docs/governance/document-metadata.schema.json`.
 - `CHATGPT_PROJECT_INSTRUCTIONS.txt` — lightweight ChatGPT project bootstrap; it routes back to repository authorities and does not outrank them.
 
 ### Product, architecture, infrastructure, and operations

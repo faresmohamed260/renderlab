@@ -9,6 +9,7 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 **Reason:**  
 **Consequences:**  
 **Supersedes:** optional
+**Superseded by:** required when Status is Superseded
 
 ---
 
@@ -238,6 +239,7 @@ Records durable UI/UX decisions so independent AI sessions do not reverse them. 
 
 ### UI-038 — Cycle 2 roadmap incorporates closed-beta production feedback
 **Status:** Accepted
+**Supersedes:** UI-037
 **Decision:** The post-Phase-6 Cycle 2 roadmap is revised so Phase 7 begins with Create foundations before multi-reference: 7A Create Foundation, 7B Multi-reference Image Editing, 7C verified Director Video, 7D Video Quality/Resolution; Phase 8 remains Library v2; Phase 9 Activity v2; Phase 10 expands to Account, Admin & Closed-Beta Operations; Phase 11 becomes Brand & Launch Experience; final integrated release validation moves to Phase 12. LoRA/model-adapter library work is an accepted post-Cycle-2 direction rather than part of Cycle 2.
 **Reason:** Real production use exposed input-geometry, upload durability, prompt-reference, composer-density, hidden-workflow, admin, branding and visual-quality needs that are prerequisites or later-cycle concerns, not a single multi-reference feature.
 **Consequences:** UI-037's original Phase 6–11 ordering is superseded. Phase 7A must establish the Create input/media/composer foundation before later Phase 7 slices are considered complete. Admin and branding are now explicit later Cycle 2 work; LoRA remains future scope with architecture compatibility preserved now.
