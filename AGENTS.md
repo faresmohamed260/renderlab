@@ -190,8 +190,11 @@ Durable decisions must update the appropriate source-of-truth file. Examples:
 - important product/UI decision → `UI_DECISIONS.md`
 - frontend architecture → `FRONTEND_ARCHITECTURE.md`
 - infrastructure/resource/secret contract → `docs/architecture/INFRASTRUCTURE.md`
+- documentation governance metadata — `docs/governance/documents.json`
 
 Update existing authoritative documentation rather than creating competing sources of truth.
+
+For documentation/governance changes, run credential-free `npm run verify:docs-governance` before closure. `docs/governance/documents.json` owns machine-readable role/lifecycle/owner/review metadata for the high-authority document set; its `lastReviewed` date records governance classification/review, not automatic re-verification of every embedded historical fact or external provider claim.
 
 ## Production Release Documentation Closure
 Any production alias cutover is not repository-closed merely because deployment and smoke passed.

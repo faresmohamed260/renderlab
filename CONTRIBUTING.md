@@ -25,6 +25,7 @@ The supported local engineering boundary is Node 24.x + npm 11.x on native Windo
 ```bash
 npm run doctor
 npm run verify:text-policy
+npm run verify:docs-governance
 npm ci --no-audit --no-fund
 ```
 

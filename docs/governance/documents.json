@@ -1,0 +1,241 @@
+{
+  "$schema": "./document-metadata.schema.json",
+  "schemaVersion": 1,
+  "documents": [
+    {
+      "path": "AGENTS.md",
+      "kind": "entry-point",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "PROJECT.md",
+      "kind": "entry-point",
+      "authority": "current-state",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 30,
+      "supersedes": [
+        "docs/archive/PROJECT_PRE_CYCLE3_2026-09-03.md"
+      ],
+      "supersededBy": []
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "SECURITY.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "security-operations",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/INDEX.md",
+      "kind": "entry-point",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/STATUS.md",
+      "kind": "current-state-registry",
+      "authority": "current-state",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 30,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/architecture/INFRASTRUCTURE.md",
+      "kind": "current-state-registry",
+      "authority": "current-state",
+      "lifecycle": "current",
+      "ownerRole": "infrastructure",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 30,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/architecture/FRONTEND_ARCHITECTURE.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 60,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/architecture/PRODUCT_CAPABILITIES.md",
+      "kind": "current-state-registry",
+      "authority": "current-state",
+      "lifecycle": "current",
+      "ownerRole": "product",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 60,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
+      "kind": "current-state-tracker",
+      "authority": "current-state",
+      "lifecycle": "current",
+      "ownerRole": "product",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 30,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md",
+      "kind": "operations-runbook",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "security-operations",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 30,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/UI_MIGRATION.md",
+      "kind": "current-state-tracker",
+      "authority": "current-state",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 30,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/SCREEN_REGISTRY.md",
+      "kind": "current-state-registry",
+      "authority": "current-state",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 30,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/COMPONENT_CATALOG.md",
+      "kind": "current-state-registry",
+      "authority": "current-state",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 60,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/UI_DECISIONS.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 60,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/UI_SYSTEM.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/DESIGN_WORKFLOW.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/VISUAL_NORTH_STAR.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/BRAND_SYSTEM.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/CREATIVE_DEVELOPMENT.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/archive/PROJECT_PRE_CYCLE3_2026-09-03.md",
+      "kind": "historical-evidence",
+      "authority": "historical",
+      "lifecycle": "superseded",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": null,
+      "supersedes": [],
+      "supersededBy": [
+        "PROJECT.md"
+      ]
+    }
+  ]
+}
