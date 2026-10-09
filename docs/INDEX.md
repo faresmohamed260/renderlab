@@ -26,7 +26,20 @@ Some documents legitimately change role over time:
 - An accepted implementation contract is **normative policy** for its bounded execution scope while active. After the work closes or the contract is superseded, the contract is primarily **historical evidence**, except for constraints that a current authority explicitly carries forward.
 - An audit or assessment is **historical evidence** by default. A current authority may explicitly name a particular assessment as the current accepted finding or score; that reference does not make every older audit current.
 - Architecture documents may contain both normative rules and current-state registries. Use the section that is authoritative for the question being answered rather than treating the entire file as one undifferentiated state record.
-- A roadmap or tracker can contain historical rows for completed work. Its current-work/current-state section governs active sequencing; old rows remain evidence only.
+- A roadmap or tracker governs active sequencing only while work is current. Once a completed phase no longer contributes a present constraint, move its detailed journal/checklist to historical evidence rather than retaining it in mandatory current context.
+
+## History separation rule
+
+Current authority answers **what is true now**. Historical evidence answers **how we got here**. Do not make one mandatory file do both when the historical prose is no longer needed to decide today's change.
+
+- `PROJECT.md` is a compact current handoff, not the execution journal.
+- `docs/ui/UI_MIGRATION.md` is a current UI foundation/migration tracker, not the Phase 0+ chronology.
+- Detailed closed-phase chronology, exact run/artifact evidence and prior production pointers belong in `docs/audits/**`, completed contract records, or `docs/archive/**`.
+- Completed contracts are historical after closure unless a current authority explicitly carries a requirement forward. Their filesystem location does not make them current.
+- Archive records preserve closure-time wording; update current authorities instead of rewriting history when present state changes.
+- Archived checkboxes and plans do not create backlog authority.
+
+Governance hardening Checkpoint 6 preserved the prior mandatory journals verbatim as `docs/archive/PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md` and `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`, then reduced the current files to present-state handoffs.
 
 ## Machine-readable governance metadata
 
@@ -157,7 +170,7 @@ Use this map to find the appropriate current authority without treating every Ma
 ### Repository entry and handoff
 
 - `AGENTS.md` — repository-specific AI/development operating rules.
-- `PROJECT.md` — compact project handoff, product direction, major current-state context, and current-production pointer.
+- `PROJECT.md` — compact current project handoff, product direction, authority routing, and current-production pointer; detailed chronology is archived.
 - `docs/INDEX.md` — this taxonomy, source-precedence rule, and backlog semantics.
 - `docs/governance/documents.json` — machine-readable governance metadata for the high-authority document set; schema: `docs/governance/document-metadata.schema.json`.
 - `CHATGPT_PROJECT_INSTRUCTIONS.txt` — lightweight ChatGPT project bootstrap; it routes back to repository authorities and does not outrank them.
@@ -173,7 +186,7 @@ Use this map to find the appropriate current authority without treating every Ma
 
 ### UI and design system
 
-- `docs/ui/UI_MIGRATION.md` — current UI migration/foundation tracker and sequencing authority.
+- `docs/ui/UI_MIGRATION.md` — current-only UI foundation/migration tracker; closed phase journals are archived rather than retained as active context.
 - `docs/ui/SCREEN_REGISTRY.md` — current screen/route/viewport registry and UI production-state record.
 - `docs/ui/COMPONENT_CATALOG.md` — current approved shared-component registry.
 - `docs/ui/UI_DECISIONS.md` — accepted UI decision/precedent log; supersession statements inside it control older decisions.
@@ -188,7 +201,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/production/current.json` — canonical machine-readable current-production application/deployment record.
 - `docs/STATUS.md` — concise current status/deployment summary validated against the production manifest; detailed domain authorities still govern their own non-production facts.
 - `docs/audits/**` — evidence and assessments. A current authority must explicitly identify an audit/assessment if its finding is meant to represent current accepted state.
-- `docs/archive/**` — historical evidence only.
+- `docs/archive/**` — historical evidence only, including the pre-Checkpoint-6 Project/UI migration journal snapshots listed in `docs/archive/README.md`.
 - `docs/readme/**` — README media/supporting assets, not governance authority.
 - Research/source-list/reference documents remain advisory unless a normative/current authority explicitly promotes a finding.
 

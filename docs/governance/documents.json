@@ -22,7 +22,8 @@
       "lastReviewed": "2026-10-09",
       "reviewIntervalDays": 30,
       "supersedes": [
-        "docs/archive/PROJECT_PRE_CYCLE3_2026-09-03.md"
+        "docs/archive/PROJECT_PRE_CYCLE3_2026-09-03.md",
+        "docs/archive/PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md"
       ],
       "supersededBy": []
     },
@@ -133,7 +134,9 @@
       "ownerRole": "product-design",
       "lastReviewed": "2026-10-09",
       "reviewIntervalDays": 30,
-      "supersedes": [],
+      "supersedes": [
+        "docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md"
+      ],
       "supersededBy": []
     },
     {
@@ -235,6 +238,32 @@
       "supersedes": [],
       "supersededBy": [
         "PROJECT.md"
+      ]
+    },
+    {
+      "path": "docs/archive/PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md",
+      "kind": "historical-evidence",
+      "authority": "historical",
+      "lifecycle": "superseded",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": null,
+      "supersedes": [],
+      "supersededBy": [
+        "PROJECT.md"
+      ]
+    },
+    {
+      "path": "docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md",
+      "kind": "historical-evidence",
+      "authority": "historical",
+      "lifecycle": "superseded",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-10-09",
+      "reviewIntervalDays": null,
+      "supersedes": [],
+      "supersededBy": [
+        "docs/ui/UI_MIGRATION.md"
       ]
     }
   ]

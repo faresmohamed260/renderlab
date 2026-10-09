@@ -273,7 +273,8 @@ For engineering work, start with:
 6. [Durable UI decisions](docs/ui/UI_DECISIONS.md)
 7. [Visual north star](docs/ui/VISUAL_NORTH_STAR.md)
 8. [AI-agent development instructions](AGENTS.md)
-9. [Detailed project handoff/history](PROJECT.md)
+9. [Current project handoff](PROJECT.md)
+10. [Historical evidence index](docs/archive/README.md)
 
 ## Known limitations
 
