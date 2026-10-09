@@ -1,6 +1,9 @@
 # Account & Settings Capability Roadmap
 
-**Status:** ACCEPTED ACTIVE ROADMAP / #215–#219 PRODUCTION-LIVE / #223 PRODUCTION-LIVE / #220 INITIAL CREATE-DEFAULT SLICE PRODUCTION-LIVE / #220 FOLLOW-ONS DEFERRED / #221 RESEARCH CHECKPOINT COMPLETE + IMPLEMENTATION DEFERRED
+**Roadmap state:** `ACTIVE`
+**Approval:** `ACCEPTED`
+**Current deployment:** #215–#219, #223, and #220's initial Create-default slice are `PRODUCTION-LIVE`.
+**Deferred scope:** #220 follow-ons remain `DEFERRED`; #221 research checkpoint is `COMPLETE` and passkey implementation remains `DEFERRED`.
 **Current execution:** #216 Session Controls, #217 MFA/privileged step-up, #218 secure sign-in-email change, #219 Data & Privacy lifecycle, #223 Profile & credential UX, and #220's initial durable Create-default slice are implemented and included in the cumulative 2026-10-09 production release. Exact deployment authority is maintained in the current-production blocks of `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md`; this roadmap does not maintain a separate production pointer. #220 follow-ons remain deferred. #221 completed a read-only research checkpoint on 2026-09-17, recorded in `docs/architecture/PASSKEY_WEBAUTHN_RESEARCH.md`: current RenderLab/Supabase architecture is compatible, but implementation is deferred because Supabase still labels passkeys experimental and the promotion gate still requires live hosted RP-config verification, stable RP-domain acceptance, assurance/AAL evidence, recovery and notification proof, and configured browser/device acceptance. No hosted passkey/Auth mutation occurred as part of that research checkpoint.
 **Tracker:** #213
 **Roadmap merge:** PR #214 / `74829e0cdad8edf423863efbbc1af98ad0f9ce79`  

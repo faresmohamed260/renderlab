@@ -38,7 +38,79 @@ Use these terms when writing or interpreting repository documentation:
 - **Future intent** — proposed, planned, deferred, or recommended work. Future intent is not evidence that implementation exists, is accepted, is merged, or is deployed.
 - **Advisory/reference** — explanatory or research material that can inform work but cannot override implementation reality, current-state authorities, or normative decisions.
 
-These content-state labels are independent from workflow lifecycle labels such as implementation/verification/merge/deployment status. This checkpoint does **not** redefine those lifecycle labels.
+These content-state labels are independent from workflow lifecycle labels such as implementation/verification/merge/deployment status.
+
+## Canonical lifecycle/status vocabulary
+
+Current-state authorities must separate **execution**, **repository**, **verification**, **deployment**, and **UI/design maturity** instead of chaining unrelated terms into one ambiguous status phrase. Historical records may retain their original wording when they are clearly identified as historical or closure-time evidence.
+
+### Execution state
+
+Use one execution state for a bounded work item:
+
+- `PLANNED` — accepted scope exists and implementation has not started.
+- `IN PROGRESS` — implementation or acceptance work is actively underway.
+- `IMPLEMENTED` — the intended change exists at a candidate repository state, but required acceptance/closure is not yet complete.
+- `COMPLETE` — the bounded scope and its required acceptance work are closed.
+- `DEFERRED` — accepted future intent exists, but execution is intentionally inactive.
+- `SUPERSEDED` — a newer authority replaces this work item or state for current interpretation.
+- `CANCELLED` — the work item was intentionally abandoned and is not a current plan.
+
+`COMPLETE` is an execution/closure statement only. It does not imply merge or deployment.
+
+### Repository state
+
+Use repository state separately when it is relevant:
+
+- `UNMERGED` — the candidate exists only outside protected `main`.
+- `MERGED` — the accepted change is present on protected `main`.
+
+`MERGED` does not imply production deployment.
+
+### Verification qualifiers
+
+Verification terms describe evidence, not lifecycle position:
+
+- `EXACT-HEAD VERIFIED` — required acceptance checks passed on the exact candidate head.
+- `MERGED-MAIN VERIFIED` — required post-merge checks passed on the exact protected-`main` merge SHA.
+- `PRODUCTION-VERIFIED` — required acceptance evidence was observed against the exact current production source/environment.
+- `HUMAN-REVIEWED` — required human evidence review passed.
+- `USER-APPROVED` — the user explicitly approved the relevant design/product result.
+- `DOCUMENTATION-SYNC VERIFIED` — the release documentation synchronization gate passed.
+
+Avoid bare `VERIFIED` in new **current-state status labels** when the evidence scope can be stated precisely. Historical text may preserve the older shorthand.
+
+### Deployment state
+
+Use one deployment state only when deployment is meaningful for the work item:
+
+- `NOT DEPLOYED` — an application/runtime change is not included in the current production application source.
+- `PRODUCTION-LIVE` — the exact current production application source includes the application/runtime change and the release was verified.
+- `NOT APPLICABLE` — the work item is documentation, research, CI/tooling, or another change for which application deployment is not a meaningful lifecycle step.
+
+`PRODUCTION-VERIFIED` and `PRODUCTION-LIVE` are different: the former describes evidence; the latter describes current application deployment state. A workstream can also have live external resources (for example a worker or recovery bucket) without making its RenderLab application change `PRODUCTION-LIVE`; name that resource-specific live state in prose.
+
+### UI/design maturity is separate
+
+`APPROVED`, `LOCKED`, and comparable UI/design labels describe accepted design maturity or change control, not implementation, merge, or deployment. `docs/ui/SCREEN_REGISTRY.md` owns its screen-maturity vocabulary. Never infer `PRODUCTION-LIVE` from `APPROVED` or `LOCKED`.
+
+### Status-writing rules
+
+For new or edited current-state blocks:
+
+1. State only the dimensions that apply, preferably as explicit fields such as `Execution:`, `Repository:`, `Verification:`, and `Deployment:`.
+2. Do not use `LIVE` alone for the RenderLab application; use `PRODUCTION-LIVE`. For a worker/provider/resource, name the resource explicitly.
+3. Do not use `NOT DEPLOYED by that workstream` as current deployment state. That phrase is closure provenance; label it `Closure-time status` and use the current-production authority for present deployment truth.
+4. Do not treat `MERGED-MAIN VERIFIED`, `HUMAN-REVIEWED`, `USER-APPROVED`, or `DOCUMENTATION-SYNC VERIFIED` as lifecycle stages.
+5. Preserve historical wording when changing it would rewrite provenance; add a current or closure-time label rather than silently changing what was true at the time.
+6. When a later cumulative release supersedes an earlier `NOT DEPLOYED` closure record, keep the closure record historical and state present deployment separately as `PRODUCTION-LIVE`.
+7. GitHub Issue open/closed state is not a lifecycle authority unless a repository authority explicitly delegates that bounded meaning.
+
+Canonical examples:
+
+- `Execution: COMPLETE; Repository: MERGED; Verification: EXACT-HEAD VERIFIED, MERGED-MAIN VERIFIED; Deployment: NOT DEPLOYED.`
+- `Execution: COMPLETE; Repository: MERGED; Verification: PRODUCTION-VERIFIED; Deployment: PRODUCTION-LIVE.`
+- `Execution: DEFERRED.`
 
 ## Repository source precedence
 
