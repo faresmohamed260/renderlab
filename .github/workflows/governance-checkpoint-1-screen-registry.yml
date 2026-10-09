@@ -1,0 +1,125 @@
+name: Governance Checkpoint 1 Screen Registry Correction
+
+on:
+  push:
+    branches:
+      - docs/governance-hardening-checkpoint-1
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch without external actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init repo
+          cd repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${GITHUB_REF_NAME}"
+          git checkout -B "${GITHUB_REF_NAME}" FETCH_HEAD
+
+      - name: Correct stale screen-registry lifecycle labels
+        run: |
+          set -euo pipefail
+          cd repo
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/ui/SCREEN_REGISTRY.md')
+          text = path.read_text()
+
+          replacements = [
+              (
+                  "**Verification:** exact head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3`, Account Profile Credential `35062679531`, artifact `10432827873` (`sha256:79e27a2998adf76d3150e1a296cfd87bdbe98eb35948468bf366a2deaf50583c`), human-reviewed at desktop and reduced-motion 390px. Production deployment remains separate.",
+                  "**Verification:** exact head `e49c0d366a9aafb0ff0194692c0b6d915fc480b3`, Account Profile Credential `35062679531`, artifact `10432827873` (`sha256:79e27a2998adf76d3150e1a296cfd87bdbe98eb35948468bf366a2deaf50583c`), human-reviewed at desktop and reduced-motion 390px. At implementation closure, production deployment remained separate; this surface is production-live per the current-production block above.",
+              ),
+              (
+                  "**Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; fidelity correction PR #188 is merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076` and the corrected Clear Composer/UI-074 shell is the repository-authoritative Create surface. Production remains on the prior deployed source until a separately authorized rollout.",
+                  "**Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; fidelity correction PR #188 is merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076` and the corrected Clear Composer/UI-074 shell is the repository-authoritative Create surface. At Phase 23 closure, production still used the prior deployed source; the current-production block above supersedes that historical deployment boundary.",
+              ),
+              (
+                  "## Cycle 4 Phase 19 shared screen treatment\nCreate, Library/Viewer, Activity, Settings and Admin continue using their existing routes and feature ownership but now inherit the UI-062 Kinetic Precision `AppShell`: atmospheric spectral canvas, floating dimensional rail/topbar, morphing active navigation, tactile navigation response and floating mobile dock. Phase 19 does not claim feature-internal redesign; Create internal composition remains Phase 20, Library/Viewer internals Phase 21, and Activity/Settings internals Phase 22. Exact reviewed shell head `ea21d56e4ac643ec32d586759fc48c2ef165e44b`.",
+                  "## Historical Cycle 4 Phase 19 shared screen treatment\nAt Phase 19, Create, Library/Viewer, Activity, Settings and Admin kept their existing routes and feature ownership while inheriting the then-current UI-062 Kinetic Precision `AppShell`: atmospheric spectral canvas, floating dimensional rail/topbar, morphing active navigation, tactile navigation response and floating mobile dock. That shell geometry is historical and was later superseded by UI-074; current shell authority is the Application Shell section above. Phase 19 did not claim feature-internal redesign; Create internal composition remained Phase 20, Library/Viewer internals Phase 21, and Activity/Settings internals Phase 22. Exact reviewed shell head `ea21d56e4ac643ec32d586759fc48c2ef165e44b`.",
+              ),
+              (
+                  "## Cycle 4 Phase 22 screen extensions — VERIFIED ON IMPLEMENTATION HEAD / MERGE PENDING",
+                  "## Historical Cycle 4 Phase 22 screen extensions — implementation-head evidence",
+              ),
+              (
+                  "Merge and merged-main verification remain pending; production deployment is not authorized.",
+                  "At this Phase 22 evidence snapshot, merge and merged-main verification were still pending and production deployment was not authorized. Later merged/current screen authority is recorded by the current screen sections and current-production block above.",
+              ),
+              (
+                  "## UI-082 active redesign cycle — planning checkpoint 2026-09-20",
+                  "## Historical UI-082 redesign cycle — planning and closure record",
+              ),
+              (
+                  "**Cycle-start baseline:** `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7` / production `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.",
+                  "**Historical cycle-start baseline:** `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7` / production `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.",
+              ),
+              (
+                  "Current approved routes and product behaviors remain live while their visual hierarchy is audited. Viewer is first because the current prompt-fallback H1 can dominate the first viewport and duplicates Prompt content already available in the Viewer register. Activity is next for the analogous prompt-headline hierarchy. Library, Create, Settings/Profile/Preferences, Admin, Landing and AppShell are reviewed for corresponding space-use, chrome-density and legibility failures; unchanged surfaces remain unchanged when the issue does not reproduce. Locked RenderLabBrand and Landing canonical quarter-circle remain outside the redesign boundary.",
+                  "At cycle start, approved routes and product behaviors remained live while their visual hierarchy was audited. Viewer was first because the then-current prompt-fallback H1 could dominate the first viewport and duplicated Prompt content already available in the Viewer register. Activity followed for the analogous prompt-headline hierarchy. Library, Create, Settings/Profile/Preferences, Admin, Landing and AppShell were reviewed for corresponding space-use, chrome-density and legibility failures; unchanged surfaces remained unchanged when the issue did not reproduce. Locked RenderLabBrand and Landing canonical quarter-circle remained outside the redesign boundary.",
+              ),
+              (
+                  "**Status:** COMPLETE / VERIFIED ON CHECKPOINT BRANCH",
+                  "**Status:** COMPLETE / VERIFIED / MERGED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE",
+                  3,
+              ),
+              (
+                  "**Status:** COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED\n**Design checkpoint:** `design/rd/activity-library-hierarchy-v01.md`",
+                  "**Status:** COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE\n**Design checkpoint:** `design/rd/activity-library-hierarchy-v01.md`",
+              ),
+              (
+                  "**Status:** COMPLETE / VERIFIED ON EXACT CANDIDATE",
+                  "**Status:** COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE",
+              ),
+              (
+                  "Production is now live from exact source `986aab269551a4c6e7d3af3a259cfa955c975d91` / READY deployment `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR`; final documentation synchronization remains the repository closure gate.",
+                  "At UI-082 rollout closure, production became live from exact source `986aab269551a4c6e7d3af3a259cfa955c975d91` / READY deployment `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR`; that deployment pointer is historical. The current-production block above records the superseding production application source and deployment.",
+              ),
+          ]
+
+          for entry in replacements:
+              old, new, *rest = entry
+              expected = rest[0] if rest else 1
+              actual = text.count(old)
+              if actual != expected:
+                  raise SystemExit(f'expected {expected} occurrence(s), found {actual}: {old[:100]!r}')
+              text = text.replace(old, new, expected)
+
+          forbidden = [
+              'MERGE PENDING',
+              'UI-082 active redesign cycle',
+              'COMPLETE / VERIFIED ON CHECKPOINT BRANCH',
+              'Production remains on the prior deployed source until a separately authorized rollout.',
+              'Production deployment remains separate.',
+              'Production is now live from exact source `986aab269551a4c6e7d3af3a259cfa955c975d91`',
+          ]
+          for needle in forbidden:
+              if needle in text:
+                  raise SystemExit(f'stale screen-registry signature remains: {needle}')
+
+          path.write_text(text)
+          PY
+          git diff --check
+          git diff -- docs/ui/SCREEN_REGISTRY.md
+          rm .github/workflows/governance-checkpoint-1-screen-registry.yml
+
+      - name: Commit correction and remove helper
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/ui/SCREEN_REGISTRY.md .github/workflows/governance-checkpoint-1-screen-registry.yml
+          git commit -m "docs: mark stale screen records historical"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
