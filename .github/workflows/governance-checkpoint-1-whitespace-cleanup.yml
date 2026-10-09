@@ -1,0 +1,106 @@
+name: Governance Checkpoint 1 Whitespace Cleanup
+
+on:
+  push:
+    branches:
+      - docs/governance-hardening-checkpoint-1
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch and main without external actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init repo
+          cd repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=50 origin "${GITHUB_REF_NAME}" main
+          git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}"
+
+      - name: Restore original whitespace on semantically unchanged lines
+        run: |
+          set -euo pipefail
+          cd repo
+          python - <<'PY'
+          from difflib import SequenceMatcher
+          from pathlib import Path
+          import subprocess
+
+          paths = [
+              'docs/STATUS.md',
+              'docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md',
+              'docs/ui/DESIGN_WORKFLOW.md',
+              'docs/ui/SCREEN_REGISTRY.md',
+              'docs/ui/UI_DECISIONS.md',
+              'docs/ui/UI_MIGRATION.md',
+              'docs/ui/VISUAL_NORTH_STAR.md',
+          ]
+
+          for rel in paths:
+              main_text = subprocess.check_output(
+                  ['git', 'show', f'origin/main:{rel}'], text=True
+              )
+              branch_path = Path(rel)
+              branch_text = branch_path.read_text()
+
+              main_lines = main_text.splitlines(keepends=True)
+              branch_lines = branch_text.splitlines(keepends=True)
+              main_norm = [line.rstrip('\r\n').rstrip() for line in main_lines]
+              branch_norm = [line.rstrip('\r\n').rstrip() for line in branch_lines]
+
+              matcher = SequenceMatcher(None, main_norm, branch_norm, autojunk=False)
+              restored = list(branch_lines)
+              for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+                  if tag != 'equal':
+                      continue
+                  for offset in range(i2 - i1):
+                      restored[j1 + offset] = main_lines[i1 + offset]
+
+              branch_path.write_text(''.join(restored))
+          PY
+
+          # The final semantic delta against authoritative main must be whitespace-clean.
+          git diff origin/main --check -- \
+            docs/STATUS.md \
+            docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md \
+            docs/ui/DESIGN_WORKFLOW.md \
+            docs/ui/SCREEN_REGISTRY.md \
+            docs/ui/UI_DECISIONS.md \
+            docs/ui/UI_MIGRATION.md \
+            docs/ui/VISUAL_NORTH_STAR.md
+          git diff --stat origin/main -- \
+            docs/STATUS.md \
+            docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md \
+            docs/ui/DESIGN_WORKFLOW.md \
+            docs/ui/SCREEN_REGISTRY.md \
+            docs/ui/UI_DECISIONS.md \
+            docs/ui/UI_MIGRATION.md \
+            docs/ui/VISUAL_NORTH_STAR.md
+          rm .github/workflows/governance-checkpoint-1-whitespace-cleanup.yml
+
+      - name: Commit semantic-only checkpoint diff and remove helper
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            docs/STATUS.md \
+            docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md \
+            docs/ui/DESIGN_WORKFLOW.md \
+            docs/ui/SCREEN_REGISTRY.md \
+            docs/ui/UI_DECISIONS.md \
+            docs/ui/UI_MIGRATION.md \
+            docs/ui/VISUAL_NORTH_STAR.md \
+            .github/workflows/governance-checkpoint-1-whitespace-cleanup.yml
+          git commit -m "docs: remove checkpoint formatting churn"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
