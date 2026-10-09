@@ -2091,7 +2091,7 @@ Production rollout is complete: exact source `a1f3cdcf095c9088fe3c2c0eebafaf52b5
 The Settings Data & Privacy lifecycle slice is implemented and verified. The production UI now reflects real export/delete behavior, uses existing shared controls, preserves desktop/mobile usability, and does not imply unsupported provider-log deletion or model-training controls. Exact head `886a4722826b268ad156eda22e817002471cd04c` passed UI Shell Validation plus the configured Account Data Lifecycle desktop/mobile evidence. This closure does not authorize deployment.
 
 ## UI-082 media-first hierarchy / whole-site legibility correction — 2026-09-20
-**Status: `CHECKPOINT 6 PRODUCTION LIVE / DOCUMENTATION SYNC PENDING`.**
+**Status: `COMPLETE / VERIFIED / MERGED / PRODUCTION LIVE / DOCUMENTATION SYNC VERIFIED`.**
 
 - Tracker #305 records the user-authorized correction.
 - Cycle-start baseline: `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`; production at cycle start was `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
@@ -2132,4 +2132,4 @@ The Settings Data & Privacy lifecycle slice is implemented and verified. The pro
 - [x] Exact-candidate rendered review covered Landing, AppShell, Create, Library, Viewer, Activity, Settings/account and Admin across desktop, 390px and changed-path reduced-motion states. No prompt-as-title regression, horizontal overflow, action-reachability defect or accidental hierarchy drift was observed. `COMPONENT_CATALOG.md` requires no change because no reusable component contract changed.
 - [x] **Checkpoint 6 merge/production — PRODUCTION LIVE.** PR #310 squash-merged as `986aab269551a4c6e7d3af3a259cfa955c975d91`; merged-main Engineering Quality `35547496591`, UI Shell Validation `35547496574`, and Activity Cancel Visual `35547496556` passed.
 - [x] Deployment `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR` was built from exact pristine `986aab269551a4c6e7d3af3a259cfa955c975d91` and is READY. Final cutover `35548015570` assigned `renderlab.faresuniform.uk`, passed root/Create/Library/Activity/Settings/Password/Profile/Preferences plus expected signed-out Admin 404 smoke, and skipped rollback. Bounded Vercel inspection found no runtime-error clusters and no error/fatal logs.
-- [ ] This docs branch updates the four authoritative production records to `986aab269551a4c6e7d3af3a259cfa955c975d91`; after merge, run Production Documentation Sync with that exact SHA to close UI-082.
+- [x] Production Documentation Sync run `35548387370` passed on documentation commit `d1350f73ca54faeec84355e31925021f1addb549` with expected production SHA `986aab269551a4c6e7d3af3a259cfa955c975d91`, closing UI-082. Later cumulative releases supersede that historical deployment while preserving the completed UI-082 product state.
