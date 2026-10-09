@@ -199,7 +199,7 @@ For documentation/governance changes, run credential-free `npm run verify:docs-g
 ### History separation
 Current authority files must optimize for present state, binding rules and explicitly active work. Do not append closed phase journals or run-by-run closure evidence back into `PROJECT.md` or `docs/ui/UI_MIGRATION.md`.
 
-- Preserve detailed closure evidence under `docs/audits/**`, completed contract records, or `docs/archive/**` as appropriate.
+- Preserve detailed closure evidence under `docs/audits/**` or `docs/archive/**`; move completed bounded architecture/UI execution contracts to `docs/history/contracts/**` once current authorities carry forward any still-binding constraints.
 - After a bounded contract closes, treat it as historical evidence unless a current authority explicitly carries a constraint forward.
 - Archived checklists are not backlog authority; an unchecked historical item is not active work unless a current tracker/accepted contract explicitly promotes it.
 - When a current tracker closes a phase, retain only the current outcome/constraint needed for future decisions and move detailed chronology out of mandatory context.

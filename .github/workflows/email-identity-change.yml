@@ -16,7 +16,6 @@ on:
       - "scripts/lib/configured-test-account.mjs"
       - "scripts/verify-email-identity-change.mjs"
       - ".github/workflows/email-identity-change.yml"
-      - "docs/architecture/IDENTITY_SIGN_IN_METHOD_IMPLEMENTATION_CONTRACT.md"
   workflow_dispatch:
 
 permissions:

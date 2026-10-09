@@ -67,7 +67,7 @@ Approved behavior:
 **Route:** `/`
 **UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** merged Lab Matrix redesign.
 **Implementation:** `src/app/page.tsx`, `src/features/landing/landing-experience.tsx`, `src/features/landing/landing-experience.module.css`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`
-**Design / implementation authority:** `docs/ui/LANDING_BRAND_RD.md`, `docs/ui/LANDING_IMPLEMENTATION_CONTRACT.md`, `docs/ui/LANDING_MEDIA_SOURCES.md`
+**Current design authority:** `docs/ui/LANDING_BRAND_RD.md`, `docs/ui/LANDING_MEDIA_SOURCES.md`. Historical implementation evidence: `docs/history/contracts/ui/LANDING_IMPLEMENTATION_CONTRACT.md`
 
 **Purpose:** Public product home for verified RenderLab capability and truthful invitation-only Closed Beta access without application-shell chrome or public self-admission.
 
@@ -91,7 +91,7 @@ Approved behavior:
 **Implementation:** `src/features/create/create-workspace.tsx`  
 **Supporting:** `src/features/create/create-advanced-panel.tsx`  
 **Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
-**Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; fidelity correction PR #188 is merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076` and the corrected Clear Composer/UI-074 shell is the repository-authoritative Create surface. At Phase 23 closure, production still used the prior deployed source; the current-production block above supersedes that historical deployment boundary.
+**Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/history/contracts/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; fidelity correction PR #188 is merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076` and the corrected Clear Composer/UI-074 shell is the repository-authoritative Create surface. At Phase 23 closure, production still used the prior deployed source; the current-production block above supersedes that historical deployment boundary.
 
 **Purpose:** Start and continue creative operations from one task-oriented workspace.
 
@@ -144,7 +144,7 @@ Approved behavior:
 **Shared browser upload transaction:** `src/features/library/library-upload-client.ts`  
 **Supporting:** `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-upload-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-uploads.ts`, `src/server/media/media-collections.ts`, `GET /api/media/assets`, `POST /api/media/assets/batch-delete`, `POST /api/media/assets/batch-favorite`, `GET|POST /api/media/collections`, `PATCH|DELETE /api/media/collections/[collectionId]`, single-asset collection membership routes, `POST /api/media/collections/[collectionId]/items/batch`, media-upload ticket/completion routes
 **Approved design artifacts:** `design/penpot/library-v0.1.svg`, `design/penpot/library-v0.2-upload.svg`
-**Phase 24 lifecycle:** Execution=`COMPLETE`; Repository=`MERGED`; Verification=`EXACT-HEAD VERIFIED`, `MERGED-MAIN VERIFIED`; Deployment=`PRODUCTION-LIVE` via the later cumulative release. **UI maturity:** `APPROVED`. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548`; PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. The fresh 13-workflow exact-head acceptance set and both workflows attached to merged main passed. At Phase 24 closure it was not yet deployed; the current-production block above supersedes that closure-time deployment state.
+**Phase 24 lifecycle:** Execution=`COMPLETE`; Repository=`MERGED`; Verification=`EXACT-HEAD VERIFIED`, `MERGED-MAIN VERIFIED`; Deployment=`PRODUCTION-LIVE` via the later cumulative release. **UI maturity:** `APPROVED`. Authority: Gallery Rail v0.3 R&D head `ba842e919305e07262ae95c81b3c2063a455b54d`, artifact `10296866215`; production contract: `docs/history/contracts/ui/LIBRARY_GALLERY_RAIL_IMPLEMENTATION_CONTRACT.md`; definitive implementation head `d0a6f66937986ace109e301913f17410a8e95548`; PR #194 merge `af88b93dcb4fcbca502b42f9ea1186192af48a6a`. The fresh 13-workflow exact-head acceptance set and both workflows attached to merged main passed. At Phase 24 closure it was not yet deployed; the current-production block above supersedes that closure-time deployment state.
 
 **Purpose:** Find, inspect, reuse and continue from durable RenderLab media. Library is a reusable creative-asset workspace, not merely generation history.
 
@@ -211,7 +211,7 @@ Approved behavior:
 **Implementation:** `src/features/library/media-viewer.tsx`, `src/features/library/media-viewer-comparison.tsx`, `src/features/library/media-viewer-register.tsx`, `src/features/library/media-viewer.module.css`, `src/features/library/media-viewer-upscale-action.tsx`
 **Viewer actions:** `src/features/library/media-viewer-actions.tsx`  
 **Supporting:** `src/app/library/[assetId]/page.tsx`, `src/app/page.tsx`, `src/app/api/media/assets/[assetId]/route.ts` (GET/PATCH/DELETE), `src/app/api/media/assets/[assetId]/favorite/route.ts`, `src/app/api/media/assets/[assetId]/download/route.ts`, `src/app/api/media/collections/route.ts`, collection membership route, `src/lib/api/media-assets-contract.ts`, `src/lib/api/media-collections-contract.ts`, `src/lib/capabilities/generation.ts`, `src/server/media/media-assets.ts`, `src/server/media/media-collections.ts`
-**Design authority:** historical `design/penpot/media-viewer-v0.1.svg`, `design/penpot/media-viewer-v0.2-compare-source.md`; current UI-076 authority is approved R&D `design/rd/media-viewer-register-fold-v02.md` at `639aef25e57e166be8d8b3d226b3e83930e05a25` plus `docs/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md`
+**Design authority:** historical `design/penpot/media-viewer-v0.1.svg`, `design/penpot/media-viewer-v0.2-compare-source.md`; current UI-076 authority is approved R&D `design/rd/media-viewer-register-fold-v02.md` at `639aef25e57e166be8d8b3d226b3e83930e05a25` plus `docs/history/contracts/ui/MEDIA_VIEWER_REGISTER_FOLD_IMPLEMENTATION_CONTRACT.md`
 
 **UI-076 / Phase 25 closure — 2026-09-13:** The old permanent Viewer sidebar is replaced by the approved Media Register + Source Fold v0.2 system. Quick actions own Favorite/Download; Manage owns Collections/Rename/Delete; Prompt/Details/Manage/Compare stay attached to the local register; Source Fold keeps Result primary, reveals Source horizontally on wide layouts and stacks Result→Source on narrow layouts; native video, continuation, Reuse Settings, Upscale, ownership and durable-media contracts remain intact. Exact implementation head `3e468ad0abd4f7b6645e86e298ce53a3a8ecf034` passed the full affected acceptance set; dedicated Viewer run `34717466185` / artifact `10304951419` (`sha256:d551006acffa260e8bbd83e25c2b156204a4391f1f9b1abcfc4e58aa0cc28e04`) was human-reviewed faithful. PR #200 merged as `b672c711f885092c5e92c42824078e7bd5bc691e`; all six merged-main workflows passed. At Phase 25 closure, production remained unchanged pending separate authorization; the current production state is recorded above.
 
@@ -337,7 +337,7 @@ Approved behavior:
 
 Phase 11 / UI-052 established the route split later retained by the Lab Matrix redesign: public `/` renders outside `AppShell`, authoritative Create lives at `/create`, `Open Create` targets `/create`, `Sign in` targets `/settings`, and legacy root `source` / `action` intent redirects to `/create` with the full query preserved before ordinary server validation. PR #73 merged that migration as `46c5daa2866c6758907ee9be219bcb3cb274ca83`.
 
-The old pre-implementation state in which `/` still served Create is historical only and must not be used as current repository reality. The current Landing implementation and approval evidence are recorded in the primary Brand / Landing entry above and in `docs/ui/LANDING_BRAND_RD.md` / `docs/ui/LANDING_IMPLEMENTATION_CONTRACT.md`.
+The old pre-implementation state in which `/` still served Create is historical only and must not be used as current repository reality. The current Landing implementation and approval evidence are recorded in the primary Brand / Landing entry above and in `docs/ui/LANDING_BRAND_RD.md` / `docs/history/contracts/ui/LANDING_IMPLEMENTATION_CONTRACT.md`.
 
 ## Creation Experience Resolution
 - Prompt + Image → Create Image.
@@ -422,7 +422,7 @@ The approved `/` product home at this phase used the reviewed Phase 22 Kinetic P
 
 ## Historical UI-082 redesign cycle — planning and closure record
 **Tracker:** #305  
-**Contract:** `docs/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`  
+**Historical implementation contract:** `docs/history/contracts/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`
 **Historical cycle-start baseline:** `main` `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7` / production `c00664d9d88c09bd4a6794ad1ad5fbe7ce662e8a`.
 
 At cycle start, approved routes and product behaviors remained live while their visual hierarchy was audited. Viewer was first because the then-current prompt-fallback H1 could dominate the first viewport and duplicated Prompt content already available in the Viewer register. Activity followed for the analogous prompt-headline hierarchy. Library, Create, Settings/Profile/Preferences, Admin, Landing and AppShell were reviewed for corresponding space-use, chrome-density and legibility failures; unchanged surfaces remained unchanged when the issue did not reproduce. Locked RenderLabBrand and Landing canonical quarter-circle remained outside the redesign boundary.

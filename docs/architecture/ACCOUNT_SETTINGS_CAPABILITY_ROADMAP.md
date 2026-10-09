@@ -514,7 +514,7 @@ The configured policy must be programmatically available or shared through one c
 
 **Status:** SESSION CONTROLS v0.1 COMPLETE / VERIFIED / MERGED / NOT DEPLOYED. Security Activity remains deliberately deferred.
 
-Implementation authority: `docs/architecture/SESSION_CONTROLS_SECURITY_ACTIVITY_IMPLEMENTATION_CONTRACT.md`. PR #259 exact candidate `061b4bf49637b4fb09f0f1486b6a85f251ea6650` merged as `590c15f6fc9db9c107b3bc67fae80083fe0d55c4`.
+Historical implementation evidence: `docs/history/contracts/architecture/SESSION_CONTROLS_SECURITY_ACTIVITY_IMPLEMENTATION_CONTRACT.md`. Current Session Controls state and any future promotion gate are owned by this roadmap. PR #259 exact candidate `061b4bf49637b4fb09f0f1486b6a85f251ea6650` merged as `590c15f6fc9db9c107b3bc67fae80083fe0d55c4`.
 
 Implemented:
 
@@ -558,7 +558,7 @@ Binding current policy:
 - lost sole factor uses operator-assisted recovery with strong identity correlation, supported Supabase Admin MFA APIs and session revocation;
 - no backup-factor UI, home-grown recovery codes, security questions, SMS-first factor or email-only bypass under the current contract.
 
-Detailed authority: `docs/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md` plus `docs/architecture/MFA_PRIVILEGED_STEP_UP_CONTRACT_AMENDMENT_1.md`. Do not reintroduce the superseded multi-factor/backup-factor assumption without a new provider-enforceable contract.
+Historical implementation evidence: `docs/history/contracts/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md` plus its amendments. The binding current policy is the policy stated immediately above in this roadmap; do not reintroduce the superseded multi-factor/backup-factor assumption without a new provider-enforceable contract.
 
 ## 14. Workstream D — Identity and sign-in method management (#218)
 

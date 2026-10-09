@@ -1,7 +1,7 @@
 # MFA & Privileged Step-Up Contract — Amendment 1
 
 **Tracker:** #217  
-**Amends:** `docs/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md`  
+**Amends:** `docs/history/contracts/architecture/MFA_PRIVILEGED_STEP_UP_IMPLEMENTATION_CONTRACT.md`
 **Audit date:** 2026-09-14  
 **Status:** BINDING CONTRACT AMENDMENT — supersedes conflicting text in the original #217 contract  
 **Reason:** Hosted Supabase factor-enrollment behavior discovered during implementation audit

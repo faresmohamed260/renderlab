@@ -4,7 +4,7 @@
 **Last verified:** 2026-09-11  
 **Parent tracker:** GitHub issue #158  
 **Workflow:** `docs/ui/CREATIVE_DEVELOPMENT.md`  
-**Production contract:** `docs/ui/LANDING_IMPLEMENTATION_CONTRACT.md`
+**Historical production contract:** `docs/history/contracts/ui/LANDING_IMPLEMENTATION_CONTRACT.md`
 
 ## Scope
 This document records the accepted visual R&D state for the public RenderLab Landing page and its handoff into verified production implementation.
@@ -169,7 +169,7 @@ Accepted complete-surface evidence:
 The whole-surface review covered desktop and 390px flow, section handoffs, reverse behavior, Library interaction, reduced motion, route truth, locked identity, media loading, no horizontal overflow and runtime cleanliness.
 
 ## Production implementation closure
-The accepted design was implemented under `docs/ui/LANDING_IMPLEMENTATION_CONTRACT.md` and merged through PR #174.
+The accepted design was implemented under `docs/history/contracts/ui/LANDING_IMPLEMENTATION_CONTRACT.md` and merged through PR #174.
 
 Verified production implementation:
 - final exact implementation head: `a7f94b77bf1be989c0101376aa0404cbb28b34ae`;
