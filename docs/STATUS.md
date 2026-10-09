@@ -6,6 +6,8 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Enterprise workstream stat
 
 ## Production
 
+**Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
+
 - Public product: https://renderlab.faresuniform.uk
 - Access model: closed beta / invitation only
 - Default branch: `main`

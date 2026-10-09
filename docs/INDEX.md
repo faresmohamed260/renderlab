@@ -117,7 +117,7 @@ Canonical examples:
 Use the following precedence when resolving claims about repository or product state. Always prefer the authority closest to the question's domain, and investigate discrepancies rather than silently choosing a convenient source.
 
 1. **Repository implementation and configuration** — source code, migrations, checked-in configuration, workflows, and tests establish what is implemented in the repository.
-2. **Exact current-production pointers and verified release evidence** — establish what application source/configuration is actually deployed. The `RENDERLAB_CURRENT_PRODUCTION_SHA` blocks maintained in `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md` are the exact production-source authorities. `docs/STATUS.md` is the concise production/status summary.
+2. **Exact current-production manifest and verified release evidence** — establish what application source/configuration is actually deployed. `docs/production/current.json` is the canonical machine-readable production record. The `RENDERLAB_CURRENT_PRODUCTION_SHA` blocks in `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md`, plus `docs/STATUS.md`, are validated human-readable mirrors/consumers of that manifest rather than independent production facts. The permanent Production Documentation Sync additionally compares the manifest read-only against Vercel/GitHub before release-documentation closure.
 3. **Current-state registries** — establish the current approved/operational inventory for their domain when consistent with verified implementation and production evidence.
 4. **Current-state trackers** — establish active migration/roadmap progress and sequencing for their bounded workstream.
 5. **Normative policy and decision documents** — establish accepted constraints and intended rules for current/future work. If implementation violates a still-current normative rule, record and resolve the discrepancy; do not reinterpret the implementation as silently superseding the rule.
@@ -172,7 +172,8 @@ Use this map to find the appropriate current authority without treating every Ma
 
 ### Status, audits, archives, and supporting material
 
-- `docs/STATUS.md` — concise current status/deployment summary; detailed domain authorities still govern their own facts.
+- `docs/production/current.json` — canonical machine-readable current-production application/deployment record.
+- `docs/STATUS.md` — concise current status/deployment summary validated against the production manifest; detailed domain authorities still govern their own non-production facts.
 - `docs/audits/**` — evidence and assessments. A current authority must explicitly identify an audit/assessment if its finding is meant to represent current accepted state.
 - `docs/archive/**` — historical evidence only.
 - `docs/readme/**` — README media/supporting assets, not governance authority.

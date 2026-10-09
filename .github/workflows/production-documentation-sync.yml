@@ -13,9 +13,13 @@ on:
         description: Exact 40-character Git SHA independently verified as production-live
         required: true
         type: string
+    secrets:
+      VERCEL_TOKEN:
+        required: true
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: renderlab-production-documentation-sync-${{ inputs.expected_production_sha }}
@@ -27,9 +31,13 @@ jobs:
     timeout-minutes: 5
     env:
       RENDERLAB_EXPECTED_PRODUCTION_SHA: ${{ inputs.expected_production_sha }}
+      RENDERLAB_VERCEL_TEAM_ID: team_r09C6RLmb2acHapENECQIn9T
+      RENDERLAB_VERCEL_PROJECT_ID: prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
 
     steps:
-      - name: Checkout repository documentation
+      - name: Checkout repository production records
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Validate exact production SHA input
@@ -45,5 +53,8 @@ jobs:
         with:
           node-version: 24
 
-      - name: Verify current-production documentation synchronization
+      - name: Verify canonical production manifest and documentation mirrors
         run: node scripts/verify-production-documentation-sync.mjs
+
+      - name: Verify production state read-only against GitHub and Vercel
+        run: node scripts/verify-production-live-state.mjs

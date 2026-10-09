@@ -197,12 +197,13 @@ Update existing authoritative documentation rather than creating competing sourc
 Any production alias cutover is not repository-closed merely because deployment and smoke passed.
 
 After every verified production cutover:
-1. Update the current-production blocks in `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md` from verified deployment reality.
-2. Keep exactly one `RENDERLAB_CURRENT_PRODUCTION_SHA` marker in each authority and move it to the newest current-production H2 block; do not add markers to historical rollout records.
-3. Run the permanent `Production Documentation Sync` workflow with the exact deployed 40-character Git SHA.
-4. Do not describe the rollout as repository-closed until that check passes. If the application is live while the check fails, record documentation closure as incomplete and fix it through a reviewed repository change rather than rewriting history or editing around the check.
+1. Update canonical machine-readable production state in `docs/production/current.json` from verified deployment reality: exact application SHA, deployment ID/URL, custom domain, rollback anchor, release qualification, and cutover timestamp.
+2. Update the human-readable `docs/STATUS.md` summary and the current-production blocks in `PROJECT.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md` to mirror/reference that manifest.
+3. Keep exactly one `RENDERLAB_CURRENT_PRODUCTION_SHA` marker in each of the four authority blocks and move it to the newest current-production H2 block; do not add markers to historical rollout records.
+4. Run the permanent `Production Documentation Sync` workflow with the exact deployed 40-character Git SHA. The workflow must validate the manifest and all five human-readable mirrors, then compare the recorded deployment, custom-domain target/cutover time, rollback anchor, and release qualification read-only against Vercel/GitHub.
+5. Do not describe the rollout as repository-closed until that check passes. If the application is live while the check fails, record documentation closure as incomplete and fix it through a reviewed repository change rather than rewriting history or editing around the check.
 
-The marker records deployed application source, not repository `main`. Documentation-only, QA-harness, and other non-deployed commits may legitimately make `main` newer than production.
+`docs/production/current.json` is the canonical machine-readable deployment record. The markers are validated human-readable mirrors of its deployed application SHA, not independent production facts and not repository `main`. Documentation-only, QA-harness, and other non-deployed commits may legitimately make `main` newer than production.
 
 ## Scope Discipline
 Follow the user's requested scope precisely. Do not redesign, migrate, refactor, deploy, or expand scope merely because it seems useful. Preserve approved RenderLab behavior unless changing it is required.

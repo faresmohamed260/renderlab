@@ -14,6 +14,8 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 
 ## Current production and whole-product audit - 2026-10-09
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
+**Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
+
 **Deployment:** `PRODUCTION-LIVE`. **Verification:** `PRODUCTION-VERIFIED`. **Historical evidence:** QA-001–QA-005 acceptance retained.
 
 - Exact current production source is `d7571a230b3f1c5719552628db020823adb4da73` at READY deployment `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` (`https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`), explicitly serving `renderlab.faresuniform.uk`.
