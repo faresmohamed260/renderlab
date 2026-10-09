@@ -1,6 +1,6 @@
 # UI-082 — Media-first Hierarchy & Whole-site Legibility Correction
 
-**Status:** Checkpoint 6 production-live / documentation sync pending
+**Status:** Complete / verified / merged / production-live / documentation sync verified
 **Tracker:** #305  
 **Baseline main:** `5f1df1c364bf5aca0a47fd964bd3dd21714f22a7`  
 **Current production application source:** `986aab269551a4c6e7d3af3a259cfa955c975d91`
@@ -136,7 +136,7 @@ These are acceptance targets, not arbitrary global CSS overrides:
 - run Production Documentation Sync with the exact deployed SHA;
 - repository closure is complete only after production documentation authorities agree.
 
-**Checkpoint 6 production verification — 2026-09-21:** PR #310 squash-merged as exact source `986aab269551a4c6e7d3af3a259cfa955c975d91` after its final docs head passed all attached checks; merged-main Engineering Quality `35547496591`, UI Shell Validation `35547496574`, and Activity Cancel Visual `35547496556` passed. Guarded rollout created READY deployment `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR` from the exact pristine merge SHA. Two safety-first attempts restored or retained the prior alias when smoke harness assumptions did not match the established signed-out Admin/Vercel-protected-URL behavior; no application defect reproduced. Final cutover `35548015570` assigned the verified deployment, passed root/Create/Library/Activity/Settings/Password/Profile/Preferences and expected signed-out Admin 404 smoke, and skipped rollback. Vercel now reports the custom domain on exact SHA `986aab269551a4c6e7d3af3a259cfa955c975d91`, with no grouped runtime errors and no error/fatal logs in the bounded post-cutover window. The four production documentation authorities are updated by the closure docs branch; Production Documentation Sync with the exact deployed SHA remains the final gate after merge.
+**Checkpoint 6 production verification — 2026-09-21:** PR #310 squash-merged as exact source `986aab269551a4c6e7d3af3a259cfa955c975d91` after its final docs head passed all attached checks; merged-main Engineering Quality `35547496591`, UI Shell Validation `35547496574`, and Activity Cancel Visual `35547496556` passed. Guarded rollout created READY deployment `dpl_D9QyFnD7BqCAB1biqsJRppDqBgnR` from the exact pristine merge SHA. Two safety-first attempts restored or retained the prior alias when smoke harness assumptions did not match the established signed-out Admin/Vercel-protected-URL behavior; no application defect reproduced. Final cutover `35548015570` assigned the verified deployment, passed root/Create/Library/Activity/Settings/Password/Profile/Preferences and expected signed-out Admin 404 smoke, and skipped rollback. Vercel now reports the custom domain on exact SHA `986aab269551a4c6e7d3af3a259cfa955c975d91`, with no grouped runtime errors and no error/fatal logs in the bounded post-cutover window. The four production documentation authorities were synchronized and Production Documentation Sync run `35548387370` passed on documentation commit `d1350f73ca54faeec84355e31925021f1addb549` with expected production SHA `986aab269551a4c6e7d3af3a259cfa955c975d91`, completing repository closure. Later cumulative releases supersede that historical deployment while preserving the completed UI-082 product state.
 
 ## Review standard
 
