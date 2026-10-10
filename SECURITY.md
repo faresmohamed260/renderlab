@@ -1,5 +1,7 @@
 # Security Policy
 
+Security decision rights, production authority, and emergency containment authority are defined in [`GOVERNANCE.md`](GOVERNANCE.md). This file defines the reporting and disclosure process; it does not independently grant production or emergency permissions.
+
 ## Reporting a vulnerability
 
 Please do not open a public issue for suspected vulnerabilities, exposed credentials, authentication bypasses, authorization defects, data-exposure risks, or other security-sensitive findings.
