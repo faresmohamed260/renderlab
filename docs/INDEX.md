@@ -178,11 +178,12 @@ Use this map to find the appropriate current authority without treating every Ma
 
 ### Product, architecture, infrastructure, and operations
 
+- `SECURITY.md` — vulnerability reporting, security severity/response expectations, and coordinated disclosure; human security/production authority remains in `GOVERNANCE.md`.
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture authority.
 - `docs/architecture/INFRASTRUCTURE.md` — infrastructure/resource/security boundaries plus exact current-production authority.
 - `docs/architecture/PRODUCT_CAPABILITIES.md` — capability/current product contract registry.
 - `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` — bounded account/settings roadmap and current workstream tracker.
-- `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` — accepted incident/recovery operating procedure.
+- `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` — accepted incident/recovery operating procedure, operator roles, review cadence, and exercise metadata.
 - Active architecture contracts remain beside current architecture while execution requires them. Closed bounded implementation contracts are historical evidence under `docs/history/contracts/architecture/**`; current architecture/roadmaps carry forward any still-binding constraints.
 
 ### UI and design system
