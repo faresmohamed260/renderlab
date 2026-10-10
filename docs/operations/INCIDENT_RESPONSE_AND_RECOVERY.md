@@ -1,7 +1,17 @@
 # RenderLab incident response and recovery
 
-Date: 2026-10-07
 Status: operational runbook / current repository and shared-infrastructure truth
+
+## Runbook metadata
+
+| Field | Current value |
+| --- | --- |
+| **Owner role** | Security / Operations Authority |
+| **Last reviewed** | 2026-10-10 |
+| **Last exercised** | 2026-10-07 — recovery-path subset only. ENT-007 Recovery Drill run `37630554797` successfully restored the retained database/Auth + R2 generation into isolated targets, verified cross-store recovery and cleanup, and is not evidence of a full incident tabletop. |
+| **Review interval** | 30 days, and after every material incident or exercise that changes the procedure |
+
+The owner/review cadence mirrors `docs/governance/documents.json`. `Last exercised` records the newest verified operational exercise that meaningfully executed part of this runbook; partial exercises must state their scope rather than implying end-to-end incident readiness.
 
 ## Purpose
 
@@ -20,7 +30,22 @@ Use these as operator priorities, not contractual SLAs:
 | Medium | Isolated provider/runtime failure, bounded operational email failure, or non-destructive degraded feature with a safe retry/workaround | Confirm scope, preserve evidence, and resolve during the current operating window |
 | Low | Informational/one-off failure with no recurring pattern and no correctness/security impact | Record only when it affects future diagnosis or a durable product decision |
 
-Do not escalate ordinary input validation, per-account admission limits, or expected user-facing rate limits as infrastructure incidents merely because they emit diagnostic events.
+Do not escalate ordinary input validation, per-account admission limits, or expected user-facing rate limits as infrastructure incidents merely because they emit diagnostic events. Security vulnerability reports use the severity and acknowledgement/triage targets in `SECURITY.md`; once a report becomes an active incident, this runbook governs containment and recovery.
+
+## Incident roles
+
+Incident roles are coordination responsibilities, not new authorization. Human decision rights and emergency authority remain governed by `GOVERNANCE.md`. One person may fill multiple incident roles; record that explicitly rather than implying independent staffing that did not exist.
+
+| Incident role | Default responsibility |
+| --- | --- |
+| **Incident Commander** | Security / Operations Authority by default, or another human explicitly designated by the Project Owner. Owns severity/state, task coordination, containment priorities, and the decision to move from active response to monitored recovery. |
+| **Security Lead** | Security / Operations Authority for authentication, authorization, credential, privacy, data-exposure, or abuse incidents. Defines containment evidence and coordinates vulnerability-report handling. |
+| **Technical Lead** | Engineering / Architecture Authority or Infrastructure Authority according to the failure domain. Leads diagnosis, proposes the smallest safe recovery/repair, and identifies architecture/infrastructure constraints. |
+| **Production Operator** | Executes already-authorized or emergency-permitted production actions, records exact provider changes, and performs read-back verification. Execution authority does not broaden approval authority. |
+| **Communications / Reporter Liaison** | Project Owner or Security / Operations Authority. Maintains the private reporter channel for security incidents and coordinates user/status/disclosure communication when needed. |
+| **Evidence Scribe** | Any explicitly assigned human. Maintains the timeline, exact production SHA/deployment, workflow/run IDs, decisions, verification evidence, and cleanup result without copying secrets or unnecessary user data. |
+
+At incident start, assign the Incident Commander and the roles actually needed. For a one-person response, state which roles that person is exercising. For handoffs, record the new role holder and time so authority/responsibility is not inferred from chat history.
 
 ## First response checklist
 
