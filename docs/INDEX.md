@@ -13,7 +13,7 @@ A document has one **primary class** based on its repository role. Individual se
 | Class | Meaning | Typical RenderLab examples |
 | --- | --- | --- |
 | **Entry point** | Navigation and handoff material that directs readers to the correct authorities. It should summarize or route, not silently override a more specific domain authority. | `AGENTS.md`, `PROJECT.md`, `docs/INDEX.md` |
-| **Normative policy** | Accepted rules, decisions, constraints, implementation contracts, or operating procedures that future work must follow until explicitly superseded. | `docs/ui/UI_DECISIONS.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/DESIGN_WORKFLOW.md`, `docs/ui/VISUAL_NORTH_STAR.md`, `docs/ui/BRAND_SYSTEM.md`, accepted `*_IMPLEMENTATION_CONTRACT.md` / `*_CONTRACT.md` files, `CONTRIBUTING.md`, `SECURITY.md` |
+| **Normative policy** | Accepted rules, decisions, constraints, implementation contracts, or operating procedures that future work must follow until explicitly superseded. | `GOVERNANCE.md`, `docs/ui/UI_DECISIONS.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/DESIGN_WORKFLOW.md`, `docs/ui/VISUAL_NORTH_STAR.md`, `docs/ui/BRAND_SYSTEM.md`, accepted `*_IMPLEMENTATION_CONTRACT.md` / `*_CONTRACT.md` files, `CONTRIBUTING.md`, `SECURITY.md` |
 | **Current-state registry** | Verified inventory or operational record describing what currently exists, is approved, is owned, or is deployed. | `docs/STATUS.md`, `docs/ui/SCREEN_REGISTRY.md`, `docs/ui/COMPONENT_CATALOG.md`, `docs/architecture/PRODUCT_CAPABILITIES.md`, current-state/current-production sections of `docs/architecture/INFRASTRUCTURE.md` |
 | **Current-state tracker** | Active sequence/progress record for a migration, roadmap, or bounded workstream. | `docs/ui/UI_MIGRATION.md`, `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` |
 | **Historical evidence** | Provenance, prior state, completed-checkpoint evidence, superseded records, audits, or closure material retained so decisions can be traced. Historical evidence does not become current instruction merely because it remains in the repository. | `docs/archive/**`, `docs/history/contracts/**`, dated audit evidence, superseded/closure records, historical sections explicitly labeled inside current authorities |
@@ -170,6 +170,7 @@ Use this map to find the appropriate current authority without treating every Ma
 ### Repository entry and handoff
 
 - `AGENTS.md` — repository-specific AI/development operating rules.
+- `GOVERNANCE.md` — normative human decision rights for repository, architecture, security, infrastructure, production/deployment, rollback, and emergency authority.
 - `PROJECT.md` — compact current project handoff, product direction, authority routing, and current-production pointer; detailed chronology is archived.
 - `docs/INDEX.md` — this taxonomy, source-precedence rule, and backlog semantics.
 - `docs/governance/documents.json` — machine-readable governance metadata for the high-authority document set; schema: `docs/governance/document-metadata.schema.json`.

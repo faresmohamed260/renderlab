@@ -8,6 +8,10 @@ Public GitHub issues are appropriate for non-sensitive reproducible defects. Inc
 
 Security issues must follow [SECURITY.md](SECURITY.md) and must not be reported publicly.
 
+## Governance and approvals
+
+Human merge, architecture, security, infrastructure, and production decision rights are defined in [`GOVERNANCE.md`](GOVERNANCE.md). Passing automated checks is evidence, not human approval, and merging a change does not authorize deployment or provider mutation.
+
 ## Development changes
 
 Before proposing a change:

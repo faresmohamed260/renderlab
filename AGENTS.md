@@ -5,9 +5,10 @@ This repository is developed with AI assistance across multiple independent sess
 ## Required Context
 Before substantial project work, read:
 1. `docs/INDEX.md`
-2. `PROJECT.md`
-3. `docs/ui/UI_MIGRATION.md`
-4. `docs/ui/UI_DECISIONS.md`
+2. `GOVERNANCE.md`
+3. `PROJECT.md`
+4. `docs/ui/UI_MIGRATION.md`
+5. `docs/ui/UI_DECISIONS.md`
 
 For frontend/UI work also read the relevant current versions of:
 - `docs/ui/DESIGN_WORKFLOW.md`
