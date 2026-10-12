@@ -1,6 +1,6 @@
 # Documentation Index and Authority Taxonomy
 
-Updated: 2026-10-10
+Updated: 2026-10-12
 
 This file is the repository-wide navigation and documentation taxonomy for RenderLab. It explains what each class of document means, how apparently conflicting records are resolved, and what does or does not establish backlog authority. It does not replace the domain-specific authorities it points to.
 
@@ -16,7 +16,7 @@ A document has one **primary class** based on its repository role. Individual se
 | **Normative policy** | Accepted rules, decisions, constraints, implementation contracts, or operating procedures that future work must follow until explicitly superseded. | `GOVERNANCE.md`, `docs/ui/UI_DECISIONS.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/DESIGN_WORKFLOW.md`, `docs/ui/VISUAL_NORTH_STAR.md`, `docs/ui/BRAND_SYSTEM.md`, accepted `*_IMPLEMENTATION_CONTRACT.md` / `*_CONTRACT.md` files, `CONTRIBUTING.md`, `SECURITY.md` |
 | **Current-state registry** | Verified inventory or operational record describing what currently exists, is approved, is owned, or is deployed. | `docs/STATUS.md`, `docs/ui/SCREEN_REGISTRY.md`, `docs/ui/COMPONENT_CATALOG.md`, `docs/architecture/PRODUCT_CAPABILITIES.md`, current-state/current-production sections of `docs/architecture/INFRASTRUCTURE.md` |
 | **Current-state tracker** | Active sequence/progress record for a migration, roadmap, or bounded workstream. | `docs/ui/UI_MIGRATION.md`, `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` |
-| **Historical evidence** | Provenance, prior state, completed-checkpoint evidence, superseded records, audits, or closure material retained so decisions can be traced. Historical evidence does not become current instruction merely because it remains in the repository. | `docs/archive/**`, `docs/history/contracts/**`, dated audit evidence, superseded/closure records, historical sections explicitly labeled inside current authorities |
+| **Historical evidence** | Provenance, prior state, completed-checkpoint evidence, superseded records, audits, or closure material retained so decisions can be traced. Historical evidence does not become current instruction merely because it remains in the repository. | `docs/archive/**`, `docs/history/contracts/**`, `docs/history/ui/**`, dated audit evidence, superseded/closure records, historical sections explicitly labeled inside current authorities |
 | **Reference guide** | Explanatory research, source lists, examples, media, or background material that helps implementation but does not independently define current state or policy. | `README.md`, `docs/architecture/PASSKEY_WEBAUTHN_RESEARCH.md` unless promoted by a normative authority, `docs/ui/LANDING_MEDIA_SOURCES.md`, `docs/readme/**` assets |
 
 ### Mixed and lifecycle-sensitive documents
@@ -27,6 +27,7 @@ Some documents legitimately change role over time:
 - An audit or assessment is **historical evidence** by default. A current authority may explicitly name a particular assessment as the current accepted finding or score; that reference does not make every older audit current.
 - Architecture documents may contain both normative rules and current-state registries. Use the section that is authoritative for the question being answered rather than treating the entire file as one undifferentiated state record.
 - A roadmap or tracker governs active sequencing only while work is current. Once a completed phase no longer contributes a present constraint, move its detailed journal/checklist to historical evidence rather than retaining it in mandatory current context.
+- A decision record remains normative for its still-binding decision/supersession content, while detailed implementation, verification, rollout, and closure evidence for that decision is historical once it is no longer needed to decide today's behavior.
 
 ## History separation rule
 
@@ -34,12 +35,15 @@ Current authority answers **what is true now**. Historical evidence answers **ho
 
 - `PROJECT.md` is a compact current handoff, not the execution journal.
 - `docs/ui/UI_MIGRATION.md` is a current UI foundation/migration tracker, not the Phase 0+ chronology.
+- `docs/ui/UI_DECISIONS.md` is the current UI decision authority. It should retain the durable decision itself: current/superseded status, decision, reason/context, consequences, supersession relationships, and concise evidence references. Exact workflow run IDs, artifact digests, PR/merge chronology, deployment narratives, and run-by-run closure evidence belong in `docs/history/ui/**` or `docs/audits/**` once they no longer affect present decision interpretation.
 - Detailed closed-phase chronology, exact run/artifact evidence and prior production pointers belong in `docs/audits/**` or `docs/archive/**`; completed bounded architecture/UI execution contracts belong in `docs/history/contracts/**`.
 - Completed contracts are historical after closure unless a current authority explicitly carries a requirement forward. Closed bounded architecture/UI execution contracts are stored under `docs/history/contracts/**`; active contracts remain with their current domain authority only while execution requires them.
 - Archive records preserve closure-time wording; update current authorities instead of rewriting history when present state changes.
 - Archived checkboxes and plans do not create backlog authority.
 
 Governance hardening Checkpoint 6 preserved the prior mandatory journals verbatim as `docs/archive/PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md` and `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`, then reduced the current files to present-state handoffs.
+
+The UI-decision evidence-separation checkpoint preserves the pre-cleanup mixed decision/evidence file verbatim as `docs/history/ui/UI_DECISIONS_PRE_EVIDENCE_SEPARATION_2026-10-12.md` from protected `main` commit `e46eb0088128105560d95249a79354b768f0f75d`. That snapshot is historical provenance only; `docs/ui/UI_DECISIONS.md` remains the current decision authority during and after the incremental cleanup.
 
 ## Machine-readable governance metadata
 
@@ -49,7 +53,7 @@ Governance hardening Checkpoint 6 preserved the prior mandatory journals verbati
 - Current managed documents have a bounded `reviewIntervalDays`; `npm run verify:docs-governance` fails when that governance review becomes stale.
 - Document-level `supersedes` / `supersededBy` links must be reciprocal. UI decision-level supersession is also linted from the explicit fields in `docs/ui/UI_DECISIONS.md`.
 - The managed registry is intentionally narrower than the complete historical corpus. Historical evidence remains governed by the taxonomy in this index until it is explicitly cataloged or archived; metadata absence does not promote historical text into current authority.
-- Journal snapshots use `docs/archive/**`; closed bounded architecture/UI execution contracts use `docs/history/contracts/**`. Location reinforces lifecycle but does not replace metadata/reference linting.
+- Journal snapshots use `docs/archive/**`; closed bounded architecture/UI execution contracts use `docs/history/contracts/**`; UI decision provenance/evidence snapshots use `docs/history/ui/**`. Location reinforces lifecycle but does not replace metadata/reference linting.
 
 The credential-free verifier also checks canonical structured status enums, closed-contract unchecked task boxes, duplicate normalized `Current ...` H2 sections, broken local documentation references, and consistency between `docs/production/current.json` and all five human production mirrors. The dedicated **Documentation Governance** workflow runs the same command on documentation/governance pull requests and pushes to `main` with `contents: read` only and no protected service credentials.
 
@@ -191,7 +195,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/ui/UI_MIGRATION.md` — current-only UI foundation/migration tracker; closed phase journals are archived rather than retained as active context.
 - `docs/ui/SCREEN_REGISTRY.md` — current screen/route/viewport registry and UI production-state record.
 - `docs/ui/COMPONENT_CATALOG.md` — current approved shared-component registry.
-- `docs/ui/UI_DECISIONS.md` — accepted UI decision/precedent log; supersession statements inside it control older decisions.
+- `docs/ui/UI_DECISIONS.md` — accepted UI decision/precedent authority. Keep durable decision/status/reason/consequence/supersession content current here; move detailed run/artifact/merge/deployment chronology to historical evidence and retain only concise evidence links when useful.
 - `docs/ui/UI_SYSTEM.md` — normative UI-system rules.
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
 - `docs/ui/VISUAL_NORTH_STAR.md` — normative visual direction for authorized redesign work.
@@ -205,6 +209,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/audits/**` — evidence and assessments. A current authority must explicitly identify an audit/assessment if its finding is meant to represent current accepted state.
 - `docs/archive/**` — historical journal/snapshot evidence only, including the pre-Checkpoint-6 Project/UI snapshots listed in `docs/archive/README.md`.
 - `docs/history/contracts/**` — relocated closed architecture/UI execution contracts; historical evidence only.
+- `docs/history/ui/**` — historical UI decision provenance/evidence, including pre-separation snapshots; never a competing current decision authority.
 - `docs/readme/**` — README media/supporting assets, not governance authority.
 - Research/source-list/reference documents remain advisory unless a normative/current authority explicitly promotes a finding.
 
