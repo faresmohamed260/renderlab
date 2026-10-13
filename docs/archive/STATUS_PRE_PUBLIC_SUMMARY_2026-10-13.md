@@ -142,4 +142,4 @@ ENT-005 durable observability and operations hardening — **Closure-time status
 
 Current work focuses on expanding creative workflows, improving continuation between media operations, strengthening organization/project workflows, and preserving production reliability as provider capability grows.
 
-For the current internal handoff, see [`PROJECT.md`](../PROJECT.md). For exact historical phase/run chronology, use `docs/audits/**` and `docs/archive/**` rather than inferring current work from old checklists.
+For the current internal handoff, see [`PROJECT.md`](../../PROJECT.md). For exact historical phase/run chronology, use `docs/audits/**` and `docs/archive/**` rather than inferring current work from old checklists.
