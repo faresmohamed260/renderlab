@@ -55,7 +55,7 @@ The UI-decision evidence-separation checkpoint preserves the pre-cleanup mixed d
 - The managed registry is intentionally narrower than the complete historical corpus. Historical evidence remains governed by the taxonomy in this index until it is explicitly cataloged or archived; metadata absence does not promote historical text into current authority.
 - Journal snapshots use `docs/archive/**`; closed bounded architecture/UI execution contracts use `docs/history/contracts/**`; UI decision provenance/evidence snapshots use `docs/history/ui/**`. Location reinforces lifecycle but does not replace metadata/reference linting.
 
-The credential-free verifier also checks canonical structured status enums, closed-contract unchecked task boxes, duplicate normalized `Current ...` H2 sections, broken local documentation references, and consistency between `docs/production/current.json` and all five human production mirrors. The dedicated **Documentation Governance** workflow runs the same command on documentation/governance pull requests and pushes to `main` with `contents: read` only and no protected service credentials.
+The credential-free verifier also checks canonical structured status enums, rejects generic `Status:` lifecycle fields in current-state lifecycle authorities, checks closed-contract unchecked task boxes, duplicate normalized `Current ...` H2 sections, broken local documentation references, and consistency between `docs/production/current.json` and all five human production mirrors. Domain-specific status vocabularies such as UI decision status and component maturity remain governed by their dedicated rules rather than the generic lifecycle-field check. The dedicated **Documentation Governance** workflow runs the same command on documentation/governance pull requests and pushes to `main` with `contents: read` only and no protected service credentials.
 
 ## Content-state vocabulary
 
@@ -134,6 +134,7 @@ For new or edited current-state blocks:
 5. Preserve historical wording when changing it would rewrite provenance; add a current or closure-time label rather than silently changing what was true at the time.
 6. When a later cumulative release supersedes an earlier `NOT DEPLOYED` closure record, keep the closure record historical and state present deployment separately as `PRODUCTION-LIVE`.
 7. GitHub Issue open/closed state is not a lifecycle authority unless a repository authority explicitly delegates that bounded meaning.
+8. Current-state lifecycle authorities must not use a generic `Status:` field for execution/repository/verification/deployment state; use the explicit dimensions above. Domain-specific status vocabularies such as UI decision `Proposed`/`Accepted`/`Superseded` and component `APPROVED`/`LOCKED` maturity remain separately governed.
 
 Canonical examples:
 
