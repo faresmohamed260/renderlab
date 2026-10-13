@@ -263,18 +263,19 @@ GitHub's secret-free **Unit Coverage** workflow runs the same Node 24 path, publ
 
 ## Documentation
 
-For engineering work, start with:
+Public/product documentation starts with:
 
-1. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
-2. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
-3. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
-4. [Current public status](docs/STATUS.md)
+1. [Current public status](docs/STATUS.md)
+2. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
+3. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
+4. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
 5. [Product/UI foundation](docs/ui/UI_MIGRATION.md)
 6. [Durable UI decisions](docs/ui/UI_DECISIONS.md)
 7. [Visual north star](docs/ui/VISUAL_NORTH_STAR.md)
-8. [AI-agent development instructions](AGENTS.md)
-9. [Current project handoff](PROJECT.md)
-10. [Historical evidence index](docs/archive/README.md)
+8. [Security reporting](SECURITY.md)
+9. [Contribution policy](CONTRIBUTING.md)
+
+Maintainer/agent handoff entry points and execution history remain repository-internal navigation rather than part of this public documentation path.
 
 ## Known limitations
 
@@ -296,7 +297,7 @@ Current work is focused on deeper creative capability rather than exposing more 
 - expand provider/worker capability only when ownership and production readiness are verified;
 - preserve lifecycle, cleanup, security, and exact-commit qualification as the product grows.
 
-See [STATUS.md](docs/STATUS.md) for the concise current state and `PROJECT.md` for detailed implementation history.
+See [STATUS.md](docs/STATUS.md) for the concise public current state. Detailed execution chronology remains historical evidence under repository governance rather than part of the public README path.
 
 ## Contributing, security, and license
 
