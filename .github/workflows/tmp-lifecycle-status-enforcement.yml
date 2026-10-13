@@ -37,120 +37,92 @@ jobs:
             fs.writeFileSync(file, body);
           }
 
+          const lifecyclePathsBlock = [
+            '',
+            'export const LIFECYCLE_STATUS_AUTHORITY_PATHS = Object.freeze([',
+            '  "PROJECT.md",',
+            '  "docs/STATUS.md",',
+            '  "docs/architecture/INFRASTRUCTURE.md",',
+            '  "docs/architecture/PRODUCT_CAPABILITIES.md",',
+            '  "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",',
+            '  "docs/ui/UI_MIGRATION.md",',
+            '  "docs/ui/SCREEN_REGISTRY.md",',
+            ']);',
+            '',
+          ].join('\n');
           replaceOnce(
             'scripts/lib/docs-governance.mjs',
-            `export const STRUCTURED_STATUS_ENUMS = Object.freeze({
-  Execution: Object.freeze(["PLANNED", "IN PROGRESS", "IMPLEMENTED", "COMPLETE", "DEFERRED", "SUPERSEDED", "CANCELLED"]),
-  Repository: Object.freeze(["UNMERGED", "MERGED"]),
-  Deployment: Object.freeze(["NOT DEPLOYED", "PRODUCTION-LIVE", "NOT APPLICABLE"]),
-  "UI maturity": Object.freeze(["PLANNED", "UNAUDITED", "MIGRATING", "APPROVED", "LOCKED"]),
-});
+            '\nfunction normalizeRepoPath(value) {',
+            `${lifecyclePathsBlock}function normalizeRepoPath(value) {`,
+          );
 
-function normalizeRepoPath(value) {`,
-            `export const STRUCTURED_STATUS_ENUMS = Object.freeze({
-  Execution: Object.freeze(["PLANNED", "IN PROGRESS", "IMPLEMENTED", "COMPLETE", "DEFERRED", "SUPERSEDED", "CANCELLED"]),
-  Repository: Object.freeze(["UNMERGED", "MERGED"]),
-  Deployment: Object.freeze(["NOT DEPLOYED", "PRODUCTION-LIVE", "NOT APPLICABLE"]),
-  "UI maturity": Object.freeze(["PLANNED", "UNAUDITED", "MIGRATING", "APPROVED", "LOCKED"]),
-});
-
-export const LIFECYCLE_STATUS_AUTHORITY_PATHS = Object.freeze([
-  "PROJECT.md",
-  "docs/STATUS.md",
-  "docs/architecture/INFRASTRUCTURE.md",
-  "docs/architecture/PRODUCT_CAPABILITIES.md",
-  "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
-  "docs/ui/UI_MIGRATION.md",
-  "docs/ui/SCREEN_REGISTRY.md",
-]);
-
-function normalizeRepoPath(value) {`,
+          const lifecycleVerifierBlock = [
+            'export function findAmbiguousLifecycleStatusProblems(documents) {',
+            '  const authorityPaths = new Set(LIFECYCLE_STATUS_AUTHORITY_PATHS);',
+            '  const problems = [];',
+            '  for (const document of documents) {',
+            '    if (!authorityPaths.has(document.path)) continue;',
+            '    for (const [lineIndex, line] of document.body.split(/\\r?\\n/).entries()) {',
+            '      if (/^\\s*(?:[-*+]\\s+)?(?:\\*\\*)?Status\\s*:(?:\\*\\*)?/i.test(line)) {',
+            '        problems.push(',
+            '          `${document.path}:${lineIndex + 1}: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status`,',
+            '        );',
+            '      }',
+            '    }',
+            '  }',
+            '  return problems;',
+            '}',
+            '',
+          ].join('\n');
+          replaceOnce(
+            'scripts/lib/docs-governance.mjs',
+            'function parseUiDecisionRecords(body) {',
+            `${lifecycleVerifierBlock}function parseUiDecisionRecords(body) {`,
           );
 
           replaceOnce(
             'scripts/lib/docs-governance.mjs',
-            `function parseUiDecisionRecords(body) {`,
-            `export function findAmbiguousLifecycleStatusProblems(documents) {
-  const authorityPaths = new Set(LIFECYCLE_STATUS_AUTHORITY_PATHS);
-  const problems = [];
-  for (const document of documents) {
-    if (!authorityPaths.has(document.path)) continue;
-    for (const [lineIndex, line] of document.body.split(/\\r?\\n/).entries()) {
-      if (/^\\s*(?:[-*+]\\s+)?(?:\\*\\*)?Status\\s*:(?:\\*\\*)?/i.test(line)) {
-        problems.push(
-          `${document.path}:${lineIndex + 1}: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status`,
-        );
-      }
-    }
-  }
-  return problems;
-}
-
-function parseUiDecisionRecords(body) {`,
-          );
-
-          replaceOnce(
-            'scripts/lib/docs-governance.mjs',
-            `    ...findStructuredStatusProblems(currentManagedDocuments),
-    ...findUiDecisionAuthorityProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),`,
-            `    ...findStructuredStatusProblems(currentManagedDocuments),
-    ...findAmbiguousLifecycleStatusProblems(currentManagedDocuments),
-    ...findUiDecisionAuthorityProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),`,
+            '    ...findStructuredStatusProblems(currentManagedDocuments),\n    ...findUiDecisionAuthorityProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),',
+            '    ...findStructuredStatusProblems(currentManagedDocuments),\n    ...findAmbiguousLifecycleStatusProblems(currentManagedDocuments),\n    ...findUiDecisionAuthorityProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),',
           );
 
           replaceOnce(
             'tests/unit/docs-governance.test.mjs',
-            `  findDuplicateCurrentSectionProblems,
-  findStructuredStatusProblems,
-  findUiDecisionAuthorityProblems,`,
-            `  findDuplicateCurrentSectionProblems,
-  findStructuredStatusProblems,
-  findAmbiguousLifecycleStatusProblems,
-  findUiDecisionAuthorityProblems,`,
+            '  findDuplicateCurrentSectionProblems,\n  findStructuredStatusProblems,\n  findUiDecisionAuthorityProblems,',
+            '  findDuplicateCurrentSectionProblems,\n  findStructuredStatusProblems,\n  findAmbiguousLifecycleStatusProblems,\n  findUiDecisionAuthorityProblems,',
           );
 
+          const lifecycleTestBlock = [
+            'test("current lifecycle authorities reject generic Status fields without blocking domain-specific status vocabularies", () => {',
+            '  const problems = findAmbiguousLifecycleStatusProblems([',
+            '    { path: "docs/STATUS.md", body: "**Status:** COMPLETE / VERIFIED / MERGED" },',
+            '    { path: "docs/ui/UI_MIGRATION.md", body: "- **Status:** COMPLETE" },',
+            '    { path: "docs/ui/COMPONENT_CATALOG.md", body: "**Status:** APPROVED" },',
+            '    { path: "docs/ui/UI_DECISIONS.md", body: "**Status:** Accepted" },',
+            '  ]);',
+            '  assert.deepEqual(problems, [',
+            '    "docs/STATUS.md:1: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status",',
+            '    "docs/ui/UI_MIGRATION.md:1: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status",',
+            '  ]);',
+            '});',
+            '',
+          ].join('\n');
           replaceOnce(
             'tests/unit/docs-governance.test.mjs',
-            `test("closed contracts cannot retain unchecked task boxes", () => {`,
-            `test("current lifecycle authorities reject generic Status fields without blocking domain-specific status vocabularies", () => {
-  const problems = findAmbiguousLifecycleStatusProblems([
-    {
-      path: "docs/STATUS.md",
-      body: "**Status:** COMPLETE / VERIFIED / MERGED",
-    },
-    {
-      path: "docs/ui/UI_MIGRATION.md",
-      body: "- **Status:** COMPLETE",
-    },
-    {
-      path: "docs/ui/COMPONENT_CATALOG.md",
-      body: "**Status:** APPROVED",
-    },
-    {
-      path: "docs/ui/UI_DECISIONS.md",
-      body: "**Status:** Accepted",
-    },
-  ]);
-  assert.deepEqual(problems, [
-    "docs/STATUS.md:1: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status",
-    "docs/ui/UI_MIGRATION.md:1: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status",
-  ]);
-});
-
-test("closed contracts cannot retain unchecked task boxes", () => {`,
+            'test("closed contracts cannot retain unchecked task boxes", () => {',
+            `${lifecycleTestBlock}test("closed contracts cannot retain unchecked task boxes", () => {`,
           );
 
           replaceOnce(
             'docs/INDEX.md',
-            `The credential-free verifier also checks canonical structured status enums, closed-contract unchecked task boxes, duplicate normalized \`Current ...\` H2 sections, broken local documentation references, and consistency between \`docs/production/current.json\` and all five human production mirrors.`,
-            `The credential-free verifier also checks canonical structured status enums, rejects generic \`Status:\` lifecycle fields in current-state lifecycle authorities, checks closed-contract unchecked task boxes, duplicate normalized \`Current ...\` H2 sections, broken local documentation references, and consistency between \`docs/production/current.json\` and all five human production mirrors. Domain-specific status vocabularies such as UI decision status and component maturity remain governed by their dedicated rules rather than the generic lifecycle-field check.`,
+            'The credential-free verifier also checks canonical structured status enums, closed-contract unchecked task boxes, duplicate normalized `Current ...` H2 sections, broken local documentation references, and consistency between `docs/production/current.json` and all five human production mirrors.',
+            'The credential-free verifier also checks canonical structured status enums, rejects generic `Status:` lifecycle fields in current-state lifecycle authorities, checks closed-contract unchecked task boxes, duplicate normalized `Current ...` H2 sections, broken local documentation references, and consistency between `docs/production/current.json` and all five human production mirrors. Domain-specific status vocabularies such as UI decision status and component maturity remain governed by their dedicated rules rather than the generic lifecycle-field check.',
           );
 
           replaceOnce(
             'docs/INDEX.md',
-            `7. GitHub Issue open/closed state is not a lifecycle authority unless a repository authority explicitly delegates that bounded meaning.`,
-            `7. GitHub Issue open/closed state is not a lifecycle authority unless a repository authority explicitly delegates that bounded meaning.
-8. Current-state lifecycle authorities must not use a generic \`Status:\` field for execution/repository/verification/deployment state; use the explicit dimensions above. Domain-specific status vocabularies such as UI decision \`Proposed\`/\`Accepted\`/\`Superseded\` and component \`APPROVED\`/\`LOCKED\` maturity remain separately governed.`,
+            '7. GitHub Issue open/closed state is not a lifecycle authority unless a repository authority explicitly delegates that bounded meaning.',
+            '7. GitHub Issue open/closed state is not a lifecycle authority unless a repository authority explicitly delegates that bounded meaning.\n8. Current-state lifecycle authorities must not use a generic `Status:` field for execution/repository/verification/deployment state; use the explicit dimensions above. Domain-specific status vocabularies such as UI decision `Proposed`/`Accepted`/`Superseded` and component `APPROVED`/`LOCKED` maturity remain separately governed.',
           );
           NODE
 
