@@ -31,7 +31,16 @@ test("QA-002 verifier covers exact provenance, account read-only surfaces, manif
   assert.match(verifier, /renderlab_account_lifecycle/);
   assert.match(verifier, /renderlab_account_exports/);
   assert.match(verifier, /trackedR2ObjectsChecked/);
-  assert.match(verifier, /exactly four contracted provider-backed generations/);
+  assert.match(verifier, /create-image-painterly-fantasy/);
+  assert.match(verifier, /create-image-graphic-scifi/);
+  assert.match(verifier, /create-image-surreal-architecture/);
+  assert.match(verifier, /create-image-stylized-3d/);
+  assert.match(verifier, /renderlab-explorer-reference\.webp/);
+  assert.match(verifier, /element\.currentTime = 0/);
+  assert.match(verifier, /await element\.play\(\)/);
+  assert.match(verifier, /await page\.setViewportSize\(desktop\);\n  await page\.goto\(baseUrl \+ "\/library"/);
+  assert.match(verifier, /passed: !primaryError && cleanup\?\.verified === true && generations\.length === 8/);
+  assert.match(verifier, /exactly eight contracted provider-backed generations/);
   assert.doesNotMatch(verifier, /\/api\/account\/delete/);
   assert.doesNotMatch(verifier, /sign out other devices/i);
   assert.doesNotMatch(verifier, /challengeAndVerify/);
