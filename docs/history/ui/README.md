@@ -17,6 +17,6 @@ The snapshot preserves the mixed decision + implementation/verification evidence
 
 ## Migration boundary
 
-Governance remediation is intentionally incremental. This checkpoint establishes the lossless evidence anchor and the repository rule for future separation. A later checkpoint may remove detailed historical evidence from `docs/ui/UI_DECISIONS.md` only after confirming that every still-binding decision, reason/context, consequence, supersession relationship, and evidence pointer remains represented in current authority.
+The lossless evidence anchor was established before compaction. On 2026-10-13, the current `docs/ui/UI_DECISIONS.md` authority was compacted so decision lifecycle, decision/reason/consequence, supersession, and still-binding design/product/security boundaries remain current while run IDs, artifact digests, PR/merge chronology, rollout/deployment narratives, and checkpoint journals remain here as historical provenance.
 
 Do not update this snapshot to match later current state. Update the current UI authority instead.

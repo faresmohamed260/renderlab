@@ -265,6 +265,34 @@ function parseUiDecisionRecords(body) {
   return records;
 }
 
+export function findUiDecisionAuthorityProblems(body) {
+  const problems = [];
+  const lines = body.split(/\r?\n/);
+  const allowedStatuses = new Set(["Proposed", "Accepted", "Superseded"]);
+  for (const [lineIndex, line] of lines.entries()) {
+    if (/^##(?!#)\s+UI-\d+\s+/.test(line)) {
+      problems.push(`docs/ui/UI_DECISIONS.md:${lineIndex + 1}: UI decision headings must use H3 (###)`);
+    }
+    if (/^####\s+/.test(line)) {
+      problems.push(`docs/ui/UI_DECISIONS.md:${lineIndex + 1}: checkpoint/evidence subheadings do not belong in current UI decision authority`);
+    }
+    if (/^##\s+Current UI redesign deployment state\b/i.test(line)) {
+      problems.push(`docs/ui/UI_DECISIONS.md:${lineIndex + 1}: deployment journals belong in current-production or historical evidence authorities`);
+    }
+    if (/^\*\*(?:Implementation evidence|Implementation verification|Verified implementation evidence|Verification|Production boundary|Primary evidence|Design checkpoint evidence)(?:[^*]*)?:\*\*/i.test(line)) {
+      problems.push(`docs/ui/UI_DECISIONS.md:${lineIndex + 1}: detailed implementation/verification chronology belongs in historical evidence`);
+    }
+  }
+  for (const record of parseUiDecisionRecords(body).values()) {
+    if (!record.status) {
+      problems.push(`${record.id}: missing Status field`);
+    } else if (!allowedStatuses.has(record.status)) {
+      problems.push(`${record.id}: Status must be Proposed, Accepted, or Superseded; found ${JSON.stringify(record.status)}`);
+    }
+  }
+  return problems;
+}
+
 export function findUiDecisionSupersessionProblems(body) {
   const problems = [];
   const records = parseUiDecisionRecords(body);
@@ -415,6 +443,7 @@ export async function verifyDocsGovernance({ rootDir = process.cwd(), now = new 
   const problems = [
     ...metadataProblems,
     ...findStructuredStatusProblems(currentManagedDocuments),
+    ...findUiDecisionAuthorityProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),
     ...findUiDecisionSupersessionProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),
     ...findClosedContractUncheckedBoxProblems(documents),
     ...findDuplicateCurrentSectionProblems(documents),

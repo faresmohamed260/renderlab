@@ -11,6 +11,7 @@ import {
   findClosedContractUncheckedBoxProblems,
   findDuplicateCurrentSectionProblems,
   findStructuredStatusProblems,
+  findUiDecisionAuthorityProblems,
   findUiDecisionSupersessionProblems,
   validateDocumentMetadata,
   verifyDocsGovernance,
@@ -72,6 +73,26 @@ test("document supersession must be reciprocal", async () => {
     now: new Date("2026-10-10T00:00:00Z"),
   });
   assert.ok(problems.some((problem) => problem.includes("reciprocal supersededBy is missing")));
+});
+
+test("UI decision authority rejects execution journals and lifecycle chains", () => {
+  const body = [
+    "## UI-100 — Wrong heading",
+    "**Status:** Accepted / Implemented / Verified",
+    "",
+    "### UI-101 — Current decision",
+    "**Status:** Accepted / Implemented / Verified",
+    "#### UI-101 implementation verification — 2026-10-13",
+    "**Verification:** run 123",
+    "",
+    "## Current UI redesign deployment state — 2026-10-13",
+  ].join("\n");
+  const problems = findUiDecisionAuthorityProblems(body);
+  assert.ok(problems.some((problem) => problem.includes("headings must use H3")));
+  assert.ok(problems.some((problem) => problem.includes("checkpoint/evidence subheadings")));
+  assert.ok(problems.some((problem) => problem.includes("detailed implementation/verification chronology")));
+  assert.ok(problems.some((problem) => problem.includes("deployment journals")));
+  assert.ok(problems.some((problem) => problem.includes("Status must be Proposed, Accepted, or Superseded")));
 });
 
 test("UI decision supersession is explicit and reciprocal", () => {

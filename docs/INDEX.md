@@ -1,6 +1,6 @@
 # Documentation Index and Authority Taxonomy
 
-Updated: 2026-10-12
+Updated: 2026-10-13
 
 This file is the repository-wide navigation and documentation taxonomy for RenderLab. It explains what each class of document means, how apparently conflicting records are resolved, and what does or does not establish backlog authority. It does not replace the domain-specific authorities it points to.
 
@@ -43,7 +43,7 @@ Current authority answers **what is true now**. Historical evidence answers **ho
 
 Governance hardening Checkpoint 6 preserved the prior mandatory journals verbatim as `docs/archive/PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md` and `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`, then reduced the current files to present-state handoffs.
 
-The UI-decision evidence-separation checkpoint preserves the pre-cleanup mixed decision/evidence file verbatim as `docs/history/ui/UI_DECISIONS_PRE_EVIDENCE_SEPARATION_2026-10-12.md` from protected `main` commit `e46eb0088128105560d95249a79354b768f0f75d`. That snapshot is historical provenance only; `docs/ui/UI_DECISIONS.md` remains the current decision authority during and after the incremental cleanup.
+The UI-decision evidence-separation checkpoint preserves the pre-cleanup mixed decision/evidence file verbatim as `docs/history/ui/UI_DECISIONS_PRE_EVIDENCE_SEPARATION_2026-10-12.md` from protected `main` commit `e46eb0088128105560d95249a79354b768f0f75d`. That snapshot is historical provenance only. The 2026-10-13 compaction pass removed redundant execution/verification/rollout chronology from `docs/ui/UI_DECISIONS.md`; the compact file remains the current decision authority.
 
 ## Machine-readable governance metadata
 
