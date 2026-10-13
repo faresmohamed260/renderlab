@@ -11,6 +11,7 @@ import {
   findClosedContractUncheckedBoxProblems,
   findDuplicateCurrentSectionProblems,
   findStructuredStatusProblems,
+  findAmbiguousLifecycleStatusProblems,
   findUiDecisionAuthorityProblems,
   findUiDecisionSupersessionProblems,
   validateDocumentMetadata,
@@ -122,6 +123,18 @@ test("structured current-state status dimensions reject unknown enum values", ()
   ]);
 });
 
+test("current lifecycle authorities reject generic Status fields without blocking domain-specific status vocabularies", () => {
+  const problems = findAmbiguousLifecycleStatusProblems([
+    { path: "docs/STATUS.md", body: "**Status:** COMPLETE / VERIFIED / MERGED" },
+    { path: "docs/ui/UI_MIGRATION.md", body: "- **Status:** COMPLETE" },
+    { path: "docs/ui/COMPONENT_CATALOG.md", body: "**Status:** APPROVED" },
+    { path: "docs/ui/UI_DECISIONS.md", body: "**Status:** Accepted" },
+  ]);
+  assert.deepEqual(problems, [
+    "docs/STATUS.md:1: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status",
+    "docs/ui/UI_MIGRATION.md:1: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status",
+  ]);
+});
 test("closed contracts cannot retain unchecked task boxes", () => {
   const problems = findClosedContractUncheckedBoxProblems([
     {

@@ -40,6 +40,15 @@ export const STRUCTURED_STATUS_ENUMS = Object.freeze({
   "UI maturity": Object.freeze(["PLANNED", "UNAUDITED", "MIGRATING", "APPROVED", "LOCKED"]),
 });
 
+export const LIFECYCLE_STATUS_AUTHORITY_PATHS = Object.freeze([
+  "PROJECT.md",
+  "docs/STATUS.md",
+  "docs/architecture/INFRASTRUCTURE.md",
+  "docs/architecture/PRODUCT_CAPABILITIES.md",
+  "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
+  "docs/ui/UI_MIGRATION.md",
+  "docs/ui/SCREEN_REGISTRY.md",
+]);
 function normalizeRepoPath(value) {
   return value.split(path.sep).join("/").replace(/^\.\//, "");
 }
@@ -245,6 +254,21 @@ export function findStructuredStatusProblems(documents) {
   return problems;
 }
 
+export function findAmbiguousLifecycleStatusProblems(documents) {
+  const authorityPaths = new Set(LIFECYCLE_STATUS_AUTHORITY_PATHS);
+  const problems = [];
+  for (const document of documents) {
+    if (!authorityPaths.has(document.path)) continue;
+    for (const [lineIndex, line] of document.body.split(/\r?\n/).entries()) {
+      if (/^\s*(?:[-*+]\s+)?(?:\*\*)?Status\s*:(?:\*\*)?/i.test(line)) {
+        problems.push(
+          `${document.path}:${lineIndex + 1}: current lifecycle authority must use explicit Execution/Repository/Verification/Deployment fields instead of generic Status`,
+        );
+      }
+    }
+  }
+  return problems;
+}
 function parseUiDecisionRecords(body) {
   const starts = [...body.matchAll(/^###\s+(UI-\d+)\s+.+$/gm)];
   const records = new Map();
@@ -443,6 +467,7 @@ export async function verifyDocsGovernance({ rootDir = process.cwd(), now = new 
   const problems = [
     ...metadataProblems,
     ...findStructuredStatusProblems(currentManagedDocuments),
+    ...findAmbiguousLifecycleStatusProblems(currentManagedDocuments),
     ...findUiDecisionAuthorityProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),
     ...findUiDecisionSupersessionProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),
     ...findClosedContractUncheckedBoxProblems(documents),
