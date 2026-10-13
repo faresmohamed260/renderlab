@@ -1,1 +1,40 @@
-import assert from "node:assert/strict";\nimport { readFile } from "node:fs/promises";\nimport path from "node:path";\nimport test from "node:test";\n\nconst rootDir = process.cwd();\n\ntest("infrastructure lifecycle state distinguishes current status from historical closure evidence", async () => {\n  const body = await readFile(\n    path.join(rootDir, "docs/architecture/INFRASTRUCTURE.md"),\n    "utf8",\n  );\n  const genericStatusLines = body\n    .split(/\r?\n/)\n    .filter((line) => /^\*\*Status:/i.test(line));\n\n  assert.deepEqual(\n    genericStatusLines,\n    [],\n    "INFRASTRUCTURE.md must not use generic Status fields for current or closure-time lifecycle state.",\n  );\n  assert.equal(\n    body.includes("Cycle 2 production is accepted and Phase 13"),\n    false,\n    "Infrastructure operating rules must defer present deployment truth to the canonical current-production authority.",\n  );\n  assert.equal(\n    body.includes("Phase 12B is `COMPLETE / VERIFIED`"),\n    false,\n    "Superseded rollout status must be written as closure-time history rather than present lifecycle state.",\n  );\n  const closureTimeStatusLines = body\n    .split(/\r?\n/)\n    .filter((line) => /^\*\*Closure-time status:\*\*/i.test(line));\n  assert.equal(\n    closureTimeStatusLines.length,\n    3,\n    "The three legacy infrastructure Status fields must remain explicitly labeled as closure-time evidence.",\n  );\n});\n
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+
+const rootDir = process.cwd();
+
+test("infrastructure lifecycle state distinguishes current status from historical closure evidence", async () => {
+  const body = await readFile(
+    path.join(rootDir, "docs/architecture/INFRASTRUCTURE.md"),
+    "utf8",
+  );
+  const genericStatusLines = body
+    .split(/\r?\n/)
+    .filter((line) => /^\*\*Status:/i.test(line));
+
+  assert.deepEqual(
+    genericStatusLines,
+    [],
+    "INFRASTRUCTURE.md must not use generic Status fields for current or closure-time lifecycle state.",
+  );
+  assert.equal(
+    body.includes("Cycle 2 production is accepted and Phase 13"),
+    false,
+    "Infrastructure operating rules must defer present deployment truth to the canonical current-production authority.",
+  );
+  assert.equal(
+    body.includes("Phase 12B is `COMPLETE / VERIFIED`"),
+    false,
+    "Superseded rollout status must be written as closure-time history rather than present lifecycle state.",
+  );
+  const closureTimeStatusLines = body
+    .split(/\r?\n/)
+    .filter((line) => /^\*\*Closure-time status:\*\*/i.test(line));
+  assert.equal(
+    closureTimeStatusLines.length,
+    3,
+    "The three legacy infrastructure Status fields must remain explicitly labeled as closure-time evidence.",
+  );
+});
