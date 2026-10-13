@@ -333,7 +333,7 @@ Approved behavior:
 **Do not change:** Do not turn Admin into a shared-Supabase user browser, cloud/provider console, arbitrary feature-flag framework or generic internal dashboard. Do not expose provider identity/credentials, raw errors, other applications' users or destructive account/data deletion. Keep global/account controls typed and bounded; generation reservations remain server-only operational state rather than a browser/admin reservation console.
 
 ### Brand / Landing — Phase 11 route migration (historical)
-**Status:** COMPLETE / SUPERSEDED by the current Brand / Landing entry above.
+**Historical execution:** `SUPERSEDED` after the completed Phase 11 route migration; the current Brand / Landing entry above is authoritative.
 
 Phase 11 / UI-052 established the route split later retained by the Lab Matrix redesign: public `/` renders outside `AppShell`, authoritative Create lives at `/create`, `Open Create` targets `/create`, `Sign in` targets `/settings`, and legacy root `source` / `action` intent redirects to `/create` with the full query preserved before ordinary server validation. PR #73 merged that migration as `46c5daa2866c6758907ee9be219bcb3cb274ca83`.
 
@@ -369,18 +369,18 @@ Generated Viewer results with a current-valid producing recipe may expose **Reus
 The existing fresh-active-admin `/admin` Health section exposes bounded accepted-to-terminal timing samples, failover incidence, active-state age bands, active admission reservations/current global guardrails and Phase 15 maintenance backlog. Counts remain aggregate and bounded; raw prompt/media/account/provider/storage identity is not part of the Health browser contract. Exact head `1ecd46bb809c1953cd24f1eecbd4bbfab7dbd4be` passed Account/Admin Operations `33976269977` with exact aggregate/privacy/cleanup assertions and desktop+narrow no-overflow checks. Artifact `9972464342` (`sha256:f0b26931cb8e5ae574c457cf0f3f1ecff19f04dcde0fc3c390f19bbb57dbbd4c`) was independently hash-checked and human-reviewed clean on 2026-09-05: the existing dense Admin card/list hierarchy remains readable on desktop and 390px narrow layout, timing is explicitly labelled as accepted-to-terminal rather than SLA/ETA, and bounded truncated counts are explained with `+`. No corrective UI change was required.
 
 ### Media Viewer — Phase 18 Image Upscale extension — render verified
-**Status:** APPROVED incremental extension — UI-058 / 18E implemented and render verified; 18F product proof remains next
+**UI maturity:** `APPROVED`. **Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Route:** existing `/library/[assetId]`; no new Upscale route
 
 **Verified behavior:** an eligible active durable image exposes **Upscale 2×** in the existing Continue hierarchy as a full-width secondary row beneath Edit/Animate. Action presence is server-derived from owner-loaded durable metadata plus backend configuration; the browser sends only the opaque asset route identity. Starting is duplicate-locked and truthful (`Starting upscale…`); acceptance keeps the source Viewer stable, shows `Upscale started. Track progress in Activity.` plus **Open Activity**, and does not fabricate completion; errors stay local/retryable. Ineligible geometry omits the action rather than showing a false disabled promise. Succeeded Upscale results continue to use the existing UI-056 Compare source path from 18D while the same-owner source remains active. Implementation head `ac4aed60e64061ee6a911c858cdc032b6f9a7423` passed Upscale Viewer Visual `34033506667`; artifact `9989427506` (`sha256:49e40583899891a1f1863ff8fd49a714febf11bfdb999bb781849f45c3e01121`) was hash-checked and human-reviewed clean for desktop/narrow eligible, starting, accepted and error states with no horizontal overflow or hierarchy correction required. Design checkpoint: `design/penpot/media-viewer-v0.3-upscale-2x.md` plus desktop/mobile SVGs. No new route, Create mode, generic primitive or production rollout was introduced.
 
-**Eligibility / scope:** fixed 2× only; PNG/JPEG/WebP source; source max edge 4096 px, max 4,194,304 pixels and max 25 MB; no video, batch, model picker, prompt, Restore claim or arbitrary factor. Server state is authoritative. A desktop+narrow Viewer design checkpoint is required before implementation and final configured screenshots require human review.
+**Eligibility / scope:** fixed 2× only; PNG/JPEG/WebP source; source max edge 4096 px, max 4,194,304 pixels and max 25 MB; no video, batch, model picker, prompt, Restore claim or arbitrary factor. Server state remains authoritative. The desktop/narrow design checkpoint and configured implementation evidence above are historical acceptance evidence; current production state is governed by the Media Viewer entry and production block above.
 
 **Do not change:** keep the existing Viewer media-primary hierarchy, result/source comparison rules and ordinary Edit/Animate actions. Do not create an Upscale application, route, modal management framework or generic post-processing toolbar for v0.1.
 
 ## Post-Cycle 3 Create Extension — Contextual Image Model Choice
 **Route:** `/create`
-**Status:** IMPLEMENTED / VERIFIED / MERGED
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Implementation:** existing `CreateWorkspace` + `CreateAdvancedPanel`; no new route or generic component.
 
 Image output now owns a compact contextual **Image model** choice. **FLUX.2 Klein** remains the default and **Qwen Image Edit** is an explicit alternative for both source-free image generation and source-backed Edit. The selector disappears in Video mode because REDGraft is currently the only productized Video choice. The browser submits only a stable product model ID; worker fleet selection/failover remains server-side. Qwen's fixed 4-step tuning removes configurable Steps/Guidance from Advanced while retaining applicable prompt/seed controls. Current-valid recipe reconstruction restores the selected model. Historical recipes lacking model identity default to the former FLUX/REDGraft behavior.
@@ -391,12 +391,11 @@ Exact PR head `d5f80c02f041b645b7a3b1dee13d70d8139cc832` passed all 19 attached 
 
 ## Post-Cycle 3 Library Extension — Creatives / Uploads
 **Route:** `/library`
-**Status:** IMPLEMENTED / VERIFIED / MERGED — UI-060
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** UI-060.
 
 The approved Library remains one route and one durable-media workspace, but now exposes two higher-level origin sections. **Creatives** is canonical `/library` and maps to generated assets; **Uploads** is URL-owned as `?tab=uploads` and maps to uploaded assets. All/Images/Videos, search, Favorites, Collections, sort and pagination remain inside the active section. Upload and desktop drag/drop exist only in Uploads. Media Viewer stays `/library/[assetId]`; Rename, Download, Favorite, Collections, Delete and continuation remain asset-ID based and origin-agnostic.
 
 Exact reconciled head `a81c02e82abb0cec6b386e4cfb69f1075f377e33` passed all 30 attached workflows and final desktop/390px Library review. PR #116 merged as `999d32812e74afdba73e3cbaa7607a64ce65d603`; all nine attached merged-main workflows passed. No new route, schema, parallel Upload media identity or deployment was introduced.
-
 
 ## Historical Cycle 4 Phase 19 shared screen treatment
 At Phase 19, Create, Library/Viewer, Activity, Settings and Admin kept their existing routes and feature ownership while inheriting the then-current UI-062 Kinetic Precision `AppShell`: atmospheric spectral canvas, floating dimensional rail/topbar, morphing active navigation, tactile navigation response and floating mobile dock. That shell geometry is historical and was later superseded by UI-074; current shell authority is the Application Shell section above. Phase 19 did not claim feature-internal redesign; Create internal composition remained Phase 20, Library/Viewer internals Phase 21, and Activity/Settings internals Phase 22. Exact reviewed shell head `ea21d56e4ac643ec32d586759fc48c2ef165e44b`.
@@ -428,7 +427,7 @@ The approved `/` product home at this phase used the reviewed Phase 22 Kinetic P
 At cycle start, approved routes and product behaviors remained live while their visual hierarchy was audited. Viewer was first because the then-current prompt-fallback H1 could dominate the first viewport and duplicated Prompt content already available in the Viewer register. Activity followed for the analogous prompt-headline hierarchy. Library, Create, Settings/Profile/Preferences, Admin, Landing and AppShell were reviewed for corresponding space-use, chrome-density and legibility failures; unchanged surfaces remained unchanged when the issue did not reproduce. Locked RenderLabBrand and Landing canonical quarter-circle remained outside the redesign boundary.
 
 ### Media Viewer — UI-082 hierarchy checkpoint
-**Status:** COMPLETE / VERIFIED / MERGED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Design checkpoint:** `design/rd/media-viewer-media-first-v01.md`
 
 UI-082 corrects the production long-prompt hierarchy without changing Viewer capability. The page H1 is a stable durable-asset label (display name → original filename → generic Generated/Uploaded media label), never the prompt. The media object follows a compact context header; prompt copy lives in one bounded attached preview/full disclosure; the result caption uses stable asset identity; Favorite/Download remain context-attached; Source Fold and continuation/manage behavior are unchanged. Desktop content may use up to 1600px and essential microtype is raised while decorative registration remains subordinate.
@@ -436,7 +435,7 @@ UI-082 corrects the production long-prompt hierarchy without changing Viewer cap
 Verification: exact source `a9d80dce2f1c78f09cbe08537b5ef2108b08344b` passed all 19 attached workflows after one unchanged retry of a transient Library History authentication failure. Media Viewer run `35530109364`, artifact `10611305473` (`sha256:9d493fc6e057fb9c10d36dc7a121d5b746dac2a12ddcc176c0fb04910d851337`) passed long-prompt 1440/1920/390, Source Fold, native video, touch, reduced-motion, 44×44 actions and no-overflow assertions and was human-reviewed clean.
 
 ### Activity + Library — UI-082 hierarchy checkpoint
-**Status:** COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Design checkpoint:** `design/rd/activity-library-hierarchy-v01.md`
 
 Activity keeps the UI-077 Job Matrix + History Register, newest-first chronology, lifecycle truth, refresh, Retry/Run Again/Cancel and result-link semantics. UI-082 changes only presentation hierarchy: request summary is no longer heading content, primary/secondary summaries are bounded, and essential job labels are raised toward the 10–12px floor. Library keeps the UI-075 Gallery Rail, media-card grammar, URL/server-owned state, search, source/kind filters, Favorites, Collections, sort, Select and upload behavior. UI-082 reduces only avoidable command-rail visual weight/height and raises essential labels while leaving touch targets and selection choreography intact.
@@ -444,7 +443,7 @@ Activity keeps the UI-077 Job Matrix + History Register, newest-first chronology
 Verification: exact source `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all 18 attached workflows. Activity Visual `35531996901` / artifact `10611591672` (`sha256:4f1fd684ee6518315a93dda67622dc978a8232d6d3eb090469b23cfe8ac05b61`) and Library History Visual `35531996914` / artifact `10611526669` (`sha256:91e24628af5bd7af4d322d7d0a965ca8c5b16f7972367a9b79d4b31cbc12914c`) were human-reviewed at desktop and 390px with reduced-motion/selection states. The deliberately long Activity request remains bounded; media remains Library's primary object; no horizontal overflow or control/action reachability regression was observed. PR #308 squash-merged as `058b8d10b0dcbfc93e47657a2c6ed0cea4c2c7e1`; merged-main Engineering Quality `35543303501`, UI Shell Validation `35543303489`, Activity Cancel Visual `35543303603`, Creative Iteration `35543303491`, and Image Upscale Integration `35543303495` all passed.
 
 ### Create — UI-082 checkpoint 4A legibility
-**Status:** COMPLETE / VERIFIED / MERGED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Design checkpoint:** `design/rd/create-account-admin-legibility-v01.md`
 
 Create retains the approved Clear Composer order, lifecycle/result placement, model/settings behavior, continuation actions, touch targets and reduced-motion path. UI-082 changes only two essential registration labels that were below the technical-text floor: active-generation registration and persisted-result registration now render at 10px with slightly stronger muted contrast.
@@ -452,7 +451,7 @@ Create retains the approved Clear Composer order, lifecycle/result placement, mo
 Verification: exact implementation head `b174eba5be1ec37c548f6f349e71d1cc0ea279c6` passed all nine attached workflows. Create Clear Composer Visual `35543744625` / artifact `10615174763` (`sha256:9611a0cd6eedacf08a0f2ab9e7b4199f947f460ba8686e6aeb7b1b7957d40670`) and Create Lifecycle Visual `35543744613` / artifact `10616030332` (`sha256:0b64377356df061af957aeeda89dc3087870fbd8474c76069dae95d8091f3260`) were human-reviewed across desktop, 390px, reduced-motion, active-generation and persisted-result states; media still leads the persistent composer and no overflow or action regression was observed.
 
 ### Settings / Profile / Preferences + Admin — UI-082 checkpoint 4B
-**Status:** COMPLETE / VERIFIED / MERGED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Design checkpoint:** `design/rd/create-account-admin-legibility-v01.md`
 
 Settings, Profile and Preferences retain their approved Trust Register/subordinate-page composition. Exact-head Account Profile Credential `35544753703` on `700cc89e9d61063817208eabf76dfe48fe83cd6c` passed profile, credential, preferences and exact fixture cleanup; profile/credential artifact `10616291853` (`sha256:1af4bbfc1eabb0453a3bd9ed0fa8280d3b0f94a77532b4ce547fcb5feea4a197`) and preferences artifact `10616496595` (`sha256:50c6107a3869d834124c50aeb9682ca57fd6b3088d2a93ffaefb603873b3ab5c`) were human-reviewed across desktop, 390px and reduced motion. No hierarchy, overflow, action-reachability or legibility defect reproduced, so UI-082 makes no account-family pixel change.
@@ -460,12 +459,12 @@ Settings, Profile and Preferences retain their approved Trust Register/subordina
 Admin retains the UI-079 Settings-derived `01 Access / 02 Generation / 03 Health` structure and all fresh-admin, self-lockout, last-active-admin, invitation, generation-control and bounded-Health contracts. UI-082 raises only reproduced sub-10px operational identity/self-badge/metric/diagnostic labels to the technical-text floor. Account/Admin Operations `35544269607` / artifact `10615716556` (`sha256:7922b507a83e6697873552ba86ae3c8995a5454e0afd3e2f7bca8f88c79c48d5`) passed on the same head and preserved desktop/390px/reduced-motion no-overflow behavior.
 
 ### Brand / Landing + AppShell — UI-082 checkpoint 4C
-**Status:** COMPLETE / VERIFIED NO-CHANGE AUDIT
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `EXACT-HEAD VERIFIED`, `HUMAN-REVIEWED`. **Deployment:** `NOT APPLICABLE`.
 
 Brand / Launch `35544269610` / artifact `10616680057` (`sha256:deeac330f648f0bcf8fae593feb7b57440293fc08c8ce4369d0f2e8d61b3d8d3`) and UI Shell `35544269606` / artifact `10615634368` (`sha256:9919e862f62ba5ba3d592a2396b6d703d8cc400b5d44707dd84d8c4de11d4018`) passed on exact implementation head `700cc89e9d61063817208eabf76dfe48fe83cd6c`. Desktop/mobile rendered review found no hierarchy, collision, clipping, action-reachability or legibility defect requiring source changes. The locked RenderLabBrand geometry, canonical Landing quarter-circle and UI-074 compact application shell remain authoritative and pixel-unchanged by checkpoint 4C.
 
 ### Whole-product — UI-082 checkpoint 5 acceptance
-**Status:** COMPLETE / VERIFIED / MERGED / MERGED-MAIN VERIFIED / PRODUCTION-LIVE VIA LATER CUMULATIVE RELEASE
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 
 Exact candidate `c194ae299f0bdee2243c54eb2be00612c86f03e2` passed all ten PR-attached workflows: Engineering Quality `35545111587`, Brand / Launch Visual `35545111542`, Account Identity Visual `35545111615`, Create Clear Composer Visual `35545111611`, Activity Cancel Visual `35545111592`, Integrated Release `35545111555`, Account/Admin Operations `35545111584`, UI Shell Validation `35545111605`, Create Lifecycle Visual `35545111606`, and Activity Visual `35545111569`. Dedicated Media Viewer Register Fold `35545120954` / artifact `10616312242` (`sha256:026a06d1585537b4beaedaf31d557b9a334420af18a2631f18a516f490a5de89`) passed the long-prompt 1440px, wide-desktop and 390px regression. Release Candidate Matrix `35545344706` passed 23/23 configured child workflows and published manifest artifact `10615743591` (`sha256:699ee1de823e3f0f6355fa3095a2114cb43651bd6614800ef6d55e5e25a68cee`).
 
