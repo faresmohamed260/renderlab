@@ -741,7 +741,7 @@ The 2026-08-29 operating assumption treated repository secret `CLOUDFLARE_API_TO
 This DNS change does not enable automatic Git -> Vercel deployment and does not change the RenderLab upload/session/ownership model. The custom-domain browser upload origin remains explicitly approved as documented above.
 
 ## Infrastructure Operating Rules
-Cycle 2 production is accepted and Phase 13 — Email & Invite Production Hardening is `COMPLETE / VERIFIED`: 13A–13D passed. Phase 13 changed only transactional-email/DNS/hosted-Auth configuration plus bounded external-mailbox verification; no application or Vercel deployment changed.
+Current application deployment truth is owned by the production block above and `docs/production/current.json`. Phase 13 — Email & Invite Production Hardening is historical closure evidence; its still-binding transactional-email, DNS and hosted-Auth constraints remain authoritative where this document carries them forward.
 
 1. Keep GitHub validation and Vercel deployment separate: deployment-readiness changes must be exact-head green on GitHub before any explicit rollout; a repository merge is never implicit permission to deploy or apply a future schema change.
 2. Add any future public upload origin explicitly to R2 CORS before deployment/use.
@@ -770,7 +770,7 @@ Cycle 2 production is accepted and Phase 13 — Email & Invite Production Harden
 - No infrastructure action in the contract PR applies migrations, changes hosted Auth configuration, changes Vercel deployment settings or deploys the application.
 
 ## Phase 10A Closed-Beta Admission Schema
-**Status:** APPLIED / VERIFIED, application enforcement not enabled in production.
+**Closure-time status:** APPLIED / VERIFIED; application enforcement was not enabled in production at this checkpoint.
 
 - Repository migration: `supabase/migrations/0010_renderlab_account_admission.sql`.
 - Hosted migration: `20260829234212 renderlab_account_admission` on the approved shared RenderLab Supabase project.
@@ -812,7 +812,7 @@ This blocker does not alter the broader-beta findings: built-in Supabase email/r
 
 
 ### Phase 12B accepted Closed-Beta production rollout — 2026-08-31
-Phase 12B is `COMPLETE / VERIFIED` for the Cycle 2 Closed-Beta operating boundary. Exact 12A-verified application SHA `d6b8f386db3893e583c99b23fc3397b0eb377d42` is the accepted production application.
+At closure, Phase 12B was `COMPLETE / VERIFIED` for the Cycle 2 Closed-Beta operating boundary. Exact 12A-verified application SHA `d6b8f386db3893e583c99b23fc3397b0eb377d42` was the accepted production application for that rollout.
 
 The earlier Auth URL blocker was resolved by run `33337864235`: Supabase hosted Auth Site URL is now `https://renderlab.faresuniform.uk`; exact production redirect destinations `https://renderlab.faresuniform.uk/settings` and `https://renderlab.faresuniform.uk/auth/confirm?type=recovery&next=/settings/password` are configured, and no-email generated invite/recovery links preserved those destinations. The sole persistent RenderLab account remains exactly one active admin with no per-account generation overrides. Vercel production `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED=true` is active.
 
@@ -828,7 +828,7 @@ Closed-Beta Cycle 2 acceptance does not resolve broader-beta Auth hardening. Sup
 
 
 ### Phase 13 Email & Invite Production Hardening infrastructure state — 2026-09-01
-**Status: `COMPLETE / VERIFIED`; 13A–13D complete.** The active production Auth mail provider is Resend custom SMTP. Brevo remains historical 13B evidence and rollback context, not the current Supabase SMTP route.
+**Closure-time status:** `COMPLETE / VERIFIED`; 13A–13D complete. The current accepted Auth mail provider remains Resend custom SMTP. Brevo remains historical 13B evidence and rollback context, not the current Supabase SMTP route.
 
 Current accepted transactional identity:
 - web application: `renderlab.faresuniform.uk`;
@@ -1006,7 +1006,7 @@ Exact proof head `fec2ad2762d21cbd92c8db03c8a95130a6b6ecb7` passed Image Upscale
 The permanent CI workflow prefers `secrets.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL`; because RenderLab Actions currently has neither that secret nor Modal credentials, its dedicated proof falls back to the independently provider-verified public endpoint `https://silentspecter67--renderlab-image-upscale-web.modal.run`. This is **CI proof-only**, not production runtime configuration: production still requires server-only `RENDERLAB_UPSCALE_WORKER_GATEWAY_URL`, and no Vercel environment was changed. Phase 18F performed no worker redeployment, schema migration, provider-routing mutation, Vercel deployment, scheduler, `pg_cron` or `pg_net` activation. Exact proof head closed at 32/32 attached workflows successful; PR #111 was subsequently squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d` from `c40705d760639eb6fffdf9d51fc69ed397fc55a0`. Merged `main` passed all 14 workflows / 15 checks GitHub attached, including the bounded real-worker Image Upscale leg. Production RenderLab deployment/environment and scheduler state remained unchanged.
 
 ## Cycle 3 / Phase 18 Production Application Rollout — 2026-09-06
-**Status: `COMPLETE / VERIFIED / LIVE`.**
+**Closure-time status:** `COMPLETE / VERIFIED / LIVE`. Present application deployment truth is the current production block at the top of this document.
 
 - Exact application source `c493eaead6997cce1c22c6835c98177d6346ff41` was explicitly deployed via Vercel CLI as production deployment `dpl_6htPrpLMysfqZycZ7wQ5btwejXPA` (`https://renderlab-42skee4j0-faresmohamed260-6733s-projects.vercel.app`); `https://renderlab.faresuniform.uk` is an active alias. The prior READY deployment `dpl_CZZvmdN42VHRK7uLVUA9W8kdc7x2` was retained as rollback until smoke completed and was not needed. Automatic Git → Vercel deployment remains disabled.
 - Production environment-key metadata contained the existing Supabase/R2 contract and server-only `RENDERLAB_UPSCALE_WORKER_GATEWAY_URL`; the deployment's own `prebuild` / `scripts/verify-vercel-env.mjs` validated the actual injected values and shared Supabase identity before Next.js compiled. The Upscale gateway variable already existed and was preserved. The already-proved Modal Upscale worker passed health; no worker redeployment occurred.
