@@ -137,7 +137,7 @@ jobs:
             '  );',
             '});',
             '',
-          ].join("\\n");
+          ].join("\n");
           fs.writeFileSync('tests/unit/product-capabilities-status.test.mjs', testBody);
           NODE
 
