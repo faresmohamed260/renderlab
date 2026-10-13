@@ -475,7 +475,7 @@ A strength meter is optional. If used, it should be supplemental and evidence-ba
 
 ## 11. Workstream A — Auth and email delivery hardening (#215)
 
-**Status:** COMPLETE / VERIFIED / PRODUCTION-LIVE — #215A hosted/application hardening plus #215B free HIBP compromised-password screening.
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Priority:** P0 prerequisite; much of this is platform hardening rather than Settings UI.
 
 ### Completed scope
@@ -512,7 +512,8 @@ The configured policy must be programmatically available or shared through one c
 
 ## 12. Workstream B — Session controls and security activity (#216)
 
-**Status:** SESSION CONTROLS v0.1 COMPLETE / VERIFIED / MERGED / NOT DEPLOYED. Security Activity remains deliberately deferred.
+**Session Controls v0.1 — Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
+**Security Activity follow-on — Execution:** `DEFERRED`.
 
 Historical implementation evidence: `docs/history/contracts/architecture/SESSION_CONTROLS_SECURITY_ACTIVITY_IMPLEMENTATION_CONTRACT.md`. Current Session Controls state and any future promotion gate are owned by this roadmap. PR #259 exact candidate `061b4bf49637b4fb09f0f1486b6a85f251ea6650` merged as `590c15f6fc9db9c107b3bc67fae80083fe0d55c4`.
 
@@ -542,7 +543,7 @@ A future Security Activity slice must first establish a populated supported even
 
 ## 13. Workstream C — MFA, recovery and privileged step-up (#217)
 
-**Status:** COMPLETE / VERIFIED / MERGED / NOT DEPLOYED.
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Priority delivered:** P0 Admin / P1 optional members.
 
 Binding current policy:
@@ -776,23 +777,26 @@ Deferred until RenderLab actually sends optional marketing communications. Secur
 
 This list prevents fake maturity: conventional menu labels are not product capabilities.
 
-## 19. Proposed execution sequence
+## 19. Current workstream sequence
 
-RenderLab's progressive-planning rule remains in force. Only the immediate selected workstream should receive an execution-ready phase contract.
+RenderLab's progressive-planning rule remains in force. The ordering below records present lifecycle and remaining gates; it does not make any workstream implicitly active or authorize implementation.
 
-Completed account-security foundation:
+Completed and production-live work:
 
-1. **#215 — Auth & email hardening:** complete, verified and production-live.
-2. **#217 — MFA & privileged step-up:** complete, verified, merged; not deployed by that workstream.
-3. **#216 — Session Controls v0.1:** complete, verified, merged; not deployed by that workstream. Security Activity remains a separately gated follow-on.
+1. **#215 — Auth & email hardening:** `Execution: COMPLETE`; `Repository: MERGED`; `Verification: PRODUCTION-VERIFIED`; `Deployment: PRODUCTION-LIVE`.
+2. **#217 — MFA & privileged step-up:** `Execution: COMPLETE`; `Repository: MERGED`; `Verification: PRODUCTION-VERIFIED`; `Deployment: PRODUCTION-LIVE`.
+3. **#216 — Session Controls v0.1:** `Execution: COMPLETE`; `Repository: MERGED`; `Verification: PRODUCTION-VERIFIED`; `Deployment: PRODUCTION-LIVE`.
+4. **#218 — Secure sign-in-email change:** `Execution: COMPLETE`; `Repository: MERGED`; `Verification: PRODUCTION-VERIFIED`; `Deployment: PRODUCTION-LIVE`.
+5. **#219 — Data & Privacy lifecycle:** `Execution: COMPLETE`; `Repository: MERGED`; `Verification: PRODUCTION-VERIFIED`; `Deployment: PRODUCTION-LIVE`.
+6. **#223 — Profile & credential UX delivered slice:** `Execution: COMPLETE`; `Repository: MERGED`; `Verification: PRODUCTION-VERIFIED`; `Deployment: PRODUCTION-LIVE`. Username/handle semantics remain unimplemented and still require the namespace gate in §10.3.
+7. **#220 — Initial durable Create-default slice:** `Execution: COMPLETE`; `Repository: MERGED`; `Verification: PRODUCTION-VERIFIED`; `Deployment: PRODUCTION-LIVE`.
 
-Default next planning sequence unless explicitly reprioritized:
+Deferred or conditional follow-ons:
 
-4. **#218 — Identity management:** secure email change and current identity/admission edge cases now that step-up/session foundations exist.
-5. **#219 — Data/privacy lifecycle:** export, retention and owner-wide deletion from a verified ownership/data map.
-6. **#223 — Profile & credential UX baseline:** independent P1 basic-maturity work that may be selected earlier if the user prioritizes visible account basics; it must not alter canonical Auth/authorization semantics.
-7. **#220 — Preferences & product notifications:** only product-backed durable preferences/channels/accessibility overrides.
-8. **#221 — Passkeys:** promote from research only after stability/domain/recovery gates are satisfied.
+- **#216 Security Activity:** `Execution: DEFERRED` pending a trustworthy populated event source plus retention/privacy/completeness evidence.
+- **#220 optional product notifications and app-level accessibility overrides:** `Execution: DEFERRED` pending real backing systems and an execution-ready amendment.
+- **#221 passkeys/WebAuthn research checkpoint:** `Execution: COMPLETE`; passkey implementation remains `Execution: DEFERRED` under the promotion gate in §17.
+- Linked identities, username/handle semantics and other conditional categories remain future intent until their stated gates are satisfied and a bounded phase is explicitly selected.
 
 The Phase 23–29 UI redesign program is already complete and production-live. This account-capability roadmap is a separate product/security program.
 
