@@ -371,11 +371,11 @@ The broader future Account & Settings program is governed by `docs/architecture/
 - Referenced temporary sources, durable media, generation history, unknown R2 objects and historical output anomalies are not age-purged.
 - Shared migrations `20260905015926 renderlab_generation_cancellation` and `20260905020803 renderlab_staging_cleanup_claims` are applied. Maintenance Integration `33939690830` passed race/fault/idempotence verification.
 - Final shared audit after verification: zero fixture users, active jobs/claims, indexed duplicate output slots, pending media purges and nonterminal upload sessions; three old unreferenced temporary sources remain eligible backlog and one old referenced source remains protected. Maintenance is implemented but not production-scheduled.
-- The shared schema is ahead of the still-deployed Cycle 2/Phase 13 application. Old-production generations may continue creating nullable `generation_output_index` rows until Phase 14/15 is explicitly rolled out; those rows are product history, not maintenance garbage.
+- At Phase 15 closure, the shared schema was ahead of the then-deployed Cycle 2/Phase 13 application. Generations from that older application could still create nullable `generation_output_index` rows until the later application rollout; those rows remained product history, not maintenance garbage. Present application deployment truth is owned by `docs/production/current.json`.
 
-Production deployment/scheduling remains separate: no Phase 14/15 app deployment, reconciler/maintenance secret, `pg_cron` or `pg_net` schedule is active from this verified implementation.
+**Closure-time deployment note:** at this Phase 14/15 checkpoint, no application rollout, reconciler/maintenance secret, `pg_cron`, or `pg_net` schedule had been activated by the verified implementation. Present deployment and scheduling truth must be read from the current production and infrastructure authorities rather than this closure record.
 
-### Phase 16 Creative Iteration — COMPLETE / VERIFIED in RenderLab
+### Phase 16 Creative Iteration
 Successful durable generation history can now be reused as **current-valid product intent** without claiming historical provider replay.
 
 - `src/server/generation/generation-recipe.ts` is the shared server boundary for historical request reconstruction. It reloads the job under owner scope, parses persisted prompt/output/inputs/Advanced state through the current request contract, verifies operation/output consistency and revalidates current image input ownership/readiness.
@@ -385,9 +385,10 @@ Successful durable generation history can now be reused as **current-valid produ
 - **Run Again** is succeeded-only and server-owned. It reconstructs the same current-valid product request and calls ordinary `submitGeneration`, so current admission, routing and defaults apply. Each explicit request creates a distinct attempt; the historical row is immutable and worker/provider/workflow/model/failover metadata is excluded.
 - Failed-job **Retry** remains recovery-only, successful **Run Again** remains iteration, and active **Cancel** remains lifecycle control. These are intentionally separate product actions.
 - Exact configured verification head `5c9008c974c9b096fd484b3e5546c613880ff79a` passed the dedicated Creative Iteration run `33959979016` and all 26 affected workflows. The focused run verified privacy, no implicit dispatch, editable Image/Video/Advanced prefill, ready temporary references, fail-closed unavailable references, distinct immutable Run Again attempts and admission denial with exact cleanup.
-- Conditional Viewer **Compare source** is implemented for generated Edit/Animate results whose producing owner-scoped job still resolves an active same-owner durable primary `media-asset`. Ineligible temporary/deleted/foreign/no-source history fails closed. The feature reveals comparison progressively, preserves truthful media geometry and result-primary hierarchy, links Source only through its ordinary Viewer, preserves video controls/result actions, and adds no new route, schema or durable comparison state. Exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed Creative Iteration `33964679539` and all 26 affected workflows. Artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) was independently hash-checked and human-reviewed clean across Image→Image and Image→Video desktop/narrow; no corrective implementation change was required. Phase 16 is `COMPLETE / VERIFIED`. Variations remains deferred because current product/worker execution still has one-output semantics.
+- Conditional Viewer **Compare source** is implemented for generated Edit/Animate results whose producing owner-scoped job still resolves an active same-owner durable primary `media-asset`. Ineligible temporary/deleted/foreign/no-source history fails closed. The feature reveals comparison progressively, preserves truthful media geometry and result-primary hierarchy, links Source only through its ordinary Viewer, preserves video controls/result actions, and adds no new route, schema or durable comparison state. Exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed Creative Iteration `33964679539` and all 26 affected workflows. Artifact `9969057974` (`sha256:cc20206371324f0698433731294924105174943cc0176dfd4ce9264fee6e8df5`) was independently hash-checked and human-reviewed clean across Image→Image and Image→Video desktop/narrow; no corrective implementation change was required. **Closure-time status:** `COMPLETE / VERIFIED`. Variations remains deferred because current product/worker execution still has one-output semantics.
 
-## Phase 18 Image Upscale v0.1 — COMPLETE / VERIFIED / MERGED
+## Phase 18 Image Upscale v0.1
+**Closure-time status:** `COMPLETE / VERIFIED / MERGED`.
 Fresh deployed-worker audit `33995223659` / artifact `9977854297` (`sha256:3490b81b9229e048d78829848b8f1c4061aa0082859dd005481604f3881febef`) was run read-only from the post-Phase-17 repository baseline. It found one ready FLUX standby, one ready REDGraft standby and two ready Qwen workers; the registered FLUX and REDGraft primaries are disabled Modal workspaces. Healthy APIs expose only current Image Edit or Video generation lifecycle routes. No deployed endpoint advertises image Upscale, Restore, Inpaint/Outpaint, LoRA selection or Director semantics.
 
 The accepted Phase 18 capability is therefore **Image Upscale v0.1**, not a combined "Upscale/Restore" promise:
@@ -411,10 +412,10 @@ Phase 18A–18D now verify the worker, domain/schema, server API/admission and l
 - `34042759032` passed the complete run-owned matrix plus one real request through the already-deployed Modal worker: one slot-0 PNG, exact `8×6 → 16×12`, source preserved, `renderlab-upscale-01` / `image-upscale-v1`.
 - Run-owned evidence verifies promptless fixed-2× admission, server reconciliation/finalization, duplicate convergence, native Cancel, failed Retry source revalidation, successful Run Again/Reuse Settings absence and active-source-only Compare.
 - Artifact `9992236657` independently matches GitHub at `sha256:68e5755c3c32b64e7f6606a7c7c94a8ed0774871975c3cf611759b46dee4eaf9`; responsive comparison renders were human-reviewed clean and configured database/Auth/R2 cleanup passed.
-- Exact proof head closed at 32/32 attached workflows successful. PR #111 was then squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d` from definitive exact head `c40705d760639eb6fffdf9d51fc69ed397fc55a0`; merged `main` passed all 14 workflows / 15 checks GitHub attached. Phase 18 is complete/verified/merged; production rollout remains separate.
+- Exact proof head closed at 32/32 attached workflows successful. PR #111 was then squash-merged as `b8be87453ba0f98e3cd70a3c16a6ad9c1747b75d` from definitive exact head `c40705d760639eb6fffdf9d51fc69ed397fc55a0`; merged `main` passed all 14 workflows / 15 checks GitHub attached. At Phase 18 closure, the work was complete/verified/merged and the application rollout remained separate. The Phase 18 merge is an ancestor of the current production source, so the application capability is now `PRODUCTION-LIVE`; current production identity remains canonical in `docs/production/current.json`.
 
 ## Post-Cycle 3 Productization — User-selectable Image model
-**Status:** COMPLETE / VERIFIED / MERGED
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `EXACT-HEAD VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 
 RenderLab now treats the image-model choice as explicit product intent rather than a hard-coded native-routing decision. Current productized prompt-generation models are:
 
@@ -433,7 +434,7 @@ Isolated routing run `34065515794` used an explicit test-only native gateway ove
 Exact PR head `d5f80c02f041b645b7a3b1dee13d70d8139cc832` passed all 19 attached workflows before PR #115 merged as `e8649ba39e660e2ec98cfd2fd864b22db74e64e3`. No schema, worker, provider-resource or production deployment change was required.
 
 ## Post-Cycle 3 Library browsing — Creatives / Uploads
-**Status:** COMPLETE / VERIFIED / MERGED
+**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `EXACT-HEAD VERIFIED`, `MERGED-MAIN VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 
 The Library now exposes an origin browsing dimension over existing durable media: canonical **Creatives** maps to `origin=generated`, while **Uploads** maps to `origin=uploaded`. This does not change durable media identity or capability. Kind/search/Favorites/Collections/sort/pagination remain composable inside either origin. Upload/drag-drop are available only in Uploads; Viewer and asset-level capabilities remain unchanged. The media-list API accepts optional origin filtering and remains unified when omitted. Existing `media_assets.origin` schema/indexes are reused; no migration/backfill/storage/provider change was required.
 
