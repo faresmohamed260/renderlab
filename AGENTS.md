@@ -88,6 +88,8 @@ In Authorized Redesign Mode:
 `LOCKED` decisions remain locked unless the user explicitly authorizes changing them.
 
 ## Component Source Policy
+
+`docs/ui/component-sources.json` is the machine-readable external-source policy companion to `docs/ui/COMPONENT_CATALOG.md`. Its source tier/search order, adoption mode, installed dependency/version mapping, active-use state, and license-review status must stay synchronized with repository reality; Documentation Governance enforces that boundary.
 Do **not** build generic UI primitives or sophisticated interaction mechanics from scratch when a suitable, production-appropriate implementation exists in an approved source.
 
 For conventional visible controls, this is now an enforceable implementation rule, not merely a preference:

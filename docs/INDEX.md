@@ -1,6 +1,6 @@
 # Documentation Index and Authority Taxonomy
 
-Updated: 2026-10-13
+Updated: 2026-10-14
 
 This file is the repository-wide navigation and documentation taxonomy for RenderLab. It explains what each class of document means, how apparently conflicting records are resolved, and what does or does not establish backlog authority. It does not replace the domain-specific authorities it points to.
 
@@ -48,6 +48,8 @@ The UI-decision evidence-separation checkpoint preserves the pre-cleanup mixed d
 ## Machine-readable governance metadata
 
 `docs/governance/documents.json` is the lint-managed metadata registry for RenderLab's high-authority documentation set. `docs/governance/document-metadata.schema.json` defines the accepted shape and enums. The registry records document kind, authority class, lifecycle, owner role, governance review date/interval, and explicit document-level supersession links.
+
+`docs/ui/component-sources.json` is a separate machine-readable current-state registry for approved external UI source policy. It records source tier/search order, adoption mode, active-use state, installed package/version mapping, and license-review status. `npm run verify:docs-governance` cross-checks it against `docs/ui/COMPONENT_CATALOG.md`, `package.json`, and `package-lock.json`; copy/registry sources remain explicitly review-required per adoption rather than receiving inferred license approval.
 
 - `lastReviewed` means the document's governance role/lifecycle/ownership classification was reviewed on that date. It does **not** silently re-verify every historical evidence statement or external-provider fact inside the document.
 - Current managed documents have a bounded `reviewIntervalDays`; `npm run verify:docs-governance` fails when that governance review becomes stale.
@@ -195,7 +197,8 @@ Use this map to find the appropriate current authority without treating every Ma
 
 - `docs/ui/UI_MIGRATION.md` — current-only UI foundation/migration tracker; closed phase journals are archived rather than retained as active context.
 - `docs/ui/SCREEN_REGISTRY.md` — current screen/route/viewport registry and UI production-state record.
-- `docs/ui/COMPONENT_CATALOG.md` — current approved shared-component registry.
+- `docs/ui/COMPONENT_CATALOG.md` — current approved shared-component registry and human external-source guidance.
+- `docs/ui/component-sources.json` — machine-readable external component-source tier/adoption/dependency/license-review registry.
 - `docs/ui/UI_DECISIONS.md` — accepted UI decision/precedent authority. Keep durable decision/status/reason/consequence/supersession content current here; move detailed run/artifact/merge/deployment chronology to historical evidence and retain only concise evidence links when useful.
 - `docs/ui/UI_SYSTEM.md` — normative UI-system rules.
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
