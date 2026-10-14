@@ -75,11 +75,9 @@ test("external fact authority must be a current managed document and action cont
   assert.ok(problems.some((problem) => problem.includes("require at least one action_context")));
 });
 
-test("Documentation Governance watches the external-fact verifier library", async () => {
-  const workflow = await readFile(path.join(rootDir, ".github/workflows/docs-governance.yml"), "utf8");
-  assert.equal(
-    workflow.split('"scripts/lib/external-fact-governance.mjs"').length - 1,
-    2,
-    "external-fact verifier must be watched on pull_request and push",
-  );
+test("Documentation Governance always covers external-fact policy inputs", async () => {
+  const workflow = (await readFile(path.join(rootDir, ".github/workflows/docs-governance.yml"), "utf8")).replace(/\r\n/g, "\n");
+  assert.match(workflow, /pull_request:/);
+  assert.match(workflow, /push:/);
+  assert.doesNotMatch(workflow, /\n\s+paths(?:-ignore)?:/);
 });

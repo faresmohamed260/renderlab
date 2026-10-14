@@ -70,15 +70,11 @@ test("component source registry rejects dependency version and license drift", a
   assert.ok(problems.some((problem) => problem.includes("licenseSpdx Apache-2.0 does not match package-lock.json MIT")));
 });
 
-test("Documentation Governance watches every component-source policy input", async () => {
-  const workflow = await readFile(path.join(rootDir, ".github/workflows/docs-governance.yml"), "utf8");
-  for (const watchedPath of [
-    "docs/ui/component-sources.json",
-    "package-lock.json",
-    "scripts/lib/component-source-governance.mjs",
-  ]) {
-    assert.equal(workflow.split(`\"${watchedPath}\"`).length - 1, 2, `${watchedPath} must be watched on pull_request and push`);
-  }
+test("Documentation Governance always covers component-source policy inputs", async () => {
+  const workflow = (await readFile(path.join(rootDir, ".github/workflows/docs-governance.yml"), "utf8")).replace(/\r\n/g, "\n");
+  assert.match(workflow, /pull_request:/);
+  assert.match(workflow, /push:/);
+  assert.doesNotMatch(workflow, /\n\s+paths(?:-ignore)?:/);
 });
 
 test("component source registry keeps copy/discovery sources on per-adoption license review", async () => {

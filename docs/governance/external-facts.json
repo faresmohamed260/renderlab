@@ -5,8 +5,8 @@
       "id": "github-main-protection",
       "authority_path": "GOVERNANCE.md",
       "subject": "Protected-main enforcement and review configuration",
-      "claim": "The repository has one direct human collaborator/owner and no repository teams; main is protected with strict up-to-date Engineering Quality quality status enforcement, while required PR reviews, rulesets, admin enforcement, and conversation-resolution enforcement are not configured.",
-      "source": "GitHub REST collaborators, teams, branch-protection, and repository-rulesets read-back for faresmohamed260/renderlab.",
+      "claim": "The repository has one direct human collaborator/owner and no repository teams; protected main requires strict up-to-date governance, quality, unit-coverage, CodeQL, and both Developer Portability OS check contexts, with administrator enforcement enabled. Required PR reviews, conversation-resolution enforcement, rulesets, and CODEOWNERS are not configured.",
+      "source": "GitHub REST collaborators, teams, branch-protection, required-status-checks, and repository-rulesets read-back for faresmohamed260/renderlab; expected settings are recorded in docs/governance/github-protection.json.",
       "verified_at": "2026-10-14",
       "reverify_before_action": true,
       "action_contexts": [
