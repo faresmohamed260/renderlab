@@ -68,7 +68,7 @@ Emergency authority does **not** authorize unrelated feature work, convenience r
 ## GitHub review and CODEOWNERS
 
 <!-- EXTERNAL_FACT: github-main-protection -->
-Current GitHub enforcement was audited on 2026-10-14: the repository has one human collaborator/owner, no repository teams, no required pull-request review, no rulesets, and branch protection requires the Engineering Quality `quality` status check. There is no `CODEOWNERS` file.
+Current GitHub enforcement is defined by `docs/governance/github-protection.json` and was verified on 2026-10-14: the repository has one human collaborator/owner and no repository teams; protected `main` requires strict up-to-date checks for Documentation Governance (`governance`), Engineering Quality (`quality`), Unit Coverage (`unit-coverage`), CodeQL (`javascript-typescript`), and Developer Portability on both Ubuntu and Windows (`clean-room (ubuntu-latest)` and `clean-room (windows-latest)`). Required checks apply to repository administrators. Required pull-request review, conversation-resolution enforcement, rulesets, and `CODEOWNERS` are not configured.
 
 A `CODEOWNERS` file is **not appropriate yet** because there is no stable multi-human/team role mapping to route meaningful independent ownership review. Adding a wildcard owner would not create independent governance and could imply review separation that does not exist.
 
@@ -76,7 +76,7 @@ Add `.github/CODEOWNERS` only when a stable role-to-GitHub-user/team mapping exi
 
 ## Governance changes and review
 
-- Governance changes must be made through reviewed repository changes and pass the required exact-head validation.
+- Governance changes must be made through reviewed repository changes and pass the required exact-head validation. Protected-main settings must remain synchronized with `docs/governance/github-protection.json`; changing a required check name or PR trigger requires the policy and live GitHub protection to change together.
 - `GOVERNANCE.md` is registered in `docs/governance/documents.json` and reviewed at least every 90 days, and sooner when maintainer/provider ownership, deployment authority, security authority, or the review model materially changes.
 - `AGENTS.md` governs AI/session operating behavior, but it cannot grant an AI agent any human role defined here.
 - `CONTRIBUTING.md` governs contributor workflow; `SECURITY.md` governs vulnerability reporting; `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` governs incident execution. Those documents must remain consistent with this human authority model.

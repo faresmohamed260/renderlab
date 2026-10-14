@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "branch": "main",
+  "strict": true,
+  "enforceAdmins": true,
+  "requiredPullRequestReviews": false,
+  "requiredConversationResolution": false,
+  "requiredChecks": [
+    {
+      "context": "quality",
+      "appId": 15368,
+      "workflow": ".github/workflows/engineering-quality.yml",
+      "job": "quality"
+    },
+    {
+      "context": "governance",
+      "appId": 15368,
+      "workflow": ".github/workflows/docs-governance.yml",
+      "job": "governance"
+    },
+    {
+      "context": "unit-coverage",
+      "appId": 15368,
+      "workflow": ".github/workflows/unit-coverage.yml",
+      "job": "unit-coverage"
+    },
+    {
+      "context": "javascript-typescript",
+      "appId": 15368,
+      "workflow": ".github/workflows/codeql.yml",
+      "job": "javascript-typescript"
+    },
+    {
+      "context": "clean-room (ubuntu-latest)",
+      "appId": 15368,
+      "workflow": ".github/workflows/developer-portability.yml",
+      "job": "clean-room",
+      "matrixOs": "ubuntu-latest"
+    },
+    {
+      "context": "clean-room (windows-latest)",
+      "appId": 15368,
+      "workflow": ".github/workflows/developer-portability.yml",
+      "job": "clean-room",
+      "matrixOs": "windows-latest"
+    }
+  ]
+}

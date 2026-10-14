@@ -4,6 +4,7 @@ import { verifyArchiveCatalog } from "./lib/archive-catalog.mjs";
 import { verifyComponentSourceRegistry } from "./lib/component-source-governance.mjs";
 import { verifyDocsGovernance } from "./lib/docs-governance.mjs";
 import { verifyExternalFactRegistry } from "./lib/external-fact-governance.mjs";
+import { verifyGithubProtectionPolicy } from "./lib/github-protection-governance.mjs";
 import { findPublicDocumentationBoundaryProblems } from "./lib/public-documentation-boundary.mjs";
 
 try {
@@ -19,10 +20,11 @@ try {
     throw new Error(`Public documentation boundary verification failed:\n- ${publicBoundaryProblems.join("\n- ")}`);
   }
   const externalFactResult = await verifyExternalFactRegistry();
+  const githubProtectionResult = await verifyGithubProtectionPolicy();
   const componentSourceResult = await verifyComponentSourceRegistry();
   const archiveResult = await verifyArchiveCatalog();
   console.log(
-    `Documentation governance passed: ${result.managedDocuments} managed metadata records, ${result.currentManagedDocuments} current managed documents, ${result.markdownDocuments} tracked Markdown documents, ${externalFactResult.facts} action-sensitive external facts governed (${externalFactResult.reverifyBeforeAction} reverify-before-action), ${componentSourceResult.sources} external component sources governed (${componentSourceResult.activeSources} active), ${archiveResult.catalogedArchives} root archive snapshots cataloged.`,
+    `Documentation governance passed: ${result.managedDocuments} managed metadata records, ${result.currentManagedDocuments} current managed documents, ${result.markdownDocuments} tracked Markdown documents, ${externalFactResult.facts} action-sensitive external facts governed (${externalFactResult.reverifyBeforeAction} reverify-before-action), ${githubProtectionResult.requiredChecks} protected-main checks governed (admins enforced), ${componentSourceResult.sources} external component sources governed (${componentSourceResult.activeSources} active), ${archiveResult.catalogedArchives} root archive snapshots cataloged.`,
   );
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

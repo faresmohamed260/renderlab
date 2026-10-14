@@ -230,6 +230,7 @@ test("Documentation Governance CI is secret-free and invokes the repository comm
   assert.equal(packageJson.scripts["verify:docs-governance"], "node scripts/verify-docs-governance.mjs");
   assert.match(workflow, /pull_request:/);
   assert.match(workflow, /push:/);
+  assert.doesNotMatch(workflow, /pull_request:\n(?:[ \t].*\n)*?\s+paths(?:-ignore)?:/);
   assert.match(workflow, /permissions:\n  contents: read/);
   assert.match(workflow, /npm run verify:docs-governance/);
   assert.doesNotMatch(workflow, /secrets\./);

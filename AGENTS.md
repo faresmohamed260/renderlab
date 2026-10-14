@@ -195,6 +195,7 @@ Durable decisions must update the appropriate source-of-truth file. Examples:
 - frontend architecture → `FRONTEND_ARCHITECTURE.md`
 - infrastructure/resource/secret contract → `docs/architecture/INFRASTRUCTURE.md`
 - documentation governance metadata — `docs/governance/documents.json`
+- protected-main required-check/admin-enforcement policy — `docs/governance/github-protection.json` plus verified GitHub branch-protection read-back
 - action-sensitive mutable external/provider fact — the applicable current authority plus `docs/governance/external-facts.json`
 
 Update existing authoritative documentation rather than creating competing sources of truth.

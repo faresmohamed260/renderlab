@@ -2,35 +2,9 @@ name: Documentation Governance
 
 on:
   pull_request:
-    paths:
-      - "**/*.md"
-      - "docs/governance/**"
-      - "docs/production/current.json"
-      - "docs/ui/component-sources.json"
-      - "package.json"
-      - "package-lock.json"
-      - "scripts/lib/component-source-governance.mjs"
-      - "scripts/lib/docs-governance.mjs"
-      - "scripts/lib/external-fact-governance.mjs"
-      - "scripts/lib/production-documentation-sync.mjs"
-      - "scripts/verify-docs-governance.mjs"
-      - ".github/workflows/docs-governance.yml"
   push:
     branches:
       - main
-    paths:
-      - "**/*.md"
-      - "docs/governance/**"
-      - "docs/production/current.json"
-      - "docs/ui/component-sources.json"
-      - "package.json"
-      - "package-lock.json"
-      - "scripts/lib/component-source-governance.mjs"
-      - "scripts/lib/docs-governance.mjs"
-      - "scripts/lib/external-fact-governance.mjs"
-      - "scripts/lib/production-documentation-sync.mjs"
-      - "scripts/verify-docs-governance.mjs"
-      - ".github/workflows/docs-governance.yml"
   workflow_dispatch:
 
 permissions:
