@@ -1,5 +1,7 @@
 # Product Capabilities & Domain Baseline
 
+> **Decision boundary:** durable non-UI cross-cutting architecture decisions and supersession are recorded in `ARCHITECTURE_DECISIONS.md`. This document remains authoritative for current product capability/domain state and supported contracts.
+
 This document records the capability baseline that informs RenderLab. It distinguishes audited Saga reference behavior, currently verified RenderLab capability, and future extensibility categories.
 
 ## Authority and Scope

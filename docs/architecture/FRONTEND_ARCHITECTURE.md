@@ -1,5 +1,7 @@
 # Frontend Architecture
 
+> **Decision boundary:** durable non-UI cross-cutting architecture decisions and supersession are recorded in `ARCHITECTURE_DECISIONS.md`. This document remains authoritative for current frontend architecture, implementation boundaries, and detailed domain contracts.
+
 Defines approved RenderLab frontend architecture and verified implementation state.
 
 ## Verified Scaffold

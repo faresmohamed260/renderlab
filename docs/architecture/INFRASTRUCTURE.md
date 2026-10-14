@@ -1,5 +1,7 @@
 # Infrastructure
 
+> **Decision boundary:** durable non-UI cross-cutting architecture decisions and supersession are recorded in `ARCHITECTURE_DECISIONS.md`. This document remains authoritative for current infrastructure/resource/security boundaries and production/provider state.
+
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
 ## Current production rollout - 2026-10-09

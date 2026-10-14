@@ -18,6 +18,7 @@ For frontend/UI work also read the relevant current versions of:
 - `docs/ui/SCREEN_REGISTRY.md`
 
 For architectural work also read:
+- `docs/architecture/ARCHITECTURE_DECISIONS.md` for durable non-UI architecture decisions and supersession
 - `docs/architecture/FRONTEND_ARCHITECTURE.md`
 - `docs/architecture/PRODUCT_CAPABILITIES.md` when capability/generation behavior is involved
 - `docs/architecture/INFRASTRUCTURE.md` when Supabase, R2, deployment secrets, generation adapters, or shared resources are involved

@@ -18,6 +18,7 @@ export const REQUIRED_MANAGED_DOCUMENTS = Object.freeze([
   "docs/INDEX.md",
   "docs/STATUS.md",
   "docs/architecture/INFRASTRUCTURE.md",
+  "docs/architecture/ARCHITECTURE_DECISIONS.md",
   "docs/architecture/FRONTEND_ARCHITECTURE.md",
   "docs/architecture/PRODUCT_CAPABILITIES.md",
   "docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md",
@@ -351,6 +352,108 @@ export function findUiDecisionSupersessionProblems(body) {
   return problems;
 }
 
+
+function parseArchitectureDecisionRecords(body) {
+  const starts = [...body.matchAll(/^###\s+(ADR-\d{3})\s+.+$/gm)];
+  const records = new Map();
+  const duplicateIds = new Set();
+  for (const [index, start] of starts.entries()) {
+    const end = index + 1 < starts.length ? starts[index + 1].index : body.length;
+    const block = body.slice(start.index, end);
+    const field = (name) => {
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return block.match(new RegExp(`^\\*\\*${escaped}:\\*\\*\\s*(.+?)\\s*$`, "mi"))?.[1]?.trim() || "";
+    };
+    if (records.has(start[1])) duplicateIds.add(start[1]);
+    records.set(start[1], {
+      id: start[1],
+      status: field("Status"),
+      scope: field("Scope"),
+      decision: field("Decision"),
+      rationale: field("Rationale"),
+      consequences: field("Consequences"),
+      currentTruth: field("Current truth"),
+      supersedes: [...field("Supersedes").matchAll(/ADR-\d{3}/g)].map((match) => match[0]),
+      supersededBy: [...field("Superseded by").matchAll(/ADR-\d{3}/g)].map((match) => match[0]),
+    });
+  }
+  return { records, duplicateIds };
+}
+
+export function findArchitectureDecisionAuthorityProblems(body) {
+  const problems = [];
+  const lines = body.split(/\r?\n/);
+  const allowedStatuses = new Set(["Proposed", "Accepted", "Superseded"]);
+  for (const [lineIndex, line] of lines.entries()) {
+    if (/^##(?!#)\s+ADR-\d{3}\s+/.test(line)) {
+      problems.push(`docs/architecture/ARCHITECTURE_DECISIONS.md:${lineIndex + 1}: architecture decision headings must use H3 (###)`);
+    }
+    if (/^####\s+/.test(line)) {
+      problems.push(`docs/architecture/ARCHITECTURE_DECISIONS.md:${lineIndex + 1}: checkpoint/evidence subheadings do not belong in current architecture decision authority`);
+    }
+    if (/^\*\*(?:Implementation evidence|Implementation verification|Verified implementation evidence|Verification|Production boundary|Primary evidence|Closure evidence|Run evidence)(?:[^*]*)?:\*\*/i.test(line)) {
+      problems.push(`docs/architecture/ARCHITECTURE_DECISIONS.md:${lineIndex + 1}: detailed implementation/verification chronology belongs in historical evidence`);
+    }
+  }
+  const { records, duplicateIds } = parseArchitectureDecisionRecords(body);
+  for (const id of duplicateIds) problems.push(`${id}: duplicate architecture decision identifier`);
+  if (records.size === 0) problems.push('docs/architecture/ARCHITECTURE_DECISIONS.md: at least one ADR record is required');
+  for (const record of records.values()) {
+    if (!record.status) {
+      problems.push(`${record.id}: missing Status field`);
+    } else if (!allowedStatuses.has(record.status)) {
+      problems.push(`${record.id}: Status must be Proposed, Accepted, or Superseded; found ${JSON.stringify(record.status)}`);
+    }
+    for (const [fieldName, value] of [
+      ["Scope", record.scope],
+      ["Decision", record.decision],
+      ["Rationale", record.rationale],
+      ["Consequences", record.consequences],
+      ["Current truth", record.currentTruth],
+    ]) {
+      if (!value) problems.push(`${record.id}: missing ${fieldName} field`);
+    }
+    if (record.status === "Proposed" && (record.supersedes.length > 0 || record.supersededBy.length > 0)) {
+      problems.push(`${record.id}: Proposed decisions cannot participate in supersession until accepted`);
+    }
+  }
+  return problems;
+}
+
+export function findArchitectureDecisionSupersessionProblems(body) {
+  const problems = [];
+  const { records } = parseArchitectureDecisionRecords(body);
+  for (const record of records.values()) {
+    if (record.status === "Superseded" && record.supersededBy.length === 0) {
+      problems.push(`${record.id}: Status Superseded requires an explicit Superseded by field`);
+    }
+    if (record.status === "Accepted" && record.supersededBy.length > 0) {
+      problems.push(`${record.id}: Accepted decisions cannot also declare Superseded by`);
+    }
+    for (const targetId of record.supersedes) {
+      const target = records.get(targetId);
+      if (!target) {
+        problems.push(`${record.id}: Supersedes references unknown decision ${targetId}`);
+        continue;
+      }
+      if (!target.supersededBy.includes(record.id)) {
+        problems.push(`${record.id}: Supersedes ${targetId}, but ${targetId} does not reciprocally declare Superseded by ${record.id}`);
+      }
+    }
+    for (const sourceId of record.supersededBy) {
+      const source = records.get(sourceId);
+      if (!source) {
+        problems.push(`${record.id}: Superseded by references unknown decision ${sourceId}`);
+        continue;
+      }
+      if (!source.supersedes.includes(record.id)) {
+        problems.push(`${record.id}: Superseded by ${sourceId}, but ${sourceId} does not reciprocally declare Supersedes ${record.id}`);
+      }
+    }
+  }
+  return problems;
+}
+
 export function findClosedContractUncheckedBoxProblems(documents) {
   const problems = [];
   for (const document of documents) {
@@ -470,6 +573,8 @@ export async function verifyDocsGovernance({ rootDir = process.cwd(), now = new 
     ...findAmbiguousLifecycleStatusProblems(currentManagedDocuments),
     ...findUiDecisionAuthorityProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),
     ...findUiDecisionSupersessionProblems(byPath.get("docs/ui/UI_DECISIONS.md")?.body || ""),
+    ...findArchitectureDecisionAuthorityProblems(byPath.get("docs/architecture/ARCHITECTURE_DECISIONS.md")?.body || ""),
+    ...findArchitectureDecisionSupersessionProblems(byPath.get("docs/architecture/ARCHITECTURE_DECISIONS.md")?.body || ""),
     ...findClosedContractUncheckedBoxProblems(documents),
     ...findDuplicateCurrentSectionProblems(documents),
     ...(await findBrokenDocumentationReferenceProblems(documents, { rootDir })),

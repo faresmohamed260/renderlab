@@ -94,6 +94,17 @@
       "supersededBy": []
     },
     {
+      "path": "docs/architecture/ARCHITECTURE_DECISIONS.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-10-14",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
       "path": "docs/architecture/FRONTEND_ARCHITECTURE.md",
       "kind": "normative-policy",
       "authority": "normative",
