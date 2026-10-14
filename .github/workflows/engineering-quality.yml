@@ -52,6 +52,9 @@ jobs:
       - name: Verify Modal project ownership boundary
         run: npm run verify:modal-project-ownership
 
+      - name: Verify reciprocal S.A.G.A. Modal ownership
+        run: npm run verify:modal-cross-repo-ownership
+
       - name: Verify maintained UI primitive usage
         run: npm run verify:ui-purity
 

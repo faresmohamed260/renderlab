@@ -253,6 +253,6 @@ Compilation alone does not mean the UI task is complete.
 
 Modal account ownership is a locked cross-project infrastructure boundary. RenderLab owns only `modal-01`, `modal-02`, and `modal-42` through `modal-47`. S.A.G.A. owns `modal-03` through `modal-41`.
 
-Possession of an omnibus credential roster does not authorize use of every Modal credential. Any RenderLab script or workflow that selects Modal credentials must pass the checked-in ownership helper before exporting or using them and must fail closed for S.A.G.A.-owned labels. Do not change this partition unless the owner explicitly changes the decision in both repositories.
+Possession of an omnibus credential roster does not authorize use of every Modal credential. Any RenderLab script or workflow that selects Modal credentials must pass the checked-in ownership helper before exporting or using them and must fail closed for S.A.G.A.-owned labels. Required Engineering Quality also performs a read-only reciprocal check against S.A.G.A.'s protected `main` ownership manifest; counterpart drift is a merge blocker, not an invitation to infer ownership. Do not change this partition unless the owner explicitly changes the decision in both repositories and the reciprocal manifests are reconciled.
 
 Public gateway names may retain historical `saga-` resource names; naming does not transfer ownership. Worker redeployment, reset, token rotation and secret-store changes remain separately authorized infrastructure operations.

@@ -23,7 +23,8 @@
     "verify:engineering-quality": "node scripts/verify-engineering-quality.mjs",
     "verify:unit-coverage": "node scripts/verify-unit-coverage-report.mjs",
     "verify:ui-purity": "node scripts/verify-ui-purity.mjs",
-    "verify:modal-project-ownership": "node scripts/verify-modal-project-ownership.mjs"
+    "verify:modal-project-ownership": "node scripts/verify-modal-project-ownership.mjs",
+    "verify:modal-cross-repo-ownership": "node scripts/verify-modal-cross-repo-ownership.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1116.0",
