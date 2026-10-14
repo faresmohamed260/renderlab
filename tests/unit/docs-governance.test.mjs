@@ -31,7 +31,7 @@ function clone(value) {
 }
 
 test("checked-in documentation governance passes the complete credential-free verifier", async () => {
-  const result = await verifyDocsGovernance({ rootDir, now: new Date("2026-10-14T00:00:00Z") });
+  const result = await verifyDocsGovernance({ rootDir, now: new Date("2026-10-15T12:00:00Z") });
   assert.ok(result.managedDocuments >= 20);
   assert.ok(result.markdownDocuments >= 90);
   assert.ok(result.currentManagedDocuments >= 19);
@@ -45,7 +45,7 @@ test("metadata review-date policy fails stale current authorities", async () => 
     registry,
     schema,
     rootDir,
-    now: new Date("2026-10-14T00:00:00Z"),
+    now: new Date("2026-10-15T12:00:00Z"),
   });
   assert.ok(problems.some((problem) => problem.includes("docs/STATUS.md: governance review is stale")));
 });
@@ -59,7 +59,7 @@ test("metadata lifecycle and ownership values are schema-enforced", async () => 
     registry,
     schema,
     rootDir,
-    now: new Date("2026-10-14T00:00:00Z"),
+    now: new Date("2026-10-15T12:00:00Z"),
   });
   assert.ok(problems.some((problem) => problem.includes("lifecycle must be one of")));
   assert.ok(problems.some((problem) => problem.includes("ownerRole must be one of")));
@@ -73,7 +73,7 @@ test("document supersession must be reciprocal", async () => {
     registry,
     schema,
     rootDir,
-    now: new Date("2026-10-14T00:00:00Z"),
+    now: new Date("2026-10-15T12:00:00Z"),
   });
   assert.ok(problems.some((problem) => problem.includes("reciprocal supersededBy is missing")));
 });

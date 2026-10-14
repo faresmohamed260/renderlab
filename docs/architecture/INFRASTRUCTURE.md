@@ -5,6 +5,8 @@
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
 ## Current production rollout - 2026-10-09
+
+<!-- EXTERNAL_FACT: vercel-release-boundary -->
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
 **Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
 
@@ -143,6 +145,8 @@ Final exact audit after the accepted suite found zero audited run-owned access/j
 PR #68 merged Phase 10C to `main` as `26508e77975ee4dd26f60860f999e4bc55c99eca`. Merged-main UI Shell `33310860293`, Reference Upload `33310860327`, Generation Integration `33310860295`, and Video Generation Integration `33310860292` all passed. The final exact post-merge audit found zero rows for those runs' deterministic accounts across `renderlab_account_access`, `generation_jobs`, `generation_sources`, `media_assets`, `media_upload_sessions`, `generation_admission_reservations`, and `auth.users`; the singleton remained generation enabled / 1 active / 12 hourly / `updated_by=null`. No deployment or production access-enforcement change occurred.
 
 ### Phase 10D pre-implementation Auth / operational audit — 2026-08-30
+
+<!-- EXTERNAL_FACT: supabase-auth-provider-posture -->
 - Starting repository state is merged `main` `0bad0efa96fd4a74cd531f21c38641d6b31708ab`; the audit used temporary workflow commits only and those temporary files are not part of the work branch/main contract.
 - One-time audit runs `33311990845` and `33312153080` used deterministic run-owned Auth identities and exact cleanup. Independent SQL verification found no remaining matching Auth/access/job/source/media/upload/reservation state.
 - Hosted recovery evidence: run `33311990845` produced `mail.send` with `mail_from=noreply@mail.app.supabase.io`, proving the project currently uses Supabase's built-in Auth mailer. Run `33312153080` then returned `429 over_email_send_rate_limit`. This is not production/broader-beta mail capacity.
@@ -1092,6 +1096,8 @@ This recovery does **not** transfer Modal-account ownership: RenderLab still own
 No RenderLab/Vercel production deployment is performed by this worker recovery. Production release remains a separate explicitly authorized operation.
 
 ## Modal Project Ownership Isolation
+
+<!-- EXTERNAL_FACT: saga-modal-reciprocal-ownership -->
 
 RenderLab and S.A.G.A. use a reciprocal, fail-closed Modal account partition. Repository ownership is authoritative for project use even when an omnibus credential secret is temporarily available to a repository.
 

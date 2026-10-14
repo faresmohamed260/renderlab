@@ -195,10 +195,11 @@ Durable decisions must update the appropriate source-of-truth file. Examples:
 - frontend architecture → `FRONTEND_ARCHITECTURE.md`
 - infrastructure/resource/secret contract → `docs/architecture/INFRASTRUCTURE.md`
 - documentation governance metadata — `docs/governance/documents.json`
+- action-sensitive mutable external/provider fact — the applicable current authority plus `docs/governance/external-facts.json`
 
 Update existing authoritative documentation rather than creating competing sources of truth.
 
-For documentation/governance changes, run credential-free `npm run verify:docs-governance` before closure. `docs/governance/documents.json` owns machine-readable role/lifecycle/owner/review metadata for the high-authority document set; its `lastReviewed` date records governance classification/review, not automatic re-verification of every embedded historical fact or external provider claim.
+For documentation/governance changes, run credential-free `npm run verify:docs-governance` before closure. `docs/governance/documents.json` owns machine-readable role/lifecycle/owner/review metadata for the high-authority document set; its `lastReviewed` date records governance classification/review, not automatic re-verification of every embedded historical fact or external provider claim. `docs/governance/external-facts.json` owns fact-level freshness for action-sensitive mutable external/provider claims. When its `reverify_before_action` flag is true, re-read the named source before using that fact to authorize or execute the listed action; changing prose or `lastReviewed` is not a substitute.
 
 ### History separation
 Current authority files must optimize for present state, binding rules and explicitly active work. Do not append closed phase journals or run-by-run closure evidence back into `PROJECT.md` or `docs/ui/UI_MIGRATION.md`.

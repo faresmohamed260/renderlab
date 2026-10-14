@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "facts": [
+    {
+      "id": "github-main-protection",
+      "authority_path": "GOVERNANCE.md",
+      "subject": "Protected-main enforcement and review configuration",
+      "claim": "The repository has one direct human collaborator/owner and no repository teams; main is protected with strict up-to-date Engineering Quality quality status enforcement, while required PR reviews, rulesets, admin enforcement, and conversation-resolution enforcement are not configured.",
+      "source": "GitHub REST collaborators, teams, branch-protection, and repository-rulesets read-back for faresmohamed260/renderlab.",
+      "verified_at": "2026-10-14",
+      "reverify_before_action": true,
+      "action_contexts": [
+        "changing branch protection, required checks, review policy, or rulesets",
+        "using GitHub enforcement state as acceptance or governance evidence"
+      ]
+    },
+    {
+      "id": "vercel-release-boundary",
+      "authority_path": "docs/architecture/INFRASTRUCTURE.md",
+      "subject": "Vercel production deployment and custom-domain cutover boundary",
+      "claim": "Automatic Git-to-Vercel deployment is disabled and production deployment, custom-domain cutover, and rollback remain explicit provider operations that require independent provider read-back.",
+      "source": "Authenticated Vercel deployment/alias read-back and release evidence from the current production rollout and Production Documentation Sync.",
+      "verified_at": "2026-10-09T13:25:40.464Z",
+      "reverify_before_action": true,
+      "action_contexts": [
+        "production deployment, custom-domain cutover, or rollback",
+        "changing Vercel project deployment or alias configuration"
+      ]
+    },
+    {
+      "id": "supabase-auth-provider-posture",
+      "authority_path": "docs/architecture/INFRASTRUCTURE.md",
+      "subject": "Hosted Supabase Auth mail and leaked-password provider posture",
+      "claim": "The recorded Phase 10D audit observed the built-in Supabase Auth mailer/rate-limit posture and Free-plan leaked-password-protection limitation; those provider facts are not assumed current without re-verification.",
+      "source": "Configured Auth audit runs 33311990845 and 33312153080 plus hosted Supabase Security Advisor inspection recorded in INFRASTRUCTURE.md.",
+      "verified_at": "2026-08-30",
+      "reverify_before_action": true,
+      "action_contexts": [
+        "broader-beta Auth/email readiness decisions",
+        "changing hosted Supabase Auth, SMTP, password-protection, or project-plan configuration"
+      ]
+    },
+    {
+      "id": "saga-modal-reciprocal-ownership",
+      "authority_path": "docs/architecture/INFRASTRUCTURE.md",
+      "subject": "Reciprocal S.A.G.A. Modal ownership enforcement",
+      "claim": "The reciprocal S.A.G.A. Modal ownership guard remains present in S.A.G.A. main; guard commit 5b6b12131ee1e920f592b489933569c81d1e430b is an ancestor of the current protected S.A.G.A. main observed during this verification.",
+      "source": "GitHub read-back of faresmohamed260/saga protected main and commit ancestry for 5b6b12131ee1e920f592b489933569c81d1e430b.",
+      "verified_at": "2026-10-14",
+      "reverify_before_action": true,
+      "action_contexts": [
+        "changing RenderLab or S.A.G.A. Modal account ownership",
+        "mutating Modal credentials, fleet-management workflows, worker deployment, reset, or provisioning boundaries"
+      ]
+    },
+    {
+      "id": "dr-provider-posture",
+      "authority_path": "docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md",
+      "subject": "Current disaster-recovery provider capability and independence limits",
+      "claim": "The retained-recovery evidence is repository-managed logical Supabase recovery rather than managed PITR/full-project recovery, and the R2 recovery destination is same-provider/same-account protection; published RPO/RTO still requires repeated scheduled evidence.",
+      "source": "ENT-007 Recovery Drill run 37630554797 and the Supabase/R2 provider read-back recorded by the recovery runbook.",
+      "verified_at": "2026-10-07",
+      "reverify_before_action": true,
+      "action_contexts": [
+        "real disaster recovery or restored-data cutover",
+        "publishing recovery objectives or changing provider/plan/retention assumptions"
+      ]
+    }
+  ]
+}
