@@ -2,6 +2,8 @@
 
 Authoritative index of reusable RenderLab UI components and approved external component sources. Populate actual RenderLab components from repository reality, not assumptions.
 
+`docs/ui/component-sources.json` is the machine-readable external-source registry. It is authoritative for source tier/search order, adoption mode, installed package/version mapping, active-use state, and license-review status; this catalog remains authoritative for RenderLab-owned component inventory and human reuse guidance. `npm run verify:docs-governance` rejects drift between the registry, this catalog, `package.json`, and `package-lock.json`.
+
 ## Statuses
 `EXPERIMENTAL`, `APPROVED`, `LOCKED`, `DEPRECATED`
 
