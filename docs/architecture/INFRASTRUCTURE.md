@@ -1112,9 +1112,9 @@ RenderLab-owned Modal accounts:
 - `modal-46` — current `renderlab-image-upscale` deployment plus historical LTX identity retained for durable job meaning.
 - `modal-47` — historical LTX standby identity retained for durable job meaning.
 
-S.A.G.A. owns `modal-03` through `modal-41`. Those accounts are reserved from RenderLab use. The reciprocal S.A.G.A. implementation is merged on its `main` branch and enforces the inverse allocation.
+S.A.G.A. owns `modal-03` through `modal-41`. Those accounts are reserved from RenderLab use. The reciprocal S.A.G.A. implementation is merged on its protected `main` branch and enforces the inverse allocation. RenderLab no longer relies only on commit ancestry for this cross-project fact: required Engineering Quality fetches S.A.G.A.'s protected-`main` `config/modal-project-ownership.json` and fails closed unless both repositories report reciprocal, non-overlapping sets covering exactly `modal-01` through `modal-47`.
 
-The checked-in authority for RenderLab is `config/modal-project-ownership.json` together with `scripts/lib/modal-project-ownership.mjs`. Any credential-selection code must validate through that boundary before exporting or using Modal credentials. `scripts/verify-modal-project-ownership.mjs` and Engineering Quality provide a negative CI gate against generic Modal credential references in active workflows.
+The checked-in authority for RenderLab is `config/modal-project-ownership.json` together with `scripts/lib/modal-project-ownership.mjs`. Any credential-selection code must validate through that boundary before exporting or using Modal credentials. `scripts/verify-modal-project-ownership.mjs` provides the local negative gate, while `scripts/verify-modal-cross-repo-ownership.mjs` performs the read-only protected-main reciprocity check inside the required Engineering Quality `quality` job.
 
 Normal RenderLab generation runtime calls configured public/server-side worker gateways; Modal API credentials are deployment or maintenance authority, not ordinary request-path configuration. Public app names or historical `saga-` prefixes do not transfer account ownership.
 

@@ -44,8 +44,8 @@
       "id": "saga-modal-reciprocal-ownership",
       "authority_path": "docs/architecture/INFRASTRUCTURE.md",
       "subject": "Reciprocal S.A.G.A. Modal ownership enforcement",
-      "claim": "The reciprocal S.A.G.A. Modal ownership guard remains present in S.A.G.A. main; guard commit 5b6b12131ee1e920f592b489933569c81d1e430b is an ancestor of the current protected S.A.G.A. main observed during this verification.",
-      "source": "GitHub read-back of faresmohamed260/saga protected main and commit ancestry for 5b6b12131ee1e920f592b489933569c81d1e430b.",
+      "claim": "S.A.G.A.'s protected main publishes the inverse Modal ownership manifest, and RenderLab's required Engineering Quality job performs a read-only live comparison that fails unless both repositories agree on a reciprocal, non-overlapping partition covering modal-01 through modal-47.",
+      "source": "Read-only protected-main fetch of faresmohamed260/saga config/modal-project-ownership.json by scripts/verify-modal-cross-repo-ownership.mjs, plus GitHub protected-main read-back.",
       "verified_at": "2026-10-14",
       "reverify_before_action": true,
       "action_contexts": [
