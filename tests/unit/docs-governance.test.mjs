@@ -12,6 +12,8 @@ import {
   findDuplicateCurrentSectionProblems,
   findStructuredStatusProblems,
   findAmbiguousLifecycleStatusProblems,
+  findArchitectureDecisionAuthorityProblems,
+  findArchitectureDecisionSupersessionProblems,
   findUiDecisionAuthorityProblems,
   findUiDecisionSupersessionProblems,
   validateDocumentMetadata,
@@ -29,7 +31,7 @@ function clone(value) {
 }
 
 test("checked-in documentation governance passes the complete credential-free verifier", async () => {
-  const result = await verifyDocsGovernance({ rootDir, now: new Date("2026-10-10T00:00:00Z") });
+  const result = await verifyDocsGovernance({ rootDir, now: new Date("2026-10-14T00:00:00Z") });
   assert.ok(result.managedDocuments >= 20);
   assert.ok(result.markdownDocuments >= 90);
   assert.ok(result.currentManagedDocuments >= 19);
@@ -43,7 +45,7 @@ test("metadata review-date policy fails stale current authorities", async () => 
     registry,
     schema,
     rootDir,
-    now: new Date("2026-10-10T00:00:00Z"),
+    now: new Date("2026-10-14T00:00:00Z"),
   });
   assert.ok(problems.some((problem) => problem.includes("docs/STATUS.md: governance review is stale")));
 });
@@ -57,7 +59,7 @@ test("metadata lifecycle and ownership values are schema-enforced", async () => 
     registry,
     schema,
     rootDir,
-    now: new Date("2026-10-10T00:00:00Z"),
+    now: new Date("2026-10-14T00:00:00Z"),
   });
   assert.ok(problems.some((problem) => problem.includes("lifecycle must be one of")));
   assert.ok(problems.some((problem) => problem.includes("ownerRole must be one of")));
@@ -71,9 +73,59 @@ test("document supersession must be reciprocal", async () => {
     registry,
     schema,
     rootDir,
-    now: new Date("2026-10-10T00:00:00Z"),
+    now: new Date("2026-10-14T00:00:00Z"),
   });
   assert.ok(problems.some((problem) => problem.includes("reciprocal supersededBy is missing")));
+});
+
+test("architecture decision authority requires durable fields and rejects evidence journals", () => {
+  const body = [
+    "## ADR-100 — Wrong heading",
+    "**Status:** Accepted",
+    "",
+    "### ADR-101 — Bad status",
+    "**Status:** Accepted / Implemented",
+    "**Scope:** Example boundary",
+    "**Decision:** Keep one durable boundary.",
+    "**Rationale:** Avoid ambiguity.",
+    "**Consequences:** Future work follows the boundary.",
+    "**Current truth:** `docs/example.md`",
+    "#### ADR-101 verification",
+    "**Verification:** run 123",
+    "",
+    "### ADR-102 — Missing rationale",
+    "**Status:** Proposed",
+    "**Scope:** Example boundary",
+    "**Decision:** Proposed choice.",
+    "**Consequences:** None yet.",
+    "**Current truth:** `docs/example.md`",
+  ].join("\n");
+  const problems = findArchitectureDecisionAuthorityProblems(body);
+  assert.ok(problems.some((problem) => problem.includes("architecture decision headings must use H3")));
+  assert.ok(problems.some((problem) => problem.includes("checkpoint/evidence subheadings")));
+  assert.ok(problems.some((problem) => problem.includes("detailed implementation/verification chronology")));
+  assert.ok(problems.some((problem) => problem.includes("Status must be Proposed, Accepted, or Superseded")));
+  assert.ok(problems.some((problem) => problem.includes("ADR-102: missing Rationale field")));
+});
+
+test("architecture decision supersession is explicit and reciprocal", () => {
+  const base = (id, status, extra = "") => [
+    `### ${id} — Decision`,
+    `**Status:** ${status}`,
+    "**Scope:** Example boundary",
+    "**Decision:** Example decision.",
+    "**Rationale:** Example rationale.",
+    "**Consequences:** Example consequence.",
+    "**Current truth:** `docs/example.md`",
+    extra,
+    "",
+  ].filter(Boolean).join("\n");
+  const body = [
+    base("ADR-100", "Superseded", "**Superseded by:** ADR-101"),
+    base("ADR-101", "Accepted"),
+  ].join("\n\n");
+  const problems = findArchitectureDecisionSupersessionProblems(body);
+  assert.ok(problems.some((problem) => problem.includes("does not reciprocally declare Supersedes ADR-100")));
 });
 
 test("UI decision authority rejects execution journals and lifecycle chains", () => {

@@ -13,7 +13,7 @@ A document has one **primary class** based on its repository role. Individual se
 | Class | Meaning | Typical RenderLab examples |
 | --- | --- | --- |
 | **Entry point** | Navigation and handoff material that directs readers to the correct authorities. It should summarize or route, not silently override a more specific domain authority. | `AGENTS.md`, `PROJECT.md`, `docs/INDEX.md` |
-| **Normative policy** | Accepted rules, decisions, constraints, implementation contracts, or operating procedures that future work must follow until explicitly superseded. | `GOVERNANCE.md`, `docs/ui/UI_DECISIONS.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/DESIGN_WORKFLOW.md`, `docs/ui/VISUAL_NORTH_STAR.md`, `docs/ui/BRAND_SYSTEM.md`, accepted `*_IMPLEMENTATION_CONTRACT.md` / `*_CONTRACT.md` files, `CONTRIBUTING.md`, `SECURITY.md` |
+| **Normative policy** | Accepted rules, decisions, constraints, implementation contracts, or operating procedures that future work must follow until explicitly superseded. | `GOVERNANCE.md`, `docs/architecture/ARCHITECTURE_DECISIONS.md`, `docs/ui/UI_DECISIONS.md`, `docs/ui/UI_SYSTEM.md`, `docs/ui/DESIGN_WORKFLOW.md`, `docs/ui/VISUAL_NORTH_STAR.md`, `docs/ui/BRAND_SYSTEM.md`, accepted `*_IMPLEMENTATION_CONTRACT.md` / `*_CONTRACT.md` files, `CONTRIBUTING.md`, `SECURITY.md` |
 | **Current-state registry** | Verified inventory or operational record describing what currently exists, is approved, is owned, or is deployed. | `docs/STATUS.md`, `docs/ui/SCREEN_REGISTRY.md`, `docs/ui/COMPONENT_CATALOG.md`, `docs/architecture/PRODUCT_CAPABILITIES.md`, current-state/current-production sections of `docs/architecture/INFRASTRUCTURE.md` |
 | **Current-state tracker** | Active sequence/progress record for a migration, roadmap, or bounded workstream. | `docs/ui/UI_MIGRATION.md`, `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` |
 | **Historical evidence** | Provenance, prior state, completed-checkpoint evidence, superseded records, audits, or closure material retained so decisions can be traced. Historical evidence does not become current instruction merely because it remains in the repository. | `docs/archive/**`, `docs/history/contracts/**`, `docs/history/ui/**`, dated audit evidence, superseded/closure records, historical sections explicitly labeled inside current authorities |
@@ -35,6 +35,7 @@ Current authority answers **what is true now**. Historical evidence answers **ho
 
 - `PROJECT.md` is a compact current handoff, not the execution journal.
 - `docs/ui/UI_MIGRATION.md` is a current UI foundation/migration tracker, not the Phase 0+ chronology.
+- `docs/architecture/ARCHITECTURE_DECISIONS.md` is the current non-UI architecture decision authority. It retains durable cross-cutting decision/status/scope/rationale/consequence/supersession content; current implementation/configuration truth stays in the domain architecture documents, while execution/verification/rollout chronology stays in historical evidence.
 - `docs/ui/UI_DECISIONS.md` is the current UI decision authority. It should retain the durable decision itself: current/superseded status, decision, reason/context, consequences, supersession relationships, and concise evidence references. Exact workflow run IDs, artifact digests, PR/merge chronology, deployment narratives, and run-by-run closure evidence belong in `docs/history/ui/**` or `docs/audits/**` once they no longer affect present decision interpretation.
 - Detailed closed-phase chronology, exact run/artifact evidence and prior production pointers belong in `docs/audits/**` or `docs/archive/**`; completed bounded architecture/UI execution contracts belong in `docs/history/contracts/**`.
 - Completed contracts are historical after closure unless a current authority explicitly carries a requirement forward. Closed bounded architecture/UI execution contracts are stored under `docs/history/contracts/**`; active contracts remain with their current domain authority only while execution requires them.
@@ -186,7 +187,8 @@ Use this map to find the appropriate current authority without treating every Ma
 ### Product, architecture, infrastructure, and operations
 
 - `SECURITY.md` — vulnerability reporting, security severity/response expectations, and coordinated disclosure; human security/production authority remains in `GOVERNANCE.md`.
-- `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture authority.
+- `docs/architecture/ARCHITECTURE_DECISIONS.md` — durable non-UI cross-cutting architecture decision and supersession authority.
+- `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture/current implementation authority.
 - `docs/architecture/INFRASTRUCTURE.md` — infrastructure/resource/security boundaries plus exact current-production authority.
 - `docs/architecture/PRODUCT_CAPABILITIES.md` — capability/current product contract registry.
 - `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` — bounded account/settings roadmap and current workstream tracker.

@@ -4,7 +4,7 @@ This document defines RenderLab's human decision rights. It is normative policy 
 
 ## Governance principles
 
-- The repository is the durable project record; durable decisions must be recorded in the applicable repository authority.
+- The repository is the durable project record; durable decisions must be recorded in the applicable repository authority. Durable non-UI cross-cutting architecture decisions and their supersession belong in `docs/architecture/ARCHITECTURE_DECISIONS.md`; implementation/configuration truth remains in the domain architecture authorities.
 - Merge authority and production authority are separate. Merging to `main` never implies deployment, provider mutation, spend authorization, or alias cutover.
 - Decision rights are assigned by role. One person may currently hold multiple roles, but a combined-role decision must not be described as independent or multi-person review.
 - Automated checks are acceptance evidence, not human approval.

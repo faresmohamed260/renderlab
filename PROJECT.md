@@ -81,6 +81,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 ## Current product and engineering state
 
 - `docs/STATUS.md` is the concise current product/engineering status summary and owns the current enterprise-hardening overview.
+- `docs/architecture/ARCHITECTURE_DECISIONS.md` owns durable non-UI cross-cutting architecture decisions and supersession; current implementation/configuration truth remains in the domain architecture authorities.
 - `docs/architecture/PRODUCT_CAPABILITIES.md` owns the current capability/product-contract registry.
 - `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` owns Account & Settings workstream state, accepted deferrals and any future promotion gates.
 - `docs/ui/UI_MIGRATION.md` owns only the current UI foundation/migration state; detailed closed phase chronology is historical evidence.
