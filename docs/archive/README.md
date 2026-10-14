@@ -8,6 +8,7 @@ Use `docs/INDEX.md` to locate current authorities.
 
 - `PROJECT_PRE_CYCLE3_2026-09-03.md` — Project chronology through the pre-Cycle-3 handoff.
 - `PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md` — Project journal snapshot immediately before governance hardening Checkpoint 6 separated current handoff from history.
+- `STATUS_PRE_PUBLIC_SUMMARY_2026-10-13.md` — Public-status snapshot immediately before M1 compacted `docs/STATUS.md` into its concise current-summary role.
 - `UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md` — UI migration/phase journal snapshot immediately before Checkpoint 6 converted the tracker to current-only state.
 
 Exact pre-separation originals remain in Git parent `06f587508f4803d1d45353e18fd1f51aee27f56c`: `PROJECT.md` blob `39c729d3c329ba80b7d150566765cd772f4dac4e`; `docs/ui/UI_MIGRATION.md` blob `9065af7bc7beae35dce19940cf52cee30f7abe6c`. The archived Markdown preserves historical content while normalizing repository-forbidden trailing-space artifacts. After closed-contract relocation, repository path references may be maintained to their new historical locations; the exact pre-separation originals remain recoverable from the parent/blob IDs above.
