@@ -7,7 +7,7 @@ Status: operational runbook / current repository and shared-infrastructure truth
 | Field | Current value |
 | --- | --- |
 | **Owner role** | Security / Operations Authority |
-| **Last reviewed** | 2026-10-10 |
+| **Last reviewed** | 2026-10-14 |
 | **Last exercised** | 2026-10-07 — recovery-path subset only. ENT-007 Recovery Drill run `37630554797` successfully restored the retained database/Auth + R2 generation into isolated targets, verified cross-store recovery and cleanup, and is not evidence of a full incident tabletop. |
 | **Review interval** | 30 days, and after every material incident or exercise that changes the procedure |
 
@@ -187,6 +187,8 @@ These are evidence-backed current objectives, not provider SLAs.
 A runbook is not a backup. Do not raise the database/storage recovery assessment merely because incident procedures exist.
 
 ## DR maturity promotion gate
+
+<!-- EXTERNAL_FACT: dr-provider-posture -->
 
 ENT-007 has crossed and repository-closed the **technical retained-recovery promotion gate**: a retained database/Auth + R2 generation exists, both stores were restored into isolated targets, cross-store coherence and cleanup passed, observed recovery point/time were measured, implementation PR #352 merged as `7f7a95a21f403e99095a19b94db39255311cf4d3`, and merged-main Engineering Quality `37642455946` plus CodeQL `37642455870` passed. These facts establish tested recovery capability, not a published SLA.
 

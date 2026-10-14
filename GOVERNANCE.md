@@ -67,7 +67,8 @@ Emergency authority does **not** authorize unrelated feature work, convenience r
 
 ## GitHub review and CODEOWNERS
 
-Current GitHub enforcement was audited on 2026-10-10: the repository has one human collaborator/owner, no repository teams, no required pull-request review, no rulesets, and branch protection requires the Engineering Quality `quality` status check. There is no `CODEOWNERS` file.
+<!-- EXTERNAL_FACT: github-main-protection -->
+Current GitHub enforcement was audited on 2026-10-14: the repository has one human collaborator/owner, no repository teams, no required pull-request review, no rulesets, and branch protection requires the Engineering Quality `quality` status check. There is no `CODEOWNERS` file.
 
 A `CODEOWNERS` file is **not appropriate yet** because there is no stable multi-human/team role mapping to route meaningful independent ownership review. Adding a wildcard owner would not create independent governance and could imply review separation that does not exist.
 
