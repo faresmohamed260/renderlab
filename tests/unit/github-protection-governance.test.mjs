@@ -30,6 +30,33 @@ test("protected-main policy rejects missing checks and weakened administrator en
   assert.ok(problems.some((problem) => problem.includes("missing required context javascript-typescript")));
 });
 
+test("protected-main workflows reject stale immutable foundational action pins", async () => {
+  const policy = clone(await json(GITHUB_PROTECTION_POLICY_PATH));
+  const bodies = await workflowBodies(policy);
+  const engineering = policy.requiredChecks.find((check) => check.context === "quality").workflow;
+  bodies.set(
+    engineering,
+    bodies.get(engineering)
+      .replace(policy.foundationalActions["actions/checkout"].sha, "11d5960a326750d5838078e36cf38b85af677262")
+      .replace("# v7.0.1", "# v4")
+      .replace(policy.foundationalActions["actions/setup-node"].sha, "49933ea5288caeca8642d1e84afbd3f7d6820020")
+      .replace("# v7.1.0", "# v4"),
+  );
+  const problems = findGithubProtectionPolicyProblems({ policy, workflowBodies: bodies });
+  assert.ok(problems.some((problem) => problem.includes("actions/checkout must use approved SHA")));
+  assert.ok(problems.some((problem) => problem.includes("actions/setup-node must use approved SHA")));
+
+  const unitCoverage = policy.requiredChecks.find((check) => check.context === "unit-coverage").workflow;
+  bodies.set(
+    unitCoverage,
+    bodies.get(unitCoverage)
+      .replace(policy.foundationalActions["actions/upload-artifact"].sha, "ea165f8d65b6e75b540449e92b4886f43607fa02")
+      .replace("# v7.0.2", "# v4"),
+  );
+  const artifactProblems = findGithubProtectionPolicyProblems({ policy, workflowBodies: bodies });
+  assert.ok(artifactProblems.some((problem) => problem.includes("actions/upload-artifact must use approved SHA")));
+});
+
 test("required branch checks cannot be path-filtered", async () => {
   const policy = clone(await json(GITHUB_PROTECTION_POLICY_PATH));
   const bodies = await workflowBodies(policy);
