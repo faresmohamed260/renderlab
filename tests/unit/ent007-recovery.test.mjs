@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   ENT007_AUTH_IDENTITY_COLUMNS,
@@ -70,4 +71,52 @@ test("ENT-007 durable R2 selection excludes tombstoned media and includes active
     "renderlab/generations/keep.png",
     "renderlab/thumbnails/keep.webp",
   ]);
+});
+
+import {
+  assertEnt007GenerationId,
+  selectLatestCompleteEnt007Generation,
+} from "../../scripts/lib/ent007-drill-selection.mjs";
+
+test("ENT-007 scheduled drill selects the newest complete retained generation", () => {
+  const nowMs = Date.parse("2026-10-17T08:00:00Z");
+  const selected = selectLatestCompleteEnt007Generation([
+    { Key: "ent007/generations/20261016070000-aaaaaaaa/complete.json", LastModified: new Date("2026-10-16T07:02:00Z") },
+    { Key: "ent007/generations/20261017070154-83d9d32a/manifest.json", LastModified: new Date("2026-10-17T07:02:20Z") },
+    { Key: "ent007/generations/20261017070154-83d9d32a/complete.json", LastModified: new Date("2026-10-17T07:02:29Z") },
+    { Key: "ent007/generations/not-a-generation/complete.json", LastModified: new Date("2026-10-17T07:03:00Z") },
+  ], { nowMs, maxAgeSeconds: 172800 });
+  assert.equal(selected.generationId, "20261017070154-83d9d32a");
+  assert.equal(selected.ageSeconds, 3451);
+});
+
+test("ENT-007 scheduled drill refuses stale or incomplete retained generations", () => {
+  const nowMs = Date.parse("2026-10-17T08:00:00Z");
+  assert.throws(
+    () => selectLatestCompleteEnt007Generation([
+      { Key: "ent007/generations/20261014070000-aaaaaaaa/complete.json", LastModified: new Date("2026-10-14T07:02:00Z") },
+    ], { nowMs, maxAgeSeconds: 172800 }),
+    /stale/,
+  );
+  assert.throws(
+    () => selectLatestCompleteEnt007Generation([
+      { Key: "ent007/generations/20261017070154-83d9d32a/manifest.json", LastModified: new Date("2026-10-17T07:02:20Z") },
+    ], { nowMs, maxAgeSeconds: 172800 }),
+    /No complete/,
+  );
+});
+
+test("ENT-007 manual drill generation IDs remain strictly validated", () => {
+  assert.equal(assertEnt007GenerationId("20261017070154-83d9d32a"), "20261017070154-83d9d32a");
+  assert.throws(() => assertEnt007GenerationId("latest"), /invalid/);
+});
+
+test("ENT-007 recovery workflow keeps the weekly fresh-generation cadence contract", () => {
+  const workflow = readFileSync(".github/workflows/ent007-recovery-drill.yml", "utf8").replace(/\r\n/g, "\n");
+  assert.match(workflow, /schedule:\n\s+- cron: "47 6 \* \* 1"/);
+  assert.match(workflow, /generation_id:\n\s+description: Optional retained ENT-007 generation ID/);
+  assert.match(workflow, /required: false/);
+  assert.match(workflow, /Resolve retained recovery generation/);
+  assert.match(workflow, /ENT007_MAX_GENERATION_AGE_SECONDS: "172800"/);
+  assert.match(workflow, /cancel-in-progress: false/);
 });

@@ -1,11 +1,14 @@
 name: ENT-007 Recovery Drill
 
 on:
+  schedule:
+    - cron: "47 6 * * 1"
   workflow_dispatch:
     inputs:
       generation_id:
-        description: Retained ENT-007 generation ID to restore
-        required: true
+        description: Optional retained ENT-007 generation ID; blank selects the newest complete generation
+        required: false
+        default: ""
         type: string
 
 permissions:
@@ -32,7 +35,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      ENT007_GENERATION_ID: ${{ inputs.generation_id }}
       ENT007_BACKUP_ENCRYPTION_KEY: ${{ secrets.ENT007_BACKUP_ENCRYPTION_KEY }}
       ENT007_OUTPUT_DIR: artifacts/ent007-retained-restore
       ENT007_R2_BACKUP_BUCKET: renderlab-dr-backup
@@ -94,6 +96,13 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      - name: Resolve retained recovery generation
+        id: generation
+        env:
+          ENT007_REQUESTED_GENERATION_ID: ${{ inputs.generation_id || '' }}
+          ENT007_MAX_GENERATION_AGE_SECONDS: "172800"
+        run: node scripts/resolve-ent007-recovery-generation.mjs
+
       - name: Start combined recovery timer
         shell: bash
         run: echo "ENT007_COMBINED_STARTED_MS=$(date +%s%3N)" >> "$GITHUB_ENV"
@@ -115,6 +124,8 @@ jobs:
           finished_ms=$(date +%s%3N)
           combined_ms=$((finished_ms - ENT007_COMBINED_STARTED_MS))
           echo "ent007_generation_id=${{ steps.retained.outputs.generation_id }}"
+          echo "ent007_generation_selection=${{ steps.generation.outputs.selection_source }}"
+          echo "ent007_generation_selection_age_seconds=${{ steps.generation.outputs.selection_age_seconds }}"
           echo "ent007_generated_at=${{ steps.retained.outputs.generated_at }}"
           echo "ent007_backup_age_seconds=${{ steps.retained.outputs.backup_age_seconds }}"
           echo "ent007_combined_recovery_elapsed_ms=${combined_ms}"

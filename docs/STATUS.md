@@ -42,7 +42,7 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity 
 - Some workflows and model routes remain capability-gated until ownership and production readiness are verified.
 - There is no supported public API or community plugin contract at this time.
 - The repository is source-visible for evaluation but is not an open-source community project.
-- Large-module decomposition, stronger performance evidence, targeted Node-unit breadth, and higher-maturity disaster recovery remain separate follow-ons. Published recovery objectives still require repeated scheduled evidence rather than being inferred from one drill.
+- Large-module decomposition, stronger performance evidence, targeted Node-unit breadth, and higher-maturity disaster recovery remain separate follow-ons. A weekly retained-restore cadence is now configured, but published recovery objectives still require multiple successful scheduled restore runs rather than being inferred from one drill or from configuration alone.
 
 ## Current direction
 
