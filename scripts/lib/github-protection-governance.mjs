@@ -29,12 +29,27 @@ function topLevelSection(body, key) {
 export function findGithubProtectionPolicyProblems({ policy, workflowBodies }) {
   const problems = [];
   if (!policy || typeof policy !== "object" || Array.isArray(policy)) return [`${GITHUB_PROTECTION_POLICY_PATH}: policy must be a JSON object`];
-  if (policy.schemaVersion !== 1) problems.push(`${GITHUB_PROTECTION_POLICY_PATH}: schemaVersion must be 1`);
+  if (policy.schemaVersion !== 2) problems.push(`${GITHUB_PROTECTION_POLICY_PATH}: schemaVersion must be 2`);
   if (policy.branch !== "main") problems.push(`${GITHUB_PROTECTION_POLICY_PATH}: branch must be main`);
   if (policy.strict !== true) problems.push(`${GITHUB_PROTECTION_POLICY_PATH}: strict must be true`);
   if (policy.enforceAdmins !== true) problems.push(`${GITHUB_PROTECTION_POLICY_PATH}: enforceAdmins must be true`);
   if (policy.requiredPullRequestReviews !== false) problems.push(`${GITHUB_PROTECTION_POLICY_PATH}: requiredPullRequestReviews must remain false until independent reviewer ownership exists`);
   if (policy.requiredConversationResolution !== false) problems.push(`${GITHUB_PROTECTION_POLICY_PATH}: requiredConversationResolution must be false unless governance explicitly changes that policy`);
+  if (!policy.foundationalActions || typeof policy.foundationalActions !== "object" || Array.isArray(policy.foundationalActions)) {
+    problems.push(`${GITHUB_PROTECTION_POLICY_PATH}: foundationalActions must be an object`);
+  } else {
+    for (const actionName of ["actions/checkout", "actions/setup-node", "actions/upload-artifact"]) {
+      const action = policy.foundationalActions[actionName];
+      const prefix = `${GITHUB_PROTECTION_POLICY_PATH}: foundationalActions.${actionName}`;
+      if (!action || typeof action !== "object" || Array.isArray(action)) {
+        problems.push(`${prefix} must be an object`);
+        continue;
+      }
+      if (!/^[0-9a-f]{40}$/i.test(action.sha || "")) problems.push(`${prefix}.sha must be an immutable 40-character Git SHA`);
+      if (typeof action.version !== "string" || !/^v\d/.test(action.version)) problems.push(`${prefix}.version must record the reviewed release tag`);
+      if (action.runtime !== "node24") problems.push(`${prefix}.runtime must be node24`);
+    }
+  }
   if (!Array.isArray(policy.requiredChecks)) return [...problems, `${GITHUB_PROTECTION_POLICY_PATH}: requiredChecks must be an array`];
 
   const contexts = new Set();
@@ -66,6 +81,25 @@ export function findGithubProtectionPolicyProblems({ policy, workflowBodies }) {
       if (!/os:\s*\[ubuntu-latest, windows-latest\]/.test(body)) problems.push(`${check.workflow}: portability matrix must contain ubuntu-latest and windows-latest`);
       if (!body.includes("name: clean-room (${{ matrix.os }})")) problems.push(`${check.workflow}: portability job name must preserve the required clean-room context names`);
       if (!["ubuntu-latest", "windows-latest"].includes(check.matrixOs)) problems.push(`${prefix}: matrixOs must be ubuntu-latest or windows-latest`);
+    }
+  }
+
+  const checkedWorkflows = new Set(policy.requiredChecks.map((check) => check.workflow));
+  for (const workflowPath of checkedWorkflows) {
+    const body = workflowBodies.get(workflowPath);
+    if (typeof body !== "string") continue;
+    for (const actionName of ["actions/checkout", "actions/setup-node", "actions/upload-artifact"]) {
+      const escapedActionName = actionName.replace("/", "\\/");
+      const refs = [...body.matchAll(new RegExp(`\\buses:\\s*${escapedActionName}@([0-9a-f]{40})(?:\\s+#\\s+(\\S+))?`, "g"))];
+      if (actionName === "actions/checkout" && refs.length !== 1) {
+        problems.push(`${workflowPath}: protected-main workflow must use actions/checkout exactly once`);
+      }
+      for (const ref of refs) {
+        const expectedAction = policy.foundationalActions?.[actionName];
+        if (!expectedAction) continue;
+        if (ref[1] !== expectedAction.sha) problems.push(`${workflowPath}: ${actionName} must use approved SHA ${expectedAction.sha}`);
+        if (ref[2] !== expectedAction.version) problems.push(`${workflowPath}: ${actionName} pin comment must record ${expectedAction.version}`);
+      }
     }
   }
 

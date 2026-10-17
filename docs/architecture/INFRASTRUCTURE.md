@@ -312,6 +312,7 @@ Why:
 
 Validation consequences:
 - public GitHub Actions is the normal mid-development remote validation path;
+- protected-main acceptance workflows use reviewed immutable Node-24-runtime foundational action pins: `actions/checkout` `v7.0.1` (`3d3c42e5aac5ba805825da76410c181273ba90b1`), `actions/setup-node` `v7.1.0` (`949feb2413d6458794dcd2491c4babbbce0c15c1`) where Node setup is required, and `actions/upload-artifact` `v7.0.2` (`cf430e030ddbb5b0abf93d22962f4752f3646cd9`) in protected Unit Coverage. `docs/governance/github-protection.json` owns those protected-cohort pins and Documentation Governance fails if a required workflow drifts. Other configured/live workflows remain independently immutable-SHA pinned and are not bulk-migrated merely to avoid triggering their provider/shared-resource acceptance paths;
 - Vercel preview deployment is not required for iterative UI/application verification;
 - final exact-head validation remains mandatory; a future runner outage still does not waive required gates;
 - connector-driven writes should continue to batch cohesive changes into as few commits as practical.
