@@ -21,7 +21,7 @@ export default function TabLayout() {
         options={{
           title: 'Create',
           tabBarAccessibilityLabel: 'Create',
-          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles-outline" color={color ?? colors.textMuted} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -29,7 +29,7 @@ export default function TabLayout() {
         options={{
           title: 'Library',
           tabBarAccessibilityLabel: 'Library',
-          tabBarIcon: ({ color, size }) => <Ionicons name="images-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="images-outline" color={color ?? colors.textMuted} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -37,7 +37,7 @@ export default function TabLayout() {
         options={{
           title: 'Activity',
           tabBarAccessibilityLabel: 'Activity',
-          tabBarIcon: ({ color, size }) => <Ionicons name="time-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="time-outline" color={color ?? colors.textMuted} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -45,7 +45,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarAccessibilityLabel: 'Settings',
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" color={color ?? colors.textMuted} size={size} />,
         }}
       />
     </Tabs>
