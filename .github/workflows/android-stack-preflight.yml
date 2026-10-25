@@ -343,7 +343,11 @@ jobs:
           timeout 60s sdkmanager --channel=0 --list | grep -F "platforms;android-37.0"
           timeout 300s sdkmanager --channel=0 --install "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.1.12297006"
           chmod +x ./gradlew
-          timeout 1200s ./gradlew :app:assembleDebug --no-daemon --console=plain --max-workers=2
+          # Smoke-test one supported modern Android ABI rather than all four.
+          # Prior run 40164786247 spent 20 minutes compiling 4 ABIs and timed out
+          # at app:x86_64 without a compiler error. This DOES NOT qualify x86
+          # emulators, 32-bit ARM, universal/multi-ABI builds or app delivery.
+          timeout 1200s ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain --max-workers=2
           apk="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$apk"
           echo "Isolated Android assembleDebug: PASS (ephemeral debug key only)." >> "$GITHUB_STEP_SUMMARY"
