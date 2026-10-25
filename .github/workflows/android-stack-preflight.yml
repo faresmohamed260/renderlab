@@ -111,10 +111,6 @@ jobs:
           # Blank Expo starter has no Babel config; gluestack CLI adds a config
           # requiring this SDK-owned preset without adding it automatically.
           npx expo install babel-preset-expo -- --save-dev
-          # Expo Atlas is needed only to inventory the disposable Android JS
-          # bundle. Install it before clean npm ci: CLI auto-install mid-export
-          # does not reload the module in the already-running Expo process.
-          npx expo install expo-atlas -- --save-dev
           test -f package-lock.json
           npm ci --no-audit --no-fund
 
@@ -223,9 +219,9 @@ jobs:
           }
           console.log('Expo Router aliases use canonical ./src/* mapping; duplicate Babel root aliases are removed');
           NODE
-          # Expo Atlas is only retained in this credential-free throwaway runner; it
-          # may include transformed source and must never be uploaded as an artifact.
-          EXPO_ATLAS=true npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
+          # Compile true Hermes output as the compatibility gate; don't change
+          # the accepted Android JS test while adding source-map diagnostics.
+          npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
           npm ls expo react react-native expo-router uniwind --depth=0
           npm ls zod node-forge --all
           node - <<'NODE'
@@ -241,35 +237,45 @@ jobs:
           echo "Minimal SDK 58 Expo Router / gluestack v5 / UniWind TypeScript and Android JS export: PASS." >> "$GITHUB_STEP_SUMMARY"
           echo "No native APK build, device rendering, EAS project or OTA delivery was tested." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Trace node-forge ownership and inspect Android Atlas bundle inventory
+      - name: Trace signing dependency and disposable Android source-map modules
         working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
         run: |
           set -euo pipefail
-          # Explain dependency ownership without running attacker-supplied fixtures or
-          # changing Expo code-signing behavior.
           npm explain node-forge
           npm explain @expo/code-signing-certificates
-          test -s .expo/atlas.jsonl
+          # Built-in SDK 58 exporter, no duplicate Expo Atlas / expo-server peer.
+          # Source maps stay inside runner temp and are never uploaded.
+          npx expo export --source-maps --no-bytecode --platform android --output-dir "$RUNNER_TEMP/expo-android-security-map"
           node - <<'NODE'
           const fs = require('node:fs');
-          const lines = fs.readFileSync('.expo/atlas.jsonl', 'utf8').trim().split(/\r?\n/);
-          const parsed = lines.map((line, i) => {
-            try { return JSON.parse(line); }
-            catch (err) { throw new Error('Atlas JSONL record ' + i + ': ' + err.message); }
-          });
-          if (!parsed.length) throw new Error('Expected populated Expo Atlas Android bundle inventory');
-          // First run establishes Expo 58 Atlas field names before any source-path
-          // absence assertion. Log only metadata: Atlas may contain app source.
-          console.log('Android Atlas record count: ' + parsed.length);
-          console.log('Android Atlas top-level keys: ' + JSON.stringify([...new Set(parsed.flatMap(p => Object.keys(p || {})))]));
-          console.log('Android Atlas first record field types: ' + JSON.stringify(Object.fromEntries(
-            Object.entries(parsed[0]).map(([key,value]) => [key,Array.isArray(value)?'array':typeof value])
-          )));
-          const serialized = fs.readFileSync('.expo/atlas.jsonl', 'utf8');
-          console.log('Atlas diagnostic text occurrence of node-forge path: ' + (serialized.split('node_modules/node-forge').length - 1));
-          console.log('Atlas diagnostic text occurrence of code-signing-certificates path: ' + (serialized.split('node_modules/@expo/code-signing-certificates').length - 1));
-          // Absence in this minimal route would not establish absence from a
-          // future full application nor prove the build-time signer secure.
+          const path = require('node:path');
+          const root = path.join(process.env.RUNNER_TEMP, 'expo-android-security-map');
+          const maps = [];
+          function scan(dir) {
+            for (const item of fs.readdirSync(dir, {withFileTypes:true})) {
+              const file = path.join(dir, item.name);
+              if (item.isDirectory()) scan(file);
+              else if (item.name.endsWith('.map')) maps.push(file);
+            }
+          }
+          scan(root);
+          if (!maps.length) throw new Error('Android analysis export did not produce source-map files');
+          const sources = new Set();
+          for (const file of maps) {
+            const record = JSON.parse(fs.readFileSync(file,'utf8'));
+            for (const p of record.sources || []) sources.add(p.replace(/\\/g, '/'));
+          }
+          if (!sources.size) throw new Error('Android source map contained no module sources');
+          const matches = [...sources].filter(p => p.includes('node_modules/node-forge/') ||
+              p.includes('node_modules/@expo/code-signing-certificates/') ||
+              p.includes('node_modules/@expo/cli/'));
+          console.log('Android source maps found: ' + maps.length);
+          console.log('Android mapped module source count: ' + sources.size);
+          console.log('Expo CLI / cert signer / node-forge Android mapped source count: ' + matches.length);
+          console.log('Mapped signing-related modules: ' + JSON.stringify(matches.slice(0, 20)));
+          if (matches.length) throw new Error('Signing/tooling module appears in the temporary Android JavaScript bundle; review before native build');
+          // Negative evidence applies to this minimum route only, and cannot
+          // clear npm audit or prove signing tooling itself safe.
           NODE
 
       - name: Inspect production dependency advisories for Android probe
