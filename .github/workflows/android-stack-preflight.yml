@@ -262,7 +262,11 @@ jobs:
           for attempt in $(seq 1 45); do
             # Expo's root handler and /status vary by SDK; the Android bundle
             # fetch below is the authoritative Metro compilation assertion.
-            if curl --silent --fail --location --max-time 3 -o /dev/null "http://127.0.0.1:$port/"; then
+            # An HTTP 404 on / can still mean Metro is listening. The
+            # source bundle response below must return HTTP 200 and include
+            # the actual generated route.
+            status="$(curl --silent --max-time 3 --output /dev/null --write-out '%{http_code}' "http://localhost:$port/" || true)"
+            if [[ "$status" =~ ^(2[0-9][0-9]|3[0-9][0-9]|404)$ ]]; then
               ready=1
               break
             fi
@@ -274,7 +278,7 @@ jobs:
             echo "Local Metro dev server did not become ready." >&2
             exit 1
           fi
-          bundle_url="http://127.0.0.1:$port/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&minify=false"
+          bundle_url="http://localhost:$port/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&minify=false"
           before="$RUNNER_TEMP/renderlab-before-edit.bundle"
           after="$RUNNER_TEMP/renderlab-after-edit.bundle"
           if ! curl --fail --show-error --silent --max-time 120 "$bundle_url" -o "$before"; then
