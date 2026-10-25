@@ -324,8 +324,15 @@ jobs:
           export ANDROID_USER_HOME="$RUNNER_TEMP/renderlab-android-debug-home"
           mkdir -p "$GRADLE_USER_HOME" "$ANDROID_USER_HOME"
           java -version
-          test -n "${ANDROID_HOME:-}"
+          # Linux runner images may expose ANDROID_SDK_ROOT without ANDROID_HOME.
+          # Detect the preinstalled public Android toolchain, never assume a
+          # credentialed EAS worker or install custom system-wide dependencies.
+          export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          test -d "$ANDROID_HOME"
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
           command -v sdkmanager
+          printf 'Android SDK root: %s\\n' "$ANDROID_HOME"
           df -h .
           # SDK 58 / RN 0.88 targets compile API 37 and NDK r27.
           # Public Android SDK packages only; no signing or Expo credentials.
