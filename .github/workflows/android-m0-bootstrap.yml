@@ -31,7 +31,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test ! -f apps/mobile/package-lock.json || { echo "Already bootstrapped"; exit 0; }
+          # One follow-up SDK-aligned install to make the Android OS chrome dark,
+          # matching the already approved RenderLab theme. The package and lockfile
+          # are committed together; this temporary workflow will then be removed.
+          if test -f apps/mobile/package-lock.json; then
+            cd apps/mobile
+            npm ci --no-audit --no-fund
+            npx expo install expo-system-ui
+            node - <<'NODE'
+          const fs = require('node:fs');
+          const cfg = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          cfg.expo.userInterfaceStyle = 'dark';
+          cfg.expo.backgroundColor = '#090A0C';
+          cfg.expo.android = cfg.expo.android || {};
+          cfg.expo.android.backgroundColor = '#090A0C';
+          if (cfg.expo.android.adaptiveIcon) cfg.expo.android.adaptiveIcon.backgroundColor = '#090A0C';
+          cfg.expo.plugins = [...new Set([...(cfg.expo.plugins || []),'expo-system-ui'])];
+          fs.writeFileSync('app.json',JSON.stringify(cfg,null,2)+'\\n');
+          NODE
+            npm ci --no-audit --no-fund
+            npx expo install --check
+            npx --yes expo-doctor@latest
+            npm run typecheck
+            npm test
+            npm run lint
+            npm run export:android
+            echo "SDK58 dark system-UI dependency and app config: PASS" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           npx --yes create-expo@5.1.5 "$RUNNER_TEMP/renderlab-m0-template" --template blank-typescript@sdk-58 --no-agents-md --yes
           for file in package.json package-lock.json app.json tsconfig.json; do
             cp "$RUNNER_TEMP/renderlab-m0-template/$file" apps/mobile/"$file"
