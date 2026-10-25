@@ -101,6 +101,10 @@ jobs:
           set -euo pipefail
           npx --yes gluestack-ui@5.0.3 init --path src/components/ui --uniwind --use-npm --yes
           npx --yes gluestack-ui@5.0.3 add button --path src/components/ui --use-npm --yes
+          # Temporary non-production mitigation candidate for GHSA-mrhx-c7xc-m3w5:
+          # the fixed Zod patch is evaluated against Expo's dependency tree, not
+          # accepted into RenderLab's app until API/peer compatibility is proven.
+          npm pkg set overrides.zod=4.6.7
           # Required by gluestack v5 as an explicit peer, even for Android export.
           # Install the Expo-SDK-matched version rather than suppressing the doctor gate.
           npx expo install react-native-web react-native-gesture-handler
@@ -217,6 +221,17 @@ jobs:
           NODE
           npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
           npm ls expo react react-native expo-router uniwind --depth=0
+          npm ls zod node-forge --all
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          const zod = Object.entries(lock.packages || {}).filter(([path]) => path.endsWith('node_modules/zod'))
+            .map(([path,pkg]) => ({path,version:pkg.version}));
+          if (!zod.length || zod.some(({version}) => !version.startsWith('4.6.7'))) {
+            throw new Error('Zod patch override failed to converge to the tested 4.6.7 release: ' + JSON.stringify(zod));
+          }
+          console.log('Resolved Zod lockfile versions: ' + JSON.stringify(zod));
+          NODE
           echo "Minimal SDK 58 Expo Router / gluestack v5 / UniWind TypeScript and Android JS export: PASS." >> "$GITHUB_STEP_SUMMARY"
           echo "No native APK build, device rendering, EAS project or OTA delivery was tested." >> "$GITHUB_STEP_SUMMARY"
 
@@ -231,7 +246,13 @@ jobs:
           const report = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/renderlab-mobile-audit.json', 'utf8'));
           const counts = report.metadata?.vulnerabilities || {};
           const rows = Object.entries(report.vulnerabilities || {}).filter(([,v])=>v.severity==='high'||v.severity==='critical')
-            .map(([name,v])=>({name,severity:v.severity,isDirect:v.isDirect,range:v.range,fixAvailable:v.fixAvailable}));
+            .map(([name,v])=>({
+              name,severity:v.severity,isDirect:v.isDirect,range:v.range,fixAvailable:v.fixAvailable,
+              nodes:v.nodes,
+              advisories:(v.via||[]).filter(x=>typeof x==='object').map(x=>({
+                title:x.title,url:x.url,range:x.range,source:x.source
+              }))
+            }));
           console.log('PRODUCTION npm audit counts: ' + JSON.stringify(counts));
           console.log('PRODUCTION high/critical affected packages: ' + JSON.stringify(rows));
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, '\\nProduction dependency audit (throwaway lockfile): ' +
