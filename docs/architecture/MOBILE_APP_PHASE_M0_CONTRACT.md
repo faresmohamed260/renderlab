@@ -1,6 +1,6 @@
 # Android / Mobile Foundation — Phase M0 Contract and Dependency Plan
 
-**Status:** M0 CONTRACT ACCEPTED and merged (PR #397); **implementation:** IN PROGRESS in isolated feature branch; **deployment:** NOT AUTHORIZED  
+**Status:** M0 CONTRACT ACCEPTED and merged (PR #397); **implementation:** IN PROGRESS in isolated feature branch; **deployment:** NOT AUTHORIZED
 **Prepared:** 2026-10-25  
 **Authorities:** [AGENTS.md](../../AGENTS.md), [GOVERNANCE.md](../../GOVERNANCE.md), [PROJECT.md](../../PROJECT.md), [FRONTEND_ARCHITECTURE.md](./FRONTEND_ARCHITECTURE.md), [INFRASTRUCTURE.md](./INFRASTRUCTURE.md), [PRODUCT_CAPABILITIES.md](./PRODUCT_CAPABILITIES.md), [UI_SYSTEM.md](../ui/UI_SYSTEM.md), [UI_DECISIONS.md](../ui/UI_DECISIONS.md), [SCREEN_REGISTRY.md](../ui/SCREEN_REGISTRY.md), [DESIGN_WORKFLOW.md](../ui/DESIGN_WORKFLOW.md).
 
