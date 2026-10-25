@@ -20,7 +20,7 @@ jobs:
   minimal-expo58-gluestack-uniwind:
     name: Minimal Expo 58 / Router / gluestack v5 / UniWind
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       CI: "1"
       EXPO_NO_TELEMETRY: "1"
@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout repository for traceability
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Use RenderLab Node.js standard
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -286,6 +288,56 @@ jobs:
           // Negative evidence applies to this minimum route only, and cannot
           // clear npm audit or prove signing tooling itself safe.
           NODE
+
+      - name: Generate disposable Android native project without credentials
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
+        run: |
+          set -euo pipefail
+          # This identity is a throwaway probe name, NOT a proposed RenderLab
+          # package ID. No EAS project, login, Auth callback or update channel.
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const config = JSON.parse(fs.readFileSync('app.json','utf8'));
+          config.expo.android = {package:'dev.renderlab.temporaryprobe'};
+          if (config.expo.extra?.eas?.projectId || config.expo.updates?.url) {
+            throw new Error('Disallowed EAS/update project binding in temporary native probe');
+          }
+          fs.writeFileSync('app.json',JSON.stringify(config,null,2)+'\\n');
+          NODE
+          npx expo prebuild --platform android --no-install --non-interactive
+          test -f android/gradlew
+          test -f android/app/build.gradle
+          test -f android/app/src/main/AndroidManifest.xml
+          if test -e eas.json || test -e ios; then
+            echo "Forbidden EAS configuration or iOS native output in Android-only probe" >&2
+            exit 1
+          fi
+          echo "Disposable Expo SDK 58 Android Gradle project generated without Expo/EAS credentials." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Compile temporary Android debug APK without distribution
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe/android
+        run: |
+          set -euo pipefail
+          export JAVA_HOME="${JAVA_HOME_17_X64:?GitHub runner needs supported JDK 17}"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          export GRADLE_USER_HOME="$RUNNER_TEMP/renderlab-gradle-home"
+          export ANDROID_USER_HOME="$RUNNER_TEMP/renderlab-android-debug-home"
+          mkdir -p "$GRADLE_USER_HOME" "$ANDROID_USER_HOME"
+          java -version
+          test -n "${ANDROID_HOME:-}"
+          command -v sdkmanager
+          df -h .
+          # SDK 58 / RN 0.88 targets compile API 37 and NDK r27.
+          # Public Android SDK packages only; no signing or Expo credentials.
+          timeout 300s sdkmanager --install "platforms;android-37" "build-tools;37.0.0" "ndk;27.1.12297006"
+          chmod +x ./gradlew
+          timeout 1200s ./gradlew :app:assembleDebug --no-daemon --console=plain --max-workers=2
+          apk="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$apk"
+          echo "Isolated Android assembleDebug: PASS (ephemeral debug key only)." >> "$GITHUB_STEP_SUMMARY"
+          echo "No APK was uploaded, retained, installed, EAS-signed or published." >> "$GITHUB_STEP_SUMMARY"
+          # Prevent later steps from treating this disposable binary as a release.
+          rm -f "$apk"
 
       - name: Inspect production dependency advisories for Android probe
         if: always()
