@@ -219,7 +219,9 @@ jobs:
           }
           console.log('Expo Router aliases use canonical ./src/* mapping; duplicate Babel root aliases are removed');
           NODE
-          # Expo Atlas is only retained in this credential-free throwaway runner; it\n          # may include transformed source and must never be uploaded as an artifact.\n          EXPO_ATLAS=true npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
+          # Expo Atlas is only retained in this credential-free throwaway runner; it
+          # may include transformed source and must never be uploaded as an artifact.
+          EXPO_ATLAS=true npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
           npm ls expo react react-native expo-router uniwind --depth=0
           npm ls zod node-forge --all
           node - <<'NODE'
