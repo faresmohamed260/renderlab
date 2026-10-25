@@ -72,7 +72,12 @@ jobs:
           console.log('Declared Expo SDK 58 / React Native 0.88 / React 19.3 / Expo Router versions verified.');
           NODE
           npx expo install --check
-          npx tsc --noEmit
+
+      - name: Typecheck stock Expo template (diagnostic, enforced at final gate)
+        id: starter_ts
+        continue-on-error: true
+        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+        run: npx tsc --noEmit
 
       - name: Test base Expo Android JS export
         working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
@@ -96,9 +101,21 @@ jobs:
           set -euo pipefail
           npx expo install --check
           npx --yes expo-doctor@latest
-          npx tsc --noEmit
           npx expo export --platform android --output-dir "$RUNNER_TEMP/renderlab-expo-combined-export"
           test -d "$RUNNER_TEMP/renderlab-expo-combined-export"
           npm ls expo react react-native expo-router uniwind --depth=0
           echo "Disposable SDK 58 / gluestack v5 / UniWind Android JavaScript stack probe passed."
           echo "This does NOT verify native Android compilation, device rendering, app signing, EAS Update, or production readiness." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Typecheck combined gluestack/UniWind project (diagnostic, enforced at final gate)
+        id: combined_ts
+        continue-on-error: true
+        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+        run: npx tsc --noEmit
+
+      - name: Enforce passing TypeScript gates
+        if: always()
+        run: |
+          set -euo pipefail
+          test "${{ steps.starter_ts.outcome }}" = "success"
+          test "${{ steps.combined_ts.outcome }}" = "success"
