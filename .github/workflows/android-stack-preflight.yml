@@ -101,6 +101,9 @@ jobs:
           set -euo pipefail
           npx --yes gluestack-ui@5.0.3 init --uniwind --use-npm --yes
           npx --yes gluestack-ui@5.0.3 add button --use-npm --yes
+          # Required by gluestack v5 as an explicit peer, even for Android export.
+          # Install the Expo-SDK-matched version rather than suppressing the doctor gate.
+          npx expo install react-native-web
           test -f package-lock.json
           npm ci --no-audit --no-fund
 
