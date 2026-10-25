@@ -104,6 +104,9 @@ jobs:
           # Required by gluestack v5 as an explicit peer, even for Android export.
           # Install the Expo-SDK-matched version rather than suppressing the doctor gate.
           npx expo install react-native-web react-native-gesture-handler
+          # Blank Expo starter has no Babel config; gluestack CLI adds a config
+          # requiring this SDK-owned preset without adding it automatically.
+          npx expo install babel-preset-expo -- --save-dev
           test -f package-lock.json
           npm ci --no-audit --no-fund
 
