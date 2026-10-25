@@ -219,7 +219,7 @@ jobs:
           }
           console.log('Expo Router aliases use canonical ./src/* mapping; duplicate Babel root aliases are removed');
           NODE
-          npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
+          # Expo Atlas is only retained in this credential-free throwaway runner; it\n          # may include transformed source and must never be uploaded as an artifact.\n          EXPO_ATLAS=true npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
           npm ls expo react react-native expo-router uniwind --depth=0
           npm ls zod node-forge --all
           node - <<'NODE'
@@ -234,6 +234,37 @@ jobs:
           NODE
           echo "Minimal SDK 58 Expo Router / gluestack v5 / UniWind TypeScript and Android JS export: PASS." >> "$GITHUB_STEP_SUMMARY"
           echo "No native APK build, device rendering, EAS project or OTA delivery was tested." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Trace node-forge ownership and inspect Android Atlas bundle inventory
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
+        run: |
+          set -euo pipefail
+          # Explain dependency ownership without running attacker-supplied fixtures or
+          # changing Expo code-signing behavior.
+          npm explain node-forge
+          npm explain @expo/code-signing-certificates
+          test -s .expo/atlas.jsonl
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const lines = fs.readFileSync('.expo/atlas.jsonl', 'utf8').trim().split(/\r?\n/);
+          const parsed = lines.map((line, i) => {
+            try { return JSON.parse(line); }
+            catch (err) { throw new Error('Atlas JSONL record ' + i + ': ' + err.message); }
+          });
+          if (!parsed.length) throw new Error('Expected populated Expo Atlas Android bundle inventory');
+          // First run establishes Expo 58 Atlas field names before any source-path
+          // absence assertion. Log only metadata: Atlas may contain app source.
+          console.log('Android Atlas record count: ' + parsed.length);
+          console.log('Android Atlas top-level keys: ' + JSON.stringify([...new Set(parsed.flatMap(p => Object.keys(p || {})))]));
+          console.log('Android Atlas first record field types: ' + JSON.stringify(Object.fromEntries(
+            Object.entries(parsed[0]).map(([key,value]) => [key,Array.isArray(value)?'array':typeof value])
+          )));
+          const serialized = fs.readFileSync('.expo/atlas.jsonl', 'utf8');
+          console.log('Atlas diagnostic text occurrence of node-forge path: ' + (serialized.match(/node_modules\\/node-forge/g)||[]).length);
+          console.log('Atlas diagnostic text occurrence of code-signing-certificates path: ' + (serialized.match(/node_modules\\/\\@expo\\/code-signing-certificates/g)||[]).length);
+          // Absence in this minimal route would not establish absence from a
+          // future full application nor prove the build-time signer secure.
+          NODE
 
       - name: Inspect production dependency advisories for Android probe
         if: always()
