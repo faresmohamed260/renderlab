@@ -99,13 +99,41 @@ jobs:
         working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
         run: |
           set -euo pipefail
-          npx --yes gluestack-ui@5.0.3 init --uniwind --use-npm --yes
-          npx --yes gluestack-ui@5.0.3 add button --use-npm --yes
+          npx --yes gluestack-ui@5.0.3 init --path src/components/ui --uniwind --use-npm --yes
+          npx --yes gluestack-ui@5.0.3 add button --path src/components/ui --use-npm --yes
           # Required by gluestack v5 as an explicit peer, even for Android export.
           # Install the Expo-SDK-matched version rather than suppressing the doctor gate.
-          npx expo install react-native-web
+          npx expo install react-native-web react-native-gesture-handler
           test -f package-lock.json
           npm ci --no-audit --no-fund
+
+      - name: Normalize CLI output into an Expo Router src layout
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
+        run: |
+          set -euo pipefail
+          test -f global.css
+          test -d src/components/ui/gluestack-ui-provider
+          test -d src/components/ui/button
+          # Gluestack's CLI writes a legacy App.tsx even when Expo Router is the
+          # configured entry. Keep only the true Router root in this probe.
+          rm -f App.tsx
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const ts = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8'));
+          ts.compilerOptions = { ...ts.compilerOptions, strict: true, paths: { '@/*': ['./src/*'] } };
+          fs.writeFileSync('tsconfig.json', JSON.stringify(ts, null, 2) + '\\n');
+          NODE
+          cat > src/global-css.d.ts <<'EOF'
+          declare module '*.css';
+          EOF
+          cat > src/app/_layout.tsx <<'EOF'
+          import '../../global.css';
+          import { Slot } from 'expo-router';
+          import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
+          export default function RootLayout() {
+            return <GluestackUIProvider mode="dark"><Slot /></GluestackUIProvider>;
+          }
+          EOF
 
       - name: Exercise generated Button in throwaway Android route
         working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
