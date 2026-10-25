@@ -1,0 +1,102 @@
+name: Android Mobile Foundation
+
+# Read-only mobile quality plus independent fail-closed dependency-security gate.
+# Nonproduction M0: no credentials, native signing, EAS provisioning or APK upload.
+on:
+  pull_request:
+    paths:
+      - apps/mobile/**
+      - .github/workflows/android-mobile-foundation.yml
+      - docs/architecture/MOBILE_APP_PHASE_M0_CONTRACT.md
+      - docs/architecture/ARCHITECTURE_DECISIONS.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-m0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scaffold-quality:
+    name: Mobile M0 clean install, typecheck, tests, lint and Android JS
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/mobile
+        shell: bash
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Enforce nonproduction M0 scaffold and locked dependencies
+        run: |
+          set -euo pipefail
+          test -f package-lock.json
+          test -d src/components/ui/button
+          test -d src/components/ui/gluestack-ui-provider
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const cfg = JSON.parse(fs.readFileSync('app.json','utf8')).expo;
+          const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+          if (cfg.android?.package || cfg.extra?.eas?.projectId || cfg.updates?.url || pkg.private !== true) {
+            throw new Error('M0 must not contain a real application identifier, EAS project/update or publishable package');
+          }
+          if (cfg.userInterfaceStyle !== 'dark' || cfg.backgroundColor !== '#090A0C' ||
+              !pkg.dependencies['expo-system-ui'] || !pkg.dependencies.uniwind) {
+            throw new Error('Approved dark native theme / styling-engine dependency is missing');
+          }
+          if (!/^~?58\./.test(pkg.dependencies.expo) || pkg.dependencies.react !== '19.3.0' ||
+              pkg.dependencies['react-native'] !== '0.88.0') {
+            throw new Error('Mobile SDK/React dependency matrix changed without review');
+          }
+          for (const route of ['index','library','activity','settings']) {
+            if (!fs.existsSync('src/app/(tabs)/' + route + '.tsx')) throw new Error('Missing M0 placeholder route: '+route);
+          }
+          NODE
+      - name: Clean deterministic mobile install
+        run: npm ci --no-audit --no-fund
+      - name: Check SDK resolution and Expo Doctor
+        run: |
+          npx expo install --check
+          npx --yes expo-doctor@latest
+      - name: TypeScript and API-origin security tests
+        run: |
+          npm run typecheck
+          npm test
+      - name: Lint native source
+        run: npm run lint
+      - name: Export Android Hermes JavaScript
+        run: npm run export:android
+
+  dependency-security:
+    name: Mobile M0 production dependency audit (fail closed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/mobile
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Deterministic dependency install
+        run: npm ci --no-audit --no-fund
+      - name: Reject any high or critical production advisories
+        run: npm audit --omit=dev --audit-level=high
