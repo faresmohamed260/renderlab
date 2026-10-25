@@ -47,7 +47,7 @@ jobs:
           cfg.expo.android.backgroundColor = '#090A0C';
           if (cfg.expo.android.adaptiveIcon) cfg.expo.android.adaptiveIcon.backgroundColor = '#090A0C';
           cfg.expo.plugins = [...new Set([...(cfg.expo.plugins || []),'expo-system-ui'])];
-          fs.writeFileSync('app.json',JSON.stringify(cfg,null,2)+'\\n');
+          fs.writeFileSync('app.json',JSON.stringify(cfg,null,2)+String.fromCharCode(10));
           NODE
             npm ci --no-audit --no-fund
             npx expo install --check
