@@ -302,7 +302,7 @@ jobs:
           if (config.expo.extra?.eas?.projectId || config.expo.updates?.url) {
             throw new Error('Disallowed EAS/update project binding in temporary native probe');
           }
-          fs.writeFileSync('app.json',JSON.stringify(config,null,2)+'\\n');
+          fs.writeFileSync('app.json',JSON.stringify(config,null,2));
           NODE
           npx expo prebuild --platform android --no-install --non-interactive
           test -f android/gradlew
