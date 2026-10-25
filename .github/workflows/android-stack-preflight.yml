@@ -160,7 +160,7 @@ jobs:
             '  };',
             '};',
             ''
-          ].join('\\n'));
+          ].join('\n'));
           NODE
 
       - name: Inspect generated Metro, Babel and alias configuration
