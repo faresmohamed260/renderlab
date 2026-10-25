@@ -239,6 +239,70 @@ jobs:
           echo "Minimal SDK 58 Expo Router / gluestack v5 / UniWind TypeScript and Android JS export: PASS." >> "$GITHUB_STEP_SUMMARY"
           echo "No native APK build, device rendering, EAS project or OTA delivery was tested." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify Metro live development edit without Android rebuild
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          # Scope: prove the live Android JS bundler sees an edited route.
+          # No connected phone, dev-client APK, Expo account or EAS update.
+          export EXPO_OFFLINE=1
+          port=18081
+          log="$RUNNER_TEMP/renderlab-metro-dev-server.log"
+          npx expo start --localhost --port "$port" --go > "$log" 2>&1 &
+          metro_pid=$!
+          cleanup() {
+            kill "$metro_pid" 2>/dev/null || true
+            wait "$metro_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          ready=0
+          for attempt in $(seq 1 45); do
+            if curl --silent --fail --max-time 3 "http://127.0.0.1:$port/status" | grep -Fxq 'packager-status:running'; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$metro_pid" 2>/dev/null; then break; fi
+            sleep 2
+          done
+          if test "$ready" -ne 1; then
+            tail -n 100 "$log" || true
+            echo "Local Metro dev server did not become ready." >&2
+            exit 1
+          fi
+          bundle_url="http://127.0.0.1:$port/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&minify=false"
+          before="$RUNNER_TEMP/renderlab-before-edit.bundle"
+          after="$RUNNER_TEMP/renderlab-after-edit.bundle"
+          if ! curl --fail --show-error --silent --max-time 120 "$bundle_url" -o "$before"; then
+            tail -n 120 "$log" || true
+            exit 1
+          fi
+          grep -Fq 'SDK integration smoke' "$before" || {
+            tail -n 120 "$log" || true
+            echo "Android dev bundle did not include the generated UI component label." >&2
+            exit 1
+          }
+          # Modify only the temporary test route while Metro remains running.
+          sed -i 's/SDK integration smoke/SDK live edit smoke/' src/app/index.tsx
+          grep -Fq 'SDK live edit smoke' src/app/index.tsx
+          updated=0
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --max-time 40 "$bundle_url" -o "$after" && grep -Fq 'SDK live edit smoke' "$after"; then
+              updated=1
+              break
+            fi
+            sleep 2
+          done
+          if test "$updated" -ne 1; then
+            tail -n 120 "$log" || true
+            echo "Metro did not reflect the temporary TypeScript edit in Android dev bundle." >&2
+            exit 1
+          fi
+          # Restore fixture for subsequent bundle/security/native validation.
+          sed -i 's/SDK live edit smoke/SDK integration smoke/' src/app/index.tsx
+          echo "Metro localhost Android development bundle and live TypeScript edit: PASS (no APK rebuild)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Not a connected-device Fast Refresh, EAS Update, or native installation test." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Trace signing dependency and disposable Android source-map modules
         working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
         run: |
