@@ -1,0 +1,105 @@
+name: Android Stack Preflight
+
+# Credential-free discovery: no RenderLab mobile app, Android binary, EAS project,
+# production deployment, or shared provider resources are created by this job.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-stack-preflight.yml
+      - docs/architecture/MOBILE_APP_PHASE_M0_CONTRACT.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-android-preflight-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sdk58-gluestack-uniwind:
+    name: Expo 58 / gluestack v5 / UniWind temporary probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      npm_config_fund: "false"
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout source for traceability
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up project-standard Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Prepare isolated throwaway workspace
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+          mkdir -p "$RUNNER_TEMP/renderlab-mobile-stack-probe"
+
+      - name: Generate temporary SDK 58 Expo Router project
+        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe
+        run: |
+          set -euo pipefail
+          npx --yes create-expo@5.1.5 probe --template default@sdk-58 --no-install --no-agents-md --yes
+          test -f probe/package.json
+          test -f probe/app.json
+
+      - name: Install and inspect SDK 58 dependencies
+        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          test -f package-lock.json
+          npm ci --no-audit --no-fund
+          node - <<'NODE'
+          const assert = require('node:assert/strict');
+          const pkg = require('./package.json');
+          const deps = pkg.dependencies || {};
+          for (const dep of ['expo', 'react-native', 'react', 'expo-router']) {
+            assert.equal(typeof deps[dep], 'string', `missing ${dep}`);
+          }
+          assert.match(deps.expo, /58\./);
+          assert.match(deps['react-native'], /0\.88\./);
+          assert.match(deps.react, /19\.3\./);
+          console.log('Declared Expo SDK 58 / React Native 0.88 / React 19.3 / Expo Router versions verified.');
+          NODE
+          npx expo install --check
+          npx tsc --noEmit
+
+      - name: Test base Expo Android JS export
+        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+        run: |
+          set -euo pipefail
+          npx expo export --platform android --output-dir "$RUNNER_TEMP/renderlab-expo-base-export"
+          test -d "$RUNNER_TEMP/renderlab-expo-base-export"
+
+      - name: Install gluestack v5 and UniWind using official CLI
+        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+        run: |
+          set -euo pipefail
+          npx --yes gluestack-ui@5.0.3 init --uniwind --use-npm --yes
+          npx --yes gluestack-ui@5.0.3 add button --use-npm --yes
+          test -f package-lock.json
+          npm ci --no-audit --no-fund
+
+      - name: Validate combined stack and Android JS export
+        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+        run: |
+          set -euo pipefail
+          npx expo install --check
+          npx --yes expo-doctor@latest
+          npx tsc --noEmit
+          npx expo export --platform android --output-dir "$RUNNER_TEMP/renderlab-expo-combined-export"
+          test -d "$RUNNER_TEMP/renderlab-expo-combined-export"
+          npm ls expo react react-native expo-router uniwind --depth=0
+          echo "Disposable SDK 58 / gluestack v5 / UniWind Android JavaScript stack probe passed."
+          echo "This does NOT verify native Android compilation, device rendering, app signing, EAS Update, or production readiness." >> "$GITHUB_STEP_SUMMARY"
