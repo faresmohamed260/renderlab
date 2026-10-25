@@ -53,6 +53,9 @@ jobs:
         run: |
           set -euo pipefail
           npm ci --no-audit --no-fund
+          # Keep optional Expo Router web peers on the same React patch even though
+          # this preflight targets Android; never bypass npm peer resolution.
+          npm pkg set devDependencies.react-dom=19.3.0
           npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar
           node - <<'NODE'
           const assert = require('node:assert/strict');
