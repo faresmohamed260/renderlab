@@ -260,8 +260,8 @@ jobs:
             Object.entries(parsed[0]).map(([key,value]) => [key,Array.isArray(value)?'array':typeof value])
           )));
           const serialized = fs.readFileSync('.expo/atlas.jsonl', 'utf8');
-          console.log('Atlas diagnostic text occurrence of node-forge path: ' + (serialized.match(/node_modules\\/node-forge/g)||[]).length);
-          console.log('Atlas diagnostic text occurrence of code-signing-certificates path: ' + (serialized.match(/node_modules\\/\\@expo\\/code-signing-certificates/g)||[]).length);
+          console.log('Atlas diagnostic text occurrence of node-forge path: ' + (serialized.split('node_modules/node-forge').length - 1));
+          console.log('Atlas diagnostic text occurrence of code-signing-certificates path: ' + (serialized.split('node_modules/@expo/code-signing-certificates').length - 1));
           // Absence in this minimal route would not establish absence from a
           // future full application nor prove the build-time signer secure.
           NODE
