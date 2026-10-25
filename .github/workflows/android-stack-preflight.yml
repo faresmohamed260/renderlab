@@ -116,12 +116,12 @@ jobs:
           test -d src/components/ui/button
           # Gluestack's CLI writes a legacy App.tsx even when Expo Router is the
           # configured entry. Keep only the true Router root in this probe.
-          rm -f App.tsx
+          rm -f App.tsx index.ts
           node - <<'NODE'
           const fs = require('node:fs');
           const ts = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8'));
           ts.compilerOptions = { ...ts.compilerOptions, strict: true, paths: { '@/*': ['./src/*'] } };
-          fs.writeFileSync('tsconfig.json', JSON.stringify(ts, null, 2) + '\\n');
+          fs.writeFileSync('tsconfig.json', JSON.stringify(ts, null, 2) + '\n');
           NODE
           cat > src/global-css.d.ts <<'EOF'
           declare module '*.css';
