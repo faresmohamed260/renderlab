@@ -261,11 +261,19 @@ jobs:
           scan(root);
           if (!maps.length) throw new Error('Android analysis export did not produce source-map files');
           const sources = new Set();
+          const shapes = [];
+          function collect(record) {
+            if (!record || typeof record !== 'object') return;
+            for (const p of record.sources || []) sources.add(p.replace(/\\/g, '/'));
+            for (const section of record.sections || []) collect(section.map);
+          }
           for (const file of maps) {
             const record = JSON.parse(fs.readFileSync(file,'utf8'));
-            for (const p of record.sources || []) sources.add(p.replace(/\\/g, '/'));
+            shapes.push({name:path.basename(file),keys:Object.keys(record),sections:(record.sections||[]).length});
+            collect(record);
           }
-          if (!sources.size) throw new Error('Android source map contained no module sources');
+          console.log('Android source-map schema: ' + JSON.stringify(shapes));
+          if (!sources.size) throw new Error('Android source maps contain neither flat nor indexed module sources');
           const matches = [...sources].filter(p => p.includes('node_modules/node-forge/') ||
               p.includes('node_modules/@expo/code-signing-certificates/') ||
               p.includes('node_modules/@expo/cli/'));
