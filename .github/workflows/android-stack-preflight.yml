@@ -1,7 +1,7 @@
 name: Android Stack Preflight
 
-# Credential-free discovery: no RenderLab mobile app, Android binary, EAS project,
-# production deployment, or shared provider resources are created by this job.
+# Discovery-only: a disposable Expo app is generated in the runner temporary dir.
+# No RenderLab product code, credentials, native distribution or EAS project is created.
 on:
   pull_request:
     paths:
@@ -17,8 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  sdk58-gluestack-uniwind:
-    name: Expo 58 / gluestack v5 / UniWind temporary probe
+  minimal-expo58-gluestack-uniwind:
+    name: Minimal Expo 58 / Router / gluestack v5 / UniWind
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -28,66 +28,72 @@ jobs:
     defaults:
       run:
         shell: bash
-
     steps:
-      - name: Checkout source for traceability
+      - name: Checkout repository for traceability
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up project-standard Node.js
+      - name: Use RenderLab Node.js standard
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
-      - name: Prepare isolated throwaway workspace
+      - name: Create temporary minimal SDK 58 TypeScript starter
         run: |
           set -euo pipefail
           node --version
           npm --version
-          mkdir -p "$RUNNER_TEMP/renderlab-mobile-stack-probe"
+          mkdir -p "$RUNNER_TEMP/renderlab-mobile-probe"
+          cd "$RUNNER_TEMP/renderlab-mobile-probe"
+          npx --yes create-expo@5.1.5 probe --template blank-typescript@sdk-58 --no-agents-md --yes
+          test -f probe/package-lock.json
+          test -f probe/tsconfig.json
 
-      - name: Generate temporary SDK 58 Expo Router project
-        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe
+      - name: Configure temporary Expo Router with SDK-matched dependencies
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
         run: |
           set -euo pipefail
-          npx --yes create-expo@5.1.5 probe --template default@sdk-58 --no-agents-md --yes
-          test -f probe/package.json
-          test -f probe/app.json
-
-      - name: Install and inspect SDK 58 dependencies
-        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
-        run: |
-          set -euo pipefail
-          test -f package-lock.json
           npm ci --no-audit --no-fund
+          npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar
           node - <<'NODE'
           const assert = require('node:assert/strict');
-          const pkg = require('./package.json');
-          const deps = pkg.dependencies || {};
-          for (const dep of ['expo', 'react-native', 'react', 'expo-router']) {
-            assert.equal(typeof deps[dep], 'string', `missing ${dep}`);
-          }
-          assert.match(deps.expo, /58\./);
-          assert.match(deps['react-native'], /0\.88\./);
-          assert.match(deps.react, /19\.3\./);
-          console.log('Declared Expo SDK 58 / React Native 0.88 / React 19.3 / Expo Router versions verified.');
+          const fs = require('node:fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          assert.match(pkg.dependencies.expo, /58\./);
+          assert.match(pkg.dependencies['react-native'], /0\.88\./);
+          assert.match(pkg.dependencies.react, /19\.3\./);
+          assert.ok(pkg.dependencies['expo-router']);
+          pkg.main = 'expo-router/entry';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          const config = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          config.expo.scheme = 'renderlab-preflight-only';
+          config.expo.plugins = ['expo-router'];
+          config.expo.experiments = { typedRoutes: true };
+          fs.writeFileSync('app.json', JSON.stringify(config, null, 2) + '\n');
+          const ts = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8'));
+          ts.compilerOptions = { ...ts.compilerOptions, strict: true, paths: { '@/*': ['./src/*'] } };
+          fs.writeFileSync('tsconfig.json', JSON.stringify(ts, null, 2) + '\n');
           NODE
-          npx expo install --check
+          mkdir -p src/app
+          cat > src/app/_layout.tsx <<'EOF'
+          import { Slot } from 'expo-router';
+          export default function RootLayout() { return <Slot />; }
+          EOF
+          cat > src/app/index.tsx <<'EOF'
+          import { Text, View } from 'react-native';
+          export default function Index() { return <View><Text>Temporary SDK verification only</Text></View>; }
+          EOF
+          npm ci --no-audit --no-fund
 
-      - name: Typecheck stock Expo template (diagnostic, enforced at final gate)
-        id: starter_ts
-        continue-on-error: true
-        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
-        run: npx tsc --noEmit
-
-      - name: Test base Expo Android JS export
-        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+      - name: Validate clean minimal Expo Router baseline
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
         run: |
           set -euo pipefail
-          npx expo export --platform android --output-dir "$RUNNER_TEMP/renderlab-expo-base-export"
-          test -d "$RUNNER_TEMP/renderlab-expo-base-export"
+          npx expo install --check
+          npx tsc --noEmit
+          npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-baseline-export"
 
-      - name: Install gluestack v5 and UniWind using official CLI
-        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+      - name: CLI-install gluestack v5 and UniWind in disposable starter
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
         run: |
           set -euo pipefail
           npx --yes gluestack-ui@5.0.3 init --uniwind --use-npm --yes
@@ -95,27 +101,26 @@ jobs:
           test -f package-lock.json
           npm ci --no-audit --no-fund
 
-      - name: Validate combined stack and Android JS export
-        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
+      - name: Exercise generated Button in throwaway Android route
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
+        run: |
+          set -euo pipefail
+          cat > src/app/index.tsx <<'EOF'
+          import { View } from 'react-native';
+          import { Button, ButtonText } from '@/components/ui/button';
+          export default function Index() {
+            return <View><Button><ButtonText>SDK integration smoke</ButtonText></Button></View>;
+          }
+          EOF
+
+      - name: Validate combined dependency tree, TypeScript and Android export
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
         run: |
           set -euo pipefail
           npx expo install --check
           npx --yes expo-doctor@latest
-          npx expo export --platform android --output-dir "$RUNNER_TEMP/renderlab-expo-combined-export"
-          test -d "$RUNNER_TEMP/renderlab-expo-combined-export"
+          npx tsc --noEmit
+          npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
           npm ls expo react react-native expo-router uniwind --depth=0
-          echo "Disposable SDK 58 / gluestack v5 / UniWind Android JavaScript stack probe passed."
-          echo "This does NOT verify native Android compilation, device rendering, app signing, EAS Update, or production readiness." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Typecheck combined gluestack/UniWind project (diagnostic, enforced at final gate)
-        id: combined_ts
-        continue-on-error: true
-        working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
-        run: npx tsc --noEmit
-
-      - name: Enforce passing TypeScript gates
-        if: always()
-        run: |
-          set -euo pipefail
-          test "${{ steps.starter_ts.outcome }}" = "success"
-          test "${{ steps.combined_ts.outcome }}" = "success"
+          echo "Minimal SDK 58 Expo Router / gluestack v5 / UniWind TypeScript and Android JS export: PASS." >> "$GITHUB_STEP_SUMMARY"
+          echo "No native APK build, device rendering, EAS project or OTA delivery was tested." >> "$GITHUB_STEP_SUMMARY"
