@@ -138,6 +138,31 @@ jobs:
           }
           EOF
 
+      - name: Normalize CLI Babel resolver to the Expo Router alias authority
+        working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const babel = fs.readFileSync('babel.config.js','utf8');
+          if (!babel.includes("'module-resolver'") || !babel.includes("'@': './'") || !babel.includes("'react-native-worklets/plugin'")) {
+            throw new Error('Unexpected gluestack CLI Babel output; review before normalizing');
+          }
+          // gluestack's generic Babel alias maps @ to project root, conflicting
+          // with Expo Router's canonical src/ path alias. Expo Metro natively
+          // resolves compilerOptions.paths: no duplicate Babel alias is needed.
+          fs.writeFileSync('babel.config.js', [
+            'module.exports = function (api) {',
+            '  api.cache(true);',
+            '  return {',
+            "    presets: ['babel-preset-expo'],",
+            "    plugins: ['react-native-worklets/plugin'],",
+            '  };',
+            '};',
+            ''
+          ].join('\\n'));
+          NODE
+
       - name: Inspect generated Metro, Babel and alias configuration
         working-directory: ${{ runner.temp }}/renderlab-mobile-probe/probe
         run: |
@@ -188,7 +213,7 @@ jobs:
           for (const p of ['src/components/ui/button', 'src/components/ui/gluestack-ui-provider']) {
             if (!fs.existsSync(path.join(process.cwd(), p))) throw new Error('Generated component directory is missing: ' + p);
           }
-          console.log('Expo Router aliases use project baseUrl and src/* mapping');
+          console.log('Expo Router aliases use canonical ./src/* mapping; duplicate Babel root aliases are removed');
           NODE
           npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-minimal-gluestack-export"
           npm ls expo react react-native expo-router uniwind --depth=0
