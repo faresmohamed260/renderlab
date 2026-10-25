@@ -73,7 +73,7 @@ jobs:
           config.expo.experiments = { typedRoutes: true };
           fs.writeFileSync('app.json', JSON.stringify(config, null, 2) + '\n');
           const ts = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8'));
-          ts.compilerOptions = { ...ts.compilerOptions, strict: true, baseUrl: '.', paths: { '@/*': ['src/*'] } };
+          ts.compilerOptions = { ...ts.compilerOptions, strict: true, paths: { '@/*': ['src/*'] } };
           fs.writeFileSync('tsconfig.json', JSON.stringify(ts, null, 2) + '\n');
           NODE
           mkdir -p src/app
@@ -123,7 +123,7 @@ jobs:
           node - <<'NODE'
           const fs = require('node:fs');
           const ts = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8'));
-          ts.compilerOptions = { ...ts.compilerOptions, strict: true, baseUrl: '.', paths: { '@/*': ['src/*'] } };
+          ts.compilerOptions = { ...ts.compilerOptions, strict: true, paths: { '@/*': ['src/*'] } };
           fs.writeFileSync('tsconfig.json', JSON.stringify(ts, null, 2) + '\n');
           NODE
           cat > src/global-css.d.ts <<'EOF'
@@ -161,8 +161,8 @@ jobs:
           const fs = require('node:fs');
           const path = require('node:path');
           const ts = require('./tsconfig.json');
-          if (ts.compilerOptions.baseUrl !== '.' || ts.compilerOptions.paths['@/*'][0] !== 'src/*') {
-            throw new Error('Expo native import aliases must match official TypeScript/Metro guidance');
+          if ('baseUrl' in ts.compilerOptions || ts.compilerOptions.paths['@/*'][0] !== 'src/*') {
+            throw new Error('Expo native import aliases must map to src without deprecated TypeScript baseUrl');
           }
           for (const p of ['src/components/ui/button', 'src/components/ui/gluestack-ui-provider']) {
             if (!fs.existsSync(path.join(process.cwd(), p))) throw new Error('Generated component directory is missing: ' + p);
