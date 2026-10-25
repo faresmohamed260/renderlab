@@ -249,7 +249,9 @@ jobs:
           export EXPO_OFFLINE=1
           port=18081
           log="$RUNNER_TEMP/renderlab-metro-dev-server.log"
-          npx expo start --localhost --port "$port" --go > "$log" 2>&1 &
+          # CI=1 intentionally disables Metro file watching; opt out only for
+          # this disposable development-mode process to validate live edits.
+          CI=0 npx expo start --localhost --port "$port" --go > "$log" 2>&1 &
           metro_pid=$!
           cleanup() {
             kill "$metro_pid" 2>/dev/null || true
@@ -258,7 +260,9 @@ jobs:
           trap cleanup EXIT
           ready=0
           for attempt in $(seq 1 45); do
-            if curl --silent --fail --max-time 3 "http://127.0.0.1:$port/status" | grep -Fxq 'packager-status:running'; then
+            # Expo's root handler and /status vary by SDK; the Android bundle
+            # fetch below is the authoritative Metro compilation assertion.
+            if curl --silent --fail --location --max-time 3 -o /dev/null "http://127.0.0.1:$port/"; then
               ready=1
               break
             fi
