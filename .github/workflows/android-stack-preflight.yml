@@ -274,14 +274,15 @@ jobs:
           }
           console.log('Android source-map schema: ' + JSON.stringify(shapes));
           if (!sources.size) throw new Error('Android source maps contain neither flat nor indexed module sources');
-          const matches = [...sources].filter(p => p.includes('node_modules/node-forge/') ||
-              p.includes('node_modules/@expo/code-signing-certificates/') ||
-              p.includes('node_modules/@expo/cli/'));
+          const risky = [...sources].filter(p => p.includes('node_modules/node-forge/') ||
+              p.includes('node_modules/@expo/code-signing-certificates/'));
+          const cli = [...sources].filter(p => p.includes('node_modules/@expo/cli/'));
           console.log('Android source maps found: ' + maps.length);
           console.log('Android mapped module source count: ' + sources.size);
-          console.log('Expo CLI / cert signer / node-forge Android mapped source count: ' + matches.length);
-          console.log('Mapped signing-related modules: ' + JSON.stringify(matches.slice(0, 20)));
-          if (matches.length) throw new Error('Signing/tooling module appears in the temporary Android JavaScript bundle; review before native build');
+          console.log('node-forge / Expo certificate signer Android mapped source count: ' + risky.length);
+          console.log('Expo CLI Android mapped modules (expected Metro runtime helper): ' + JSON.stringify(cli.slice(0, 20)));
+          console.log('Mapped vulnerable signing package modules: ' + JSON.stringify(risky.slice(0, 20)));
+          if (risky.length) throw new Error('Vulnerable cryptography or certificate signer package enters the temporary Android JS bundle; review before native build');
           // Negative evidence applies to this minimum route only, and cannot
           // clear npm audit or prove signing tooling itself safe.
           NODE
