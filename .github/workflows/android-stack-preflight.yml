@@ -49,7 +49,7 @@ jobs:
         working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe
         run: |
           set -euo pipefail
-          npx --yes create-expo@5.1.5 probe --template default@sdk-58 --no-install --no-agents-md --yes
+          npx --yes create-expo@5.1.5 probe --template default@sdk-58 --no-agents-md --yes
           test -f probe/package.json
           test -f probe/app.json
 
@@ -57,7 +57,6 @@ jobs:
         working-directory: ${{ runner.temp }}/renderlab-mobile-stack-probe/probe
         run: |
           set -euo pipefail
-          npm install --no-audit --no-fund
           test -f package-lock.json
           npm ci --no-audit --no-fund
           node - <<'NODE'
