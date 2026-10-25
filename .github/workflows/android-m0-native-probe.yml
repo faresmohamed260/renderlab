@@ -1,0 +1,90 @@
+name: Android M0 Persistent Native Probe
+
+# ONE-TIME nonproduction compilation qualification of the actual M0 app.
+# Remove after recording verified evidence to avoid repeated costly PR builds.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-m0-native-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  arm64-temporary:
+    name: Compile Android M0 arm64 debug APK and delete it
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      npm_config_fund: "false"
+    defaults:
+      run:
+        shell: bash
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout trusted branch without persisted write credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Resolve exact mobile lockfile, no services or credentials
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          npx expo install --check
+          test -f eas.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const cfg = JSON.parse(fs.readFileSync('app.json','utf8'));
+          if (cfg.expo.android?.package || cfg.expo.extra?.eas?.projectId || cfg.expo.updates?.url) {
+            throw new Error('Repo must not bind real package/EAS/update identifiers');
+          }
+          const eas = JSON.parse(fs.readFileSync('eas.json','utf8'));
+          if (eas.build?.production || eas.submit || eas.update) {
+            throw new Error('Release EAS configuration is not authorized');
+          }
+          const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+          for (const name of ['expo-dev-client','expo-secure-store','expo-font','expo-system-ui']) {
+            if (!pkg.dependencies[name]) throw new Error('M0 native dependency missing: '+name);
+          }
+          // This is ONLY an ephemeral runner-local package identifier for prebuild.
+          cfg.expo.android = {...(cfg.expo.android || {}),package:'dev.renderlab.temporarym0'};
+          fs.writeFileSync('app.json',JSON.stringify(cfg,null,2));
+          NODE
+      - name: Prebuild the persistent app's temporary Android project
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --no-install --non-interactive
+          test -f android/gradlew
+          test -f android/app/build.gradle
+          echo "Expo prebuild of current apps/mobile package: PASS" >> "$GITHUB_STEP_SUMMARY"
+      - name: Assemble disposable Android arm64 APK
+        working-directory: apps/mobile/android
+        run: |
+          set -euo pipefail
+          export JAVA_HOME="${JAVA_HOME_17_X64:?JDK17 is required}"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          export GRADLE_USER_HOME="$RUNNER_TEMP/renderlab-m0-native-gradle"
+          export ANDROID_USER_HOME="$RUNNER_TEMP/renderlab-m0-native-android"
+          mkdir -p "$GRADLE_USER_HOME" "$ANDROID_USER_HOME"
+          export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+          test -d "$ANDROID_HOME"
+          command -v sdkmanager
+          timeout 60s sdkmanager --channel=0 --list | grep -F "platforms;android-37.0"
+          timeout 300s sdkmanager --channel=0 --install "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.1.12297006"
+          chmod +x ./gradlew
+          timeout 1200s ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain --max-workers=2
+          apk="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$apk"
+          echo "Current M0 Android arm64 debug APK compilation: PASS (runner-local ephemeral debug signing)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Not installed, retained, uploaded, signed for release or distributed." >> "$GITHUB_STEP_SUMMARY"
+          rm -f "$apk"
