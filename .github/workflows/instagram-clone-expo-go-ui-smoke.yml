@@ -82,6 +82,58 @@ jobs:
           sudo udevadm trigger --name-match=kvm
           test -c /dev/kvm
 
+      - name: Write standalone emulator smoke-test script
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > clone/ci-expo-go-emulator.sh <<'EXPO_GO_SCRIPT_FILE'
+          set -euo pipefail
+          cd clone
+          mkdir -p ../reference-evidence
+          # Expo's published SDK 53 Android APK, linked at expo.dev/go?sdkVersion=53.
+          curl -fL --retry 3 --max-time 180               'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-2.33.22/Expo-Go-2.33.22.apk'               -o /tmp/expo-go-53.apk
+          test -s /tmp/expo-go-53.apk
+          adb install -r /tmp/expo-go-53.apk
+          # Block accidental external services: only the ADB-reversed loopback Metro connection is needed.
+          adb shell svc wifi disable || true
+          adb shell cmd connectivity airplane-mode enable || true
+          nohup npx expo start --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
+          for n in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'
+          adb reverse tcp:8081 tcp:8081
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 55
+          adb exec-out screencap -p > ../reference-evidence/before.png
+          adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/window.xml > ../reference-evidence/before-window.xml 2>/dev/null || true
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/screens/Login.jsx')
+          s=p.read_text()
+          old='backgroundColor: "#000",'
+          assert old in s
+          p.write_text(s.replace(old,'backgroundColor: "#171717",',1))
+          print('Modified ORIGINAL login UI stylesheet only; original SDK 53 APK stays installed.')
+          PY
+          # This checks automatic updates first, then explicitly reloads JS (never reinstalls APK).
+          sleep 30
+          adb exec-out screencap -p > ../reference-evidence/after-hot.png
+          adb shell am force-stop host.exp.exponent || true
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 45
+          adb exec-out screencap -p > ../reference-evidence/after-reload.png
+          curl -fsS --max-time 170 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/updated.js
+          grep -q '#171717' /tmp/updated.js
+          sha256sum ../reference-evidence/*.png > ../reference-evidence/screenshot-checksums.txt
+          adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity|host.exp.exponent' | tail -20 > ../reference-evidence/activity.txt || true
+          adb logcat -d -s ReactNativeJS:E AndroidRuntime:E | tail -120 > ../reference-evidence/android-errors.log || true
+          echo "Expo Go installed once; Android JS edit served. Screenshots captured for review."
+          EXPO_GO_SCRIPT_FILE
+          chmod +x clone/ci-expo-go-emulator.sh
+
       - name: Launch official SDK 53 Expo Go and test no-APK-rebuild UI reload
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -90,53 +142,7 @@ jobs:
           target: google_apis
           profile: pixel_6
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: |
-            bash <<'EXPO_GO_TEST'
-            set -euo pipefail
-            cd clone
-            mkdir -p ../reference-evidence
-            # Expo's published SDK 53 Android APK, linked at expo.dev/go?sdkVersion=53.
-            curl -fL --retry 3 --max-time 180               'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-2.33.22/Expo-Go-2.33.22.apk'               -o /tmp/expo-go-53.apk
-            test -s /tmp/expo-go-53.apk
-            adb install -r /tmp/expo-go-53.apk
-            # Block accidental external services: only the ADB-reversed loopback Metro connection is needed.
-            adb shell svc wifi disable || true
-            adb shell cmd connectivity airplane-mode enable || true
-            nohup npx expo start --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
-            for n in $(seq 1 90); do
-              if curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'; then break; fi
-              sleep 2
-            done
-            curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'
-            adb reverse tcp:8081 tcp:8081
-            adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
-            sleep 55
-            adb exec-out screencap -p > ../reference-evidence/before.png
-            adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
-            adb exec-out cat /sdcard/window.xml > ../reference-evidence/before-window.xml 2>/dev/null || true
-            python3 - <<'PY'
-            from pathlib import Path
-            p=Path('src/screens/Login.jsx')
-            s=p.read_text()
-            old='backgroundColor: "#000",'
-            assert old in s
-            p.write_text(s.replace(old,'backgroundColor: "#171717",',1))
-            print('Modified ORIGINAL login UI stylesheet only; original SDK 53 APK stays installed.')
-            PY
-            # This checks automatic updates first, then explicitly reloads JS (never reinstalls APK).
-            sleep 30
-            adb exec-out screencap -p > ../reference-evidence/after-hot.png
-            adb shell am force-stop host.exp.exponent || true
-            adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
-            sleep 45
-            adb exec-out screencap -p > ../reference-evidence/after-reload.png
-            curl -fsS --max-time 170 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/updated.js
-            grep -q '#171717' /tmp/updated.js
-            sha256sum ../reference-evidence/*.png > ../reference-evidence/screenshot-checksums.txt
-            adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity|host.exp.exponent' | tail -20 > ../reference-evidence/activity.txt || true
-            adb logcat -d -s ReactNativeJS:E AndroidRuntime:E | tail -120 > ../reference-evidence/android-errors.log || true
-            echo "Expo Go installed once; Android JS edit served. Screenshots captured for review."
-            EXPO_GO_TEST
+          script: bash clone/ci-expo-go-emulator.sh
 
       - name: Keep only screenshots/logs; do not upload APKs
         if: always()
