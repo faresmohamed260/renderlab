@@ -1,6 +1,6 @@
 # Android Library v0.3 — bounded usability refinement proposal
 
-**Status:** PROPOSED, NOT RENDERED, NOT APPROVED. **Scope:** design-only follow-up to v0.2 in draft PR #400. No native implementation, merge, or deployment authorization.
+**Status:** SOURCE SVG CANDIDATES PREPARED; RASTER / NATIVE QA AND OWNER ACCEPTANCE PENDING. **Scope:** design-only follow-up to v0.2 in draft PR #400. No native implementation, merge, or deployment authorization.
 
 ## Source and boundary
 Based on the actual v0.2 SVGs, walkthrough source and `android-instagram-shell-library-v02.md`, the v0.1 audit, UI-083 and repository UI governance. Retain the Instagram-inspired media-first layout, root Feed/Browse five-icon dock, contextual back-only Collection grid, existing owner-scoped asset semantics, and synthetic fixtures. Do not introduce Albums persistence or social behavior.
@@ -22,4 +22,4 @@ Based on the actual v0.2 SVGs, walkthrough source and `android-instagram-shell-l
 ## Deliverables and review gate
 Prepare side-by-side **v0.2 vs v0.3 rendered** Feed, Browse, Browse Controls, Collection and stress states, plus an updated clickable walkthrough. Record measured visual differences and a finding-by-finding disposition. Seek explicit owner design approval before any mobile code changes. Preserve v0.2 unchanged as the comparison baseline.
 
-**Checkpoint:** This file records a proposed next design iteration only. It is not evidence that v0.3 screens exist or that any test passed.
+**Checkpoint update — 2026-10-26:** The v0.3 SVG screens, distinct root Collections list, selected-filter states, corrected fixture-filter results, four revised non-populated Browse states, clickable walkthrough, and expanded side-by-side comparison are now committed on the PR #400 draft branch. See [v0.3 audit / source-check report](android-instagram-shell-library-v03-audit.md) for exact file links and the explicit limitations. A [contact-sheet render/validation utility](../tools/android_v03_review.py) is committed but has not been run in this checkpoint. Do not label v0.3 as raster-reviewed, owner-accepted, implemented or ready to merge.
