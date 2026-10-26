@@ -86,6 +86,8 @@ jobs:
           curl -fLsS --retry 3 --max-time 180 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-2.33.22/Expo-Go-2.33.22.apk' -o /tmp/expo-go-sdk53.apk
           test -s /tmp/expo-go-sdk53.apk
           adb install -r /tmp/expo-go-sdk53.apk
+          # Give the Android launcher time to finish first-boot initialization.
+          sleep 18
           # Only local Metro traffic, via ADB reverse. External Firebase unavailable.
           adb shell svc wifi disable || true
           adb shell cmd connectivity airplane-mode enable || true
@@ -102,6 +104,10 @@ jobs:
           adb exec-out screencap -p > ../reference-evidence/01-home-feed.png
           adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
           adb exec-out cat /sdcard/window.xml > ../reference-evidence/01-home-hierarchy.xml 2>/dev/null || true
+          if grep -Eqi 'not responding|isn.t responding|Application Error' ../reference-evidence/01-home-hierarchy.xml; then
+            echo 'Emulator system error dialog; cannot accept touch test' >&2
+            exit 1
+          fi
           adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' > ../reference-evidence/window-focus.txt || true
           if grep -Eq 'ErrorActivity' ../reference-evidence/window-focus.txt; then
             echo 'ErrorActivity appeared; failing the UI smoke instead of claiming success.' >&2
@@ -113,11 +119,19 @@ jobs:
           adb exec-out screencap -p > ../reference-evidence/02-search-grid.png
           adb shell uiautomator dump /sdcard/search.xml >/dev/null 2>&1
           adb exec-out cat /sdcard/search.xml > ../reference-evidence/02-search-hierarchy.xml
+          if grep -Eqi 'not responding|isn.t responding|Application Error' ../reference-evidence/02-search-hierarchy.xml; then
+            echo 'System dialog blocked Search selection' >&2
+            exit 1
+          fi
           adb shell input tap 971 2280
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/03-profile-grid.png
           adb shell uiautomator dump /sdcard/profile.xml >/dev/null 2>&1
           adb exec-out cat /sdcard/profile.xml > ../reference-evidence/03-profile-hierarchy.xml
+          if grep -Eqi 'not responding|isn.t responding|Application Error' ../reference-evidence/03-profile-hierarchy.xml; then
+            echo 'System dialog blocked Profile selection' >&2
+            exit 1
+          fi
           adb shell input tap 110 2280
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/04-home-returned.png
@@ -167,7 +181,7 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          target: google_apis
+          target: default
           profile: pixel_6
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash clone/ci-feed-grid-emulator.sh
