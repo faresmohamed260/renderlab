@@ -36,7 +36,7 @@ Unchanged v0.2 Feed, Media Actions, signed-out gate and delete-confirmation fram
 | V03-08 | **P1 open — technical gate** | Expo SDK58/Phase M0 security, React Native route ownership, safe-area insets, TalkBack, reduced motion, auth/resource ownership, gesture/navigation restoration, video playback, uploads and permissions remain untouched/unverified. PR #401 third-party clone lab must not be treated as launch-ready. |
 
 ## Repository source checks (executed on fetched branch blobs, not local runtime)
-- Ten initial v0.3 SVGs examined: each declared `width=709`, `height=1536`, `viewBox=0 0 709 1536`; simple tag-stack checks returned balanced markup. Additional source-filter and alternate-state SVGs were then added. This does **not** replace a comprehensive XML parse/render run.
+- All **14 current v0.3 SVG candidates** were re-fetched after the corrections and checked for `width=709`, `height=1536`, `viewBox=0 0 709 1536`, root opening/closing tags and balanced SVG tag stacks; **14/14 passed those limited source checks**. This does **not** replace a standards-compliant XML parse/render run.
 - Generated result contained **nine** `<image>` elements and **two** explicit video-poster badge groups; Uploads result contained **three** `<image>` elements. These are correct according to `design/tools/android_v02_generator.py` `FIXTURES` source mapping.
 - Empty contextual Collection lacks the root dock in markup. Root Browse, root Collections and filtered Items variants include it.
 - `All types` is the visibly selected default in v0.3 Browse controls, and selected Generated/Uploads sheets have distinct corresponding selected-source styling.
