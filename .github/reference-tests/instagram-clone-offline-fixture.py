@@ -59,9 +59,9 @@ app.write_text(contents.replace(old, 'import AuthNavigation from "./src/navigati
 # screen during its exit animation. It must not intercept taps after fading.
 # This changes hit testing only; the existing visual splash remains intact.
 contents = app.read_text()
-splash = '<Animated.View\\n          exiting={FadeOut.duration(1500)}'
+splash = '<Animated.View\n          exiting={FadeOut.duration(1500)}'
 assert contents.count(splash) == 1, "Upstream App.js splash signature changed"
-app.write_text(contents.replace(splash, '<Animated.View\\n          pointerEvents="none"\\n          exiting={FadeOut.duration(1500)}', 1))
+app.write_text(contents.replace(splash, '<Animated.View\n          pointerEvents="none"\n          exiting={FadeOut.duration(1500)}', 1))
 print("Reference-only input guard: splash overlay cannot intercept React Native touches.")
 
 # No real backend is initialized; accidental attempted reads/writes must fail closed.
