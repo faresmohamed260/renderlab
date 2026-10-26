@@ -220,6 +220,22 @@ jobs:
           grep -q 'renderlab_preview' src/offlineReferenceFixture.js
           grep -q 'SignedInStack' App.js
           grep -q 'db = null' src/services/firebase.js
+          # Diagnostic instrumentation only; no change to navigator or UI behavior.
+          python3 - <<'PY'
+          from pathlib import Path
+          tabs=Path('src/navigation/BottomTabs.jsx')
+          t=tabs.read_text()
+          old='<Tab.Navigator screenOptions={screenOptions}>'
+          new='<Tab.Navigator screenOptions={screenOptions} screenListeners={{ tabPress: e => console.log("INPUT_PROBE_TAB_PRESS:" + e.target) }}>'
+          assert t.count(old)==1
+          tabs.write_text(t.replace(old,new))
+          head=Path('src/components/home/Header.jsx')
+          h=head.read_text()
+          old='onPress={() => setFilterModalVisible(true)}'
+          new='onPress={() => { console.log("INPUT_PROBE_HEADER"); setFilterModalVisible(true); }}'
+          assert h.count(old)==1
+          head.write_text(h.replace(old,new))
+          PY
 
       - name: Configure accelerated Android emulator
         shell: bash
@@ -387,6 +403,16 @@ jobs:
           PY
           sleep 40
           adb exec-out screencap -p > ../reference-evidence/05-nav-hot-update.png
+          # Probe independent Home header tap, then collect native input diagnostics.
+          # Done after normal tab taps to avoid influencing their state.
+          adb shell input tap 310 190
+          sleep 5
+          adb exec-out screencap -p > ../reference-evidence/05a-header-touch-probe.png
+          adb shell uiautomator dump /sdcard/header-touch-probe.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/header-touch-probe.xml > ../reference-evidence/05a-header-touch-probe.xml 2>/dev/null || true
+          adb logcat -d -s ReactNativeJS:V InputDispatcher:D WindowManager:W | tail -n 650 > ../reference-evidence/input-probe-logcat.txt || true
+          adb shell dumpsys input | tail -n 260 > ../reference-evidence/input-probe-dumpsys.txt || true
+          grep 'INPUT_PROBE_' ../reference-evidence/input-probe-logcat.txt || true
           curl -fsS --max-time 150 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/feed-grid-bundle.js
           grep -q '#252525' /tmp/feed-grid-bundle.js
           # Independent control: route directly to existing Search/Profile tabs by
@@ -396,9 +422,9 @@ jobs:
           from pathlib import Path
           p=Path('src/navigation/BottomTabs.jsx')
           s=p.read_text()
-          original='<Tab.Navigator screenOptions={screenOptions}>'
+          original='<Tab.Navigator screenOptions={screenOptions} screenListeners={{ tabPress: e => console.log("INPUT_PROBE_TAB_PRESS:" + e.target) }}>'
           assert s.count(original)==1
-          p.write_text(s.replace(original,'<Tab.Navigator screenOptions={screenOptions} initialRouteName="Search">',1))
+          p.write_text(s.replace(original,original[:-1]+' initialRouteName="Search">',1))
           PY
           adb shell am force-stop host.exp.exponent
           adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
