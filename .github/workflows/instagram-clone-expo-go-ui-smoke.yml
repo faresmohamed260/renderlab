@@ -300,6 +300,12 @@ jobs:
           ensure_expo_foreground
           adb shell wm size > ../reference-evidence/device-size.txt
           adb exec-out screencap -p > ../reference-evidence/01-home-feed.png
+          # Diagnose whether Android delivers any touchscreen gestures to the feed.
+          adb shell input swipe 540 1850 540 830 680
+          sleep 8
+          adb exec-out screencap -p > ../reference-evidence/01a-home-after-swipe.png
+          adb shell input swipe 540 830 540 1850 680
+          sleep 6
           adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
           adb exec-out cat /sdcard/window.xml > ../reference-evidence/01-home-hierarchy.xml 2>/dev/null || true
           if grep -Eqi 'not responding|isn.t responding|Application Error' ../reference-evidence/01-home-hierarchy.xml; then
@@ -383,6 +389,47 @@ jobs:
           adb exec-out screencap -p > ../reference-evidence/05-nav-hot-update.png
           curl -fsS --max-time 150 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/feed-grid-bundle.js
           grep -q '#252525' /tmp/feed-grid-bundle.js
+          # Independent control: route directly to existing Search/Profile tabs by
+          # changing only the original navigator's initialRouteName in the CI checkout.
+          # No cloned visual components, native build, or installed APK are replaced.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/navigation/BottomTabs.jsx')
+          s=p.read_text()
+          original='<Tab.Navigator screenOptions={screenOptions}>'
+          assert s.count(original)==1
+          p.write_text(s.replace(original,'<Tab.Navigator screenOptions={screenOptions} initialRouteName="Search">',1))
+          PY
+          adb shell am force-stop host.exp.exponent
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 42
+          adb exec-out screencap -p > ../reference-evidence/06-initial-search.png
+          adb shell uiautomator dump /sdcard/forced-search.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/forced-search.xml > ../reference-evidence/06-initial-search.xml 2>/dev/null || true
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/navigation/BottomTabs.jsx')
+          s=p.read_text()
+          old='initialRouteName="Search"'
+          assert s.count(old)==1
+          p.write_text(s.replace(old,'initialRouteName="Profile"',1))
+          PY
+          adb shell am force-stop host.exp.exponent
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 42
+          adb exec-out screencap -p > ../reference-evidence/07-initial-profile.png
+          adb shell uiautomator dump /sdcard/forced-profile.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/forced-profile.xml > ../reference-evidence/07-initial-profile.xml 2>/dev/null || true
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('../reference-evidence')
+          names=['01-home-feed.png','01a-home-after-swipe.png','06-initial-search.png','07-initial-profile.png']
+          print("DIAGNOSTIC IMAGE HASHES:",[(n,hashlib.sha256((p/n).read_bytes()).hexdigest()) for n in names])
+          (p/'input-route-diagnostic.txt').write_text(
+             "Touch input and route initialization are independent checks; inspect images and XML.\\n"
+          )
+          PY
           python3 - <<'PY'
           from pathlib import Path
           import hashlib
