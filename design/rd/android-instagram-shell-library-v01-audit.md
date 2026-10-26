@@ -6,6 +6,18 @@
 **Evidence reviewed:** original user Instagram images `1000089808.jpg` (Feed) and `1000089810.jpg` (Grid), both 709 × 1536; actual raster previews `renderlab-android-feed-v01.png`, `renderlab-android-grid-v01.png` and side-by-side reference comparison; self-contained [Feed SVG](../penpot/android-instagram-feed-v01.svg), [Grid SVG](../penpot/android-instagram-grid-v01.svg); [v0.1 candidate design/interaction specification](android-instagram-shell-library-v01.md).  
 **Audit type:** visual + IA + affordance + accessibility/release-risk desk review. **Not** a React Native runtime, security penetration, usability study, approved interaction test, device rendering, or owner acceptance.
 
+## v0.2 correction record (2026-10-26; design-only)
+
+The [v0.2 remediation contract](android-instagram-shell-library-v02.md), [root Feed SVG](../penpot/android-instagram-feed-v02.svg), [root Browse SVG](../penpot/android-instagram-browse-v02.svg), [contextual Collection SVG](../penpot/android-instagram-collection-v02.svg), and [keyboard-operable design walkthrough](../prototypes/android-navigation-v02.html) address the **static UI-design** defects reported here. The v0.1 measurements and defects below are retained as historical review evidence, not the current candidate to implement.
+
+- **A01–A02:** Corrected design navigation hierarchy (root Feed/Browse with five-icon dock, back-only contextual Collection) and defined Items/Collections/Generated/Uploads tab meanings. User acceptance of that mapping is still required.
+- **A03–A04, A07:** Corrected synthetic item-type badges, four-item carousel indicator/count agreement, and unsupported attention dot.
+- **A05–A06:** Added labeled Media Actions and Browse Controls sheets, including clear Upload and Search entry points and capability boundaries.
+- **A08–A10:** Reused locked RenderLab mark geometry + separate wordpart weights and added scrolled Feed clearance; precise system font matching, icon licensing and real device behavior remain unverified.
+- **A11–A12:** Added design states for keyboard focus, signed out, loading, error, empty Library and delete confirmation. Accessibility, gestures, permissions, real server results and destructive actions are not implemented or device-tested.
+
+**Overall status: DESIGN REMEDIATION CANDIDATE — OWNER REVIEW PENDING.** A fixed static illustration does **not** close native acceptance, Expo SDK58/Phase M0 security, the vulnerable third-party clone, or launch/release gates. No mobile implementation or production environment was changed.
+
 ## Executive verdict
 
 The **macro layout is promising and notably closer than the earlier broad concept images**: Feed and Grid share the exact reference 709 × 1536 viewport; Feed's media begins at about **y=285** and spans the full 709 px; the contextual Grid begins at about **y=265**, has three roughly **236 × 315** portrait cells per row, very narrow seams, and correctly omits a root bottom bar. The near-black background, compact header/identity hierarchy and media-first presentation also preserve the requested direction.

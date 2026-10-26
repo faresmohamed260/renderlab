@@ -1,7 +1,9 @@
 # RenderLab Android — Instagram-close shell and Library v0.1
 
 **Status:** DESIGN CANDIDATE — for owner review; not a final visual approval or implementation contract.  
-**Scope:** native Android layout, information architecture, labels and interaction design only.  
+**Scope:** native Android layout, information architecture, labels and interaction design only.
+
+**Design iteration notice:** This v0.1 file preserves the original reference translation and audit baseline. Its proposed Grid/root-tab behavior and sample states are superseded **for further review** by [v0.2 corrections](android-instagram-shell-library-v02.md); v0.2 remains an unapproved design candidate, not RenderLab implementation or changed product contracts.  
 **Date:** 2026-10-26. **Design authority:** [UI-083](../../docs/ui/UI_DECISIONS.md), [UI system](../../docs/ui/UI_SYSTEM.md), [native M0 contract](../../docs/architecture/MOBILE_APP_PHASE_M0_CONTRACT.md), [screen registry](../../docs/ui/SCREEN_REGISTRY.md).  
 **Reference:** owner's two Instagram Android screenshots (feed at 5:33 and grid at 5:34). The original screenshots are the visual benchmark; this text is a working translation, not substituted visual evidence. **Related isolated technical proof:** draft PR #401; it verifies original-clone feed rendering, no-reinstall JS styling and keyboard-activated original Search/Profile tabs, **not touchscreen interactions or RenderLab implementation**.
 
