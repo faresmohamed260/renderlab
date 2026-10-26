@@ -16,7 +16,7 @@ const screens={
 feed:['feed','v02','Library Feed','Full-width media with compact creative actions.'],
 browse:['browse','v03','Browse · Items','Items organization; source = All, kind = All types.'],
 collections:['collections','v03','Browse · Collections','Collection cover list; root dock remains.'],
-collection:['collection','v02','Landscapes · Contextual grid','Back-only contextual grid with no root dock.'],
+collection:['collection','v03','Landscapes · Contextual grid','Back-only contextual grid with no root dock.'],
 'empty-collection':['empty-collection','v03','Empty contextual collection','Empty owner-scoped collection review scenario.'],
 filters:['filters','v03','Browse controls · All','Search, Upload and independent source/kind filters.'],
 'filters-generated':['filters-generated','v03','Browse controls · Generated','Generated selected; All types remains the kind selection.'],
@@ -41,7 +41,7 @@ if(['feed','browse','collections','generated-filter','uploads-filter','crop-stre
 if(['browse','collections','generated-filter','uploads-filter','crop-stress'].includes(current)){spot('Search or Browse controls',0,78,100,93,()=>go('filters'));spot('Browse controls',615,78,94,93,()=>go('filters'));spot('Items organization tab',0,177,352,89,()=>go('browse'));spot('Collections organization tab',355,177,354,89,()=>go('collections'))}
 if(current==='collections'){spot('Open Landscapes collection',0,267,236,315,()=>go('collection'));spot('Empty collection stress scenario',237,267,235,315,()=>go('empty-collection'))}
 if(current==='collection'||current==='empty-collection')spot('Back to Collections',0,72,107,110,back);
-if(current==='empty-collection')spot('Browse Library items (design only)',187,936,335,74,()=>go('browse'));
+if(current==='empty-collection')spot('Browse Library items (design only)',187,936,335,88,()=>go('browse'));
 if(current==='generated-filter'||current==='uploads-filter')spot('Clear source filter',24,275,205,42,()=>go('browse'));
 if(['filters','filters-generated','filters-uploads'].includes(current)){spot('Close Browse controls',600,565,109,81,back);spot('Search media (design only)',30,665,646,82,()=>later('Search'));spot('Upload media picker (design only)',30,757,646,94,()=>later('Upload'));spot('All media sources',32,928,160,61,()=>go('browse'));spot('Generated media source',207,928,226,61,()=>go('generated-filter'));spot('Uploads media source',447,928,202,61,()=>go('uploads-filter'));spot('All media kinds',32,1061,188,55,()=>later('All types'));spot('Image-only media kind',234,1061,188,55,()=>later('Image filter'));spot('Video-only media kind',436,1061,188,55,()=>later('Video filter'))}
 if(current==='feed'||current==='long-caption'){spot('Media actions',620,197,89,84,()=>go('media-actions'));spot('Browse Library',142,1356,141,91,()=>go(browseView))}
