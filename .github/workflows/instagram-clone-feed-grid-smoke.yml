@@ -99,7 +99,40 @@ jobs:
           curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'
           adb reverse tcp:8081 tcp:8081
           adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          # On headless CI Android images, Quickstep/Pixel Launcher may ANR.
+          # Dismiss ONLY the launcher error's "Close app" button, never Expo Go.
+          clear_launcher_anr() {
+            adb shell uiautomator dump /sdcard/check-dialog.xml >/dev/null 2>&1 || true
+            adb exec-out cat /sdcard/check-dialog.xml > ../reference-evidence/launcher-dialog.xml 2>/dev/null || true
+            python3 - <<'PY' > /tmp/launcher-close-tap.txt
+          import re, xml.etree.ElementTree as ET
+          from pathlib import Path
+          p=Path('../reference-evidence/launcher-dialog.xml')
+          try:
+              root=ET.parse(p).getroot()
+          except Exception:
+              raise SystemExit(0)
+          labels=[n.get('text','') for n in root.iter('node')]
+          if not any(('quickstep' in t.lower() or 'pixel launcher' in t.lower()) and 'responding' in t.lower() for t in labels):
+              raise SystemExit(0)
+          for n in root.iter('node'):
+              if n.get('resource-id','').endswith(':id/aerr_close'):
+                  m=re.match(r'\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]',n.get('bounds',''))
+                  if m:
+                      x1,y1,x2,y2=map(int,m.groups())
+                      print((x1+x2)//2,(y1+y2)//2)
+                      raise SystemExit(0)
+          raise SystemExit('Launcher ANR present but close button missing')
+          PY
+            if [ -s /tmp/launcher-close-tap.txt ]; then
+              read -r touch_x touch_y < /tmp/launcher-close-tap.txt
+              echo "Closing unresponsive Android launcher, not Expo Go, at $touch_x $touch_y"
+              adb shell input tap "$touch_x" "$touch_y"
+              sleep 5
+            fi
+          }
           sleep 60
+          clear_launcher_anr
           adb shell wm size > ../reference-evidence/device-size.txt
           adb exec-out screencap -p > ../reference-evidence/01-home-feed.png
           adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
@@ -114,6 +147,7 @@ jobs:
             exit 1
           fi
           # Pixel 6 @ 1080x2400: tap bottom-native navigation Search then Profile.
+          clear_launcher_anr
           adb shell input tap 324 2280
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/02-search-grid.png
@@ -123,6 +157,7 @@ jobs:
             echo 'System dialog blocked Search selection' >&2
             exit 1
           fi
+          clear_launcher_anr
           adb shell input tap 971 2280
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/03-profile-grid.png
@@ -132,6 +167,7 @@ jobs:
             echo 'System dialog blocked Profile selection' >&2
             exit 1
           fi
+          clear_launcher_anr
           adb shell input tap 110 2280
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/04-home-returned.png
