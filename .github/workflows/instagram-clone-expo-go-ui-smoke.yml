@@ -103,7 +103,7 @@ jobs:
           adb shell svc wifi disable || true
           adb shell cmd connectivity airplane-mode enable || true
           # CI mode disables Fast Refresh, while offline prevents a login/signature prompt.
-          nohup env -u CI EXPO_OFFLINE=1 npx expo start --go --offline --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
+          nohup env -u CI EXPO_OFFLINE=1 npx expo start --go --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
           for n in $(seq 1 90); do
             if curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'; then break; fi
             sleep 2
