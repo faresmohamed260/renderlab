@@ -71,7 +71,12 @@ jobs:
           old = 'onLogin(values.email, values.password);'
           assert s.count(old) == 1
           form.write_text(s.replace(old, 'return; // login disabled in isolated UI reference test'))
-          print('Existing clone login UI selected; no auth observer, Firebase initialization or submissions.')
+          import json
+          config_path = Path('app.json')
+          config = json.loads(config_path.read_text())
+          config['expo'].pop('extra', None)  # disassociate original owner's EAS project
+          config_path.write_text(json.dumps(config, indent=2) + '\n')
+          print('Existing login UI selected; no Firebase, no third-party EAS project, no submissions.')
           PY
 
       - name: Enable KVM for Android emulator
@@ -97,7 +102,8 @@ jobs:
           # Block accidental external services: only the ADB-reversed loopback Metro connection is needed.
           adb shell svc wifi disable || true
           adb shell cmd connectivity airplane-mode enable || true
-          nohup npx expo start --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
+          # CI mode disables Fast Refresh, while offline prevents a login/signature prompt.
+          nohup env -u CI EXPO_OFFLINE=1 npx expo start --go --offline --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
           for n in $(seq 1 90); do
             if curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'; then break; fi
             sleep 2
@@ -109,6 +115,15 @@ jobs:
           adb exec-out screencap -p > ../reference-evidence/before.png
           adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
           adb exec-out cat /sdcard/window.xml > ../reference-evidence/before-window.xml 2>/dev/null || true
+          adb shell dumpsys window | grep 'mCurrentFocus' | tail -1 > ../reference-evidence/initial-window-focus.txt || true
+          if grep -q 'ErrorActivity' ../reference-evidence/initial-window-focus.txt; then
+            echo 'Expo Go showed its error activity instead of the clone UI.' >&2
+            exit 1
+          fi
+          if grep -qi 'An Expo user account is required' ../reference-evidence/metro.log; then
+            echo 'Expo CLI attempted login; offline-only test is not ready.' >&2
+            exit 1
+          fi
           python3 - <<'PY'
           from pathlib import Path
           p=Path('src/screens/Login.jsx')
