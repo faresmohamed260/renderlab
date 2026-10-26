@@ -495,7 +495,8 @@ jobs:
       - name: Boot Android and capture existing Instagram UI screens and Hot Refresh
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
-          api-level: 35
+          # Android 14 compatibility check: distinguish SDK 35 input behavior from the clone.
+          api-level: 34
           arch: x86_64
           target: default
           profile: pixel_6
