@@ -6,6 +6,7 @@ on:
       - .github/workflows/instagram-clone-expo-go-ui-smoke.yml
       - .github/workflows/instagram-clone-feed-grid-smoke.yml
       - .github/reference-tests/instagram-clone-offline-fixture.py
+      - .github/reference-tests/ReferenceInputProbe.java
   workflow_dispatch:
 
 permissions:
@@ -413,6 +414,66 @@ jobs:
           adb logcat -d -s ReactNativeJS:V InputDispatcher:D WindowManager:W | tail -n 650 > ../reference-evidence/input-probe-logcat.txt || true
           adb shell dumpsys input | tail -n 260 > ../reference-evidence/input-probe-dumpsys.txt || true
           grep 'INPUT_PROBE_' ../reference-evidence/input-probe-logcat.txt || true
+          # Independent Android UI Automator legacy driver using UiDevice.click().
+          # This injects through the test bridge, NOT adb shell input, and does not
+          # change the original clone's product screens or installed APK.
+          probe_dir=/tmp/renderlab-uiautomator
+          mkdir -p "$probe_dir/classes" "$probe_dir/dex"
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          android_jar="$sdk_root/platforms/android-34/android.jar"
+          automator_jar="$sdk_root/platforms/android-34/uiautomator.jar"
+          if [ ! -f "$automator_jar" ]; then
+            automator_jar="$(find "$sdk_root/platforms" -maxdepth 2 -name uiautomator.jar | sort -V | tail -1)"
+          fi
+          test -f "$android_jar"
+          test -f "$automator_jar"
+          # Pinned and digest-checked compilation-only JUnit artifact.
+          curl -fsSL --retry 2 --max-time 90 \
+            'https://repo.maven.apache.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar' \
+            -o "$probe_dir/junit.jar"
+          echo "8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3  $probe_dir/junit.jar" | sha256sum --check
+          javac -source 8 -target 8 -cp "$android_jar:$automator_jar:$probe_dir/junit.jar" \
+            -d "$probe_dir/classes" ../.github/reference-tests/ReferenceInputProbe.java
+          d8_bin="$(find "$sdk_root/build-tools" -maxdepth 2 -type f -name d8 | sort -V | tail -1)"
+          test -x "$d8_bin"
+          "$d8_bin" --min-api 23 --lib "$android_jar" --output "$probe_dir/dex" \
+            "$probe_dir/classes/renderlab/reference/ReferenceInputProbe.class"
+          test -s "$probe_dir/dex/classes.dex"
+          jar cf "$probe_dir/reference-input-probe.jar" -C "$probe_dir/dex" classes.dex
+          adb push "$probe_dir/reference-input-probe.jar" /data/local/tmp/reference-input-probe.jar
+          probe_y="$(python3 - <<'PY'
+          import re, xml.etree.ElementTree as ET
+          root=ET.parse('../reference-evidence/tab-before-1.xml').getroot()
+          for n in root.iter('node'):
+              if n.get('selected')!='true': continue
+              m=re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.get('bounds',''))
+              if not m: continue
+              x1,y1,x2,y2=map(int,m.groups())
+              if y1>1700 and x2-x1>=150:
+                  print((y1+y2)//2)
+                  break
+          else:
+              raise SystemExit('Could not find actual Android tab bounds')
+          PY
+          )"
+          echo "Testing UI Automator independent touch at y=$probe_y"
+          set +e
+          adb shell uiautomator runtest /data/local/tmp/reference-input-probe.jar \
+            -c renderlab.reference.ReferenceInputProbe -e tab_y "$probe_y" \
+            > ../reference-evidence/uiautomator-run.txt 2>&1
+          uia_exit=$?
+          set -e
+          echo "UI Automator exit=$uia_exit"
+          cat ../reference-evidence/uiautomator-run.txt
+          adb exec-out cat /sdcard/reference-uiautomator-search.png \
+            > ../reference-evidence/08-uiautomator-search.png 2>/dev/null || true
+          adb exec-out cat /sdcard/reference-uiautomator-profile.png \
+            > ../reference-evidence/09-uiautomator-profile.png 2>/dev/null || true
+          adb exec-out cat /sdcard/reference-uiautomator-return.png \
+            > ../reference-evidence/10-uiautomator-home.png 2>/dev/null || true
+          adb logcat -d -s ReactNativeJS:V | grep INPUT_PROBE \
+            > ../reference-evidence/uiautomator-reactnative-events.txt || true
+          # Original fail-closed screenshot/navigation assertions below remain.
           curl -fsS --max-time 150 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/feed-grid-bundle.js
           grep -q '#252525' /tmp/feed-grid-bundle.js
           # Independent control: route directly to existing Search/Profile tabs by
