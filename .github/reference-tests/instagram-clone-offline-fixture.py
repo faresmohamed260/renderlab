@@ -138,6 +138,8 @@ put("src/hooks/useSharePost.js",
 # replacing navigation/buttons, and log actual tab press events for diagnosis.
 tabs = Path("src/navigation/BottomTabs.jsx")
 original_tabs = tabs.read_text()
+assert original_tabs.count('      position: "absolute",') == 1
+original_tabs = original_tabs.replace('      position: "absolute",', '      position: "relative",')
 assert original_tabs.count("      elevation: 0,") == 1
 assert original_tabs.count("<Tab.Navigator screenOptions={screenOptions}>") == 1
 original_tabs = original_tabs.replace("      elevation: 0,", "      elevation: 12,\n      zIndex: 12,")
