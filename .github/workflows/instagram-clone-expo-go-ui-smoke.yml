@@ -22,7 +22,7 @@ jobs:
       EXPO_NO_TELEMETRY: "1"
     steps:
       - name: Node 24 for the original Expo 53 lockfile
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "24"
 
@@ -150,7 +150,7 @@ jobs:
           chmod +x clone/ci-expo-go-emulator.sh
 
       - name: Launch official SDK 53 Expo Go and test no-APK-rebuild UI reload
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
           api-level: 35
           arch: x86_64
@@ -161,7 +161,7 @@ jobs:
 
       - name: Keep only screenshots/logs; do not upload APKs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: expo-go-reference-evidence
           path: reference-evidence/
