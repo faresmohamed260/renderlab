@@ -160,10 +160,39 @@ jobs:
             echo 'ErrorActivity appeared; failing the UI smoke instead of claiming success.' >&2
             exit 1
           fi
+          # Locate the original bottom tabs from the current Android UI hierarchy.
+          # Hard-coded 2280px taps previously hit Android's system navigation area.
+          tap_tab() {
+            local index="$1"
+            clear_launcher_anr
+            ensure_expo_foreground
+            adb shell uiautomator dump /sdcard/tab-before-tap.xml >/dev/null 2>&1
+            adb exec-out cat /sdcard/tab-before-tap.xml > ../reference-evidence/tab-before-"$index".xml
+            local coords
+            coords=$(python3 - "$index" <<'PY'
+          import sys, re, xml.etree.ElementTree as ET
+          target=int(sys.argv[1])
+          root=ET.parse(f'../reference-evidence/tab-before-{target}.xml').getroot()
+          bounds=[]
+          for n in root.iter('node'):
+              if n.get('selected') != 'true': continue
+              m=re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.get('bounds',''))
+              if not m: continue
+              x1,y1,x2,y2=map(int,m.groups())
+              if y1>1800 and 150 <= x2-x1 <= 250 and 80 <= y2-y1 <= 180:
+                  bounds.append((x1,y1,x2,y2))
+          assert len(bounds)==1, f'Expected selected native bottom tab, found {bounds}'
+          x1,y1,x2,y2=bounds[0]
+          tab_width=x2-x1
+          print(int((target+0.5)*tab_width),int((y1+y2)/2))
+          PY
+            )
+            read -r tap_x tap_y <<< "$coords"
+            echo "Touch native clone tab $index at $tap_x,$tap_y (computed from Android hierarchy)"
+            adb shell input tap "$tap_x" "$tap_y"
+          }
           # Pixel 6 @ 1080x2400: tap bottom-native navigation Search then Profile.
-          clear_launcher_anr
-          ensure_expo_foreground
-          adb shell input tap 324 2280
+          tap_tab 1
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/02-search-grid.png
           adb shell uiautomator dump /sdcard/search.xml >/dev/null 2>&1
@@ -172,9 +201,7 @@ jobs:
             echo 'System dialog blocked Search selection' >&2
             exit 1
           fi
-          clear_launcher_anr
-          ensure_expo_foreground
-          adb shell input tap 971 2280
+          tap_tab 4
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/03-profile-grid.png
           adb shell uiautomator dump /sdcard/profile.xml >/dev/null 2>&1
@@ -183,9 +210,7 @@ jobs:
             echo 'System dialog blocked Profile selection' >&2
             exit 1
           fi
-          clear_launcher_anr
-          ensure_expo_foreground
-          adb shell input tap 110 2280
+          tap_tab 0
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/04-home-returned.png
           # Edit ONLY the clone's existing tab bar style. No native APK rebuild/reinstall/restart.
@@ -214,11 +239,20 @@ jobs:
           print('Screenshot digests', list(zip(shots,sha)))
           assert len(set(sha[:3])) == 3, 'Navigation screens were identical; must inspect/repair taps.'
           import xml.etree.ElementTree as ET
-          def selected_tab(path):
+          import re
+          def selected_tab_index(path):
               root=ET.parse(p/path).getroot()
-              return [n.get('bounds') for n in root.iter('node') if n.get('selected')=='true' and n.get('bounds','').endswith('2336]')]
-          assert '[216,2227][432,2336]' in selected_tab('02-search-hierarchy.xml'), 'Search bottom tab not selected'
-          assert '[864,2227][1080,2336]' in selected_tab('03-profile-hierarchy.xml'), 'Profile bottom tab not selected'
+              rows=[]
+              for n in root.iter('node'):
+                  m=re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.get('bounds',''))
+                  if not m or n.get('selected')!='true': continue
+                  x1,y1,x2,y2=map(int,m.groups())
+                  if y1>1800 and 150 <= x2-x1 <= 250 and 80 <= y2-y1 <= 180:
+                      rows.append(int(x1//(x2-x1)))
+              assert len(rows)==1, f'Selected tab missing in {path}: {rows}'
+              return rows[0]
+          assert selected_tab_index('02-search-hierarchy.xml') == 1, 'Search bottom tab not selected'
+          assert selected_tab_index('03-profile-hierarchy.xml') == 4, 'Profile bottom tab not selected'
           assert sha[3] != sha[4], 'Tab styling update was not visible; must inspect/repair Fast Refresh.'
           (p/'visual-assertions.txt').write_text('screenshots distinct; hot style screenshot changed; manual image review still required\n')
           PY
