@@ -133,18 +133,16 @@ put("src/hooks/useHandleFollow.js",
 put("src/hooks/useSharePost.js",
     'export default function useSharePost() { return { sharePost: () => {}, shareStory: () => {}, shareUser: () => {} }; }\n')
 
-# Test-only Android system-nav inset fix in the upstream clone tabBarStyle.
-# The absolute-positioned upstream bar had touch bounds y=2290..2399 inside
-# Android system controls. Raise the same original component by 40 dp.
+# Test-only hit-test isolation: keep the *original clone* navigator, tab
+# screens, icons, and onPress behavior, but lay out the tab bar in normal flow.
+# This distinguishes a React Navigation problem from a View hit-test overlay.
 tabs = Path("src/navigation/BottomTabs.jsx")
 original_tabs = tabs.read_text()
-old_bottom = "      bottom: 0,"
-assert original_tabs.count(old_bottom) == 1
-raised = original_tabs.replace(old_bottom, '      bottom: Platform.OS === "android" ? 40 : 0,', 1)
-assert raised.count("      elevation: 0,") == 1
-raised = raised.replace("      elevation: 0,", "      elevation: 20,\n      zIndex: 20,", 1)
-tabs.write_text(raised)
-print("Reference-only Android tab inset 40 dp and touch elevation 20 applied.")
-
+assert original_tabs.count('      position: "absolute",') == 1
+relative = original_tabs.replace('      position: "absolute",', '      position: "relative",', 1)
+assert relative.count("      elevation: 0,") == 1
+relative = relative.replace("      elevation: 0,", "      elevation: 20,\\n      zIndex: 20,", 1)
+tabs.write_text(relative)
+print("Reference-only test: original tab bar in relative layout, above content.")
 print("Offline fixture ready: 12 generated images, 4 stories, fake preview identity.")
 print("Original Home, Search, Profile, BottomTabs and visual post/grid components unchanged.")
