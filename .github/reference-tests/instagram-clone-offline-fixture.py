@@ -133,20 +133,5 @@ put("src/hooks/useHandleFollow.js",
 put("src/hooks/useSharePost.js",
     'export default function useSharePost() { return { sharePost: () => {}, shareStory: () => {}, shareUser: () => {} }; }\n')
 
-# The upstream absolute-position tab bar uses elevation 0; in the test,
-# mounted FlatLists appear to overlap it. Put it above screen content without
-# replacing navigation/buttons, and log actual tab press events for diagnosis.
-tabs = Path("src/navigation/BottomTabs.jsx")
-original_tabs = tabs.read_text()
-assert original_tabs.count("      elevation: 0,") == 1
-assert original_tabs.count("<Tab.Navigator screenOptions={screenOptions}>") == 1
-original_tabs = original_tabs.replace("      elevation: 0,", "      elevation: 12,\n      zIndex: 12,")
-original_tabs = original_tabs.replace(
-    "<Tab.Navigator screenOptions={screenOptions}>",
-    '<Tab.Navigator screenOptions={screenOptions} screenListeners={{ tabPress: (e) => console.log("REFERENCE_TAB_PRESS:" + e.target) }}>',
-)
-tabs.write_text(original_tabs)
-print("Applied test-only bottom-tab elevation and tab-press instrumentation.")
-
 print("Offline fixture ready: 12 generated images, 4 stories, fake preview identity.")
 print("Original Home, Search, Profile, BottomTabs and visual post/grid components unchanged.")
