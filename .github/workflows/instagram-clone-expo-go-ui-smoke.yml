@@ -6,7 +6,6 @@ on:
       - .github/workflows/instagram-clone-expo-go-ui-smoke.yml
       - .github/workflows/instagram-clone-feed-grid-smoke.yml
       - .github/reference-tests/instagram-clone-offline-fixture.py
-      - .github/reference-tests/ReferenceInputProbe.java
   workflow_dispatch:
 
 permissions:
@@ -414,65 +413,52 @@ jobs:
           adb logcat -d -s ReactNativeJS:V InputDispatcher:D WindowManager:W | tail -n 650 > ../reference-evidence/input-probe-logcat.txt || true
           adb shell dumpsys input | tail -n 260 > ../reference-evidence/input-probe-dumpsys.txt || true
           grep 'INPUT_PROBE_' ../reference-evidence/input-probe-logcat.txt || true
-          # Independent Android UI Automator legacy driver using UiDevice.click().
-          # This injects through the test bridge, NOT adb shell input, and does not
-          # change the original clone's product screens or installed APK.
-          probe_dir=/tmp/renderlab-uiautomator
-          mkdir -p "$probe_dir/classes" "$probe_dir/dex"
-          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          android_jar="$sdk_root/platforms/android-34/android.jar"
-          automator_jar="$sdk_root/platforms/android-34/uiautomator.jar"
-          if [ ! -f "$automator_jar" ]; then
-            automator_jar="$(find "$sdk_root/platforms" -maxdepth 2 -name uiautomator.jar | sort -V | tail -1)"
-          fi
-          test -f "$android_jar"
-          test -f "$automator_jar"
-          # Pinned and digest-checked compilation-only JUnit artifact.
-          curl -fsSL --retry 2 --max-time 90 \
-            'https://repo.maven.apache.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar' \
-            -o "$probe_dir/junit.jar"
-          echo "8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3  $probe_dir/junit.jar" | sha256sum --check
-          javac -source 8 -target 8 -cp "$android_jar:$automator_jar:$probe_dir/junit.jar" \
-            -d "$probe_dir/classes" ../.github/reference-tests/ReferenceInputProbe.java
-          d8_bin="$(find "$sdk_root/build-tools" -maxdepth 2 -type f -name d8 | sort -V | tail -1)"
-          test -x "$d8_bin"
-          "$d8_bin" --min-api 23 --lib "$android_jar" --output "$probe_dir/dex" \
-            "$probe_dir/classes/renderlab/reference/ReferenceInputProbe.class"
-          test -s "$probe_dir/dex/classes.dex"
-          jar cf "$probe_dir/reference-input-probe.jar" -C "$probe_dir/dex" classes.dex
-          adb push "$probe_dir/reference-input-probe.jar" /data/local/tmp/reference-input-probe.jar
-          probe_y="$(python3 - <<'PY'
-          import re, xml.etree.ElementTree as ET
-          root=ET.parse('../reference-evidence/tab-before-1.xml').getroot()
+          # Key-based accessibility focus check. Native tab controls expose
+          # focusable=true; this tests hardware Tab/Enter independently of ADB
+          # touchscreen injection. No navigation/source replacements.
+          focus_log=../reference-evidence/keyboard-navigation-trace.txt
+          : > "$focus_log"
+          keyboard_tab_probe() {
+            local label="$1" min_x="$2" max_x="$3" output="$4"
+            local focused=0
+            for attempt in $(seq 1 20); do
+              adb shell input keyevent 61 # KEYCODE_TAB
+              adb shell uiautomator dump /sdcard/keyboard-focus.xml >/dev/null 2>&1 || true
+              adb exec-out cat /sdcard/keyboard-focus.xml > /tmp/keyboard-focus.xml 2>/dev/null || true
+              if python3 - "$min_x" "$max_x" <<'PY'
+          import re, sys, xml.etree.ElementTree as ET
+          try: root=ET.parse('/tmp/keyboard-focus.xml').getroot()
+          except Exception: raise SystemExit(1)
+          left,right=map(int,sys.argv[1:3])
           for n in root.iter('node'):
-              if n.get('selected')!='true': continue
+              if n.get('focused')!='true': continue
               m=re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.get('bounds',''))
               if not m: continue
               x1,y1,x2,y2=map(int,m.groups())
-              if y1>1700 and x2-x1>=150:
-                  print((y1+y2)//2)
-                  break
-          else:
-              raise SystemExit('Could not find actual Android tab bounds')
+              if left<=x1 and x2<=right and y1>1700 and n.get('clickable')=='true':
+                  raise SystemExit(0)
+          raise SystemExit(1)
           PY
-          )"
-          echo "Testing UI Automator independent touch at y=$probe_y"
-          set +e
-          adb shell uiautomator runtest /data/local/tmp/reference-input-probe.jar \
-            -c renderlab.reference.ReferenceInputProbe -e tab_y "$probe_y" \
-            > ../reference-evidence/uiautomator-run.txt 2>&1
-          uia_exit=$?
-          set -e
-          echo "UI Automator exit=$uia_exit"
-          cat ../reference-evidence/uiautomator-run.txt
-          adb exec-out cat /sdcard/reference-uiautomator-search.png \
-            > ../reference-evidence/08-uiautomator-search.png 2>/dev/null || true
-          adb exec-out cat /sdcard/reference-uiautomator-profile.png \
-            > ../reference-evidence/09-uiautomator-profile.png 2>/dev/null || true
-          adb exec-out cat /sdcard/reference-uiautomator-return.png \
-            > ../reference-evidence/10-uiautomator-home.png 2>/dev/null || true
+              then
+                echo "KEYBOARD_FOCUS_FOUND $label attempt=$attempt" | tee -a "$focus_log"
+                focused=1
+                adb shell input keyevent 66 # KEYCODE_ENTER
+                sleep 9
+                adb exec-out screencap -p > "../reference-evidence/$output"
+                adb shell uiautomator dump /sdcard/keyboard-after-enter.xml >/dev/null 2>&1 || true
+                adb exec-out cat /sdcard/keyboard-after-enter.xml > "../reference-evidence/$output.xml" 2>/dev/null || true
+                break
+              fi
+            done
+            if [ "$focused" -eq 0 ]; then
+              echo "KEYBOARD_FOCUS_NOT_FOUND $label (20 Tab presses)" | tee -a "$focus_log"
+              return 1
+            fi
+          }
+          keyboard_tab_probe Search 216 432 08-keyboard-search.png || true
+          keyboard_tab_probe Profile 864 1080 09-keyboard-profile.png || true
           adb logcat -d -s ReactNativeJS:V | grep INPUT_PROBE \
-            > ../reference-evidence/uiautomator-reactnative-events.txt || true
+            > ../reference-evidence/keyboard-reactnative-events.txt || true
           # Original fail-closed screenshot/navigation assertions below remain.
           curl -fsS --max-time 150 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/feed-grid-bundle.js
           grep -q '#252525' /tmp/feed-grid-bundle.js
