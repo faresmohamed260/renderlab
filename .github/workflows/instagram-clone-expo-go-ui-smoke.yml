@@ -367,7 +367,7 @@ jobs:
             )
             read -r tap_x tap_y <<< "$coords"
             echo "Touch native clone tab $index at $tap_x,$tap_y (computed from Android hierarchy)"
-            adb shell input tap "$tap_x" "$tap_y"
+            adb shell input touchscreen swipe "$tap_x" "$tap_y" "$tap_x" "$tap_y" 160
           }
           # Pixel 6 @ 1080x2400: tap bottom-native navigation Search then Profile.
           tap_tab 1
@@ -405,7 +405,7 @@ jobs:
           adb exec-out screencap -p > ../reference-evidence/05-nav-hot-update.png
           # Probe independent Home header tap, then collect native input diagnostics.
           # Done after normal tab taps to avoid influencing their state.
-          adb shell input tap 310 190
+          adb shell input touchscreen swipe 310 190 310 190 160
           sleep 5
           adb exec-out screencap -p > ../reference-evidence/05a-header-touch-probe.png
           adb shell uiautomator dump /sdcard/header-touch-probe.xml >/dev/null 2>&1 || true
