@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RenderLab Android Library v0.3 — design interaction walkthrough</title>
+<style>
+:root{color-scheme:dark;font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;background:#10141c;color:#f4f6fa}*{box-sizing:border-box}body{margin:0;padding:24px 16px 45px}header,main{max-width:1040px;margin:auto}h1{font-size:25px;margin:0 0 8px}p{color:#bdc6d3}.layout{display:flex;align-items:start;flex-wrap:wrap;gap:30px}.phone{position:relative;flex:none;width:min(354.5px,91vw);aspect-ratio:709/1536;border:2px solid #5d6676;overflow:hidden;border-radius:18px;background:#0c1016;box-shadow:0 15px 55px #0007}.phone img{width:100%;height:100%;display:block}.hotspot{position:absolute;z-index:2;border:0;background:transparent;color:transparent;font-size:0;cursor:pointer;padding:0}.hotspot:focus-visible,.hotspot:hover{outline:2.5px solid #89baff;outline-offset:-3px;background:#89baff25}.panel{flex:1;min-width:min(290px,90vw)}h2{font-size:21px;margin:0 0 6px}.states{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0}.states button{color:#edf2f8;background:#202937;border:1px solid #566378;border-radius:10px;padding:10px 12px;cursor:pointer;font:inherit}.states button[aria-pressed="true"]{background:#3c5273;border-color:#b8d5ff}.states button:focus-visible{outline:3px solid #91beff}#status{color:#b4d7ff;min-height:43px}.note{border-left:3px solid #9fb6d2;padding-left:14px;color:#c2ccda}a{color:#b8d8ff}
+</style></head>
+<body><header><h1>Android Library v0.3 — design-only walkthrough</h1><p>Actual repository SVGs with navigable review hotspots. No React Native screen, backend action, authenticated data, or device testing is represented.</p></header>
+<main class="layout"><div class="phone"><img id="frame" alt="Library Feed design screenshot" src="../penpot/android-instagram-feed-v02.svg"><div id="targets"></div></div><section class="panel" aria-label="Review controls">
+<h2 id="title">Library Feed</h2><p id="desc">Browse is a second root presentation of the same private Library.</p>
+<div class="states" id="screens"><button data-screen="feed">Feed</button><button data-screen="browse">Browse · Items</button><button data-screen="collections">Collections list</button><button data-screen="collection">Collection grid</button><button data-screen="empty-collection">Empty collection</button><button data-screen="filters">Browse controls</button><button data-screen="generated-filter">Generated only</button><button data-screen="uploads-filter">Uploads only</button><button data-screen="crop-stress">Crop test</button><button data-screen="long-caption">Long caption</button><button data-screen="media-actions">Media actions</button></div>
+<p id="status" aria-live="polite"></p><p class="note"><strong>Path to inspect:</strong> Feed → Browse → Collections → Landscapes → Android Back → Browse controls → Generated → clear selected filter. The root dock appears only on root screens. Collections is an organization view, while Generated and Uploads are source filters applied to Items.</p>
+<p class="note">Filter toggles and buttons switch illustrations only. Media downloads, uploads, search, collection writes, favorite operations, backend error handling and OS permissions remain unimplemented. Real Android touch sizes, deep links, TalkBack, font scaling, RTL and reduced motion require separate validation.</p>
+</section></main>
+<script>
+'use strict';
+const screens={
+feed:['feed','v02','Library Feed','Full-width media with compact creative actions.'],
+browse:['browse','v03','Browse · Items','Items organization; source = All, kind = All types.'],
+collections:['collections','v03','Browse · Collections','Collection cover list; root dock remains.'],
+collection:['collection','v02','Landscapes · Contextual grid','Back-only contextual grid with no root dock.'],
+'empty-collection':['empty-collection','v03','Empty contextual collection','Empty owner-scoped collection review scenario.'],
+filters:['filters','v03','Browse controls · All','Search, Upload and independent source/kind filters.'],
+'filters-generated':['filters-generated','v03','Browse controls · Generated','Generated selected; All types remains the kind selection.'],
+'filters-uploads':['filters-uploads','v03','Browse controls · Uploads','Uploads selected; All types remains the kind selection.'],
+'generated-filter':['generated-filter','v03','Browse · Generated only','Nine generated image/video source fixtures; clear source chip.'],
+'uploads-filter':['uploads-filter','v03','Browse · Uploads only','Three uploaded source fixtures with truthful grouping badge.'],
+'crop-stress':['crop-stress','v03','Browse · Aspect-ratio stress','Illustrative 9:16 portrait and 16:9 landscape crop previews.'],
+'long-caption':['long-caption','v03','Feed · Long-caption stress','Caption and next item above fixed bottom dock.'],
+'media-actions':['media-actions','v02','Media actions','Labeled actions remain capability-gated design intent.']
+};
+let current='feed',browseView='browse',backTarget='feed';
+const frame=document.getElementById('frame'),targets=document.getElementById('targets'),status=document.getElementById('status');
+function go(to){if(to==='filters')to=browseView==='generated-filter'?'filters-generated':browseView==='uploads-filter'?'filters-uploads':'filters';
+if(['browse','collections','generated-filter','uploads-filter'].includes(to))browseView=to;
+if(['filters','filters-generated','filters-uploads','media-actions','collection','empty-collection'].includes(to))backTarget=to==='collection'||to==='empty-collection'?'collections':to==='media-actions'?'feed':browseView;
+if(!screens[to])return;current=to;const [name,version,title,desc]=screens[to];frame.src='../penpot/android-instagram-'+name+'-'+version+'.svg';frame.alt=title+' static SVG design';document.getElementById('title').textContent=title;document.getElementById('desc').textContent=desc;status.textContent=title+' — design illustration only';document.querySelectorAll('[data-screen]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.screen===to)));hotspots()}
+function back(){if(['collection','empty-collection'].includes(current))return go('collections');if(['filters','filters-generated','filters-uploads','media-actions'].includes(current))return go(backTarget);return go('feed')}
+function spot(label,x,y,w,h,fn){const b=document.createElement('button');b.type='button';b.className='hotspot';b.setAttribute('aria-label',label);b.title=label;b.style.cssText='left:'+(x/709*100).toFixed(2)+'%;top:'+(y/1536*100).toFixed(2)+'%;width:'+(w/709*100).toFixed(2)+'%;height:'+(h/1536*100).toFixed(2)+'%';b.addEventListener('click',fn);targets.append(b)}
+function later(label){status.textContent=label+' — not connected to native app or backend'}
+function hotspots(){targets.replaceChildren();
+if(['feed','browse','collections','generated-filter','uploads-filter','crop-stress','long-caption'].includes(current)){spot('Feed tab',0,1356,141,91,()=>go('feed'));spot('Browse tab — restore last Browse view',142,1356,141,91,()=>go(browseView));spot('Create tab (unimplemented)',284,1356,141,91,()=>later('Create'));spot('Activity tab (unimplemented)',426,1356,141,91,()=>later('Activity'));spot('Settings tab (unimplemented)',568,1356,141,91,()=>later('Settings'))}
+if(['browse','collections','generated-filter','uploads-filter','crop-stress'].includes(current)){spot('Search or Browse controls',0,78,100,93,()=>go('filters'));spot('Browse controls',615,78,94,93,()=>go('filters'));spot('Items organization tab',0,177,352,89,()=>go('browse'));spot('Collections organization tab',355,177,354,89,()=>go('collections'))}
+if(current==='collections'){spot('Open Landscapes collection',0,267,236,315,()=>go('collection'));spot('Empty collection stress scenario',237,267,235,315,()=>go('empty-collection'))}
+if(current==='collection'||current==='empty-collection')spot('Back to Collections',0,72,107,110,back);
+if(current==='empty-collection')spot('Browse Library items (design only)',187,936,335,74,()=>go('browse'));
+if(current==='generated-filter'||current==='uploads-filter')spot('Clear source filter',24,275,205,42,()=>go('browse'));
+if(['filters','filters-generated','filters-uploads'].includes(current)){spot('Close Browse controls',600,565,109,81,back);spot('Search media (design only)',30,665,646,82,()=>later('Search'));spot('Upload media picker (design only)',30,757,646,94,()=>later('Upload'));spot('All media sources',32,928,160,61,()=>go('browse'));spot('Generated media source',207,928,226,61,()=>go('generated-filter'));spot('Uploads media source',447,928,202,61,()=>go('uploads-filter'));spot('All media kinds',32,1061,188,55,()=>later('All types'));spot('Image-only media kind',234,1061,188,55,()=>later('Image filter'));spot('Video-only media kind',436,1061,188,55,()=>later('Video filter'))}
+if(current==='feed'||current==='long-caption'){spot('Media actions',620,197,89,84,()=>go('media-actions'));spot('Browse Library',142,1356,141,91,()=>go(browseView))}
+if(current==='media-actions')spot('Close media actions',600,565,109,81,back);
+}
+document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.screen)));
+document.addEventListener('keydown',e=>{if((e.key==='Escape'||e.key==='Backspace')&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();back()}});
+go('feed');
+</script></body></html>
