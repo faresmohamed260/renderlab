@@ -1,0 +1,172 @@
+name: Instagram clone offline feed and grid Android proof
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/instagram-clone-feed-grid-smoke.yml
+      - .github/reference-tests/instagram-clone-offline-fixture.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: instagram-clone-feed-grid-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reference-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - name: Checkout test-only fixtures from RenderLab PR (read-only)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Node 24 for original clone lockfile
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+
+      - name: Fetch pinned, MIT-licensed Instagram clone in isolated directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout --depth=1 https://github.com/hernanhawryluk/instagram-clone-app.git clone
+          cd clone
+          git fetch --no-tags --depth=1 origin 24777fc335530a9c4285c7ef5974053ba7b39104
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "24777fc335530a9c4285c7ef5974053ba7b39104"
+          test -f LICENSE
+
+      - name: Install untrusted clone dependencies without lifecycle scripts
+        working-directory: clone
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Show unresolved audit risk, no release approval
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > "$RUNNER_TEMP/instagram-clone-audit.json" || true
+          node -e 'const a=require(process.env.RUNNER_TEMP+"/instagram-clone-audit.json");console.log("ISOLATED EXPERIMENT ONLY:",JSON.stringify(a.metadata.vulnerabilities))'
+
+      - name: Seed fake local feed and grid content; block all Firebase operations
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ../.github/reference-tests/instagram-clone-offline-fixture.py
+          git diff --name-only | sed -n '1,50p'
+          grep -q 'renderlab_preview' src/offlineReferenceFixture.js
+          grep -q 'SignedInStack' App.js
+          grep -q 'db = null' src/services/firebase.js
+
+      - name: Configure accelerated Android emulator
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+
+      - name: Prepare one-shot emulator script
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > clone/ci-feed-grid-emulator.sh <<'END_ANDROID_SMOKE'
+          set -euo pipefail
+          cd clone
+          mkdir -p ../reference-evidence
+          # Official SDK53 Expo Go, installed once; never publish or install clone debug APK.
+          curl -fLsS --retry 3 --max-time 180 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-2.33.22/Expo-Go-2.33.22.apk' -o /tmp/expo-go-sdk53.apk
+          test -s /tmp/expo-go-sdk53.apk
+          adb install -r /tmp/expo-go-sdk53.apk
+          # Only local Metro traffic, via ADB reverse. External Firebase unavailable.
+          adb shell svc wifi disable || true
+          adb shell cmd connectivity airplane-mode enable || true
+          nohup env -u CI EXPO_OFFLINE=1 npx expo start --go --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
+          for n in $(seq 1 100); do
+            if curl -fsS http://127.0.0.1:8081/status 2>/dev/null | grep -q 'packager-status:running'; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'
+          adb reverse tcp:8081 tcp:8081
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 60
+          adb shell wm size > ../reference-evidence/device-size.txt
+          adb exec-out screencap -p > ../reference-evidence/01-home-feed.png
+          adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/window.xml > ../reference-evidence/01-home-hierarchy.xml 2>/dev/null || true
+          adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' > ../reference-evidence/window-focus.txt || true
+          if grep -Eq 'ErrorActivity' ../reference-evidence/window-focus.txt; then
+            echo 'ErrorActivity appeared; failing the UI smoke instead of claiming success.' >&2
+            exit 1
+          fi
+          # Pixel 6 @ 1080x2400: tap bottom-native navigation Search then Profile.
+          adb shell input tap 324 2230
+          sleep 12
+          adb exec-out screencap -p > ../reference-evidence/02-search-grid.png
+          adb shell input tap 971 2230
+          sleep 12
+          adb exec-out screencap -p > ../reference-evidence/03-profile-grid.png
+          adb shell input tap 110 2230
+          sleep 12
+          adb exec-out screencap -p > ../reference-evidence/04-home-returned.png
+          # Edit ONLY the clone's existing tab bar style. No native APK rebuild/reinstall/restart.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/navigation/BottomTabs.jsx')
+          original=p.read_text()
+          old='backgroundColor: "#000",'
+          assert original.count(old) >= 1
+          p.write_text(original.replace(old, 'backgroundColor: "#252525",', 1))
+          print("Modified existing clone bottom navigation background in JavaScript only.")
+          PY
+          sleep 40
+          adb exec-out screencap -p > ../reference-evidence/05-nav-hot-update.png
+          curl -fsS --max-time 150 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/feed-grid-bundle.js
+          grep -q '#252525' /tmp/feed-grid-bundle.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('../reference-evidence')
+          shots=['01-home-feed.png','02-search-grid.png','03-profile-grid.png','04-home-returned.png','05-nav-hot-update.png']
+          for s in shots:
+              img=p/s
+              assert img.stat().st_size>1000,(s, img.stat().st_size)
+          sha=[hashlib.sha256((p/s).read_bytes()).hexdigest() for s in shots]
+          print('Screenshot digests', list(zip(shots,sha)))
+          assert len(set(sha[:3])) == 3, 'Navigation screens were identical; must inspect/repair taps.'
+          assert sha[3] != sha[4], 'Tab styling update was not visible; must inspect/repair Fast Refresh.'
+          (p/'visual-assertions.txt').write_text('screenshots distinct; hot style screenshot changed; manual image review still required\n')
+          PY
+          sha256sum ../reference-evidence/*.png > ../reference-evidence/screenshot-checksums.txt
+          adb logcat -d -s ReactNativeJS:E AndroidRuntime:E | tail -180 > ../reference-evidence/android-errors.log || true
+          if grep -q 'An Expo user account is required' ../reference-evidence/metro.log; then exit 1; fi
+          echo 'Captured offline existing feed/search/profile with one Expo Go installation.'
+          END_ANDROID_SMOKE
+          chmod +x clone/ci-feed-grid-emulator.sh
+
+      - name: Boot Android and capture existing Instagram UI screens and Hot Refresh
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash clone/ci-feed-grid-emulator.sh
+
+      - name: Save screenshot evidence only (no unsafe APKs or real user data)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: instagram-clone-offline-feed-grid-evidence
+          path: reference-evidence/
+          retention-days: 7
+          if-no-files-found: warn
