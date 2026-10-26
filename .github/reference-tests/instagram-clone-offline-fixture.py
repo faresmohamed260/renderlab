@@ -142,7 +142,7 @@ old_bottom = "      bottom: 0,"
 assert original_tabs.count(old_bottom) == 1
 raised = original_tabs.replace(old_bottom, '      bottom: Platform.OS === "android" ? 40 : 0,', 1)
 assert raised.count("      elevation: 0,") == 1
-raised = raised.replace("      elevation: 0,", "      elevation: 20,\\n      zIndex: 20,", 1)
+raised = raised.replace("      elevation: 0,", "      elevation: 20,\n      zIndex: 20,", 1)
 tabs.write_text(raised)
 print("Reference-only Android tab inset 40 dp and touch elevation 20 applied.")
 
