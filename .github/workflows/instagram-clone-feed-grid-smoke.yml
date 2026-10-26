@@ -108,13 +108,17 @@ jobs:
             exit 1
           fi
           # Pixel 6 @ 1080x2400: tap bottom-native navigation Search then Profile.
-          adb shell input tap 324 2230
+          adb shell input tap 324 2280
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/02-search-grid.png
-          adb shell input tap 971 2230
+          adb shell uiautomator dump /sdcard/search.xml >/dev/null 2>&1
+          adb exec-out cat /sdcard/search.xml > ../reference-evidence/02-search-hierarchy.xml
+          adb shell input tap 971 2280
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/03-profile-grid.png
-          adb shell input tap 110 2230
+          adb shell uiautomator dump /sdcard/profile.xml >/dev/null 2>&1
+          adb exec-out cat /sdcard/profile.xml > ../reference-evidence/03-profile-hierarchy.xml
+          adb shell input tap 110 2280
           sleep 12
           adb exec-out screencap -p > ../reference-evidence/04-home-returned.png
           # Edit ONLY the clone's existing tab bar style. No native APK rebuild/reinstall/restart.
@@ -122,9 +126,9 @@ jobs:
           from pathlib import Path
           p=Path('src/navigation/BottomTabs.jsx')
           original=p.read_text()
-          old='backgroundColor: "#000",'
-          assert original.count(old) >= 1
-          p.write_text(original.replace(old, 'backgroundColor: "#252525",', 1))
+          old='height: Platform.OS === "android" ? insets.bottom + 54 : 84,\n      backgroundColor: "#000",'
+          assert original.count(old) == 1
+          p.write_text(original.replace(old, old.replace('#000', '#252525')))
           print("Modified existing clone bottom navigation background in JavaScript only.")
           PY
           sleep 40
@@ -142,6 +146,12 @@ jobs:
           sha=[hashlib.sha256((p/s).read_bytes()).hexdigest() for s in shots]
           print('Screenshot digests', list(zip(shots,sha)))
           assert len(set(sha[:3])) == 3, 'Navigation screens were identical; must inspect/repair taps.'
+          import xml.etree.ElementTree as ET
+          def selected_tab(path):
+              root=ET.parse(p/path).getroot()
+              return [n.get('bounds') for n in root.iter('node') if n.get('selected')=='true' and n.get('bounds','').endswith('2336]')]
+          assert '[216,2227][432,2336]' in selected_tab('02-search-hierarchy.xml'), 'Search bottom tab not selected'
+          assert '[864,2227][1080,2336]' in selected_tab('03-profile-hierarchy.xml'), 'Profile bottom tab not selected'
           assert sha[3] != sha[4], 'Tab styling update was not visible; must inspect/repair Fast Refresh.'
           (p/'visual-assertions.txt').write_text('screenshots distinct; hot style screenshot changed; manual image review still required\n')
           PY
