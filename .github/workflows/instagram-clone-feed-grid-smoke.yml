@@ -88,7 +88,8 @@ jobs:
           adb install -r /tmp/expo-go-sdk53.apk
           # Disposable test emulator only: Quickstep/Launcher3 repeatedly ANRs.
           # Disable its home UI to prevent stealing focus from Expo Go.
-          if adb shell pm list packages | grep -q '^package:com.android.launcher3
+          adb shell pm disable-user --user 0 com.android.launcher3 || true
+          sleep 10
           # Only local Metro traffic, via ADB reverse. External Firebase unavailable.
           adb shell svc wifi disable || true
           adb shell cmd connectivity airplane-mode enable || true
