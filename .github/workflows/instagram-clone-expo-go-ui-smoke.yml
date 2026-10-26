@@ -91,6 +91,7 @@ jobs:
           profile: pixel_6
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
+            bash <<'EXPO_GO_TEST'
             set -euo pipefail
             cd clone
             mkdir -p ../reference-evidence
@@ -135,6 +136,7 @@ jobs:
             adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity|host.exp.exponent' | tail -20 > ../reference-evidence/activity.txt || true
             adb logcat -d -s ReactNativeJS:E AndroidRuntime:E | tail -120 > ../reference-evidence/android-errors.log || true
             echo "Expo Go installed once; Android JS edit served. Screenshots captured for review."
+            EXPO_GO_TEST
 
       - name: Keep only screenshots/logs; do not upload APKs
         if: always()
