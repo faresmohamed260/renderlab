@@ -141,7 +141,7 @@ original_tabs = tabs.read_text()
 assert original_tabs.count('      position: "absolute",') == 1
 relative = original_tabs.replace('      position: "absolute",', '      position: "relative",', 1)
 assert relative.count("      elevation: 0,") == 1
-relative = relative.replace("      elevation: 0,", "      elevation: 20,\\n      zIndex: 20,", 1)
+relative = relative.replace("      elevation: 0,", "      elevation: 20,\n      zIndex: 20,", 1)
 tabs.write_text(relative)
 print("Reference-only test: original tab bar in relative layout, above content.")
 print("Offline fixture ready: 12 generated images, 4 stories, fake preview identity.")
