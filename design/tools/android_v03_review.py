@@ -31,7 +31,7 @@ SETS = {
         "crop-stress-v03",
     ],
     "context-and-type": [
-        "collection-v02", "empty-collection-v03",
+        "collection-v02", "collection-v03", "empty-collection-v03",
         "scrolled-feed-v02", "long-caption-v03",
     ],
     "states": [
