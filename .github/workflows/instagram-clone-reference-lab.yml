@@ -1,0 +1,143 @@
+name: Instagram clone reference lab (Android emulator)
+
+# Experimental external-code proof only. This is NOT a RenderLab mobile-app job.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/instagram-clone-reference-lab.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: instagram-clone-reference-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-external-clone:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - name: Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Fetch pinned, MIT-licensed external clone (no RenderLab checkout)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout --depth 1 https://github.com/hernanhawryluk/instagram-clone-app.git clone
+          cd clone
+          git fetch --no-tags --depth=1 origin 24777fc335530a9c4285c7ef5974053ba7b39104
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "24777fc335530a9c4285c7ef5974053ba7b39104"
+          test -f LICENSE
+
+      - name: Install clone JavaScript dependencies without package lifecycle scripts
+        working-directory: clone
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Record audit risk (release gate stays red; sandbox-only)
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > "$RUNNER_TEMP/instagram-clone-audit.json" || true
+          node -e 'const a=require(process.env.RUNNER_TEMP+"/instagram-clone-audit.json");console.log("Unresolved dependency findings:",JSON.stringify(a.metadata.vulnerabilities));'
+          # Do not sign, publish or distribute APK: vulnerabilities are unresolved.
+
+      - name: Use existing signed-out Instagram screen without connecting an account
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("App.js")
+          s = p.read_text()
+          old = 'import AuthNavigation from "./src/navigation/AuthNavigation";'
+          new = 'import AuthNavigation from "./src/navigation/SignedOutStack";'
+          assert s.count(old) == 1
+          p.write_text(s.replace(old, new))
+          print("Rendered clone SignedOutStack directly; no authentication observer or login action")
+          PY
+
+      - name: Compile temporary debug APK locally in ephemeral CI runner
+        working-directory: clone/android
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+          test -s app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Enable emulator acceleration (KVM)
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+
+      - name: Android emulator screenshots and JS-only refresh proof
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -euo pipefail
+            cd clone
+            mkdir -p ../reference-evidence
+            # The original app's third-party Firebase project is never used for sign-in.
+            # Disallow emulator outbound Wi-Fi/network; development transport uses ADB reverse.
+            adb shell svc wifi disable || true
+            adb shell cmd connectivity airplane-mode enable || true
+            nohup npx expo start --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
+            for n in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:8081/status | grep -q packager-status:running; then break; fi
+              sleep 2
+            done
+            curl -fsS http://127.0.0.1:8081/status | grep -q packager-status:running
+            adb reverse tcp:8081 tcp:8081
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -n com.hernanhawryluk.instagramcloneapp/.MainActivity
+            sleep 30
+            adb exec-out screencap -p > ../reference-evidence/before.png
+            python3 - <<'PY'
+            from pathlib import Path
+            p = Path("src/screens/Login.jsx")
+            s = p.read_text()
+            original = 'backgroundColor: "#000",'
+            assert s.count(original) >= 1
+            p.write_text(s.replace(original, 'backgroundColor: "#171717",', 1))
+            print("Changed existing login screen background in JS only; no APK rebuild")
+            PY
+            sleep 30
+            adb exec-out screencap -p > ../reference-evidence/after.png
+            curl --fail --silent --show-error --max-time 150 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/clone-refresh.js
+            grep -q '#171717' /tmp/clone-refresh.js
+            echo "Metro served changed source; screenshot evidence saved for rendered verification."
+            adb shell pidof com.hernanhawryluk.instagramcloneapp || true
+            adb logcat -d -s ReactNativeJS:E AndroidRuntime:E | tail -120 > ../reference-evidence/android-errors.log || true
+
+      - name: Upload screenshots and logs (never upload unsigned/unsafe APK)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instagram-clone-reference-lab-evidence
+          path: reference-evidence/
+          if-no-files-found: warn
+          retention-days: 7
