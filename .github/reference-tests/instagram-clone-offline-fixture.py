@@ -133,15 +133,15 @@ put("src/hooks/useHandleFollow.js",
 put("src/hooks/useSharePost.js",
     'export default function useSharePost() { return { sharePost: () => {}, shareStory: () => {}, shareUser: () => {} }; }\n')
 
-# On Expo Go SDK 53 edge-to-edge Android, upstream absolute tabBarStyle
-# occupies y=2290..2399, behind Android system navigation controls.
-# Change only its positioning for a real touch target in this disposable preview.
+# Test-only Android system-nav inset fix in the upstream clone tabBarStyle.
+# The absolute-positioned upstream bar had touch bounds y=2290..2399 inside
+# Android system controls. Raise the same original component by 40 dp.
 tabs = Path("src/navigation/BottomTabs.jsx")
 original_tabs = tabs.read_text()
-old_position = '      position: "absolute",'
-assert original_tabs.count(old_position) == 1
-tabs.write_text(original_tabs.replace(old_position, '      position: "relative",', 1))
-print("Reference-only positioning correction: bottom bar sits above system navigation.")
+old_bottom = "      bottom: 0,"
+assert original_tabs.count(old_bottom) == 1
+tabs.write_text(original_tabs.replace(old_bottom, '      bottom: Platform.OS === "android" ? 40 : 0,', 1))
+print("Reference-only Android tab inset offset of 40 dp applied.")
 
 print("Offline fixture ready: 12 generated images, 4 stories, fake preview identity.")
 print("Original Home, Search, Profile, BottomTabs and visual post/grid components unchanged.")
