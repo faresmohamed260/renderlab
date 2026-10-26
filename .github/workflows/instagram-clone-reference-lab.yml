@@ -16,6 +16,8 @@ concurrency:
 
 jobs:
   isolated-external-clone:
+    # Superseded by Expo Go smoke: avoid unnecessary lengthy native build.
+    if: false
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
