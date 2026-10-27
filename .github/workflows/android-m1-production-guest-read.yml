@@ -1,0 +1,31 @@
+name: Android M1 Production Guest Read (no credentials)
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-m1-production-guest-read.yml
+      - apps/mobile/tools/verify-guest-production-api.mjs
+      - apps/mobile/src/services/api/production-read.ts
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-android-m1-production-guest-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guest-only-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Verify protected production read-only endpoints require authentication
+        env:
+          CI: "1"
+        run: node apps/mobile/tools/verify-guest-production-api.mjs

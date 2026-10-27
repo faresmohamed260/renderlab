@@ -27,3 +27,12 @@ The **persistent M0 scaffold's full native dependency set** (including font, dev
 ## Tooling isolation
 
 The web root's TypeScript configuration excludes `apps/mobile`: running `npm run typecheck` at the repository root validates the Next.js app only, while `npm run typecheck` inside `apps/mobile` validates the mobile SDK/React Native dependency graph. The Android Mobile Foundation workflow runs both independent quality and fail-closed production dependency audit jobs; do not bypass one by relying on the other.
+
+## Stacked M1 draft — production API connectivity without credentials (2026-10-27)
+
+This README's original M0 foundation status still applies to PR #399. The separate, **unmerged and unapproved** PR #402 is stacked on top and adds the production guest probe and a native Library status screen; see [M1 contract](../../docs/architecture/MOBILE_APP_M1_PRODUCTION_READ_CONTRACT.md). It now makes an anonymous, first-party **GET** request to `https://renderlab.faresuniform.uk/api/media/assets?limit=1` and correctly displays that production Library requires sign-in. This is the first real backend connection, **not a private media connection**; no native Supabase credentials or tokens are read, generated, or stored.
+
+Exact [GitHub Actions guest probe](https://github.com/faresmohamed260/renderlab/actions/runs/40484282154) verified HTTP 401 JSON on private Library/Collections/Profile and HTTP 200 on public generation availability with no credentials or mutations. Contract validation now covers Library media/page metadata, Collections, MFA and access-denied errors, and reject-only signed media route checking. Protected media 302 redirects to R2, so native image rendering still requires a separately secured token-free signed-media resolver; do not pass bearer headers into React Native media components.
+
+**Not done:** SDK 58 replacement APK installation, native Auth/MFA and account admission, secure token persistence, private Library or media UI, real-phone navigation and scroll, release signing, EAS, cloud Metro host or Fast Refresh on-device. Owner forbids WANDA. Vercel Sandbox was examined only as a possible **metered** cloud Metro host; none has been created or started without provider-spend authorization. High-severity Expo node-forge dependency gate remains failed by design. Never claim production account connectivity is complete based on the guest status alone.
+
