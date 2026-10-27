@@ -64,6 +64,24 @@ The app's `RuntimeUiConfigProvider` refetches no-credential HTTPS JSON every **4
 
 **Next gates:** review the passing API/native checks, audit runtime label/icon changes on a real device and guest no-credential transport; review Android UI semantics and platform accessibility; obtain normal Security/Engineering/Owner release approvals for any server-side deployment, app signing or OTA activation. PR #399 and PR #402 remain draft and unmerged independently.
 
+## Checkpoint 32 — verified standalone native binary format (2026-10-27)
+
+**Purpose:** The owner rejected WANDA, cloud Metro hosting and an APK that opens to an Expo development-client server chooser. A correct long-term installed APK requires a **release-mode embedded JavaScript bundle**, not a debug development-launcher-only shell. An OTA channel and secure native Auth require distinct later approval.
+
+**Actual, verified source/build evidence:** On draft PR #403 source head `7b2efc85a45f38968c1b3fc6ea933c13be78f1a3`, [temporary GitHub Actions run 40508267121](https://github.com/faresmohamed260/renderlab/actions/runs/40508267121), job `122203112817`, **SUCCEEDED**. The isolated runner:
+- Installed exact committed SDK 58 mobile dependencies with Node 24 and JDK 17;
+- Assigned disposable `dev.renderlab.standaloneproof` Android package ID and nonrelease display name **only in runner workspace**, never in repository/production;
+- Ran `npx expo prebuild --platform android --no-install --non-interactive`;
+- Ran `./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain --max-workers=2`; Gradle reported **BUILD SUCCESSFUL in 9m 31s**;
+- Verified nonempty `app/build/outputs/apk/release/app-release.apk`, approximately **33 MB**, containing `assets/index.android.bundle` (3,121,456 bytes), a release-mode embedded JS bundle;
+- **Deleted** the APK inside the runner. Did not upload, install, distribute, provision an EAS project, deploy backend, send credentials or create long-lived signing identities. Temporary workflow source is not an approved permanent release pipeline.
+
+**What this proves:** The current SDK 58 / Expo Router / Gluestack/Uniwind app and production-guest + UI-config client can be packaged with JavaScript embedded, meaning a future appropriately configured standalone installation does not depend on a continuously running Metro bundler just to load its UI.
+
+**What this does NOT prove:** Android device/emulator install and startup, navigation taps or live config polling; real production account sign-in/MFA and media; APK production signing, identity/OTA runtime-version matching, compatible update downloads, reduced-motion/accessibility or all-ABI support. The embedded bundle is not proof of full phone functionality. The known upstream Expo CLI `node-forge <=1.4.0` advisory `GHSA-86w9-cpqp-85rv` still has no advisory-listed patched release as of this checkpoint; npm's `fix available` is **not** an accepted upgrade strategy without preserving Expo SDK 58 compatibility. Keep the independent high-severity security audit red. No exception/waiver was granted.
+
+**Next actual gate:** An **authorized, isolated installed-device/emulator proof** of the native runtime and read-only production guest status, followed by accepted signed-update client/runtime policy, safe Auth/MFA and owner-scoped media. A production-build signing identity, app package ID, Expo project provisioning and APK distribution must each follow repository human-authority gates. The older SDK53 clone APK is still not interchangeable.
+
 ## Blocking security and acceptance gates
 
 1. **Product/Security/Architecture authority:** review M1 production-account access, actual native package ID and callback/deep-link identity, invitation/recovery and MFA, OS-encrypted `expo-secure-store` token lifecycle, logout/revocation, session refresh and login failure behavior. PR #399 M0 itself is still unmerged and has an unresolved Expo `node-forge` high-severity advisory.
