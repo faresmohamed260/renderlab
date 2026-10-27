@@ -1,6 +1,6 @@
 # Android Library v0.3 — bounded usability refinement proposal
 
-**Status:** 15 SVG CANDIDATES SOURCE-CHECKED; PREVIOUS CONTEXTUAL EMPTY-STATE RASTER INSPECTED; CURRENT FULL RASTER/NATIVE QA AND OWNER ACCEPTANCE PENDING. **Scope:** design-only follow-up to v0.2 in draft PR #400. No native implementation, merge, or deployment authorization.
+**Status:** V0.3 RASTER RENDERED AND INSPECTED IN GITHUB ACTIONS AT 709×1536; DESIGN OWNER ACCEPTANCE AND NATIVE QA PENDING. **Scope:** design-only follow-up to v0.2 in draft PR #400. No native implementation, merge, or deployment authorization.
 
 ## Source and boundary
 Based on the actual v0.2 SVGs, walkthrough source and `android-instagram-shell-library-v02.md`, the v0.1 audit, UI-083 and repository UI governance. Retain the Instagram-inspired media-first layout, root Feed/Browse five-icon dock, contextual back-only Collection grid, existing owner-scoped asset semantics, and synthetic fixtures. Do not introduce Albums persistence or social behavior.
@@ -26,3 +26,6 @@ Prepare side-by-side **v0.2 vs v0.3 rendered** Feed, Browse, Browse Controls, Co
 
 
 **Checkpoint 26 — 2026-10-27:** Enlarged root Browse labels to 26 SVG units, enlarged source/kind control backgrounds and source-chip row to 88 units, updated review hotspots, and added [source regression gate](../tools/android_v03_source_gate.py). The independent GitHub-connector source audit reports 15/15 structural/content checks passed. This **does not** mean the current complete SVG set was raster-rendered or device-tested. See [the audit's Checkpoint 26 record](android-instagram-shell-library-v03-audit.md) for exact limitations and remaining acceptance gates. PR remains a design-only draft.
+
+
+**Checkpoint 27 — 2026-10-27:** Re-ran source validation and full-resolution CairoSVG rendering on the PR branch in a temporary read-only GitHub Actions runner. Successful [run 40446398423](https://github.com/faresmohamed260/renderlab/actions/runs/40446398423) produced 18 full-resolution PNG screenshots, five contact sheets, and a manifest; [audit](android-instagram-shell-library-v03-audit.md) records observed visual issues and corrections. Source gate passed 15/15. The rendered cases now show corrected Browse-sheet headings, non-overlapping long captions, and a clean contextual empty-state CTA. The two-mode hierarchy and action meanings remain **owner-approval candidates**, not native features. The temporary workflow may be removed after artifact collection; re-run the committed scripts in an authorized checkout if needed later. No merge/implementation/security sign-off was implied.
