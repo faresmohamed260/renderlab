@@ -1,5 +1,18 @@
 # Instagram clone live Android device handoff — PR #401
 
+> **Owner requirement correction — 2026-10-27:** The desired installed Android app must run the Instagram-style UI **against RenderLab's existing production backend and actual account/Library/job data**, while supporting Fast Refresh edits. The offline fake-account Expo SDK 53 clone APK built in this lab **does not satisfy that requirement**. Do not describe this APK as the final RenderLab client, a backend-integrated build, a production login client, or an acceptable app for real credentials. The screenshot of the Expo development-server picker indicates Metro is not connected, independently of the missing backend integration.
+
+### Production contract and safe route to the user goal
+- **Actual production origin:** `https://renderlab.faresuniform.uk` (canonical source: `docs/production/current.json`). No second backend, no Firebase, and no direct R2/Supabase table or ComfyUI worker calls from the app.
+- Existing server routes include read-only `GET /api/media/assets` (owner-scoped Library; optional `origin=generated|uploaded`), `GET /api/media/collections`, `GET /api/account/profile`, and `GET /api/generation/jobs/[jobId]`. Generation writes use `POST /api/generation/jobs` and remain **out of the first read-only milestone**.
+- The backend reads a Supabase bearer access token via `src/lib/supabase/server.ts`, revalidates Auth user, claims/session ID and live session, checks MFA/TOTP, then requires active account admission before returning private Library data. The current fake offline fixture provides **no** such authenticated session.
+- Production credentials must **not** be supplied to the old SDK 53 third-party clone (known 4 critical/18 high dependency findings). Do not add a static bearer token, service-role key or bypass to that APK. Native authentication must use the approved M0/M1 native project direction in `docs/architecture/MOBILE_APP_PHASE_M0_CONTRACT.md` with secure token storage, accepted MFA flow, protected Auth redirects and fresh owner validation.
+- **Recommended implementation:** keep the original clone as a UI/interaction reference; bring its reusable Instagram-style composition into the supported RenderLab mobile codebase (`apps/mobile` on draft PR #399, Expo SDK 58), then implement production Auth + read-only Library as the separately reviewed **M1 security-sensitive slice**. Do **not** merge the old vulnerable clone or touch production Auth config based only on this lab.
+- The newly built secure native APK must be installed **once** to replace the test client. Thereafter JSX text/icons/tab layout changes can update through a reachable Metro Fast Refresh server; native dependency/manifest changes still require another build. Neither an already-installed APK nor Fast Refresh automatically starts a Metro server. WANDA is currently offline and cannot host it until reconnected.
+
+**Acceptance remains open:** authorized production-compatible native Auth and MFA/invitation; real-device sign-in; owner-scoped generated/uploaded Library and collections via production API; token never forwarded to R2 redirects; actual touch and feed scrolling; live CSS/JS change reflected on-device without reinstall. Do not label any as passed until tested.
+
+
 **Status (2026-10-27): DEBUG APK BUILT, DOWNLOADED AND HASH-VERIFIED; REAL PHONE INSTALLATION / METRO CONNECTIVITY NOT YET VERIFIED.** This is an isolated, synthetic-data development lab, **not** a RenderLab production client, approved UI migration, or release-ready app.
 
 ## Verified exact APK
