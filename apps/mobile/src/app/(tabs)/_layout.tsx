@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useRuntimeUiConfig } from '@/features/runtime-ui/RuntimeUiConfigProvider';
 import { colors } from '@/theme/tokens';
 
+/** Route identities stay fixed; the existing backend changes only their presentation/order. */
 export default function TabLayout() {
+  const { tabs } = useRuntimeUiConfig();
   const shared = {
     headerShown: false,
     tabBarActiveTintColor: colors.accent,
@@ -16,38 +19,19 @@ export default function TabLayout() {
 
   return (
     <Tabs screenOptions={shared}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Create',
-          tabBarAccessibilityLabel: 'Create',
-          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles-outline" color={typeof color === 'string' ? color : colors.textMuted} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="library"
-        options={{
-          title: 'Library',
-          tabBarAccessibilityLabel: 'Library',
-          tabBarIcon: ({ color, size }) => <Ionicons name="images-outline" color={typeof color === 'string' ? color : colors.textMuted} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="activity"
-        options={{
-          title: 'Activity',
-          tabBarAccessibilityLabel: 'Activity',
-          tabBarIcon: ({ color, size }) => <Ionicons name="time-outline" color={typeof color === 'string' ? color : colors.textMuted} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarAccessibilityLabel: 'Settings',
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" color={typeof color === 'string' ? color : colors.textMuted} size={size} />,
-        }}
-      />
+      {tabs.map(tab => (
+        <Tabs.Screen
+          key={tab.id}
+          name={tab.id}
+          options={{
+            title: tab.label,
+            tabBarAccessibilityLabel: tab.label,
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name={tab.icon} color={typeof color === 'string' ? color : colors.textMuted} size={size} />
+            ),
+          }}
+        />
+      ))}
     </Tabs>
   );
 }
