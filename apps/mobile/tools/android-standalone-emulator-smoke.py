@@ -153,9 +153,23 @@ if __name__ == "__main__":
         main()
     except BaseException as exc:
         print(f"FAIL standalone emulator acceptance: {type(exc).__name__}: {exc}", flush=True)
+        for name, argv in [
+            ("android-errors.log", ("logcat", "-d", "-s", "ReactNativeJS:E", "AndroidRuntime:E")),
+            ("window-focus.txt", ("shell", "dumpsys", "window")),
+            ("activity-top.txt", ("shell", "dumpsys", "activity", "top")),
+            ("android-package-pid.txt", ("shell", "pidof", PACKAGE)),
+        ]:
+            try:
+                raw = adb(*argv, timeout=18, check=False)
+                (EVIDENCE / name).write_text(raw[-25000:], encoding="utf-8")
+            except Exception:
+                pass
         try:
-            raw = adb("logcat", "-d", "-s", "ReactNativeJS:E", "AndroidRuntime:E", timeout=15)
-            (EVIDENCE / "android-errors.log").write_text(raw[-20000:], encoding="utf-8")
+            shot = subprocess.run(
+                ["adb", "exec-out", "screencap", "-p"], capture_output=True, timeout=15,
+            )
+            if shot.returncode == 0 and shot.stdout.startswith(b"\\x89PNG"):
+                (EVIDENCE / "failure-device-screen.png").write_bytes(shot.stdout)
         except Exception:
             pass
         raise
