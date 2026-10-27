@@ -34,6 +34,10 @@ SETS = {
         "collection-v02", "collection-v03", "empty-collection-v03",
         "scrolled-feed-v02", "long-caption-v03",
     ],
+    "feed-and-actions": [
+        "feed-v02", "media-actions-v02", "scrolled-feed-v02",
+        "long-caption-v03",
+    ],
     "states": [
         "empty-library-v03", "loading-library-v03",
         "error-library-v03", "keyboard-focus-v03",
