@@ -2,7 +2,7 @@
 """Prepare pinned MIT Instagram clone for a disposable *device* UI editing lab.
 
 Run from the root of the cloned upstream repository, after npm ci:
-    python3 ../renderlab/.github/reference-tests/instagram-clone-device-lab.py
+    python3 ../.github/reference-tests/instagram-clone-device-lab.py
 
 This modifies only the disposable upstream clone checkout (never production RenderLab).
 Requires the existing instagram-clone-offline-fixture.py to be provided as
@@ -18,7 +18,7 @@ import sys
 
 ROOT = Path.cwd().resolve()
 assert (ROOT / "App.js").is_file() and (ROOT / "src/navigation/BottomTabs.jsx").is_file()
-fixture = Path(os.environ.get("RENDERLAB_FIXTURE_SCRIPT", "../renderlab/.github/reference-tests/instagram-clone-offline-fixture.py")).resolve()
+fixture = Path(os.environ.get("RENDERLAB_FIXTURE_SCRIPT", "../.github/reference-tests/instagram-clone-offline-fixture.py")).resolve()
 assert fixture.is_file(), f"Offline fixture missing: {fixture}"
 subprocess.run([sys.executable, str(fixture)], check=True)
 
