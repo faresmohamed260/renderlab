@@ -1,4 +1,4 @@
-import { createRenderLabApiClient } from './client';
+import { resolveApiUrl } from './url-policy.ts';
 
 /**
  * Native production API read contract for an eventual approved M1 transport.
@@ -90,9 +90,8 @@ export function libraryReadPath(query: LibraryReadQuery = {}): string {
  * React Native fetch to carry production tokens.
  */
 export function createRenderLabProductionReader(transport: ApprovedNativePrivateTransport) {
-  const api = createRenderLabApiClient(RENDERLAB_PRODUCTION_ORIGIN);
   async function read(path: string, token: string): Promise<AuthenticatedReadResult> {
-    const url = api.urlFor(path);
+    const url = resolveApiUrl(RENDERLAB_PRODUCTION_ORIGIN, path);
     const response = await transport({
       url,
       method: 'GET',
