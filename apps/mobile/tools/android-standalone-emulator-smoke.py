@@ -168,7 +168,7 @@ if __name__ == "__main__":
             shot = subprocess.run(
                 ["adb", "exec-out", "screencap", "-p"], capture_output=True, timeout=15,
             )
-            if shot.returncode == 0 and shot.stdout.startswith(b"\\x89PNG"):
+            if shot.returncode == 0 and shot.stdout.startswith(b"\x89PNG"):
                 (EVIDENCE / "failure-device-screen.png").write_bytes(shot.stdout)
         except Exception:
             pass
