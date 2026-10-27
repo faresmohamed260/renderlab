@@ -1,5 +1,5 @@
-import { resolveApiUrl } from '@/services/api/url-policy';
-import { RENDERLAB_PRODUCTION_ORIGIN } from '@/services/api/production-read';
+import { resolveApiUrl } from '../../services/api/url-policy.ts';
+import { RENDERLAB_PRODUCTION_ORIGIN } from '../../services/api/production-read.ts';
 
 /**
  * Deliberately duplicated small, stable wire contract: mobile is an independent
