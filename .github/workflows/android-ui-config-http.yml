@@ -1,0 +1,47 @@
+name: Android UI Config HTTP (local only)
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-ui-config-http.yml
+      - src/app/api/mobile/ui-config/**
+      - src/lib/api/android-ui-config-contract.ts
+      - scripts/verify-android-ui-config-http.mjs
+      - tests/unit/android-ui-config.test.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-android-ui-config-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install exact web dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify schema rejects arbitrary remote behavior
+        run: node --test tests/unit/android-ui-config.test.mjs
+      - name: Verify the actual Next.js route, with no production access
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev -- --hostname 127.0.0.1 --port 3198 > "$RUNNER_TEMP/renderlab-ui-config-next.log" 2>&1 &
+          PID="$!"
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if curl --silent --fail http://127.0.0.1:3198/api/mobile/ui-config > /dev/null; then break; fi
+            sleep 2
+          done
+          node scripts/verify-android-ui-config-http.mjs
