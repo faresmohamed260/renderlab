@@ -222,7 +222,7 @@ function decodeCollections(value: Record<string, unknown>): CollectionsReadData 
   }) };
 }
 
-function accessDenied(body: unknown): AuthenticatedReadResult {
+function accessDenied(body: unknown): Exclude<AuthenticatedReadResult, { state: 'ok' }> {
   const r = body && typeof body === 'object' && !Array.isArray(body)
     ? body as Record<string, unknown> : {};
   const error = r.error && typeof r.error === 'object' && !Array.isArray(r.error)
