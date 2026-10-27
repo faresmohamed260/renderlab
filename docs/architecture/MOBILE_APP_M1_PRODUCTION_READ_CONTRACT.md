@@ -43,6 +43,25 @@ Server authentication already reads `Authorization: Bearer <Supabase user sessio
 
 **Remaining first usable app milestone:** approve native package identity and safe account/Auth+TOTP flow on the supported Expo SDK58 app; prove the signed-media resolution contract and bearer non-forwarding with a real Android build; deliver/install the new APK and connect a reachable Metro server; verify real owner-scoped Library and physical UI interaction. Neither the current SDK53 clone APK nor the pre-existing SDK58 placeholder build meets that milestone.
 
+## Checkpoint 31 — controlled in-app presentation updates from the existing backend (draft, 2026-10-27)
+
+**Owner direction:** use existing `renderlab.faresuniform.uk`, no WANDA, Codespaces, paid always-on Metro host, or second backend. Installed Android UI changes to copy, predefined icon variants and placement of **existing** tabs should take effect without rebuilding/installing an APK. No claim of unlimited code hot-reload or a fully production-ready binary.
+
+**Draft implementation:** stacked PR #403 (`feature/android-live-ui-config-20261027`) adds a non-authenticated **GET `/api/mobile/ui-config`** to the RenderLab Next.js app, with fixed versioned JSON schema and a server-only `RENDERLAB_ANDROID_UI_CONFIG_JSON` override. The schema only permits:
+- `brand`: bounded, plain non-control text (up to 24 chars)
+- `tabs`: exactly the four existing Expo Router paths `index`, `library`, `activity`, `settings` **once each**, in a reorderable array; each has a bounded user-visible label (up to 18 chars) and one of three role-approved Ionicons
+- `version:1` and a bounded `revision`, for client validation/change detection
+
+Both web and native parse this schema **independently** (per the accepted mobile separation). Unknown keys, remote URLs, arbitrary components/JS, auth changes, new/deleted destinations, identity and role changes, invalid icons and control characters fail closed. The server returns `503` for malformed overrides without printing the value; the mobile app keeps its last accepted/embedded config on errors. Neither component sends or stores credentials; the endpoint never serves private media. The existing production Library/Auth contracts are unaffected.
+
+The app's `RuntimeUiConfigProvider` refetches no-credential HTTPS JSON every **45 seconds while foregrounded**, and on return to foreground; layout labels, icon choices, tab order and RenderLab wordmark are React state. No Metro, remote code execution, APK reinstall, EAS account, OTA signing or device credential is necessary for **these specific presentational changes once a compatible APK and the route are deployed**. Standard native navigation, keyboard/accessibility destinations and underlying route implementations cannot be replaced via JSON.
+
+**Operational limitation:** the checked-in default and optional server-only Vercel environment override are **deployment-time release inputs**, not an admin-facing live settings database. Changing those values requires a separately authorized backend deployment/release. This can update the installed app's UI without replacing the APK, but it does **not** satisfy instant editing without a server release. Persistent, mutable configuration via existing R2/DB would introduce a shared-resource mutation/security lifecycle and is **not implemented or approved**. Unauthorised users cannot change the public route; publication follows Git/operational approvals.
+
+**Full JavaScript/asset OTA is distinct:** Expo SDK 58 supports `expo-updates` with either EAS Update or a fully compliant custom update server. EAS Update offers a limited Free plan, but requires Expo project/account linkage, update channel, native package ID, versioned runtime, code-signing policy, build/install and release controls. Neither EAS nor an unaudited self-hosted update protocol was silently provisioned. Native modules, manifest/permission changes and incompatible runtime require a new APK. The current Expo/node-forge dependency audit stays fail-closed; no live user Auth/MFA or production APK qualification is implied.
+
+**Next gates:** run both Next.js and mobile tests/Android JS export on the exact PR #403 head; audit runtime label/icon changes on a real device and guest no-credential transport; review Android UI semantics and platform accessibility; obtain normal Security/Engineering/Owner release approvals for any server-side deployment, app signing or OTA activation. PR #399 and PR #402 remain draft and unmerged independently.
+
 ## Blocking security and acceptance gates
 
 1. **Product/Security/Architecture authority:** review M1 production-account access, actual native package ID and callback/deep-link identity, invitation/recovery and MFA, OS-encrypted `expo-secure-store` token lifecycle, logout/revocation, session refresh and login failure behavior. PR #399 M0 itself is still unmerged and has an unresolved Expo `node-forge` high-severity advisory.
