@@ -96,6 +96,9 @@ jobs:
           set -euo pipefail
           npx expo install expo-dev-client -- --ignore-scripts --no-audit --no-fund
           test -d node_modules/expo-dev-client
+          # Normalize the upstream clone's four stale native patch versions.
+          # Temporary checkout only: no production dependency policy is changed.
+          npm install --save-exact expo@53.0.27 expo-image@2.4.1 expo-updates@0.28.18 react-native@0.79.6 --ignore-scripts --no-audit --no-fund
           npx expo install --check
 
       - name: Generate nonproduction Android native wrapper
