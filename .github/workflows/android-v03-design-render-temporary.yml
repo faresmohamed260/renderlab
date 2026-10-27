@@ -1,0 +1,77 @@
+name: Android v0.3 Design Raster QA (temporary)
+# Review-only visual artifact generation. No APK, secrets, deployment, backend or app source mutations.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-v03-design-render-temporary.yml
+      - design/penpot/android-instagram-**.svg
+      - design/tools/android_v03_*.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-design-only:
+    name: Render vector design candidate without app build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR design branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install isolated vector-rendering dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/renderlab-v03-venv"
+          "$RUNNER_TEMP/renderlab-v03-venv/bin/python" -m pip install --disable-pip-version-check 'Pillow==11.3.0' 'CairoSVG==2.7.1'
+
+      - name: Check source SVG model and render full-sized and comparison previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          PY="$RUNNER_TEMP/renderlab-v03-venv/bin/python"
+          mkdir -p "$RUNNER_TEMP/renderlab-v03-qa/full"
+          "$PY" design/tools/android_v03_source_gate.py
+          "$PY" design/tools/android_v03_review.py --out "$RUNNER_TEMP/renderlab-v03-qa"
+          "$PY" - <<'PY'
+          from pathlib import Path
+          import cairosvg
+          src = Path('design/penpot')
+          out = Path(__import__('os').environ['RUNNER_TEMP'])/'renderlab-v03-qa'/'full'
+          for path in sorted(src.glob('android-instagram-*-v03.svg')):
+              cairosvg.svg2png(url=str(path),write_to=str(out/(path.stem+'.png')),output_width=709,output_height=1536)
+          for file in sorted(out.glob('*.png')):
+              print('RENDERED',file.name,file.stat().st_size)
+          if len(list(out.glob('*.png'))) < 15: raise SystemExit('Expected at least 15 v0.3 screens')
+          PY
+
+      - name: Export compact previews for authenticated repository review
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/renderlab-v03-venv/bin/python" - <<'PY'
+          import base64,io,os
+          from pathlib import Path
+          from PIL import Image
+          out=Path(os.environ['RUNNER_TEMP'])/'renderlab-v03-qa'
+          for title in ('navigation','sources','context-and-type','states'):
+              p=out/(title+'.png')
+              im=Image.open(p).convert('RGB')
+              im.thumbnail((1100,2300),Image.Resampling.LANCZOS)
+              buf=io.BytesIO();im.save(buf,format='JPEG',quality=72,optimize=True)
+              data=base64.b64encode(buf.getvalue()).decode('ascii')
+              print('RENDERLAB_PREVIEW_'+title.upper().replace('-','_')+'='+data)
+          PY
+
+      - name: Preserve full-size and contact-sheet render artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: renderlab-android-v03-review-pngs
+          path: ${{ runner.temp }}/renderlab-v03-qa
+          retention-days: 7
+          if-no-files-found: warn
