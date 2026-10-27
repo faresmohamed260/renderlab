@@ -86,7 +86,7 @@ def assess(name: str) -> list[str]:
                 len(found) == 1 and float(found[0].get("font-size", 0)) >= 26,
                 f"{word} text not readable in source design",
             )
-        check(any(rects(root, y=1356)), "missing root dock")
+        check(any(True for _ in rects(root, y=1356)), "missing root dock")
     if name in CONTEXTUAL:
         check(len(labels(root, "Items")) == 1, "missing contextual Items")
         check(not list(rects(root, y=1356)), "contextual screen has root dock")
