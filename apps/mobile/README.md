@@ -45,3 +45,9 @@ To prepare an authorized configuration change, edit the versioned `DEFAULT_ANDRO
 
 Tests are in `tests/unit/android-ui-config.test.mjs` (server) and `apps/mobile/tests/runtime-ui-config.test.mjs` (mobile). See `docs/architecture/MOBILE_APP_M1_PRODUCTION_READ_CONTRACT.md` Checkpoint 31 for the exact limits. **Do not tell the owner the current SDK53 offline APK or any other existing APK can load this remote configuration.** Real RenderLab login, signed media, native signing, update distribution, security qualification and actual phone testing remain separately blocked. WANDA is not used.
 
+
+## Checkpoint 32 — Standalone JS bundle compiled, not installed (2026-10-27)
+
+[Isolated GitHub Actions native proof 40508267121](https://github.com/faresmohamed260/renderlab/actions/runs/40508267121) on draft PR #403 compiled `apps/mobile` as a **release-mode arm64 Android APK with the embedded `assets/index.android.bundle`**. The nonempty approximately 33 MB APK was verified and immediately deleted; only a disposable, runner-local package name was used. This specifically validates that a future standalone build can open its embedded JavaScript **without a Metro process**. It does **not** establish phone/emulator installation, native startup, actual production Auth/Library data, working public UI-config updates on a device, signing/OTA credentials or release readiness. The old SDK53 clone APK still needs its development server and is not compatible with this code.
+
+**Blockers:** Repo-native package ID and signing authorization, all-ABI and real-device runtime/UX tests, accepted Expo Updates runtime/server/channel/security contract for JavaScript OTA (not installed/configured), Supabase Auth/MFA, signed media and the current red Expo/node-forge security audit. No WANDA, new hosted backend, paid Metro or provider resources were used. See [M1 Checkpoint 32](../../docs/architecture/MOBILE_APP_M1_PRODUCTION_READ_CONTRACT.md) for exact evidence and gates.
