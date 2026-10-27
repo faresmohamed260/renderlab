@@ -33,7 +33,11 @@ def snapshot(tag: str) -> tuple[list[ET.Element], str]:
     adb("shell", "uiautomator", "dump", target, timeout=42)
     raw = adb("exec-out", "cat", target, timeout=12)
     if "<hierarchy" not in raw:
-        raise AssertionError("Android UIAutomator hierarchy missing")
+        (EVIDENCE / f"{tag}-ui-dump-empty.txt").write_text(
+            "UIAutomator returned no hierarchy; raw dump:\n" + raw[:2000],
+            encoding="utf-8",
+        )
+        raise AssertionError("Android UIAutomator hierarchy missing (startup may not have settled)")
     content = raw[raw.index("<hierarchy"):]
     (EVIDENCE / f"{tag}.xml").write_text(content, encoding="utf-8")
     root = ET.fromstring(content)
@@ -43,7 +47,7 @@ def snapshot(tag: str) -> tuple[list[ET.Element], str]:
     return list(root.iter("node")), " ".join(values)
 
 
-def wait_for(expected: str, tag: str, *, timeout: int = 75) -> list[ET.Element]:
+def wait_for(expected: str, tag: str, *, timeout: int = 105) -> list[ET.Element]:
     end = time.monotonic() + timeout
     last = ""
     attempt = 0
@@ -55,7 +59,7 @@ def wait_for(expected: str, tag: str, *, timeout: int = 75) -> list[ET.Element]:
             if expected in text:
                 print(f"PASS {tag}: on-device hierarchy contains {expected!r}", flush=True)
                 return nodes
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ET.ParseError) as error:
+        except (AssertionError, subprocess.CalledProcessError, subprocess.TimeoutExpired, ET.ParseError) as error:
             last = type(error).__name__
         time.sleep(2)
     raise AssertionError(f"Expected {expected!r} not visible in {tag}; last UI: {last[:1000]}")
@@ -104,9 +108,12 @@ def main() -> None:
     adb("shell", "pm", "disable-user", "--user", "0", "com.android.launcher3", check=False)
     adb("install", "-r", str(apk), timeout=120)
     print("PASS disposable standalone APK installed into isolated Android emulator", flush=True)
+    adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
+    adb("shell", "input", "keyevent", "KEYCODE_MENU")
     start = adb("shell", "am", "start", "-n", PACKAGE + "/.MainActivity")
     print("LAUNCH", start[:300], flush=True)
-    adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
+    # Android UIAutomator can be blank immediately after a cold app start.
+    time.sleep(5)
     out = adb("shell", "wm", "size")
     match = re.search(r"(\d+)x(\d+)", out)
     if not match:
