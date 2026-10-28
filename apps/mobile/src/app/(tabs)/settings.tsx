@@ -25,6 +25,7 @@ export default function SettingsRoute() {
   const queryClient = useQueryClient();
   const ref = useRef<Coordinator | null>(null);
   const [state, setState] = useState<NativeAuthState>({ stage: 'unavailable' });
+  const [canRetry, setCanRetry] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -48,6 +49,7 @@ export default function SettingsRoute() {
       },
     );
     if (!runtime) {
+      setCanRetry(false);
       safeUpdate({ stage: 'unavailable' });
       return () => { mounted = false; };
     }
@@ -55,6 +57,7 @@ export default function SettingsRoute() {
       runtime.port, runtime.probe, safeUpdate,
     );
     ref.current = coordinator;
+    setCanRetry(true);
     safeUpdate(coordinator.state);
     try {
       runtime.start();
@@ -62,6 +65,7 @@ export default function SettingsRoute() {
       runtime.stop();
       coordinator.invalidate();
       ref.current = null;
+      setCanRetry(false);
       safeUpdate({ stage: 'unavailable' });
     }
     return () => {
@@ -113,7 +117,7 @@ export default function SettingsRoute() {
         onVerifyTotp={verifyTotp}
         onCancelMfa={cancelMfa}
         onSignOut={signOut}
-        onRetry={ref.current ? retry : undefined}
+        onRetry={canRetry ? retry : undefined}
       />
     </View>
   );

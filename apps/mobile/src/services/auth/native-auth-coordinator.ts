@@ -5,14 +5,12 @@
  * Authorization is impossible without a validated server profile response.
  */
 import {
-  decideNativeMfaGate, inspectNativeAdmission, transitionNativeAuth,
+  decideNativeMfaGate, transitionNativeAuth,
   type NativeAuthState,
 } from './native-auth-boundary.ts';
 
 type Credentials = Readonly<{ email: string; password: string }>;
 type Factor = { id: unknown; status: unknown; factor_type?: unknown };
-type Factors = { all: Factor[]; totp: Factor[] };
-type Assurance = { currentLevel: unknown; nextLevel: unknown };
 export type NativeAuthPort = Readonly<{
   signIn: (credentials: Credentials) => Promise<boolean>;
   verifySession: () => Promise<boolean>;

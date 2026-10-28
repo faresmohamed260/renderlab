@@ -27,15 +27,40 @@ def tap(nodes,label):
     b=re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',hits[-1].get('bounds',''))
     if not b:raise AssertionError('Invalid bounds for '+label)
     x1,y1,x2,y2=map(int,b.groups())
-    adb('shell','input','tap',str((x1+x2)//2),str((y1+y2)//2))
-def type_into(label,value):
+    x,y=(x1+x2)//2,(y1+y2)//2
+    width,height=map(int,re.search(r'(\d+)x(\d+)',adb('shell','wm','size')).groups())
+    if x<0 or x>=width or y<0 or y>=height-48:
+        raise AssertionError('Unsafe touch position for '+label+'; bounds='+str((x1,y1,x2,y2)))
+    print('QA target:',label,'clickable:',hits[-1].get('clickable'),'bounds:',(x1,y1,x2,y2),flush=True)
+    adb('shell','input','tap',str(x),str(y))
+def type_into(label,value,submit=False):
     tap(wait(label),label)
     adb('shell','input','text',value)
-    adb('shell','input','keyevent','4')
+    adb('shell','input','keyevent','66' if submit else '4')
+def diagnostic():
+    try:
+        text=adb('shell','dumpsys','activity','activities',timeout=25)
+        hits=[line.strip() for line in text.splitlines()
+              if 'ResumedActivity' in line or 'topResumedActivity' in line]
+        print('QA top activity:',(hits[:2] or ['not reported']),flush=True)
+        raw=adb('shell','logcat','-d','-s','AndroidRuntime:E','ReactNativeJS:E',timeout=25)
+        signatures=[line.strip()[:220] for line in raw.splitlines() if
+                    ('FATAL EXCEPTION' in line or 'Process: dev.renderlab.m2totpqa' in line or
+                     'TypeError:' in line or 'Invariant Violation:' in line)]
+        print('QA crash signatures:',signatures[-12:],flush=True)
+    except Exception as error:
+        print('QA diagnostic unavailable:',type(error).__name__,flush=True)
 def sign_in():
     type_into('Account email','qa@example.test')
-    type_into('Account password','synthetic-only')
-    tap(wait('Sign in'),'Sign in')
+    type_into('Account password','synthetic-only',submit=True)
+    try:
+        wait('M2 QA STAGE: mfa_required',timeout=15)
+    except AssertionError:
+        # KeyEvent ENTER is the preferred Android IME submit. Fall back to
+        # a bounded accessible button hit only if the app remains foreground.
+        nodes,_=screen()
+        tap(nodes,'Sign in')
+        wait('M2 QA STAGE: mfa_required',timeout=25)
     wait('Enter the six-digit code from your existing authenticator app.')
 def main(apk):
     adb('wait-for-device',timeout=140)
@@ -66,4 +91,8 @@ def main(apk):
     print('PASS cold restart resets QA state; no network, Metro or persistent credentials',flush=True)
 if __name__=='__main__':
     if len(sys.argv)!=2:raise SystemExit('Disposable APK required')
-    main(sys.argv[1])
+    try:
+        main(sys.argv[1])
+    except Exception:
+        diagnostic()
+        raise
