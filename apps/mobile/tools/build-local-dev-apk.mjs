@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Owner-approved LOCAL dev-client APK. No hosted signing, EAS, upload, or real Auth. */
-import { existsSync, mkdirSync, readFileSync, copyFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, copyFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const out=join(root,'.local-build');
-const key=join(homedir(),'.android','debug.keystore');
+const key=join(homedir(),'.renderlab','android','renderlab-dev.keystore');
 const keyPin=join(out,'debug-key-sha256');
 const sdk=process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
 const win=process.platform==='win32';
@@ -34,7 +34,25 @@ if(existsSync(keyPin) && (!existsSync(key) || hash(key)!==readFileSync(keyPin,'u
   fail('Debug signing identity changed; restore original private keystore before upgrading');
 exec(win?'npm.cmd':'npm',['ci','--no-audit','--no-fund']);
 exec(win?'npx.cmd':'npx',['expo','prebuild','--platform','android','--clean','--no-install','--non-interactive']);
-exec(win?'gradlew.bat':'./gradlew',[':app:assembleDebug','--no-daemon','--console=plain'],join(root,'android'));
+const native=join(root,'android');
+const gradle=readFileSync(join(native,'app','build.gradle'),'utf8');
+// Expo/React Native templates can sign from android/app/debug.keystore.
+// Never trust the template's generated default identity: overwrite it with
+// the same privately owned RenderLab key after EVERY clean prebuild.
+if(!/storeFile\s+file\(['"]debug\.keystore['"]\)/.test(gradle))
+  fail('Generated Gradle debug signing configuration changed; inspect before signing');
+mkdirSync(join(homedir(),'.renderlab','android'),{recursive:true,mode:0o700});
+if(!existsSync(key)){
+  if(existsSync(keyPin))fail('Original RenderLab signing key is missing; restore the private backup');
+  const keytool=join(process.env.JAVA_HOME,'bin',win?'keytool.exe':'keytool');
+  exec(keytool,['-genkeypair','-noprompt','-storetype','PKCS12','-keystore',key,
+    '-storepass','android','-keypass','android','-alias','androiddebugkey',
+    '-dname','CN=RenderLab Development Only, O=RenderLab','-keyalg','RSA',
+    '-keysize','3072','-validity','3650']);
+  if(!win)chmodSync(key,0o600);
+}
+copyFileSync(key,join(native,'app','debug.keystore'));
+exec(win?'gradlew.bat':'./gradlew',[':app:assembleDebug','--no-daemon','--console=plain'],native);
 const built=join(root,'android','app','build','outputs','apk','debug','app-debug.apk');
 if(!existsSync(built) || !existsSync(key))fail('Gradle did not produce a signed debug APK and reusable local key');
 mkdirSync(out,{recursive:true});

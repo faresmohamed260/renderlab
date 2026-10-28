@@ -15,7 +15,7 @@ test('stable development-only Android ID has no OTA/EAS configuration',()=>{
 test('local APK uses reusable private signing, guarded device commands and ignored artifacts',()=>{
   assert.equal(pkg.scripts['build:device'],'node tools/build-local-dev-apk.mjs');
   assert.equal(pkg.scripts['start:device'],'expo start --dev-client --host localhost');
-  for(const x of ['debug.keystore','assembleDebug','debug-key-sha256','process.env.CI'])
+  for(const x of ['renderlab-dev.keystore','debug.keystore','assembleDebug','debug-key-sha256','process.env.CI','-genkeypair','copyFileSync(key'])
     assert.ok(builder.includes(x),x);
   for(const x of ['.local-build/','*.apk','*.keystore','*.jks','*.p12'])
     assert.ok(source('../.gitignore').split('\n').includes(x),x);
