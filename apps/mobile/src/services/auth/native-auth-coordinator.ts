@@ -70,6 +70,7 @@ export function createNativeAuthCoordinator(
   let current: NativeAuthState = Object.freeze({ stage: 'signed_out' });
   let epoch = 0;
   let inFlight: Promise<void> | null = null;
+  let signingOut = false;
   function emit(next: NativeAuthState) {
     current = next;
     onState(next);
@@ -100,7 +101,7 @@ export function createNativeAuthCoordinator(
     if (gate.decision === 'ready') await checkServer(myEpoch);
   }
   function startSignIn(credentials: Credentials): Promise<void> {
-    if (inFlight || current.stage !== 'signed_out' && current.stage !== 'access_denied'
+    if (signingOut || inFlight || current.stage !== 'signed_out' && current.stage !== 'access_denied'
       && current.stage !== 'unavailable') return Promise.resolve();
     if (!credentials || !credentials.email.trim() || !credentials.password) {
       return Promise.reject(new Error('Invalid sign-in request'));
@@ -126,7 +127,7 @@ export function createNativeAuthCoordinator(
     return operation;
   }
   function submitTotp(code: string): Promise<void> {
-    if (inFlight || current.stage !== 'mfa_required' || !/^[0-9]{6}$/.test(code)) {
+    if (signingOut || inFlight || current.stage !== 'mfa_required' || !/^[0-9]{6}$/.test(code)) {
       return Promise.resolve();
     }
     const factorId = current.factorId;
@@ -159,20 +160,26 @@ export function createNativeAuthCoordinator(
     return operation;
   }
   async function signOut() {
+    if (signingOut) throw new Error('Native sign-out already running');
+    signingOut = true; // Block new sign-in until protected storage is cleared.
     ++epoch;
     transition({ type: 'sign_out' });
-    const pending = inFlight;
-    if (pending) await pending.catch(() => undefined);
-    // Remote revocation can fail offline; local session MUST still be cleared.
-    let revoked = false;
-    try { await auth.signOutRemote(); revoked = true; } catch { /* remote unconfirmed */ }
     try {
-      await auth.clearProtectedSession();
-    } catch {
-      transition({ type: 'connection_failed' });
-      throw new Error('Unable to clear protected native session');
+      const pending = inFlight;
+      if (pending) await pending.catch(() => undefined);
+      // Remote revocation can fail offline; local session MUST still be cleared.
+      let revoked = false;
+      try { await auth.signOutRemote(); revoked = true; } catch { /* remote unconfirmed */ }
+      try {
+        await auth.clearProtectedSession();
+      } catch {
+        transition({ type: 'connection_failed' });
+        throw new Error('Unable to clear protected native session');
+      }
+      return { localSignedOut: true, remoteRevocationConfirmed: revoked } as const;
+    } finally {
+      signingOut = false;
     }
-    return { localSignedOut: true, remoteRevocationConfirmed: revoked } as const;
   }
   return Object.freeze({
     get state(): NativeAuthState { return current; },
