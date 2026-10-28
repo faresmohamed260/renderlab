@@ -47,6 +47,16 @@ def snapshot(tag: str) -> tuple[list[ET.Element], str]:
     return list(root.iter("node")), " ".join(values)
 
 
+def capture_screen(tag: str) -> None:
+    """Non-secret visual evidence from the disposable guest-only Android build."""
+    shot = subprocess.run(
+        ["adb", "exec-out", "screencap", "-p"], capture_output=True, timeout=18,
+    )
+    if shot.returncode != 0 or not shot.stdout.startswith(b"\\x89PNG"):
+        raise AssertionError(f"Unable to capture Android screen for {tag}")
+    (EVIDENCE / f"{tag}.png").write_bytes(shot.stdout)
+
+
 def wait_for(expected: str, tag: str, *, timeout: int = 105) -> list[ET.Element]:
     end = time.monotonic() + timeout
     last = ""
@@ -105,7 +115,7 @@ def main() -> None:
     adb("shell", "settings", "put", "global", "window_animation_scale", "0")
     adb("shell", "settings", "put", "global", "transition_animation_scale", "0")
     adb("shell", "settings", "put", "global", "animator_duration_scale", "0")
-    adb("shell", "pm", "disable-user", "--user", "0", "com.android.launcher3", check=False)
+    # Do not disable the OS launcher: an ANR dialog from it obscured a working RenderLab UI in CI.
     adb("install", "-r", str(apk), timeout=120)
     print("PASS disposable standalone APK installed into isolated Android emulator", flush=True)
     adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
@@ -121,6 +131,7 @@ def main() -> None:
     _, height = map(int, match.groups())
 
     nodes = wait_for("CREATIVE WORKSPACE", "launch-create")
+    capture_screen("launch-create")
     adb("shell", "pidof", PACKAGE, timeout=10)
     # The initial screen must show the real SDK58 embedded scaffold (not Expo dev-client launcher).
     for tab, marker in [
@@ -131,6 +142,7 @@ def main() -> None:
     ]:
         tap_accessible(tab, nodes, height, bottom=True)
         nodes = wait_for(marker, "tab-" + tab.lower())
+        capture_screen("tab-" + tab.lower())
         adb("shell", "pidof", PACKAGE, timeout=10)
     tap_accessible("Open Library", nodes, height)
     wait_for("PRODUCTION CONNECTION", "create-button-library")
@@ -138,6 +150,7 @@ def main() -> None:
     adb("shell", "am", "force-stop", PACKAGE)
     start = adb("shell", "am", "start", "-n", PACKAGE + "/.MainActivity")
     wait_for("CREATIVE WORKSPACE", "cold-restart")
+    capture_screen("cold-restart")
     print("PASS standalone cold restart uses bundled JavaScript without Metro", flush=True)
     (EVIDENCE / "acceptance.txt").write_text(
         "PASS: native launch, Library/Activity/Settings/Create tab touch, "

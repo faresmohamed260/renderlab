@@ -92,7 +92,8 @@ jobs:
           api-level: 35
           arch: x86_64
           profile: pixel_6
-          target: google_apis
+          # AOSP image avoids the Google Pixel Launcher ANR that masked a healthy SDK58 Create screen.
+          target: default
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: python3 apps/mobile/tools/android-standalone-emulator-smoke.py "$RUNNER_TEMP/standalone-emulator-only.apk"
