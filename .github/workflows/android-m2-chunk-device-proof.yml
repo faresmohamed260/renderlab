@@ -61,18 +61,31 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-          root = Path('android/app/src/main')
-          files = list(root.rglob('*.xml'))
-          print('QA GENERATED XML PATHS:', [str(p.relative_to(root)) for p in files if 'backup' in p.name.lower() or 'extract' in p.name.lower() or p.name=='AndroidManifest.xml'])
-          manifest = (root / 'AndroidManifest.xml').read_text()
-          print('QA MANIFEST BACKUP ATTRIBUTES:', re.findall(r'android:(?:allowBackup|fullBackupContent|dataExtractionRules)="[^"]+"', manifest))
-          rules = [p for p in files if 'exclude' in p.read_text() and
-                  'SecureStore' in p.read_text() and
-                  'sharedpref' in p.read_text()]
-          print('QA SECURESTORE EXCLUSION FILES:', [str(p.relative_to(root)) for p in rules])
-          if not rules:
-              raise AssertionError('No generated Android SecureStore sharedpref backup exclusion')
-          print('PASS generated native Android backup exclusion exists:', len(rules))
+          app = Path('android/app/src/main')
+          manifest = (app / 'AndroidManifest.xml').read_text()
+          expected = (
+              ('fullBackupContent', 'secure_store_backup_rules.xml'),
+              ('dataExtractionRules', 'secure_store_data_extraction_rules.xml'),
+          )
+          native_resources = Path('node_modules/expo-secure-store/android/src/main/res/xml')
+          for attribute, filename in expected:
+              reference = '@xml/' + filename.removesuffix('.xml')
+              if 'android:' + attribute + '="' + reference + '"' not in manifest:
+                  raise AssertionError('Missing required Android manifest backup reference: ' + attribute)
+              app_copy = app / 'res/xml' / filename
+              module_copy = native_resources / filename
+              rules = app_copy if app_copy.exists() else module_copy
+              if not rules.exists():
+                  raise AssertionError('Missing native merged-resource source: ' + filename)
+              xml = rules.read_text()
+              excludes = re.findall(r'<exclude\\s+domain="sharedpref"\\s+path="SecureStore"\\s*/>', xml)
+              minimum = 2 if attribute == 'dataExtractionRules' else 1
+              if len(excludes) < minimum:
+                  raise AssertionError('SecureStore excluded in fewer backup paths than required: ' + filename)
+              print('PASS Android backup resource and manifest for:', attribute,
+                    'excluded paths:', len(excludes))
+          # App-local rules, when present, override the Expo module resource:
+          # only the effective merged-resource source above may be accepted.
           PY
           cd android
           chmod +x gradlew
