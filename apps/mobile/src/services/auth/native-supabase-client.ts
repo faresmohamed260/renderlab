@@ -33,8 +33,15 @@ export function createDormantNativeSupabaseAuthRuntime(
       flowType: 'pkce',
     },
   });
+  // React Native can report null/unknown startup AppState. Only explicitly
+  // active is eligible to refresh; all other values lock admission.
+  const safeAppState = {
+    currentState: AppState.currentState === 'active' ? 'active' as const : 'background' as const,
+    addEventListener: (_event: 'change', callback: (next: 'active' | 'background') => void) =>
+      AppState.addEventListener('change', state => callback(state === 'active' ? 'active' : 'background')),
+  };
   const lifecycle = createNativeAuthForegroundLifecycle(
-    AppState, client.auth, invalidateLocalAdmission, onRefreshFailure,
+    safeAppState, client.auth, invalidateLocalAdmission, onRefreshFailure,
   );
   // Expose Auth only. Do not return the Supabase Data API client.
   return Object.freeze({
