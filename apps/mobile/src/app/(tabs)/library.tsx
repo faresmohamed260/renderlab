@@ -6,6 +6,7 @@ import {
   type GuestProductionResult,
 } from '@/services/api/production-guest';
 import { colors, radii, space } from '@/theme/tokens';
+import { useRuntimeUiConfig } from '@/features/runtime-ui/RuntimeUiConfigProvider';
 
 type ProbeState = GuestProductionResult | { state: 'checking' };
 
@@ -14,6 +15,7 @@ type ProbeState = GuestProductionResult | { state: 'checking' };
  * or a synthetic-media feed. Native Auth/MFA and signed media are still gated.
  */
 export default function LibraryRoute() {
+  const { brand } = useRuntimeUiConfig();
   const [status, setStatus] = useState<ProbeState>({ state: 'checking' });
   const runProbe = useCallback(async () => {
     setStatus({ state: 'checking' });
@@ -38,7 +40,7 @@ export default function LibraryRoute() {
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.content}>
-        <Text style={styles.brand}>RenderLab</Text>
+        <Text style={styles.brand}>{brand}</Text>
         <Text accessibilityRole="header" style={styles.title}>Library</Text>
         <Text style={styles.subtitle}>Your generated and uploaded media, from the existing RenderLab account.</Text>
         <View style={styles.card}>

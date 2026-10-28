@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, ButtonText } from '@/components/ui/button';
 import { colors, radii, space } from '@/theme/tokens';
+import { useRuntimeUiConfig } from '@/features/runtime-ui/RuntimeUiConfigProvider';
 
 type FoundationScreenProps = {
   eyebrow: string;
@@ -12,10 +13,11 @@ type FoundationScreenProps = {
 
 /** Phase M0 navigation scaffold, not a product-complete screen. No network or auth access. */
 export function FoundationScreen({ eyebrow, title, description, milestone, action }: FoundationScreenProps) {
+  const { brand } = useRuntimeUiConfig();
   return (
     <ScrollView contentContainerStyle={styles.container} accessibilityRole="scrollbar">
       <View style={styles.content}>
-        <Text style={styles.brand}>RENDERLAB</Text>
+        <Text style={styles.brand}>{brand}</Text>
         <Text style={styles.eyebrow}>{eyebrow}</Text>
         <Text accessibilityRole="header" style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
