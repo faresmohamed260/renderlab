@@ -1,0 +1,182 @@
+name: Android owner-approved development APK (one-time signer + encrypted recovery)
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-owner-dev-apk-one-off.yml
+      - apps/mobile/app.config.js
+      - apps/mobile/tools/android-dev-package-qa.py
+      - apps/mobile/tools/dev-signing-recovery-recipient.crt
+permissions:
+  contents: read
+jobs:
+  build-and-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      RENDERLAB_ANDROID_DEV_VARIANT: "1"
+      JAVA_TOOL_OPTIONS: -Xmx3g -Dfile.encoding=UTF-8
+    steps:
+      - name: Checkout exact owner-approved draft head, not PR merge
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Enable Android emulator hardware acceleration
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+      - name: Deterministic install, strictly disabled Auth and native quality gate
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          test ! -f .env
+          grep -Fq 'NATIVE_AUTH_RUNTIME_ENABLED = false' src/services/auth/native-auth-config.ts
+          npm ci --no-audit --no-fund
+          npx expo install --check
+          npm run typecheck
+          npm test
+          npm run lint
+          npm audit --omit=dev --audit-level=high
+          node - <<'NODE'
+          const config=require('./app.config.js')({config:require('./app.json').expo});
+          if(config.android?.package !== 'uk.faresuniform.renderlab.dev' ||
+             config.updates?.url || config.extra?.eas?.projectId) {
+            throw new Error('Unexpected signed development app metadata');
+          }
+          if(require('./app.json').expo.android.package) {
+            throw new Error('Default M0 must remain unprovisioned');
+          }
+          console.log('PASS explicit opt-in development package without EAS or OTA');
+          NODE
+      - name: Prebuild only the development variant and generate one signing identity
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --no-install --non-interactive
+          test -f android/app/build.gradle
+          test -f android/app/debug.keystore
+          # Generated template key is deliberately replaced. Never use a shared
+          # Expo/React Native debug key or commit any signing credentials.
+          rm -f android/app/debug.keystore
+          umask 077
+          keytool -genkeypair -noprompt -storetype JKS \
+            -keystore android/app/debug.keystore \
+            -alias androiddebugkey -keyalg RSA -keysize 3072 -validity 3650 \
+            -storepass android -keypass android \
+            -dname 'CN=RenderLab Owner Dev Signing,OU=Development,O=RenderLab' >/dev/null 2>&1
+          test -s android/app/debug.keystore
+          # Only the repository-committed PUBLIC encryption certificate is read.
+          # The owner controls the corresponding encrypted private recovery key.
+          mkdir -p "$RUNNER_TEMP/renderlab-dev-recovery"
+          openssl cms -encrypt -binary -aes-256-gcm \
+            -in android/app/debug.keystore -outform DER \
+            -out "$RUNNER_TEMP/renderlab-dev-recovery/renderlab-dev-debug.keystore.cms" \
+            tools/dev-signing-recovery-recipient.crt
+          test -s "$RUNNER_TEMP/renderlab-dev-recovery/renderlab-dev-debug.keystore.cms"
+          echo "PASS encrypted recovery generated, raw signer remains runner-local"
+      - name: Compile signed arm64 and emulator APKs with one private identity
+        working-directory: apps/mobile/android
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug :app:assembleRelease \
+            -PreactNativeArchitectures=arm64-v8a,x86_64 \
+            --no-daemon --console=plain --max-workers=2
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          test -s app/build/outputs/apk/release/app-release.apk
+          unzip -Z -1 app/build/outputs/apk/release/app-release.apk | grep -F 'assets/index.android.bundle' >/dev/null
+      - name: Verify both APKs use the same unique development signer, never production
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/renderlab-dev-apks"
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -1)"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name aapt | sort -V | tail -1)"
+          test -x "$SIGNER" && test -x "$AAPT"
+          cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk \
+             "$RUNNER_TEMP/renderlab-dev-apks/RenderLab-Dev-FastRefresh-64bit.apk"
+          "$SIGNER" sign \
+             --ks apps/mobile/android/app/debug.keystore \
+             --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android \
+             --out "$RUNNER_TEMP/renderlab-dev-apks/RenderLab-Dev-Preview-64bit.apk" \
+             apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          DEBUG_APK="$RUNNER_TEMP/renderlab-dev-apks/RenderLab-Dev-FastRefresh-64bit.apk"
+          PREVIEW_APK="$RUNNER_TEMP/renderlab-dev-apks/RenderLab-Dev-Preview-64bit.apk"
+          "$SIGNER" verify --verbose "$DEBUG_APK"
+          "$SIGNER" verify --verbose "$PREVIEW_APK"
+          DEBUG_SHA="$("$SIGNER" verify --print-certs "$DEBUG_APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+          PREVIEW_SHA="$("$SIGNER" verify --print-certs "$PREVIEW_APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+          test -n "$DEBUG_SHA" && test "$DEBUG_SHA" = "$PREVIEW_SHA"
+          echo "DEV_SIGNER_SHA256=$DEBUG_SHA" >> "$GITHUB_ENV"
+          echo "Verified DEVELOPMENT signing certificate SHA-256: $DEBUG_SHA"
+          "$AAPT" dump badging "$DEBUG_APK" | grep -F "name='uk.faresuniform.renderlab.dev'" >/dev/null
+          "$AAPT" dump badging "$PREVIEW_APK" | grep -F "name='uk.faresuniform.renderlab.dev'" >/dev/null
+          echo "PASS signed same-package offline-preview and Fast Refresh APK pair"
+      - name: Verify actual Android 35 installation and same-signature replacement
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          target: default
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: python3 apps/mobile/tools/android-dev-package-qa.py "$RUNNER_TEMP/renderlab-dev-apks/RenderLab-Dev-Preview-64bit.apk" "$RUNNER_TEMP/renderlab-dev-apks/RenderLab-Dev-FastRefresh-64bit.apk"
+      - name: Generate public hashes and exact source manifest (no signing keys)
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const path = require('node:path');
+          const root=path.join(process.env.RUNNER_TEMP,'renderlab-dev-apks');
+          const hash=file=>crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex');
+          const preview='RenderLab-Dev-Preview-64bit.apk';
+          const metro='RenderLab-Dev-FastRefresh-64bit.apk';
+          const manifest={
+            scope:'Owner-approved DEVELOPMENT ONLY. No account login, OTA, or production release.',
+            sourceCommit:process.env.GITHUB_SHA,
+            applicationId:'uk.faresuniform.renderlab.dev',
+            applicationName:'RenderLab Dev',
+            architectures:['arm64-v8a','x86_64'],
+            signingCertificateSha256:process.env.DEV_SIGNER_SHA256,
+            preview:{file:preview,sha256:hash(preview),requiresMetro:false},
+            fastRefresh:{file:metro,sha256:hash(metro),requiresMetro:true},
+            keystoreBackup:'separate encrypted recovery artifact; keep private key outside GitHub',
+          };
+          fs.writeFileSync(path.join(root,'build-manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+          console.log('PASS nonsecret manifest generated, exact source and APK digests recorded');
+          NODE
+      - name: Upload owner-installable DEV APKs (no private credentials)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: renderlab-dev-owner-installable-apks
+          path: ${{ runner.temp }}/renderlab-dev-apks/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload ONLY encrypted signing recovery (private signer never public)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: renderlab-dev-signing-key-encrypted-recovery
+          path: ${{ runner.temp }}/renderlab-dev-recovery/renderlab-dev-debug.keystore.cms
+          if-no-files-found: error
+          retention-days: 30
+      - name: Destroy transient unsigned APKs, raw signing key and temporary files
+        if: always()
+        run: |
+          rm -rf apps/mobile/android "$RUNNER_TEMP/renderlab-dev-apks" "$RUNNER_TEMP/renderlab-dev-recovery"
+          echo "No raw signing key, Supabase credential or production build was uploaded."

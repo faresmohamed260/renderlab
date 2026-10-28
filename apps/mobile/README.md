@@ -130,3 +130,36 @@ The dormant SDK58 integration is now connected in source: `native-supabase-auth-
 **Additional completed UI QA:** [synthetic TOTP screen emulator run 40654701239](https://github.com/faresmohamed260/renderlab/actions/runs/40654701239) **PASSED** the actual native Settings sign-in fields, rejected code, valid synthetic code, server-admission state, sign-out and cold restart; zero real credentials/network authentication. The two expensive one-off M2 TOTP/HTTPS emulator workflows were removed after proof; their fixtures remain reusable. Standard exact-head mobile checks continue to cover the coordinator, event observer, transport boundary, typecheck, lint and Android JS.
 
 **Next owner/security gates:** Review/accept HTTPS bearer transport and full native session lifecycle under the existing M2 contract. Real Supabase Auth client configuration and real-account MFA/admission tests remain separately owner/architecture/security gated. An owner-approved, stably signed Android development APK installed on a real phone, with free local Metro/Fast Refresh for JS changes, is the practical next installation milestone. Metro-based Fast Refresh needs a reachable development server; server-controlled public tab labels/icon/order can change only when the compatible backend endpoint is deployed, and broader OTA updates need a separately approved channel. No WANDA, second backend, APK distribution or OTA publishing has occurred.
+
+## Owner-approved development APK and private signing recovery — 2026-10-28
+
+**Authority:** The Project Owner approved a stable **development-only** Android app and signing identity for installation on their physical phone. This is a separate step on an unmerged draft stacked after M2 #405, not an expansion of M2 authentication approvals. Production login, real Supabase credentials, EAS/OTA, production release, a new backend, WANDA, and parent PR merges are still disallowed. APK readiness and owner-phone installation must be verified before being marked complete.
+
+Default `app.json` remains unprovisioned. Explicit build flag `RENDERLAB_ANDROID_DEV_VARIANT=1` resolves `app.config.js` to stable Android package `uk.faresuniform.renderlab.dev`, display name `RenderLab Dev`, scheme `renderlab-dev`, versionCode 1. No EAS project/update URL or Supabase key is added. The compile-time native Auth flag remains **false**.
+
+The one-off CI workflow generates **one** randomized development keystore on its runner. It signs two 64-bit APKs with the **same** identity (arm64-v8a physical phone and x86_64 emulator):
+
+- `RenderLab-Dev-Preview-64bit.apk` — offline signed preview with embedded JavaScript, no Metro required.
+- `RenderLab-Dev-FastRefresh-64bit.apk` — native development client, requires the owner’s reachable free local Metro server for interactive JavaScript edits without native rebuild.
+
+CI must verify signing digests, both app IDs, installed Android Create/Settings with locked account access and a no-Metro cold start, then prove `adb install -r` replaces Preview with FastRefresh without uninstall. **CI emulator results do not imply physical phone installation.**
+
+**Signing-key custody:** CI **never uploads the raw signing key** to this public GitHub repo or artifacts. It uses the tracked **public** recovery certificate `tools/dev-signing-recovery-recipient.crt` to encrypt the randomized keystore with AES-256-GCM CMS. Only `renderlab-dev-debug.keystore.cms` is uploaded separately (30-day artifact retention). The matching *password-encrypted* private recovery key and separate passphrase are delivered to the owner outside GitHub. Download and save all three securely. Losing the signer can make an in-place Android update impossible without uninstalling first. The key entry uses standard development alias/password `androiddebugkey / android` only for Gradle compatibility; those are not the confidentiality mechanism.
+
+**Local future builds:** The dev signer is recovered **outside Git** on the owner's own computer. With its recipient public certificate, encrypted private recovery key and passphrase in the current directory, run:
+
+```bash
+mkdir -p "$HOME/.config/renderlab/android"
+openssl cms -decrypt -binary -inform DER \
+  -in renderlab-dev-debug.keystore.cms \
+  -recip dev-signing-recovery-recipient.crt \
+  -inkey renderlab-dev-signing-recovery-private-encrypted.pem \
+  -passin file:renderlab-dev-signing-recovery-passphrase.txt \
+  -out "$HOME/.config/renderlab/android/debug.keystore"
+chmod 600 "$HOME/.config/renderlab/android/debug.keystore"
+cd apps/mobile && npm ci && npm run dev:apk
+```
+
+This build **refuses to generate a fresh key** and requires the existing owner-held signer. On Windows, set `RENDERLAB_DEV_SIGNING_KEYSTORE` to the recovered keystore's private absolute path.
+
+**Actual fast editing:** On a computer with Node 24, Java 17, Android SDK and this branch checked out, run `cd apps/mobile && npm ci && npm run dev:metro`. Install FastRefresh once on Android (tap extracted APK, or `adb install -r <path>`). Keep the phone on the same Wi-Fi or enable USB debugging with `adb reverse tcp:8081 tcp:8081`, and load the local Metro session. JavaScript UI changes then hot-reload without reinstalling; native changes still require a new APK. Github-only edits do not reach a disconnected phone. A standalone Preview can be installed to inspect the current app without Metro, but it does not hot-reload by itself. Owner deployment of the existing RenderLab backend-driven tab wordmark/labels/icons/order and arbitrary OTA remain separate operations.
