@@ -60,10 +60,16 @@ jobs:
           npx expo prebuild --platform android --no-install --non-interactive
           python3 - <<'PY'
           from pathlib import Path
-          files = list(Path('android/app/src/main/res/xml').glob('*.xml'))
+          import re
+          root = Path('android/app/src/main')
+          files = list(root.rglob('*.xml'))
+          print('QA GENERATED XML PATHS:', [str(p.relative_to(root)) for p in files if 'backup' in p.name.lower() or 'extract' in p.name.lower() or p.name=='AndroidManifest.xml'])
+          manifest = (root / 'AndroidManifest.xml').read_text()
+          print('QA MANIFEST BACKUP ATTRIBUTES:', re.findall(r'android:(?:allowBackup|fullBackupContent|dataExtractionRules)="[^"]+"', manifest))
           rules = [p for p in files if 'exclude' in p.read_text() and
                   'SecureStore' in p.read_text() and
                   'sharedpref' in p.read_text()]
+          print('QA SECURESTORE EXCLUSION FILES:', [str(p.relative_to(root)) for p in rules])
           if not rules:
               raise AssertionError('No generated Android SecureStore sharedpref backup exclusion')
           print('PASS generated native Android backup exclusion exists:', len(rules))
