@@ -137,3 +137,28 @@ test('remote sign-out failure reports unconfirmed revocation, local clear remain
   await assert.rejects(() => coordinator.signOut(), /Unable to clear protected native session/);
   assert.equal(coordinator.state.stage, 'unavailable');
 });
+
+test('local protected session is wiped before slow remote revocation settles', async () => {
+  let resolveRemote;
+  const remotePending = new Promise(resolve => { resolveRemote = resolve; });
+  const events = [];
+  const gateway = {
+    async signIn() { return true; },
+    async getAssurance() { return assurance('aal1', 'aal1'); },
+    async listFactors() { return factors(); },
+    async verifyTotp() { return false; },
+    async getAccessToken() { return 'synthetic'; },
+    async signOutRemote() { events.push('remote-start'); await remotePending; events.push('remote-done'); },
+    async clearProtectedSession() { events.push('clear-local'); },
+  };
+  const coordinator = createNativeAuthCoordinator(gateway, async () => admitted, () => {});
+  await coordinator.signIn({ email: 'synthetic@example.test', password: 'test-only' });
+  const pending = coordinator.signOut();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(coordinator.state.stage, 'signed_out');
+  assert.deepEqual(events, ['remote-start', 'clear-local']);
+  resolveRemote();
+  const outcome = await pending;
+  assert.equal(outcome.remoteRevocationConfirmed, true);
+  assert.deepEqual(events, ['remote-start', 'clear-local', 'remote-done']);
+});

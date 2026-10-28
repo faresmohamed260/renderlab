@@ -168,14 +168,23 @@ export function createNativeAuthCoordinator(
       const pending = inFlight;
       if (pending) await pending.catch(() => undefined);
       // Remote revocation can fail offline; local session MUST still be cleared.
-      let revoked = false;
-      try { await auth.signOutRemote(); revoked = true; } catch { /* remote unconfirmed */ }
+      // Initiate remote revocation, but do not await it while a protected
+      // session remains on disk. The UI is already locked above.
+      let remoteResult: Promise<boolean>;
+      try {
+        remoteResult = Promise.resolve(auth.signOutRemote()).then(
+          () => true, () => false,
+        );
+      } catch {
+        remoteResult = Promise.resolve(false);
+      }
       try {
         await auth.clearProtectedSession();
       } catch {
         transition({ type: 'connection_failed' });
         throw new Error('Unable to clear protected native session');
       }
+      const revoked = await remoteResult;
       return { localSignedOut: true, remoteRevocationConfirmed: revoked } as const;
     } finally {
       signingOut = false;
