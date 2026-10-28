@@ -13,12 +13,19 @@ import { createNativeAuthForegroundLifecycle } from './native-auth-lifecycle.ts'
 import { createNativeSupabaseSecureStorage } from './native-supabase-storage.ts';
 import { createNativeSupabaseAuthPort } from './native-supabase-auth-port.ts';
 import { createNativeProfileAdmissionProbe } from './native-profile-admission.ts';
+import { createNativeAuthEventBridge } from './native-auth-events.ts';
+import type { NativeAuthState } from './native-auth-boundary.ts';
 
 /** Future integration must revalidate server-owned admission on every resume. */
 export function createDormantNativeSupabaseAuthRuntime(
   invalidateLocalAdmission: () => void,
   onRefreshFailure: () => void,
   onResume: () => void | Promise<void>,
+  authEvents: Readonly<{
+    invalidate: () => void;
+    requestRestore: () => void;
+    getState: () => NativeAuthState;
+  }>,
 ) {
   const config = getApprovedNativeAuthConfig();
   if (!config) return null;
@@ -46,11 +53,23 @@ export function createDormantNativeSupabaseAuthRuntime(
   const lifecycle = createNativeAuthForegroundLifecycle(
     safeAppState, client.auth, invalidateLocalAdmission, onRefreshFailure, onResume,
   );
+  const events = createNativeAuthEventBridge(
+    client.auth,
+    authEvents,
+    () => AppState.currentState === 'active',
+    invalidateLocalAdmission,
+  );
   // Expose Auth only. Do not return the Supabase Data API client.
   return Object.freeze({
     port: createNativeSupabaseAuthPort(client.auth, protectedStorage),
     probe: createNativeProfileAdmissionProbe(fetch),
-    start: lifecycle.start,
-    stop: lifecycle.stop,
+    start() {
+      events.start();
+      lifecycle.start();
+    },
+    stop() {
+      events.stop();
+      lifecycle.stop();
+    },
   });
 }

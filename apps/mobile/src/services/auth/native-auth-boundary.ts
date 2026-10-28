@@ -27,6 +27,7 @@ export type NativeAuthEvent =
   | Readonly<{ type: 'session_missing' }>
   | Readonly<{ type: 'begin_sign_in' }>
   | Readonly<{ type: 'password_verified' }>
+  | Readonly<{ type: 'password_rejected' }>
   | Readonly<{ type: 'factors_checked'; snapshot: unknown }>
   | Readonly<{ type: 'begin_totp'; code: unknown }>
   | Readonly<{ type: 'totp_verified' }>
@@ -128,6 +129,7 @@ export function transitionNativeAuth(
       || previous.stage === 'unavailable'
       ? { stage: 'verifying_password' } : previous;
   }
+  if (previous.stage === 'verifying_password' && event.type === 'password_rejected') return { stage: 'access_denied' };
   if (previous.stage === 'verifying_password' && event.type === 'password_verified') {
     return { stage: 'checking_factors' };
   }

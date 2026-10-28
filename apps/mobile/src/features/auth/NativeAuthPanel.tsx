@@ -16,11 +16,12 @@ type Props = Readonly<{
   onSignIn: (email: string, password: string) => Promise<void>;
   onVerifyTotp: (code: string) => Promise<void>;
   onCancelMfa: () => void;
+  onRetry?: () => void;
   onSignOut: () => Promise<void>;
 }>;
 
 export function NativeAuthPanel({
-  stage, errorMessage, onSignIn, onVerifyTotp, onCancelMfa, onSignOut,
+  stage, errorMessage, onSignIn, onVerifyTotp, onCancelMfa, onSignOut, onRetry,
 }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -91,8 +92,14 @@ export function NativeAuthPanel({
         <Text accessibilityRole="header" style={styles.heading}>RenderLab account</Text>
         {stage === 'unavailable' ? (
           <Text style={styles.note} accessibilityRole="alert">
-            Sign-in is unavailable in this build. Private content remains locked.
+            Sign-in is unavailable. Private content remains locked.
           </Text>
+          {onRetry ? (
+            <Button accessibilityLabel="Retry account verification"
+              isDisabled={working} onPress={onRetry}>
+              <ButtonText>Try again</ButtonText>
+            </Button>
+          ) : null}
         ) : isSignedIn ? (
           <>
             <Text accessibilityRole="status" style={styles.note}>

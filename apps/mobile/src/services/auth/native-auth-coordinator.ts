@@ -72,6 +72,7 @@ export function createNativeAuthCoordinator(
   let epoch = 0;
   let inFlight: Promise<void> | null = null;
   let signingOut = false;
+  let pendingRestore = false;
   function emit(next: NativeAuthState) {
     current = next;
     onState(next);
@@ -80,6 +81,22 @@ export function createNativeAuthCoordinator(
     emit(transitionNativeAuth(current, event));
   }
   function active(myEpoch: number) { return myEpoch === epoch; }
+  function settle(operation: Promise<void>) {
+    if (inFlight !== operation) return;
+    inFlight = null;
+    if (pendingRestore && !signingOut) {
+      pendingRestore = false;
+      void restore();
+    }
+  }
+  function requestRestore(): void {
+    if (signingOut) return;
+    // Don't lose refresh/account-switch revalidation while a login or
+    // MFA request is pending; finish the stale request first.
+    if (inFlight) { pendingRestore = true; return; }
+    pendingRestore = false;
+    void restore();
+  }
   async function checkServer(myEpoch: number) {
     if (!active(myEpoch)) return;
     const token = await auth.getAccessToken();
@@ -121,7 +138,7 @@ export function createNativeAuthCoordinator(
       }
     })();
     inFlight = operation;
-    void operation.finally(() => { if (inFlight === operation) inFlight = null; });
+    void operation.then(() => settle(operation), () => settle(operation));
     return operation;
   }
   function startSignIn(credentials: Credentials): Promise<void> {
@@ -137,7 +154,7 @@ export function createNativeAuthCoordinator(
         const signedIn = await auth.signIn(credentials);
         if (!active(myEpoch)) return;
         if (!signedIn) {
-          transition({ type: 'connection_failed' });
+          transition({ type: 'password_rejected' });
           return;
         }
         transition({ type: 'password_verified' });
@@ -147,7 +164,7 @@ export function createNativeAuthCoordinator(
       }
     })();
     inFlight = operation;
-    void operation.finally(() => { if (inFlight === operation) inFlight = null; });
+    void operation.then(() => settle(operation), () => settle(operation));
     return operation;
   }
   function submitTotp(code: string): Promise<void> {
@@ -180,13 +197,14 @@ export function createNativeAuthCoordinator(
       }
     })();
     inFlight = operation;
-    void operation.finally(() => { if (inFlight === operation) inFlight = null; });
+    void operation.then(() => settle(operation), () => settle(operation));
     return operation;
   }
   async function signOut() {
     if (signingOut) throw new Error('Native sign-out already running');
     signingOut = true; // Block new sign-in until protected storage is cleared.
     ++epoch;
+    pendingRestore = false;
     transition({ type: 'sign_out' });
     try {
       const pending = inFlight;
@@ -218,9 +236,10 @@ export function createNativeAuthCoordinator(
     get state(): NativeAuthState { return current; },
     signIn: startSignIn,
     restore,
+    requestRestore,
     verifyTotp: submitTotp,
     signOut,
     /** Background, auth-user change, token expiration: clear UI admission. */
-    invalidate: () => { ++epoch; transition({ type: 'session_invalidated' }); },
+    invalidate: () => { ++epoch; pendingRestore = false; transition({ type: 'session_invalidated' }); },
   });
 }

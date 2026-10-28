@@ -41,6 +41,11 @@ export default function SettingsRoute() {
       invalidate,
       () => safeUpdate({ stage: 'unavailable' }),
       () => ref.current?.restore(),
+      {
+        invalidate: () => ref.current?.invalidate(),
+        requestRestore: () => ref.current?.requestRestore(),
+        getState: () => ref.current?.state ?? { stage: 'unavailable' },
+      },
     );
     if (!runtime) {
       safeUpdate({ stage: 'unavailable' });
@@ -69,6 +74,10 @@ export default function SettingsRoute() {
     if (!ref.current) throw new Error('Native authenticator unavailable');
     await ref.current.verifyTotp(code);
   }
+  function retry() {
+    const controller = ref.current;
+    if (controller) controller.requestRestore();
+  }
   async function signOut() {
     if (!ref.current) throw new Error('Native sign-out unavailable');
     queryClient.clear();
@@ -95,6 +104,7 @@ export default function SettingsRoute() {
         onVerifyTotp={verifyTotp}
         onCancelMfa={cancelMfa}
         onSignOut={signOut}
+        onRetry={ref.current ? retry : undefined}
       />
     </View>
   );
