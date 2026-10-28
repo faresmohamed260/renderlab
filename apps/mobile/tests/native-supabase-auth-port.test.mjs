@@ -18,7 +18,8 @@ function setup() {
       async challengeAndVerify(value){calls.push(['totp',value.factorId]);return {data:{},error:null}},
     },
     async getSession(){calls.push(['session']);return {data:{session:{
-      access_token:'synthetic-only',expires_at:expiration}},error:null}},
+      access_token:'synthetic-only',expires_at:expiration,user:{id:'user-only'}}},error:null}},
+    async getUser(){calls.push(['getUser']);return {data:{user:{id:'user-only'}},error:null}},
     async signOut(opts){calls.push(['sign-out',opts.scope]);return {
       error:remoteFailure ? new Error('synthetic remote sensitive') : null}},
   };
@@ -67,4 +68,15 @@ test('remote global sign-out and encrypted local clear remain independent, fail 
     e.message==='Remote sign-out unconfirmed'&&!/sensitive/.test(e.message));
   await assert.rejects(()=>ctx.port.clearProtectedSession(),e=>
     e.message==='Protected native session unavailable'&&!/private/.test(e.message));
+});
+
+test('restoration verifies real SDK user against the persisted session user, never only cached JWT',async()=>{
+  const ctx=setup();
+  assert.equal(await ctx.port.verifySession(),true);
+  ctx.fake.getUser=async()=>({data:{user:{id:'different-user'}},error:null});
+  assert.equal(await ctx.port.verifySession(),false);
+  ctx.fake.getUser=async()=>{throw Error('private authentication failure')};
+  assert.equal(await ctx.port.verifySession(),false);
+  ctx.expire();
+  assert.equal(await ctx.port.verifySession(),false);
 });
