@@ -82,8 +82,17 @@ jobs:
             -storepass android -alias androiddebugkey | sed -n 's/^[[:space:]]*SHA256: //p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           ACTUAL="$("$SIGNER" verify --print-certs "$APK" | \
             sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          echo "Expected test certificate fingerprint length: ${#EXPECTED}"
+          echo "APK certificate fingerprint length: ${#ACTUAL}"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::APK signer certificate mismatch or verification parser mismatch"
+            echo "Expected synthetic test certificate SHA256: $EXPECTED"
+            echo "Actual APK signer certificate SHA256: $ACTUAL"
+            "$SIGNER" verify --print-certs "$APK" | grep -E 'certificate (DN|SHA-256 digest)' || true
+            exit 1
+          fi
           test -n "$EXPECTED"
-          test "$EXPECTED" = "$ACTUAL"
+          test -n "$ACTUAL"
           echo 'PASS: actual Expo SDK58 standalone debug APK has dev.renderlab.mobile and correct disposable QA signing certificate'
           echo 'PASS: development-client is source-configured; APK has no production Auth key, production signing or OTA'
       - name: Delete disposable APK and signing material (no hosted build artifacts)
