@@ -1,0 +1,98 @@
+name: Android M2 native HTTPS no-follow redirect proof
+on:
+  pull_request:
+    paths:
+      - apps/mobile/tools/android-m2-https-qa-screen.tsx
+      - apps/mobile/tools/android-m2-https-redirect-qa.py
+      - .github/workflows/android-m2-https-redirect-proof.yml
+permissions:
+  contents: read
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 38
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      JAVA_TOOL_OPTIONS: -Xmx3g -Dfile.encoding=UTF-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Enable emulator hardware acceleration
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+      - name: Deterministic install, synthetic tests and hard-disabled Auth gate
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          grep -q 'NATIVE_AUTH_RUNTIME_ENABLED = false' src/services/auth/native-auth-config.ts
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm test
+      - name: Build one-off TLS-trusting QA APK (no shipped trust or app identifier)
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          cp tools/android-m2-https-qa-screen.tsx 'src/app/(tabs)/settings.tsx'
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const cfg=JSON.parse(fs.readFileSync('app.json','utf8'));
+          if(cfg.expo.android.package || cfg.expo.updates?.url || cfg.expo.extra?.eas?.projectId) {
+            throw new Error('Unexpected production app identifier / OTA metadata');
+          }
+          cfg.expo.android.package='dev.renderlab.m2httpsqa';
+          cfg.expo.name='RenderLab local HTTPS redirect QA';
+          cfg.expo.slug='renderlab-m2-https-qa-only';
+          fs.writeFileSync('app.json',JSON.stringify(cfg,null,2));
+          NODE
+          npx expo prebuild --platform android --no-install --non-interactive
+          python3 tools/android-m2-https-redirect-qa.py prepare "$RUNNER_TEMP/m2-https-fixture" android
+          cd android
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain --max-workers=2
+          test -s app/build/outputs/apk/release/app-release.apk
+          unzip -l app/build/outputs/apk/release/app-release.apk | grep -q 'assets/index.android.bundle'
+      - name: Disposable emulator-only signing
+        run: |
+          set -euo pipefail
+          umask 077
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/m2-https-qa-only.p12" \
+            -alias m2-only -keyalg RSA -keysize 2048 -validity 1 \
+            -dname 'CN=RenderLab M2 HTTPS redirect QA only' \
+            -storepass changeit -keypass changeit >/dev/null
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -1)"
+          test -x "$SIGNER"
+          "$SIGNER" sign --ks "$RUNNER_TEMP/m2-https-qa-only.p12" --ks-key-alias m2-only \
+            --ks-pass pass:changeit --key-pass pass:changeit \
+            --out "$RUNNER_TEMP/m2-https-qa-only.apk" apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          "$SIGNER" verify "$RUNNER_TEMP/m2-https-qa-only.apk"
+      - name: Android 35 actual HTTPS redirect refusal and destination-hit proof
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          target: default
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: python3 apps/mobile/tools/android-m2-https-redirect-qa.py run "$RUNNER_TEMP/m2-https-qa-only.apk" "$RUNNER_TEMP/m2-https-fixture"
+      - name: Destroy ephemeral APK and all local TLS/signing keys
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/m2-https-qa-only.apk" "$RUNNER_TEMP/m2-https-qa-only.p12"
+          rm -rf "$RUNNER_TEMP/m2-https-fixture" apps/mobile/android
+          echo "No TLS CA, signing key, APK, credentials, production Auth, or privileged artifact persisted"
