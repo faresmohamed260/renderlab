@@ -10,3 +10,9 @@ ios/
 !.env.example
 expo-env.d.ts
 npm-debug.log*
+.local-build/
+*.apk
+*.aab
+*.keystore
+*.jks
+*.p12

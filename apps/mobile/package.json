@@ -51,7 +51,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "lint": "eslint src/app src/features src/services src/state src/theme",
-    "export:android": "expo export --platform android --output-dir dist-android"
+    "export:android": "expo export --platform android --output-dir dist-android",
+    "build:device": "node tools/build-local-dev-apk.mjs",
+    "start:device": "expo start --dev-client --host localhost"
   },
   "private": true,
   "overrides": {

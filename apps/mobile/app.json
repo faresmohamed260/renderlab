@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "RenderLab M0 Dev",
-    "slug": "renderlab-mobile-m0",
+    "name": "RenderLab Dev",
+    "slug": "renderlab-android-dev",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,7 +17,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "backgroundColor": "#090A0C"
+      "backgroundColor": "#090A0C",
+      "package": "dev.renderlab.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,7 +29,7 @@
       "expo-secure-store",
       "expo-system-ui"
     ],
-    "scheme": "renderlab-m0-dev",
+    "scheme": "renderlab-dev",
     "experiments": {
       "typedRoutes": true
     },

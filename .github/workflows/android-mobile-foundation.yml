@@ -1,7 +1,7 @@
 name: Android Mobile Foundation
 
 # Read-only mobile quality plus independent fail-closed dependency-security gate.
-# Nonproduction M0: no credentials, native signing, EAS provisioning or APK upload.
+# Nonproduction: stable local-only debug package; no production signing, EAS or APK upload.
 on:
   pull_request:
     paths:
@@ -49,8 +49,8 @@ jobs:
           const fs = require('node:fs');
           const cfg = JSON.parse(fs.readFileSync('app.json','utf8')).expo;
           const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
-          if (cfg.android?.package || cfg.extra?.eas?.projectId || cfg.updates?.url || pkg.private !== true) {
-            throw new Error('M0 must not contain a real application identifier, EAS project/update or publishable package');
+          if (cfg.android?.package !== 'dev.renderlab.mobile' || cfg.scheme !== 'renderlab-dev' || cfg.extra?.eas?.projectId || cfg.updates?.url || pkg.private !== true) {
+            throw new Error('Expected approved local debug identity without EAS or OTA provisioning');
           }
           if (cfg.userInterfaceStyle !== 'dark' || cfg.backgroundColor !== '#090A0C' ||
               !pkg.dependencies['expo-system-ui'] || !pkg.dependencies.uniwind) {
