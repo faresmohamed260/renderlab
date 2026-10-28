@@ -25,3 +25,17 @@ test('developer APK cannot turn on native Auth',()=>{
   assert.match(source('../src/services/auth/native-auth-config.ts'),/NATIVE_AUTH_RUNTIME_ENABLED\s*=\s*false\b/);
   assert.match(builder,/NATIVE_AUTH_RUNTIME_ENABLED/);
 });
+
+test('builder parses and CI mode fails before native commands or key generation', async()=>{
+  const {spawnSync}=await import('node:child_process');
+  const {fileURLToPath}=await import('node:url');
+  const path=fileURLToPath(new URL('../tools/build-local-dev-apk.mjs',import.meta.url));
+  const syntax=spawnSync(process.execPath,['--check',path],{encoding:'utf8'});
+  assert.equal(syntax.status,0,syntax.stderr);
+  const locked=spawnSync(process.execPath,[path],{
+    encoding:'utf8',
+    env:{...process.env,CI:'true'},
+  });
+  assert.notEqual(locked.status,0);
+  assert.match(locked.stderr,/Local owner computer only/);
+});

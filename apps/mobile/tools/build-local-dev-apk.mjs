@@ -16,7 +16,7 @@ const win=process.platform==='win32';
 function fail(msg){console.error('RenderLab dev build: '+msg);process.exit(1)}
 function hash(file){return createHash('sha256').update(readFileSync(file)).digest('hex')}
 function exec(command,args,cwd=root){
-  const result=spawnSync(command,args,{cwd,stdio:'inherit',shell:win});
+  const result=spawnSync(command,args,{cwd,stdio:'inherit',shell:win && /\.(cmd|bat)$/i.test(command)});
   if(result.error || result.status!==0)fail('Command failed: '+command+' '+args.join(' '));
 }
 if(process.env.CI || process.env.GITHUB_ACTIONS)fail('Local owner computer only; no hosted signing');
@@ -39,7 +39,8 @@ const gradle=readFileSync(join(native,'app','build.gradle'),'utf8');
 // Expo/React Native templates can sign from android/app/debug.keystore.
 // Never trust the template's generated default identity: overwrite it with
 // the same privately owned RenderLab key after EVERY clean prebuild.
-if(!/storeFile\s+file\(['"]debug\.keystore['"]\)/.test(gradle))
+if(!/storeFile\s+file\(['"]debug\.keystore['"]\)/.test(gradle) ||
+   !gradle.includes('signingConfig signingConfigs.debug'))
   fail('Generated Gradle debug signing configuration changed; inspect before signing');
 mkdirSync(join(homedir(),'.renderlab','android'),{recursive:true,mode:0o700});
 if(!existsSync(key)){
