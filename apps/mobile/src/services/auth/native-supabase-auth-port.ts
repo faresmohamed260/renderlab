@@ -27,6 +27,19 @@ export function createNativeSupabaseAuthPort(
         return false;
       }
     },
+    async verifySession() {
+      try {
+        const [{ data: identity, error: userError }, { data: session, error: sessionError }] =
+          await Promise.all([auth.getUser(), auth.getSession()]);
+        if (userError || sessionError || !identity.user?.id || !session.session ||
+            identity.user.id !== session.session.user?.id ||
+            !Number.isFinite(session.session.expires_at) ||
+            (session.session.expires_at ?? 0) <= Date.now() / 1000 + 15) return false;
+        return true;
+      } catch {
+        return false;
+      }
+    },
     async getAssurance() {
       try {
         const { data, error } = await auth.mfa.getAuthenticatorAssuranceLevel();

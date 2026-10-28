@@ -16,6 +16,7 @@ export function createNativeAuthForegroundLifecycle(
   auth: NativeRefreshAuth,
   invalidateLocalAdmission: () => void,
   onFailure: () => void,
+  onActive?: () => void | Promise<void>,
 ) {
   let subscribed = false;
   let active = false;
@@ -42,7 +43,10 @@ export function createNativeAuthForegroundLifecycle(
       active = true;
       // Resuming refresh never restores admission; it must be server-proven.
       invalidateLocalAdmission();
-      run(() => auth.startAutoRefresh());
+      run(() => {
+        const started = auth.startAutoRefresh();
+        return onActive ? Promise.resolve(started).then(() => onActive()) : started;
+      });
     }
   }
   return Object.freeze({

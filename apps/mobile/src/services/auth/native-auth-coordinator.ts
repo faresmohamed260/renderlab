@@ -15,6 +15,7 @@ type Factors = { all: Factor[]; totp: Factor[] };
 type Assurance = { currentLevel: unknown; nextLevel: unknown };
 export type NativeAuthPort = Readonly<{
   signIn: (credentials: Credentials) => Promise<boolean>;
+  verifySession: () => Promise<boolean>;
   getAssurance: () => Promise<unknown>;
   listFactors: () => Promise<unknown>;
   verifyTotp: (factorId: string, code: string) => Promise<boolean>;
@@ -99,6 +100,29 @@ export function createNativeAuthCoordinator(
     const gate = decideNativeMfaGate(snapshot);
     transition({ type: 'factors_checked', snapshot });
     if (gate.decision === 'ready') await checkServer(myEpoch);
+  }
+  /** Fresh SDK identity plus MFA plus RenderLab admission on every restore/resume. */
+  function restore(): Promise<void> {
+    if (signingOut || inFlight) return Promise.resolve();
+    const myEpoch = ++epoch;
+    transition({ type: 'begin_restore' });
+    const operation = (async () => {
+      try {
+        const verified = await auth.verifySession();
+        if (!active(myEpoch)) return;
+        if (!verified) {
+          transition({ type: 'session_missing' });
+          return;
+        }
+        transition({ type: 'session_restored' });
+        await checkFactors(myEpoch);
+      } catch {
+        if (active(myEpoch)) transition({ type: 'connection_failed' });
+      }
+    })();
+    inFlight = operation;
+    void operation.finally(() => { if (inFlight === operation) inFlight = null; });
+    return operation;
   }
   function startSignIn(credentials: Credentials): Promise<void> {
     if (signingOut || inFlight || current.stage !== 'signed_out' && current.stage !== 'access_denied'
@@ -193,6 +217,7 @@ export function createNativeAuthCoordinator(
   return Object.freeze({
     get state(): NativeAuthState { return current; },
     signIn: startSignIn,
+    restore,
     verifyTotp: submitTotp,
     signOut,
     /** Background, auth-user change, token expiration: clear UI admission. */

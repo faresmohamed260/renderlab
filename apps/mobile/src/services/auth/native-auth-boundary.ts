@@ -6,6 +6,7 @@
  */
 export type NativeAuthStage =
   | 'signed_out'
+  | 'restoring_session'
   | 'verifying_password'
   | 'checking_factors'
   | 'mfa_required'
@@ -21,6 +22,9 @@ export type NativeAuthState = Readonly<{
 }>;
 
 export type NativeAuthEvent =
+  | Readonly<{ type: 'begin_restore' }>
+  | Readonly<{ type: 'session_restored' }>
+  | Readonly<{ type: 'session_missing' }>
   | Readonly<{ type: 'begin_sign_in' }>
   | Readonly<{ type: 'password_verified' }>
   | Readonly<{ type: 'factors_checked'; snapshot: unknown }>
@@ -113,7 +117,11 @@ export function inspectNativeAdmission(response: unknown): NativeAdmissionDecisi
 export function transitionNativeAuth(
   previous: NativeAuthState, event: NativeAuthEvent,
 ): NativeAuthState {
-  if (event.type === 'sign_out' || event.type === 'session_invalidated') return SIGNED_OUT;
+  if (event.type === 'sign_out' || event.type === 'session_invalidated' || event.type === 'session_missing') return SIGNED_OUT;
+  if (event.type === 'begin_restore') return { stage: 'restoring_session' };
+  if (previous.stage === 'restoring_session' && event.type === 'session_restored') {
+    return { stage: 'checking_factors' };
+  }
   if (event.type === 'connection_failed') return { stage: 'unavailable' };
   if (event.type === 'begin_sign_in') {
     return previous.stage === 'signed_out' || previous.stage === 'access_denied'
