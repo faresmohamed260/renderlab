@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 /** Local free Expo development-server entrypoint for the stable dev client. */
 import { spawn } from 'node:child_process';
-import { createRequire } from 'node:module';
+import { join } from 'node:path';
 
-const require = createRequire(import.meta.url);
-const expoCli = require.resolve('expo/bin/cli');
+const expoCli = join(import.meta.dirname, '..', 'node_modules', 'expo', 'bin', 'cli');
 const server = spawn(process.execPath, [
   expoCli, 'start', '--dev-client', '--lan', '--port', '8081',
 ], {

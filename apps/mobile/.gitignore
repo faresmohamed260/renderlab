@@ -10,3 +10,11 @@ ios/
 !.env.example
 expo-env.d.ts
 npm-debug.log*
+# Never commit native signing or recovery material (even encrypted copies).
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.key
+*.pem
+*.cms

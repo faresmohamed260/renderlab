@@ -40,9 +40,9 @@ if (process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.EXPO_PUBLIC_SUPABASE_URL) {
   throw new Error('Production Supabase Auth configuration is prohibited in the development APK');
 }
-const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
-run(npx, ['expo', 'prebuild', '--platform', 'android', '--no-install', '--non-interactive']);
+const expoCli = join(mobileRoot, 'node_modules', 'expo', 'bin', 'cli');
+const gradle = join(mobileRoot, 'android', process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
+run(process.execPath, [expoCli, 'prebuild', '--platform', 'android', '--no-install', '--non-interactive']);
 // Source key stays outside the repository. The generated native tree is ignored
 // by Git; its temporary copy is removed even when compilation fails.
 try {
@@ -53,12 +53,14 @@ try {
     '-list', '-keystore', generatedKey, '-storepass', 'android',
     '-alias', 'androiddebugkey',
   ]);
-  run(process.platform === 'win32' ? join(mobileRoot, 'android', gradle)
-    : gradle, [
+  if (process.platform !== 'win32') chmodSync(gradle, 0o755);
+  const gradleArgs = [
     ':app:assembleDebug',
     '-PreactNativeArchitectures=arm64-v8a,x86_64',
     '--no-daemon', '--console=plain', '--max-workers=2',
-  ], variantEnv);
+  ];
+  if (process.platform === 'win32') run('cmd.exe', ['/c', gradle, ...gradleArgs], variantEnv);
+  else run(gradle, gradleArgs, variantEnv);
 } finally {
   if (existsSync(generatedKey)) unlinkSync(generatedKey);
 }
