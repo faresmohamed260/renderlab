@@ -49,24 +49,20 @@ export default function SettingsRoute() {
       },
     );
     if (!runtime) {
-      setCanRetry(false);
-      safeUpdate({ stage: 'unavailable' });
       return () => { mounted = false; };
     }
     const coordinator = createNativeAuthCoordinator(
       runtime.port, runtime.probe, safeUpdate,
     );
     ref.current = coordinator;
-    setCanRetry(true);
-    safeUpdate(coordinator.state);
+    queueMicrotask(() => { if (mounted) { setCanRetry(true); safeUpdate(coordinator.state); } });
     try {
       runtime.start();
     } catch {
       runtime.stop();
       coordinator.invalidate();
       ref.current = null;
-      setCanRetry(false);
-      safeUpdate({ stage: 'unavailable' });
+      queueMicrotask(() => { if (mounted) { setCanRetry(false); safeUpdate({ stage: 'unavailable' }); } });
     }
     return () => {
       mounted = false;
