@@ -60,7 +60,7 @@ jobs:
           npx expo prebuild --platform android --no-install --non-interactive
           python3 - <<'PY'
           from pathlib import Path
-          import re
+          from xml.etree import ElementTree as ET
           app = Path('android/app/src/main')
           manifest = (app / 'AndroidManifest.xml').read_text()
           expected = (
@@ -78,7 +78,8 @@ jobs:
               if not rules.exists():
                   raise AssertionError('Missing native merged-resource source: ' + filename)
               xml = rules.read_text()
-              excludes = re.findall(r'<exclude\\s+domain="sharedpref"\\s+path="SecureStore"\\s*/>', xml)
+              excludes = [el for el in ET.parse(rules).iter() if el.tag.endswith('exclude') and
+                          el.get('domain') == 'sharedpref' and el.get('path') == 'SecureStore']
               minimum = 2 if attribute == 'dataExtractionRules' else 1
               if len(excludes) < minimum:
                   raise AssertionError('SecureStore excluded in fewer backup paths than required: ' + filename)
