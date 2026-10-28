@@ -52,7 +52,7 @@ def capture_screen(tag: str) -> None:
     shot = subprocess.run(
         ["adb", "exec-out", "screencap", "-p"], capture_output=True, timeout=18,
     )
-    if shot.returncode != 0 or not shot.stdout.startswith(b"\\x89PNG"):
+    if shot.returncode != 0 or not shot.stdout.startswith(b"\x89PNG"):
         raise AssertionError(f"Unable to capture Android screen for {tag}")
     (EVIDENCE / f"{tag}.png").write_bytes(shot.stdout)
 
