@@ -1,8 +1,8 @@
 # Android M2 — native authentication, TOTP and authorized-session boundary
 
-**Execution:** `PLANNED` (**owner-approved phase contract**, implementation not started). **Repository:** `UNMERGED` (until #404 merges). **Deployment:** `NOT DEPLOYED`.
+**Execution:** `IN PROGRESS` (phase contract approved; synthetic-only implementation work has started in draft PR #405). **Repository:** `MERGED` (contract only, PR #404, merge `cc56da0fb898be9c803bd5154bf454f15a29d638`; feature code is separately unmerged). **Deployment:** `NOT DEPLOYED`.
 **Owner direction:** Continue toward an installed, production-backend-connected RenderLab Android app without WANDA, a second backend, a permanent Metro server or repeated APK reinstalls for approved presentation-only changes.
-**Decision gate:** The owner explicitly approved this phase contract on 2026-10-28. Under `AGENTS.md` Progressive Phase Planning, the contract **must merge before any M2 implementation**. Acceptance does not authorize real-account testing, secrets, Supabase/Auth configuration changes, production deploy, signing, APK distribution, OTA or parent PR merges.
+**Decision gate:** The owner explicitly approved this phase contract on 2026-10-28. Under `AGENTS.md` Progressive Phase Planning, this contract **merged before M2 feature implementation began**. Acceptance does not authorize real-account testing, secrets, Supabase/Auth configuration changes, production deploy, signing, APK distribution, OTA or parent PR merges.
 
 ## Goal and user value
 
