@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>RenderLab Android navigation — design review prototype v0.2</title>
+<style>
+:root{color-scheme:dark;background:#0b0f15;color:#f2f3f6;font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box}body{margin:0;padding:25px 18px 50px;background:#10141c}
+header{max-width:980px;margin:0 auto 22px}h1{font-size:23px;letter-spacing:-.03em;margin:0 0 8px}p{color:#afb8c6;margin:0}
+.wrap{display:flex;max-width:980px;margin:auto;gap:32px;align-items:start;flex-wrap:wrap}
+.phone{position:relative;flex:none;width:min(354.5px,90vw);aspect-ratio:709/1536;border:2px solid #434b58;border-radius:16px;overflow:hidden;background:#0b0f15;box-shadow:0 20px 80px #0008}
+.phone>img{width:100%;height:100%;display:block}
+.target{position:absolute;z-index:2;background:transparent;border:0;margin:0;cursor:pointer;color:transparent;font-size:0}
+.target:hover{outline:1.5px solid #97baff;outline-offset:-2px;background:#96b9ff19}.target:focus-visible{outline:2.5px solid #92bcff;outline-offset:-3px;background:#96b9ff29}
+.panel{flex:1;min-width:min(300px,80vw);max-width:510px}.panel h2{margin:0 0 6px;font-size:19px}.panel p{margin:0 0 16px}
+.buttons{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 19px}.buttons button{background:#202733;color:#eef2fa;border:1px solid #4c576b;border-radius:9px;padding:10px 11px;font:inherit;cursor:pointer}.buttons button:hover,.buttons button:focus-visible{border-color:#88b6ff;background:#2a3546}
+.note{border-left:3px solid #9ba9be;padding:8px 0 8px 12px;color:#b8c3d0;margin-top:18px}.status{color:#9fc6ff;min-height:42px;font-size:13px;margin:16px 0 4px}
+.flow{font-size:13px;color:#b3bac5;line-height:1.7;padding-left:18px}
+a{color:#aad0ff}strong{color:#f6f7f9}
+</style>
+</head>
+<body>
+<header><h1>RenderLab Android — v0.2 navigation review</h1><p>Interactive <strong>design-only</strong> overlay on the static SVG frames. No app, backend, login, real media or data writes.</p></header>
+<main class="wrap">
+<div class="phone" id="phone"><img id="frame" src="../penpot/android-instagram-feed-v02.svg" alt="Static RenderLab Library Feed v0.2 design review frame"/><div id="targets"></div></div>
+<section class="panel" aria-label="Design review controls"><h2 id="screenTitle">Library Feed</h2><p id="description">Private-media Feed is a root destination. Browse is a second view of the same Library.</p>
+<div class="buttons" aria-label="Review screen states">
+<button type="button" data-screen="feed">Feed root</button><button type="button" data-screen="browse">Browse root</button><button type="button" data-screen="collection">Contextual collection</button><button type="button" data-screen="filters">Filter sheet</button><button type="button" data-screen="media-actions">Media actions</button><button type="button" data-screen="scrolled-feed">Scrolled Feed</button><button type="button" data-screen="empty-library">Empty state</button><button type="button" data-screen="keyboard-focus">Keyboard focus</button><button type="button" data-screen="loading-library">Loading</button><button type="button" data-screen="error-library">Load error</button><button type="button" data-screen="signed-out">Signed out</button><button type="button" data-screen="delete-confirmation">Delete confirmation</button></div>
+<p class="status" id="status" aria-live="polite"></p>
+<div class="note"><strong>Navigation model:</strong> Feed and Browse are root Library views and keep the five-icon dock. Opening a specific Collection creates a contextual Grid with back navigation and no dock. The source/filter sheet and media-action sheet are overlays, not separate product destinations.</div>
+<ol class="flow"><li>Click or keyboard-activate <strong>Browse</strong> in the bottom bar.</li><li>Click <strong>Collections</strong> to open a context-only collection Grid. Use Back or Esc to return to Browse.</li><li>Use Browse overflow to inspect filtering and Upload discovery.</li><li>Use Feed asset overflow for labeled creative actions.</li></ol>
+<p class="note">Selection and media actions are visual proposals only. Create, Activity, Settings, Viewer, Upload and real filters have not been implemented here. Actual RenderLab mobile SDK58 touch, TalkBack and OS Back acceptance remains separate.</p></section>
+</main>
+<script>
+'use strict';
+const file={feed:'feed',browse:'browse',collection:'collection',filters:'filters','media-actions':'media-actions','scrolled-feed':'scrolled-feed','empty-library':'empty-library','keyboard-focus':'keyboard-focus','loading-library':'loading-library','error-library':'error-library','signed-out':'signed-out','delete-confirmation':'delete-confirmation'};
+const title={feed:'Library Feed — root',browse:'Library Browse — root',collection:'Landscapes — contextual collection',filters:'Browse controls — sheet','media-actions':'Media actions — sheet','scrolled-feed':'Feed scroll state', 'empty-library':'Empty Library state','keyboard-focus':'Keyboard focus state','loading-library':'Library loading state','error-library':'Library load error','signed-out':'Signed-out privacy gate','delete-confirmation':'Media deletion confirmation'};
+const desc={feed:'Vertical Feed, five root tabs, generated fixture and four-slide carousel.',browse:'Portrait 3:4 grid with five root tabs, existing Items/Collections/Generated/Uploads groupings.',collection:'Opened from Collections; Back returns to Browse with state preserved.',filters:'Search, Upload, source, media kind, Favorites and sort entry points.', 'media-actions':'Explicit actions and eligibility explanation for a generated image.', 'scrolled-feed':'Caption and next-item row clear the persistent bottom bar.', 'empty-library':'Truthful no-media state with explicit Upload entry point.', 'keyboard-focus':'Illustrative focus outline; not measured real-device focus.','loading-library':'Placeholder skeletons while owner media resolves.','error-library':'Network error without fabricated media; retry is explicit.','signed-out':'Private media hidden until sign-in and account admission.','delete-confirmation':'Destructive action requires explicit confirmation and owner permission.'};
+let screen='feed', previous='browse';
+const img=document.getElementById('frame'),targets=document.getElementById('targets'),status=document.getElementById('status');
+function change(next){if(next==='collection')previous='browse'; if(next==='filters')previous='browse';if(next==='media-actions')previous='feed'; if(!file[next])return;screen=next;img.src='../penpot/android-instagram-'+file[next]+'-v02.svg';img.alt=title[next]+' static design illustration';document.getElementById('screenTitle').textContent=title[next];document.getElementById('description').textContent=desc[next];status.textContent='Showing '+title[next]+' (concept only)';createTargets();}
+function back(){if(['collection','filters'].includes(screen))return change('browse');if(screen==='media-actions'||screen==='scrolled-feed')return change('feed');return change('feed')}
+function target(label,x,y,w,h,onclick){const b=document.createElement('button');b.type='button';b.className='target';b.setAttribute('aria-label',label);b.title=label;b.style.cssText=`left:${(x/709*100).toFixed(3)}%;top:${(y/1536*100).toFixed(3)}%;width:${(w/709*100).toFixed(3)}%;height:${(h/1536*100).toFixed(3)}%`;b.addEventListener('click',onclick);targets.appendChild(b)}
+function info(msg){status.textContent=msg+' — requires later app implementation'}
+function createTargets(){targets.replaceChildren();
+ if(['feed','browse','scrolled-feed','empty-library','keyboard-focus'].includes(screen)){
+  target('Feed root tab',0,1356,141,91,()=>change('feed'));target('Browse root tab',142,1356,141,91,()=>change('browse'));
+  target('Create root tab',284,1356,141,91,()=>info('Create root screen'));
+  target('Activity root tab',426,1356,141,91,()=>info('Activity root screen'));
+  target('Settings root tab',568,1356,141,91,()=>info('Settings root screen'));
+ }
+ if(['feed','scrolled-feed'].includes(screen)){
+  target('Create shortcut',0,76,86,89,()=>info('Create shortcut'));
+  target('Activity attention (no pending badge)',615,75,90,96,()=>info('Activity'));
+  target('Media asset actions',620,198,89,83,()=>change('media-actions'));
+  target('Scroll to next media — design preview',320,500,70,200,()=>change('scrolled-feed'));
+ }
+ if(['browse','keyboard-focus','empty-library'].includes(screen)){
+  target('Browse search',0,76,95,91,()=>change('filters'));
+  target('Browse menu and controls',612,76,97,91,()=>change('filters'));
+  target('Items',0,177,177,89,()=>change('browse'));
+  target('Collections',178,177,177,89,()=>change('collection'));
+  target('Generated media filter',355,177,177,89,()=>change('filters'));
+  target('Uploads source filter',532,177,177,89,()=>change('filters'));
+ }
+ if(screen==='collection'){
+  target('Back to Browse',0,72,105,105,back);
+  target('Collection options',615,75,94,102,()=>info('Collection options'));
+ }
+ if(screen==='filters'||screen==='media-actions'){
+  target('Close sheet',602,565,107,86,back);
+ }
+ if(screen==='empty-library')target('Upload media',212,908,289,80,()=>info('Upload media picker'));
+ if(screen==='delete-confirmation'){target('Cancel deletion',373,819,246,66,()=>change('feed'));target('Confirm deletion (not functional)',87,819,248,66,()=>info('Delete requires actual backend confirmation'));}
+ if(screen==='signed-out')target('Sign in (not connected)',201,863,307,70,()=>info('Native sign-in'));
+ if(screen==='error-library')target('Retry (not connected)',217,872,275,69,()=>info('Network retry')); 
+}
+document.querySelectorAll('[data-screen]').forEach(x=>x.addEventListener('click',()=>change(x.dataset.screen)));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'||event.key==='Backspace' && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){event.preventDefault();back()}});
+change('feed');
+</script>
+</body>
+</html>
