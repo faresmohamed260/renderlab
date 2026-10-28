@@ -92,7 +92,9 @@ export function NativeAuthPanel({
         <Text accessibilityRole="header" style={styles.heading}>RenderLab account</Text>
         {stage === 'unavailable' ? (
           <Text style={styles.note} accessibilityRole="alert">
-            Sign-in is unavailable. Private content remains locked.
+            {onRetry
+              ? 'Account verification unavailable. Private content remains locked.'
+              : 'Sign-in is unavailable in this build. Private content remains locked.'}
           </Text>
           {onRetry ? (
             <Button accessibilityLabel="Retry account verification"

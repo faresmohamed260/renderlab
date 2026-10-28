@@ -28,18 +28,19 @@ export function createNativeAuthEventBridge(
 ) {
   let started = false;
   let subscription: Subscription | null = null;
-  let queued = false;
+  let scheduled: ReturnType<typeof setTimeout> | null = null;
   function lock() {
     coordinator.invalidate();
     clearPrivateCache();
   }
   function scheduleRestore() {
-    if (queued) return;
-    queued = true;
-    void Promise.resolve().then(() => {
-      queued = false;
+    if (scheduled !== null) return;
+    // Auth SDK can hold its lock through the event callback and microtasks.
+    // Use a new macrotask, never a Supabase call inside the callback.
+    scheduled = setTimeout(() => {
+      scheduled = null;
       if (started && isForeground()) coordinator.requestRestore();
-    });
+    }, 0);
   }
   function eventReceived(event: string) {
     if (!started || event === 'INITIAL_SESSION') return;
@@ -69,12 +70,14 @@ export function createNativeAuthEventBridge(
       } catch {
         started = false;
         lock();
+        throw new Error('Native Auth event observer unavailable');
       }
     },
     stop() {
       if (!started) return;
       started = false;
-      queued = false;
+      if (scheduled !== null) clearTimeout(scheduled);
+      scheduled = null;
       subscription?.unsubscribe();
       subscription = null;
     },

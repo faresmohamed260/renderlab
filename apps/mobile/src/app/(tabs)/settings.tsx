@@ -56,7 +56,14 @@ export default function SettingsRoute() {
     );
     ref.current = coordinator;
     safeUpdate(coordinator.state);
-    runtime.start();
+    try {
+      runtime.start();
+    } catch {
+      runtime.stop();
+      coordinator.invalidate();
+      ref.current = null;
+      safeUpdate({ stage: 'unavailable' });
+    }
     return () => {
       mounted = false;
       runtime.stop();
