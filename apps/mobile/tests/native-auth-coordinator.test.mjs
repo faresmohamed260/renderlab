@@ -162,3 +162,42 @@ test('local protected session is wiped before slow remote revocation settles', a
   assert.equal(outcome.remoteRevocationConfirmed, true);
   assert.deepEqual(events, ['remote-start', 'clear-local', 'remote-done']);
 });
+
+test('restored session is never authorized until fresh identity, factors and first-party admission pass',async()=>{
+  const events=[];
+  const auth={
+    async verifySession(){events.push('getUser');return true;},
+    async signIn(){throw Error('restore must not request password');},
+    async getAssurance(){events.push('assurance');return assurance('aal1','aal1');},
+    async listFactors(){events.push('factors');return factors();},
+    async verifyTotp(){throw Error('no MFA factor');},
+    async getAccessToken(){events.push('session');return 'synthetic-token';},
+    async signOutRemote(){},async clearProtectedSession(){},
+  };
+  const states=[];
+  const c=createNativeAuthCoordinator(auth,async(token)=>{
+    assert.equal(token,'synthetic-token');
+    events.push('server');return admitted;
+  },state=>states.push(state.stage));
+  await c.restore();
+  assert.deepEqual(events,['getUser','assurance','factors','session','server']);
+  assert.deepEqual(states,['restoring_session','checking_factors','checking_admission','authorized']);
+});
+test('unverified or revoked restored session fails signed out before contacting RenderLab',async()=>{
+  const {coordinator,auth,events}=setup();
+  auth.verifySession=async()=>false;
+  await coordinator.restore();
+  assert.equal(coordinator.state.stage,'signed_out');
+  assert.equal(events.length,0);
+});
+test('restored session with MFA factor remains locked until current TOTP and server admission',async()=>{
+  const {coordinator,auth,events}=setup({
+    factorList:factors([FACTOR]),level:assurance('aal1','aal2'),
+  });
+  auth.verifySession=async()=>true;
+  await coordinator.restore();
+  assert.equal(coordinator.state.stage,'mfa_required');
+  assert.equal(events.includes('server'),false);
+  await coordinator.verifyTotp('123456');
+  assert.equal(coordinator.state.stage,'authorized');
+});
