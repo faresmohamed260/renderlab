@@ -107,7 +107,7 @@ export function NativeAuthPanel({
           </>
         ) : isSignedIn ? (
           <>
-            <Text accessibilityRole="status" style={styles.note}>
+            <Text accessibilityLiveRegion="polite" style={styles.note}>
               Account access confirmed by the RenderLab server.
             </Text>
             <Button accessibilityLabel="Sign out" isDisabled={working}
@@ -194,7 +194,7 @@ export function NativeAuthPanel({
             </Button>
           </>
         ) : (
-          <Text accessibilityRole="status" style={styles.note}>
+          <Text accessibilityLiveRegion="polite" style={styles.note}>
             Verifying your account access…
           </Text>
         )}

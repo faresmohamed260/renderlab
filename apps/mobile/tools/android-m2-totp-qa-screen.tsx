@@ -35,7 +35,7 @@ export default function SyntheticTotpQaRoute() {
     <View style={styles.container}>
       <Text accessibilityRole="header" style={styles.title}>M2 SYNTHETIC TOTP QA</Text>
       <Text style={styles.note}>Offline fixture. No real authentication or API calls.</Text>
-      <Text accessibilityRole="status" style={styles.note}>M2 QA STAGE: {state.stage}</Text>
+      <Text accessibilityLiveRegion="polite" style={styles.note}>M2 QA STAGE: {state.stage}</Text>
       <NativeAuthPanel
         stage={state.stage}
         onSignIn={async (email, password) => { await controller.signIn({ email, password }); }}
