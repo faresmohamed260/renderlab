@@ -1,7 +1,8 @@
 /**
  * Dormant native account presentation for the accepted Android M2 contract.
- * This component is intentionally NOT mounted in a route until owner-approved
- * public Auth configuration and a reviewed first-party admission transport.
+ * This component is mounted in Settings, but its runtime receives the
+ * unavailable state while native Auth is hard-disabled. No sign-in fields
+ * or protected account access are enabled in the current shipping candidate.
  * It never stores credentials, tokens, or TOTP in persistence or diagnostics.
  */
 import { useState } from 'react';

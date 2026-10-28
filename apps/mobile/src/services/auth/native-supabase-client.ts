@@ -1,7 +1,8 @@
 /**
  * Dormant SDK58 native Auth adapter. NO production Auth client is created
  * in the submitted app: NATIVE_AUTH_RUNTIME_ENABLED remains false, no
- * Supabase publishable key is supplied, and this module is not mounted.
+ * Supabase publishable key is supplied. Settings calls this gated factory,
+ * which returns null without instantiating a Supabase client.
  * Keep all application data behind RenderLab's first-party Next.js server.
  */
 import 'react-native-url-polyfill/auto';

@@ -1,7 +1,8 @@
 /**
  * M2 native Auth orchestration without network or production credentials.
  * Both Supabase Auth and the first-party server-admission transport are
- * injected. Nothing calls this module from an application screen yet.
+ * injected. Settings uses it only behind the disabled native Auth runtime
+ * gate; synthetic QA routes provide nonproduction proof of state transitions.
  * Authorization is impossible without a validated server profile response.
  */
 import {

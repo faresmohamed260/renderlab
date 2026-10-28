@@ -2,9 +2,12 @@
  * First-party read-only admission probe, NOT YET APPROVED for production bearer.
  * Accepts only the existing RenderLab GET /api/account/profile endpoint.
  *
- * Native SDK58 Android emulator separately proved a single local 302 was NOT
- * followed when fetch used redirect:'error' (CI run 40628610677). That is not
- * universal proof for HTTPS/physical devices; do not open the Auth gate yet.
+ * Real Android 35 SDK58 release-mode fetch proved local HTTP 302 refusal
+ * (40628610677), and synthetic HTTPS requests with a disposable trusted CA
+ * refused 302 same/cross-origin, 307 cross-origin and downgrade destinations
+ * without any follow (40667456928). Neither run used the production endpoint,
+ * real session credentials or R2. No physical-device assurance is established.
+ * Keep the production bearer gate disabled pending security/owner approval.
  */
 import type { NativeServerAdmissionPort } from './native-auth-coordinator.ts';
 export const NATIVE_PROFILE_ADMISSION_URL =
