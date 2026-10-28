@@ -68,3 +68,24 @@ test('refresh exceptions fail closed instead of making an authorized UI', async 
   assert.deepEqual(events, ['invalidate', 'invalidate', 'failure']);
   lifecycle.stop();
 });
+
+test('optional foreground admission restore runs only after starting refresh, not in background',async()=>{
+  const events=[],callbacks=new Set();
+  const source={currentState:'background',addEventListener(_event,fn){
+    callbacks.add(fn);return{remove(){callbacks.delete(fn)}};
+  }};
+  const lifecycle=createNativeAuthForegroundLifecycle(
+    source,{startAutoRefresh(){events.push('start');},
+      stopAutoRefresh(){events.push('stop');}},
+    ()=>events.push('lock'),()=>events.push('failed'),
+    ()=>{events.push('restore');},
+  );
+  lifecycle.start();
+  assert.deepEqual(events,['lock']);
+  for(const fn of callbacks)fn('active');
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(events,['lock','lock','start','restore']);
+  for(const fn of callbacks)fn('background');
+  assert.deepEqual(events.slice(-2),['lock','stop']);
+  lifecycle.stop();
+});
