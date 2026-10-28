@@ -44,10 +44,13 @@ def diagnostic():
               if 'ResumedActivity' in line or 'topResumedActivity' in line]
         print('QA top activity:',(hits[:2] or ['not reported']),flush=True)
         raw=adb('shell','logcat','-d','-s','AndroidRuntime:E','ReactNativeJS:E',timeout=25)
-        signatures=[line.strip()[:220] for line in raw.splitlines() if
+        lines=raw.splitlines()
+        signatures=[(i,line.strip()[:220]) for i,line in enumerate(lines) if
                     ('FATAL EXCEPTION' in line or 'Process: dev.renderlab.m2totpqa' in line or
                      'TypeError:' in line or 'Invariant Violation:' in line)]
         print('QA crash signatures:',signatures[-12:],flush=True)
+        for index,_ in signatures[-4:]:
+            print('QA AndroidRuntime traceback:', '\\n'.join(lines[max(0,index-1):index+34])[:7500],flush=True)
     except Exception as error:
         print('QA diagnostic unavailable:',type(error).__name__,flush=True)
 def sign_in():
