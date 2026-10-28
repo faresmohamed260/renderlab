@@ -1,8 +1,8 @@
 # Android M2 — native authentication, TOTP and authorized-session boundary
 
-**Execution:** `PLANNED` (proposed, **not accepted**). **Repository:** `UNMERGED`. **Deployment:** `NOT DEPLOYED`.
+**Execution:** `PLANNED` (**owner-approved phase contract**, implementation not started). **Repository:** `UNMERGED` (until #404 merges). **Deployment:** `NOT DEPLOYED`.
 **Owner direction:** Continue toward an installed, production-backend-connected RenderLab Android app without WANDA, a second backend, a permanent Metro server or repeated APK reinstalls for approved presentation-only changes.
-**Decision gate:** Under `AGENTS.md` Progressive Phase Planning, this phase contract **must be reviewed and merged before any M2 implementation**. This proposal does not authorize real-account testing, secrets, Supabase/Auth configuration changes, production deploy, signing, APK distribution, OTA or parent PR merges.
+**Decision gate:** The owner explicitly approved this phase contract on 2026-10-28. Under `AGENTS.md` Progressive Phase Planning, the contract **must merge before any M2 implementation**. Acceptance does not authorize real-account testing, secrets, Supabase/Auth configuration changes, production deploy, signing, APK distribution, OTA or parent PR merges.
 
 ## Goal and user value
 
@@ -48,7 +48,7 @@ This first native auth slice is deliberately smaller than the complete Instagram
 - **No data/schema implication:** M2 must not create tables, migrations, RLS policies or new Supabase/R2 resources. Public auth configuration uses the **existing** reviewed project only. No signup/invitation/admin policy changes.
 - **No UI redesign implied:** integration-first app Settings/auth presentation; exact native styling/a11y review required when screens exist. Web's accepted compact shell stays untouched.
 
-## Validation matrix (none of these tests are claimed as done by this proposal)
+## Validation matrix (M2 implementation tests are not claimed as done by contract acceptance)
 
 | Area | Required evidence |
 | --- | --- |
