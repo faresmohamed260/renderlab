@@ -92,6 +92,23 @@ The app's `RuntimeUiConfigProvider` refetches no-credential HTTPS JSON every **4
 
 **Outstanding:** a successful AOSP device-navigation rerun, Android native media/auth trust boundary, accessible visual review, approved package identity, signing, OTA and owner-authorized release. No production deployment, replacement APK distribution, shared-resource mutation, WANDA or metered sandbox.
 
+## Checkpoint 34 — x86_64 installed-emulator navigation **PASSED** (2026-10-28)
+
+**Verified evidence:** The third independent Google APIs Android 35 run, [Android SDK58 Standalone Emulator Proof 40622272456](https://github.com/faresmohamed260/renderlab/actions/runs/40622272456), on draft PR #403 exact source `9fdbe1a504b60e9afe80a72dd1be6ce14fa46540`, **PASSED**. Its disposable, release-mode x86_64 Android APK includes the embedded SDK58 JavaScript/Hermes bundle; CI signed it with a one-day ephemeral QA key, installed it on an Android emulator and used UIAutomator screen trees + actual ADB touch inputs to confirm:
+
+1. Cold start: on-screen `CREATIVE WORKSPACE` (Create).
+2. Bottom `Library` tab: `PRODUCTION CONNECTION`.
+3. Bottom `Activity` tab: `GENERATION HISTORY`.
+4. Bottom `Settings` tab: `DEVICE PREFERENCES`.
+5. Return to bottom `Create`, then press the `Open Library` content button: Library screen visible.
+6. Force-stop and cold restart: `CREATIVE WORKSPACE` loads again with **no Metro**.
+
+The test checked the native app process after navigation steps; [acceptance artifact 12788133451](https://github.com/faresmohamed260/renderlab/actions/runs/40622272456/artifacts/12788133451) contains eight nonsecret outputs (acceptance.txt plus seven UI hierarchy XML files). The QA APK and signing material were deleted on the CI runner. The two earlier parallel x86_64 test failures due to **system Pixel Launcher ANR** are retained as separate negative results in Checkpoint 33; they do not disprove this verified successful Android render/navigation trace. The [first failure screenshot](https://github.com/faresmohamed260/renderlab/actions/runs/40621393582/artifacts/12788167223) independently confirms the native UI was drawn behind the system dialog.
+
+**AOSP variant under test:** Follow-up no-system-launcher-disabling script and Android 35 AOSP target, plus success screenshots, ran under [workflow 40623561684](https://github.com/faresmohamed260/renderlab/actions/runs/40623561684) at source `5660fbbcef8d1da4a6ffe6feed7c306849314a4e`. At this documentation snapshot its final result was **not yet established**. Its in-flight run is independent of removal of the temporary workflow file from the PR branch.
+
+**Scope/next gates:** Installed-emulator launch, touch/navigation and no-Metro cold restart are **VERIFIED** for the temporary SDK58 scaffold. **NOT VERIFIED**: physical device APK distribution/launch, signed permanent package identity, OTA/EAS update channels, production bearer/Auth/TOTP, owner-scoped media, all-ABI build, actual live UI-config refresh on a device, accessibility review and finalized Instagram-style feed. Root config HTTP test is separately green; production route is **not deployed**. Expo patch compatibility drift and unpatched `node-forge` high-severity audit still block fully green native qualification. No release signing identity, production deploy, shared-resource changes, WANDA or metered development environment were used.
+
 ## Blocking security and acceptance gates
 
 1. **Product/Security/Architecture authority:** review M1 production-account access, actual native package ID and callback/deep-link identity, invitation/recovery and MFA, OS-encrypted `expo-secure-store` token lifecycle, logout/revocation, session refresh and login failure behavior. PR #399 M0 itself is still unmerged and has an unresolved Expo `node-forge` high-severity advisory.
