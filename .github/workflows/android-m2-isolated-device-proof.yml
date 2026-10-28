@@ -1,0 +1,106 @@
+name: Android M2 isolated device security proof
+on:
+  pull_request:
+    paths:
+      - apps/mobile/tools/android-m2-emulator-qa-screen.tsx
+      - apps/mobile/tools/android-m2-emulator-qa.py
+      - .github/workflows/android-m2-isolated-device-proof.yml
+permissions:
+  contents: read
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 37
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      JAVA_TOOL_OPTIONS: -Xmx3g -Dfile.encoding=UTF-8
+    steps:
+      - name: Checkout exact draft merge candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Install JDK 17
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Enable emulator KVM acceleration
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+      - name: Install locked Expo SDK58 dependencies
+        run: |
+          cd apps/mobile
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm test
+      - name: Compile isolated native proof screen without Metro
+        run: |
+          set -euo pipefail
+          cd apps/mobile
+          cp tools/android-m2-emulator-qa-screen.tsx 'src/app/(tabs)/settings.tsx'
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const p='app.json', cfg=JSON.parse(fs.readFileSync(p,'utf8'));
+          cfg.expo.android.package='dev.renderlab.m2syntheticqa';
+          cfg.expo.slug='renderlab-temporary-m2-security-device';
+          cfg.expo.name='RenderLab M2 QA ONLY';
+          fs.writeFileSync(p,JSON.stringify(cfg,null,2));
+          NODE
+          npx expo prebuild --platform android --no-install --non-interactive
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          assert '<application ' in s and 'usesCleartextTraffic' not in s
+          s=s.replace('<application ', '<application android:usesCleartextTraffic="true" ', 1)
+          p.write_text(s)
+          assert 'android:usesCleartextTraffic="true"' in p.read_text()
+          PY
+          cd android
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain --max-workers=2
+          test -s app/build/outputs/apk/release/app-release.apk
+          unzip -l app/build/outputs/apk/release/app-release.apk | grep -q 'assets/index.android.bundle'
+      - name: Throwaway emulator-only signing
+        run: |
+          set -euo pipefail
+          umask 077
+          KEYSTORE="$RUNNER_TEMP/m2-qa-only.p12"
+          OUT="$RUNNER_TEMP/m2-qa-only.apk"
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$KEYSTORE" \
+            -alias m2-only -keyalg RSA -keysize 2048 -validity 1 \
+            -dname 'CN=RenderLab M2 synthetic CI only' \
+            -storepass changeit -keypass changeit >/dev/null
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -1)"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" sign --ks "$KEYSTORE" --ks-key-alias m2-only \
+            --ks-pass pass:changeit --key-pass pass:changeit \
+            --out "$OUT" apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          "$APKSIGNER" verify "$OUT"
+      - name: Native storage and redirected-request proof
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          target: default
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: python3 apps/mobile/tools/android-m2-emulator-qa.py "$RUNNER_TEMP/m2-qa-only.apk"
+      - name: Destroy temporary signing and APK
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/m2-qa-only.apk" "$RUNNER_TEMP/m2-qa-only.p12"
+          rm -rf apps/mobile/android
+          echo "No real credentials, production requests or APK distribution"
