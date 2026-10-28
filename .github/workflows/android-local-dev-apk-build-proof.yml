@@ -1,0 +1,94 @@
+name: Android local development APK signing proof
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-local-dev-apk-build-proof.yml
+permissions:
+  contents: read
+jobs:
+  debug-apk:
+    name: One-off signed debug APK inspection, no artifact upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      JAVA_TOOL_OPTIONS: -Xmx3g -Dfile.encoding=UTF-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Verify fixed development-only identity, disabled Auth and JS build
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          node --check tools/build-local-dev-apk.mjs
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm test
+          node - <<'NODE'
+          const fs=require('fs');
+          const cfg=JSON.parse(fs.readFileSync('app.json','utf8')).expo;
+          const auth=fs.readFileSync('src/services/auth/native-auth-config.ts','utf8');
+          if(cfg.android?.package!=='dev.renderlab.mobile' || cfg.scheme!=='renderlab-dev' ||
+             cfg.updates?.url || cfg.extra?.eas?.projectId ||
+             !/NATIVE_AUTH_RUNTIME_ENABLED\s*=\s*false\b/.test(auth))
+            throw Error('Real Auth/OTA or unapproved package in development APK');
+          NODE
+      - name: Generate disposable native app and inspect Gradle signing contract
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --clean --no-install --non-interactive
+          grep -q "storeFile file('debug.keystore')" android/app/build.gradle
+          grep -q 'signingConfig signingConfigs.debug' android/app/build.gradle
+          test -d android/app
+      - name: Create throwaway test-only key and build debug APK
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          umask 077
+          keytool -genkeypair -noprompt -storetype PKCS12 \
+            -keystore "$RUNNER_TEMP/renderlab-dev-qa-only.keystore" \
+            -storepass android -keypass android -alias androiddebugkey \
+            -dname "CN=RenderLab Development APK QA ONLY, O=RenderLab" \
+            -keyalg RSA -keysize 3072 -validity 1 >/dev/null
+          cp "$RUNNER_TEMP/renderlab-dev-qa-only.keystore" android/app/debug.keystore
+          cd android
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PreactNativeArchitectures=x86_64 \
+            --no-daemon --console=plain --max-workers=2
+      - name: Verify signed native APK, package identity and EXACT test certificate
+        run: |
+          set -euo pipefail
+          APK=apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name aapt -type f | sort -V | tail -1)"
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)"
+          test -x "$AAPT"
+          test -x "$SIGNER"
+          "$AAPT" dump badging "$APK" | grep -q "package: name='dev.renderlab.mobile'"
+          "$SIGNER" verify "$APK"
+          EXPECTED="$(keytool -list -v -keystore "$RUNNER_TEMP/renderlab-dev-qa-only.keystore" \
+            -storepass android -alias androiddebugkey | sed -n 's/^[[:space:]]*SHA256: //p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          ACTUAL="$("$SIGNER" verify --print-certs "$APK" | \
+            sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          test -n "$EXPECTED"
+          test "$EXPECTED" = "$ACTUAL"
+          echo 'PASS: actual Expo SDK58 standalone debug APK has dev.renderlab.mobile and correct disposable QA signing certificate'
+          echo 'PASS: development-client is source-configured; APK has no production Auth key, production signing or OTA'
+      - name: Delete disposable APK and signing material (no hosted build artifacts)
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/renderlab-dev-qa-only.keystore"
+          rm -rf apps/mobile/android
+          echo 'No APK or signing identity uploaded, distributed, or stored'
