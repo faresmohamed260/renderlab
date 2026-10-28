@@ -34,9 +34,9 @@ test('missing adapter or invalid payload fails closed', async () => {
   for (const value of ['', 'x'.repeat(MAX_NATIVE_SESSION_BYTES + 1), '\ud800', '🎨'.repeat(451)]) {
     await assert.rejects(() => store.write(value), NativeSessionStorageUnavailable);
   }
-  const { records } = makeAdapter();
+  const { records, adapter: oversizedAdapter } = makeAdapter();
   records.set(RENDERLAB_NATIVE_SESSION_KEY, 'x'.repeat(MAX_NATIVE_SESSION_BYTES + 1));
-  await assert.rejects(() => store.read(), NativeSessionStorageUnavailable);
+  await assert.rejects(() => createGuardedNativeSessionStore(oversizedAdapter).read(), NativeSessionStorageUnavailable);
 });
 
 test('storage read/write/delete errors never silently fall back to plaintext', async () => {
