@@ -201,3 +201,41 @@ test('restored session with MFA factor remains locked until current TOTP and ser
   await coordinator.verifyTotp('123456');
   assert.equal(coordinator.state.stage,'authorized');
 });
+
+test('rejected password remains eligible for an explicit safe retry',async()=>{
+  const ctx=setup();
+  let attempts=0;
+  ctx.auth.signIn=async()=>{attempts++;return attempts>1};
+  await ctx.coordinator.signIn({email:'synthetic@example.test',password:'wrong-synthetic'});
+  assert.equal(ctx.coordinator.state.stage,'access_denied');
+  assert.equal(ctx.events.includes('server'),false);
+  await ctx.coordinator.signIn({email:'synthetic@example.test',password:'synthetic-retry'});
+  assert.equal(ctx.coordinator.state.stage,'authorized');
+  assert.equal(attempts,2);
+});
+test('refresh during a pending Auth request invalidates old admission and queues fresh restore',async()=>{
+  let unblock;
+  const gate=new Promise(r=>{unblock=r});
+  const events=[],states=[];
+  const auth={
+    async signIn(){events.push('start-signin');await gate;return true;},
+    async verifySession(){events.push('verify-session');return true;},
+    async getAssurance(){events.push('assurance');return assurance('aal1','aal1');},
+    async listFactors(){events.push('factors');return factors();},
+    async verifyTotp(){return false;},
+    async getAccessToken(){return 'synthetic';},
+    async signOutRemote(){},async clearProtectedSession(){}
+  };
+  const c=createNativeAuthCoordinator(auth,async()=>{events.push('server');return admitted;},
+    s=>states.push(s.stage));
+  const first=c.signIn({email:'synthetic@example.test',password:'synthetic-only'});
+  c.invalidate();
+  c.requestRestore();
+  assert.equal(c.state.stage,'signed_out');
+  unblock();
+  await first;
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(events,['start-signin','verify-session','assurance','factors','server']);
+  assert.equal(c.state.stage,'authorized');
+  assert.equal(states.filter(x=>x==='authorized').length,1);
+});
