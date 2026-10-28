@@ -79,7 +79,9 @@ export default function SettingsRoute() {
   }
   async function verifyTotp(code: string) {
     if (!ref.current) throw new Error('Native authenticator unavailable');
-    await ref.current.verifyTotp(code);
+    const controller = ref.current;
+    await controller.verifyTotp(code);
+    return controller.state.stage === 'authorized';
   }
   function retry() {
     const controller = ref.current;

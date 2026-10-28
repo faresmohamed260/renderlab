@@ -14,7 +14,7 @@ type Props = Readonly<{
   stage: NativeAuthStage;
   errorMessage?: string | null;
   onSignIn: (email: string, password: string) => Promise<void>;
-  onVerifyTotp: (code: string) => Promise<void>;
+  onVerifyTotp: (code: string) => Promise<boolean>;
   onCancelMfa: () => void;
   onRetry?: () => void;
   onSignOut: () => Promise<void>;
@@ -65,7 +65,8 @@ export function NativeAuthPanel({
     }
     setPending(true);
     try {
-      await onVerifyTotp(submittedCode);
+      const verified = await onVerifyTotp(submittedCode);
+      if (!verified) setLocalError('Verification was not completed. Check the current code and try again.');
     } catch {
       setLocalError('The code could not be verified.');
     } finally {
@@ -148,6 +149,11 @@ export function NativeAuthPanel({
             <Text style={styles.note}>
               Sign in with your existing RenderLab account. New account registration is unavailable.
             </Text>
+            {stage === 'access_denied' ? (
+              <Text accessibilityRole="alert" style={styles.error}>
+                Sign-in or account access was not accepted. Check your details and try again.
+              </Text>
+            ) : null
             <View style={styles.fields}>
               <TextInput
                 accessibilityLabel="Account email"
