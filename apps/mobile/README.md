@@ -1,16 +1,16 @@
 # RenderLab Android — Phase M0 development scaffold
 
-**Status:** implemented M0 nonproduction scaffold on a review branch; **not** an installed-device-verified or release-qualified app. Governing contract: `docs/architecture/MOBILE_APP_PHASE_M0_CONTRACT.md` and repository `AGENTS.md`.
+**Status:** the M0 nonproduction scaffold is unmerged and not release-qualified; draft #403 has **emulator-verified** standalone Android navigation but has **not** been installed or validated on the owner's physical phone. Governing contract: `docs/architecture/MOBILE_APP_PHASE_M0_CONTRACT.md` and repository `AGENTS.md`.
 
 ## Architecture
 
-Independent Expo SDK 58 / React Native / TypeScript / Expo Router app in `apps/mobile`. Four native tabs — Create, Library, Activity and Settings — are **placeholder scaffolds**, not product-complete features. Local gluestack-ui v5 (UniWind) Button and provider are generated from the maintained CLI. Colors mirror `docs/ui/UI_SYSTEM.md`. TanStack Query is wired for future server-owned data; Zustand is strictly local UI state. The typed API boundary currently performs URL validation only; it **does not make requests**, authenticate or read private data.
+Independent Expo SDK 58 / React Native / TypeScript / Expo Router app in `apps/mobile`. Four native tabs — Create, Library, Activity and Settings — are **placeholder scaffolds**, not product-complete features. Local gluestack-ui v5 (UniWind) Button and provider are generated from the maintained CLI. Colors mirror `docs/ui/UI_SYSTEM.md`. TanStack Query is wired for future server-owned data; Zustand is strictly local UI state. The original M0 typed API boundary performed URL validation only. This stacked draft now additionally makes an anonymous production guest probe and polls a strictly validated public UI configuration; **native authentication and private media are not implemented**.
 
 ## Local development
 
 Use Node 24 and the committed lockfile: `cd apps/mobile && npm ci`. Start Metro with `npm start` and work in an Expo-compatible development environment. Expo Fast Refresh updates JS/UI during development without rebuilding native binaries. Initial app installation is still required; native modules/permissions or runtime upgrades require another native build. A real device, Android development client, Expo/EAS account, OTA Update service, and credentials **have not been configured or validated**.
 
-Run `npm run typecheck`, `npm test`, `npm run lint`, `npm run export:android`, and `npx expo-doctor` before requesting review. `npm audit --omit=dev` must remain fail-closed for high/critical issues; Expo's current `node-forge` advisory is an unresolved **security blocker for release/credentials**. Passing metro export is not device-rendering proof.
+Run `npm run typecheck`, `npm test`, `npm run lint`, `npm run export:android`, and `npx expo-doctor` before requesting review. `npm audit --omit=dev --audit-level=high` remains fail-closed for high/critical findings. On committed draft #403 implementation code head `0b6e4099d576bbfb5ccedcfeef74927bb7fce217`, it passed with `node-forge` 1.4.2 and seven low-severity advisories; see Checkpoint 35. This is **not** approval to introduce production credentials or distribute a release. Expo JS export alone is not device-rendering proof; separate emulator evidence is recorded below.
 
 ## Security and provisioning limits
 
