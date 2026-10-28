@@ -1,0 +1,44 @@
+name: Android M2 temporary dependency lock proof
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-m2-temporary-lock-proof.yml
+permissions:
+  contents: read
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+      - name: Resolve exactly pinned Supabase SDK and React Native URL support
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --save-exact '@supabase/supabase-js@2.112.4' 'react-native-url-polyfill@2.0.0'
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm test
+          npx expo install --check
+          npm audit --omit=dev --audit-level=high
+      - name: Emit verified dependency patch (lossless compressed diff, no tokens)
+        run: |
+          set -euo pipefail
+          git diff -- apps/mobile/package.json apps/mobile/package-lock.json > "$RUNNER_TEMP/m2-deps.diff"
+          test -s "$RUNNER_TEMP/m2-deps.diff"
+          python3 - <<'PY'
+          import base64, gzip, os
+          p=os.environ['RUNNER_TEMP']+'/m2-deps.diff'
+          raw=open(p,'rb').read()
+          encoded=base64.b64encode(gzip.compress(raw,compresslevel=9)).decode('ascii')
+          print('M2_DEPENDENCY_PATCH_BEGIN')
+          for n in range(0,len(encoded),160):
+              print(encoded[n:n+160])
+          print('M2_DEPENDENCY_PATCH_END')
+          print('PATCH_BYTES',len(raw))
+          PY
