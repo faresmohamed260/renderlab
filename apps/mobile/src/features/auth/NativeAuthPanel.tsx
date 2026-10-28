@@ -92,6 +92,7 @@ export function NativeAuthPanel({
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.heading}>RenderLab account</Text>
         {stage === 'unavailable' ? (
+          <>
           <Text style={styles.note} accessibilityRole="alert">
             {onRetry
               ? 'Account verification unavailable. Private content remains locked.'
@@ -103,6 +104,7 @@ export function NativeAuthPanel({
               <ButtonText>Try again</ButtonText>
             </Button>
           ) : null}
+          </>
         ) : isSignedIn ? (
           <>
             <Text accessibilityRole="status" style={styles.note}>
