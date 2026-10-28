@@ -155,7 +155,7 @@ export function NativeAuthPanel({
               <Text accessibilityRole="alert" style={styles.error}>
                 Sign-in or account access was not accepted. Check your details and try again.
               </Text>
-            ) : null
+            ) : null}
             <View style={styles.fields}>
               <TextInput
                 accessibilityLabel="Account email"
