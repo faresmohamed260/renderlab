@@ -11,11 +11,14 @@ import { AppState } from 'react-native';
 import { getApprovedNativeAuthConfig } from './native-auth-config.ts';
 import { createNativeAuthForegroundLifecycle } from './native-auth-lifecycle.ts';
 import { createNativeSupabaseSecureStorage } from './native-supabase-storage.ts';
+import { createNativeSupabaseAuthPort } from './native-supabase-auth-port.ts';
+import { createNativeProfileAdmissionProbe } from './native-profile-admission.ts';
 
 /** Future integration must revalidate server-owned admission on every resume. */
 export function createDormantNativeSupabaseAuthRuntime(
   invalidateLocalAdmission: () => void,
   onRefreshFailure: () => void,
+  onResume: () => void | Promise<void>,
 ) {
   const config = getApprovedNativeAuthConfig();
   if (!config) return null;
@@ -41,11 +44,12 @@ export function createDormantNativeSupabaseAuthRuntime(
       AppState.addEventListener('change', state => callback(state === 'active' ? 'active' : 'background')),
   };
   const lifecycle = createNativeAuthForegroundLifecycle(
-    safeAppState, client.auth, invalidateLocalAdmission, onRefreshFailure,
+    safeAppState, client.auth, invalidateLocalAdmission, onRefreshFailure, onResume,
   );
   // Expose Auth only. Do not return the Supabase Data API client.
   return Object.freeze({
-    auth: client.auth,
+    port: createNativeSupabaseAuthPort(client.auth, protectedStorage),
+    probe: createNativeProfileAdmissionProbe(fetch),
     start: lifecycle.start,
     stop: lifecycle.stop,
   });

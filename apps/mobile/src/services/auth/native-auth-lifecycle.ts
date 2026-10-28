@@ -45,7 +45,9 @@ export function createNativeAuthForegroundLifecycle(
       invalidateLocalAdmission();
       run(() => {
         const started = auth.startAutoRefresh();
-        return onActive ? Promise.resolve(started).then(() => onActive()) : started;
+        return onActive ? Promise.resolve(started).then(() => {
+          if (active && subscribed) return onActive();
+        }) : started;
       });
     }
   }
