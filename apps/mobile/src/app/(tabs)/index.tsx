@@ -5,7 +5,7 @@ export default function CreateRoute() {
   const router = useRouter();
   return (
     <FoundationScreen
-      eyebrow="CREATIVE WORKSPACE · LIVE TEST"
+      eyebrow="CREATIVE WORKSPACE"
       title="Create"
       description="A native starting point for image and video creation. Generation controls will arrive only after secure API and product flow validation."
       milestone="Navigation and maintained UI component smoke only. No generation request is sent."
