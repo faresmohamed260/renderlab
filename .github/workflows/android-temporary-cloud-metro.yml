@@ -10,13 +10,42 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: android-temporary-cloud-metro-pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
+# PR path filters compare the entire PR, not just the latest commit.
+# Inspect the latest head commit so UI-only pushes don't relaunch/cancel Metro.
 jobs:
-  temporary-metro:
+  inspect-head:
+    name: Check explicit Metro launch request
     if: ${{ github.event.pull_request.number == 405 && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    outputs:
+      launch: ${{ steps.check.outputs.launch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: check
+        name: Gate cloud Metro startup to explicit launch commit
+        shell: bash
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=2 origin "$PR_HEAD_SHA"
+          MESSAGE="$(git show -s --format=%B "$PR_HEAD_SHA")"
+          if [[ "$MESSAGE" == *"[metro:start]"* ]]; then
+            echo 'launch=true' >> "$GITHUB_OUTPUT"
+            echo 'Explicit temporary Metro launch requested.'
+          else
+            echo 'launch=false' >> "$GITHUB_OUTPUT"
+            echo 'No launch request; preserving any existing Metro session.'
+          fi
+
+  temporary-metro:
+    needs: inspect-head
+    if: ${{ needs.inspect-head.outputs.launch == 'true' }}
+    concurrency:
+      group: android-temporary-cloud-metro-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     name: Temporary Expo SDK58 Metro over Cloudflare Quick Tunnel
     runs-on: ubuntu-latest
     timeout-minutes: 35
