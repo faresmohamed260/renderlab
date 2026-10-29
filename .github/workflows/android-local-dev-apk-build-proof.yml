@@ -81,7 +81,7 @@ jobs:
           EXPECTED="$(keytool -list -v -keystore "$RUNNER_TEMP/renderlab-dev-qa-only.keystore" \
             -storepass android -alias androiddebugkey | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
           ACTUAL="$("$SIGNER" verify --print-certs "$APK" | \
-            sed -n 's/^Signer #1 certificate SHA-256 digest:[[:space:]]*//p' | head -1 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+            sed -n -E 's/^(V[0-9]+ Signer:|Signer #[0-9]+) certificate SHA-256 digest:[[:space:]]*//p' | sort -u | head -1 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
           echo "Expected test certificate fingerprint length: ${#EXPECTED}"
           echo "APK certificate fingerprint length: ${#ACTUAL}"
           if [ "$EXPECTED" != "$ACTUAL" ]; then
