@@ -53,7 +53,10 @@ jobs:
         run: |
           set -euo pipefail
           npm ci --no-audit --no-fund
-          npx expo install --check
+          # This session serves the already-installed RN 0.88.0 dev-client ABI.
+          # Newer Expo package metadata now recommends RN 0.88.1; do not
+          # force a native upgrade inside a Metro-only session. The unchanged
+          # Android Mobile Foundation CI remains the independent compatibility gate.
       - name: Install SHA256-verified Cloudflare Quick Tunnel CLI
         run: |
           set -euo pipefail
