@@ -1,0 +1,158 @@
+name: RenderLab On-Demand Cloud Metro (temporary)
+
+# Temporary owner phone development only. No Codespaces, WANDA, paid sandbox,
+# production credentials, new backend, EAS/OTA, APK signing or deployment.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-temporary-cloud-metro.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-temporary-cloud-metro-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  temporary-metro:
+    if: ${{ github.event.pull_request.number == 405 && github.event.pull_request.head.repo.full_name == github.repository }}
+    name: Temporary Expo SDK58 Metro over Cloudflare Quick Tunnel
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Reject production Auth, provisioning and incompatible app identity
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const cfg = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo;
+          const auth = fs.readFileSync('src/services/auth/native-auth-config.ts', 'utf8');
+          if (cfg.android?.package !== 'dev.renderlab.mobile' ||
+              cfg.extra?.eas?.projectId || cfg.updates?.url ||
+              !/NATIVE_AUTH_RUNTIME_ENABLED\s*=\s*false\b/.test(auth)) {
+            throw Error('Refusing to expose an Auth-enabled, OTA or unapproved mobile app through Metro');
+          }
+          NODE
+          test -z "${EXPO_PUBLIC_SUPABASE_URL:-}"
+          test -z "${EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}"
+      - name: Install deterministic dependencies
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          npx expo install --check
+      - name: Install SHA256-verified Cloudflare Quick Tunnel CLI
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 3 \
+            https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-amd64 \
+            -o "$RUNNER_TEMP/cloudflared"
+          echo "e1bc0cf084fd9e590554fe769a86b1db46701c3f847a43d902f7b974a4e16298  $RUNNER_TEMP/cloudflared" | sha256sum --check -
+          chmod +x "$RUNNER_TEMP/cloudflared"
+          "$RUNNER_TEMP/cloudflared" --version
+      - name: Open short-lived tunnel and Metro; refresh source from PR while active
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          TUNNEL_LOG="$RUNNER_TEMP/renderlab-cloudflared.log"
+          METRO_LOG="$RUNNER_TEMP/renderlab-metro.log"
+          "$RUNNER_TEMP/cloudflared" tunnel --no-autoupdate --url http://localhost:8081 --output json >"$TUNNEL_LOG" 2>&1 &
+          TUNNEL_PID=$!
+          METRO_PID=""
+          cleanup() {
+            if [ -n "$METRO_PID" ]; then kill "$METRO_PID" 2>/dev/null || true; fi
+            kill "$TUNNEL_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          TUNNEL_URL=""
+          for i in $(seq 1 60); do
+            TUNNEL_URL="$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_LOG" | head -1 || true)"
+            if [ -n "$TUNNEL_URL" ]; then break; fi
+            if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
+              echo "::error::Cloudflare Quick Tunnel process terminated"
+              tail -30 "$TUNNEL_LOG"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [ -z "$TUNNEL_URL" ]; then
+            echo "::error::No Quick Tunnel URL from Cloudflare"
+            tail -30 "$TUNNEL_LOG"
+            exit 1
+          fi
+          export EXPO_PACKAGER_PROXY_URL="$TUNNEL_URL"
+          npx expo start --dev-client --host lan --port 8081 >"$METRO_LOG" 2>&1 &
+          METRO_PID=$!
+          READY=0
+          for i in $(seq 1 45); do
+            if ! kill -0 "$METRO_PID" 2>/dev/null; then
+              echo "::error::Metro exited before startup"
+              tail -70 "$METRO_LOG"
+              exit 1
+            fi
+            STATUS="$(curl -sS -o "$RUNNER_TEMP/android-manifest-response" -w '%{http_code}' \
+              --max-time 10 -H 'expo-platform: android' \
+              -H 'Accept: application/expo+json, application/json' "$TUNNEL_URL/" || true)"
+            if [ "$STATUS" = '200' ]; then READY=1; break; fi
+            sleep 2
+          done
+          if [ "$READY" != 1 ]; then
+            echo "::error::Metro manifest never returned HTTP 200 through the HTTPS tunnel"
+            tail -70 "$METRO_LOG"
+            tail -30 "$TUNNEL_LOG"
+            exit 1
+          fi
+          echo "PASS: Android manifest endpoint responds HTTP 200 over an ephemeral HTTPS Quick Tunnel"
+          echo "::notice title=RenderLab cloud Metro::Open RenderLab Dev > Enter URL manually > $TUNNEL_URL"
+          {
+            echo '## RenderLab temporary cloud Metro is running'
+            echo ''
+            echo "**Manifest URL (paste into RenderLab Dev launcher):** \`$TUNNEL_URL\`"
+            echo ''
+            echo 'This URL is temporary and publicly reachable by anyone who knows it. Do not enter real account credentials.'
+            echo 'The runner automatically stops after approximately 25 minutes of active testing. No production or native Auth is enabled.'
+            echo ''
+            echo "Source branch: \`feature/android-m2-synthetic-auth-boundary-20261028\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "=== RENDERLAB METRO MANIFEST URL: $TUNNEL_URL ==="
+          echo '=== Enter the HTTPS URL in the installed Expo development launcher ==='
+          echo '=== Runner will stop automatically after 25 minutes; new session needs Re-run jobs ==='
+          # During this bounded session, pull only safe JS/TS source updates.
+          # Native/dependency/config changes are intentionally not hot-applied.
+          for i in $(seq 1 125); do
+            sleep 12
+            if ! kill -0 "$TUNNEL_PID" 2>/dev/null || ! kill -0 "$METRO_PID" 2>/dev/null; then
+              echo "::error::Cloud Metro or Quick Tunnel stopped unexpectedly"
+              tail -35 "$METRO_LOG" || true
+              exit 1
+            fi
+            if git -C "$GITHUB_WORKSPACE" fetch --quiet --no-tags --depth=1 origin \
+              refs/heads/feature/android-m2-synthetic-auth-boundary-20261028; then
+              TARGET="$(git -C "$GITHUB_WORKSPACE" rev-parse FETCH_HEAD)"
+              CURRENT="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+              if [ "$TARGET" != "$CURRENT" ]; then
+                CHANGED="$(git -C "$GITHUB_WORKSPACE" diff --name-only "$CURRENT" "$TARGET")"
+                if printf '%s\n' "$CHANGED" | grep -E '^(apps/mobile/(package(-lock)?\.json|app\.json|babel\.config\.[^/]+|metro\.config\.[^/]+|tools/|src/services/auth/native-auth-config\.ts)|\.github/workflows/android-temporary-cloud-metro\.yml)$' >/dev/null; then
+                  echo 'Source changed in a native/build-sensitive area; ending Metro session safely'
+                  exit 1
+                fi
+                git -C "$GITHUB_WORKSPACE" reset --hard "$TARGET"
+                echo "Fast Refresh source updated to $TARGET"
+              fi
+            fi
+          done
+          echo 'Expected 25-minute cloud session has ended; the HTTPS URL is no longer active'
