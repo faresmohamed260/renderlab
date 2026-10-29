@@ -1,0 +1,201 @@
+name: RenderLab On-Demand Cloud Metro (temporary)
+
+# Temporary owner phone development only. No Codespaces, WANDA, paid sandbox,
+# production credentials, new backend, EAS/OTA, APK signing or deployment.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-temporary-cloud-metro.yml
+
+permissions:
+  contents: read
+
+# PR path filters compare the entire PR, not just the latest commit.
+# Inspect the latest head commit so UI-only pushes don't relaunch/cancel Metro.
+jobs:
+  inspect-head:
+    name: Check explicit Metro launch request
+    if: ${{ github.event.pull_request.number == 405 && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    outputs:
+      launch: ${{ steps.check.outputs.launch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: check
+        name: Gate cloud Metro startup to explicit launch commit
+        shell: bash
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=2 origin "$PR_HEAD_SHA"
+          MESSAGE="$(git show -s --format=%B "$PR_HEAD_SHA")"
+          if [[ "$MESSAGE" == *"[metro:start]"* ]]; then
+            echo 'launch=true' >> "$GITHUB_OUTPUT"
+            echo 'Explicit temporary Metro launch requested.'
+          else
+            echo 'launch=false' >> "$GITHUB_OUTPUT"
+            echo 'No launch request; preserving any existing Metro session.'
+          fi
+
+  temporary-metro:
+    needs: inspect-head
+    if: ${{ needs.inspect-head.outputs.launch == 'true' }}
+    concurrency:
+      group: android-temporary-cloud-metro-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    name: Temporary Expo SDK58 Metro over Cloudflare Quick Tunnel
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Reject production Auth, provisioning and incompatible app identity
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const cfg = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo;
+          const auth = fs.readFileSync('src/services/auth/native-auth-config.ts', 'utf8');
+          if (cfg.android?.package !== 'dev.renderlab.mobile' ||
+              cfg.extra?.eas?.projectId || cfg.updates?.url ||
+              !/NATIVE_AUTH_RUNTIME_ENABLED\s*=\s*false\b/.test(auth)) {
+            throw Error('Refusing to expose an Auth-enabled, OTA or unapproved mobile app through Metro');
+          }
+          NODE
+          test -z "${EXPO_PUBLIC_SUPABASE_URL:-}"
+          test -z "${EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}"
+      - name: Install deterministic dependencies
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          # This session serves the already-installed RN 0.88.0 dev-client ABI.
+          # Newer Expo package metadata now recommends RN 0.88.1; do not
+          # force a native upgrade inside a Metro-only session. The unchanged
+          # Android Mobile Foundation CI remains the independent compatibility gate.
+      - name: Install SHA256-verified Cloudflare Quick Tunnel CLI
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 3 \
+            https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-amd64 \
+            -o "$RUNNER_TEMP/cloudflared"
+          echo "e1bc0cf084fd9e590554fe769a86b1db46701c3f847a43d902f7b974a4e16298  $RUNNER_TEMP/cloudflared" | sha256sum --check -
+          chmod +x "$RUNNER_TEMP/cloudflared"
+          "$RUNNER_TEMP/cloudflared" --version
+      - name: Open quick tunnel, start Metro and verify Android HTTPS manifest
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          TUNNEL_LOG="$RUNNER_TEMP/renderlab-cloudflared.log"
+          METRO_LOG="$RUNNER_TEMP/renderlab-metro.log"
+          "$RUNNER_TEMP/cloudflared" tunnel --no-autoupdate --url http://localhost:8081 --output json >"$TUNNEL_LOG" 2>&1 &
+          TUNNEL_PID=$!
+          TUNNEL_URL=""
+          for i in $(seq 1 60); do
+            TUNNEL_URL="$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_LOG" | head -1 || true)"
+            if [ -n "$TUNNEL_URL" ]; then break; fi
+            if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
+              echo "::error::Cloudflare Quick Tunnel exited before startup"
+              tail -35 "$TUNNEL_LOG"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [ -z "$TUNNEL_URL" ]; then
+            echo "::error::No public tunnel URL was returned"
+            tail -35 "$TUNNEL_LOG"
+            exit 1
+          fi
+          export EXPO_PACKAGER_PROXY_URL="$TUNNEL_URL"
+          npx expo start --dev-client --host lan --port 8081 >"$METRO_LOG" 2>&1 &
+          METRO_PID=$!
+          READY=0
+          for i in $(seq 1 45); do
+            if ! kill -0 "$METRO_PID" 2>/dev/null; then
+              echo "::error::Metro exited before its Android manifest became reachable"
+              tail -65 "$METRO_LOG"
+              exit 1
+            fi
+            STATUS="$(curl -sS -o "$RUNNER_TEMP/android-manifest-response" -w '%{http_code}' \
+              --max-time 10 -H 'expo-platform: android' \
+              -H 'Accept: application/expo+json, application/json' "$TUNNEL_URL/" || true)"
+            if [ "$STATUS" = '200' ]; then READY=1; break; fi
+            sleep 2
+          done
+          if [ "$READY" != 1 ]; then
+            echo "::error::Public HTTPS Android manifest did not return 200"
+            tail -65 "$METRO_LOG"
+            tail -35 "$TUNNEL_LOG"
+            exit 1
+          fi
+          # GitHub Actions allows these background services to persist between steps.
+          echo "RENDERLAB_METRO_PID=$METRO_PID" >> "$GITHUB_ENV"
+          echo "RENDERLAB_TUNNEL_PID=$TUNNEL_PID" >> "$GITHUB_ENV"
+          echo "RENDERLAB_TUNNEL_URL=$TUNNEL_URL" >> "$GITHUB_ENV"
+          printf '%s\n' "$TUNNEL_URL" > "$RUNNER_TEMP/renderlab-cloud-metro-url.txt"
+          {
+            echo '## RenderLab temporary cloud Metro'
+            echo ''
+            echo "Paste this HTTPS address into **RenderLab Dev → Enter URL manually**:"
+            echo ''
+            echo "\\`$TUNNEL_URL\\`"
+            echo ''
+            echo 'No real credentials; this temporary debug endpoint is public to anyone with its URL.'
+            echo 'The session expires automatically after approximately 20 minutes.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Temporary Android Metro URL::$TUNNEL_URL"
+          echo "PASS: Android manifest reachable via $TUNNEL_URL"
+      - name: Publish session URL before the temporary Metro window
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: renderlab-temporary-metro-url
+          path: ${{ runner.temp }}/renderlab-cloud-metro-url.txt
+          if-no-files-found: error
+          retention-days: 1
+      - name: Serve the phone temporarily and refresh safe JS/TS source from draft PR
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          cleanup() {
+            kill "$RENDERLAB_METRO_PID" "$RENDERLAB_TUNNEL_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          echo "Metro is available at $RENDERLAB_TUNNEL_URL (expires after this step)."
+          for i in $(seq 1 100); do
+            sleep 12
+            if ! kill -0 "$RENDERLAB_METRO_PID" 2>/dev/null || ! kill -0 "$RENDERLAB_TUNNEL_PID" 2>/dev/null; then
+              echo "::error::Metro or Quick Tunnel stopped unexpectedly"
+              tail -35 "$RUNNER_TEMP/renderlab-metro.log" || true
+              exit 1
+            fi
+            if git -C "$GITHUB_WORKSPACE" fetch --quiet --no-tags --depth=1 origin \
+              refs/heads/feature/android-m2-synthetic-auth-boundary-20261028; then
+              TARGET="$(git -C "$GITHUB_WORKSPACE" rev-parse FETCH_HEAD)"
+              CURRENT="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+              if [ "$TARGET" != "$CURRENT" ]; then
+                CHANGED="$(git -C "$GITHUB_WORKSPACE" diff --name-only "$CURRENT" "$TARGET")"
+                if printf '%s\n' "$CHANGED" | grep -E '^apps/mobile/(package(-lock)?\.json|app\.json|babel\.config\.|metro\.config\.|tools/|src/services/auth/native-auth-config\.ts)' >/dev/null; then
+                  echo "::warning::Native/dependency/build-sensitive change detected. End session; rebuild APK if needed."
+                  exit 1
+                fi
+                git -C "$GITHUB_WORKSPACE" reset --hard "$TARGET"
+                echo "Fast Refresh source updated to $TARGET"
+              fi
+            fi
+          done
+          echo 'Temporary cloud Metro session ended normally; tunnel stopped.'
