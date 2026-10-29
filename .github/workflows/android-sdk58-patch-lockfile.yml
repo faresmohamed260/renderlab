@@ -1,0 +1,64 @@
+name: Android SDK58 one-off lockfile refresh
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-sdk58-patch-lockfile.yml
+permissions:
+  contents: write
+jobs:
+  locked-patch:
+    if: >-
+      github.event.pull_request.number == 405 &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'feature/android-m2-synthetic-auth-boundary-20261028'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/mobile
+        shell: bash
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Refresh only SDK58 published compatibility patches
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = feature/android-m2-synthetic-auth-boundary-20261028
+          grep -q 'NATIVE_AUTH_RUNTIME_ENABLED = false' src/services/auth/native-auth-config.ts
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --save-prefix '~' \
+            'expo@~58.0.21' \
+            'expo-constants@~58.0.14' \
+            'expo-dev-client@~58.0.17' \
+            'expo-font@~58.0.11' \
+            'expo-linking@~58.0.15' \
+            'expo-router@~58.0.28' \
+            'expo-system-ui@~58.0.7'
+          git diff --check
+          test "$(git diff --name-only | sort)" = "$(printf 'apps/mobile/package-lock.json\napps/mobile/package.json')"
+          npm ci --no-audit --no-fund
+          npx expo install --check
+          npx --yes expo-doctor@latest
+          npm run typecheck
+          npm test
+          npm run lint
+          npm audit --omit=dev --audit-level=high
+      - name: Commit only deterministic mobile manifest and lockfile to existing draft
+        working-directory: .
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- apps/mobile/package.json apps/mobile/package-lock.json
+          git diff --cached --check
+          git commit -m 'chore(android): align Expo SDK58 patch lockfile with current compatibility matrix'
+          git push origin HEAD:refs/heads/feature/android-m2-synthetic-auth-boundary-20261028
