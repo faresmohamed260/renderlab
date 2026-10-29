@@ -1,0 +1,560 @@
+name: Instagram clone Expo Go reference lab
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/instagram-clone-expo-go-ui-smoke.yml
+      - .github/workflows/instagram-clone-feed-grid-smoke.yml
+      - .github/reference-tests/instagram-clone-offline-fixture.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: instagram-expo-go-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-expo-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - name: Node 24 for the original Expo 53 lockfile
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+
+      - name: Fetch pinned MIT-licensed clone, without RenderLab checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout --depth=1 https://github.com/hernanhawryluk/instagram-clone-app.git clone
+          cd clone
+          git fetch --no-tags --depth=1 origin 24777fc335530a9c4285c7ef5974053ba7b39104
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "24777fc335530a9c4285c7ef5974053ba7b39104"
+          test -f LICENSE
+
+      - name: Install clone dependencies without lifecycle scripts
+        working-directory: clone
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Record unresolved security findings
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > "$RUNNER_TEMP/instagram-clone-audit.json" || true
+          node -e 'const a=require(process.env.RUNNER_TEMP+"/instagram-clone-audit.json");console.log("EXPERIMENT ONLY; audit remains red:",JSON.stringify(a.metadata.vulnerabilities))'
+
+      - name: Open existing signed-out UI; disable outside Firebase connectivity
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          app = Path('App.js')
+          s = app.read_text()
+          old = 'import AuthNavigation from "./src/navigation/AuthNavigation";'
+          assert s.count(old) == 1
+          app.write_text(s.replace(old, 'import AuthNavigation from "./src/navigation/SignedOutStack";'))
+          # All cloned server credentials are disabled for the throwaway test.
+          firebase = Path("src/services/firebase.js")
+          assert firebase.is_file()
+          firebase.write_text("export const auth = null;\nexport const db = null;\n")
+          # Inhibit submission of test credentials.
+          form = Path("src/components/login/LoginForm.jsx")
+          s = form.read_text()
+          old = 'onLogin(values.email, values.password);'
+          assert s.count(old) == 1
+          form.write_text(s.replace(old, 'return; // login disabled in isolated UI reference test'))
+          import json
+          config_path = Path('app.json')
+          config = json.loads(config_path.read_text())
+          config['expo'].pop('extra', None)  # disassociate original owner's EAS project
+          config_path.write_text(json.dumps(config, indent=2) + '\n')
+          print('Existing login UI selected; no Firebase, no third-party EAS project, no submissions.')
+          PY
+
+      - name: Enable KVM for Android emulator
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+
+      - name: Write standalone emulator smoke-test script
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > clone/ci-expo-go-emulator.sh <<'EXPO_GO_SCRIPT_FILE'
+          set -euo pipefail
+          cd clone
+          mkdir -p ../reference-evidence
+          # Expo's published SDK 53 Android APK, linked at expo.dev/go?sdkVersion=53.
+          curl -fL --retry 3 --max-time 180               'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-2.33.22/Expo-Go-2.33.22.apk'               -o /tmp/expo-go-53.apk
+          test -s /tmp/expo-go-53.apk
+          adb install -r /tmp/expo-go-53.apk
+          # Block accidental external services: only the ADB-reversed loopback Metro connection is needed.
+          adb shell svc wifi disable || true
+          adb shell cmd connectivity airplane-mode enable || true
+          # CI mode disables Fast Refresh, while offline prevents a login/signature prompt.
+          nohup env -u CI EXPO_OFFLINE=1 npx expo start --go --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
+          for n in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'
+          adb reverse tcp:8081 tcp:8081
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 55
+          adb exec-out screencap -p > ../reference-evidence/before.png
+          adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/window.xml > ../reference-evidence/before-window.xml 2>/dev/null || true
+          adb shell dumpsys window | grep 'mCurrentFocus' | tail -1 > ../reference-evidence/initial-window-focus.txt || true
+          if grep -q 'ErrorActivity' ../reference-evidence/initial-window-focus.txt; then
+            echo 'Expo Go showed its error activity instead of the clone UI.' >&2
+            exit 1
+          fi
+          if grep -qi 'An Expo user account is required' ../reference-evidence/metro.log; then
+            echo 'Expo CLI attempted login; offline-only test is not ready.' >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/screens/Login.jsx')
+          s=p.read_text()
+          old='backgroundColor: "#000",'
+          assert old in s
+          p.write_text(s.replace(old,'backgroundColor: "#171717",',1))
+          print('Modified ORIGINAL login UI stylesheet only; original SDK 53 APK stays installed.')
+          PY
+          # This checks automatic updates first, then explicitly reloads JS (never reinstalls APK).
+          sleep 30
+          adb exec-out screencap -p > ../reference-evidence/after-hot.png
+          adb shell am force-stop host.exp.exponent || true
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 45
+          adb exec-out screencap -p > ../reference-evidence/after-reload.png
+          curl -fsS --max-time 170 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/updated.js
+          grep -q '#171717' /tmp/updated.js
+          sha256sum ../reference-evidence/*.png > ../reference-evidence/screenshot-checksums.txt
+          adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity|host.exp.exponent' | tail -20 > ../reference-evidence/activity.txt || true
+          adb logcat -d -s ReactNativeJS:E AndroidRuntime:E | tail -120 > ../reference-evidence/android-errors.log || true
+          echo "Expo Go installed once; Android JS edit served. Screenshots captured for review."
+          EXPO_GO_SCRIPT_FILE
+          chmod +x clone/ci-expo-go-emulator.sh
+
+      - name: Launch official SDK 53 Expo Go and test no-APK-rebuild UI reload
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash clone/ci-expo-go-emulator.sh
+
+      - name: Keep only screenshots/logs; do not upload APKs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: expo-go-reference-evidence
+          path: reference-evidence/
+          if-no-files-found: warn
+          retention-days: 7
+
+  reference-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - name: Checkout test-only fixtures from RenderLab PR (read-only)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Node 24 for original clone lockfile
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+
+      - name: Fetch pinned, MIT-licensed Instagram clone in isolated directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout --depth=1 https://github.com/hernanhawryluk/instagram-clone-app.git clone
+          cd clone
+          git fetch --no-tags --depth=1 origin 24777fc335530a9c4285c7ef5974053ba7b39104
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "24777fc335530a9c4285c7ef5974053ba7b39104"
+          test -f LICENSE
+
+      - name: Install untrusted clone dependencies without lifecycle scripts
+        working-directory: clone
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Show unresolved audit risk, no release approval
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > "$RUNNER_TEMP/instagram-clone-audit.json" || true
+          node -e 'const a=require(process.env.RUNNER_TEMP+"/instagram-clone-audit.json");console.log("ISOLATED EXPERIMENT ONLY:",JSON.stringify(a.metadata.vulnerabilities))'
+
+      - name: Seed fake local feed and grid content; block all Firebase operations
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ../.github/reference-tests/instagram-clone-offline-fixture.py
+          git diff --name-only | sed -n '1,50p'
+          grep -q 'renderlab_preview' src/offlineReferenceFixture.js
+          grep -q 'SignedInStack' App.js
+          grep -q 'db = null' src/services/firebase.js
+          # Diagnostic instrumentation only; no change to navigator or UI behavior.
+          python3 - <<'PY'
+          from pathlib import Path
+          tabs=Path('src/navigation/BottomTabs.jsx')
+          t=tabs.read_text()
+          old='<Tab.Navigator screenOptions={screenOptions}>'
+          new='<Tab.Navigator screenOptions={screenOptions} screenListeners={{ tabPress: e => console.log("INPUT_PROBE_TAB_PRESS:" + e.target) }}>'
+          assert t.count(old)==1
+          tabs.write_text(t.replace(old,new))
+          head=Path('src/components/home/Header.jsx')
+          h=head.read_text()
+          old='onPress={() => setFilterModalVisible(true)}'
+          new='onPress={() => { console.log("INPUT_PROBE_HEADER"); setFilterModalVisible(true); }}'
+          assert h.count(old)==1
+          head.write_text(h.replace(old,new))
+          PY
+
+      - name: Configure accelerated Android emulator
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+
+      - name: Prepare one-shot emulator script
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > clone/ci-feed-grid-emulator.sh <<'END_ANDROID_SMOKE'
+          set -euo pipefail
+          cd clone
+          mkdir -p ../reference-evidence
+          # Official SDK53 Expo Go, installed once; never publish or install clone debug APK.
+          curl -fLsS --retry 3 --max-time 180 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-2.33.22/Expo-Go-2.33.22.apk' -o /tmp/expo-go-sdk53.apk
+          test -s /tmp/expo-go-sdk53.apk
+          adb install -r /tmp/expo-go-sdk53.apk
+          # Disposable test emulator only: Quickstep/Launcher3 repeatedly ANRs.
+          # Disable its home UI to prevent stealing focus from Expo Go.
+          adb shell pm disable-user --user 0 com.android.launcher3 || true
+          sleep 10
+          # Only local Metro traffic, via ADB reverse. External Firebase unavailable.
+          adb shell svc wifi disable || true
+          adb shell cmd connectivity airplane-mode enable || true
+          nohup env -u CI EXPO_OFFLINE=1 npx expo start --go --localhost --port 8081 > ../reference-evidence/metro.log 2>&1 &
+          for n in $(seq 1 100); do
+            if curl -fsS http://127.0.0.1:8081/status 2>/dev/null | grep -q 'packager-status:running'; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8081/status | grep -q 'packager-status:running'
+          adb reverse tcp:8081 tcp:8081
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          # On headless CI Android images, Quickstep/Pixel Launcher may ANR.
+          # Dismiss ONLY the launcher error's "Wait" button, never Expo Go.
+          clear_launcher_anr() {
+            adb shell uiautomator dump /sdcard/check-dialog.xml >/dev/null 2>&1 || true
+            adb exec-out cat /sdcard/check-dialog.xml > ../reference-evidence/launcher-dialog.xml 2>/dev/null || true
+            python3 - <<'PY' > /tmp/launcher-close-tap.txt
+          import re, xml.etree.ElementTree as ET
+          from pathlib import Path
+          p=Path('../reference-evidence/launcher-dialog.xml')
+          try:
+              root=ET.parse(p).getroot()
+          except Exception:
+              raise SystemExit(0)
+          labels=[n.get('text','') for n in root.iter('node')]
+          if not any(('quickstep' in t.lower() or 'pixel launcher' in t.lower()) and 'responding' in t.lower() for t in labels):
+              raise SystemExit(0)
+          for n in root.iter('node'):
+              if n.get('resource-id','').endswith(':id/aerr_wait'):
+                  m=re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.get('bounds',''))
+                  if m:
+                      x1,y1,x2,y2=map(int,m.groups())
+                      print((x1+x2)//2,(y1+y2)//2)
+                      raise SystemExit(0)
+          raise SystemExit('Launcher ANR present but close button missing')
+          PY
+            if [ -s /tmp/launcher-close-tap.txt ]; then
+              read -r touch_x touch_y < /tmp/launcher-close-tap.txt
+              echo "Waiting for unresponsive Android launcher, preserving Expo Go, at $touch_x $touch_y"
+              adb shell input tap "$touch_x" "$touch_y"
+              sleep 5
+            fi
+          }
+          ensure_expo_foreground() {
+            if ! adb shell dumpsys window | grep 'mCurrentFocus' | grep -q 'host.exp.exponent'; then
+              echo 'Restoring Expo Go foreground following Android system dialog'
+              adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+              sleep 12
+            fi
+          }
+          sleep 60
+          clear_launcher_anr
+          ensure_expo_foreground
+          adb shell wm size > ../reference-evidence/device-size.txt
+          adb exec-out screencap -p > ../reference-evidence/01-home-feed.png
+          # Diagnose whether Android delivers any touchscreen gestures to the feed.
+          adb shell input swipe 540 1850 540 830 680
+          sleep 8
+          adb exec-out screencap -p > ../reference-evidence/01a-home-after-swipe.png
+          adb shell input swipe 540 830 540 1850 680
+          sleep 6
+          adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/window.xml > ../reference-evidence/01-home-hierarchy.xml 2>/dev/null || true
+          if grep -Eqi 'not responding|isn.t responding|Application Error' ../reference-evidence/01-home-hierarchy.xml; then
+            echo 'Emulator system error dialog; cannot accept touch test' >&2
+            exit 1
+          fi
+          adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' > ../reference-evidence/window-focus.txt || true
+          cat ../reference-evidence/window-focus.txt
+          if ! grep -q 'host.exp.exponent' ../reference-evidence/window-focus.txt; then
+            echo 'Expo Go is not foreground; refusing to assert working clone navigation.' >&2
+            exit 1
+          fi
+          if grep -Eq 'ErrorActivity' ../reference-evidence/window-focus.txt; then
+            echo 'ErrorActivity appeared; failing the UI smoke instead of claiming success.' >&2
+            exit 1
+          fi
+          # Locate the original bottom tabs from the current Android UI hierarchy.
+          # Hard-coded 2280px taps previously hit Android's system navigation area.
+          tap_tab() {
+            local index="$1"
+            clear_launcher_anr
+            ensure_expo_foreground
+            adb shell uiautomator dump /sdcard/tab-before-tap.xml >/dev/null 2>&1
+            adb exec-out cat /sdcard/tab-before-tap.xml > ../reference-evidence/tab-before-"$index".xml
+            local coords
+            coords=$(python3 - "$index" <<'PY'
+          import sys, re, xml.etree.ElementTree as ET
+          target=int(sys.argv[1])
+          root=ET.parse(f'../reference-evidence/tab-before-{target}.xml').getroot()
+          bounds=[]
+          for n in root.iter('node'):
+              if n.get('selected') != 'true': continue
+              m=re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.get('bounds',''))
+              if not m: continue
+              x1,y1,x2,y2=map(int,m.groups())
+              if y1>1800 and 150 <= x2-x1 <= 250 and 80 <= y2-y1 <= 180:
+                  bounds.append((x1,y1,x2,y2))
+          assert len(bounds)==1, f'Expected selected native bottom tab, found {bounds}'
+          x1,y1,x2,y2=bounds[0]
+          tab_width=x2-x1
+          print(int((target+0.5)*tab_width),int((y1+y2)/2))
+          PY
+            )
+            read -r tap_x tap_y <<< "$coords"
+            echo "Touch native clone tab $index at $tap_x,$tap_y (computed from Android hierarchy)"
+            adb shell input touchscreen swipe "$tap_x" "$tap_y" "$tap_x" "$tap_y" 160
+          }
+          # Pixel 6 @ 1080x2400: tap bottom-native navigation Search then Profile.
+          tap_tab 1
+          sleep 12
+          adb exec-out screencap -p > ../reference-evidence/02-search-grid.png
+          adb shell uiautomator dump /sdcard/search.xml >/dev/null 2>&1
+          adb exec-out cat /sdcard/search.xml > ../reference-evidence/02-search-hierarchy.xml
+          if grep -Eqi 'not responding|isn.t responding|Application Error' ../reference-evidence/02-search-hierarchy.xml; then
+            echo 'System dialog blocked Search selection' >&2
+            exit 1
+          fi
+          tap_tab 4
+          sleep 12
+          adb exec-out screencap -p > ../reference-evidence/03-profile-grid.png
+          adb shell uiautomator dump /sdcard/profile.xml >/dev/null 2>&1
+          adb exec-out cat /sdcard/profile.xml > ../reference-evidence/03-profile-hierarchy.xml
+          if grep -Eqi 'not responding|isn.t responding|Application Error' ../reference-evidence/03-profile-hierarchy.xml; then
+            echo 'System dialog blocked Profile selection' >&2
+            exit 1
+          fi
+          tap_tab 0
+          sleep 12
+          adb exec-out screencap -p > ../reference-evidence/04-home-returned.png
+          # Edit ONLY the clone's existing tab bar style. No native APK rebuild/reinstall/restart.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/navigation/BottomTabs.jsx')
+          original=p.read_text()
+          old='height: Platform.OS === "android" ? insets.bottom + 54 : 84,\n      backgroundColor: "#000",'
+          assert original.count(old) == 1
+          p.write_text(original.replace(old, old.replace('#000', '#252525')))
+          print("Modified existing clone bottom navigation background in JavaScript only.")
+          PY
+          sleep 40
+          adb exec-out screencap -p > ../reference-evidence/05-nav-hot-update.png
+          # Probe independent Home header tap, then collect native input diagnostics.
+          # Done after normal tab taps to avoid influencing their state.
+          adb shell input touchscreen swipe 310 190 310 190 160
+          sleep 5
+          adb exec-out screencap -p > ../reference-evidence/05a-header-touch-probe.png
+          adb shell uiautomator dump /sdcard/header-touch-probe.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/header-touch-probe.xml > ../reference-evidence/05a-header-touch-probe.xml 2>/dev/null || true
+          adb logcat -d -s ReactNativeJS:V InputDispatcher:D WindowManager:W | tail -n 650 > ../reference-evidence/input-probe-logcat.txt || true
+          adb shell dumpsys input | tail -n 260 > ../reference-evidence/input-probe-dumpsys.txt || true
+          grep 'INPUT_PROBE_' ../reference-evidence/input-probe-logcat.txt || true
+          # Key-based accessibility focus check. Native tab controls expose
+          # focusable=true; this tests hardware Tab/Enter independently of ADB
+          # touchscreen injection. No navigation/source replacements.
+          focus_log=../reference-evidence/keyboard-navigation-trace.txt
+          : > "$focus_log"
+          keyboard_tab_probe() {
+            local label="$1" min_x="$2" max_x="$3" output="$4"
+            local focused=0
+            for attempt in $(seq 1 20); do
+              adb shell input keyevent 61 # KEYCODE_TAB
+              adb shell uiautomator dump /sdcard/keyboard-focus.xml >/dev/null 2>&1 || true
+              adb exec-out cat /sdcard/keyboard-focus.xml > /tmp/keyboard-focus.xml 2>/dev/null || true
+              if python3 - "$min_x" "$max_x" <<'PY'
+          import re, sys, xml.etree.ElementTree as ET
+          try: root=ET.parse('/tmp/keyboard-focus.xml').getroot()
+          except Exception: raise SystemExit(1)
+          left,right=map(int,sys.argv[1:3])
+          for n in root.iter('node'):
+              if n.get('focused')!='true': continue
+              m=re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.get('bounds',''))
+              if not m: continue
+              x1,y1,x2,y2=map(int,m.groups())
+              if left<=x1 and x2<=right and y1>1700 and n.get('clickable')=='true':
+                  raise SystemExit(0)
+          raise SystemExit(1)
+          PY
+              then
+                echo "KEYBOARD_FOCUS_FOUND $label attempt=$attempt" | tee -a "$focus_log"
+                focused=1
+                adb shell input keyevent 66 # KEYCODE_ENTER
+                sleep 9
+                adb exec-out screencap -p > "../reference-evidence/$output"
+                adb shell uiautomator dump /sdcard/keyboard-after-enter.xml >/dev/null 2>&1 || true
+                adb exec-out cat /sdcard/keyboard-after-enter.xml > "../reference-evidence/$output.xml" 2>/dev/null || true
+                break
+              fi
+            done
+            if [ "$focused" -eq 0 ]; then
+              echo "KEYBOARD_FOCUS_NOT_FOUND $label (20 Tab presses)" | tee -a "$focus_log"
+              return 1
+            fi
+          }
+          keyboard_tab_probe Search 216 432 08-keyboard-search.png || true
+          keyboard_tab_probe Profile 864 1080 09-keyboard-profile.png || true
+          adb logcat -d -s ReactNativeJS:V | grep INPUT_PROBE \
+            > ../reference-evidence/keyboard-reactnative-events.txt || true
+          # Original fail-closed screenshot/navigation assertions below remain.
+          curl -fsS --max-time 150 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false&minify=false' -o /tmp/feed-grid-bundle.js
+          grep -q '#252525' /tmp/feed-grid-bundle.js
+          # Independent control: route directly to existing Search/Profile tabs by
+          # changing only the original navigator's initialRouteName in the CI checkout.
+          # No cloned visual components, native build, or installed APK are replaced.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/navigation/BottomTabs.jsx')
+          s=p.read_text()
+          original='<Tab.Navigator screenOptions={screenOptions} screenListeners={{ tabPress: e => console.log("INPUT_PROBE_TAB_PRESS:" + e.target) }}>'
+          assert s.count(original)==1
+          p.write_text(s.replace(original,original[:-1]+' initialRouteName="Search">',1))
+          PY
+          adb shell am force-stop host.exp.exponent
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 42
+          adb exec-out screencap -p > ../reference-evidence/06-initial-search.png
+          adb shell uiautomator dump /sdcard/forced-search.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/forced-search.xml > ../reference-evidence/06-initial-search.xml 2>/dev/null || true
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/navigation/BottomTabs.jsx')
+          s=p.read_text()
+          old='initialRouteName="Search"'
+          assert s.count(old)==1
+          p.write_text(s.replace(old,'initialRouteName="Profile"',1))
+          PY
+          adb shell am force-stop host.exp.exponent
+          adb shell am start -a android.intent.action.VIEW -d 'exp://127.0.0.1:8081'
+          sleep 42
+          adb exec-out screencap -p > ../reference-evidence/07-initial-profile.png
+          adb shell uiautomator dump /sdcard/forced-profile.xml >/dev/null 2>&1 || true
+          adb exec-out cat /sdcard/forced-profile.xml > ../reference-evidence/07-initial-profile.xml 2>/dev/null || true
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('../reference-evidence')
+          names=['01-home-feed.png','01a-home-after-swipe.png','06-initial-search.png','07-initial-profile.png']
+          print("DIAGNOSTIC IMAGE HASHES:",[(n,hashlib.sha256((p/n).read_bytes()).hexdigest()) for n in names])
+          (p/'input-route-diagnostic.txt').write_text(
+             "Touch input and route initialization are independent checks; inspect images and XML.\\n"
+          )
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('../reference-evidence')
+          shots=['01-home-feed.png','02-search-grid.png','03-profile-grid.png','04-home-returned.png','05-nav-hot-update.png']
+          for s in shots:
+              img=p/s
+              assert img.stat().st_size>1000,(s, img.stat().st_size)
+          sha=[hashlib.sha256((p/s).read_bytes()).hexdigest() for s in shots]
+          print('Screenshot digests', list(zip(shots,sha)))
+          assert len(set(sha[:3])) == 3, 'Navigation screens were identical; must inspect/repair taps.'
+          import xml.etree.ElementTree as ET
+          import re
+          def selected_tab_index(path):
+              root=ET.parse(p/path).getroot()
+              rows=[]
+              for n in root.iter('node'):
+                  m=re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.get('bounds',''))
+                  if not m or n.get('selected')!='true': continue
+                  x1,y1,x2,y2=map(int,m.groups())
+                  if y1>1800 and 150 <= x2-x1 <= 250 and 80 <= y2-y1 <= 180:
+                      rows.append(int(x1//(x2-x1)))
+              assert len(rows)==1, f'Selected tab missing in {path}: {rows}'
+              return rows[0]
+          assert selected_tab_index('02-search-hierarchy.xml') == 1, 'Search bottom tab not selected'
+          assert selected_tab_index('03-profile-hierarchy.xml') == 4, 'Profile bottom tab not selected'
+          assert sha[3] != sha[4], 'Tab styling update was not visible; must inspect/repair Fast Refresh.'
+          (p/'visual-assertions.txt').write_text('screenshots distinct; hot style screenshot changed; manual image review still required\n')
+          PY
+          sha256sum ../reference-evidence/*.png > ../reference-evidence/screenshot-checksums.txt
+          adb logcat -d -s ReactNativeJS:E AndroidRuntime:E | tail -180 > ../reference-evidence/android-errors.log || true
+          if grep -q 'An Expo user account is required' ../reference-evidence/metro.log; then exit 1; fi
+          echo 'Captured offline existing feed/search/profile with one Expo Go installation.'
+          END_ANDROID_SMOKE
+          chmod +x clone/ci-feed-grid-emulator.sh
+
+      - name: Boot Android and capture existing Instagram UI screens and Hot Refresh
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          # Android 14 compatibility check: distinguish SDK 35 input behavior from the clone.
+          api-level: 34
+          arch: x86_64
+          target: default
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash clone/ci-feed-grid-emulator.sh
+
+      - name: Save screenshot evidence only (no unsafe APKs or real user data)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: instagram-clone-offline-feed-grid-evidence
+          path: reference-evidence/
+          retention-days: 7
+          if-no-files-found: warn

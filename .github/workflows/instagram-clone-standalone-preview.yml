@@ -1,0 +1,134 @@
+name: Pinned Instagram clone standalone offline preview
+
+# Separate synthetic, untrusted UI reference lab. No real account/auth/backend.
+# Not a RenderLab production distribution, SDK58 migration, or persistent OTA.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/instagram-clone-standalone-preview.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: instagram-clone-standalone-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  standalone-clone:
+    if: ${{ github.event.pull_request.number == 401 && github.event.pull_request.head.repo.full_name == github.repository }}
+    name: Build original clone components with embedded offline JS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      JAVA_TOOL_OPTIONS: -Xmx3g -Dfile.encoding=UTF-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Fetch and verify exact MIT Instagram clone upstream
+        run: |
+          set -euo pipefail
+          git clone --quiet --no-checkout --depth=1 https://github.com/hernanhawryluk/instagram-clone-app.git clone
+          git -C clone fetch --quiet --depth=1 origin 24777fc335530a9c4285c7ef5974053ba7b39104
+          git -C clone checkout --quiet --detach FETCH_HEAD
+          test "$(git -C clone rev-parse HEAD)" = 24777fc335530a9c4285c7ef5974053ba7b39104
+          grep -q 'Copyright (c) 2023 Hernán Pablo Hawryluk' clone/LICENSE
+          test -f clone/src/screens/Home.jsx
+          test -f clone/src/navigation/BottomTabs.jsx
+      - name: Install original pinned clone and verify nonproduction isolation
+        working-directory: clone
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          python3 ../.github/reference-tests/instagram-clone-device-lab.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("app.json")
+          cfg = json.loads(p.read_text(encoding="utf8"))
+          expo=cfg["expo"]
+          assert expo["android"]["package"] == "dev.renderlab.instagramclonelab"
+          assert expo["updates"]["enabled"] is False
+          assert not expo.get("extra")
+          assert "db = null" in Path("src/services/firebase.js").read_text()
+          assert "offlineReferenceFixture" in Path("src/hooks/useFetchPosts.js").read_text()
+          assert "createBottomTabNavigator" in Path("src/navigation/BottomTabs.jsx").read_text()
+          expo["android"]["blockedPermissions"].append("android.permission.INTERNET")
+          p.write_text(json.dumps(cfg, indent=2)+"\n",encoding="utf8")
+          PY
+          # Keep the validated legacy runtime *only* for this network-blocked
+          # isolated visual reference; never merge its dependency graph into SDK58.
+          npm install --save-exact expo@53.0.27 expo-image@2.4.1 \
+            expo-updates@0.28.18 react-native@0.79.6 \
+            --ignore-scripts --no-audit --no-fund
+      - name: Generate native project and disposable release signer
+        working-directory: clone
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --clean --no-install --non-interactive
+          grep -q "signingConfig signingConfigs.debug" android/app/build.gradle
+          umask 077
+          keytool -genkeypair -noprompt -storetype PKCS12 \
+            -keystore "$RUNNER_TEMP/renderlab-instagram-clone-preview-only.keystore" \
+            -storepass android -keypass android -alias androiddebugkey \
+            -dname "CN=RenderLab Instagram UI Offline Preview ONLY, O=RenderLab" \
+            -keyalg RSA -keysize 3072 -validity 3650 >/dev/null
+          cp "$RUNNER_TEMP/renderlab-instagram-clone-preview-only.keystore" android/app/debug.keystore
+      - name: Assemble release-mode ARM64 APK with embedded original clone UI
+        working-directory: clone/android
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a \
+            --no-daemon --console=plain --max-workers=2
+      - name: Verify embedded JS, no internet permission, identity and signing
+        run: |
+          set -euo pipefail
+          APK=clone/android/app/build/outputs/apk/release/app-release.apk
+          test -s "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name aapt -type f | sort -V | tail -1)"
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)"
+          test -x "$AAPT" && test -x "$SIGNER"
+          "$AAPT" dump badging "$APK" | grep -q "package: name='dev.renderlab.instagramclonelab'"
+          unzip -Z1 "$APK" | grep -q '^assets/index.android.bundle$'
+          unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/'
+          "$AAPT" dump permissions "$APK" > "$RUNNER_TEMP/clone-permissions.txt"
+          if grep -Eq 'android.permission.(INTERNET|CAMERA|RECORD_AUDIO|READ_MEDIA_IMAGES|READ_MEDIA_VIDEO|ACCESS_FINE_LOCATION|READ_CONTACTS)' "$RUNNER_TEMP/clone-permissions.txt"; then
+            echo "::error::Network or sensitive Android permission present in isolated offline UI clone"
+            cat "$RUNNER_TEMP/clone-permissions.txt"
+            exit 1
+          fi
+          "$SIGNER" verify "$APK"
+          EXPECTED="$(keytool -list -v -keystore "$RUNNER_TEMP/renderlab-instagram-clone-preview-only.keystore" \
+            -storepass android -alias androiddebugkey | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          ACTUAL="$("$SIGNER" verify --print-certs "$APK" | \
+            sed -n -E 's/^(V[0-9]+ Signer:|Signer #[0-9]+) certificate SHA-256 digest:[[:space:]]*//p' | sort -u | head -1 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+          test "${#EXPECTED}" -eq 64 && test "$EXPECTED" = "$ACTUAL"
+          mkdir -p "$RUNNER_TEMP/clone-preview"
+          cp "$APK" "$RUNNER_TEMP/clone-preview/renderlab-instagram-clone-offline-preview.apk"
+          cp clone/LICENSE "$RUNNER_TEMP/clone-preview/UPSTREAM-MIT-LICENSE.txt"
+          printf 'ISOLATED UI PREVIEW ONLY. Original pinned Expo SDK53 clone, synthetic fixtures. No Firebase, RenderLab sign-in, internet permission, or OTA. Offline embedded JS; not a secure or production RenderLab app. Do not enter credentials.\n' > "$RUNNER_TEMP/clone-preview/READ-ME-FIRST.txt"
+          sha256sum "$RUNNER_TEMP/clone-preview/renderlab-instagram-clone-offline-preview.apk"
+      - name: Publish verified offline original-clone UI preview
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: renderlab-instagram-clone-offline-preview
+          path: ${{ runner.temp }}/clone-preview/
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0
+      - name: Remove disposable signing identity and generated tree
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/renderlab-instagram-clone-preview-only.keystore"
+          rm -rf clone

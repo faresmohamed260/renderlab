@@ -1,0 +1,152 @@
+name: Instagram Clone Device Dev APK (isolated lab)
+
+# Experimental personal-device build only. The original clone is old/unaudited
+# for release; no real user credentials, backend, shared infrastructure, OTA,
+# public distribution, production app identity or permission grants.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/instagram-clone-device-dev-apk.yml
+      - .github/reference-tests/instagram-clone-device-lab.py
+      - .github/reference-tests/instagram-clone-offline-fixture.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: instagram-clone-device-lab-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-dev-client:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      npm_config_fund: "false"
+    steps:
+      - name: Checkout isolated RenderLab lab scripts
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Use Node 24 for pinned clone
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Use JDK 17 for Android Gradle
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Checkout pinned MIT clone source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout --depth=1 https://github.com/hernanhawryluk/instagram-clone-app.git clone
+          cd clone
+          git fetch --no-tags --depth=1 origin 24777fc335530a9c4285c7ef5974053ba7b39104
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 24777fc335530a9c4285c7ef5974053ba7b39104
+          test -f LICENSE
+
+      - name: Install locked clone dependencies and document residual security risk
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          mkdir -p ../device-lab-evidence
+          npm audit --omit=dev --json > ../device-lab-evidence/production-audit.json || true
+          node - <<'JS'
+          const fs=require('fs');
+          const data=JSON.parse(fs.readFileSync('../device-lab-evidence/production-audit.json','utf8'));
+          const v=data.metadata?.vulnerabilities||{};
+          console.log('ISOLATED EXPERIMENT; NOT SECURITY CLEARED. npm audit:',JSON.stringify(v));
+          if (!Object.keys(v).length) throw new Error('Audit metadata missing; do not claim security status');
+          fs.writeFileSync('../device-lab-evidence/audit-summary.json',JSON.stringify(v,null,2)+'\n');
+          JS
+
+      - name: Enable offline fake account, disable Firebase and privileged media permissions
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ../.github/reference-tests/instagram-clone-device-lab.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          cfg=json.loads(Path("app.json").read_text())["expo"]
+          assert cfg["android"]["package"]=="dev.renderlab.instagramclonelab"
+          assert not cfg.get("extra")
+          assert cfg["updates"]["enabled"] is False
+          assert not cfg["android"]["permissions"]
+          assert "expo-camera" not in cfg["plugins"]
+          assert "db = null" in Path("src/services/firebase.js").read_text()
+          PY
+
+      - name: Install SDK-matched development client in disposable clone only
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx expo install expo-dev-client -- --ignore-scripts --no-audit --no-fund
+          test -d node_modules/expo-dev-client
+          # Normalize the upstream clone's four stale native patch versions.
+          # Temporary checkout only: no production dependency policy is changed.
+          npm install --save-exact expo@53.0.27 expo-image@2.4.1 expo-updates@0.28.18 react-native@0.79.6 --ignore-scripts --no-audit --no-fund
+          npx expo install --check
+
+      - name: Generate nonproduction Android native wrapper
+        working-directory: clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --clean --no-install
+          test -f android/gradlew
+          test -f android/app/build.gradle
+
+      - name: Assemble installable universal debug APK (requires Metro for JS)
+        working-directory: clone/android
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon --console=plain --stacktrace
+          test -s app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Verify APK metadata and preserve device-lab artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p device-lab-evidence/apk
+          cp clone/android/app/build/outputs/apk/debug/app-debug.apk device-lab-evidence/apk/renderlab-instagram-lab-debug.apk
+          cd device-lab-evidence/apk
+          sha256sum renderlab-instagram-lab-debug.apk > SHA256SUMS.txt
+          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -1)"
+          test -x "$AAPT"
+          "$AAPT" dump badging renderlab-instagram-lab-debug.apk > package-badging.txt
+          "$AAPT" dump permissions renderlab-instagram-lab-debug.apk > package-permissions.txt
+          grep -q "dev.renderlab.instagramclonelab" package-badging.txt
+          for permission in CAMERA RECORD_AUDIO READ_MEDIA_IMAGES READ_MEDIA_VIDEO READ_CONTACTS ACCESS_FINE_LOCATION; do
+            if grep -q "android.permission.$permission" package-permissions.txt; then
+              echo "Unexpected sensitive permission in UI-only debug APK: $permission" >&2
+              exit 1
+            fi
+          done
+          cat SHA256SUMS.txt
+          echo "A debug client, NOT a standalone offline release or publicly safe APK."
+          echo "It needs an accessible npx expo start --dev-client Metro server."
+
+      - name: Preserve installation artifact for private review only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: renderlab-instagram-lab-debug-apk
+          path: device-lab-evidence/
+          retention-days: 7
+          if-no-files-found: warn
