@@ -145,3 +145,8 @@ The dormant SDK58 integration is now connected in source: `native-supabase-auth-
 
 **Evidence:** This commit prepares and tests the repeatable local path; it has **not** built an ARM64 APK on the owner's computer, created that computer's signing key, installed on a physical phone or proven live Fast Refresh. Report those steps only after actually verified.
 
+## Checkpoint 50 — Expo SDK58 published patch alignment (2026-10-29)
+
+**Verified at draft commit `ca86696`:** An isolated Node 24 GitHub Actions job ([run 40816818898](https://github.com/faresmohamed260/renderlab/actions/runs/40816818898)) regenerated the deterministic mobile dependency lockfile, then passed fresh `npm ci`, `npx expo install --check`, Expo Doctor **20/20**, strict mobile TypeScript, **71/71** native tests, lint and the unchanged production high/critical dependency audit. The exact accepted dependency patches are `expo 58.0.21`, `expo-constants 58.0.14`, `expo-dev-client 58.0.17`, `expo-font 58.0.11`, `expo-linking 58.0.15`, `expo-router 58.0.28` and `expo-system-ui 58.0.7`. This is a patch-only SDK58 compatibility change; there is no production Auth activation, live key, new backend, OTA, EAS project or real-device installation.
+
+The isolated lockfile-generation workflow was removed after successful verification. **A separate fresh signed native debug APK compile/certificate inspection on this updated lockfile remains required** before the local device-build path can be treated as natively validated. The private signing key and APK must still be generated and retained only on the owner's trusted computer; the CI test uses an unrelated disposable test keystore.
