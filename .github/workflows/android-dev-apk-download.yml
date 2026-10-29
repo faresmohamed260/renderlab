@@ -1,0 +1,124 @@
+name: RenderLab Android Dev APK (owner download)
+
+# Explicitly scoped one-off draft PR artifact distribution; no production credentials,
+# EAS/OTA, shared signing material or automatic store release.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android-dev-apk-download.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-device-apk-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  build-device-apk:
+    name: Build and publish phone-compatible, nonproduction debug APK
+    if: ${{ github.event.pull_request.number == 405 && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      JAVA_TOOL_OPTIONS: -Xmx3g -Dfile.encoding=UTF-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Check nonproduction app identity and disabled native Auth
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const cfg = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo;
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const auth = fs.readFileSync('src/services/auth/native-auth-config.ts', 'utf8');
+          if (cfg.android?.package !== 'dev.renderlab.mobile' ||
+              cfg.scheme !== 'renderlab-dev' || pkg.private !== true ||
+              cfg.extra?.eas?.projectId || cfg.updates?.url ||
+              !/NATIVE_AUTH_RUNTIME_ENABLED\s*=\s*false\b/.test(auth)) {
+            throw Error('Do not distribute an APK with production Auth, OTA, or an unapproved app identity');
+          }
+          NODE
+          if [ -n "${EXPO_PUBLIC_SUPABASE_URL:-}" ] || [ -n "${EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}" ]; then
+            echo 'Production Auth environment is forbidden in the device artifact'
+            exit 1
+          fi
+      - name: Install locked SDK58 dependencies and verify compatibility
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          npx expo install --check
+          npm run typecheck
+          npm test
+      - name: Generate native project and inspect debug signing config
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --clean --no-install --non-interactive
+          grep -q "storeFile file('debug.keystore')" android/app/build.gradle
+          grep -q 'signingConfig signingConfigs.debug' android/app/build.gradle
+      - name: Build ARM64 and ARMv7 development APK with disposable signer
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          umask 077
+          keytool -genkeypair -noprompt -storetype PKCS12 \
+            -keystore "$RUNNER_TEMP/renderlab-download-only.keystore" \
+            -storepass android -keypass android -alias androiddebugkey \
+            -dname "CN=RenderLab Downloaded Development APK ONLY, O=RenderLab" \
+            -keyalg RSA -keysize 3072 -validity 3650 >/dev/null
+          cp "$RUNNER_TEMP/renderlab-download-only.keystore" android/app/debug.keystore
+          cd android
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a,armeabi-v7a \
+            --no-daemon --console=plain --max-workers=2
+      - name: Verify package, ABI coverage and actual signer before distribution
+        run: |
+          set -euo pipefail
+          APK=apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name aapt -type f | sort -V | tail -1)"
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)"
+          test -x "$AAPT" && test -x "$SIGNER"
+          "$AAPT" dump badging "$APK" | grep -q "package: name='dev.renderlab.mobile'"
+          unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/'
+          unzip -Z1 "$APK" | grep -q '^lib/armeabi-v7a/'
+          "$SIGNER" verify "$APK"
+          EXPECTED="$(keytool -list -v -keystore "$RUNNER_TEMP/renderlab-download-only.keystore" \
+            -storepass android -alias androiddebugkey | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          ACTUAL="$("$SIGNER" verify --print-certs "$APK" | \
+            sed -n -E 's/^(V[0-9]+ Signer:|Signer #[0-9]+) certificate SHA-256 digest:[[:space:]]*//p' | sort -u | head -1 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+          test "${#EXPECTED}" -eq 64 && test "$EXPECTED" = "$ACTUAL"
+          mkdir -p "$RUNNER_TEMP/renderlab-apk-artifact"
+          cp "$APK" "$RUNNER_TEMP/renderlab-apk-artifact/renderlab-android-dev-debug.apk"
+          printf 'Unmerged PR #405, nonproduction Expo SDK58 development client.\nRequires a reachable Metro server.\nSigning key is disposable; future native APK updates require uninstall/data reset or the separately built local stable-key APK.\n' > "$RUNNER_TEMP/renderlab-apk-artifact/INSTALL-NOTES.txt"
+          echo "Verified signed app dev.renderlab.mobile; downloadable APK SHA-256:"
+          sha256sum "$RUNNER_TEMP/renderlab-apk-artifact/renderlab-android-dev-debug.apk"
+      - name: Publish verified APK ZIP for owner to download
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: renderlab-android-dev-debug
+          path: ${{ runner.temp }}/renderlab-apk-artifact/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+      - name: Delete disposable signing material and generated native tree
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/renderlab-download-only.keystore"
+          rm -rf apps/mobile/android
