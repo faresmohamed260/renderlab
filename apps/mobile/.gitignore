@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+dist/
+dist-android/
+web-build/
+android/
+ios/
+.env
+.env.*
+!.env.example
+expo-env.d.ts
+npm-debug.log*
