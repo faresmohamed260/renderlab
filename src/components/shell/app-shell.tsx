@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Activity, CircleUserRound } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppShell({ children, wandaFrame = false }: { children: ReactNode; wandaFrame?: boolean }) {
+export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const section = routeSection(pathname);
@@ -38,19 +38,8 @@ export function AppShell({ children, wandaFrame = false }: { children: ReactNode
     previousSection.current = section;
   }, [router, section]);
 
-  function followFrameBoundary(event: MouseEvent<HTMLDivElement>) {
-    if (!wandaFrame || event.defaultPrevented || event.button !== 0 || event.metaKey
-      || event.ctrlKey || event.shiftKey || event.altKey || !(event.target instanceof Element)) return;
-    const link = event.target.closest("a[href]");
-    if (!(link instanceof HTMLAnchorElement) || link.origin !== location.origin
-      || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
-    if ((link.pathname === "/create") === (pathname === "/create")) return;
-    event.preventDefault();
-    location.assign(link.href);
-  }
-
   return (
-    <div className="kinetic-app min-h-dvh text-text" data-kinetic-shell="true" onClickCapture={followFrameBoundary}>
+    <div className="kinetic-app min-h-dvh text-text" data-kinetic-shell="true">
       <header
         className="fixed inset-x-0 top-0 z-50 h-16 border-b border-white/[0.055] bg-[#06080c]/[0.88] backdrop-blur-[18px] lg:h-[72px]"
         data-kinetic-surface="topbar"
