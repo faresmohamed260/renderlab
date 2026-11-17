@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Keyboard, List } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -78,7 +77,9 @@ export function CreateHeaderActions({ activeStatus }: { activeStatus: string | n
   return (
     <div className="fibo-header-actions">
       <Button type="button" variant="ghost" size="sm" className="fibo-header-action" aria-label={activeStatus ? "Render queue, 1 active render" : "Render queue"} aria-keyshortcuts="Q" title="Render queue" popoverTarget="fibo-render-queue">
-        <List aria-hidden="true" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+          <path d="M8 6h12M8 12h12M8 18h12M4 6h.1M4 12h.1M4 18h.1" />
+        </svg>
         <span className="fibo-queue-label">Queue</span>
         {activeStatus ? <span className="fibo-queue-count" aria-hidden="true">1</span> : null}
       </Button>
@@ -102,7 +103,10 @@ export function CreateHeaderActions({ activeStatus }: { activeStatus: string | n
         ref={triggerRef}
         onClick={openShortcuts}
       >
-        <Keyboard aria-hidden="true" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+          <rect x="2" y="5" width="20" height="14" rx="2" />
+          <path d="M6 9h.1m4 0h.1m4 0h.1m4 0h.1m-12 4h.1m4 0h.1m4 0h.1m4 0h.1M9 16h6" />
+        </svg>
         <span>Shortcuts</span>
       </Button>
       <dialog ref={shortcutsRef} id="fibo-shortcuts-dialog" className="fibo-shortcuts-dialog" aria-labelledby="fibo-shortcuts-title"
