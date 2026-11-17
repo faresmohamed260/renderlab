@@ -816,10 +816,11 @@ export function CreateWorkspace({
 
   return (
     <section
-      className="clear-create-workspace mx-auto flex w-full flex-col"
+      className="clear-create-workspace fibo-create mx-auto flex w-full flex-col"
       data-create-has-stage={jobActive || resultLoading || Boolean(resultAsset) ? "true" : "false"}
     >
-      <div className="clear-create-stack mx-auto w-full">
+      <div className="clear-create-stack fibo-create-grid mx-auto w-full">
+        <div className="fibo-create-controls">
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={createContextKey}
@@ -1211,6 +1212,20 @@ export function CreateWorkspace({
           </Alert>
         ) : null}
 
+        </div>
+        <section className="fibo-create-canvas" aria-label="Canvas">
+          {!jobActive && !resultLoading && !resultAsset ? (
+            <div className="fibo-create-empty">
+              <span className="fibo-create-watermark" aria-hidden="true">R</span>
+              {mediaUploadAvailable && accountAvailable ? (
+                <Button type="button" variant="secondary" onClick={() => chooseReferenceFile(null)}>
+                  Add a source image
+                </Button>
+              ) : (
+                <p>Canvas · Your results will appear here</p>
+              )}
+            </div>
+          ) : null}
         {statusText && (jobActive || job?.status === "failed" || job?.status === "cancelled") ? (
           <Alert
             className="clear-create-stage kinetic-lifecycle relative mt-6 overflow-hidden"
@@ -1300,6 +1315,13 @@ export function CreateWorkspace({
             </motion.article>
           ) : null}
         </AnimatePresence>
+        </section>
+        <aside className="fibo-create-history" aria-labelledby="fibo-create-history-heading">
+          <h2 id="fibo-create-history-heading">History</h2>
+          <p>Review your RenderLab runs and saved media.</p>
+          <Button asChild size="sm" variant="secondary"><Link href="/activity">Open Activity</Link></Button>
+          <Button asChild size="sm" variant="ghost"><Link href="/library">Open Library</Link></Button>
+        </aside>
       </div>
     </section>
   );
