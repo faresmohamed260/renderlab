@@ -312,3 +312,27 @@
   [data-fibo-header] [data-renderlab-wordmark], #fibo-create-header-modes { display: none; }
   [data-fibo-header] [data-renderlab-brand] > svg { width: 32px; height: 32px; }
 }
+
+.fibo-header-actions { display: flex; align-items: center; gap: 6px; }
+.fibo-header-actions .fibo-header-action {
+  min-width: 36px;
+  min-height: 36px;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 9999px;
+  color: rgb(235 232 255 / 70%);
+  font-size: 12px;
+  font-weight: 500;
+}
+.fibo-header-action svg { width: 17px; height: 17px; }
+.fibo-queue-dot { width: 6px; height: 6px; border-radius: 50%; background: #a5b4fc; }
+.fibo-header-panel { z-index: 60; min-width: 218px; border-radius: 16px; background: rgb(26 23 38 / 96%); }
+.fibo-header-panel-copy { padding: 4px 8px 8px; font-size: 12px; }
+.fibo-shortcut-list { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; padding: 6px 8px; font-size: 12px; }
+.fibo-shortcut-list dd { text-align: end; }
+.fibo-shortcut-list kbd { border-radius: 4px; background: rgb(255 255 255 / 10%); padding: 2px 4px; }
+@media (max-width: 760px) {
+  .fibo-header-actions { gap: 0; }
+  .fibo-header-actions .fibo-header-action { min-width: 44px; min-height: 44px; }
+  .fibo-header-action > span:not(.fibo-queue-dot) { display: none; }
+}

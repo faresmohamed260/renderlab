@@ -61,6 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           {section === "/create" ? <div id="fibo-create-header-modes" /> : null}
           <nav className="ml-auto flex min-h-11 items-center gap-1 sm:gap-2" aria-label="Application navigation">
+            {section === "/create" ? <div id="fibo-create-header-actions" /> : null}
             <Button
               asChild
               variant="ghost"

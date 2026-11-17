@@ -5,6 +5,7 @@ import { ChevronDown, ImagePlus, MoreHorizontal, Plus, Volume2, X } from "lucide
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { CreateHeaderActions } from "./create-header-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -285,6 +286,14 @@ function isFileDrag(event: DragEvent<HTMLElement>) {
 }
 
 const createHeaderQuery = "(min-width: 761px)";
+
+function subscribeHeaderActions() {
+  return () => {};
+}
+
+function getHeaderActions() {
+  return document.getElementById("fibo-create-header-actions");
+}
 
 function subscribeCreateHeader(onChange: () => void) {
   const query = window.matchMedia(createHeaderQuery);
@@ -834,6 +843,7 @@ export function CreateWorkspace({
 
   const desktopHeader = useSyncExternalStore(subscribeCreateHeader, getCreateHeaderDesktop, () => false);
   const modeSlot = desktopHeader ? document.getElementById("fibo-create-header-modes") : null;
+  const actionSlot = useSyncExternalStore(subscribeHeaderActions, getHeaderActions, () => null);
   const workflowSwitch = (
     <ToggleGroup
       type="single"
@@ -926,6 +936,7 @@ export function CreateWorkspace({
           </motion.div>
         </AnimatePresence>
 
+        {actionSlot ? createPortal(<CreateHeaderActions activeStatus={submitting ? "Submitting generation." : jobActive ? statusText : null} />, actionSlot) : null}
         {modeSlot ? createPortal(workflowSwitch, modeSlot) : workflowSwitch}
         {outputMode}
 
