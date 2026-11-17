@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Keyboard, ListOrdered } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Keyboard, List, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,22 +13,34 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type HeaderPanel = "queue" | "shortcuts";
-
 export function CreateHeaderActions({ activeStatus }: { activeStatus: string | null }) {
-  const [panel, setPanel] = useState<HeaderPanel | null>(null);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const shortcutsRef = useRef<HTMLDialogElement>(null);
+
+  function toggleShortcuts() {
+    const dialog = shortcutsRef.current;
+    if (!dialog) return;
+    if (dialog.open) dialog.close();
+    else {
+      setQueueOpen(false);
+      dialog.showModal();
+    }
+  }
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented || event.repeat || event.isComposing || event.ctrlKey || event.metaKey || event.shiftKey
-        || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      if (event.defaultPrevented || event.repeat || event.isComposing || event.ctrlKey || event.metaKey || event.shiftKey) return;
       const target = event.target;
       if (target instanceof Element && target.closest('input, textarea, select, [contenteditable], [role="textbox"]')) return;
-      const next = !event.altKey && event.key.toLowerCase() === "q" ? "queue"
-        : event.altKey && event.code === "Slash" ? "shortcuts" : null;
-      if (!next) return;
-      event.preventDefault();
-      setPanel((current) => current === next ? null : next);
+      const otherDialog = document.querySelector('dialog[open], [role="dialog"], [role="alertdialog"]');
+      if (otherDialog && otherDialog !== shortcutsRef.current) return;
+      if (event.altKey && event.code === "Slash") {
+        event.preventDefault();
+        toggleShortcuts();
+      } else if (!event.altKey && event.key.toLowerCase() === "q" && !shortcutsRef.current?.open) {
+        event.preventDefault();
+        setQueueOpen((open) => !open);
+      }
     }
 
     window.addEventListener("keydown", onKeyDown);
@@ -37,12 +49,12 @@ export function CreateHeaderActions({ activeStatus }: { activeStatus: string | n
 
   return (
     <div className="fibo-header-actions">
-      <DropdownMenu open={panel === "queue"} onOpenChange={(open) => setPanel((current) => open ? "queue" : current === "queue" ? null : current)} modal={false}>
+      <DropdownMenu open={queueOpen} onOpenChange={setQueueOpen} modal={false}>
         <DropdownMenuTrigger asChild>
           <Button type="button" variant="ghost" size="sm" className="fibo-header-action" aria-label="Render queue" aria-keyshortcuts="Q" title="Render queue (Q)">
-            <ListOrdered aria-hidden="true" />
-            <span>Render queue</span>
-            {activeStatus ? <span className="fibo-queue-dot" aria-hidden="true" /> : null}
+            <List aria-hidden="true" />
+            <span className="fibo-queue-label">Queue</span>
+            {activeStatus ? <span className="fibo-queue-count" aria-label="1 active render">1</span> : null}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -58,29 +70,36 @@ export function CreateHeaderActions({ activeStatus }: { activeStatus: string | n
           <DropdownMenuItem asChild><Link href="/activity">Open Activity</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <DropdownMenu open={panel === "shortcuts"} onOpenChange={(open) => setPanel((current) => open ? "shortcuts" : current === "shortcuts" ? null : current)} modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button type="button" variant="ghost" size="icon" className="fibo-header-action" aria-label="Keyboard shortcuts" aria-keyshortcuts="Alt+/" title="Keyboard shortcuts (Alt+/)">
-            <Keyboard aria-hidden="true" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="fibo-header-panel"
-          onInteractOutside={(event) => {
-            if (event.target instanceof Element && event.target.closest(".fibo-header-actions")) event.preventDefault();
-          }}
-        >
-          <DropdownMenuLabel>Keyboard shortcuts</DropdownMenuLabel>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="fibo-header-action fibo-shortcuts-trigger"
+        aria-haspopup="dialog"
+        aria-controls="fibo-shortcuts-dialog"
+        aria-keyshortcuts="Alt+/"
+        title="Keyboard shortcuts (Alt+/)"
+        onClick={toggleShortcuts}
+      >
+        <Keyboard aria-hidden="true" />
+        <span>Shortcuts</span>
+      </Button>
+      <dialog ref={shortcutsRef} id="fibo-shortcuts-dialog" className="fibo-shortcuts-dialog" aria-labelledby="fibo-shortcuts-title">
+        <div className="fibo-shortcuts-heading">
+          <h2 id="fibo-shortcuts-title">Keyboard shortcuts</h2>
+          <form method="dialog">
+            <Button type="submit" variant="ghost" size="icon" aria-label="Close keyboard shortcuts"><X aria-hidden="true" /></Button>
+          </form>
+        </div>
+        <div className="fibo-shortcuts-group">
+          <h3>Studio</h3>
           <dl className="fibo-shortcut-list">
-            <dt>Toggle render queue</dt><dd><kbd>Q</kbd></dd>
-            <dt>Toggle shortcuts</dt><dd><kbd>Alt + /</kbd></dd>
-            <dt>Close menu</dt><dd><kbd>Esc</kbd></dd>
+            <dt>Open / close render queue</dt><dd><kbd>Q</kbd></dd>
+            <dt>Open / close shortcuts</dt><dd><kbd>Alt + /</kbd></dd>
+            <dt>Close queue or shortcuts</dt><dd><kbd>Esc</kbd></dd>
           </dl>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setPanel(null)}>Close</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </div>
+      </dialog>
     </div>
   );
 }

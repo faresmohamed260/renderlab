@@ -315,18 +315,18 @@
 
 .fibo-header-actions { display: flex; align-items: center; gap: 6px; }
 .fibo-header-actions .fibo-header-action {
-  min-width: 36px;
+  min-width: 0;
   min-height: 36px;
   gap: 6px;
   padding: 5px 9px;
   border-radius: 9999px;
-  color: rgb(235 232 255 / 70%);
+  color: rgb(235 232 255 / 55%);
   font-size: 12px;
   font-weight: 500;
 }
 .fibo-header-action svg { width: 17px; height: 17px; }
-.fibo-queue-dot { width: 6px; height: 6px; border-radius: 50%; background: #a5b4fc; }
-.fibo-header-panel { z-index: 60; min-width: 218px; border-radius: 16px; background: rgb(26 23 38 / 96%); }
+.fibo-queue-count { color: #a5b4fc; font-size: 10px; }
+.fibo-header-panel { z-index: 60; width: min(358px, calc(100vw - 24px)); padding: 14px; border: 0; border-radius: 20px; background: rgb(26 23 38 / 88%); backdrop-filter: blur(22px); }
 .fibo-header-panel-copy { padding: 4px 8px 8px; font-size: 12px; }
 .fibo-shortcut-list { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; padding: 6px 8px; font-size: 12px; }
 .fibo-shortcut-list dd { text-align: end; }
@@ -334,5 +334,28 @@
 @media (max-width: 760px) {
   .fibo-header-actions { gap: 0; }
   .fibo-header-actions .fibo-header-action { min-width: 44px; min-height: 44px; }
-  .fibo-header-action > span:not(.fibo-queue-dot) { display: none; }
+  .fibo-header-action > .fibo-queue-label, .fibo-header-actions .fibo-shortcuts-trigger { display: none; }
 }
+
+.fibo-header-actions .fibo-header-action { height: 36px; }
+.fibo-header-actions .fibo-header-action svg { stroke-width: 1.7; }
+.fibo-shortcuts-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(610px, calc(100% - 28px));
+  max-height: calc(100dvh - 28px);
+  padding: 16px;
+  overflow: auto;
+  border: 0;
+  border-radius: 24px;
+  color: #dedbed;
+  background: rgb(26 23 38 / 88%);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 18px 60px rgb(0 0 0 / 45%);
+}
+.fibo-shortcuts-dialog::backdrop { background: rgb(6 4 14 / 56%); }
+.fibo-shortcuts-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fibo-shortcuts-heading h2 { font-size: 16px; font-weight: 650; }
+.fibo-shortcuts-group { margin-top: 12px; padding: 10px; border-radius: 14px; background: rgb(255 255 255 / 4.5%); }
+.fibo-shortcuts-group h3 { padding-inline: 8px; font-size: 12px; font-weight: 650; }
