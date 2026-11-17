@@ -465,6 +465,12 @@ All future RenderLab Modal worker operations are to use the owner’s main Modal
 Before deploying: reconcile the workspace against the reciprocal RenderLab/S.A.G.A. ownership manifests under ADR-002; inventory current production workers and validate replacement worker capacity and GPU access on the approved account before a separately authorized routing cutover. Keep the existing fleet and rollback information intact until the cutover is verified. Do not infer GPU access or production health from billing setup or token creation.
 
 
+**Read-only dependency audit (2026-11-17):** The owner confirmed the prior management tokens for the main workspace were revoked and the replacement is local to WANDA, not provisioned to either app. The existing ownership contract already maps this workspace to RenderLab's `modal-01`, which S.A.G.A.'s protected main reserves for RenderLab. Vercel confirmed the canonical production deployment `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF`; its exact source calls worker HTTP gateways without a Modal management token, and no Modal token variable was listed in Vercel production. GitHub has the `SAGA_MODAL_TOKENS_JSON` secret name; its contents and token validity were not inspected. Do not put the new token in that omnibus secret.
+
+The active LTX primary (`ltx-primary-02`, `modal-01`) returned Modal HTTP 404 (invalid function call) on /health. The LTX standby, FLUX primary, and both Qwen workers returned 200 on /health. These checks did not submit jobs or verify rendering/failover. The app's generation availability flag returned true, which is not a fleet health test. Upscaling uses a separate configured gateway whose ownership and health were not verified.
+
+For migration, keep the reciprocal ownership guard and use only the verified `modal-01` workspace for new work. Qualify a non-production GPU run there first, then stage replacements for LTX, FLUX, Qwen and any separately confirmed upscale dependency. Use distinct worker IDs for replacement endpoints, retain old IDs for polling/cancellation and rollback, and do not retire old endpoints or change production routing before qualification and explicit cutover approval.
+
 RenderLab reuses existing ComfyUI/Modal workers while the **RenderLab server owns orchestration**. Public routing metadata lives in `src/server/generation/worker-fleet.ts`; credentials never belong there.
 
 Reused ecosystems:
