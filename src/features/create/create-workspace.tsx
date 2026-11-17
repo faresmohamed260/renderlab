@@ -79,6 +79,7 @@ type InitialContinuation = {
 };
 
 type AttachedReference = {
+  slot: number;
   alias: GenerationInputAlias;
   source: GenerationInputSource;
   previewUrl: string;
@@ -321,9 +322,10 @@ export function CreateWorkspace({
   );
   const [references, setReferences] = useState<AttachedReference[]>(() =>
     initialRecipe
-      ? initialRecipe.references
+      ? initialRecipe.references.map((reference, slot) => ({ ...reference, slot }))
       : initialContinuation
         ? [{
+            slot: 0,
             alias: generationInputAlias(1),
             source: { type: "media-asset", id: initialContinuation.asset.id },
             previewUrl: initialContinuation.asset.contentUrl,
@@ -339,7 +341,7 @@ export function CreateWorkspace({
     initialRecipe?.references[0]?.alias ?? (initialContinuation ? generationInputAlias(1) : null),
   );
   const [mentionRange, setMentionRange] = useState<{ start: number; end: number } | null>(null);
-  const [referenceUploadTargetAlias, setReferenceUploadTargetAlias] = useState<GenerationInputAlias | null>(null);
+  const referenceUploadTarget = useRef<{ alias: GenerationInputAlias | null; slot?: number }>({ alias: null });
   const [referenceUploading, setReferenceUploading] = useState(false);
   const [referenceDragActive, setReferenceDragActive] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -474,11 +476,13 @@ export function CreateWorkspace({
   const [imageWorkflow, setImageWorkflow] = useState<"generate" | "edit">(() => initialRecipe && !initialRecipe.request.inputs.length ? "generate" : "edit");
   const activeImageWorkflow = hasReference ? "edit" : imageWorkflow;
   const maxReferences = maxGenerationInputsForOutput(outputKind);
+  const setupSlots = outputKind === "image" && activeImageWorkflow === "edit" ? 4 : outputKind === "video" ? 1 : 0;
+  const sourceAttached = references.some((reference) => reference.slot === 0);
   const referenceDropAvailable =
     accountAvailable
     && mediaUploadAvailable
     && !referenceUploading
-    && references.length < maxReferences;
+    && references.length < setupSlots;
 
   const unresolvedReferenceAliases = useMemo(
     () => unresolvedGenerationPromptReferenceAliases(
@@ -499,7 +503,8 @@ export function CreateWorkspace({
   const canSubmit =
     accountAvailable
     && generationAvailable
-    && (outputKind !== "image" || activeImageWorkflow !== "edit" || hasReference)
+    && (outputKind !== "image" || activeImageWorkflow !== "edit" || sourceAttached)
+    && references.length <= maxReferences
     && Boolean(prompt.trim())
     && unresolvedReferenceAliases.length === 0
     && !submitting
@@ -590,16 +595,18 @@ export function CreateWorkspace({
     if (outputKind !== "image") return;
     setReferences((current) => {
       const index = current.findIndex((reference) => reference.alias === alias);
-      if (index <= 0) return current;
-      const next = [...current];
-      [next[0], next[index]] = [next[index], next[0]];
-      return next;
+      const selected = current[index];
+      if (!selected || selected.slot === 0) return current;
+      return current.map((reference) => reference.alias === alias
+        ? { ...reference, slot: 0 }
+        : reference.slot === 0 ? { ...reference, slot: selected.slot } : reference
+      ).sort((a, b) => a.slot - b.slot);
     });
     setError(null);
   }
 
-  function chooseReferenceFile(targetAlias: GenerationInputAlias | null) {
-    setReferenceUploadTargetAlias(targetAlias);
+  function chooseReferenceFile(targetAlias: GenerationInputAlias | null, slot?: number) {
+    referenceUploadTarget.current = { alias: targetAlias, slot };
     if (fileInputRef.current) fileInputRef.current.value = "";
     fileInputRef.current?.click();
   }
@@ -657,6 +664,7 @@ export function CreateWorkspace({
     if (!resultAsset) return;
     const nextAlias = generationInputAlias(nextReferenceNumber);
     setReferences([{
+      slot: 0,
       alias: nextAlias,
       source: { type: "media-asset", id: resultAsset.id },
       previewUrl: resultAsset.contentUrl,
@@ -679,7 +687,7 @@ export function CreateWorkspace({
     setError(null);
   }
 
-  async function uploadReference(file: File, targetAlias: GenerationInputAlias | null) {
+  async function uploadReference(file: File, targetAlias: GenerationInputAlias | null, targetSlot?: number) {
     if (!accountAvailable || !mediaUploadAvailable) return;
 
     const mimeType = file.type.toLowerCase();
@@ -691,8 +699,11 @@ export function CreateWorkspace({
       setError("Reference images must be no larger than 25 MB.");
       return;
     }
-    if (!targetAlias && references.length >= maxGenerationInputsForOutput(outputKind)) {
-      setError(outputKind === "image" ? "Image supports up to two references." : "Video supports one source image.");
+    const slot = targetAlias ? references.find((reference) => reference.alias === targetAlias)?.slot
+      : targetSlot ?? Array.from({ length: setupSlots }, (_, index) => index)
+        .find((index) => !references.some((reference) => reference.slot === index));
+    if (slot === undefined || slot >= setupSlots) {
+      setError("There is no empty image slot.");
       return;
     }
 
@@ -703,6 +714,7 @@ export function CreateWorkspace({
     try {
       const asset = await uploadPersistentImageFile(file, mimeType as MediaUploadMimeType);
       const attached: AttachedReference = {
+        slot,
         alias: uploadAlias,
         source: { type: "media-asset", id: asset.id },
         previewUrl: asset.contentUrl,
@@ -711,11 +723,11 @@ export function CreateWorkspace({
       if (targetAlias) {
         setReferences((current) => current.map((reference) => reference.alias === targetAlias ? attached : reference));
       } else {
-        setReferences((current) => [...current, attached]);
+        setReferences((current) => [...current, attached].sort((a, b) => a.slot - b.slot));
         setMentionMenuAnchorAlias((current) => current ?? uploadAlias);
         setNextReferenceNumber((current) => current + 1);
       }
-      if (!targetAlias && references.length === 0) {
+      if (!targetAlias && slot === 0) {
         setImageAspect("original");
         setVideoAspect("original");
       }
@@ -723,7 +735,7 @@ export function CreateWorkspace({
       setError(uploadError instanceof Error ? uploadError.message : "Reference upload failed.");
     } finally {
       setReferenceUploading(false);
-      setReferenceUploadTargetAlias(null);
+      referenceUploadTarget.current = { alias: null };
     }
   }
 
@@ -904,7 +916,8 @@ export function CreateWorkspace({
             aria-label="Reference image file"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) void uploadReference(file, referenceUploadTargetAlias);
+              const { alias, slot } = referenceUploadTarget.current;
+              if (file) void uploadReference(file, alias, slot);
             }}
           />
           <Label htmlFor="create-prompt" className="sr-only">Prompt</Label>
@@ -938,29 +951,55 @@ export function CreateWorkspace({
                 <p className="fibo-setup-note"><Link href="/settings">Sign in</Link> to attach images.</p>
               ) : !mediaUploadAvailable ? (
                 <p className="fibo-setup-note">Image uploads are unavailable.</p>
-              ) : outputKind === "image" && activeImageWorkflow === "edit" ? (
-                <p className="fibo-setup-note">Add a source first. RenderLab supports one additional reference.</p>
+              ) : references.length > maxReferences ? (
+                <p className="fibo-setup-note" role="status">Keep the source and one reference to generate. The hosted API does not accept more than two images.</p>
+              ) : references.length > 0 && setupSlots === 4 && !sourceAttached ? (
+                <p className="fibo-setup-note" role="status">Add a source image before generating.</p>
               ) : null}
               <div className="fibo-input-tiles" data-setup={outputKind === "image" && activeImageWorkflow === "edit" ? "edit" : outputKind}>
                 {Array.from({ length: outputKind === "video" ? 1 : activeImageWorkflow === "edit" ? 4 : 1 }, (_, index) => {
-                  const reference = references[index];
+                  const reference = references.find((entry) => entry.slot === index);
                   const inspiration = outputKind === "image" && activeImageWorkflow === "generate";
-                  const unsupported = inspiration || index >= maxReferences;
-                  const blockedReason = unsupported
-                    ? (inspiration ? "Text to Image does not accept an inspiration image." : "Production accepts a source and one reference only.")
+                  const blockedReason = inspiration ? "Text to Image does not accept an inspiration image."
                     : !accountAvailable ? "Sign in from Settings to upload an image."
-                    : !mediaUploadAvailable ? "Image upload storage is unavailable."
-                    : !reference && index !== references.length ? "Add the source image before Reference 2." : null;
+                    : !mediaUploadAvailable ? "Image upload storage is unavailable." : null;
                   const label = outputKind === "video" ? "Start image" : inspiration ? "Inspiration" : index === 0 ? "Source" : "Reference " + (index + 1);
                   return (
-                    <Button key={index} type="button" variant="ghost"
+                    <div key={index} className="fibo-setup-tile"
+                      onDragOver={(event) => {
+                        if (!blockedReason && !referenceUploading && isFileDrag(event)) {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          event.dataTransfer.dropEffect = "copy";
+                        }
+                      }}
+                      onDrop={(event) => {
+                        if (blockedReason || referenceUploading || !isFileDrag(event)) return;
+                        event.preventDefault();
+                        event.stopPropagation();
+                        resetReferenceDragState();
+                        if (event.dataTransfer.files.length !== 1) {
+                          setError("Drop one image at a time.");
+                          return;
+                        }
+                        void uploadReference(event.dataTransfer.files[0]!, reference?.alias ?? null, index);
+                      }}>
+                    <Button type="button" variant="ghost"
                       className={index === 0 ? "fibo-input-slot clear-composer-reference-trigger" : "fibo-input-slot"}
                       aria-label={(reference ? "Replace " : "Choose ") + label}
                       disabled={referenceUploading || Boolean(blockedReason)}
                       title={blockedReason ?? undefined}
-                      onClick={() => chooseReferenceFile(reference?.alias ?? null)}>
+                      onClick={() => chooseReferenceFile(reference?.alias ?? null, index)}>
                       {reference ? <img src={reference.previewUrl} alt="" /> : <span>{label}</span>}
                     </Button>
+                      {reference ? (
+                        <Button type="button" size="icon-sm" variant="ghost" className="fibo-setup-remove"
+                          aria-label={"Remove " + label} disabled={referenceUploading}
+                          onClick={() => removeReference(reference.alias)}>
+                          <X aria-hidden="true" />
+                        </Button>
+                      ) : null}
+                    </div>
                   );
                 })}
                 {outputKind !== "image" || activeImageWorkflow !== "edit" ? (
@@ -1037,7 +1076,7 @@ export function CreateWorkspace({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {outputKind === "image" && index > 0 ? (
+                      {outputKind === "image" && reference.slot > 0 ? (
                         <DropdownMenuItem onSelect={() => makeReferencePrimary(reference.alias)}>
                           Make primary
                         </DropdownMenuItem>

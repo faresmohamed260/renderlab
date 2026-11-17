@@ -572,3 +572,13 @@
 .fibo-create .fibo-setup-note { margin: 0 0 8px; color: #b1adbf; font-size: 12px; line-height: 1.4; }
 .fibo-create .fibo-setup-note a { color: #c4b5fd; text-decoration: underline; }
 .fibo-create .fibo-input-slot:disabled { cursor: not-allowed; }
+
+.fibo-create .fibo-setup-tile { position: relative; min-width: 0; }
+.fibo-create .fibo-setup-tile .fibo-input-slot { width: 100%; }
+.fibo-create .fibo-setup-remove {
+  position: absolute; top: 4px; right: 4px; display: grid; place-items: center;
+  width: 22px; min-height: 0; height: 22px; padding: 0; border-radius: 50%;
+  background: #151121d9; color: #faf7ff;
+}
+.fibo-create .fibo-setup-remove:is(:hover, :focus-visible) { background: #342651; }
+.fibo-create .fibo-setup-remove > svg { width: 12px; height: 12px; }
