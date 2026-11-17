@@ -561,3 +561,10 @@
 }
 .fibo-create-controls label[for="create-prompt"] { position: absolute; }
 .fibo-create .fibo-primary-settings #fibo-seed { padding-right: 40px; }
+
+.fibo-create .fibo-primary-settings #fibo-steps { font: inherit; }
+.fibo-create .fibo-seed-entry button,
+.fibo-create .fibo-prompt-heading button { display: grid; place-items: center; line-height: 1; }
+.fibo-create .fibo-seed-entry button > svg { width: 16px; height: 16px; }
+.fibo-create .fibo-generate-action > span > svg { width: 16px; height: 16px; flex: none; }
+.fibo-create .fibo-input-slot > span { display: grid; justify-items: center; }

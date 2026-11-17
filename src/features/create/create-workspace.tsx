@@ -896,6 +896,17 @@ export function CreateWorkspace({
           onDragLeave={handleReferenceDragLeave}
           onDrop={(event) => void handleReferenceDrop(event)}
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="sr-only"
+            aria-label="Reference image file"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void uploadReference(file, referenceUploadTargetAlias);
+            }}
+          />
           <Label htmlFor="create-prompt" className="sr-only">Prompt</Label>
           {referenceDragActive ? (
             <div
@@ -934,7 +945,7 @@ export function CreateWorkspace({
                       className={index === 0 ? "fibo-input-slot clear-composer-reference-trigger" : "fibo-input-slot"}
                       aria-label={(reference ? "Replace " : "Choose ") + label}
                       disabled={unsupported || !accountAvailable || !mediaUploadAvailable || referenceUploading || (!reference && index !== references.length)}
-                      title={unsupported ? (inspiration ? "RenderLab does not support inspiration in Text to Image." : "RenderLab supports a source and one reference.") : undefined}
+                      title={unsupported ? (inspiration ? "RenderLab does not support inspiration in Text to Image." : "RenderLab supports a source and one reference.") : !accountAvailable ? "Sign in to upload an image." : !mediaUploadAvailable ? "Image uploads are not connected in this environment." : !reference && index !== references.length ? "Add the source image first." : undefined}
                       onClick={() => chooseReferenceFile(reference?.alias ?? null)}>
                       {reference ? <img src={reference.previewUrl} alt="" /> : <span>{label}</span>}
                     </Button>
@@ -1056,6 +1067,7 @@ export function CreateWorkspace({
           <Textarea
             ref={promptInputRef}
             id="create-prompt"
+            spellCheck={true}
             variant="bare"
             value={prompt}
             onChange={handlePromptChange}
@@ -1072,14 +1084,14 @@ export function CreateWorkspace({
 
             <details className="fibo-negative-prompt">
               <summary>Negative prompt</summary>
-              <Textarea aria-label="Negative prompt" variant="bare" value={advancedDraft.negativePrompt}
+              <Textarea aria-label="Negative prompt" spellCheck={true} variant="bare" value={advancedDraft.negativePrompt}
                 onChange={(event) => setAdvancedDraft({ ...advancedDraft, negativePrompt: event.target.value })}
                 placeholder="What should the image avoid?" />
             </details>
             {outputKind === "image" ? (
               <details className="fibo-negative-prompt">
                 <summary>VGL JSON</summary>
-                <Textarea aria-label="VGL JSON" variant="bare" disabled placeholder="VGL JSON is not supported by RenderLab." />
+                <Textarea aria-label="VGL JSON" spellCheck={false} variant="bare" disabled placeholder="VGL JSON is not supported by RenderLab." />
               </details>
             ) : null}
           </div>
@@ -1101,23 +1113,13 @@ export function CreateWorkspace({
                 {outputKind === "image" ? <label htmlFor="fibo-count">Images<Input id="fibo-count" type="number" value={1} disabled title="RenderLab generates one image per request." /></label> : null}
                 {outputKind === "image" ? (
                   <label className="fibo-steps-field" htmlFor="fibo-steps">Steps <output>{advancedDraft.steps}</output>
-                    <Input id="fibo-steps" type="range" disabled={imageModel === "qwen-image-edit-2511"} min={generationAdvancedCapabilities.steps.min} max={generationAdvancedCapabilities.steps.max}
+                    <Input id="fibo-steps" type="range" disabled={imageModel === "qwen-image-edit-2511"} min={generationAdvancedCapabilities.steps.min} max={Math.min(generationAdvancedCapabilities.steps.max, Math.max(8, Number(initialRecipe?.request.advanced?.steps) || 0))}
                       value={advancedDraft.steps} onChange={(event) => setAdvancedDraft({ ...advancedDraft, steps: event.target.value })} />
                   </label>
                 ) : null}
               </div>
               {outputKind === "video" ? <div data-create-primary-controls className="clear-composer-settings flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:pb-0">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="sr-only"
-                  aria-label="Reference image file"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void uploadReference(file, referenceUploadTargetAlias);
-                  }}
-                />
+
 
 
 
