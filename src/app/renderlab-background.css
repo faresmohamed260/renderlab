@@ -40,3 +40,40 @@ html.renderlab-gradient-host:has(.wanda-create-background),
   background: none;
   animation: none;
 }
+/* Keep navigation and footer links on the canvas, without a viewport-wide strip. */
+.renderlab-gradient [data-kinetic-surface="topbar"],
+.renderlab-gradient [data-landing-header] {
+  position: relative;
+  inset: auto;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.renderlab-gradient [data-kinetic-content] {
+  padding-block-start: 0;
+  min-block-size: calc(100dvh - 64px);
+}
+
+@media (width >= 64rem) {
+  .renderlab-gradient [data-kinetic-content] {
+    min-block-size: calc(100dvh - 72px);
+  }
+}
+
+.renderlab-gradient [data-landing-footer] {
+  border: 0;
+  background: transparent;
+}
+
+.renderlab-gradient [data-landing-section="hero"] {
+  min-block-size: calc(100svh - 80px);
+  padding-block-start: 24px;
+}
+
+@media (width <= 900px) {
+  .renderlab-gradient [data-landing-section="hero"] {
+    min-block-size: auto;
+    padding-block-start: 30px;
+  }
+}
