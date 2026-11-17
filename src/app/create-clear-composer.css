@@ -125,8 +125,8 @@
 .clear-create-workspace.fibo-create {
   --fibo-glass: linear-gradient(150deg, rgb(255 255 255 / 5%), transparent 62%), rgb(20 19 29 / 58%);
   width: 100%;
-  max-width: none;
-  padding: 8px 12px 12px;
+  max-width: none !important;
+  padding: 0 !important;
   background: transparent;
 }
 /* The ambient glow belongs behind the whole Create surface, not inside Canvas. */
@@ -143,11 +143,12 @@
 .fibo-create .fibo-create-grid::after { content: none; }
 .fibo-create .fibo-create-grid {
   display: grid;
-  grid-template-columns: clamp(288px, 26vw, 360px) minmax(0, 1fr) clamp(144px, 14vw, 214px);
+  grid-template-columns: clamp(300px, 26vw, 360px) minmax(0, 1fr) clamp(144px, 14vw, 214px);
   align-items: stretch;
-  gap: 14px;
-  max-width: none;
-  min-height: min(750px, 78dvh);
+  gap: 0;
+  max-width: none !important;
+  height: max(420px, calc(100dvh - 100px));
+  grid-template-rows: minmax(0, 1fr);
 }
 .fibo-create-controls,
 .fibo-create-history {
@@ -158,8 +159,10 @@
   backdrop-filter: blur(18px);
   box-shadow: inset 0 1px rgb(255 255 255 / 9%), 0 5px 18px rgb(0 0 0 / 14%);
 }
-.fibo-create .clear-create-context { margin: 0 0 14px; }
-.fibo-create .clear-create-heading { font-size: clamp(18px, 2vw, 25px); }
+.fibo-create-controls { margin: 8px 0 12px 12px; overflow: auto; }
+.fibo-create-history { margin: 8px 12px 12px 0; overflow: auto; }
+.fibo-create .clear-create-context { width: 100%; margin: 0 0 14px !important; }
+.fibo-create .clear-create-heading { font-size: clamp(18px, 2vw, 25px) !important; }
 .fibo-create .clear-composer-mode { margin-bottom: 10px; }
 .fibo-create .clear-create-composer { border-radius: 16px; }
 .fibo-create .clear-composer-footer { flex-direction: column; align-items: stretch; }
@@ -168,7 +171,9 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 380px;
+  min-height: 0;
+  padding: 6px 18px 0;
+  container-type: size;
   overflow: hidden;
   border-radius: 24px;
   background: transparent;
@@ -176,7 +181,7 @@
 .fibo-create-empty {
   position: relative;
   display: grid;
-  width: min(92%, 420px);
+  width: min(92%, calc(69cqh));
   aspect-ratio: 3 / 4;
   margin: auto;
   place-items: center;
@@ -193,16 +198,13 @@
 .fibo-create-history p { color: var(--text-muted); font-size: 12px; }
 .fibo-create-canvas .clear-create-stage,
 .fibo-create-canvas .clear-create-result { margin: 12px; }
-@media (max-width: 1000px) and (min-width: 761px) {
-  .fibo-create .fibo-create-grid { grid-template-columns: minmax(250px, 32%) minmax(0, 1fr); }
-  .fibo-create-history { grid-column: 1 / -1; }
-}
+.kinetic-app:has(.fibo-create) > [data-kinetic-surface="topbar"] { height: 68px; }
+.kinetic-app:has(.fibo-create) > [data-kinetic-content] { padding-top: 68px; }
 @media (max-width: 760px) {
-  .fibo-create .fibo-create-grid { display: flex; flex-direction: column; min-height: 0; gap: 8px; }
-  .fibo-create-canvas { order: -1; min-height: 40dvh; border-radius: 17px; }
-  .fibo-create-controls, .fibo-create-history { padding: 12px; border-radius: 17px; }
+  .fibo-create .fibo-create-grid { display: flex; flex-direction: column; height: auto; min-height: 0; gap: 4px; }
+  .fibo-create-canvas { order: -1; min-height: 55dvh; padding: 4px 10px 0; border-radius: 17px; container-type: normal; }
+  .fibo-create-controls, .fibo-create-history { margin: 0; padding: 12px; border-radius: 17px; }
 }
-
 @media (max-width: 760px) {
   .kinetic-app:has(.fibo-create) {
     --fibo-blue-size: 65vw 42dvh;
@@ -212,7 +214,7 @@
   }
   .fibo-create-empty {
     width: 100%;
-    min-height: 40dvh;
+    min-height: 55dvh;
     aspect-ratio: auto;
     background: transparent;
   }
