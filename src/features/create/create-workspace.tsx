@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Dices, Clock, ImagePlus, Sparkles, MoreHorizontal, Volume2, X } from "lucide-react";
+import { ChevronDown, Dices, Clock, Sparkles, MoreHorizontal, Volume2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
@@ -281,7 +281,7 @@ export function CreateWorkspace({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const promptSelectionRef = useRef({ start: 0, end: 0 });
-  const referenceDragDepth = useRef(0);
+
   const [randomizeSeed, setRandomizeSeed] = useState(false);
   const [recentPrompts, setRecentPrompts] = useState<string[]>([]);
   const [cancelPending, setCancelPending] = useState(false);
@@ -343,7 +343,7 @@ export function CreateWorkspace({
   const [mentionRange, setMentionRange] = useState<{ start: number; end: number } | null>(null);
   const referenceUploadTarget = useRef<{ alias: GenerationInputAlias | null; slot?: number }>({ alias: null });
   const [referenceUploading, setReferenceUploading] = useState(false);
-  const [referenceDragActive, setReferenceDragActive] = useState(false);
+  const [dropTarget, setDropTarget] = useState<number | "canvas" | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [imageAdvanced, setImageAdvanced] = useState<AdvancedDraft>(() =>
     initialRecipe?.request.output.kind === "image"
@@ -478,11 +478,7 @@ export function CreateWorkspace({
   const maxReferences = maxGenerationInputsForOutput(outputKind);
   const setupSlots = outputKind === "image" && activeImageWorkflow === "edit" ? 4 : outputKind === "video" ? 1 : 0;
   const sourceAttached = references.some((reference) => reference.slot === 0);
-  const referenceDropAvailable =
-    accountAvailable
-    && mediaUploadAvailable
-    && !referenceUploading
-    && references.length < setupSlots;
+
 
   const unresolvedReferenceAliases = useMemo(
     () => unresolvedGenerationPromptReferenceAliases(
@@ -611,53 +607,53 @@ export function CreateWorkspace({
     fileInputRef.current?.click();
   }
 
-  function resetReferenceDragState() {
-    referenceDragDepth.current = 0;
-    setReferenceDragActive(false);
-  }
+  const tileDragType = "application/x-renderlab-image-tile";
 
-  function handleReferenceDragEnter(event: DragEvent<HTMLFormElement>) {
-    if (!isFileDrag(event)) return;
-    event.preventDefault();
-    referenceDragDepth.current += 1;
-    if (!referenceDropAvailable) return;
-    setError(null);
-    setReferenceDragActive(true);
-  }
-
-  function handleReferenceDragOver(event: DragEvent<HTMLFormElement>) {
-    if (!isFileDrag(event)) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = referenceDropAvailable ? "copy" : "none";
-  }
-
-  function handleReferenceDragLeave(event: DragEvent<HTMLFormElement>) {
-    if (!isFileDrag(event) || referenceDragDepth.current === 0) return;
-    event.preventDefault();
-    referenceDragDepth.current = Math.max(0, referenceDragDepth.current - 1);
-    if (referenceDragDepth.current === 0) setReferenceDragActive(false);
-  }
-
-  async function handleReferenceDrop(event: DragEvent<HTMLFormElement>) {
-    if (!isFileDrag(event)) return;
-    event.preventDefault();
-    resetReferenceDragState();
-    if (referenceUploading) return;
-    if (!accountAvailable) {
-      setError("Sign in to add a private reference image.");
-      return;
-    }
-    if (!mediaUploadAvailable) {
-      setError("Reference upload storage is not configured in this environment.");
-      return;
-    }
-
-    const files = Array.from(event.dataTransfer.files);
-    if (files.length !== 1) {
-      setError("Drop one image at a time.");
-      return;
-    }
-    await uploadReference(files[0]!, null);
+  function imageDropHandlers(target: number | "canvas") {
+    const slot = target === "canvas" ? 0 : target;
+    const occupied = references.find((reference) => reference.slot === slot);
+    const available = accountAvailable && mediaUploadAvailable && setupSlots > slot
+      && !jobActive && !submitting && !referenceUploading;
+    return {
+      onDragOver(event: DragEvent<HTMLElement>) {
+        const swap = target !== "canvas" && occupied && event.dataTransfer.types.includes(tileDragType);
+        const active = available && (swap || isFileDrag(event));
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = !active ? "none" : swap ? "move" : "copy";
+        setDropTarget(active ? target : null);
+      },
+      onDragLeave(event: DragEvent<HTMLElement>) {
+        if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+        setDropTarget((current) => current === target ? null : current);
+      },
+      onDrop(event: DragEvent<HTMLElement>) {
+        event.preventDefault();
+        event.stopPropagation();
+        setDropTarget(null);
+        if (!available) return;
+        const from = event.dataTransfer.getData(tileDragType);
+        if (from) {
+          if (target === "canvas" || !occupied || from === occupied.alias) return;
+          const dragged = references.find((reference) => reference.alias === from);
+          if (!dragged) return;
+          // Keep prompt aliases attached to the same slots, just as in FIBO.
+          setReferences((current) => current.map((reference) => {
+            const incoming = reference.alias === occupied.alias ? dragged
+              : reference.alias === dragged.alias ? occupied : null;
+            return incoming ? { ...incoming, alias: reference.alias, slot: reference.slot } : reference;
+          }));
+          setError(null);
+          return;
+        }
+        if (!isFileDrag(event)) return;
+        if (event.dataTransfer.files.length !== 1) {
+          setError("Drop one image at a time.");
+          return;
+        }
+        void uploadReference(event.dataTransfer.files[0]!, occupied?.alias ?? null, slot);
+      },
+    };
   }
 
   function startContinuation(action: ContinuationAction) {
@@ -902,11 +898,8 @@ export function CreateWorkspace({
           data-create-instrument="true"
           data-create-layout="clear-composer"
           data-create-mode={outputKind}
-          data-create-drop-active={referenceDragActive ? "true" : "false"}
-          onDragEnter={handleReferenceDragEnter}
-          onDragOver={handleReferenceDragOver}
-          onDragLeave={handleReferenceDragLeave}
-          onDrop={(event) => void handleReferenceDrop(event)}
+          onDragOver={(event) => { if (isFileDrag(event)) event.preventDefault(); }}
+          onDrop={(event) => { if (isFileDrag(event)) event.preventDefault(); }}
         >
           <input
             ref={fileInputRef}
@@ -921,29 +914,6 @@ export function CreateWorkspace({
             }}
           />
           <Label htmlFor="create-prompt" className="sr-only">Prompt</Label>
-          {referenceDragActive ? (
-            <div
-              className="pointer-events-none absolute inset-0 !z-30 flex items-center justify-center bg-canvas/90 px-6 text-center backdrop-blur-sm"
-              data-create-drop-overlay="true"
-              role="status"
-            >
-              <div className="flex items-start gap-3" data-create-drop-content="true">
-                <ImagePlus
-                  aria-hidden="true"
-                  className="mt-0.5 size-5 shrink-0 text-accent-bright"
-                  data-create-drop-icon="true"
-                />
-                <div className="flex flex-col items-start gap-0.5 text-left" data-create-drop-copy="true">
-                  <span className="text-sm font-semibold leading-5 text-text" data-create-drop-title="true">
-                    Drop image to add as reference
-                  </span>
-                  <span className="text-xs leading-4 text-text-muted" data-create-drop-detail="true">
-                    PNG, JPEG or WebP · up to 25 MB
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : null}
           <div className="fibo-controls-scroll">
             <section aria-labelledby="fibo-image-setup">
               <h2 id="fibo-image-setup">Image setup</h2>
@@ -966,31 +936,25 @@ export function CreateWorkspace({
                   const label = outputKind === "video" ? "Start image" : inspiration ? "Inspiration" : index === 0 ? "Source" : "Reference " + (index + 1);
                   return (
                     <div key={index} className="fibo-setup-tile"
-                      onDragOver={(event) => {
-                        if (!blockedReason && !referenceUploading && isFileDrag(event)) {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          event.dataTransfer.dropEffect = "copy";
-                        }
-                      }}
-                      onDrop={(event) => {
-                        if (blockedReason || referenceUploading || !isFileDrag(event)) return;
-                        event.preventDefault();
-                        event.stopPropagation();
-                        resetReferenceDragState();
-                        if (event.dataTransfer.files.length !== 1) {
-                          setError("Drop one image at a time.");
-                          return;
-                        }
-                        void uploadReference(event.dataTransfer.files[0]!, reference?.alias ?? null, index);
-                      }}>
+                      data-drag-over={dropTarget === index}
+                      {...imageDropHandlers(index)}>
                     <Button type="button" variant="ghost"
                       className={index === 0 ? "fibo-input-slot clear-composer-reference-trigger" : "fibo-input-slot"}
                       aria-label={(reference ? "Replace " : "Choose ") + label}
                       disabled={referenceUploading || Boolean(blockedReason)}
+                      draggable={Boolean(reference) && outputKind === "image" && !jobActive && !submitting && !referenceUploading}
+                      onDragStart={(event) => {
+                        if (!reference || outputKind !== "image" || jobActive || submitting || referenceUploading) {
+                          event.preventDefault();
+                          return;
+                        }
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData(tileDragType, reference.alias);
+                      }}
+                      onDragEnd={() => setDropTarget(null)}
                       title={blockedReason ?? undefined}
                       onClick={() => chooseReferenceFile(reference?.alias ?? null, index)}>
-                      {reference ? <img src={reference.previewUrl} alt="" /> : <span>{label}</span>}
+                      {reference ? <img src={reference.previewUrl} alt="" draggable={false} /> : <span>{label}</span>}
                     </Button>
                       {reference ? (
                         <Button type="button" size="icon-sm" variant="ghost" className="fibo-setup-remove"
@@ -1255,7 +1219,7 @@ export function CreateWorkspace({
         </form>
 
         </div>
-        <section className="fibo-create-canvas" aria-label="Canvas">
+        <section className="fibo-create-canvas" aria-label="Canvas" data-drag-over={dropTarget === "canvas"} {...imageDropHandlers("canvas")}>
           <div className="fibo-create-notices">
         {unresolvedReferenceAliases.length ? (
           <Alert className="clear-create-support-alert mt-3" variant="destructive" role="alert">
@@ -1295,7 +1259,7 @@ export function CreateWorkspace({
             <div className="fibo-create-empty">
               <span className="fibo-create-watermark" aria-hidden="true">R</span>
               {mediaUploadAvailable && accountAvailable ? (
-                <Button type="button" variant="secondary" onClick={() => chooseReferenceFile(null)}>
+                <Button type="button" variant="secondary" onClick={() => chooseReferenceFile(references.find((reference) => reference.slot === 0)?.alias ?? null, 0)}>
                   Add a source image
                 </Button>
               ) : (

@@ -582,3 +582,6 @@
 }
 .fibo-create .fibo-setup-remove:is(:hover, :focus-visible) { background: #342651; }
 .fibo-create .fibo-setup-remove > svg { width: 12px; height: 12px; }
+
+.fibo-create .fibo-setup-tile[data-drag-over="true"] .fibo-input-slot,
+.fibo-create .fibo-create-canvas[data-drag-over="true"] { outline: 2px solid #a5b4fc; outline-offset: -2px; }
