@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ImagePlus, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
+import { ChevronDown, Dices, ImagePlus, MoreHorizontal, Volume2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { generationAdvancedCapabilities, randomGenerationSeed } from "@/lib/capabilities/generation";
 import { CreateHeaderActions } from "./create-header-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
@@ -327,6 +329,7 @@ export function CreateWorkspace({
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const promptSelectionRef = useRef({ start: 0, end: 0 });
   const referenceDragDepth = useRef(0);
+  const [randomizeSeed, setRandomizeSeed] = useState(false);
   const [prompt, setPrompt] = useState(() => initialRecipe?.request.prompt ?? "");
   const [outputKind, setOutputKind] = useState<OutputKind>(() =>
     initialRecipe?.request.output.kind ?? initialContinuation?.action.outputKind ?? "image",
@@ -522,20 +525,6 @@ export function CreateWorkspace({
     && mediaUploadAvailable
     && !referenceUploading
     && references.length < maxReferences;
-
-  const heading = outputKind === "image" ? "Create an image" : "Create a video";
-  const supportingText = outputKind === "image"
-    ? hasReference
-      ? references.length > 1
-        ? "Shape the result with a primary image and one supporting reference."
-        : "Shape the result from your primary image, then describe the change you want."
-      : activeImageWorkflow === "edit"
-        ? "Add a source image, then describe the edit you want."
-        : "Describe the image you want to generate."
-    : hasReference
-      ? "Use the Start image as the first frame, then describe the motion or shot you want."
-      : "Describe the motion or shot you want. Add a Start image only when it helps.";
-  const createContextKey = `${outputKind}:${hasReference ? references.length : 0}`;
 
   const unresolvedReferenceAliases = useMemo(
     () => unresolvedGenerationPromptReferenceAliases(
@@ -787,7 +776,8 @@ export function CreateWorkspace({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
-    const advanced = advancedParametersFromDraft(advancedDraft, outputKind, imageModel);
+    const draft = randomizeSeed ? { ...advancedDraft, seed: String(randomGenerationSeed(Number(advancedDraft.seed))) } : advancedDraft;
+    const advanced = advancedParametersFromDraft(draft, outputKind, imageModel);
     if (!advanced) {
       setAdvancedOpen(true);
       setError(
@@ -918,28 +908,8 @@ export function CreateWorkspace({
     >
       <div className="clear-create-stack fibo-create-grid mx-auto w-full">
         <div className="fibo-create-controls">
-        <AnimatePresence initial={false} mode="wait">
-          <motion.div
-            key={createContextKey}
-            data-create-motion="context"
-            className="clear-create-context"
-            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
-            transition={contextTransition}
-          >
-            <p className="clear-create-eyebrow">{outputKind === "image" ? "Create / Image" : "Create / Video"}</p>
-            <h2 className="clear-create-heading font-semibold text-text">
-              {heading}
-            </h2>
-            <p className="clear-create-supporting text-text-muted">{supportingText}</p>
-          </motion.div>
-        </AnimatePresence>
-
         {actionSlot ? createPortal(<CreateHeaderActions activeStatus={submitting ? "Submitting generation." : jobActive ? statusText : null} />, actionSlot) : null}
         {modeSlot ? createPortal(workflowSwitch, modeSlot) : workflowSwitch}
-        {outputMode}
-
         <form
           onSubmit={submit}
           noValidate
@@ -977,42 +947,40 @@ export function CreateWorkspace({
               </div>
             </div>
           ) : null}
-          <div className="clear-composer-reference-bar" data-create-reference-bar="true">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="clear-composer-reference-trigger"
-              disabled={
-                !accountAvailable
-                || !mediaUploadAvailable
-                || referenceUploading
-                || (references.length >= maxReferences && !(outputKind === "video" && references.length === 1))
-              }
-              onClick={() => chooseReferenceFile(outputKind === "video" && references[0] ? references[0].alias : null)}
-              aria-label={outputKind === "video" ? (references.length ? "Replace Start image" : "Start image") : "Add reference"}
-              title={
-                !accountAvailable
-                  ? "Sign in to add a private reference image."
-                  : !mediaUploadAvailable
-                    ? "Reference upload storage is not configured in this environment."
-                    : outputKind === "video" && references.length
-                      ? "Replace the Start image"
-                      : references.length >= maxReferences
-                        ? "Image supports up to two references."
-                        : outputKind === "video"
-                          ? "Add an optional Start image"
-                          : "Add a reference image"
-              }
-            >
-              {referenceUploading ? <Spinner data-icon="inline-start" /> : <Plus aria-hidden="true" data-icon="inline-start" />}
-              <span>{outputKind === "video" ? (references.length ? "Replace Start image" : "Start image") : "Add reference"}</span>
-            </Button>
-            <span className="clear-composer-reference-help">
-              {outputKind === "image" ? "Optional · up to two images" : "Optional · one image"}
-            </span>
-          </div>
-
+          <div className="fibo-controls-scroll">
+            <section aria-labelledby="fibo-image-setup">
+              <h2 id="fibo-image-setup">Image setup</h2>
+              <div className="fibo-input-tiles" data-setup={outputKind === "image" && activeImageWorkflow === "edit" ? "edit" : outputKind}>
+                {Array.from({ length: outputKind === "video" ? 1 : activeImageWorkflow === "edit" ? maxReferences : 0 }, (_, index) => {
+                  const reference = references[index];
+                  const label = outputKind === "video" ? "Start image" : index === 0 ? "Source" : "Reference " + (index + 1);
+                  return (
+                    <Button key={index} type="button" variant="ghost"
+                      className={index === 0 ? "fibo-input-slot clear-composer-reference-trigger" : "fibo-input-slot"}
+                      aria-label={(reference ? "Replace " : "Choose ") + label}
+                      disabled={!accountAvailable || !mediaUploadAvailable || referenceUploading || (!reference && index !== references.length)}
+                      onClick={() => chooseReferenceFile(reference?.alias ?? null)}>
+                      {reference ? <img src={reference.previewUrl} alt="" /> : <span>{label}</span>}
+                    </Button>
+                  );
+                })}
+                {outputKind !== "image" || activeImageWorkflow !== "edit" ? (
+                  <div className="fibo-setup-aspect">
+                    <span>Aspect ratio</span>
+                    <AspectRatioMenu
+                  value={aspectRatio}
+                  options={outputKind === "image" ? imageAspectRatios : videoAspectRatios}
+                  sourceAware={hasReference}
+                  onValueChange={(value) => {
+                    if (outputKind === "image") setImageAspect(value);
+                    else setVideoAspect(value);
+                    setError(null);
+                  }}
+                />
+                  </div>
+                ) : null}
+              </div>
+            </section>
           {references.length ? (
             <div className="clear-composer-reference-list mb-3 space-y-2" data-create-reference-list="true" aria-label="Attached references">
               <AnimatePresence initial={false} mode="popLayout">
@@ -1096,7 +1064,6 @@ export function CreateWorkspace({
               </AnimatePresence>
             </div>
           ) : null}
-
           <div className="clear-composer-prompt-label">Prompt</div>
           <Textarea
             ref={promptInputRef}
@@ -1115,8 +1082,35 @@ export function CreateWorkspace({
             className="clear-composer-prompt placeholder:text-text-muted/55"
           />
 
+            <details className="fibo-negative-prompt">
+              <summary>Negative prompt</summary>
+              <Textarea aria-label="Negative prompt" variant="bare" value={advancedDraft.negativePrompt}
+                onChange={(event) => setAdvancedDraft({ ...advancedDraft, negativePrompt: event.target.value })}
+                placeholder="What should the image avoid?" />
+            </details>
+          </div>
+
           <Collapsible className="clear-composer-controls" open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <div className="clear-composer-footer kinetic-control-deck flex flex-col gap-2 border-t sm:flex-row sm:items-center">
+              <div className="fibo-primary-settings">
+                <div className="fibo-seed-field"><label htmlFor="fibo-seed">Seed</label>
+                  <span className="fibo-seed-entry">
+                    <Input id="fibo-seed" type="number" step="1" value={advancedDraft.seed}
+                      onChange={(event) => setAdvancedDraft({ ...advancedDraft, seed: event.target.value })} />
+                    <Button type="button" size="icon-sm" variant="ghost" aria-label="Randomize seed each time"
+                      title="Randomize seed each time" aria-pressed={randomizeSeed}
+                      onClick={() => setRandomizeSeed((current) => !current)}>
+                      <Dices aria-hidden="true" />
+                    </Button>
+                  </span>
+                </div>
+                {outputKind === "image" && imageModel !== "qwen-image-edit-2511" ? (
+                  <label htmlFor="fibo-steps">Steps <output>{advancedDraft.steps}</output>
+                    <Input id="fibo-steps" type="range" min={generationAdvancedCapabilities.steps.min} max={generationAdvancedCapabilities.steps.max}
+                      value={advancedDraft.steps} onChange={(event) => setAdvancedDraft({ ...advancedDraft, steps: event.target.value })} />
+                  </label>
+                ) : null}
+              </div>
               <div data-create-primary-controls className="clear-composer-settings flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:pb-0">
                 <input
                   ref={fileInputRef}
@@ -1147,17 +1141,6 @@ export function CreateWorkspace({
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
-
-                <AspectRatioMenu
-                  value={aspectRatio}
-                  options={outputKind === "image" ? imageAspectRatios : videoAspectRatios}
-                  sourceAware={hasReference}
-                  onValueChange={(value) => {
-                    if (outputKind === "image") setImageAspect(value);
-                    else setVideoAspect(value);
-                    setError(null);
-                  }}
-                />
 
                 <AnimatePresence initial={false} mode="wait">
                   {outputKind === "video" ? (
@@ -1191,6 +1174,19 @@ export function CreateWorkspace({
                   ) : null}
                 </AnimatePresence>
 
+                {outputKind === "image" && activeImageWorkflow === "edit" ? (
+                <AspectRatioMenu
+                  value={aspectRatio}
+                  options={outputKind === "image" ? imageAspectRatios : videoAspectRatios}
+                  sourceAware={hasReference}
+                  onValueChange={(value) => {
+                    if (outputKind === "image") setImageAspect(value);
+                    else setVideoAspect(value);
+                    setError(null);
+                  }}
+                />
+                ) : null}
+                {outputMode}
                 <CollapsibleTrigger asChild>
                   <Button
                     type="button"
@@ -1221,7 +1217,8 @@ export function CreateWorkspace({
                   data-active={submitting || jobActive ? "true" : "false"}
                 >
                   {submitting || jobActive ? <Spinner data-icon="inline-start" /> : null}
-                  {submitting ? "Submitting" : jobActive ? "Generating" : outputKind === "image" && activeImageWorkflow === "edit" ? "Generate Edit" : "Generate"}
+                  <span>{submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}</span>
+                  <kbd aria-hidden="true">Ctrl + Enter</kbd>
                 </Button>
               </motion.div>
             </div>
