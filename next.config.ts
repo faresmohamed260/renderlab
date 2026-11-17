@@ -42,6 +42,19 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: supabasePublishableKey,
   },
+  async rewrites() {
+    if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_HOSTED_CREATE !== "1") return [];
+    const paths = [
+      "generation/jobs", "generation/jobs/:id", "generation/jobs/:id/cancel",
+      "media/assets", "media/assets/:id([a-f0-9-]{36})", "media/assets/:id/content", "media/assets/:id/thumbnail",
+      "media/uploads/upload-tickets", "media/uploads/upload-completions",
+    ];
+    return { beforeFiles: paths.map((path) => ({
+      source: "/api/" + path,
+      destination: "/hosted-create-relay/" + path.replace(":id([a-f0-9-]{36})", ":id"),
+      has: [{ type: "host", value: "127\\.0\\.0\\.1" }],
+    })), afterFiles: [], fallback: [] };
+  },
   async headers() {
     return [
       {

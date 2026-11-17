@@ -1,3 +1,4 @@
+import { getHostedCreateState } from "@/server/hosted-create";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import type { ContinuationAction } from "@/lib/capabilities/generation";
 import {
@@ -118,11 +119,12 @@ export default async function CreatePage({
     }
   }
 
+  const hosted = await getHostedCreateState();
   return (
     <CreateWorkspace
-      accountAvailable={Boolean(account)}
-      generationAvailable={isGenerationBackendConfigured()}
-      mediaUploadAvailable={isMediaUploadConfigured()}
+      accountAvailable={hosted?.accountAvailable ?? Boolean(account)}
+      generationAvailable={hosted?.generationAvailable ?? isGenerationBackendConfigured()}
+      mediaUploadAvailable={hosted?.accountAvailable ?? isMediaUploadConfigured()}
       initialContinuation={initialContinuation}
       initialRecipe={initialRecipe ?? initialPreferenceRecipe}
       initialContinuationError={initialNavigationError}
