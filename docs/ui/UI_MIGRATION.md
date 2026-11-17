@@ -67,6 +67,16 @@ When a new UI phase or redesign is explicitly authorized:
 4. Validate exact-head behavior, responsiveness, accessibility/reduced motion and rendered fidelity as applicable.
 5. After closure, keep only the current outcome/constraint needed for future work here; move detailed run chronology and closed checklists to historical evidence rather than growing this file into another journal.
 
+## Proposed next phase — FIBO Studio visual port for Create
+
+**Execution:** proposed only. This is a phase contract for review; the verified production baseline remains unchanged.
+
+- **Goal:** Match the live FIBO Studio design in the RenderLab web Create workspace. Port the desktop and mobile layout, canvas background effects, controls, motion and interactions. Keep navigation and other routes intact.
+- **Starting point:** WANDA RenderLab checkout at main 985deda. The Next.js route resolves account state and owner-scoped recipes and continuations before rendering the React workspace. The live FIBO reference is 127.0.0.1:7865, served from B:/ComfyUI/Fibo-2.0-Local/upstream/studio.html with studio.py adaptations. Use the served page for fidelity, including the gradient canvas, Edit and Text to Image, settings, queue and history.
+- **Boundary:** Use scoped styles and React components with approved primitives; no iframe or embedded Python app. Preserve access, ownership, durable uploads, job lifecycle, results, recipes, continuations, image and video behavior. Map FIBO controls to actual supported operations and account for controls that have no RenderLab equivalent. No new provider, API, schema or credentials; no separate workflow-canvas route, history import, production change or deployment.
+- **Validation:** Capture live reference on WANDA, verify reuse rights before copying upstream assets or code, and compare the rendered derivatives at desktop and mobile widths. Validate keyboard, touch, reduced motion, inputs, settings, queue, error, result and history states with existing test fixtures and affected CI. No production credentials for visual comparison.
+- **Exit:** Review visual and motion evidence, record verified gaps and the exact rollback reference, update screen registry and affected UI decisions when verified. GitHub remains authoritative even when WANDA is the development and comparison machine.
+
 ## Historical evidence
 
 The complete pre-separation UI migration journal is preserved as a content snapshot in `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`. It contains the Phase 0–29 chronology, corrective-maintenance records, closure-time statuses, exact run IDs, artifact digests and earlier production pointers that previously occupied this current tracker.
