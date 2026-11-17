@@ -457,6 +457,14 @@ During PR #12 verification, two older leaked Library lifecycle assets surfaced w
 The configured Library lifecycle is now hardened at both orchestration and identity boundaries. `.github/workflows/library-lifecycle-visual.yml` uses `concurrency: renderlab-library-lifecycle-shared` with `cancel-in-progress: false` so shared mutable lifecycle windows do not overlap for workflow revisions that include the rule. Independently, `scripts/verify-library-lifecycle.mjs` locates the exact Library card by the durable `media-asset` ID returned by its own upload completion and separately asserts the expected display name. Same-name durable assets therefore cannot make the verifier ambiguous even if unrelated stale state exists.
 
 ## Generation Worker Fleet
+
+### Owner direction: one Modal account for RenderLab (2026-11-17)
+
+All future RenderLab Modal worker operations are to use the owner’s main Modal account, `faresmohamed260`, only. The owner reports adding a payment method and replacing that account’s prior API keys. The new credential has not been configured or verified on WANDA. This is the target state, not a worker migration or production routing change. Do not use legacy accounts or credentials for new work.
+
+Before deploying: configure the fresh token privately on WANDA; verify the effective Modal identity and workspace without exposing the token; reconcile the workspace against the reciprocal RenderLab/S.A.G.A. ownership manifests under ADR-002; inventory current production workers and validate replacement worker capacity and GPU access on the approved account before a separately authorized routing cutover. Keep the existing fleet and rollback information intact until the cutover is verified. Do not infer GPU access or production health from billing setup or token creation.
+
+
 RenderLab reuses existing ComfyUI/Modal workers while the **RenderLab server owns orchestration**. Public routing metadata lives in `src/server/generation/worker-fleet.ts`; credentials never belong there.
 
 Reused ecosystems:
