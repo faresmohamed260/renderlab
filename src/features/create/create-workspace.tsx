@@ -934,6 +934,13 @@ export function CreateWorkspace({
           <div className="fibo-controls-scroll">
             <section aria-labelledby="fibo-image-setup">
               <h2 id="fibo-image-setup">Image setup</h2>
+              {!accountAvailable ? (
+                <p className="fibo-setup-note"><Link href="/settings">Sign in</Link> to attach images.</p>
+              ) : !mediaUploadAvailable ? (
+                <p className="fibo-setup-note">Image uploads are unavailable.</p>
+              ) : outputKind === "image" && activeImageWorkflow === "edit" ? (
+                <p className="fibo-setup-note">Add a source first. RenderLab supports one additional reference.</p>
+              ) : null}
               <div className="fibo-input-tiles" data-setup={outputKind === "image" && activeImageWorkflow === "edit" ? "edit" : outputKind}>
                 {Array.from({ length: outputKind === "video" ? 1 : activeImageWorkflow === "edit" ? 4 : 1 }, (_, index) => {
                   const reference = references[index];
@@ -949,15 +956,9 @@ export function CreateWorkspace({
                     <Button key={index} type="button" variant="ghost"
                       className={index === 0 ? "fibo-input-slot clear-composer-reference-trigger" : "fibo-input-slot"}
                       aria-label={(reference ? "Replace " : "Choose ") + label}
-                      disabled={referenceUploading}
+                      disabled={referenceUploading || Boolean(blockedReason)}
                       title={blockedReason ?? undefined}
-                      onClick={() => {
-                        if (blockedReason) {
-                          setError(blockedReason);
-                          return;
-                        }
-                        chooseReferenceFile(reference?.alias ?? null);
-                      }}>
+                      onClick={() => chooseReferenceFile(reference?.alias ?? null)}>
                       {reference ? <img src={reference.previewUrl} alt="" /> : <span>{label}</span>}
                     </Button>
                   );

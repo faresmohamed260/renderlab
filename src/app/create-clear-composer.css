@@ -568,3 +568,7 @@
 .fibo-create .fibo-seed-entry button > svg { width: 16px; height: 16px; }
 .fibo-create .fibo-generate-action > span > svg { width: 16px; height: 16px; flex: none; }
 .fibo-create .fibo-input-slot > span { display: grid; justify-items: center; }
+
+.fibo-create .fibo-setup-note { margin: 0 0 8px; color: #b1adbf; font-size: 12px; line-height: 1.4; }
+.fibo-create .fibo-setup-note a { color: #c4b5fd; text-decoration: underline; }
+.fibo-create .fibo-input-slot:disabled { cursor: not-allowed; }
