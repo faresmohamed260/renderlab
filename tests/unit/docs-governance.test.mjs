@@ -31,7 +31,8 @@ function clone(value) {
 }
 
 test("checked-in documentation governance passes the complete credential-free verifier", async () => {
-  const result = await verifyDocsGovernance({ rootDir, now: new Date("2026-10-15T12:00:00Z") });
+  // Use the same clock as CI when validating the live, checked-in registry.
+  const result = await verifyDocsGovernance({ rootDir });
   assert.ok(result.managedDocuments >= 20);
   assert.ok(result.markdownDocuments >= 90);
   assert.ok(result.currentManagedDocuments >= 19);
