@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Keyboard, List, X } from "lucide-react";
+import { Keyboard, List } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,16 +88,25 @@ export function CreateHeaderActions({ activeStatus }: { activeStatus: string | n
         <div className="fibo-shortcuts-heading">
           <h2 id="fibo-shortcuts-title">Keyboard shortcuts</h2>
           <form method="dialog">
-            <Button type="submit" variant="ghost" size="icon" aria-label="Close keyboard shortcuts"><X aria-hidden="true" /></Button>
+            <Button type="submit" variant="ghost" size="sm">Close</Button>
           </form>
         </div>
-        <div className="fibo-shortcuts-group">
-          <h3>Studio</h3>
-          <dl className="fibo-shortcut-list">
-            <dt>Open / close render queue</dt><dd><kbd>Q</kbd></dd>
-            <dt>Open / close shortcuts</dt><dd><kbd>Alt + /</kbd></dd>
-            <dt>Close queue or shortcuts</dt><dd><kbd>Esc</kbd></dd>
-          </dl>
+        <div className="fibo-shortcuts-groups">
+          <section aria-labelledby="fibo-shortcuts-studio">
+            <h3 id="fibo-shortcuts-studio">Studio</h3>
+            <dl>
+              <div><dt>Open / close render queue menu</dt><dd><kbd>Q</kbd></dd></div>
+              <div><dt>Open / close shortcuts</dt><dd><kbd>Alt + /</kbd> / <kbd>Esc</kbd></dd></div>
+            </dl>
+          </section>
+          <section aria-labelledby="fibo-shortcuts-navigation">
+            <h3 id="fibo-shortcuts-navigation">Keyboard navigation</h3>
+            <dl>
+              <div><dt>Move between controls</dt><dd><kbd>Tab</kbd> / <kbd>Shift + Tab</kbd></dd></div>
+              <div><dt>Switch the focused workflow</dt><dd><kbd>←</kbd> <kbd>→</kbd></dd></div>
+              <div><dt>Activate a focused button</dt><dd><kbd>Enter</kbd> / <kbd>Space</kbd></dd></div>
+            </dl>
+          </section>
         </div>
       </dialog>
     </div>
