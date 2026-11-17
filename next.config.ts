@@ -43,7 +43,9 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: supabasePublishableKey,
   },
   async rewrites() {
-    if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_HOSTED_CREATE !== "1") return [];
+    if (process.env.NODE_ENV !== "development") return [];
+    const host = [{ type: "host" as const, value: "127\\.0\\.0\\.1" }];
+    if (process.env.RENDERLAB_HOSTED_CREATE !== "1") return [];
     const paths = [
       "generation/jobs", "generation/jobs/:id", "generation/jobs/:id/cancel",
       "media/assets", "media/assets/:id([a-f0-9-]{36})", "media/assets/:id/content", "media/assets/:id/thumbnail",
@@ -52,15 +54,28 @@ const nextConfig: NextConfig = {
     return { beforeFiles: paths.map((path) => ({
       source: "/api/" + path,
       destination: "/hosted-create-relay/" + path.replace(":id([a-f0-9-]{36})", ":id"),
-      has: [{ type: "host", value: "127\\.0\\.0\\.1" }],
+      has: host,
     })), afterFiles: [], fallback: [] };
   },
   async headers() {
-    return [
+    const base = [
       {
         source: "/:path*",
         headers: [...securityHeaders],
       },
+    ];
+    if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_WANDA_FIBO !== "1") return base;
+    const host = [{ type: "host" as const, value: "127.0.0.1" }].map(
+      (rule) => ({ ...rule, value: rule.value.replaceAll(".", "\\.") }),
+    );
+    return [...base,
+      { source: "/create", has: host, headers: [
+        { key: "Content-Security-Policy", value: contentSecurityPolicy.replace("frame-src 'none'", "frame-src 'self'") },
+      ] },
+      { source: "/wanda-fibo-frame", has: host, headers: [
+        { key: "Content-Security-Policy", value: contentSecurityPolicy.replace("frame-ancestors 'none'", "frame-ancestors 'self'") },
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      ] },
     ];
   },
 };

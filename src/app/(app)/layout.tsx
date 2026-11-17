@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
 
 import { AppShell } from "@/components/shell/app-shell";
 
-export default function ApplicationLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return <AppShell>{children}</AppShell>;
+export default async function ApplicationLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const wandaFrame = process.env.NODE_ENV === "development" && process.env.RENDERLAB_WANDA_FIBO === "1"
+    && (await headers()).get("host") === "127.0.0.1:3000";
+  return <AppShell wandaFrame={wandaFrame}>{children}</AppShell>;
 }

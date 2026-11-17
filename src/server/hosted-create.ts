@@ -67,3 +67,13 @@ export async function relayHostedCreate(request: Request, path: string) {
     return new Response(JSON.stringify({ error: "The hosted RenderLab API could not be reached." }), { status: 502, headers: json });
   }
 }
+
+/** A real Supabase user whose normal session passes hosted RenderLab admission. */
+export async function getWandaFiboOwner() {
+  const supabase = await createServerSupabaseClient();
+  const verified = await supabase?.auth.getUser();
+  if (!verified?.data.user || verified.error) return null;
+  const admission = await hostedFetch("/api/media/assets?limit=1");
+  if (!admission.ok || (await admission.json()).ok !== true) return null;
+  return verified.data.user.id;
+}
