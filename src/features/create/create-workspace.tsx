@@ -862,8 +862,8 @@ export function CreateWorkspace({
         setError(null);
       }}
     >
-      <ToggleGroupItem value="generate">Text to Image</ToggleGroupItem>
-      <ToggleGroupItem value="edit">Image Editing</ToggleGroupItem>
+      <ToggleGroupItem value="generate" data-workflow-key="generate">Text to Image</ToggleGroupItem>
+      <ToggleGroupItem value="edit" data-workflow-key="edit">Image Editing</ToggleGroupItem>
     </ToggleGroup>
   );
   const outputMode = (
