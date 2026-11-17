@@ -36,7 +36,7 @@ export function PreviewNavigationShell({ children }: { children: ReactNode }) {
       {destinations.map(({ href, label, icon: Icon }) => {
         const current = href === "/" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
         return <Link key={href} href={href} aria-current={current ? "page" : undefined}>
-          <Icon size={17} aria-hidden="true" />
+          <Icon size={19} aria-hidden="true" />
           <span>{label}</span>
         </Link>;
       })}
@@ -47,7 +47,7 @@ export function PreviewNavigationShell({ children }: { children: ReactNode }) {
     <div className="preview-navigation-shell" onClickCapture={handleNavigation}>
       <aside className="preview-navigation-rail" aria-label="Sidebar">
         <Link href="/" className="preview-navigation-brand" aria-label="RenderLab home">
-          <RenderLabBrand markClassName="size-7" textClassName="text-sm" />
+          <RenderLabBrand markClassName="size-8" textClassName="text-base" />
         </Link>
         {links}
       </aside>
