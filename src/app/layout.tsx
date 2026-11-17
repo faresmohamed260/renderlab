@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
 
 import "./globals.css";
+import "./renderlab-background.css";
 import "./create-clear-composer.css";
 
 const title = "RenderLab — Image & video creative workspace";
@@ -24,10 +26,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const gradient = process.env.NODE_ENV === "development" && process.env.RENDERLAB_WANDA_FIBO === "1"
+    && (await headers()).get("host") === "127.0.0.1:3000";
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className={gradient ? "renderlab-gradient-host" : undefined}>
+      <body className={gradient ? "renderlab-gradient" : undefined}>{children}</body>
     </html>
   );
 }

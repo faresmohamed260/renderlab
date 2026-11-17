@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getWandaFiboOwner } from "@/server/hosted-create";
-import "./background.css";
 
 export default async function FiboFramePage() {
   if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_WANDA_FIBO !== "1"
