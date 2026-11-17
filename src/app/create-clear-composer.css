@@ -258,15 +258,53 @@
 [data-fibo-header] [data-renderlab-brand] > svg { width: 36px; height: 36px; }
 [data-fibo-header] > nav { justify-self: end; }
 [data-fibo-header] > nav > span { display: none; }
-#fibo-create-header-modes .clear-composer-mode { display: grid; place-items: center; width: 206px; height: 68px; margin: 0 !important; padding: 0; }
-#fibo-create-header-modes [role="radiogroup"] {
-  display: grid;
+#fibo-create-header-modes { display: grid; place-items: center; height: 100%; }
+.fibo-workflow-switch[data-slot="toggle-group"] {
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 100% !important;
-  height: 40px !important;
+  width: min(206px, 100%);
+  gap: 0;
+  padding: 3px;
   border-radius: 9999px;
+  background: rgb(255 255 255 / 4.5%);
 }
-#fibo-create-header-modes [role="radio"] { border-radius: 9999px; height: 34px; min-height: 34px !important; }
+.fibo-workflow-switch::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 3px auto 3px 3px;
+  width: calc((100% - 6px) / 2);
+  border-radius: inherit;
+  background: #30264a;
+  pointer-events: none;
+  transition: transform .2s ease;
+}
+.fibo-workflow-switch[data-workflow="edit"]::before { transform: translateX(100%); }
+.fibo-workflow-switch[data-workflow="video"]::before { visibility: hidden; }
+.fibo-workflow-switch [role="radio"] {
+  min-width: 0;
+  min-height: 34px;
+  height: auto;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent !important;
+  color: rgb(235 232 255 / 55%);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.fibo-workflow-switch [role="radio"]:is(:hover, [aria-checked="true"]) { color: #dedbed; }
+.fibo-workflow-switch [role="radio"]:focus-visible { outline: 2px solid #a5b4fc; outline-offset: -2px; }
+.fibo-create-controls > .fibo-workflow-switch { margin-bottom: 10px; }
+@media (pointer: coarse) {
+  .fibo-workflow-switch [role="radio"] { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fibo-workflow-switch::before { transition: none; }
+}
 @media (max-width: 760px) {
   .kinetic-app:has(.fibo-create) > [data-kinetic-surface="topbar"] { height: 52px; }
   .kinetic-app:has(.fibo-create) > [data-kinetic-content] { padding-top: 52px; }

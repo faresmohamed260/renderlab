@@ -505,6 +505,8 @@ export function CreateWorkspace({
   const advancedDraft = outputKind === "image" ? imageAdvanced : videoAdvanced;
   const setAdvancedDraft = outputKind === "image" ? setImageAdvanced : setVideoAdvanced;
   const hasReference = references.length > 0;
+  const [imageWorkflow, setImageWorkflow] = useState<"generate" | "edit">(() => initialRecipe && !initialRecipe.request.inputs.length ? "generate" : "edit");
+  const activeImageWorkflow = hasReference ? "edit" : imageWorkflow;
   const maxReferences = maxGenerationInputsForOutput(outputKind);
   const referenceDropAvailable =
     accountAvailable
@@ -518,7 +520,9 @@ export function CreateWorkspace({
       ? references.length > 1
         ? "Shape the result with a primary image and one supporting reference."
         : "Shape the result from your primary image, then describe the change you want."
-      : "Describe what you want. Add references if you have them, then generate."
+      : activeImageWorkflow === "edit"
+        ? "Add a source image, then describe the edit you want."
+        : "Describe the image you want to generate."
     : hasReference
       ? "Use the Start image as the first frame, then describe the motion or shot you want."
       : "Describe the motion or shot you want. Add a Start image only when it helps.";
@@ -543,6 +547,7 @@ export function CreateWorkspace({
   const canSubmit =
     accountAvailable
     && generationAvailable
+    && (outputKind !== "image" || activeImageWorkflow !== "edit" || hasReference)
     && Boolean(prompt.trim())
     && unresolvedReferenceAliases.length === 0
     && !submitting
@@ -829,6 +834,28 @@ export function CreateWorkspace({
 
   const desktopHeader = useSyncExternalStore(subscribeCreateHeader, getCreateHeaderDesktop, () => false);
   const modeSlot = desktopHeader ? document.getElementById("fibo-create-header-modes") : null;
+  const workflowSwitch = (
+    <ToggleGroup
+      type="single"
+      value={outputKind === "image" ? activeImageWorkflow : ""}
+      aria-label="Image workflow"
+      className="fibo-workflow-switch"
+      data-workflow={outputKind === "image" ? activeImageWorkflow : "video"}
+      onValueChange={(value) => {
+        if (value !== "generate" && value !== "edit") return;
+        if (value === "generate" && hasReference) {
+          setError("Remove the attached source image before switching to Text to Image.");
+          return;
+        }
+        setOutputKind("image");
+        setImageWorkflow(value);
+        setError(null);
+      }}
+    >
+      <ToggleGroupItem value="generate">Text to Image</ToggleGroupItem>
+      <ToggleGroupItem value="edit">Image Editing</ToggleGroupItem>
+    </ToggleGroup>
+  );
   const outputMode = (
     <div className="clear-composer-mode" data-create-mode-switch="true">
       <ToggleGroup
@@ -899,7 +926,8 @@ export function CreateWorkspace({
           </motion.div>
         </AnimatePresence>
 
-        {modeSlot ? createPortal(outputMode, modeSlot) : outputMode}
+        {modeSlot ? createPortal(workflowSwitch, modeSlot) : workflowSwitch}
+        {outputMode}
 
         <form
           onSubmit={submit}
@@ -1182,7 +1210,7 @@ export function CreateWorkspace({
                   data-active={submitting || jobActive ? "true" : "false"}
                 >
                   {submitting || jobActive ? <Spinner data-icon="inline-start" /> : null}
-                  {submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}
+                  {submitting ? "Submitting" : jobActive ? "Generating" : outputKind === "image" && activeImageWorkflow === "edit" ? "Generate Edit" : "Generate"}
                 </Button>
               </motion.div>
             </div>
