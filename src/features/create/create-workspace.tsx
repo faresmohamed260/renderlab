@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Dices, ImagePlus, MoreHorizontal, Volume2, X } from "lucide-react";
+import { ChevronDown, Dices, History, ImagePlus, MoreHorizontal, Volume2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
@@ -63,7 +63,6 @@ import {
   generationInputRoleForIndex,
   generationModelDefinitions,
   imageAspectRatios,
-  imageGenerationModels,
   isImageGenerationModel,
   maxGenerationInputsForOutput,
   unresolvedGenerationPromptReferenceAliases,
@@ -71,6 +70,7 @@ import {
   videoDurations,
   videoResolutions,
 } from "@/lib/capabilities/generation";
+import type { CancelGenerationResponse } from "@/lib/api/generation-cancel-contract";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 
 type InitialContinuation = {
@@ -104,54 +104,6 @@ const imageModelTriggerLabels: Record<ImageGenerationModel, string> = {
   "flux2-klein-9b": "FLUX",
   "qwen-image-edit-2511": "Qwen",
 };
-
-function ImageModelMenu({
-  value,
-  onValueChange,
-}: {
-  value: ImageGenerationModel;
-  onValueChange: (value: ImageGenerationModel) => void;
-}) {
-  const selected = generationModelDefinitions[value];
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="secondary"
-          size="xs"
-          aria-label={`Image model ${selected.label}`}
-          className="shrink-0 gap-1 !px-1.5"
-        >
-          <span className="clear-setting-label">Model</span>
-          <strong>{imageModelTriggerLabels[value]}</strong>
-          <ChevronDown aria-hidden="true" className="size-3 opacity-70" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-64">
-        <DropdownMenuLabel>Image model</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={value}
-          onValueChange={(next) => onValueChange(next as ImageGenerationModel)}
-        >
-          {imageGenerationModels.map((model) => {
-            const definition = generationModelDefinitions[model];
-            return (
-              <DropdownMenuRadioItem key={model} value={model}>
-                <span className="flex min-w-0 flex-1 items-center justify-between gap-4">
-                  <span>{definition.label}</span>
-                  <span className="text-xs text-text-muted">
-                    {definition.version}{model === defaultImageGenerationModel ? " · Default" : ""}
-                  </span>
-                </span>
-              </DropdownMenuRadioItem>
-            );
-          })}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 function AspectRatioMenu({
   value,
@@ -330,11 +282,13 @@ export function CreateWorkspace({
   const promptSelectionRef = useRef({ start: 0, end: 0 });
   const referenceDragDepth = useRef(0);
   const [randomizeSeed, setRandomizeSeed] = useState(false);
+  const [recentPrompts, setRecentPrompts] = useState<string[]>([]);
+  const [cancelPending, setCancelPending] = useState(false);
   const [prompt, setPrompt] = useState(() => initialRecipe?.request.prompt ?? "");
   const [outputKind, setOutputKind] = useState<OutputKind>(() =>
     initialRecipe?.request.output.kind ?? initialContinuation?.action.outputKind ?? "image",
   );
-  const [imageModel, setImageModel] = useState<ImageGenerationModel>(() =>
+  const [imageModel] = useState<ImageGenerationModel>(() =>
     initialRecipe?.request.output.kind === "image" && isImageGenerationModel(initialRecipe.request.model)
       ? initialRecipe.request.model
       : defaultImageGenerationModel,
@@ -779,11 +733,11 @@ export function CreateWorkspace({
     const draft = randomizeSeed ? { ...advancedDraft, seed: String(randomGenerationSeed(Number(advancedDraft.seed))) } : advancedDraft;
     const advanced = advancedParametersFromDraft(draft, outputKind, imageModel);
     if (!advanced) {
-      setAdvancedOpen(true);
+      if (outputKind === "video") setAdvancedOpen(true);
       setError(
         outputKind === "video"
           ? "Check the Advanced values before generating. Seed must be an integer."
-          : "Check the Advanced values before generating. Seed must be an integer, steps must be 1–200, and guidance must be 0–100.",
+          : "Check the render settings. Seed must be a whole number and Steps must be within the supported range.",
       );
       return;
     }
@@ -824,10 +778,29 @@ export function CreateWorkspace({
       }
 
       setJob(payload.job);
+      setRecentPrompts((previous) => [prompt, ...previous.filter((item) => item !== prompt)].slice(0, 8));
     } catch {
       setError("Generation could not be submitted. Your prompt, reference, and settings are unchanged.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function cancelCurrentRender() {
+    if (!job || !jobActive || cancelPending) return;
+    setCancelPending(true);
+    try {
+      const response = await fetch("/api/generation/jobs/" + encodeURIComponent(job.id) + "/cancel", { method: "POST" });
+      const payload = (await response.json()) as CancelGenerationResponse;
+      if (!response.ok || !payload.ok) {
+        setError(payload.ok ? "Could not cancel the render." : payload.error.message);
+        return;
+      }
+      setJob((current) => current?.id === payload.job.id && !isTerminalJob(current) ? payload.job : current);
+    } catch {
+      setError("Could not cancel the render.");
+    } finally {
+      setCancelPending(false);
     }
   }
 
@@ -951,14 +924,17 @@ export function CreateWorkspace({
             <section aria-labelledby="fibo-image-setup">
               <h2 id="fibo-image-setup">Image setup</h2>
               <div className="fibo-input-tiles" data-setup={outputKind === "image" && activeImageWorkflow === "edit" ? "edit" : outputKind}>
-                {Array.from({ length: outputKind === "video" ? 1 : activeImageWorkflow === "edit" ? maxReferences : 0 }, (_, index) => {
+                {Array.from({ length: outputKind === "video" ? 1 : activeImageWorkflow === "edit" ? 4 : 1 }, (_, index) => {
                   const reference = references[index];
-                  const label = outputKind === "video" ? "Start image" : index === 0 ? "Source" : "Reference " + (index + 1);
+                  const inspiration = outputKind === "image" && activeImageWorkflow === "generate";
+                  const unsupported = inspiration || index >= maxReferences;
+                  const label = outputKind === "video" ? "Start image" : inspiration ? "Inspiration" : index === 0 ? "Source" : "Reference " + (index + 1);
                   return (
                     <Button key={index} type="button" variant="ghost"
                       className={index === 0 ? "fibo-input-slot clear-composer-reference-trigger" : "fibo-input-slot"}
                       aria-label={(reference ? "Replace " : "Choose ") + label}
-                      disabled={!accountAvailable || !mediaUploadAvailable || referenceUploading || (!reference && index !== references.length)}
+                      disabled={unsupported || !accountAvailable || !mediaUploadAvailable || referenceUploading || (!reference && index !== references.length)}
+                      title={unsupported ? (inspiration ? "RenderLab does not support inspiration in Text to Image." : "RenderLab supports a source and one reference.") : undefined}
                       onClick={() => chooseReferenceFile(reference?.alias ?? null)}>
                       {reference ? <img src={reference.previewUrl} alt="" /> : <span>{label}</span>}
                     </Button>
@@ -1064,7 +1040,19 @@ export function CreateWorkspace({
               </AnimatePresence>
             </div>
           ) : null}
-          <div className="clear-composer-prompt-label">Prompt</div>
+            <div className="clear-composer-prompt-label">
+              <span>Prompt</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" size="icon-sm" variant="ghost" aria-label="Recent prompts" title="Recent prompts"><History aria-hidden="true" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {recentPrompts.length ? recentPrompts.map((item) => (
+                    <DropdownMenuItem key={item} onSelect={() => setPrompt(item)}>{item.slice(0, 100)}</DropdownMenuItem>
+                  )) : <DropdownMenuLabel>No recent prompts in this session.</DropdownMenuLabel>}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           <Textarea
             ref={promptInputRef}
             id="create-prompt"
@@ -1088,6 +1076,12 @@ export function CreateWorkspace({
                 onChange={(event) => setAdvancedDraft({ ...advancedDraft, negativePrompt: event.target.value })}
                 placeholder="What should the image avoid?" />
             </details>
+            {outputKind === "image" ? (
+              <details className="fibo-negative-prompt">
+                <summary>VGL JSON</summary>
+                <Textarea aria-label="VGL JSON" variant="bare" disabled placeholder="VGL JSON is not supported by RenderLab." />
+              </details>
+            ) : null}
           </div>
 
           <Collapsible className="clear-composer-controls" open={advancedOpen} onOpenChange={setAdvancedOpen}>
@@ -1104,14 +1098,15 @@ export function CreateWorkspace({
                     </Button>
                   </span>
                 </div>
-                {outputKind === "image" && imageModel !== "qwen-image-edit-2511" ? (
-                  <label htmlFor="fibo-steps">Steps <output>{advancedDraft.steps}</output>
-                    <Input id="fibo-steps" type="range" min={generationAdvancedCapabilities.steps.min} max={generationAdvancedCapabilities.steps.max}
+                {outputKind === "image" ? <label htmlFor="fibo-count">Images<Input id="fibo-count" type="number" value={1} disabled title="RenderLab generates one image per request." /></label> : null}
+                {outputKind === "image" ? (
+                  <label className="fibo-steps-field" htmlFor="fibo-steps">Steps <output>{advancedDraft.steps}</output>
+                    <Input id="fibo-steps" type="range" disabled={imageModel === "qwen-image-edit-2511"} min={generationAdvancedCapabilities.steps.min} max={generationAdvancedCapabilities.steps.max}
                       value={advancedDraft.steps} onChange={(event) => setAdvancedDraft({ ...advancedDraft, steps: event.target.value })} />
                   </label>
                 ) : null}
               </div>
-              <div data-create-primary-controls className="clear-composer-settings flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:pb-0">
+              {outputKind === "video" ? <div data-create-primary-controls className="clear-composer-settings flex min-w-0 flex-1 flex-wrap items-center gap-2 pb-1 sm:pb-0">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -1125,22 +1120,6 @@ export function CreateWorkspace({
                 />
 
 
-
-                <AnimatePresence initial={false} mode="wait">
-                  {outputKind === "image" ? (
-                    <motion.div
-                      key="image-model"
-                      data-create-motion="mode-control"
-                      className="shrink-0"
-                      initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
-                      transition={contextTransition}
-                    >
-                      <ImageModelMenu value={imageModel} onValueChange={setImageModel} />
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
 
                 <AnimatePresence initial={false} mode="wait">
                   {outputKind === "video" ? (
@@ -1174,18 +1153,6 @@ export function CreateWorkspace({
                   ) : null}
                 </AnimatePresence>
 
-                {outputKind === "image" && activeImageWorkflow === "edit" ? (
-                <AspectRatioMenu
-                  value={aspectRatio}
-                  options={outputKind === "image" ? imageAspectRatios : videoAspectRatios}
-                  sourceAware={hasReference}
-                  onValueChange={(value) => {
-                    if (outputKind === "image") setImageAspect(value);
-                    else setVideoAspect(value);
-                    setError(null);
-                  }}
-                />
-                ) : null}
                 {outputMode}
                 <CollapsibleTrigger asChild>
                   <Button
@@ -1201,7 +1168,7 @@ export function CreateWorkspace({
                     <strong aria-hidden="true">{advancedOpen ? "−" : "+"}</strong>
                   </Button>
                 </CollapsibleTrigger>
-              </div>
+              </div> : null}
 
               <motion.div
                 className="w-full sm:w-auto"
@@ -1221,15 +1188,16 @@ export function CreateWorkspace({
                   <kbd aria-hidden="true">Ctrl + Enter</kbd>
                 </Button>
               </motion.div>
+              {jobActive ? <Button type="button" variant="secondary" disabled={cancelPending} onClick={() => void cancelCurrentRender()}>Cancel</Button> : null}
             </div>
 
-            <CreateAdvancedPanel
+            {outputKind === "video" ? <CreateAdvancedPanel
               outputKind={outputKind}
               imageModel={imageModel}
               draft={advancedDraft}
               onDraftChange={setAdvancedDraft}
               onReset={resetAdvanced}
-            />
+            /> : null}
           </Collapsible>
         </form>
 

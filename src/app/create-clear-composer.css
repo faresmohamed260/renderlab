@@ -438,9 +438,7 @@
 .fibo-controls-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 16px; }
 .fibo-controls-scroll h2 { margin: 0 0 10px; font-size: 14px; font-weight: 650; color: #dedbed; }
 .fibo-input-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 108px)); gap: 8px; margin-bottom: 14px; }
-.fibo-input-tiles[data-setup="image"] { grid-template-columns: minmax(0,1fr); }
 .fibo-setup-aspect { align-self: center; grid-column: span 3; display: grid; gap: 4px; min-width: 0; font-size: 12px; color: #dedbed; }
-.fibo-input-tiles[data-setup="image"] .fibo-setup-aspect { grid-column: 1; }
 .fibo-create .fibo-input-tiles .fibo-input-slot {
   position: relative;
   display: grid;
@@ -509,3 +507,8 @@
 .fibo-seed-entry input::-webkit-inner-spin-button { appearance: none; }
 .fibo-seed-entry button { position: absolute; inset: 8px 4px 4px auto; width: 29px; height: auto; border-radius: 9999px; }
 .fibo-seed-entry button[aria-pressed=true] { color: #e2d9ff; background: #382858; }
+
+.fibo-controls-scroll .clear-composer-prompt-label { justify-content: space-between; }
+.fibo-controls-scroll .clear-composer-prompt-label button { width: 27px; height: 27px; min-height: 27px; border-radius: 50%; }
+.fibo-controls-scroll .clear-composer-prompt-label button svg { width: 14px; height: 14px; }
+.fibo-steps-field { grid-column: 1 / -1; }
