@@ -239,3 +239,38 @@
   }
   .fibo-create-empty > :not(.fibo-create-watermark) { transform: translateY(32px); }
 }
+
+/* Create header: match the live FIBO alignment without restyling other routes. */
+.kinetic-app:has(.fibo-create) > [data-kinetic-surface="topbar"] {
+  background: transparent;
+  border-color: transparent;
+  backdrop-filter: none;
+}
+[data-fibo-header] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  max-width: none;
+  gap: 12px;
+  padding-inline: 18px;
+}
+[data-fibo-header] > :first-child { justify-self: start; }
+[data-fibo-header] [data-renderlab-wordmark] { font-size: 20px; }
+[data-fibo-header] [data-renderlab-brand] > svg { width: 36px; height: 36px; }
+[data-fibo-header] > nav { justify-self: end; }
+[data-fibo-header] > nav > span { display: none; }
+#fibo-create-header-modes .clear-composer-mode { display: grid; place-items: center; width: 206px; height: 68px; margin: 0 !important; padding: 0; }
+#fibo-create-header-modes [role="radiogroup"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100% !important;
+  height: 40px !important;
+  border-radius: 9999px;
+}
+#fibo-create-header-modes [role="radio"] { border-radius: 9999px; height: 34px; min-height: 34px !important; }
+@media (max-width: 760px) {
+  .kinetic-app:has(.fibo-create) > [data-kinetic-surface="topbar"] { height: 52px; }
+  .kinetic-app:has(.fibo-create) > [data-kinetic-content] { padding-top: 52px; }
+  [data-fibo-header] { grid-template-columns: minmax(0, 1fr) auto; gap: 4px; padding-inline: 10px; }
+  [data-fibo-header] [data-renderlab-wordmark], #fibo-create-header-modes { display: none; }
+  [data-fibo-header] [data-renderlab-brand] > svg { width: 32px; height: 32px; }
+}

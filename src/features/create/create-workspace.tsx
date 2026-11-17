@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ChevronDown, ImagePlus, MoreHorizontal, Plus, Volume2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -281,6 +282,18 @@ function isTerminalJob(job: GenerationJob | null) {
 
 function isFileDrag(event: DragEvent<HTMLElement>) {
   return Array.from(event.dataTransfer.types).includes("Files");
+}
+
+const createHeaderQuery = "(min-width: 761px)";
+
+function subscribeCreateHeader(onChange: () => void) {
+  const query = window.matchMedia(createHeaderQuery);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function getCreateHeaderDesktop() {
+  return window.matchMedia(createHeaderQuery).matches;
 }
 
 export function CreateWorkspace({
@@ -814,6 +827,53 @@ export function CreateWorkspace({
     }
   }
 
+  const desktopHeader = useSyncExternalStore(subscribeCreateHeader, getCreateHeaderDesktop, () => false);
+  const modeSlot = desktopHeader ? document.getElementById("fibo-create-header-modes") : null;
+  const outputMode = (
+    <div className="clear-composer-mode" data-create-mode-switch="true">
+      <ToggleGroup
+        type="single"
+        value={outputKind}
+        aria-label="Output type"
+        onValueChange={(value) => {
+          if (!value) return;
+          const kind = value as OutputKind;
+          if (references.length > maxGenerationInputsForOutput(kind)) {
+            setError("Video uses one source image. Remove one reference before switching to Video.");
+            return;
+          }
+          setOutputKind(kind);
+          setError(null);
+        }}
+        size="sm"
+        className="relative isolate shrink-0 overflow-hidden rounded-full bg-white/[0.045] p-[3px]"
+      >
+        <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
+          {outputKind === "image" ? (
+            <motion.span
+              layoutId="create-output-mode-highlight"
+              aria-hidden="true"
+              className="absolute inset-0 z-0 rounded-full bg-[#30264a]"
+              transition={reduceMotion ? { duration: 0 } : createMotionSpring}
+            />
+          ) : null}
+          <span className="relative z-10">Image</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
+          {outputKind === "video" ? (
+            <motion.span
+              layoutId="create-output-mode-highlight"
+              aria-hidden="true"
+              className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(115,215,255,0.2),rgba(129,114,246,0.28))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(115,215,255,0.12)]"
+              transition={reduceMotion ? { duration: 0 } : createMotionSpring}
+            />
+          ) : null}
+          <span className="relative z-10">Video</span>
+        </ToggleGroupItem>
+      </ToggleGroup>
+    </div>
+  );
+
   return (
     <section
       className="clear-create-workspace fibo-create mx-auto flex w-full flex-col"
@@ -839,48 +899,7 @@ export function CreateWorkspace({
           </motion.div>
         </AnimatePresence>
 
-        <div className="clear-composer-mode" data-create-mode-switch="true">
-          <ToggleGroup
-            type="single"
-            value={outputKind}
-            aria-label="Output type"
-            onValueChange={(value) => {
-              if (!value) return;
-              const kind = value as OutputKind;
-              if (references.length > maxGenerationInputsForOutput(kind)) {
-                setError("Video uses one source image. Remove one reference before switching to Video.");
-                return;
-              }
-              setOutputKind(kind);
-              setError(null);
-            }}
-            size="sm"
-            className="relative isolate shrink-0 overflow-hidden rounded-lg border border-white/[0.06] bg-black/20 p-0.5"
-          >
-            <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
-              {outputKind === "image" ? (
-                <motion.span
-                  layoutId="create-output-mode-highlight"
-                  aria-hidden="true"
-                  className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(129,114,246,0.32),rgba(115,215,255,0.12))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(129,114,246,0.14)]"
-                  transition={reduceMotion ? { duration: 0 } : createMotionSpring}
-                />
-              ) : null}
-              <span className="relative z-10">Image</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
-              {outputKind === "video" ? (
-                <motion.span
-                  layoutId="create-output-mode-highlight"
-                  aria-hidden="true"
-                  className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(115,215,255,0.2),rgba(129,114,246,0.28))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(115,215,255,0.12)]"
-                  transition={reduceMotion ? { duration: 0 } : createMotionSpring}
-                />
-              ) : null}
-              <span className="relative z-10">Video</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
+        {modeSlot ? createPortal(outputMode, modeSlot) : outputMode}
 
         <form
           onSubmit={submit}

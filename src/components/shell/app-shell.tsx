@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="fixed inset-x-0 top-0 z-50 h-16 border-b border-white/[0.055] bg-[#06080c]/[0.88] backdrop-blur-[18px] lg:h-[72px]"
         data-kinetic-surface="topbar"
       >
-        <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-4 sm:px-7 lg:px-12">
+        <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-4 sm:px-7 lg:px-12" data-fibo-header={section === "/create" ? "" : undefined}>
           <motion.div
             whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 430, damping: 34 }}
@@ -59,6 +59,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </motion.div>
 
+          {section === "/create" ? <div id="fibo-create-header-modes" /> : null}
           <nav className="ml-auto flex min-h-11 items-center gap-1 sm:gap-2" aria-label="Application navigation">
             <Button
               asChild
