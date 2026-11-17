@@ -8,7 +8,7 @@ const production = "https://renderlab.faresuniform.uk";
 const loopback = "127.0.0.1:3000";
 const assetId = "[a-f0-9-]{36}";
 const routes: Record<string, RegExp> = {
-  GET: new RegExp("^/api/(generation/jobs(?:/" + assetId + ")?|media/assets(?:/" + assetId + "(?:/content|/thumbnail)?)?)$"),
+  GET: new RegExp("^/api/(generation/jobs(?:/" + assetId + ")?|media/assets(?:/" + assetId + "(?:/content|/thumbnail)?)?|media/uploads/upload-tickets)$"),
   POST: new RegExp("^/api/(generation/jobs(?:/" + assetId + "/cancel)?|media/uploads/upload-(?:tickets|completions))$"),
 };
 
@@ -32,11 +32,12 @@ async function hostedFetch(path: string, init: RequestInit = {}) {
 
 export async function getHostedCreateState() {
   if (!enabled((await headers()).get("host"))) return null;
-  const [generation, media] = await Promise.all([
+  const [generation, media, upload] = await Promise.all([
     hostedFetch("/api/generation/jobs").then((r) => r.ok ? r.json() : null).catch(() => null),
     hostedFetch("/api/media/assets?limit=1").then((r) => r.ok ? r.json() : null).catch(() => null),
+    hostedFetch("/api/media/uploads/upload-tickets").then((r) => r.ok ? r.json() : null).catch(() => null),
   ]);
-  return { generationAvailable: generation?.available === true, accountAvailable: media?.ok === true };
+  return { generationAvailable: generation?.available === true, accountAvailable: media?.ok === true, mediaUploadAvailable: upload?.available === true };
 }
 
 export async function relayHostedCreate(request: Request, path: string) {

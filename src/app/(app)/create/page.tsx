@@ -124,7 +124,7 @@ export default async function CreatePage({
     <CreateWorkspace
       accountAvailable={hosted?.accountAvailable ?? Boolean(account)}
       generationAvailable={hosted?.generationAvailable ?? isGenerationBackendConfigured()}
-      mediaUploadAvailable={hosted?.accountAvailable ?? isMediaUploadConfigured()}
+      mediaUploadAvailable={hosted?.mediaUploadAvailable ?? isMediaUploadConfigured()}
       initialContinuation={initialContinuation}
       initialRecipe={initialRecipe ?? initialPreferenceRecipe}
       initialContinuationError={initialNavigationError}

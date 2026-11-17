@@ -939,14 +939,25 @@ export function CreateWorkspace({
                   const reference = references[index];
                   const inspiration = outputKind === "image" && activeImageWorkflow === "generate";
                   const unsupported = inspiration || index >= maxReferences;
+                  const blockedReason = unsupported
+                    ? (inspiration ? "Text to Image does not accept an inspiration image." : "Production accepts a source and one reference only.")
+                    : !accountAvailable ? "Sign in from Settings to upload an image."
+                    : !mediaUploadAvailable ? "Image upload storage is unavailable."
+                    : !reference && index !== references.length ? "Add the source image before Reference 2." : null;
                   const label = outputKind === "video" ? "Start image" : inspiration ? "Inspiration" : index === 0 ? "Source" : "Reference " + (index + 1);
                   return (
                     <Button key={index} type="button" variant="ghost"
                       className={index === 0 ? "fibo-input-slot clear-composer-reference-trigger" : "fibo-input-slot"}
                       aria-label={(reference ? "Replace " : "Choose ") + label}
-                      disabled={unsupported || !accountAvailable || !mediaUploadAvailable || referenceUploading || (!reference && index !== references.length)}
-                      title={unsupported ? (inspiration ? "RenderLab does not support inspiration in Text to Image." : "RenderLab supports a source and one reference.") : !accountAvailable ? "Sign in to upload an image." : !mediaUploadAvailable ? "Image uploads are not connected in this environment." : !reference && index !== references.length ? "Add the source image first." : undefined}
-                      onClick={() => chooseReferenceFile(reference?.alias ?? null)}>
+                      disabled={referenceUploading}
+                      title={blockedReason ?? undefined}
+                      onClick={() => {
+                        if (blockedReason) {
+                          setError(blockedReason);
+                          return;
+                        }
+                        chooseReferenceFile(reference?.alias ?? null);
+                      }}>
                       {reference ? <img src={reference.previewUrl} alt="" /> : <span>{label}</span>}
                     </Button>
                   );
