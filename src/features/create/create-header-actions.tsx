@@ -2,19 +2,11 @@
 
 import Link from "next/link";
 import { Keyboard, List } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 export function CreateHeaderActions({ activeStatus }: { activeStatus: string | null }) {
-  const [queueOpen, setQueueOpen] = useState(false);
+  const queueRef = useRef<HTMLElement>(null);
   const shortcutsRef = useRef<HTMLDialogElement>(null);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -24,7 +16,7 @@ export function CreateHeaderActions({ activeStatus }: { activeStatus: string | n
   function openShortcuts() {
     const dialog = shortcutsRef.current;
     if (!dialog || dialog.open) return;
-    setQueueOpen(false);
+    queueRef.current?.hidePopover();
     dialog.showModal();
     closeRef.current?.focus();
   }
@@ -71,8 +63,11 @@ export function CreateHeaderActions({ activeStatus }: { activeStatus: string | n
         return;
       }
       if (!editing && event.key.toLowerCase() === "q") {
+        const queue = queueRef.current;
+        const openPanel = document.querySelector("[popover]:popover-open");
+        if (!queue || (openPanel && openPanel !== queue) || document.querySelector('[role="menu"]')) return;
         event.preventDefault();
-        setQueueOpen((open) => !open);
+        queue.togglePopover();
       }
     }
 
@@ -82,27 +77,19 @@ export function CreateHeaderActions({ activeStatus }: { activeStatus: string | n
 
   return (
     <div className="fibo-header-actions">
-      <DropdownMenu open={queueOpen} onOpenChange={setQueueOpen} modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button type="button" variant="ghost" size="sm" className="fibo-header-action" aria-label="Render queue" aria-keyshortcuts="Q" title="Render queue (Q)">
-            <List aria-hidden="true" />
-            <span className="fibo-queue-label">Queue</span>
-            {activeStatus ? <span className="fibo-queue-count" aria-label="1 active render">1</span> : null}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="fibo-header-panel"
-          onInteractOutside={(event) => {
-            if (event.target instanceof Element && event.target.closest(".fibo-header-actions")) event.preventDefault();
-          }}
-        >
-          <DropdownMenuLabel>Render queue</DropdownMenuLabel>
-          <p className="fibo-header-panel-copy" role="status">{activeStatus ?? "No active renders in this workspace."}</p>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild><Link href="/activity">Open Activity</Link></DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button type="button" variant="ghost" size="sm" className="fibo-header-action" aria-label={activeStatus ? "Render queue, 1 active render" : "Render queue"} aria-keyshortcuts="Q" title="Render queue" popoverTarget="fibo-render-queue">
+        <List aria-hidden="true" />
+        <span className="fibo-queue-label">Queue</span>
+        {activeStatus ? <span className="fibo-queue-count" aria-hidden="true">1</span> : null}
+      </Button>
+      <section ref={queueRef} id="fibo-render-queue" popover="auto" className="fibo-queue-popover" aria-labelledby="fibo-queue-title">
+        <div className="fibo-queue-heading">
+          <h2 id="fibo-queue-title">Render queue</h2>
+          <Button type="button" variant="ghost" size="sm" popoverTarget="fibo-render-queue" popoverTargetAction="hide">Close</Button>
+        </div>
+        <p className="fibo-queue-status" role="status">{activeStatus ?? "No renders queued."}</p>
+        <Button asChild variant="ghost" size="sm"><Link href="/activity">Open Activity</Link></Button>
+      </section>
       <Button
         type="button"
         variant="ghost"

@@ -326,8 +326,6 @@
 }
 .fibo-header-action svg { width: 17px; height: 17px; }
 .fibo-queue-count { color: #a5b4fc; font-size: 10px; }
-.fibo-header-panel { z-index: 60; width: min(358px, calc(100vw - 24px)); padding: 14px; border: 0; border-radius: 20px; background: rgb(26 23 38 / 88%); backdrop-filter: blur(22px); }
-.fibo-header-panel-copy { padding: 4px 8px 8px; font-size: 12px; }
 @media (max-width: 760px) {
   .fibo-header-actions { gap: 0; }
   .fibo-header-actions .fibo-header-action { min-width: 44px; min-height: 44px; }
@@ -379,3 +377,33 @@
   font: 500 10px/1.2 Inter, system-ui, sans-serif;
 }
 @media (max-width: 580px) { .fibo-shortcuts-groups { grid-template-columns: 1fr; } }
+
+.fibo-queue-popover {
+  position: fixed;
+  inset: 60px 16px auto auto;
+  margin: 0;
+  width: min(358px, calc(100vw - 24px));
+  max-height: min(70dvh, 500px);
+  overflow: auto;
+  padding: 14px;
+  border: 0;
+  border-radius: 20px;
+  color: #dedbed;
+  background: rgb(25 21 37 / 88%);
+  backdrop-filter: blur(24px) saturate(120%);
+  box-shadow: 0 14px 48px rgb(0 0 0 / 42%);
+}
+.fibo-queue-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.fibo-queue-heading h2 { margin: 0 auto 0 0; font-size: 15px; }
+.fibo-queue-heading button {
+  height: auto;
+  padding: 5px 7px;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 4.5%);
+  font-size: 11px;
+}
+.fibo-queue-status { margin: 8px 0; color: rgb(235 232 255 / 55%); font-size: 12px; }
+@media (max-width: 760px) {
+  .fibo-header-action:has(.fibo-queue-label) { position: relative; }
+  .fibo-queue-count { position: absolute; inset: 4px 3px auto auto; }
+}
