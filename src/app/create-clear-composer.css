@@ -435,7 +435,7 @@
 }
 .fibo-create .fibo-create-controls > .clear-create-composer::before,
 .fibo-create .fibo-create-controls > .clear-create-composer::after { content: none; }
-.fibo-controls-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 16px; }
+.fibo-controls-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: 16px; }
 .fibo-controls-scroll h2 { margin: 0 0 10px; font-size: 14px; font-weight: 650; color: #dedbed; }
 .fibo-input-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 108px)); gap: 8px; margin-bottom: 14px; }
 .fibo-setup-aspect { align-self: center; grid-column: span 3; display: grid; gap: 4px; min-width: 0; font-size: 12px; color: #dedbed; }
@@ -451,8 +451,8 @@
   padding: 5px 2px !important;
   overflow: hidden;
   border: 0;
-  border-radius: 16px;
-  background: rgb(255 255 255 / 4.5%);
+  border-radius: 16px !important;
+  background: rgb(255 255 255 / 4.5%) !important;
   color: rgb(235 232 255 / 55%);
   font-size: clamp(11px, 1vw, 13px);
   font-weight: 400;
@@ -461,7 +461,7 @@
 }
 .fibo-create .fibo-input-slot span::before { content: "+"; display: block; margin-bottom: 5px; color: #a5b4fc; font-size: 22px; line-height: 1; }
 .fibo-create .fibo-input-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.fibo-controls-scroll .clear-composer-prompt-label { display: flex; align-items: center; min-height: 27px; margin: 0 !important; color: #dedbed; font-size: 12px; }
+.fibo-controls-scroll .fibo-prompt-heading { display: flex; align-items: center; min-height: 27px; margin: 0 !important; color: #dedbed; font-size: 12px; }
 .fibo-create .fibo-controls-scroll textarea {
   width: 100%;
   height: 240px !important;
@@ -508,7 +508,56 @@
 .fibo-seed-entry button { position: absolute; inset: 8px 4px 4px auto; width: 29px; height: auto; border-radius: 9999px; }
 .fibo-seed-entry button[aria-pressed=true] { color: #e2d9ff; background: #382858; }
 
-.fibo-controls-scroll .clear-composer-prompt-label { justify-content: space-between; }
-.fibo-controls-scroll .clear-composer-prompt-label button { width: 27px; height: 27px; min-height: 27px; border-radius: 50%; }
-.fibo-controls-scroll .clear-composer-prompt-label button svg { width: 14px; height: 14px; }
+.fibo-controls-scroll .fibo-prompt-heading { justify-content: space-between; }
+.fibo-controls-scroll .fibo-prompt-heading button { width: 27px; height: 27px; min-height: 27px; border-radius: 50%; }
+.fibo-controls-scroll .fibo-prompt-heading button svg { width: 14px; height: 14px; }
 .fibo-steps-field { grid-column: 1 / -1; }
+
+/* Prevent the previous composer skin from overriding the FIBO panel. */
+.fibo-create .fibo-create-controls {
+  font: 400 14px Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #dedbed;
+}
+.fibo-create .fibo-controls-scroll h2 { color: rgb(235 232 255 / 55%); line-height: normal; }
+.fibo-create .fibo-input-tiles .fibo-input-slot:disabled { opacity: .68; }
+.fibo-create .fibo-controls-scroll .fibo-prompt-heading { color: rgb(235 232 255 / 55%); font-size: 14px; margin-bottom: 8px !important; }
+.fibo-create .fibo-prompt-heading button { padding: 0; background: rgb(255 255 255 / 4.5%); }
+.fibo-create .fibo-controls-scroll .fibo-prompt-editor {
+  display: block;
+  border-radius: 16px !important;
+  font: inherit;
+  line-height: 1.6;
+}
+.fibo-create .fibo-prompt-editor::placeholder { color: #878794; }
+.fibo-create .fibo-negative-prompt { font-size: 14px; }
+.fibo-create .fibo-negative-prompt summary { color: rgb(235 232 255 / 55%); }
+.fibo-create .clear-composer-controls .clear-composer-footer { gap: 10px; box-shadow: none; }
+.fibo-create .fibo-primary-settings { padding: 14px 0 2px; font-size: 14px; }
+.fibo-primary-settings label { color: rgb(235 232 255 / 55%); }
+.fibo-create .fibo-primary-settings input[type=number] { height: auto; min-height: 0; margin-top: 8px; border: 0; box-shadow: none; color: #dedbed; font: inherit; }
+.fibo-create .fibo-primary-settings #fibo-count { padding: 10px 11px; opacity: .68; }
+.fibo-create .fibo-primary-settings #fibo-steps {
+  display: block; appearance: auto; height: 32px; min-height: 0;
+  margin-top: 8px; padding: 0; border: 0; border-radius: 0;
+  background: transparent; box-shadow: none; color-scheme: dark;
+}
+.fibo-create .fibo-seed-entry button { inset: 12px 4px 4px auto; min-height: 0; padding: 0; }
+.fibo-create .clear-composer-footer .fibo-generate-action {
+  color: #fff !important;
+  background: linear-gradient(180deg, rgb(255 255 255 / 9%), rgb(0 0 0 / 12%)), #644bcc !important;
+  line-height: normal;
+}
+.fibo-create .fibo-generate-action > span { display: inline-flex; align-items: center; gap: 8px; }
+.fibo-create .clear-composer-footer .fibo-generate-action:disabled { opacity: .65; }
+.fibo-create .clear-composer-footer .fibo-generate-action kbd { padding: 4px 6px; border-radius: 6px; color: #f4efff; background: rgb(17 9 53 / 25%); }
+.fibo-create-notices:empty { display: none; }
+.fibo-create-notices { flex: none; }
+
+@media (min-width: 761px) {
+  .fibo-create .fibo-controls-scroll { padding-top: 21px; }
+  .fibo-create .fibo-controls-scroll h2 { margin-bottom: 14px; }
+  /* Mobile fallback stays in the DOM for hydration, but must not consume desktop space. */
+  .fibo-create-controls > .fibo-workflow-switch { display: none; }
+}
+.fibo-create-controls label[for="create-prompt"] { position: absolute; }
+.fibo-create .fibo-primary-settings #fibo-seed { padding-right: 40px; }

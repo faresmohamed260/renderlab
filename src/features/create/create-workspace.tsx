@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Dices, History, ImagePlus, MoreHorizontal, Volume2, X } from "lucide-react";
+import { ChevronDown, Dices, Clock, ImagePlus, Sparkles, MoreHorizontal, Volume2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
@@ -1040,11 +1040,11 @@ export function CreateWorkspace({
               </AnimatePresence>
             </div>
           ) : null}
-            <div className="clear-composer-prompt-label">
+            <div className="fibo-prompt-heading">
               <span>Prompt</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" size="icon-sm" variant="ghost" aria-label="Recent prompts" title="Recent prompts"><History aria-hidden="true" /></Button>
+                  <Button type="button" size="icon-sm" variant="ghost" aria-label="Recent prompts" title="Recent prompts"><Clock aria-hidden="true" /></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {recentPrompts.length ? recentPrompts.map((item) => (
@@ -1064,10 +1064,10 @@ export function CreateWorkspace({
               hasReference
                 ? "Describe the change or result you want…"
                 : outputKind === "image"
-                  ? "Describe what you want to create…"
+                  ? "Describe the result you want…"
                   : "Describe the video you want to create…"
             }
-            className="clear-composer-prompt placeholder:text-text-muted/55"
+            className="fibo-prompt-editor"
           />
 
             <details className="fibo-negative-prompt">
@@ -1180,11 +1180,11 @@ export function CreateWorkspace({
                   type="submit"
                   size="lg"
                   disabled={!canSubmit}
-                  className="kinetic-generate relative w-full overflow-hidden sm:min-w-32 sm:w-auto"
+                  className="fibo-generate-action"
                   data-active={submitting || jobActive ? "true" : "false"}
                 >
                   {submitting || jobActive ? <Spinner data-icon="inline-start" /> : null}
-                  <span>{submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}</span>
+                  <span>{!submitting && !jobActive ? <Sparkles aria-hidden="true" /> : null}{submitting ? "Submitting" : jobActive ? "Generating" : "Generate"}</span>
                   <kbd aria-hidden="true">Ctrl + Enter</kbd>
                 </Button>
               </motion.div>
@@ -1201,6 +1201,9 @@ export function CreateWorkspace({
           </Collapsible>
         </form>
 
+        </div>
+        <section className="fibo-create-canvas" aria-label="Canvas">
+          <div className="fibo-create-notices">
         {unresolvedReferenceAliases.length ? (
           <Alert className="clear-create-support-alert mt-3" variant="destructive" role="alert">
             <AlertDescription>
@@ -1234,9 +1237,7 @@ export function CreateWorkspace({
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
-
-        </div>
-        <section className="fibo-create-canvas" aria-label="Canvas">
+          </div>
           {!jobActive && !resultLoading && !resultAsset ? (
             <div className="fibo-create-empty">
               <span className="fibo-create-watermark" aria-hidden="true">R</span>
