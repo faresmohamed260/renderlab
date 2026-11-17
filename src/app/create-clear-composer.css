@@ -127,12 +127,20 @@
   width: 100%;
   max-width: none;
   padding: 8px 12px 12px;
-  border-radius: 22px;
-  background:
-    radial-gradient(ellipse 38rem 29rem at 72% 9rem, rgb(79 66 220 / 24%), transparent),
-    radial-gradient(ellipse 30rem 28rem at 24% 16rem, rgb(205 46 167 / 14%), transparent),
-    #0d0c14;
+  background: transparent;
 }
+/* The ambient glow belongs behind the whole Create surface, not inside Canvas. */
+.kinetic-app:has(.fibo-create) {
+  background:
+    radial-gradient(ellipse var(--fibo-blue-size, 38rem 29rem) at 72% var(--fibo-blue-top, 9rem), rgb(79 66 220 / 24%), transparent 100%),
+    radial-gradient(ellipse var(--fibo-pink-size, 30rem 28rem) at 24% var(--fibo-pink-top, 16rem), rgb(205 46 167 / 14%), transparent 100%),
+    #0d0c14 !important;
+}
+.kinetic-app:has(.fibo-create)::before,
+.kinetic-app:has(.fibo-create)::after,
+.clear-create-workspace.fibo-create::before,
+.clear-create-workspace.fibo-create::after,
+.fibo-create .fibo-create-grid::after { content: none; }
 .fibo-create .fibo-create-grid {
   display: grid;
   grid-template-columns: clamp(288px, 26vw, 360px) minmax(0, 1fr) clamp(144px, 14vw, 214px);
@@ -163,30 +171,23 @@
   min-height: 380px;
   overflow: hidden;
   border-radius: 24px;
-  background:
-    radial-gradient(ellipse at 20% 28%, #503151, transparent 67%),
-    radial-gradient(ellipse at 82% 19%, #3b3467, transparent 65%),
-    radial-gradient(ellipse at 77% 87%, #26304c, transparent 70%), #14131d;
+  background: transparent;
 }
 .fibo-create-empty {
   position: relative;
   display: grid;
-  flex: 1;
+  width: min(92%, 420px);
+  aspect-ratio: 3 / 4;
+  margin: auto;
   place-items: center;
+  border-radius: 20px;
+  background: rgb(255 255 255 / 4.5%);
   isolation: isolate;
   text-align: center;
   color: rgb(255 255 255 / 75%);
   font-size: 13px;
 }
-.fibo-create-watermark {
-  position: absolute;
-  z-index: -1;
-  font-weight: 750;
-  font-size: clamp(100px, 21vw, 300px);
-  line-height: 1;
-  opacity: .075;
-  user-select: none;
-}
+.fibo-create-watermark { display: none; }
 .fibo-create-history { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .fibo-create-history h2 { font-size: 14px; font-weight: 650; }
 .fibo-create-history p { color: var(--text-muted); font-size: 12px; }
@@ -200,4 +201,39 @@
   .fibo-create .fibo-create-grid { display: flex; flex-direction: column; min-height: 0; gap: 8px; }
   .fibo-create-canvas { order: -1; min-height: 40dvh; border-radius: 17px; }
   .fibo-create-controls, .fibo-create-history { padding: 12px; border-radius: 17px; }
+}
+
+@media (max-width: 760px) {
+  .kinetic-app:has(.fibo-create) {
+    --fibo-blue-size: 65vw 42dvh;
+    --fibo-blue-top: 13dvh;
+    --fibo-pink-size: 56vw 38dvh;
+    --fibo-pink-top: 23dvh;
+  }
+  .fibo-create-empty {
+    width: 100%;
+    min-height: 40dvh;
+    aspect-ratio: auto;
+    background: transparent;
+  }
+  .fibo-create-watermark {
+    position: absolute;
+    top: 38%;
+    display: grid;
+    place-items: center;
+    width: clamp(58px, 18vw, 84px);
+    aspect-ratio: 1;
+    border-radius: 27%;
+    color: rgb(222 214 246 / 22%);
+    font-size: clamp(30px, 10vw, 48px);
+    font-weight: 750;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+    transform: translateY(-50%);
+    background: linear-gradient(145deg, rgb(170 151 235 / 11%), rgb(65 53 105 / 7%));
+    box-shadow: inset 0 1px rgb(218 204 255 / 9%), inset 0 -1px 10px rgb(9 7 21 / 18%),
+      0 14px 30px rgb(6 4 17 / 28%), 0 0 65px rgb(129 98 219 / 9%);
+  }
+  .fibo-create-empty > :not(.fibo-create-watermark) { transform: translateY(32px); }
 }
