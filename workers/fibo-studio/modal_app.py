@@ -150,8 +150,10 @@ class FiboStudio:
 
     @modal.method()
     def text_to_image_with_setup(self, instruction: str, seed: int, width: int, height: int,
-                                 inspiration: bytes | None = None):
+                                 inspiration: bytes | None = None, steps: int = 4):
         from PIL import Image
+        if type(steps) is not int or not 1 <= steps <= 8:
+            raise ValueError("Unsupported step count")
         if (type(width) is not int or type(height) is not int
                 or not all(256 <= side <= 1536 and side % 16 == 0 for side in (width, height))
                 or width * height > 1536 * 1024):
@@ -165,11 +167,13 @@ class FiboStudio:
                     raise ValueError("Inspiration exceeds the private worker pixel limit")
                 guide = image.convert("RGB")
         backend = self.backend_for(instruction, seed)
-        return self.read_output(backend.generate("", seed, 4, width, height, instruction, inspiration=guide))
+        return self.read_output(backend.generate("", seed, steps, width, height, instruction, inspiration=guide))
 
     @modal.method()
-    def edit_image(self, images: list[bytes], instruction: str, seed: int = 1):
+    def edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4):
         from PIL import Image
+        if type(steps) is not int or not 1 <= steps <= 8:
+            raise ValueError("Unsupported step count")
         if not 1 <= len(images) <= 4:
             raise ValueError("Expected a source image and up to three references")
         decoded = []
@@ -181,7 +185,7 @@ class FiboStudio:
                     raise ValueError("Image exceeds the private worker pixel limit")
                 decoded.append(image.convert("RGB"))
         backend = self.backend_for(instruction, seed)
-        return self.read_output(backend.render(decoded, "", seed, 4, None, instruction))
+        return self.read_output(backend.render(decoded, "", seed, steps, None, instruction))
 
     @modal.exit()
     def stop(self):

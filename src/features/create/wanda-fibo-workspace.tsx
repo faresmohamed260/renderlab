@@ -21,7 +21,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: boolean; extendedSetup: boolean }) {
+export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: { admitted: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const [mode, setMode] = useState<"edit" | "generate">("edit");
   const [reducedMotion, setReducedMotion] = useState(true);
   useEffect(() => {
@@ -38,6 +38,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
   });
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const [prompt, setPrompt] = useState("");
+  const [imageCount, setImageCount] = useState("1");
+  const [steps, setSteps] = useState(4);
   const [seed, setSeed] = useState("42");
   const [randomize, setRandomize] = useState(true);
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
@@ -95,18 +97,18 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
       const job = crypto.randomUUID().replaceAll("-", "");
       await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(),
-          seed: Number(seed), randomize, steps: 4, image_count: 1, width: size.width, height: size.height }) });
+          seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
       setStatus("Rendering on Modal...");
       const end = Date.now() + 8 * 60_000;
       while (!signal.aborted && Date.now() < end) {
         const update = await request<{ finished: boolean; images: Result[]; error?: string }>("local/render/" + job, { signal });
         if (update.finished) {
-          if (update.error || !update.images[0]) throw new Error(update.error ?? "No image returned.");
+          if (!update.images[0]) throw new Error(update.error ?? "No image returned.");
           const image = update.images[0];
           setResult(image);
-          setHistory((items) => [image, ...items].slice(0, 8));
+          setHistory((items) => [...update.images, ...items].slice(0, 8));
           setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
-          setStatus("Render complete.");
+          setStatus(update.error ?? (update.images.length === 1 ? "Render complete." : update.images.length + " images ready in History."));
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -137,6 +139,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
     : mode === "edit" && !files[0] ? "Add a source image to edit."
     : !prompt.trim() ? "Enter a prompt to generate."
+    : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
     : "";
   const canSubmit = !busy && !blocker;
@@ -254,8 +257,17 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
                     onClick={() => setRandomize(!randomize)}><Dices /></Button>
                 </div>
               </div>
-              <div>Images <span className="wanda-fibo-fixed-value">1 per render</span></div>
-              <p className="wanda-fibo-steps">Steps <span>4 · fixed in this preview</span></p>
+              <label htmlFor="wanda-fibo-count">Images
+                <Input id="wanda-fibo-count" type="number" min={1} max={4} step={1} value={imageCount}
+                  disabled={!admitted || busy} onChange={(event) => setImageCount(event.target.value)} />
+              </label>
+              <label className="wanda-fibo-steps" htmlFor="wanda-fibo-steps">
+                <span>Steps <output htmlFor="wanda-fibo-steps">{steps}</output></span>
+                <Input id="wanda-fibo-steps" type="range" min={1} max={8} step={1} value={steps}
+                  disabled={!admitted || busy || !variableSteps}
+                  title={variableSteps ? undefined : "Adjustable steps require the private worker update"}
+                  onChange={(event) => setSteps(event.target.valueAsNumber)} />
+              </label>
             </div>
             <p id="wanda-fibo-worker-note" className="wanda-fibo-caption wanda-fibo-worker-note" role="status">
               {busy ? status : blocker || status || "Ready to generate."}

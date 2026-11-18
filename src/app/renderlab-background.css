@@ -387,8 +387,16 @@
 .wanda-fibo-dock { margin-block-start: 24px; }
 .wanda-fibo-worker-note { min-block-size: 3em; overflow-wrap: anywhere; }
 .wanda-fibo-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: end; font-size: 12px; }
-.wanda-fibo-steps { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 8px; }
-.wanda-fibo-fixed-value { display: flex; align-items: center; min-block-size: 40px; margin-block-start: 4px; padding-inline: 12px; border-radius: 999px; background: rgb(255 255 255 / 5%); }
+.wanda-fibo-steps { grid-column: 1 / -1; }
+.wanda-fibo-steps > span { display: flex; justify-content: space-between; }
+.wanda-fibo-steps input[type="range"] {
+  display: block;
+  min-block-size: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: #adabf6;
+}
 .wanda-fibo-settings input { min-inline-size: 0; margin-block-start: 4px; }
 .wanda-fibo-seed { display: flex; align-items: center; position: relative; }
 .wanda-fibo-generate { inline-size: 100%; margin-block-start: 12px; justify-content: flex-start; }

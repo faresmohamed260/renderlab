@@ -36,13 +36,13 @@ async function boundedBody(request: Request, limit: number) {
   } finally { reader.releaseLock(); }
 }
 
-function bridge(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+function bridge(payload: Record<string, unknown>, timeoutMs = 430_000): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
     const child = spawn("C:/Windows/py.exe", ["-3.10", join(process.cwd(), "workers/fibo-studio/wanda_bridge.py")], {
       windowsHide: true, stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
     });
-    const timer = setTimeout(() => child.kill(), 430_000);
+    const timer = setTimeout(() => child.kill(), timeoutMs);
     let size = 0;
     const out: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => {
@@ -139,13 +139,21 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       || typeof prompt !== "string" || !prompt.trim() || prompt.length > 4000) {
       return error("Enter a prompt and submit a valid job.", 400);
     }
+    const steps = data.steps ?? 4;
+    const count = data.image_count ?? 1;
+    if (typeof steps !== "number" || !Number.isInteger(steps) || steps < 1 || steps > 8
+      || typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > 4) {
+      return error("Choose 1 to 8 steps and 1 to 4 images.", 422);
+    }
+    if (steps !== 4 && process.env.RENDERLAB_WANDA_FIBO_VARIABLE_STEPS !== "1") {
+      return error("Adjustable steps need the private worker update.", 503);
+    }
     const width = data.width ?? 1024;
     const height = data.height ?? 1024;
     if (data.mask || data.json_instruction || data.negative_prompt || data.append_to
-      || (data.steps != null && data.steps !== 4) || (data.image_count != null && data.image_count !== 1)
       || (mode === "edit" && data.inspiration != null)
       || (mode === "generate" && !wandaFiboSizes.some((size) => size.width === width && size.height === height))) {
-      return error("Use a supported preset, plain prompt, four steps and one output.", 422);
+      return error("Use a supported preset and a plain prompt.", 422);
     }
     const extended = mode === "generate" && (width !== 1024 || height !== 1024 || data.inspiration != null);
     if (extended && process.env.RENDERLAB_WANDA_FIBO_EXTENDED !== "1") {
@@ -179,12 +187,30 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     state.jobs.set(id, job);
     after(async () => {
       try {
-        const result = await bridge({ mode, instruction: prompt, seed, images, width, height, extended, inspiration });
-        if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error();
-        job.images.push({ image_data: "data:image/png;base64," + result.png, filename: id + ".png",
-          seed, json_instruction: result.prompt, seconds: result.seconds, vgl_seconds: result.vgl_seconds,
-          total_seconds: result.total_seconds });
-      } catch { job.error = "The private Modal worker did not return a render."; }
+        const deadline = Date.now() + 430_000;
+        let batchBytes = 0;
+        let retainedBytes = [...state.jobs.values()].reduce((total, entry) =>
+          total + entry.images.reduce((bytes, image) => bytes + String(image.image_data).length, 0), 0);
+        for (let index = 0; index < count; index++) {
+          const remaining = deadline - Date.now();
+          if (remaining <= 0) throw new Error("Render time limit exceeded");
+          const imageSeed = (seed + index) % 2147483648;
+          const result = await bridge({
+            mode, instruction: prompt, seed: imageSeed, images, width, height, extended, inspiration, steps,
+          }, remaining);
+          if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error("Invalid PNG");
+          batchBytes += result.png.length;
+          retainedBytes += result.png.length + "data:image/png;base64,".length;
+          if (batchBytes > 16 * mb || retainedBytes > 96 * mb) throw new Error("Batch exceeds the preview result limit");
+          job.images.push({ image_data: "data:image/png;base64," + result.png,
+            filename: id + "-" + (index + 1) + ".png", seed: imageSeed, json_instruction: result.prompt,
+            seconds: result.seconds, vgl_seconds: result.vgl_seconds, total_seconds: result.total_seconds });
+        }
+      } catch {
+        job.error = job.images.length
+          ? "Only " + job.images.length + " of " + count + " images finished. See History for the completed images."
+          : "The private Modal worker did not return a render.";
+      }
       finally { job.finished = true; }
     });
     return json({ id, state: "running" }, 202);
