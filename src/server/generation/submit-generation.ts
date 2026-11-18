@@ -6,6 +6,8 @@ import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/g
 import { workersForEcosystem } from "@/server/generation/worker-fleet";
 import { getMediaAsset } from "@/server/media/media-assets";
 import { supabaseRest } from "@/server/data/supabase-rest";
+import { fiboMaskUsage } from "@/lib/capabilities/fibo-mask";
+import { getReadyFiboMaskSource } from "@/server/media/reference-uploads";
 import { correlationIdForGenerationJob, createDiagnosticCorrelationId, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 import {
   bindGenerationAdmission,
@@ -22,6 +24,14 @@ function isExternalGenerationBackendConfigured() {
 
 export function isFiboGenerationAvailable() {
   return workersForEcosystem(fiboGenerationModel).length > 0 && isNativeGenerationConfigured();
+}
+
+/** The approved worker has not been redeployed with mask support. Do not
+ * accept masked jobs until the owner separately authorizes qualification and
+ * a backend operator explicitly enables this server-only gate.
+ */
+export function isFiboMaskGenerationAvailable() {
+  return process.env.RENDERLAB_FIBO_MASK_ENABLED === "true" && isFiboGenerationAvailable();
 }
 
 export function isGenerationBackendConfigured() {
@@ -66,14 +76,15 @@ export async function generationImageInputsAvailable(ownerId: string, request: G
       return asset?.kind === "image";
     }
 
-    const rows = await supabaseRest<Array<{ mime_type: string; status: string }>>(
-      `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(input.source.id)}&select=mime_type,status&limit=1`,
+    const rows = await supabaseRest<Array<{ mime_type: string; status: string; metadata: { usage?: string } | null }>>(
+      `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(input.source.id)}&select=mime_type,status,metadata&limit=1`,
       { method: "GET" },
     );
     const source = rows?.[0];
-    return source?.status === "ready" && source.mime_type.startsWith("image/");
+    return source?.status === "ready" && source.mime_type.startsWith("image/") && source.metadata?.usage !== fiboMaskUsage;
   }));
-  return available.every(Boolean);
+  if (!available.every(Boolean)) return false;
+  return !request.mask || Boolean(await getReadyFiboMaskSource(ownerId, request.mask.id));
 }
 
 async function submitToRenderLabBackend(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
@@ -133,6 +144,9 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
   };
 
   const isFibo = request.model === fiboGenerationModel;
+  if (request.mask && !isFiboMaskGenerationAvailable()) {
+    return reject({ ok: false, error: { code: "generation_disabled", message: "FIBO masked editing has not been qualified for this environment." } });
+  }
   if (isFibo && !isFiboGenerationAvailable()) {
     return reject({ ok: false, error: { code: "generation_backend_unavailable", message: "FIBO generation is not enabled." } });
   }

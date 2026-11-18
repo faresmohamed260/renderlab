@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { inspectFiboMaskSelection } from "@/server/media/fibo-mask-image-validation";
+import { fiboMaskMaxBytes, fiboMaskUsage } from "@/lib/capabilities/fibo-mask";
 import type {
   CompleteReferenceUploadRequest,
   CreateReferenceUploadTicketRequest,
@@ -50,7 +52,21 @@ export async function getReadyReferenceSource(ownerId: string, sourceId: string)
   });
   const rows = await supabaseRest<SourceRow[]>(`generation_sources?${params.toString()}`, { method: "GET" });
   const source = rows?.[0] ?? null;
-  return source?.mime_type.startsWith("image/") ? source : null;
+  return source?.mime_type.startsWith("image/") && source.metadata?.usage !== fiboMaskUsage ? source : null;
+}
+
+export async function getReadyFiboMaskSource(ownerId: string, sourceId: string) {
+  const params = new URLSearchParams({
+    select: "id,owner_id,storage_key,filename,mime_type,size_bytes,width,height,status,metadata",
+    owner_id: `eq.${ownerId}`,
+    id: `eq.${sourceId}`,
+    status: "eq.ready",
+    limit: "1",
+  });
+  const rows = await supabaseRest<SourceRow[]>(`generation_sources?${params.toString()}`, { method: "GET" });
+  const source = rows?.[0] ?? null;
+  return source?.metadata?.usage === fiboMaskUsage && source.mime_type === "image/png"
+    && Number(source.size_bytes) > 0 && Number(source.size_bytes) <= fiboMaskMaxBytes ? source : null;
 }
 
 export async function getReferenceSourceContentUrl(source: Pick<SourceRow, "storage_key">) {
@@ -121,7 +137,7 @@ export async function createReferenceUploadTicket(
         size_bytes: request.sizeBytes,
         purpose: "reference",
         status: "pending",
-        metadata: {},
+        metadata: request.usage === fiboMaskUsage ? { usage: fiboMaskUsage } : {},
       }),
     });
 
@@ -142,7 +158,7 @@ export async function createReferenceUploadTicket(
       method: "PUT",
       headers: { "content-type": request.mimeType },
       expiresInSeconds,
-      maxBytes: maxReferenceUploadBytes,
+      maxBytes: request.usage === fiboMaskUsage ? fiboMaskMaxBytes : maxReferenceUploadBytes,
     };
   } catch (error) {
     if (row?.status === "pending") {
@@ -209,6 +225,21 @@ export async function completeReferenceUpload(
   } catch {
     await markReferenceFailed(ownerId, row, "Uploaded image content validation failed.");
     throw new Error("Uploaded reference could not be verified as a supported image.");
+  }
+
+  if (row.metadata?.usage === fiboMaskUsage) {
+    try {
+      if (row.mime_type !== "image/png" || object.sizeBytes > fiboMaskMaxBytes
+        || verifiedImage.width > 4096 || verifiedImage.height > 4096
+        || verifiedImage.width * verifiedImage.height > 16_777_216) {
+        throw new RangeError("FIBO mask dimensions or bytes exceed bounds.");
+      }
+      // Do not mark an empty mask ready; the worker repeats this check.
+      await inspectFiboMaskSelection(body.bytes, verifiedImage);
+    } catch {
+      await markReferenceFailed(ownerId, row, "FIBO PNG mask validation failed.");
+      throw new Error("Uploaded FIBO mask is empty or invalid.");
+    }
   }
 
   const updated = await supabaseRest<SourceRow[]>(
