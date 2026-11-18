@@ -413,70 +413,76 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     const end = Date.now() + 24 * 60_000;
     let images: Result[] = [];
     let recoveringInspection = restoring && !!bookmark.filename;
-    while (!signal.aborted && Date.now() < end) {
-      const update = await request<Poll>("local/render/" + bookmark.id, { signal });
-      if (signal.aborted) throw new Error("Render polling stopped.");
-      setActiveCancel(!update.finished && update.canCancel ? { id: bookmark.id, pending: !!update.cancelling } : undefined);
-      if (!update.finished) {
-        if (update.state === "pending") setStatus("Waiting in Queue…");
-        else if (update.state === "running") setStatus("Rendering on Modal...");
-        setLiveFrame(update.preview);
-        setLiveBlur(update.previewBlur);
-        setLiveCaption(update.cancelling ? "Cancelling…" : update.caption);
-      }
-      if (update.images.length > images.length) {
-        images = [...images, ...update.images.slice(images.length).map((image) => ({
-          ...image, batchId: bookmark.id, run, source: run?.inputs[0],
-        }))];
-        setRunningBatch(images);
-      }
-      if (update.finished) {
-        setCancelError("");
-        if (!images[0]) throw new Error(update.error ?? "No image returned.");
-        // Decode the bookmarked image before replacing the live/previous view or changing its aspect.
-        const remembered = bookmarkKey ? readStageBookmark(bookmarkKey) : bookmark;
-        const filename = remembered?.id === bookmark.id ? remembered.filename : undefined;
-        const selected = images.find((image) => filename && image.filename === filename) ?? images[0];
-        const displayed = { ...selected, aspect: await decodeAspect(selected.image_data) };
+    try {
+      while (!signal.aborted && Date.now() < end) {
+        const update = await request<Poll>("local/render/" + bookmark.id, { signal });
         if (signal.aborted) throw new Error("Render polling stopped.");
-        images = images.map((image) => image === selected ? displayed : image);
-        setResult((previous) => previous?.batchId === bookmark.id && previous !== selected ? previous : displayed);
+        setActiveCancel(!update.finished && update.canCancel ? { id: bookmark.id, pending: !!update.cancelling } : undefined);
+        if (!update.finished) {
+          if (update.state === "pending") setStatus("Waiting in Queue…");
+          else if (update.state === "running") setStatus("Rendering on Modal...");
+          setLiveFrame(update.preview);
+          setLiveBlur(update.previewBlur);
+          setLiveCaption(update.cancelling ? "Cancelling…" : update.caption);
+        }
+        if (update.images.length > images.length) {
+          images = [...images, ...update.images.slice(images.length).map((image) => ({
+            ...image, batchId: bookmark.id, run, source: run?.inputs[0],
+          }))];
+          setRunningBatch(images);
+        }
+        if (update.finished) {
+          setCancelError("");
+          if (!images[0]) throw new Error(update.error ?? "No image returned.");
+          // Decode the bookmarked image before replacing the live/previous view or changing its aspect.
+          const remembered = bookmarkKey ? readStageBookmark(bookmarkKey) : bookmark;
+          const filename = remembered?.id === bookmark.id ? remembered.filename : undefined;
+          const selected = images.find((image) => filename && image.filename === filename) ?? images[0];
+          const displayed = { ...selected, aspect: await decodeAspect(selected.image_data) };
+          if (signal.aborted) throw new Error("Render polling stopped.");
+          images = images.map((image) => image === selected ? displayed : image);
+          setResult((previous) => previous?.batchId === bookmark.id && previous !== selected ? previous : displayed);
+          setHistory((items) => {
+            const merged = [...images, ...items.filter((item) => item.batchId !== bookmark.id)];
+            const ids = new Set<Result["batchId"]>();
+            return merged.filter((item) => {
+              if (ids.has(item.batchId)) return true;
+              if (ids.size >= 8) return false;
+              ids.add(item.batchId);
+              return true;
+            });
+          });
+          setStatus(update.error ?? (images.length === 1 ? "Render complete." : images.length + " images ready in History."));
+          if (restoring) setStageReady(true);
+          return { images, error: update.error };
+        }
+        if (recoveringInspection) {
+          recoveringInspection = false;
+          const previous = images.find((image) => image.filename === bookmark.filename);
+          if (previous) {
+            const aspect = await decodeAspect(previous.image_data).catch(() => undefined);
+            if (signal.aborted) throw new Error("Render polling stopped.");
+            if (aspect) {
+              const restored = { ...previous, aspect };
+              images = images.map((image) => image === previous ? restored : image);
+              setRunningBatch(images);
+              setInspected(restored);
+              setResult(restored);
+            }
+          }
+        }
+        if (restoring) setStageReady(true);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+      throw new Error("Render status did not return before the local timeout.");
+    } finally {
+      if (!signal.aborted) {
+        setActiveCancel(undefined);
         setLiveFrame(undefined);
         setLiveBlur(undefined);
         setLiveCaption(undefined);
-        setHistory((items) => {
-          const merged = [...images, ...items.filter((item) => item.batchId !== bookmark.id)];
-          const ids = new Set<Result["batchId"]>();
-          return merged.filter((item) => {
-            if (ids.has(item.batchId)) return true;
-            if (ids.size >= 8) return false;
-            ids.add(item.batchId);
-            return true;
-          });
-        });
-        setStatus(update.error ?? (images.length === 1 ? "Render complete." : images.length + " images ready in History."));
-        if (restoring) setStageReady(true);
-        return { images, error: update.error };
       }
-      if (recoveringInspection) {
-        recoveringInspection = false;
-        const previous = images.find((image) => image.filename === bookmark.filename);
-        if (previous) {
-          const aspect = await decodeAspect(previous.image_data).catch(() => undefined);
-          if (signal.aborted) throw new Error("Render polling stopped.");
-          if (aspect) {
-            const restored = { ...previous, aspect };
-            images = images.map((image) => image === previous ? restored : image);
-            setRunningBatch(images);
-            setInspected(restored);
-            setResult(restored);
-          }
-        }
-      }
-      if (restoring) setStageReady(true);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
-    throw new Error("Render status did not return before the local timeout.");
   }
 
   useEffect(() => {
