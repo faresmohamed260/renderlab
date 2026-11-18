@@ -1,8 +1,9 @@
 "use client";
 
+import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronRight, Clock, Dices, Image as ImageIcon, Keyboard, ListOrdered, Plus, Sparkles, X } from "lucide-react";
+import { ChevronRight, Clock, Dices, Image as ImageIcon, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -22,6 +23,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: boolean; extendedSetup: boolean }) {
   const [mode, setMode] = useState<"edit" | "generate">("edit");
+  const [reducedMotion, setReducedMotion] = useState(true);
+  useEffect(() => {
+    const query = matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  const modeSpring = useSpring({
+    position: mode === "edit" ? 1 : 0,
+    config: { mass: 1, tension: 220, friction: 22 },
+    immediate: reducedMotion,
+  });
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const [prompt, setPrompt] = useState("");
   const [seed, setSeed] = useState("42");
@@ -123,12 +137,6 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
   return (
     <section className="wanda-fibo-workspace mx-auto w-full" aria-label="Create with FIBO">
       <div className="wanda-fibo-toolbar">
-        <div className="wanda-fibo-modes" role="group" aria-label="Workflow">
-          <Button type="button" variant={mode === "generate" ? "secondary" : "ghost"} aria-pressed={mode === "generate"}
-            disabled={busy} onClick={() => { if (mode !== "generate") setResult(undefined); setMode("generate"); }}>Text to Image</Button>
-          <Button type="button" variant={mode === "edit" ? "secondary" : "ghost"} aria-pressed={mode === "edit"}
-            disabled={busy} onClick={() => { if (mode !== "edit") setResult(undefined); setMode("edit"); }}>Image Editing</Button>
-        </div>
         <div className="wanda-fibo-tools">
           <details className="wanda-fibo-queue">
             <summary><ListOrdered size={16} aria-hidden="true" /> Queue</summary>
@@ -149,6 +157,20 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
             }
           }}>
           <div className="wanda-fibo-fields">
+            <div className="wanda-fibo-modes" role="group" aria-label="Workflow">
+              <animated.span className="wanda-fibo-mode-highlight" aria-hidden="true"
+                style={{ transform: modeSpring.position.to((position) => "translateX(" + (position * 44) + "px)") }} />
+              <Button type="button" variant="ghost" aria-label="Text to Image" title="Text to Image"
+                aria-pressed={mode === "generate"} disabled={busy}
+                onClick={() => { if (mode !== "generate") setResult(undefined); setMode("generate"); }}>
+                <ImagePlus aria-hidden="true" />
+              </Button>
+              <Button type="button" variant="ghost" aria-label="Image Editing" title="Image Editing"
+                aria-pressed={mode === "edit"} disabled={busy}
+                onClick={() => { if (mode !== "edit") setResult(undefined); setMode("edit"); }}>
+                <Pencil aria-hidden="true" />
+              </Button>
+            </div>
             <section aria-labelledby="wanda-fibo-setup">
               <h2 id="wanda-fibo-setup">Image setup</h2>
               <div className="wanda-fibo-setup-slot">
@@ -169,12 +191,12 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
                 <div className="wanda-fibo-size" inert={mode !== "generate"}>
                   <div className="wanda-fibo-tile">
                     <Button type="button" variant="outline" disabled={!admitted || busy}
-                      aria-label="Choose inspiration image" onClick={() => chooseImage(4)}>
+                      aria-label="Choose reference image" onClick={() => chooseImage(4)}>
                       {inspirationPreview ? <img src={inspirationPreview} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}
-                      <span>Inspiration</span>
+                      <span>Reference</span>
                     </Button>
                     {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="wanda-fibo-remove"
-                      aria-label="Remove inspiration image" disabled={busy} onClick={() => setInspiration(undefined)}><X /></Button>}
+                      aria-label="Remove reference image" disabled={busy} onClick={() => setInspiration(undefined)}><X /></Button>}
                   </div>
                   <label className="wanda-fibo-aspect">Aspect ratio
                     <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
@@ -233,7 +255,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
               <Sparkles aria-hidden="true" />{busy ? "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
             </Button>
             <p id="wanda-fibo-worker-note" className="wanda-fibo-caption wanda-fibo-worker-note" role="status">
-              {needsUpgrade ? "Inspiration and non-square renders need the private worker update." : status}
+              {needsUpgrade ? "Reference images and non-square renders need the private worker update." : status}
             </p>
           </div>
         </form>
