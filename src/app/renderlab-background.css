@@ -630,3 +630,9 @@
   font-size: 10px;
 }
 .wanda-fibo-workspace .wanda-fibo-generate:disabled { opacity: .68; }
+
+.wanda-fibo-workspace .wanda-fibo-tile[data-drag-over="true"] > button:first-child,
+.wanda-fibo-workspace .wanda-fibo-canvas[data-drag-over="true"] {
+  outline: 2px solid #a5b4fc;
+  outline-offset: -2px;
+}

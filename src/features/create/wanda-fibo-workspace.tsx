@@ -2,7 +2,7 @@
 
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { Clock, Dice5, Image as ImageIcon, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +88,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   }, [inspiration]);
   const picker = useRef<HTMLInputElement>(null);
   const slot = useRef(0);
+  const [dragTarget, setDragTarget] = useState<number | "canvas">();
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const active = useRef<AbortController | null>(null);
@@ -167,6 +168,30 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
 
+  function uploadDropTarget(target: number | "canvas") {
+    return {
+      "data-drag-over": admitted && !busy && dragTarget === target ? "true" : undefined,
+      onDragOver(event: DragEvent<HTMLElement>) {
+        if (!event.dataTransfer.types.includes("Files")) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = admitted && !busy ? "copy" : "none";
+        if (admitted && !busy) setDragTarget(target);
+      },
+      onDragLeave(event: DragEvent<HTMLElement>) {
+        if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+        setDragTarget((current) => current === target ? undefined : current);
+      },
+      onDrop(event: DragEvent<HTMLElement>) {
+        event.preventDefault();
+        setDragTarget(undefined);
+        const file = event.dataTransfer.files[0];
+        if (!admitted || busy || !file?.type.startsWith("image/")) return;
+        if (target === 4) setReference(file);
+        else attachImage(file, target === "canvas" ? 0 : target);
+      },
+    };
+  }
+
   const seedValid = randomize || (/^\d+$/.test(seed) && Number(seed) <= 2147483647);
   const vglValid = (() => {
     if (!manualVgl) return true;
@@ -229,7 +254,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               <div className="wanda-fibo-setup-slot">
                 <div className="wanda-fibo-tiles" inert={mode !== "edit"}>
                   {slots.map((label, index) => (
-                    <div className="wanda-fibo-tile" key={label}>
+                    <div className="wanda-fibo-tile" key={label} {...uploadDropTarget(index)}>
                       <Button type="button" variant="outline" aria-label={"Choose " + label.toLowerCase() + " image"}
                         title={files[index]?.name ?? label} disabled={!admitted || busy}
                         onClick={() => chooseImage(index)}>
@@ -245,7 +270,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                   ))}
                 </div>
                 <div className="wanda-fibo-size" inert={mode !== "generate"}>
-                  <div className="wanda-fibo-tile">
+                  <div className="wanda-fibo-tile" {...uploadDropTarget(4)}>
                     <Button type="button" variant="outline" disabled={!admitted || busy}
                       aria-label="Choose reference image" onClick={() => chooseImage(4)}>
                       {inspirationPreview ? <img src={inspirationPreview} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}
@@ -342,15 +367,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             </Button>
           </div>
         </form>
-        <section className="wanda-fibo-canvas" aria-label="Canvas"
-          onDragOver={(event) => {
-            if (admitted && !busy && event.dataTransfer.types.includes("Files")) event.preventDefault();
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            const file = event.dataTransfer.files[0];
-            if (admitted && !busy && file?.type.startsWith("image/")) attachImage(file, 0);
-          }}>
+        <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
           {!admitted ? (
             <p>Sign in with an admitted RenderLab account to generate. <Link href="/settings" className="underline">Open Settings</Link></p>
           ) : result ? (
