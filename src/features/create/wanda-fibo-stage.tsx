@@ -5,11 +5,13 @@ import { Download, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildWandaBatchZip } from "./wanda-fibo-batch-zip";
 
-type StageResult = { image_data: string; seed: number; filename?: string; source?: File };
+type StageResult = { image_data: string; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
 type Props<T extends StageResult> = {
   result?: T;
   source?: File;
   batch: T[];
+  history: T[];
+  onRestore: (image: T, reopen: boolean) => void;
   onSelect: (image: T) => void;
   onReturnToProgress: () => void;
   expectedImages: number;
@@ -23,7 +25,7 @@ type Props<T extends StageResult> = {
   onUseSource: (result: StageResult) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ result, source, batch, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ result, source, batch, history, onRestore, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -33,6 +35,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const frame = useRef<HTMLDivElement>(null);
+  const restoring = useRef(false);
   const opener = useRef<HTMLButtonElement>(null);
   const inspecting = busy && !!result;
   const showingProgress = busy && !inspecting;
@@ -164,6 +167,20 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
     if (viewerOpen) dialog.current?.close();
   }
 
+  function runActions() {
+    if (!result?.run || busy) return null;
+    const restore = (reopen: boolean) => {
+      if (viewerOpen) { restoring.current = true; dialog.current?.close(); }
+      onRestore(result, reopen);
+    };
+    return (
+      <div className="wanda-fibo-stage-run-actions" role="group" aria-label="Result settings">
+        <Button type="button" variant="ghost" size="sm" onClick={() => restore(false)}>Reuse settings</Button>
+        {result.run.mode === "edit" && <Button type="button" variant="ghost" size="sm" onClick={() => restore(true)}>Reopen edit</Button>}
+      </div>
+    );
+  }
+
   function stageKeys(event: KeyboardEvent<HTMLElement>) {
     if (event.defaultPrevented || event.nativeEvent.isComposing || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
     const target = event.target;
@@ -180,6 +197,14 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
       next.focus({ preventScroll: true });
       next.scrollIntoView({ block: "nearest", inline: "nearest" });
       next.click();
+      return;
+    }
+    if (!busy && ["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key) && history.length) {
+      const direction = key === "arrowup" || key === "arrowleft" ? -1 : 1;
+      const index = result ? history.indexOf(result) : -1;
+      const next = index < 0 ? (direction === 1 ? 0 : history.length - 1) : (index + direction + history.length) % history.length;
+      event.preventDefault();
+      void select(history[next]);
       return;
     }
     if (busy || event.repeat) return;
@@ -247,16 +272,18 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
             </Button>}
         </div>
         {!viewerOpen && carousel()}
+        {!viewerOpen && runActions()}
         {notice && !viewerOpen && <p className="wanda-fibo-stage-notice" role="status">{notice}</p>}
       </div>
       <dialog ref={dialog} className="wanda-fibo-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer" onKeyDown={stageKeys}
-        onClose={() => { setViewerOpen(false); setCompared(undefined); opener.current?.focus({ preventScroll: true }); }}>
+        onClose={() => { setViewerOpen(false); setCompared(undefined); if (!restoring.current) opener.current?.focus({ preventScroll: true }); restoring.current = false; }}>
         {viewerOpen && <>
           <Button type="button" variant="ghost" size="icon-sm" className="wanda-fibo-stage-close"
             aria-label="Close image viewer" onClick={() => dialog.current?.close()}><X aria-hidden="true" /></Button>
           {media()}
           {tools()}
           {carousel()}
+          {runActions()}
           {notice && <p className="wanda-fibo-stage-notice" role="status">{notice}</p>}
         </>}
       </dialog>

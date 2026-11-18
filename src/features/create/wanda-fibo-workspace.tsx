@@ -14,8 +14,18 @@ import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
 const api = "/wanda-fibo/";
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { image_data: string; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string };
+type Result = { image_data: string; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
+type RunSettings = {
+  mode: Workflow;
+  prompt: string;
+  negativePrompt: string;
+  vgl: string;
+  steps: number;
+  imageCount: string;
+  sizeIndex: number;
+  inputs: (File | undefined)[];
+};
 type PromptDraft = {
   prompt: string;
   negativePrompt: string;
@@ -130,6 +140,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
         uploads.inspiration = id;
       }
+      const run: RunSettings = {
+        mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex,
+        inputs: mode === "edit" ? [...files] : [],
+      };
       const job = crypto.randomUUID().replaceAll("-", "");
       await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: manualVgl,
@@ -141,7 +155,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         const update = await request<{ finished: boolean; images: Result[]; error?: string }>("local/render/" + job, { signal });
         if (update.images.length > images.length) {
           images = [...images, ...update.images.slice(images.length).map((image) => ({
-            ...image, batchId: job, source: mode === "edit" ? files[0] : undefined,
+            ...image, batchId: job, run, source: mode === "edit" ? files[0] : undefined,
           }))];
           setRunningBatch(images);
         }
@@ -166,6 +180,20 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       active.current = null;
       if (!signal.aborted) setBusy(false);
     }
+  }
+
+  function restoreRun(image: Result, reopen: boolean) {
+    const run = image.run;
+    if (!admitted || busy || !run || (reopen && run.mode !== "edit")) return;
+    setMode(run.mode);
+    if (reopen) setFiles([...run.inputs]);
+    if (run.mode === "generate") setSizeIndex(run.sizeIndex);
+    setSteps(run.steps);
+    updateDraft(run.mode, {
+      prompt: run.prompt, negativePrompt: run.negativePrompt, vgl: run.vgl,
+      generatedVgl: false, seed: String(image.seed), randomize: false, imageCount: run.imageCount,
+    });
+    requestAnimationFrame(() => document.getElementById("wanda-fibo-prompt")?.focus({ preventScroll: true }));
   }
 
   function chooseImage(index: number) {
@@ -387,6 +415,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             <WandaFiboStage
               browseDisabled={!admitted}
               result={busy ? inspected : result}
+              history={history}
+              onRestore={restoreRun}
               source={mode === "edit" ? files[0] : undefined}
               batch={busy ? runningBatch : result?.batchId ? history.filter((image) => image.batchId === result.batchId) : []}
               onSelect={(image) => {
@@ -421,10 +451,21 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             />
             {!admitted && <Link href="/settings" className="wanda-fibo-stage-sign-in">Sign in to upload</Link>}
         </section>
-        <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title">
+        <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title"
+          onKeyDown={(event) => {
+            if (busy || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+            const direction = ["ArrowUp", "ArrowLeft"].includes(event.key) ? -1 : ["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : 0;
+            const chips = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+            const from = chips.indexOf(document.activeElement as HTMLButtonElement);
+            if (!direction || from < 0) return;
+            event.preventDefault();
+            const next = chips[(from + direction + chips.length) % chips.length];
+            next.focus();
+            next.click();
+          }}>
           <h2 id="wanda-fibo-history-title">History</h2>
           {history.length ? history.map((image, index) => (
-            <Button key={index} type="button" variant="outline" onClick={() => setResult(image)}>Render {history.length - index} · {image.seed}</Button>
+            <Button key={image.filename ?? index} type="button" variant="outline" disabled={busy} aria-current={result === image} onClick={() => setResult(image)}>Render {history.length - index} · {image.seed}</Button>
           )) : <p className="wanda-fibo-caption">Finished images will appear here.</p>}
         </aside>
       </div>

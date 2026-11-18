@@ -895,3 +895,23 @@
   mask-image: linear-gradient(to right, transparent, #000 var(--stage-fade-start, 0px),
     #000 calc(100% - var(--stage-fade-end, 0px)), transparent);
 }
+
+.wanda-fibo-stage-run-actions {
+  position: absolute;
+  inset: auto 8px 8px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+.wanda-fibo-stage-frame[data-batch="true"] .wanda-fibo-stage-run-actions { inset-block-end: 2px; }
+.wanda-fibo-workspace .wanda-fibo-stage-run-actions button {
+  pointer-events: auto;
+  color: #e4ddeb;
+  background: rgb(16 15 21 / 65%);
+  backdrop-filter: blur(18px);
+}
+.wanda-fibo-stage-viewer .wanda-fibo-stage-run-actions { inset: 12px 52px auto 12px; }
+.wanda-fibo-history button[aria-current="true"] { outline: 1px solid #a5b4fc; outline-offset: -1px; }
