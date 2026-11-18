@@ -234,7 +234,7 @@
   inset: auto auto 0 -8px;
   inline-size: 244px;
   min-block-size: 196px;
-  padding: 54px 10px 48px;
+  padding: 8px 10px 48px;
   pointer-events: none;
   transform-origin: bottom;
 }
@@ -304,7 +304,7 @@
 
 .preview-account-name {
   position: absolute;
-  inset: auto auto 15px 54px;
+  inset: auto auto 15px 126px;
   max-inline-size: 101px;
   overflow: hidden;
   color: #f6f7fb;
@@ -315,6 +315,6 @@
 }
 
 .preview-account-card:not([data-has-photo="true"]) .preview-account-name {
-  inset-inline-start: 16px;
+  inset-inline-start: 89px;
   max-inline-size: 138px;
 }
