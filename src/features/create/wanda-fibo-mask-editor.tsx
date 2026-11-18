@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+type View = { zoom: number; x: number; y: number };
+const initialView: View = { zoom: 1, x: 0, y: 0 };
+
+function boundedView(zoom: number, x: number, y: number): View {
+  const limit = (zoom - 1) / 2;
+  return { zoom, x: Math.max(-limit, Math.min(limit, x)), y: Math.max(-limit, Math.min(limit, y)) };
+}
 
 type Props = {
   source: string;
@@ -17,6 +25,12 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
   const canvas = useRef<HTMLCanvasElement>(null);
   const undo = useRef<ImageData[]>([]);
   const redo = useRef<ImageData[]>([]);
+  const viewport = useRef<HTMLDivElement>(null);
+  const panDrag = useRef<{ id: number; x: number; y: number; view: View } | null>(null);
+  const [view, setView] = useState(initialView);
+  const [hand, setHand] = useState(false);
+  const [space, setSpace] = useState(false);
+  const [panning, setPanning] = useState(false);
   const sourcePixels = useRef<ImageData>(null);
   const pointer = useRef<{ id: number; x: number; y: number } | null>(null);
   const [ready, setReady] = useState(false);
@@ -74,6 +88,49 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
     void load().catch(() => { if (!cancelled) setError("Could not open the source or mask."); });
     return () => { cancelled = true; if (maskUrl) URL.revokeObjectURL(maskUrl); };
   }, [source, mask]);
+
+  function zoomBy(factor: number, x = 0, y = 0) {
+    if (pointer.current || panDrag.current) return;
+    setView((prev) => {
+      const zoom = Math.max(1, Math.min(4, prev.zoom * factor));
+      const scale = zoom / prev.zoom;
+      return boundedView(zoom, x + (prev.x - x) * scale, y + (prev.y - y) * scale);
+    });
+  }
+
+  useEffect(() => {
+    const region = viewport.current;
+    if (!region) return;
+    const wheel = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey || !ready || saving) return;
+      event.preventDefault();
+      const bounds = region.getBoundingClientRect();
+      if (!bounds.width || !bounds.height) return;
+      const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 200 : 1);
+      zoomBy(Math.exp(-delta / 320), (event.clientX - bounds.left) / bounds.width - .5,
+        (event.clientY - bounds.top) / bounds.height - .5);
+    };
+    const release = () => setSpace(false);
+    region.addEventListener("wheel", wheel, { passive: false });
+    window.addEventListener("blur", release);
+    return () => {
+      region.removeEventListener("wheel", wheel);
+      window.removeEventListener("blur", release);
+    };
+  }, [ready, saving]);
+
+  function viewKeys(event: KeyboardEvent<HTMLDialogElement>) {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.code === "Space" && !(event.target instanceof HTMLButtonElement)) {
+      event.preventDefault();
+      setSpace(true);
+    } else if (["+", "=", "-", "0", "h"].includes(event.key.toLowerCase())) {
+      event.preventDefault();
+      if (event.key === "0") setView(initialView);
+      else if (event.key.toLowerCase() === "h") { if (!event.repeat) setHand((value) => !value); }
+      else zoomBy(event.key === "-" ? 1 / Math.SQRT2 : Math.SQRT2);
+    }
+  }
 
   function context() { return canvas.current?.getContext("2d", { willReadFrequently: true }); }
   function snapshot(ctx: CanvasRenderingContext2D) { return ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height); }
@@ -184,13 +241,16 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
   return (
     <dialog ref={dialog} className="wanda-fibo-mask-dialog" aria-label="Edit source mask"
       onCancel={(event) => { event.preventDefault(); if (!saving) onClose(); }}
+      onKeyUp={(event) => { if (event.code === "Space") setSpace(false); }}
       onKeyDown={(event) => {
         if (event.target instanceof HTMLInputElement || drawing || saving || !ready) return;
+        viewKeys(event);
         const key = event.key.toLowerCase();
         if ((event.ctrlKey || event.metaKey) && (key === "z" || key === "y")) {
           event.preventDefault();
           moveHistory(key === "z" && !event.shiftKey);
         } else if (!event.altKey && !event.ctrlKey && !event.metaKey) {
+          if (["b", "e", "f", "i"].includes(key)) setHand(false);
           if (key === "b") setTool("brush");
           if (key === "e") setTool("eraser");
           if (key === "f") setTool("fill");
@@ -198,10 +258,10 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
         }
       }}>
       <div className="wanda-fibo-mask-toolbar" role="group" aria-label="Mask tools">
-        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "brush"} onClick={() => { setReview(false); setTool("brush"); }}>Brush</Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "eraser"} onClick={() => { setReview(false); setTool("eraser"); }}>Eraser</Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "fill"} onClick={() => { setReview(false); setTool("fill"); }}>Fill</Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "color"} onClick={() => { setReview(false); setTool("color"); }}>Select color</Button>
+        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "brush"} onClick={() => { setReview(false); setHand(false); setTool("brush"); }}>Brush</Button>
+        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "eraser"} onClick={() => { setReview(false); setHand(false); setTool("eraser"); }}>Eraser</Button>
+        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "fill"} onClick={() => { setReview(false); setHand(false); setTool("fill"); }}>Fill</Button>
+        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "color"} onClick={() => { setReview(false); setHand(false); setTool("color"); }}>Select color</Button>
         {(tool === "fill" || tool === "color") && (
           <label>Tolerance <Input type="range" min={0} max={100} value={tolerance} onChange={(event) => setTolerance(event.target.valueAsNumber)} /><output>{tolerance}</output></label>
         )}
@@ -214,11 +274,26 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
         <Button type="button" size="sm" variant="ghost" disabled={!ready || drawing || saving} onClick={() => modify(false)}>Clear</Button>
         <Button type="button" size="sm" variant="ghost" aria-pressed={review} onClick={() => setReview(!review)}>{review ? "Show overlay" : "Hide overlay"}</Button>
       </div>
-      <div className="wanda-fibo-mask-plane">
+      <div className="wanda-fibo-mask-toolbar" role="group" aria-label="Mask zoom">
+        <Button type="button" size="sm" variant="ghost" aria-label="Zoom out" disabled={!ready || drawing || panning || view.zoom <= 1} onClick={() => zoomBy(1 / Math.SQRT2)}>−</Button>
+        <Button type="button" size="sm" variant="ghost" title="Reset zoom" aria-label="Reset zoom" disabled={drawing || panning} onClick={() => setView(initialView)}>{Math.round(view.zoom * 100)}%</Button>
+        <Button type="button" size="sm" variant="ghost" aria-label="Zoom in" disabled={!ready || drawing || panning || view.zoom >= 4} onClick={() => zoomBy(Math.SQRT2)}>+</Button>
+        <Button type="button" size="sm" variant="ghost" aria-pressed={hand} onClick={() => setHand(!hand)}>Hand</Button>
+      </div>
+      <div ref={viewport} className="wanda-fibo-mask-viewport" tabIndex={0} aria-label="Mask canvas">
+      <div className="wanda-fibo-mask-plane" style={{ transform: `translate(${view.x * 100}%, ${view.y * 100}%) scale(${view.zoom})` }}>
         <img src={source} alt="Source image" draggable={false} />
-        <canvas ref={canvas} aria-label="Paint the selected region" style={{ opacity: review ? 0 : overlay / 100 }}
+        <canvas ref={canvas} aria-label="Paint the selected region" style={{ opacity: review ? 0 : overlay / 100, cursor: panning ? "grabbing" : hand || space ? "grab" : "crosshair" }}
           onPointerDown={(event) => {
-            if (!ready || saving || review || pointer.current || event.button !== 0) return;
+            if (!ready || saving || pointer.current || panDrag.current || event.button !== 0) return;
+            if (hand || space) {
+              if (view.zoom === 1) return;
+              event.currentTarget.setPointerCapture(event.pointerId);
+              panDrag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, view };
+              setPanning(true);
+              return;
+            }
+            if (review) return;
             const ctx = context();
             if (!ctx) return;
             const at = point(event);
@@ -233,6 +308,13 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
             setDrawing(true);
           }}
           onPointerMove={(event) => {
+            const drag = panDrag.current;
+            const region = viewport.current;
+            if (drag?.id === event.pointerId && region?.clientWidth && region.clientHeight) {
+              setView(boundedView(drag.view.zoom, drag.view.x + (event.clientX - drag.x) / region.clientWidth,
+                drag.view.y + (event.clientY - drag.y) / region.clientHeight));
+              return;
+            }
             const from = pointer.current;
             const ctx = context();
             if (!ctx || from?.id !== event.pointerId) return;
@@ -241,10 +323,16 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
             pointer.current = to;
           }}
           onLostPointerCapture={(event) => {
+            if (panDrag.current?.id === event.pointerId) {
+              panDrag.current = null;
+              setPanning(false);
+              return;
+            }
             if (pointer.current?.id !== event.pointerId) return;
             pointer.current = null;
             setDrawing(false);
           }} />
+      </div>
       </div>
       {!enabled && <p>Mask editing is available here. Rendering a masked edit requires the private worker update.</p>}
       {error && <p role="alert">{error}</p>}
