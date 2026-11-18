@@ -581,7 +581,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           onKeyDown={(event) => {
             if (busy || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
             const direction = ["ArrowUp", "ArrowLeft"].includes(event.key) ? -1 : ["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : 0;
-            const chips = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+            const chips = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("[data-wanda-history-image]:not(:disabled)")];
             const from = chips.indexOf(document.activeElement as HTMLButtonElement);
             if (!direction || from < 0) return;
             event.preventDefault();
@@ -595,7 +595,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
           {savedStatus && <p className="wanda-fibo-caption" role="status">{savedStatus}</p>}
           {history.length ? history.map((image, index) => (
-            <Button key={image.filename ?? index} type="button" variant="outline" disabled={busy} aria-current={result === image} onClick={() => { setMaskEditor(undefined); setResult(image); }}>Render {history.length - index} · {image.seed}</Button>
+            <Button key={image.batchId ? image.batchId + ":" + index : image.filename ?? index} data-wanda-history-image type="button" variant="outline" disabled={busy} aria-current={result === image} onClick={() => { setMaskEditor(undefined); setResult(image); }}>Render {history.length - index} · {image.seed}</Button>
           )) : <p className="wanda-fibo-caption">Finished images will appear here.</p>}
         </aside>
       </div>

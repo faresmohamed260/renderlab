@@ -447,15 +447,15 @@ export function WandaFiboStage<T extends StageResult>({ desktopResultActions, wo
     if (!(target instanceof Element) || target.closest("input, textarea, select, [contenteditable], [role=slider]")) return;
     const key = event.key.toLowerCase();
     const scope = viewerOpen ? dialog.current : frame.current;
-    if ((key === "arrowleft" || key === "arrowright") && showBatch) {
+    if ((key === "arrowleft" || key === "arrowright") && batch.length + Number(pending) > 1) {
       const chips = [...(scope?.querySelectorAll<HTMLButtonElement>(".wanda-fibo-stage-batch button") ?? [])];
       if (!chips.length) return;
-      const focused = chips.indexOf(document.activeElement as HTMLButtonElement);
-      const current = focused >= 0 ? focused : chips.findIndex((chip) => chip.getAttribute("aria-current") === "true");
-      const next = chips[(Math.max(0, current) + (key === "arrowleft" ? -1 : 1) + chips.length) % chips.length];
+      const queued = pendingImage.current ? batch.indexOf(pendingImage.current) : -1;
+      const current = queued >= 0 ? queued : chips.findIndex((chip) => chip.getAttribute("aria-current") === "true");
+      const direction = key === "arrowleft" ? -1 : 1;
+      const next = chips[current < 0 ? (direction > 0 ? 0 : chips.length - 1) : (current + direction + chips.length) % chips.length];
       event.preventDefault();
       next.focus({ preventScroll: true });
-      next.scrollIntoView({ block: "nearest", inline: "nearest" });
       next.click();
       return;
     }
