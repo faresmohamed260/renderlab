@@ -148,7 +148,7 @@ html.renderlab-gradient-host:has(.wanda-create-background),
 @media (width >= 75rem) {
   .preview-navigation-shell {
     display: grid;
-    grid-template-columns: 13rem minmax(0, 1fr);
+    grid-template-columns: 16rem minmax(0, 1fr);
     gap: 0;
   }
   .preview-navigation-disclosure {
@@ -163,7 +163,7 @@ html.renderlab-gradient-host:has(.wanda-create-background),
     block-size: 100dvh;
     overflow-y: auto;
     padding: 20px 16px;
-    background: #15141e;
+    background: transparent;
   }
   .preview-navigation-rail .preview-navigation-links {
     gap: 4px;
