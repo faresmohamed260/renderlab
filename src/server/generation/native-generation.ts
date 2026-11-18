@@ -8,6 +8,7 @@ import {
   defaultVideoResolution,
   generationInputAlias,
   generationModelForRequest,
+  fiboGenerationModel,
   qwenImageFixedGuidance,
   qwenImageFixedSteps,
   resolveCreativeOperation,
@@ -16,7 +17,7 @@ import {
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
-import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
+import { fiboWorkerHeaders, findWorker, getFiboWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import {
@@ -40,7 +41,7 @@ type WorkflowConfig = {
   model: string;
   ecosystem: GenerationWorker["ecosystem"];
   kind: "image" | "video";
-  submitPath: "/jobs/edit" | "/jobs/video";
+  submitPath: "/jobs/edit" | "/jobs/video" | "/jobs/fibo";
   outputMimeType: string;
   defaults: {
     seed: number;
@@ -104,6 +105,14 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
   const requestedModel = generationModelForRequest(request);
 
   if (operation === "create-image" || operation === "edit-image") {
+    if (requestedModel === fiboGenerationModel) {
+      return {
+        id: operation === "edit-image" ? "fibo2-turbo-edit" : "fibo2-turbo-text",
+        model: "Bria FIBO 2.0 Edit Turbo", ecosystem: fiboGenerationModel, kind: "image",
+        submitPath: "/jobs/fibo", outputMimeType: "image/png",
+        defaults: { seed: 42, steps: 4, megapixels: 1 },
+      };
+    }
     if (requestedModel === "qwen-image-edit-2511") {
       return {
         id: operation === "edit-image" ? "qwen-image-edit-2511-edit" : "qwen-image-edit-2511-generate",
@@ -348,6 +357,36 @@ function gatewayUrlForWorker(worker: GenerationWorker) {
 }
 
 async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
+  if (workflow.ecosystem === fiboGenerationModel) {
+    const worker = getFiboWorker();
+    if (!worker || process.env.RENDERLAB_FIBO_GENERATION !== "1") throw new Error("FIBO generation is disabled.");
+    const sizes = { original: [0, 0], "1:1": [1024, 1024], "4:3": [1152, 864],
+      "3:4": [864, 1152], "16:9": [1280, 720], "9:16": [720, 1280] } as const;
+    const ratio = request.output.aspectRatio;
+    const size = Object.hasOwn(sizes, ratio) ? sizes[ratio as keyof typeof sizes] : undefined;
+    if (!size || sources.some((source) => source.bytes.length > 16 * 1024 * 1024)
+      || sources.reduce((total, source) => total + source.bytes.length, 0) > 32 * 1024 * 1024) {
+      throw new Error("Unsupported FIBO dimensions or input size.");
+    }
+    const aliases = new Map<string, number>(request.inputs.map((input, index) => [input.alias, index + 1]));
+    const prompt = request.prompt.replace(/@image\d+\b/g, (mention) => {
+      const slot = aliases.get(mention.slice(1));
+      return slot ? `<image_${slot}>` : mention;
+    });
+    const response = await fetch(`${worker.gatewayUrl}/jobs/fibo`, {
+      method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30_000),
+      headers: { ...fiboWorkerHeaders(), "content-type": "application/json" },
+      body: JSON.stringify({ prompt, width: size[0], height: size[1], seed: request.advanced?.seed ?? 42,
+        steps: request.advanced?.steps ?? 4, negative_prompt: request.advanced?.negativePrompt ?? "",
+        images: sources.map((source) => source.bytes.toString("base64")) }),
+    });
+    if (response.status !== 202) throw new Error("FIBO submission was not confirmed.");
+    const result: { call_id?: unknown } = await response.json();
+    if (typeof result.call_id !== "string" || !/^fc-[A-Za-z0-9]{16,64}\.[0-9a-f]{64}$/.test(result.call_id)) {
+      throw new Error("FIBO gateway returned an invalid job ID.");
+    }
+    return { worker, callId: result.call_id, workerState: "queued", failures: [] };
+  }
   const prepared = await prepareWorkerPayload(request, workflow, sources);
   const failures: Array<Record<string, unknown>> = [];
   for (const worker of workersForEcosystem(workflow.ecosystem)) {
@@ -685,7 +724,7 @@ function attemptedWorkerIds(row: JobRow) {
 }
 
 async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification) {
-  if (!failure.safeToReassign || pollReassignmentAttemptCount(row) >= maxPollReassignmentAttempts) return null;
+  if (row.ecosystem === fiboGenerationModel || !failure.safeToReassign || pollReassignmentAttemptCount(row) >= maxPollReassignmentAttempts) return null;
 
   const request = requestFromJobRow(row);
   const workflow = workflowFor(request);
@@ -841,7 +880,9 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
 
   const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
     method: "GET",
-    headers: { accept: row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json" },
+    headers: { accept: row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json",
+      ...(worker.ecosystem === fiboGenerationModel ? fiboWorkerHeaders() : {}) },
+    ...(worker.ecosystem === fiboGenerationModel ? { redirect: "error", signal: AbortSignal.timeout(30_000) } : {}),
     cache: "no-store",
   });
 
@@ -912,6 +953,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     .split(";")[0]
     .trim()
     .toLowerCase();
+  if (worker.ecosystem === fiboGenerationModel && contentType !== "image/png") throw new Error("FIBO gateway returned a non-PNG result.");
   if (row.output_kind === "image" && !contentType.startsWith("image/")) throw new Error("Worker returned a non-image result.");
   if (row.output_kind === "video" && !contentType.startsWith("video/")) throw new Error("Worker returned a non-video result.");
 

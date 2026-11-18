@@ -42,3 +42,28 @@ test("all routed workers are explicitly active", () => {
     }
   }
 });
+
+test("FIBO gateway fails closed without complete credentials or a Modal HTTPS origin", () => {
+  const names = ["RENDERLAB_FIBO_GATEWAY_URL", "RENDERLAB_FIBO_MODAL_KEY", "RENDERLAB_FIBO_MODAL_SECRET"];
+  const before = names.map((name) => process.env[name]);
+  try {
+    for (const name of names) delete process.env[name];
+    assert.equal(findWorker("renderlab-fibo-native-01"), null);
+    process.env.RENDERLAB_FIBO_MODAL_KEY = "test-key";
+    process.env.RENDERLAB_FIBO_MODAL_SECRET = "test-secret";
+    for (const origin of ["http://localhost:3000", "https://worker.modal.run/redirect", "https://modal.run.example.org"]) {
+      process.env.RENDERLAB_FIBO_GATEWAY_URL = origin;
+      assert.equal(findWorker("renderlab-fibo-native-01"), null);
+    }
+    process.env.RENDERLAB_FIBO_GATEWAY_URL = "https://test-worker.modal.run/";
+    const worker = findWorker("renderlab-fibo-native-01");
+    assert.equal(worker?.gatewayUrl, "https://test-worker.modal.run");
+    assert.doesNotMatch(JSON.stringify(worker), /test-secret|test-key/);
+    assert.deepEqual(workersForEcosystem("fibo2-edit-turbo"), []);
+  } finally {
+    for (const [i, name] of names.entries()) {
+      if (before[i] === undefined) delete process.env[name];
+      else process.env[name] = before[i];
+    }
+  }
+});

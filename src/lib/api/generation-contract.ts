@@ -22,6 +22,7 @@ import {
   generationInputAliasPattern,
   generationInputRoleForIndex,
   generationModelsForOutput,
+  fiboGenerationModel,
   imageAspectRatios,
   maxGenerationInputsForOutput,
   qwenImageFixedGuidance,
@@ -201,7 +202,8 @@ export function parseGenerationRequest(value: unknown):
     model = defaultGenerationModelForOutput(outputKind);
   } else if (
     typeof value.model !== "string"
-    || !generationModelsForOutput(outputKind).includes(value.model as GenerationModel)
+    || (!generationModelsForOutput(outputKind).includes(value.model as GenerationModel)
+      && !(outputKind === "image" && value.model === fiboGenerationModel))
   ) {
     return { ok: false, error: { code: "invalid_request", message: "Unsupported model for the selected output type." } };
   } else {
@@ -281,6 +283,16 @@ export function parseGenerationRequest(value: unknown):
   const advanced = parseAdvanced(value.advanced, outputKind, model);
   if (advanced === null) {
     return { ok: false, error: { code: "invalid_request", message: "Advanced generation parameters are invalid." } };
+  }
+
+  if (model === fiboGenerationModel && (
+    !["original", "1:1", "4:3", "3:4", "16:9", "9:16"].includes(String(aspectRatio))
+    || inputs.length > 4 || (advanced?.steps ?? 4) > 8
+    || Array.from(prompt).length > 4000 || Array.from(advanced?.negativePrompt ?? "").length > 4000
+    || "mask" in value || "vgl" in value || "json_instruction" in value
+    || (advanced?.guidance ?? 1) !== 1
+  )) {
+    return { ok: false, error: { code: "invalid_request", message: "Unsupported FIBO size, inputs, or tuning." } };
   }
 
   return {

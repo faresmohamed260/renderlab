@@ -7,7 +7,7 @@ import {
   claimGenerationReconciliation,
   releaseGenerationReconciliation,
 } from "@/server/generation/generation-reconciliation-claim";
-import { findWorker } from "@/server/generation/worker-fleet";
+import { fiboWorkerHeaders, findWorker } from "@/server/generation/worker-fleet";
 import { getImageUpscaleWorker } from "@/server/generation/upscale-worker";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
@@ -76,7 +76,7 @@ async function hasIndexedDurableOutput(ownerId: string, jobId: string) {
 
 function cancellationGatewayForWorker(workerId: string) {
   const worker = findWorker(workerId);
-  if (worker && (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft")) {
+  if (worker && (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft" || worker.ecosystem === "fibo2-edit-turbo")) {
     return worker.gatewayUrl;
   }
   const upscaleWorker = getImageUpscaleWorker();
@@ -121,7 +121,9 @@ async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancell
   try {
     const response = await fetch(`${gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
       method: "DELETE",
-      headers: { accept: "application/json" },
+      headers: { accept: "application/json",
+        ...(row.worker_id === "renderlab-fibo-native-01" ? fiboWorkerHeaders() : {}) },
+      ...(row.worker_id === "renderlab-fibo-native-01" ? { redirect: "error" } : {}),
       cache: "no-store",
       signal: AbortSignal.timeout(providerCancellationTimeoutMs),
     });

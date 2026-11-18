@@ -1,6 +1,6 @@
 export type GenerationWorker = {
   id: string;
-  ecosystem: "flux2-klein-9b" | "ltx25-redgraft" | "qwen-image-edit-2511";
+  ecosystem: "flux2-klein-9b" | "ltx25-redgraft" | "qwen-image-edit-2511" | "fibo2-edit-turbo";
   gatewayUrl: string;
   displayName: string;
   role: "primary" | "standby";
@@ -88,6 +88,22 @@ export const generationWorkers: GenerationWorker[] = [
   },
 ];
 
+export function getFiboWorker(): GenerationWorker | null {
+  const url = process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim().replace(/\/$/, "");
+  const key = process.env.RENDERLAB_FIBO_MODAL_KEY?.trim();
+  const secret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
+  if (!url || !key || !secret || !/^https:\/\/[a-z0-9-]+\.modal\.run$/.test(url)) return null;
+  return { id: "renderlab-fibo-native-01", ecosystem: "fibo2-edit-turbo", gatewayUrl: url,
+    displayName: "Bria FIBO 2.0 Edit Turbo", role: "primary", routingStatus: "active" };
+}
+
+export function fiboWorkerHeaders() {
+  return {
+    "Modal-Key": process.env.RENDERLAB_FIBO_MODAL_KEY!.trim(),
+    "Modal-Secret": process.env.RENDERLAB_FIBO_MODAL_SECRET!.trim(),
+  };
+}
+
 export function workersForEcosystem(ecosystem: GenerationWorker["ecosystem"]) {
   return generationWorkers
     .filter((worker) => worker.ecosystem === ecosystem && worker.routingStatus === "active")
@@ -95,5 +111,6 @@ export function workersForEcosystem(ecosystem: GenerationWorker["ecosystem"]) {
 }
 
 export function findWorker(workerId: string) {
+  if (workerId === "renderlab-fibo-native-01") return getFiboWorker();
   return generationWorkers.find((worker) => worker.id === workerId) ?? null;
 }
