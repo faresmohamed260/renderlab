@@ -15,6 +15,7 @@ type Props<T extends StageResult> = {
   expectedImages: number;
   input?: string;
   inputLabel: string;
+  browseDisabled?: boolean;
   busy: boolean;
   renderRatio?: number;
   status: string;
@@ -22,7 +23,7 @@ type Props<T extends StageResult> = {
   onUseSource: (result: StageResult) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ result, source, batch, onSelect, onReturnToProgress, expectedImages, input, inputLabel, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ result, source, batch, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -31,6 +32,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
   const [viewerOpen, setViewerOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
   const inspecting = busy && !!result;
   const showingProgress = busy && !inspecting;
@@ -138,19 +140,19 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
         onFocus={(event) => highlight(event.currentTarget)}
         onBlur={(event) => { const toolbar = event.currentTarget; requestAnimationFrame(() => highlight(toolbar)); }}>
         {inspecting ? <Button type="button" variant="ghost" size="sm" onClick={returnToProgress}>Return to render</Button> : <>
-        {canCompare && <Button type="button" variant="ghost" size="sm" aria-pressed={compare} title="Compare before and after"
+        {canCompare && <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="C" aria-pressed={compare} title="Compare before and after"
           onClick={(event) => {
             const toolbar = event.currentTarget.parentElement as HTMLDivElement;
             setCompared(compare ? undefined : result);
             requestAnimationFrame(() => highlight(toolbar));
           }}>Before / After</Button>}
-        <Button type="button" variant="ghost" size="sm" title="Send result back to the source slot" onClick={() => {
+        <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="U" title="Send result back to the source slot" onClick={() => {
           if (viewerOpen) dialog.current?.close();
           onUseSource(result);
         }}><Undo2 aria-hidden="true" />Use as source</Button>
         {batch.length > 1 && <Button type="button" variant="ghost" size="sm" title="Download all batch images as a ZIP"
           onClick={downloadBatch}>Download batch</Button>}
-        <a href={result.image_data} download={result.filename ?? "fibo-result.png"} aria-label="Download image" title="Download image"><Download size={15} aria-hidden="true" /></a>
+        <a href={result.image_data} download={result.filename ?? "fibo-result.png"} aria-keyshortcuts="D" aria-label="Download image" title="Download image"><Download size={15} aria-hidden="true" /></a>
         </>}
       </div>
     );
@@ -162,18 +164,41 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
     if (viewerOpen) dialog.current?.close();
   }
 
+  function stageKeys(event: KeyboardEvent<HTMLElement>) {
+    if (event.defaultPrevented || event.nativeEvent.isComposing || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest("input, textarea, select, [contenteditable], [role=slider]")) return;
+    const key = event.key.toLowerCase();
+    const scope = viewerOpen ? dialog.current : frame.current;
+    if ((key === "arrowleft" || key === "arrowright") && showBatch) {
+      const chips = [...(scope?.querySelectorAll<HTMLButtonElement>(".wanda-fibo-stage-batch button") ?? [])];
+      if (!chips.length) return;
+      const focused = chips.indexOf(document.activeElement as HTMLButtonElement);
+      const current = focused >= 0 ? focused : chips.findIndex((chip) => chip.getAttribute("aria-current") === "true");
+      const next = chips[(Math.max(0, current) + (key === "arrowleft" ? -1 : 1) + chips.length) % chips.length];
+      event.preventDefault();
+      next.focus({ preventScroll: true });
+      next.scrollIntoView({ block: "nearest", inline: "nearest" });
+      next.click();
+      return;
+    }
+    if (busy || event.repeat) return;
+    const shortcut = key === "escape" && compare ? "C" : key.toUpperCase();
+    if (!["C", "D", "U"].includes(shortcut)) return;
+    const action = scope?.querySelector<HTMLElement>('[aria-keyshortcuts="' + shortcut + '"]');
+    if (!action?.getClientRects().length) return;
+    event.preventDefault();
+    action.click();
+  }
+
   function carousel() {
     return showBatch && (
-      <div className="wanda-fibo-stage-batch" role="group" aria-label="Batch results"
-        onKeyDown={(event) => {
-          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-          const chips = [...event.currentTarget.querySelectorAll("button")];
-          const current = Math.max(0, chips.findIndex((chip) => chip.getAttribute("aria-current") === "true"));
-          const next = chips[current + (event.key === "ArrowLeft" ? -1 : 1)];
-          if (!next) return;
-          event.preventDefault();
-          next.focus();
-          next.click();
+      <div className="wanda-fibo-stage-batch" role="group" aria-label="Batch results" tabIndex={0}
+        aria-keyshortcuts="ArrowLeft ArrowRight"
+        onScroll={(event) => {
+          const row = event.currentTarget;
+          row.toggleAttribute("data-overflow-start", row.scrollLeft > 1);
+          row.toggleAttribute("data-overflow-end", row.scrollWidth - row.clientWidth - row.scrollLeft > 1);
         }}>
         {batch.map((image, index) => (
           <Button key={image.filename ?? index} type="button" variant="ghost"
@@ -190,7 +215,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
 
   return (
     <>
-      <div className="wanda-fibo-stage-frame" data-batch={showBatch}>
+      <div ref={frame} className="wanda-fibo-stage-frame" onKeyDown={stageKeys} data-batch={showBatch}>
         <div className="wanda-fibo-stage-surface" data-empty={!shown && !busy} role="group" tabIndex={0}
           aria-label={showingProgress ? "Generating" : result ? "Result" : input ? inputLabel : "Canvas"} aria-busy={showingProgress}
           onClick={(event) => {
@@ -213,14 +238,18 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, o
                   setViewerOpen(true);
                 }} />
             </> : <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload"
-              title={"Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
-              Drop an image or click to upload
+              disabled={browseDisabled} title={browseDisabled ? "Sign in to upload an image" : "Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
+              <svg className="wanda-fibo-stage-empty-icon" width="25" height="25" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="16" rx="3" /><path d="m4 17 5-5 4 4 3-3 4 4" /><circle cx="16" cy="9" r="1.5" />
+              </svg>
+              <span>Drop an image or click to upload</span>
             </Button>}
         </div>
         {!viewerOpen && carousel()}
         {notice && !viewerOpen && <p className="wanda-fibo-stage-notice" role="status">{notice}</p>}
       </div>
-      <dialog ref={dialog} className="wanda-fibo-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer"
+      <dialog ref={dialog} className="wanda-fibo-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer" onKeyDown={stageKeys}
         onClose={() => { setViewerOpen(false); setCompared(undefined); opener.current?.focus({ preventScroll: true }); }}>
         {viewerOpen && <>
           <Button type="button" variant="ghost" size="icon-sm" className="wanda-fibo-stage-close"

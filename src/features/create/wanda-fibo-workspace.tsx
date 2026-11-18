@@ -384,10 +384,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           </div>
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
-          {!admitted ? (
-            <p>Sign in with an admitted RenderLab account to generate. <Link href="/settings" className="underline">Open Settings</Link></p>
-          ) : (
             <WandaFiboStage
+              browseDisabled={!admitted}
               result={busy ? inspected : result}
               source={mode === "edit" ? files[0] : undefined}
               batch={busy ? runningBatch : result?.batchId ? history.filter((image) => image.batchId === result.batchId) : []}
@@ -407,11 +405,21 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 try {
                   const bytes = Uint8Array.from(atob(image.image_data.split(",")[1]), (ch) => ch.charCodeAt(0));
                   attachImage(new File([bytes], image.filename ?? "fibo-result.png", { type: "image/png" }), 0);
-                  requestAnimationFrame(() => sourceButton.current?.focus({ preventScroll: true }));
+                  requestAnimationFrame(() => {
+                    const button = sourceButton.current;
+                    button?.focus({ preventScroll: true });
+                    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                      button?.animate([
+                        { boxShadow: "0 0 0 2px #a5b4fc, 0 0 16px #9b7cff73", offset: 0 },
+                        { boxShadow: "0 0 0 2px #a5b4fc, 0 0 16px #9b7cff73", offset: .3 },
+                        { boxShadow: "0 0 0 2px transparent, 0 0 16px transparent", offset: 1 },
+                      ], { duration: 900, easing: "ease-out" });
+                    }
+                  });
                 } catch { setStatus("Could not use this result as the source."); }
               }}
             />
-          )}
+            {!admitted && <Link href="/settings" className="wanda-fibo-stage-sign-in">Sign in to upload</Link>}
         </section>
         <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title">
           <h2 id="wanda-fibo-history-title">History</h2>

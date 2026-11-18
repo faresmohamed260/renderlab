@@ -646,7 +646,7 @@
   place-items: center;
   container-type: size;
 }
-.wanda-fibo-stage-frame[data-batch="true"] { inset-block-end: 66px; }
+.wanda-fibo-stage-frame[data-batch="true"] { inset-block-end: 78px; }
 .wanda-fibo-stage-frame .wanda-fibo-stage-surface {
   position: relative;
   inset: auto;
@@ -659,12 +659,31 @@
 }
 .wanda-fibo-stage-frame .wanda-fibo-stage-surface[data-empty="true"] { background: rgb(255 255 255 / 4.5%); }
 .wanda-fibo-stage-surface .wanda-fibo-canvas-upload {
+  display: grid;
+  gap: 0;
+  place-content: center;
+  justify-items: center;
   padding: 14px;
   color: #dbdbe4;
   font-size: 12px;
   line-height: 1.5;
 }
-.wanda-fibo-workspace .wanda-fibo-stage-surface .wanda-fibo-canvas-upload:hover { background: rgb(255 255 255 / 3.5%); }
+.wanda-fibo-stage-empty-icon {
+  display: block;
+  inline-size: 25px !important;
+  block-size: 25px !important;
+  margin-block-end: 7px;
+  color: #a69ac7;
+}
+.wanda-fibo-stage-sign-in {
+  position: absolute;
+  inset: auto 8px 10px;
+  justify-self: center;
+  font-size: 11px;
+  text-decoration: underline;
+  color: #bbb4ca;
+}
+.wanda-fibo-workspace .wanda-fibo-stage-surface .wanda-fibo-canvas-upload:not(:disabled):hover { background: rgb(255 255 255 / 3.5%); }
 .wanda-fibo-stage-surface {
   position: absolute;
   inset: 0;
@@ -791,15 +810,19 @@
   display: flex;
   gap: 6px;
   position: absolute;
-  inset: calc(100% + 8px) 0 auto;
+  inset: calc(100% + 10px) 0 auto;
+  block-size: 68px;
+  align-items: center;
+  scroll-snap-type: x proximity;
   justify-content: safe center;
   overflow-x: auto;
   scrollbar-width: none;
   padding: 2px;
 }
 .wanda-fibo-workspace .wanda-fibo-stage-batch button {
-  inline-size: 52px;
-  block-size: 52px;
+  inline-size: 64px;
+  block-size: 64px;
+  scroll-snap-align: start;
   padding: 2px;
   border-radius: 12px;
 }
@@ -864,4 +887,11 @@
 @media (prefers-reduced-motion: reduce) {
   .wanda-fibo-stage-tools::before { transition: none; }
   .wanda-fibo-stage-shimmer { animation: none; }
+}
+
+.wanda-fibo-stage-batch[data-overflow-start] { --stage-fade-start: 12px; }
+.wanda-fibo-stage-batch[data-overflow-end] { --stage-fade-end: 12px; }
+.wanda-fibo-stage-batch {
+  mask-image: linear-gradient(to right, transparent, #000 var(--stage-fade-start, 0px),
+    #000 calc(100% - var(--stage-fade-end, 0px)), transparent);
 }
