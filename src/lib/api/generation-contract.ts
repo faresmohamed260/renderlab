@@ -1,4 +1,5 @@
 import { normalizeFiboVgl } from "@/lib/capabilities/fibo-vgl";
+import { parseFiboMaskSource } from "@/lib/capabilities/fibo-mask";
 import {
   generationNegativePromptWithinLimit,
   generationPromptWithinLimit,
@@ -222,6 +223,12 @@ export function parseGenerationRequest(value: unknown):
     }
   }
 
+  const mask = value.mask === undefined ? undefined : parseFiboMaskSource(value.mask);
+  if (value.mask !== undefined && (
+    !mask || inputs.length !== 1 || mask?.id === inputs[0]?.source.id
+  )) {
+    return { ok: false, error: { code: "invalid_request", message: "FIBO masks require one distinct owner-scoped PNG source and one edit image." } };
+  }
   const aliases = inputs.map((input) => input.alias);
   const vgl = value.vgl === undefined ? undefined : normalizeFiboVgl(value.vgl, aliases);
   if (value.vgl !== undefined && vgl === null) {
@@ -274,7 +281,7 @@ export function parseGenerationRequest(value: unknown):
     !["original", "1:1", "4:3", "3:4", "16:9", "9:16"].includes(String(aspectRatio))
     || (advanced?.steps ?? 4) > 8
     || (Array.from(prompt).length > 4000 && !(vgl && !textPrompt)) || Array.from(advanced?.negativePrompt ?? "").length > 4000
-    || "mask" in value || "json_instruction" in value
+    || "json_instruction" in value
     || (advanced?.guidance ?? 1) !== 1
   )) {
     return { ok: false, error: { code: "invalid_request", message: "Unsupported FIBO size, inputs, or tuning." } };
@@ -291,6 +298,7 @@ export function parseGenerationRequest(value: unknown):
       },
       inputs,
       ...(vgl ? { vgl } : {}),
+      ...(mask ? { mask } : {}),
       ...(advanced ? { advanced } : {}),
     },
   };

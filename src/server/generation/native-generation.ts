@@ -1,4 +1,7 @@
-import { resolveFiboVglReferences } from "@/lib/capabilities/fibo-vgl";
+import { buildFiboWorkerPayload } from "@/server/generation/fibo-worker-payload";
+import { fiboMaskMaxBytes, fiboMaskUsage, persistFiboMaskInputs, splitPersistedFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
+import { parseGenerationRequest } from "@/lib/api/generation-contract";
+import { getReadyFiboMaskSource } from "@/server/media/reference-uploads";
 import type {
   CreativeOperation,
   GenerationJob,
@@ -7,7 +10,6 @@ import type {
 import {
   defaultVideoAudioEnabled,
   defaultVideoResolution,
-  generationInputAlias,
   generationModelForRequest,
   fiboGenerationModel,
   qwenImageFixedGuidance,
@@ -66,7 +68,7 @@ export type NativeGenerationJobRow = {
   workflow_id: string;
   model: string;
   ecosystem: string;
-  inputs: GenerationRequest["inputs"];
+  inputs: unknown[];
   parameters: Record<string, unknown>;
   worker_id: string | null;
   provider_job_id: string | null;
@@ -197,7 +199,7 @@ async function insertJob(ownerId: string, request: GenerationRequest, workflow: 
       workflow_id: workflow.id,
       model: workflow.model,
       ecosystem: workflow.ecosystem,
-      inputs: request.inputs,
+      inputs: persistFiboMaskInputs(request.inputs, request.mask),
       parameters: { model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {},
         ...(request.vgl ? { vgl: request.vgl } : {}) },
     }),
@@ -231,12 +233,12 @@ async function resolveInputs(ownerId: string, request: GenerationRequest): Promi
   const resolved: InputBytes[] = [];
   for (const input of request.inputs) {
     if (input.source.type === "temporary-source") {
-      const rows = await supabaseRest<Array<{ storage_key: string; filename: string; mime_type: string; status: string }>>(
-        `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(input.source.id)}&select=storage_key,filename,mime_type,status&limit=1`,
+      const rows = await supabaseRest<Array<{ storage_key: string; filename: string; mime_type: string; status: string; metadata: { usage?: string } | null }>>(
+        `generation_sources?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(input.source.id)}&select=storage_key,filename,mime_type,status,metadata&limit=1`,
         { method: "GET" },
       );
       const source = rows?.[0];
-      if (!source || source.status !== "ready") throw new Error("Reference source is not ready.");
+      if (!source || source.status !== "ready" || source.metadata?.usage === fiboMaskUsage) throw new Error("Reference source is not ready.");
       const object = await readR2Object(source.storage_key);
       resolved.push({ bytes: object.bytes, contentType: source.mime_type, filename: source.filename });
       continue;
@@ -252,6 +254,22 @@ async function resolveInputs(ownerId: string, request: GenerationRequest): Promi
     resolved.push({ bytes: object.bytes, contentType: asset.mime_type, filename: `asset-${input.source.id}` });
   }
   return resolved;
+}
+
+async function resolveMaskBytes(ownerId: string, request: GenerationRequest): Promise<Buffer | undefined> {
+  if (!request.mask) return undefined;
+  if (request.model !== fiboGenerationModel || request.inputs.length !== 1) {
+    throw new Error("FIBO masking requires one image edit input.");
+  }
+  const source = await getReadyFiboMaskSource(ownerId, request.mask.id);
+  if (!source) throw new Error("The owner-scoped mask source is unavailable.");
+  const object = await readR2Object(source.storage_key);
+  const bytes = Buffer.from(object.bytes);
+  if (object.contentType !== "image/png" || bytes.length < 8 || bytes.length > fiboMaskMaxBytes
+    || !bytes.subarray(0, 8).equals(Buffer.from("89504e470d0a1a0a", "hex"))) {
+    throw new Error("The stored FIBO PNG mask is invalid.");
+  }
+  return bytes;
 }
 
 type PreparedWorkerPayload = {
@@ -358,30 +376,13 @@ function gatewayUrlForWorker(worker: GenerationWorker) {
   return worker.gatewayUrl;
 }
 
-async function prepareWorkerSubmission(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
+async function prepareWorkerSubmission(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[], maskBytes?: Buffer): Promise<{ body: string | FormData; contentType?: string }> {
+  if (Boolean(request.mask) !== Boolean(maskBytes)
+    || (maskBytes && (workflow.ecosystem !== fiboGenerationModel || sources.length !== 1))) {
+    throw new Error("FIBO masked edit payload is incomplete or has invalid source slots.");
+  }
   if (workflow.ecosystem === fiboGenerationModel) {
-    const sizes = { original: [0, 0], "1:1": [1024, 1024], "4:3": [1152, 864],
-      "3:4": [864, 1152], "16:9": [1280, 720], "9:16": [720, 1280] } as const;
-    const ratio = request.output.aspectRatio;
-    const size = Object.hasOwn(sizes, ratio) ? sizes[ratio as keyof typeof sizes] : undefined;
-    if (!size || sources.some((source) => source.bytes.length > 16 * 1024 * 1024)
-      || sources.reduce((total, source) => total + source.bytes.length, 0) > 32 * 1024 * 1024) {
-      throw new Error("Unsupported FIBO dimensions or input size.");
-    }
-    const inputAliases = request.inputs.map((input) => input.alias);
-    const aliases = new Map<string, number>(inputAliases.map((alias, index) => [alias, index + 1]));
-    const prompt = request.vgl && request.prompt === request.vgl ? "" : request.prompt.replace(/@image\d+\b/g, (mention) => {
-      const slot = aliases.get(mention.slice(1));
-      return slot ? `<image_${slot}>` : mention;
-    });
-    const vgl = request.vgl ? resolveFiboVglReferences(request.vgl, inputAliases) : undefined;
-    return {
-      body: JSON.stringify({ prompt, width: size[0], height: size[1], seed: request.advanced?.seed ?? 42,
-        steps: request.advanced?.steps ?? 4, negative_prompt: request.advanced?.negativePrompt ?? "",
-        ...(vgl ? { vgl } : {}),
-        images: sources.map((source) => source.bytes.toString("base64")) }),
-      contentType: "application/json",
-    };
+    return buildFiboWorkerPayload(request, sources, maskBytes);
   }
   const prepared = await prepareWorkerPayload(request, workflow, sources);
   return { body: buildForm(request, workflow, prepared) };
@@ -397,8 +398,8 @@ function dispatchWorker(worker: GenerationWorker, workflow: WorkflowConfig, subm
   });
 }
 
-async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
-  const submission = await prepareWorkerSubmission(workflow, request, sources);
+async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[], maskBytes?: Buffer) {
+  const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes);
   const failures: Array<Record<string, unknown>> = [];
   for (const worker of workersForEcosystem(workflow.ecosystem)) {
     try {
@@ -438,7 +439,8 @@ export async function submitNativeGeneration(ownerId: string, request: Generatio
   try {
     job = await insertJob(ownerId, request, workflow);
     const sources = await resolveInputs(ownerId, request);
-    const submitted = await submitWorker(workflow, request, sources);
+    const maskBytes = await resolveMaskBytes(ownerId, request);
+    const submitted = await submitWorker(workflow, request, sources, maskBytes);
     job = await patchJob(ownerId, job.id, {
       status: "running",
       worker_id: submitted.worker.id,
@@ -698,23 +700,24 @@ async function fetchPoster(worker: GenerationWorker, callId: string) {
 }
 
 function requestFromJobRow(row: JobRow): GenerationRequest {
-  if (typeof row.prompt !== "string" || !row.prompt.trim()) {
-    throw new Error("Stored prompt generation request is missing its prompt.");
-  }
-  const output = row.parameters.output as GenerationRequest["output"] | undefined;
-  const advanced = row.parameters.advanced as GenerationRequest["advanced"] | undefined;
-  if (!output?.aspectRatio) throw new Error("Stored generation request is missing its output settings.");
-  return {
+  // A rejected/malformed stored source must never be redispatched during
+  // recovery. The mask is an internal job input, not an image-reference slot.
+  const persisted = splitPersistedFiboMaskInputs(row.inputs);
+  if (!persisted) throw new Error("Stored FIBO mask source is invalid.");
+  const parsed = parseGenerationRequest({
+    model: row.parameters.model,
     prompt: row.prompt,
-    output: { ...output, kind: row.output_kind },
-    inputs: Array.isArray(row.inputs)
-      ? row.inputs.map((input, index) => ({
-          ...input,
-          alias: input.alias || generationInputAlias(index + 1),
-        }))
-      : [],
-    ...(advanced ? { advanced } : {}),
-  };
+    output: row.parameters.output,
+    inputs: persisted.inputs,
+    advanced: row.parameters.advanced,
+    ...(Object.hasOwn(row.parameters, "vgl") ? { vgl: row.parameters.vgl } : {}),
+    ...(persisted.mask ? { mask: persisted.mask } : {}),
+  });
+  if (!parsed.ok || parsed.request.output.kind !== row.output_kind
+    || resolveCreativeOperation(parsed.request) !== row.operation) {
+    throw new Error("Stored generation request can no longer be safely dispatched.");
+  }
+  return parsed.request;
 }
 
 function pollReassignmentAttemptCount(row: JobRow) {
@@ -743,7 +746,8 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
   }
 
   const sources = await resolveInputs(row.owner_id, request);
-  const submission = await prepareWorkerSubmission(workflow, request, sources);
+  const maskBytes = await resolveMaskBytes(row.owner_id, request);
+  const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes);
   const excluded = attemptedWorkerIds(row);
   const candidate = workersForEcosystem(workflow.ecosystem).find((worker) => !excluded.has(worker.id));
   if (!candidate) return null;

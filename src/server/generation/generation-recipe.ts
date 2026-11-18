@@ -7,6 +7,7 @@ import { isPromptGenerationOperation, resolveCreativeOperation } from "@/lib/cap
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
 import { persistedUpscaleSourceAssetId } from "@/lib/capabilities/upscale";
 import { comparisonSourceAssetId } from "@/lib/capabilities/generation-comparison";
+import { splitPersistedFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { generationImageInputsAvailable } from "@/server/generation/submit-generation";
@@ -58,13 +59,16 @@ export function reconstructGenerationRecipeRequest(
     advanced = compatibleAdvanced;
   }
 
+  const persisted = splitPersistedFiboMaskInputs(row.inputs);
+  if (!persisted) return null;
   const parsed = parseGenerationRequest({
     model: row.parameters.model,
     prompt: row.prompt,
     output,
-    inputs: row.inputs,
+    inputs: persisted.inputs,
     ...(advanced === undefined ? {} : { advanced }),
     ...(Object.hasOwn(row.parameters, "vgl") ? { vgl: row.parameters.vgl } : {}),
+    ...(persisted.mask ? { mask: persisted.mask } : {}),
   });
   if (!parsed.ok) return null;
   if (parsed.request.output.kind !== row.output_kind) return null;
@@ -129,6 +133,10 @@ export async function loadInitialGenerationRecipe(
 
   const request = await reconstructAvailableGenerationRecipeRequest(ownerId, row);
   if (!request) return null;
+  // Until the normal Create composer supports displaying and preserving masks,
+  // do not open a masked recipe as an unmasked draft. Server-owned retry still
+  // reconstructs and revalidates the mask through this same request parser.
+  if (request.mask) return null;
 
   const references = await Promise.all(request.inputs.map(async (input) => {
     if (input.source.type === "media-asset") {

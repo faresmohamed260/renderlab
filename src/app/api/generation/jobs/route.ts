@@ -2,7 +2,7 @@ import { enforceSameOriginMutation } from "@/server/security/same-origin-mutatio
 import { NextResponse } from "next/server";
 import { parseGenerationRequest, type SubmitGenerationErrorCode } from "@/lib/api/generation-contract";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
-import { isFiboGenerationAvailable, isGenerationBackendConfigured, submitGeneration } from "@/server/generation/submit-generation";
+import { isFiboGenerationAvailable, isFiboMaskGenerationAvailable, isGenerationBackendConfigured, submitGeneration } from "@/server/generation/submit-generation";
 
 function submissionStatus(code: SubmitGenerationErrorCode) {
   if (code === "generation_access_denied") return 403;
@@ -15,6 +15,7 @@ export async function GET() {
   return NextResponse.json({
     available: isGenerationBackendConfigured(),
     ...(isFiboGenerationAvailable() ? { fiboAvailable: true } : {}),
+    ...(isFiboMaskGenerationAvailable() ? { fiboMaskAvailable: true } : {}),
   });
 }
 

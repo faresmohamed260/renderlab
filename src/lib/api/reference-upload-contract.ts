@@ -1,3 +1,5 @@
+import { fiboMaskMaxBytes, fiboMaskUsage } from "@/lib/capabilities/fibo-mask";
+
 export const maxReferenceUploadBytes = 25 * 1024 * 1024;
 
 export const supportedReferenceMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
@@ -7,6 +9,7 @@ export type CreateReferenceUploadTicketRequest = {
   filename: string;
   mimeType: ReferenceMimeType;
   sizeBytes: number;
+  usage?: typeof fiboMaskUsage;
 };
 
 export type ReferenceUploadTicket = {
@@ -73,6 +76,10 @@ export function validateReferenceTicketRequest(value: unknown):
   const filename = typeof body.filename === "string" ? body.filename.trim() : "";
   const mimeType = typeof body.mimeType === "string" ? body.mimeType.toLowerCase() : "";
   const sizeBytes = body.sizeBytes;
+  const usage = body.usage;
+  if (usage !== undefined && usage !== fiboMaskUsage) {
+    return { ok: false, error: { code: "invalid_upload", message: "Unsupported reference upload usage." } };
+  }
 
   if (!filename || filename.length > 180) {
     return { ok: false, error: { code: "invalid_upload", message: "A valid filename is required." } };
@@ -84,12 +91,16 @@ export function validateReferenceTicketRequest(value: unknown):
     return { ok: false, error: { code: "invalid_upload", message: "Reference images must be no larger than 25 MB." } };
   }
 
+  if (usage === fiboMaskUsage && (mimeType !== "image/png" || (sizeBytes as number) > fiboMaskMaxBytes)) {
+    return { ok: false, error: { code: "invalid_upload", message: "FIBO edit masks must be PNG files no larger than 8 MB." } };
+  }
   return {
     ok: true,
     request: {
       filename,
       mimeType,
       sizeBytes: sizeBytes as number,
+      ...(usage === fiboMaskUsage ? { usage } : {}),
     },
   };
 }
