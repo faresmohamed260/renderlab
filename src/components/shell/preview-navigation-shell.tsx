@@ -93,10 +93,13 @@ function usePreviewReducedMotion() {
   return reduced;
 }
 
+const settingsPath = "/settings";
+const isSettingsRoute = (pathname: string) => pathname === settingsPath || pathname.startsWith(settingsPath + "/");
+
 const accountOptions = [
   { label: "Profile", icon: UserRound },
   { label: "Personalization", icon: SlidersHorizontal },
-  { label: "Settings", icon: Settings },
+  { label: "Settings", icon: Settings, href: settingsPath },
   { label: "Help", icon: CircleHelp },
 ];
 
@@ -109,6 +112,7 @@ async function loadProfileName(hostedProfile: boolean, signal: AbortSignal): Pro
 }
 
 function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | null; hostedProfile: boolean }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const reduced = usePreviewReducedMotion();
   const panel = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
@@ -159,7 +163,7 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
     <div ref={card} className="preview-account-card" data-open={open}
       onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpen(true); }}
       onPointerLeave={(event) => {
-        if (event.pointerType === "mouse" && !pinned.current) setOpen(false);
+        if (event.pointerType === "mouse" && !pinned.current && !event.currentTarget.contains(document.activeElement)) setOpen(false);
       }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -184,10 +188,24 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>{name}</animated.span>
         <animated.ul aria-label="Account options" className="preview-account-options"
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>
-          {accountOptions.map(({ label, icon: Icon }) => (
-            <li key={label} className="flex min-h-9 items-center gap-2 px-2 text-sm">
-              <Icon size={16} aria-hidden="true" /> {label}
-              <span className="ml-auto text-xs text-text-muted">Coming soon</span>
+          {accountOptions.map(({ label, icon: Icon, href }) => (
+            <li key={label}>
+              {href ? (
+                <Link href={href} className="preview-account-settings flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm"
+                  aria-current={isSettingsRoute(pathname) ? "page" : undefined}
+                  onNavigate={() => {
+                    trigger.current?.focus({ preventScroll: true });
+                    pinned.current = false;
+                    setOpen(false);
+                  }}>
+                  <Icon size={16} aria-hidden="true" /> {label}
+                </Link>
+              ) : (
+                <div className="flex min-h-9 items-center gap-2 px-2 text-sm">
+                  <Icon size={16} aria-hidden="true" /> {label}
+                  <span className="ml-auto text-xs text-text-muted">Coming soon</span>
+                </div>
+              )}
             </li>
           ))}
         </animated.ul>
@@ -201,18 +219,17 @@ const destinations = [
   { href: "/create", label: "Create", icon: Sparkles },
   { href: "/library", label: "Library", icon: Images },
   { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const navigationGroups = [
   { title: "Workspace", destinations: destinations.slice(0, 2) },
   { title: "Media & history", destinations: destinations.slice(2, 4) },
-  { title: "Account", destinations: destinations.slice(4) },
 ];
 
 export function PreviewNavigationShell({ children, accountId, hostedProfile }: { children: ReactNode; accountId: string | null; hostedProfile: boolean }) {
   const pathname = usePathname();
   const current = destinations.find(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
+  const sectionLabel = isSettingsRoute(pathname) ? "Settings" : current?.label ?? "RenderLab";
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
   const id = useId();
@@ -257,10 +274,10 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
             setOpenPath(null);
           }}>
           <Button ref={trigger} type="button" variant="ghost" className="preview-section-trigger"
-            aria-label={"RenderLab sections: " + (current?.label ?? "RenderLab")}
+            aria-label={"RenderLab sections: " + sectionLabel}
             aria-expanded={open} aria-controls={id} onClick={() => setOpenPath(open ? null : pathname)}>
             <RenderLabMark className="size-6" />
-            <span>{current?.label ?? "RenderLab"}</span>
+            <span>{sectionLabel}</span>
             <Menu size={12} aria-hidden="true" />
           </Button>
           <animated.nav id={id} className="preview-section-panel" aria-label="RenderLab navigation"
@@ -270,7 +287,7 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
             {navigationGroups.map((group) => (
               <animated.section key={group.title} className="preview-section-group"
                 style={{ opacity: reveal.progress.to([0.84, 1], [0, 1], "clamp") }}>
-                <p className={group.destinations.length === 1 ? "sr-only" : "preview-section-title"}>{group.title}</p>
+                <p className="preview-section-title">{group.title}</p>
                 {group.destinations.map(({ href, label, icon: Icon }) => (
                   <Link key={href} href={href} aria-current={current?.href === href ? "page" : undefined}
                     onNavigate={() => { trigger.current?.focus({ preventScroll: true }); setOpenPath(null); }}>

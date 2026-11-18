@@ -171,11 +171,6 @@
   padding-inline-start: 8px;
   border-inline-start: 1px solid rgb(221 211 255 / 13%);
 }
-.preview-section-group:last-child {
-  grid-column: 1 / -1;
-  padding-block-start: 4px;
-  border-block-start: 1px solid rgb(221 211 255 / 13%);
-}
 .preview-section-title {
   padding: 0 8px 2px;
   font-size: 12px;
@@ -191,10 +186,13 @@
   border-radius: 8px;
   font-size: 14px;
 }
+.preview-account-settings:hover,
+.preview-account-settings[aria-current="page"],
 .preview-section-group a:hover,
 .preview-section-group a[aria-current="page"] {
   background: rgb(221 211 255 / 12%);
 }
+.preview-account-settings:focus-visible,
 .preview-section-group a:focus-visible {
   outline: 2px solid #d9c0ea;
   outline-offset: -2px;
@@ -241,5 +239,5 @@
 }
 
 @media (any-pointer: coarse) {
-  .preview-section-group a, .preview-account-options li { min-block-size: 44px; }
+  .preview-section-group a, .preview-account-options li > * { min-block-size: 44px; }
 }
