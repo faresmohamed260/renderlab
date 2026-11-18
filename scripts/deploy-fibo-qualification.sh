@@ -9,14 +9,14 @@ if ! "$cli" -m modal token info 2>/dev/null | grep -Fx 'Workspace: faresmohamed2
 fi
 "$cli" -m modal secret list -e main --json | python3 -c '
 import json, sys
-if not any(item.get("Name") == "renderlab-fibo-native-gateway" for item in json.load(sys.stdin)):
+if not any(item.get("name") == "renderlab-fibo-native-gateway" for item in json.load(sys.stdin)):
     sys.exit("The dedicated gateway signing secret must be provisioned first.")
 '
 "$cli" -m modal deploy -e main workers/fibo-studio/modal_native_candidate.py
 "$cli" -m modal app list -e main --json | python3 -c '
 import json, sys
-apps = [a for a in json.load(sys.stdin) if a.get("Description") == "renderlab-fibo-native-candidate" and a.get("State") == "deployed"]
+apps = [a for a in json.load(sys.stdin) if a.get("description") == "renderlab-fibo-native-candidate" and a.get("state") == "deployed"]
 if len(apps) != 1:
     sys.exit("Could not verify the exact deployed qualification gateway.")
-print("Verified qualification app:", apps[0]["App ID"])
+print("Verified qualification app:", apps[0]["app_id"])
 '
