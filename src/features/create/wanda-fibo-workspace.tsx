@@ -3,7 +3,7 @@
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Clock, Dices, Image as ImageIcon, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
+import { Clock, Dice5, Image as ImageIcon, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -22,9 +22,13 @@ type PromptDraft = {
   generatedVgl: boolean;
   negativeOpen: boolean;
   vglOpen: boolean;
+  seed: string;
+  randomize: boolean;
+  imageCount: string;
 };
 const emptyDraft: PromptDraft = {
   prompt: "", negativePrompt: "", vgl: "", generatedVgl: false, negativeOpen: false, vglOpen: false,
+  seed: "42", randomize: true, imageCount: "1",
 };
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(api + path, { cache: "no-store", ...init });
@@ -50,7 +54,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   });
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
-  const { prompt, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen } = drafts[mode];
+  const { prompt, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen, seed, randomize, imageCount } = drafts[mode];
   // Legacy workers can return VGL, but cannot accept it back as a manual instruction.
   const manualVgl = !advancedPrompt && generatedVgl ? "" : vgl.trim();
 
@@ -66,10 +70,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     setInspiration(file);
     updateDraft("generate", { vgl: "", generatedVgl: false });
   }
-  const [imageCount, setImageCount] = useState("1");
   const [steps, setSteps] = useState(4);
-  const [seed, setSeed] = useState("42");
-  const [randomize, setRandomize] = useState(true);
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
   const [result, setResult] = useState<Result>();
   const [history, setHistory] = useState<Result[]>([]);
@@ -309,19 +310,21 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           </div>
           <div className="wanda-fibo-dock">
             <div className="wanda-fibo-settings">
-              <div>
+              <div className="wanda-fibo-render-field">
                 <label htmlFor="wanda-fibo-seed">Seed</label>
                 <div className="wanda-fibo-seed">
-                  <Input id="wanda-fibo-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10} required={!randomize} value={seed}
-                    disabled={!admitted || busy} onChange={(event) => { setSeed(event.target.value); setRandomize(false); }} />
-                  <Button type="button" variant={randomize ? "secondary" : "outline"} size="icon-sm"
-                    aria-label="Randomize seed" aria-pressed={randomize} disabled={!admitted || busy}
-                    onClick={() => setRandomize(!randomize)}><Dices /></Button>
+                  <Input id="wanda-fibo-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
+                    required={!randomize} value={seed} disabled={busy} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
+                  <label className="wanda-fibo-seed-dice" title="Randomize seed each time">
+                    <Input type="checkbox" aria-label="Randomize seed each time" checked={randomize} disabled={busy}
+                      onChange={(event) => updateDraft(mode, { randomize: event.target.checked })} />
+                    <Dice5 aria-hidden="true" />
+                  </label>
                 </div>
               </div>
-              <label htmlFor="wanda-fibo-count">Images
-                <Input id="wanda-fibo-count" type="number" min={1} max={4} step={1} value={imageCount}
-                  disabled={!admitted || busy} onChange={(event) => setImageCount(event.target.value)} />
+              <label className="wanda-fibo-render-field" htmlFor="wanda-fibo-count">Images
+                <Input id="wanda-fibo-count" type="number" min={1} max={4} step={1} required value={imageCount}
+                  disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} />
               </label>
               <label className="wanda-fibo-steps" htmlFor="wanda-fibo-steps">
                 <span>Steps <output htmlFor="wanda-fibo-steps">{steps}</output></span>
