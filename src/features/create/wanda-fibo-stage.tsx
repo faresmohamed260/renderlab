@@ -83,6 +83,7 @@ type Props<T extends StageResult> = {
   browseDisabled?: boolean;
   maskAction?: { mask?: File; blocked: boolean; open: () => void; clear: () => void };
   busy: boolean;
+  cancelling?: boolean;
   liveFrame?: string;
   liveBlur?: number;
   renderRatio?: number;
@@ -92,7 +93,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ historySelection, desktopArrows, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ historySelection, desktopArrows, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -167,7 +168,7 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
     if (row) row.scrollTop = row.scrollHeight;
   }, [inThread, turns]);
   function openViewer(inputUrl?: string) {
-    if (!dialog.current || dialog.current.open) return;
+    if (!phone || !dialog.current || dialog.current.open) return;
     viewerOrigin.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSubmittedImage(inputUrl);
     dialog.current.showModal();
@@ -252,7 +253,7 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
     void image.decode().then(() => { if (current) setDecodedFrame({ url: liveFrame, blur: liveBlur }); }, () => {});
     return () => { current = false; };
   }, [busy, liveFrame, liveBlur]);
-  const pending = busy && batch.length < expectedImages;
+  const pending = busy && !cancelling && batch.length < expectedImages;
   const showBatch = busy ? batch.length > 0 || pending : batch.length > 1;
   const shown = showingProgress ? undefined : (reviewing ? input : result?.image_data ?? input);
   const canCompare = !reviewing && !!source && result?.source === source && !!before && !busy;

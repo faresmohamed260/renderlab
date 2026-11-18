@@ -906,6 +906,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               input={mode === "edit" ? previews[0] : inspirationPreview}
               inputLabel={mode === "edit" ? "Source image" : "Reference image"}
               busy={busy}
+              cancelling={activeCancel?.pending}
               liveFrame={liveFrame}
               liveBlur={liveBlur}
               renderRatio={resuming ? resuming.aspect : mode === "generate" ? size.width / size.height : undefined}

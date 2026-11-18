@@ -650,7 +650,9 @@
     inline-size: auto;
     aspect-ratio: auto;
     border-radius: 0;
-    margin: 6px min(18px, 2cqw) 0;
+    /* The preview has its own vertical bounds; the controls' footer reserve is not stage padding. */
+    margin: -11px min(18px, 2cqw) calc(16px - var(--fibo-footer-reserve));
+    overflow: hidden;
   }
 }
 .wanda-fibo-stage-frame {
@@ -798,6 +800,17 @@
   font-size: 12px;
 }
 .wanda-fibo-workspace .wanda-fibo-stage-tools :is(button, a):is(:hover, [aria-pressed="true"]) { color: white; background: transparent; }
+.wanda-fibo-canvas .wanda-fibo-stage-surface > .wanda-fibo-stage-live {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  max-block-size: none;
+  border-radius: 0;
+  object-fit: contain;
+  filter: blur(30px);
+  transform: scale(1.04);
+}
 .wanda-fibo-stage-backdrop, .wanda-fibo-stage-shimmer {
   position: absolute;
   inset: 0;
@@ -894,6 +907,9 @@
   .wanda-fibo-stage-pending::before { animation: wanda-fibo-pending-pulse 1s ease-in-out infinite alternate; }
 }
 @keyframes wanda-fibo-pending-pulse { from { opacity: .45; } to { opacity: 1; } }
+@media (min-width: 1025px) {
+  .wanda-fibo-stage-document > .wanda-fibo-stage-batch { justify-content: flex-start; }
+}
 .wanda-fibo-stage-batch button[aria-current="true"] {
   outline: 2px solid #a5b4fc;
   outline-offset: -2px;
@@ -1131,19 +1147,38 @@
   max-block-size: none;
   object-fit: contain;
 }
-.wanda-fibo-mask-inline .wanda-fibo-mask-toolbar {
+.wanda-fibo-mask-toolset { display: contents; }
+.wanda-fibo-mask-inline .wanda-fibo-mask-toolset {
   position: relative;
-  margin: 8px 10px 0;
-  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  inline-size: max-content;
+  max-inline-size: calc(100% - 20px);
+  margin: 10px 10px 0;
+  padding: 5px;
   border-radius: 16px;
   background: rgb(16 15 21 / 69%);
   backdrop-filter: blur(18px);
 }
-.wanda-fibo-mask-inline .wanda-fibo-mask-toolbar:last-child {
+.wanda-fibo-mask-inline .wanda-fibo-mask-toolset .wanda-fibo-mask-toolbar {
+  justify-content: flex-start;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+.wanda-fibo-mask-inline > .wanda-fibo-mask-toolbar:last-child {
   position: absolute;
   inset: auto 10px 14px;
   inline-size: max-content;
   margin-inline: auto;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgb(16 15 21 / 69%);
+  backdrop-filter: blur(18px);
 }
 .wanda-fibo-mask-inline > p {
   position: absolute;

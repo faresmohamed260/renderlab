@@ -290,28 +290,30 @@ export function WandaFiboMaskEditor({ source, mask, enabled, inline = false, onC
           if (key === "i") setTool("color");
         }
       }}>
-      <div className="wanda-fibo-mask-toolbar" role="group" aria-label="Mask tools">
-        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "brush"} onClick={() => { setReview(false); setHand(false); setTool("brush"); }}>Brush</Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "eraser"} onClick={() => { setReview(false); setHand(false); setTool("eraser"); }}>Eraser</Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "fill"} onClick={() => { setReview(false); setHand(false); setTool("fill"); }}>Fill</Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "color"} onClick={() => { setReview(false); setHand(false); setTool("color"); }}>Select color</Button>
-        {(tool === "fill" || tool === "color") && (
-          <label>Tolerance <Input type="range" min={0} max={100} value={tolerance} onChange={(event) => setTolerance(event.target.valueAsNumber)} /><output>{tolerance}</output></label>
-        )}
-        <label>Size <Input type="range" min={4} max={250} value={size} onChange={(event) => setSize(event.target.valueAsNumber)} /><output>{size}</output></label>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setSquare(!square)}>{square ? "Square" : "Round"}</Button>
-        <label>Overlay <Input type="range" min={10} max={90} value={overlay} onChange={(event) => setOverlay(event.target.valueAsNumber)} /><output>{overlay}%</output></label>
-        <Button type="button" size="sm" variant="ghost" disabled={!counts[0] || drawing || saving} onClick={() => moveHistory(true)}>Undo</Button>
-        <Button type="button" size="sm" variant="ghost" disabled={!counts[1] || drawing || saving} onClick={() => moveHistory(false)}>Redo</Button>
-        <Button type="button" size="sm" variant="ghost" disabled={!ready || drawing || saving} onClick={() => modify(true)}>Invert</Button>
-        <Button type="button" size="sm" variant="ghost" disabled={!ready || drawing || saving} onClick={() => modify(false)}>Clear</Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={review} onClick={() => setReview(!review)}>{review ? "Show overlay" : "Hide overlay"}</Button>
-      </div>
-      <div className="wanda-fibo-mask-toolbar" role="group" aria-label="Mask zoom">
-        <Button type="button" size="sm" variant="ghost" aria-label="Zoom out" disabled={!ready || drawing || panning || view.zoom <= 1} onClick={() => zoomBy(1 / Math.SQRT2)}>−</Button>
-        <Button type="button" size="sm" variant="ghost" title="Reset zoom" aria-label="Reset zoom" disabled={drawing || panning} onClick={() => setView(initialView)}>{Math.round(view.zoom * 100)}%</Button>
-        <Button type="button" size="sm" variant="ghost" aria-label="Zoom in" disabled={!ready || drawing || panning || view.zoom >= 4} onClick={() => zoomBy(Math.SQRT2)}>+</Button>
-        <Button type="button" size="sm" variant="ghost" aria-pressed={hand} onClick={() => setHand(!hand)}>Hand</Button>
+      <div className="wanda-fibo-mask-toolset">
+        <div className="wanda-fibo-mask-toolbar" role="group" aria-label="Mask tools">
+          <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "brush"} onClick={() => { setReview(false); setHand(false); setTool("brush"); }}>Brush</Button>
+          <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "eraser"} onClick={() => { setReview(false); setHand(false); setTool("eraser"); }}>Eraser</Button>
+          <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "fill"} onClick={() => { setReview(false); setHand(false); setTool("fill"); }}>Fill</Button>
+          <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "color"} onClick={() => { setReview(false); setHand(false); setTool("color"); }}>Select color</Button>
+          {(tool === "fill" || tool === "color") && (
+            <label>Tolerance <Input type="range" min={0} max={100} value={tolerance} onChange={(event) => setTolerance(event.target.valueAsNumber)} /><output>{tolerance}</output></label>
+          )}
+          <label>Size <Input type="range" min={4} max={250} value={size} onChange={(event) => setSize(event.target.valueAsNumber)} /><output>{size}</output></label>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setSquare(!square)}>{square ? "Square" : "Round"}</Button>
+          <label>Overlay <Input type="range" min={10} max={90} value={overlay} onChange={(event) => setOverlay(event.target.valueAsNumber)} /><output>{overlay}%</output></label>
+          <Button type="button" size="sm" variant="ghost" disabled={!counts[0] || drawing || saving} onClick={() => moveHistory(true)}>Undo</Button>
+          <Button type="button" size="sm" variant="ghost" disabled={!counts[1] || drawing || saving} onClick={() => moveHistory(false)}>Redo</Button>
+          <Button type="button" size="sm" variant="ghost" disabled={!ready || drawing || saving} onClick={() => modify(true)}>Invert</Button>
+          <Button type="button" size="sm" variant="ghost" disabled={!ready || drawing || saving} onClick={() => modify(false)}>Clear</Button>
+          <Button type="button" size="sm" variant="ghost" aria-pressed={review} onClick={() => setReview(!review)}>{review ? "Show overlay" : "Hide overlay"}</Button>
+        </div>
+        <div className="wanda-fibo-mask-toolbar" role="group" aria-label="Mask zoom">
+          <Button type="button" size="sm" variant="ghost" aria-label="Zoom out" disabled={!ready || drawing || panning || view.zoom <= 1} onClick={() => zoomBy(1 / Math.SQRT2)}>−</Button>
+          <Button type="button" size="sm" variant="ghost" title="Reset zoom" aria-label="Reset zoom" disabled={drawing || panning} onClick={() => setView(initialView)}>{Math.round(view.zoom * 100)}%</Button>
+          <Button type="button" size="sm" variant="ghost" aria-label="Zoom in" disabled={!ready || drawing || panning || view.zoom >= 4} onClick={() => zoomBy(Math.SQRT2)}>+</Button>
+          <Button type="button" size="sm" variant="ghost" aria-pressed={hand} onClick={() => setHand(!hand)}>Hand</Button>
+        </div>
       </div>
       <div ref={viewport} className="wanda-fibo-mask-viewport" tabIndex={0} aria-label="Mask canvas">
       <div className="wanda-fibo-mask-plane" style={{ transform: `translate(${view.x * 100}%, ${view.y * 100}%) scale(${view.zoom})` }}>
