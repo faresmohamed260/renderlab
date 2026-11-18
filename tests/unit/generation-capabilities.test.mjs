@@ -6,6 +6,7 @@ import {
   continuationActionForMedia,
   defaultGenerationModelForOutput,
   defaultImageGenerationModel,
+  fiboPreferenceAspectRatio,
   generationInputAlias,
   generationInputRoleForIndex,
   generationModelDefinitions,
@@ -47,6 +48,13 @@ test("generation model capability exposes contextual choices with stable default
   assert.equal(isImageGenerationModel("qwen-image-edit-2511"), false);
   assert.equal(isImageGenerationModel("fibo2-edit-turbo"), true);
   assert.equal(isImageGenerationModel("ltx25-redgraft"), false);
+});
+
+test("FIBO-only preference image sizes preserve supported ratios and reject retired presets", () => {
+  assert.equal(fiboPreferenceAspectRatio("3:4"), "3:4");
+  assert.equal(fiboPreferenceAspectRatio("16:9"), "16:9");
+  assert.equal(fiboPreferenceAspectRatio("4:5"), "1:1");
+  assert.equal(fiboPreferenceAspectRatio("21:9"), "1:1");
 });
 
 test("generation input capabilities preserve bounded roles", () => {

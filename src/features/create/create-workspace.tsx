@@ -57,6 +57,7 @@ import {
   generationInputAlias,
   generationInputRoleForIndex,
   generationModelDefinitions,
+  fiboImageAspectRatios,
   imageAspectRatios,
   imageGenerationModels,
   maxGenerationInputsForOutput,
@@ -100,7 +101,6 @@ const imageModelTriggerLabels: Record<ImageGenerationModel, string> = {
   "fibo2-edit-turbo": "FIBO",
 };
 
-const fiboImageAspectRatios: readonly PresetAspectRatio[] = ["1:1", "4:3", "3:4", "16:9", "9:16"];
 
 function ImageModelMenu({
   value,

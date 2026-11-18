@@ -24,11 +24,9 @@ test("Create preferences seed only a clean new workspace", () => {
   assert.match(createPage, /!recipeId && !sourceId && !requestedAction/);
   assert.match(createPage, /function preferenceSeedRecipe\(preferences: RenderLabCreatePreferences\)/);
   assert.match(createPage, /initialRecipe=\{initialRecipe \?\? initialPreferenceRecipe\}/);
-  assert.match(createPage, /aspectRatio: preferences\.imageAspectRatio/);
-  assert.match(createPage, /aspectRatio: "16:9"/);
-  assert.match(createPage, /resolution: preferences\.videoResolution/);
-  assert.match(createPage, /durationSeconds: preferences\.videoDurationSeconds/);
-  assert.match(createPage, /audioEnabled: preferences\.videoAudioEnabled/);
+  assert.match(createPage, /fiboPreferenceAspectRatio\(preferences\.imageAspectRatio\)/);
+  assert.match(createPage, /defaultGenerationModelForOutput\("image"\)/);
+  assert.match(createPage, /output: \{ kind: "image", aspectRatio: ratio \}/);
 });
 
 test("account lifecycle exports and newest finalizer proves owner cleanup", () => {

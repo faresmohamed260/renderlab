@@ -163,14 +163,17 @@ async function getPreferences(accessToken) {
 }
 
 async function createState(page) {
-  await page.locator('[data-create-mode-switch="true"] [data-state="on"]').waitFor({ state: "visible", timeout: 30_000 });
-  const mode = (await page.locator('[data-create-mode-switch="true"] [data-state="on"]').innerText()).trim().toLowerCase();
+  // FIBO-only Create has an actual image composer and a static model label,
+  // not the retired Image/Video ToggleGroup state.
+  await page.locator('[data-create-layout="clear-composer"][data-create-mode="image"]').waitFor({ state: "visible", timeout: 30_000 });
+  await page.locator('[data-create-mode-switch="true"]').getByText("FIBO image", { exact: true }).waitFor({ state: "visible" });
   const aspect = await page.locator('button[aria-label^="Aspect ratio "]').getAttribute("aria-label");
   const videoButton = page.locator('button[aria-label^="Video settings."]');
+  assert(await videoButton.count() === 0, "Retired Video settings reappeared in FIBO-only Create.");
   return {
-    mode,
+    mode: "image",
     aspect: aspect?.replace("Aspect ratio ", "") ?? null,
-    video: await videoButton.count() ? await videoButton.getAttribute("aria-label") : null,
+    video: null,
     prompt: await page.getByLabel("Prompt").inputValue(),
   };
 }
@@ -189,7 +192,7 @@ async function verifySettingsAndCreate(accountA, accountB) {
     await pageA.getByRole("heading", { name: "Create defaults", exact: true }).waitFor({ state: "visible" });
     assert((await pageA.getByLabel("Default Create mode").inputValue()) === "image", "Default preference UI did not start from Image.");
     await pageA.getByLabel("Default Create mode").selectOption("image");
-    await pageA.getByLabel("Default Image aspect ratio").selectOption("4:5");
+    await pageA.getByLabel("Default Image aspect ratio").selectOption("3:4");
     await pageA.getByLabel("Default Video resolution").selectOption("1080p");
     await pageA.getByLabel("Default Video duration").selectOption("20");
     await pageA.getByLabel("Default Video audio").selectOption("off");
@@ -206,7 +209,7 @@ async function verifySettingsAndCreate(accountA, accountB) {
     const pageSecond = await contextSecond.newPage();
     await routeLocalAppRequestsWithAccount(pageSecond, baseUrl, secondAccount);
     await pageSecond.goto(`${baseUrl}/settings/preferences`, { waitUntil: "networkidle", timeout: 60_000 });
-    assert((await pageSecond.getByLabel("Default Image aspect ratio").inputValue()) === "4:5", "Second session did not receive saved Image ratio.");
+    assert((await pageSecond.getByLabel("Default Image aspect ratio").inputValue()) === "3:4", "Second session did not receive saved Image ratio.");
     assert((await pageSecond.getByLabel("Default Video resolution").inputValue()) === "1080p", "Second session did not receive saved Video resolution.");
     assert((await pageSecond.getByLabel("Default Video duration").inputValue()) === "20", "Second session did not receive saved Video duration.");
     assert((await pageSecond.getByLabel("Default Video audio").inputValue()) === "off", "Second session did not receive saved Video audio.");
@@ -216,12 +219,12 @@ async function verifySettingsAndCreate(accountA, accountB) {
 
     await pageSecond.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
     let state = await createState(pageSecond);
-    assert(state.mode === "image" && state.aspect === "4:5", `Clean Image draft ignored saved defaults: ${JSON.stringify(state)}`);
+    assert(state.mode === "image" && state.aspect === "3:4", `Clean Image draft ignored saved defaults: ${JSON.stringify(state)}`);
     await pageSecond.screenshot({ path: `${artifactDir}/preferences-create-image-mobile.png`, fullPage: true });
 
     const videoPrefs = {
       outputKind: "video",
-      imageAspectRatio: "4:5",
+      imageAspectRatio: "3:4",
       videoResolution: "1080p",
       videoDurationSeconds: 20,
       videoAudioEnabled: false,
@@ -229,8 +232,8 @@ async function verifySettingsAndCreate(accountA, accountB) {
     await savePreferences(secondToken, videoPrefs);
     await pageSecond.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
     state = await createState(pageSecond);
-    assert(state.mode === "video" && state.aspect === "16:9", `Clean Video draft ignored saved mode/default geometry: ${JSON.stringify(state)}`);
-    assert(state.video?.includes("Resolution 1080p") && state.video.includes("Duration 20 seconds") && state.video.includes("Audio off"), `Clean Video draft ignored saved Video defaults: ${state.video}`);
+    assert(state.mode === "image" && state.aspect === "3:4" && state.video === null,
+      `Retired Video preference reopened a non-FIBO Create mode: ${JSON.stringify(state)}`);
 
     const bPrefs = {
       outputKind: "image",
@@ -317,13 +320,15 @@ async function verifyPrecedenceAndFallback(accountA, secondToken) {
 
     await page.goto(`${baseUrl}/create?recipe=${recipeJobId}`, { waitUntil: "networkidle", timeout: 60_000 });
     let state = await createState(page);
-    assert(state.mode === "video" && state.aspect === "9:16" && state.prompt === `recipe wins ${runToken}`, `Saved recipe did not override preferences: ${JSON.stringify(state)}`);
-    assert(state.video?.includes("Resolution 720p") && state.video.includes("Duration 10 seconds") && state.video.includes("Audio on"), `Saved recipe Video settings did not override preferences: ${state.video}`);
+    assert(state.mode === "image" && state.aspect === "1:1" && !state.prompt,
+      `Historical Video recipe unexpectedly reopened an unsupported generation mode: ${JSON.stringify(state)}`);
+    await page.getByText("That saved generation can’t be reused with the current inputs and settings. Start a new creation instead.", { exact: true }).waitFor({ state: "visible" });
 
     await page.goto(`${baseUrl}/create?source=${continuationAssetId}&action=animate-image`, { waitUntil: "networkidle", timeout: 60_000 });
     state = await createState(page);
-    assert(state.mode === "video" && state.aspect === "Original", `Media continuation did not override preference geometry: ${JSON.stringify(state)}`);
-    assert(state.video?.includes("Resolution 480p") && state.video.includes("Duration 5 seconds") && state.video.includes("Audio on"), `Media continuation incorrectly inherited account Video defaults: ${state.video}`);
+    assert(state.mode === "image" && state.aspect === "1:1" && !state.prompt,
+      `Retired Animate continuation reopened Video or changed the new FIBO draft: ${JSON.stringify(state)}`);
+    await page.getByText("That action is not available for this media item. Start a new creation or return to Library.", { exact: true }).waitFor({ state: "visible" });
 
     await context.close();
   } finally {

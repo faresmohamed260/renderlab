@@ -10,6 +10,8 @@ New creative work is **FIBO image generation and image editing only**. FLUX, Qwe
 
 Historical edit/animate result-to-source comparison remains a read-only, owner-scoped media operation even when an old model recipe is no longer runnable; Retry/Reuse Settings still require current capability validation.
 
+Legacy account preferences may retain Video fields as historical account data, but clean `/create` drafts are always FIBO Image. Saved Image ratios unsupported by the retained FIBO gateway normalize to 1:1 for the new draft, without rewriting the saved preference row. Historical Video recipes and Animate continuation links do not re-enable retired Create Video controls. Account export/settings history remain readable; future product cleanup of inert Video preference controls is distinct from preserving old data.
+
 The FIBO-only production Create workspace is an **in-progress implementation**, governed by `docs/architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md` and UI-084. Its manually supplied VGL JSON path now has request validation, per-slot reference validation, worker mapping, durable job parameter persistence and recipe/retry reconstruction in the current candidate code. This is an implementation statement, **not** a live hosted-provider qualification or a claim that the full workspace, masks, generated VGL, inspiration or 1–4 output batches are functional in production. The working WANDA FIBO Studio's source-free Edit Turbo generation is the parity reference, without substituting FIBO Dev.
 
 ## Authority and Scope
