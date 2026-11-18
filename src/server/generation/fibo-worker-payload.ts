@@ -23,6 +23,10 @@ export function buildFiboWorkerPayload(
     || (maskBytes && (sources.length !== 1 || maskBytes.length < 8 || maskBytes.length > fiboMaskMaxBytes))) {
     throw new Error("FIBO mask payload is missing or incompatible with source slots.");
   }
+  if (request.autoVgl && (sources.length !== 0 || request.vgl || request.mask
+    || !request.prompt.trim() || request.output.aspectRatio === "original")) {
+    throw new Error("Generated VGL requires a source-free bounded image request.");
+  }
   const inputAliases = request.inputs.map((input) => input.alias);
   const indices = new Map<string, number>(inputAliases.map((alias, index) => [alias, index + 1]));
   const prompt = request.vgl && request.prompt === request.vgl ? "" : request.prompt.replace(/@image\d+\b/g, (mention) => {
@@ -37,6 +41,7 @@ export function buildFiboWorkerPayload(
       seed: request.advanced?.seed ?? 42, steps: request.advanced?.steps ?? 4,
       negative_prompt: request.advanced?.negativePrompt ?? "",
       ...(vgl ? { vgl } : {}),
+      ...(request.autoVgl ? { generate_vgl: true } : {}),
       ...(maskBytes ? { mask: maskBytes.toString("base64") } : {}),
       images: sources.map((source) => source.bytes.toString("base64")),
     }),

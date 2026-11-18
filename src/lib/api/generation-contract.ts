@@ -234,6 +234,13 @@ export function parseGenerationRequest(value: unknown):
   if (value.vgl !== undefined && vgl === null) {
     return { ok: false, error: { code: "invalid_request", message: "VGL must be a bounded non-empty JSON object with attached image references." } };
   }
+  const autoVgl = value.autoVgl === true;
+  if (value.autoVgl !== undefined && !autoVgl || "generatedVgl" in value) {
+    return { ok: false, error: { code: "invalid_request", message: "Generated VGL mode must be an explicit supported boolean." } };
+  }
+  if (autoVgl && (inputs.length !== 0 || mask || vgl || !textPrompt)) {
+    return { ok: false, error: { code: "invalid_request", message: "Automatic VGL requires source-free text generation without a mask or manually supplied VGL." } };
+  }
   if (!textPrompt && !vgl) {
     return { ok: false, error: { code: "invalid_request", message: "A prompt or VGL JSON is required." } };
   }
@@ -298,6 +305,7 @@ export function parseGenerationRequest(value: unknown):
       },
       inputs,
       ...(vgl ? { vgl } : {}),
+      ...(autoVgl ? { autoVgl: true as const } : {}),
       ...(mask ? { mask } : {}),
       ...(advanced ? { advanced } : {}),
     },

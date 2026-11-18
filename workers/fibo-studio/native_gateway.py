@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from native_graph import build_graph
+from native_generated_vgl import validate_generated_vgl
 
 MAX_BODY = 46 * 1024 * 1024
 MAX_IMAGES = 32 * 1024 * 1024
@@ -18,6 +19,18 @@ MAX_MASK = 8 * 1024 * 1024
 PNG_HEADER = bytes.fromhex("89504e470d0a1a0a")
 CALL_ID = re.compile(r"fc-[A-Za-z0-9]{16,64}")
 FIELDS = {"prompt", "seed", "width", "height", "steps", "negative_prompt", "vgl", "images", "mask", "generate_vgl"}
+
+
+def validated_worker_result(result):
+    generated_vgl = None
+    if type(result) is dict:
+        if set(result) != {"image_png", "generated_vgl"}:
+            raise ValueError("Unexpected generated VGL result fields")
+        generated_vgl = validate_generated_vgl(result["generated_vgl"])
+        result = result["image_png"]
+    if type(result) is not bytes or not result.startswith(PNG_HEADER) or len(result) > 16 * 1024 * 1024:
+        raise ValueError("Invalid FIBO image result")
+    return result, generated_vgl
 
 
 def validate_payload(payload):
@@ -113,9 +126,32 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors):
             raise HTTPException(422, "FIBO rejected the render inputs") from exc
         except Exception as exc:
             raise HTTPException(500, "FIBO job failed or could not be read") from exc
-        if not isinstance(result, bytes) or not result.startswith(b"\x89PNG\r\n\x1a\n") or len(result) > 16 * 1024 * 1024:
-            raise HTTPException(502, "Invalid FIBO output")
-        return Response(result, media_type="image/png")
+        try:
+            image_bytes, _ = validated_worker_result(result)
+        except ValueError as exc:
+            raise HTTPException(502, "Invalid FIBO output") from exc
+        return Response(image_bytes, media_type="image/png")
+
+    @api.get("/jobs/{token}/vgl")
+    async def generated_vgl(token: str):
+        call_id = unwrap(token)
+        try:
+            result = await run_in_threadpool(poll, call_id)
+        except TimeoutError:
+            return JSONResponse({"worker_state": "generating"}, status_code=202)
+        except expired_errors as exc:
+            raise HTTPException(410, "FIBO result expired") from exc
+        except ValueError as exc:
+            raise HTTPException(422, "FIBO rejected the render inputs") from exc
+        except Exception as exc:
+            raise HTTPException(500, "FIBO job failed or could not be read") from exc
+        try:
+            _, caption = validated_worker_result(result)
+        except ValueError as exc:
+            raise HTTPException(502, "Invalid generated FIBO VGL") from exc
+        if caption is None:
+            raise HTTPException(404, "This FIBO job does not have generated VGL")
+        return JSONResponse({"vgl": caption})
 
     @api.delete("/jobs/{token}")
     async def remove(token: str):
