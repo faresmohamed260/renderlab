@@ -241,6 +241,29 @@ class FiboStudio:
         except (OSError, ValueError):
             return None
 
+    @staticmethod
+    def preview_progress(message):
+        try:
+            event = json.loads(message)
+        except (ValueError, TypeError):
+            return None
+        if not isinstance(event, dict) or not isinstance(event.get("data"), dict):
+            return None
+        data = event["data"]
+        node = str(data.get("node"))
+        if event.get("type") == "executing":
+            phase = {"vgl": "vgl", "5": "prepare", "6": "denoise", "7": "finish", "8": "finish"}.get(node)
+            return (phase, None) if phase else None
+        if event.get("type") != "progress" or node != "6":
+            return None
+        value, maximum = data.get("value"), data.get("max")
+        if type(value) is not int or type(maximum) is not int or not 1 <= maximum <= 8 or not 0 <= value <= maximum:
+            return None
+        fraction = value / maximum
+        blur_fraction = 1 if maximum == 1 else max(0, min(1, (value - 1) / (maximum - 1)))
+        phase = "shapes" if fraction <= .34 else "details" if fraction < .75 else "refine"
+        return phase, round(90 - 60 * blur_fraction)
+
     @modal.method(is_generator=True)
     async def render_with_preview(self, mode: str, options: dict):
         from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType
@@ -256,6 +279,9 @@ class FiboStudio:
             async with socket:
                 task = asyncio.create_task(asyncio.to_thread(render, preview_id=identifier, **options))
                 sent = 0
+                progress_sent = 0
+                last_progress = None
+                blur = 90
                 try:
                     while not task.done():
                         try:
@@ -266,11 +292,20 @@ class FiboStudio:
                             break
                         if event.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.ERROR):
                             break
+                        if event.type == WSMsgType.TEXT and progress_sent < 16:
+                            progress = self.preview_progress(event.data)
+                            if progress and progress != last_progress:
+                                phase, next_blur = progress
+                                if next_blur is not None:
+                                    blur = next_blur
+                                last_progress = progress
+                                progress_sent += 1
+                                yield {"kind": "progress", "phase": phase}
                         if event.type == WSMsgType.BINARY and sent < 12:
                             frame = self.preview_jpeg(event.data)
                             if frame and len(frame) <= 192 * 1024:
                                 sent += 1
-                                yield {"kind": "frame", "jpeg": frame}
+                                yield {"kind": "frame", "jpeg": frame, "blur": blur}
                     yield {"kind": "result", "result": await task}
                 finally:
                     # Do not leave an inference thread racing the next RPC on this container.

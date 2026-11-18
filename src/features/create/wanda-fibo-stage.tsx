@@ -84,6 +84,7 @@ type Props<T extends StageResult> = {
   maskAction?: { mask?: File; blocked: boolean; open: () => void; clear: () => void };
   busy: boolean;
   liveFrame?: string;
+  liveBlur?: number;
   renderRatio?: number;
   status: string;
   onBrowse: () => void;
@@ -91,7 +92,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ historySelection, desktopArrows, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ historySelection, desktopArrows, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -242,15 +243,15 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
   }, [savedMask]);
   const reviewing = !busy && !!savedMask && savedMask !== hiddenMask && overlay?.mask === savedMask;
   const showingProgress = busy && !inspecting;
-  const [decodedFrame, setDecodedFrame] = useState<string>();
+  const [decodedFrame, setDecodedFrame] = useState<{ url: string; blur?: number }>();
   useEffect(() => {
     if (!busy || !liveFrame) { setDecodedFrame(undefined); return; }
     let current = true;
     const image = new Image();
     image.src = liveFrame;
-    void image.decode().then(() => { if (current) setDecodedFrame(liveFrame); }, () => {});
+    void image.decode().then(() => { if (current) setDecodedFrame({ url: liveFrame, blur: liveBlur }); }, () => {});
     return () => { current = false; };
-  }, [busy, liveFrame]);
+  }, [busy, liveFrame, liveBlur]);
   const pending = busy && batch.length < expectedImages;
   const showBatch = busy ? batch.length > 0 || pending : batch.length > 1;
   const shown = showingProgress ? undefined : (reviewing ? input : result?.image_data ?? input);
@@ -525,7 +526,7 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
           }}>
           {inlineMask || (showingProgress ? <>
             <div className="wanda-fibo-stage-backdrop" aria-hidden="true" />
-            {liveFrame && decodedFrame && <img className="wanda-fibo-stage-live" src={decodedFrame} alt="" draggable={false} />}
+            {liveFrame && decodedFrame && <img className="wanda-fibo-stage-live" src={decodedFrame.url} style={decodedFrame.blur === undefined ? undefined : { filter: "blur(" + decodedFrame.blur + "px)" }} alt="" draggable={false} />}
             <div className="wanda-fibo-stage-shimmer" aria-hidden="true" />
             <div className="wanda-fibo-stage-notice" role="status"><span>{status || "Rendering…"}</span></div>
           </>

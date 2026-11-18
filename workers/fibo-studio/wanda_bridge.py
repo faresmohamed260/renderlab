@@ -34,7 +34,9 @@ if request.get("preview") and mode in ("edit", "generate"):
     result = None
     for event in worker.render_with_preview.remote_gen(mode, options):
         if event["kind"] == "frame":
-            print(json.dumps({"frame": base64.b64encode(event["jpeg"]).decode("ascii")}), flush=True)
+            print(json.dumps({"frame": base64.b64encode(event["jpeg"]).decode("ascii"), "blur": event.get("blur")}), flush=True)
+        elif event["kind"] == "progress":
+            print(json.dumps({"phase": event["phase"]}), flush=True)
         elif event["kind"] == "result":
             result = event["result"]
     if result is None:

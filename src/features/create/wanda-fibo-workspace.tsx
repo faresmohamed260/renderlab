@@ -106,6 +106,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [result, setResult] = useState<Result>();
   const [turns, setTurns] = useState<Record<Workflow, StageTurn<Result>[]>>({ edit: [], generate: [] });
   const [liveFrame, setLiveFrame] = useState<string>();
+  const [liveBlur, setLiveBlur] = useState<number>();
+  const [liveCaption, setLiveCaption] = useState<string>();
   const [runningBatch, setRunningBatch] = useState<Result[]>([]);
   const [inspected, setInspected] = useState<Result>();
   const [sessionHistory, setHistory] = useState<Result[]>([]);
@@ -224,6 +226,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       }));
     }
     setLiveFrame(undefined);
+    setLiveBlur(undefined);
+    setLiveCaption(undefined);
     setRunningBatch([]);
     setInspected(undefined);
     setBusy(true);
@@ -268,8 +272,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       const end = Date.now() + 8 * 60_000;
       let images: Result[] = [];
       while (!signal.aborted && Date.now() < end) {
-        const update = await request<{ finished: boolean; images: Result[]; preview?: string; error?: string }>("local/render/" + job, { signal });
+        const update = await request<{ finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string }>("local/render/" + job, { signal });
         setLiveFrame(update.preview);
+        setLiveBlur(update.previewBlur);
+        setLiveCaption(update.caption);
         if (update.images.length > images.length) {
           images = [...images, ...update.images.slice(images.length).map((image) => ({
             ...image, batchId: job, run, source: mode === "edit" ? editInputs[0] : undefined,
@@ -589,8 +595,9 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               inputLabel={mode === "edit" ? "Source image" : "Reference image"}
               busy={busy}
               liveFrame={liveFrame}
+              liveBlur={liveBlur}
               renderRatio={mode === "generate" ? size.width / size.height : undefined}
-              status={status}
+              status={liveCaption ?? status}
               onBrowse={() => chooseImage(mode === "edit" ? 0 : 4)}
               onUseInput={(file) => attachImage(file, 0)}
               onUseSource={(image) => {
