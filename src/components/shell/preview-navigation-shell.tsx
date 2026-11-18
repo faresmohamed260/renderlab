@@ -144,9 +144,9 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
           pinned.current = !pinned.current;
           setOpen(pinned.current);
         }}>
-        {avatarSrc ? <Image src={avatarSrc} alt="" width={40} height={40} unoptimized
+        {avatarSrc ? <Image src={avatarSrc} alt="" width={24} height={24} unoptimized
           className="preview-navigation-avatar"
-          onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} /> : <UserRound size={26} aria-hidden="true" />}
+          onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} /> : <UserRound size={24} aria-hidden="true" />}
       </Button>
       <MenuSilhouette id={id + "-shape"} right />
       <animated.div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}
@@ -227,9 +227,9 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
           <Button ref={trigger} type="button" variant="ghost" className="preview-section-trigger"
             aria-label={"RenderLab sections: " + (current?.label ?? "RenderLab")}
             aria-expanded={open} aria-controls={id} onClick={() => setOpenPath(open ? null : pathname)}>
-            <RenderLabMark className="size-9" />
+            <RenderLabMark className="size-6" />
             <span>{current?.label ?? "RenderLab"}</span>
-            <Menu size={20} aria-hidden="true" />
+            <Menu size={12} aria-hidden="true" />
           </Button>
           <MenuSilhouette id={id + "-shape"} />
           <animated.nav id={id} className="preview-section-panel" aria-label="RenderLab navigation"
