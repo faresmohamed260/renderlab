@@ -268,7 +268,10 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
         <div ref={disclosure} className="preview-section-disclosure"
           onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpenPath(pathname); }}
           onPointerLeave={(event) => {
-            if (event.pointerType === "mouse" && pinnedPath.current !== pathname && !event.currentTarget.contains(document.activeElement)) close();
+            // Route selection restores trigger focus; that alone must not lock a hover preview.
+            const focused = document.activeElement;
+            const focusInPanel = focused !== trigger.current && event.currentTarget.contains(focused);
+            if (event.pointerType === "mouse" && pinnedPath.current !== pathname && !focusInPanel) close();
           }}
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) close();
