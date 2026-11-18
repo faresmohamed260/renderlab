@@ -15,9 +15,6 @@ export type GenerationWorker = {
   routingStatus: "active" | "disabled";
 };
 
-const testGatewayOverride = process.env.RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE === "true"
-  ? process.env.RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL?.trim().replace(/\/$/, "") || null
-  : null;
 const modalGatewayOriginPattern = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
 
 // The sole live RenderLab worker is configured from server-only FIBO settings
