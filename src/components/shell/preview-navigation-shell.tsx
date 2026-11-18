@@ -28,7 +28,7 @@ function railOutline(height: number, center: number) {
   const bottom = Math.max(120, height) - 8;
   const y = Math.max(66, Math.min(bottom - 56, center));
   const notch = center > 0
-    ? `V ${y - 42} C 74 ${y - 22} 29 ${y - 32} 29 ${y} S 74 ${y + 24} 74 ${y + 42}`
+    ? `V ${y - 42} C 74 ${y - 22} 60 ${y - 32} 60 ${y} S 74 ${y + 24} 74 ${y + 42}`
     : "";
   return `M 24 8 H 58 Q 74 8 74 24 ${notch} V ${bottom - 16}
     Q 74 ${bottom} 58 ${bottom} H 24 Q 8 ${bottom} 8 ${bottom - 16} V 24 Q 8 8 24 8 Z`;
@@ -129,7 +129,7 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
         <svg className="preview-account-clip" width="0" height="0" aria-hidden="true">
           <defs>
             <clipPath id={id + "-glass"} clipPathUnits="objectBoundingBox">
-              <path d="M .09 0 H .91 Q 1 0 1 .09 V .71 Q 1 .8 .91 .8 H .77 C .69 .8 .68 .83 .67 .91 C .66 .975 .63 1 .55 1 H .09 Q 0 1 0 .91 V .09 Q 0 0 .09 0 Z" />
+              <path transform="translate(0 1) scale(1 -1)" d="M .09 0 H .91 Q 1 0 1 .09 V .71 Q 1 .8 .91 .8 H .77 C .69 .8 .68 .83 .67 .91 C .66 .975 .63 1 .55 1 H .09 Q 0 1 0 .91 V .09 Q 0 0 .09 0 Z" />
             </clipPath>
           </defs>
         </svg>
