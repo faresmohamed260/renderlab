@@ -10,6 +10,15 @@ import { RenderLabMark } from "@/components/brand/renderlab-brand";
 import { animated, useSpring } from "@react-spring/web";
 import { Button } from "@/components/ui/button";
 
+function MenuSilhouette({ id, right = false }: { id: string; right?: boolean }) {
+  return <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
+    <clipPath id={id} clipPathUnits="objectBoundingBox">
+      <path transform={right ? "translate(1 0) scale(-1 1)" : undefined}
+        d="M 0 .1 Q 0 0 .055 0 H .30 C .39 0 .35 .10 .44 .10 H .945 Q 1 .10 1 .20 V .90 Q 1 1 .945 1 H .055 Q 0 1 0 .90 Z" />
+    </clipPath>
+  </svg>;
+}
+
 const navigationSpring = { mass: 1, tension: 220, friction: 22 };
 
 function usePreviewReducedMotion() {
@@ -113,8 +122,9 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
           className="preview-navigation-avatar"
           onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} /> : <UserRound size={26} aria-hidden="true" />}
       </Button>
+      <MenuSilhouette id={id + "-shape"} right />
       <animated.div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}
-        style={{ opacity: panel.progress.to([0, 1], [0, 1], "clamp"), scaleY: panel.progress }}>
+        style={{ clipPath: "url(#" + id + "-shape)", opacity: panel.progress.to([0, 1], [0, 1], "clamp"), scaleY: panel.progress }}>
         <ul aria-label="Account options" className="preview-account-options">
           {accountOptions.map(({ label, icon: Icon }) => (
             <li key={label} className="flex items-center gap-2 px-2 py-2 text-sm">
@@ -158,14 +168,27 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
     function outside(event: PointerEvent) {
       if (event.target instanceof Node && !disclosure.current?.contains(event.target)) setOpenPath(null);
     }
+    function escape(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (disclosure.current?.contains(document.activeElement)) trigger.current?.focus();
+      setOpenPath(null);
+    }
     document.addEventListener("pointerdown", outside);
-    return () => document.removeEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
   }, [open]);
 
   return (
     <div className="preview-navigation-shell">
       <header className="preview-navigation-header">
         <div ref={disclosure} className="preview-section-disclosure"
+          onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpenPath(pathname); }}
+          onPointerLeave={(event) => {
+            if (event.pointerType === "mouse" && !event.currentTarget.contains(document.activeElement)) setOpenPath(null);
+          }}
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) setOpenPath(null);
           }}
@@ -182,9 +205,10 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
             <span>{current?.label ?? "RenderLab"}</span>
             <Menu size={20} aria-hidden="true" />
           </Button>
+          <MenuSilhouette id={id + "-shape"} />
           <animated.nav id={id} className="preview-section-panel" aria-label="RenderLab navigation"
             aria-hidden={!open} inert={!open} data-open={open}
-            style={{ opacity: reveal.progress.to([0, 1], [0, 1], "clamp"),
+            style={{ clipPath: "url(#" + id + "-shape)", opacity: reveal.progress.to([0, 1], [0, 1], "clamp"),
               y: reveal.progress.to([0, 1], [-10, 0]) }}>
             {navigationGroups.map((group) => (
               <section key={group.title} className="preview-section-group">

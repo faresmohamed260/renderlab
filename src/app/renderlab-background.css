@@ -217,3 +217,23 @@
     border-block-start: 1px solid rgb(221 211 255 / 13%);
   }
 }
+
+/* One stepped glass silhouette per disclosure, mirrored at the two header ends. */
+.preview-section-panel,
+.preview-account-menu {
+  border: 0;
+  border-radius: 0;
+  background: #201b2b;
+
+}
+.preview-section-panel { padding-block-start: 36px; }
+.preview-account-menu {
+  padding-block-start: 30px;
+
+}
+@supports (backdrop-filter: blur(1px)) {
+  .preview-section-panel, .preview-account-menu {
+    background: rgb(49 40 66 / 73%);
+    backdrop-filter: blur(20px) saturate(165%);
+  }
+}
