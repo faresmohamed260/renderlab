@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Clock, Dices, Images, ListOrdered, Sparkles, X } from "lucide-react";
+import { Clock, Dices, Images, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -86,6 +86,18 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
     }
   }
 
+  function chooseImage(index: number) {
+    if (!admitted || busy) return;
+    slot.current = index;
+    picker.current?.click();
+  }
+
+  function attachImage(file: File, index: number) {
+    if (!admitted || busy) return;
+    if (index === 0) setResult(undefined);
+    setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
+  }
+
   const canSubmit = admitted && !busy && !!prompt.trim() && (mode !== "edit" || !!files[0]);
 
   return (
@@ -113,8 +125,8 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
                     <div className="wanda-fibo-tile" key={label}>
                       <Button type="button" variant="outline" aria-label={"Choose " + label.toLowerCase() + " image"}
                         title={files[index]?.name ?? label} disabled={!admitted || busy}
-                        onClick={() => { slot.current = index; picker.current?.click(); }}>
-                        {previews[index] ? <img src={previews[index]} alt="" draggable={false} /> : <Images size={16} aria-hidden="true" />}<span>{label}</span>
+                        onClick={() => chooseImage(index)}>
+                        {previews[index] ? <img src={previews[index]} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}<span>{label}</span>
                       </Button>
                       {files[index] && <Button type="button" variant="secondary" size="icon-sm"
                         className="wanda-fibo-remove" aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
@@ -130,11 +142,7 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
               )}
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
-                const index = slot.current;
-                if (file) {
-                  if (index === 0) setResult(undefined);
-                  setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
-                }
+                if (file) attachImage(file, slot.current);
                 event.currentTarget.value = "";
               }} />
             </section>
@@ -170,7 +178,7 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
                 </div>
               </div>
               <label>Images<Input type="number" value={1} disabled /></label>
-              <label>Steps <output>4</output><Input type="range" min={1} max={8} value={4} disabled /></label>
+              <label className="wanda-fibo-steps"><span>Steps <output>4</output></span><Input type="range" min={1} max={8} value={4} disabled /></label>
             </div>
             <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}>
               <Sparkles aria-hidden="true" />{busy ? "Rendering…" : "Generate"}
@@ -178,7 +186,15 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
             {status && <p className="wanda-fibo-caption" role="status">{status}</p>}
           </div>
         </form>
-        <section className="wanda-fibo-canvas" aria-label="Canvas">
+        <section className="wanda-fibo-canvas" aria-label="Canvas" data-workflow={mode}
+          onDragOver={(event) => {
+            if (mode === "edit" && admitted && !busy && event.dataTransfer.types.includes("Files")) event.preventDefault();
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (mode === "edit" && file?.type.startsWith("image/")) attachImage(file, 0);
+          }}>
           {!admitted ? (
             <p>Sign in with an admitted RenderLab account to generate. <Link href="/settings" className="underline">Open Settings</Link></p>
           ) : result ? (
@@ -188,7 +204,12 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
           ) : mode === "edit" && previews[0] ? (
             <figure><img src={previews[0]} alt="Source image" /><figcaption>Source</figcaption></figure>
           ) : (
-            <p className="wanda-fibo-caption">{mode === "edit" ? "Add a source image to start editing." : "Your generated image will appear here."}</p>
+            mode === "edit" ? (
+              <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload" disabled={busy}
+                onClick={() => chooseImage(0)}>
+                <Images size={20} aria-hidden="true" /> Drop an image or click to upload
+              </Button>
+            ) : <p className="wanda-fibo-caption">Your generated image will appear here.</p>
           )}
         </section>
         <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title">
