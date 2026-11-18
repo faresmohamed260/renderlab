@@ -137,6 +137,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
   const seedValid = randomize || (/^\d+$/.test(seed) && Number(seed) <= 2147483647);
   const blocker = !admitted ? "Sign in with an account that has Create access."
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
+    : !variableSteps && steps !== 4 ? "The current worker supports 4 steps. Select 4 to generate."
     : mode === "edit" && !files[0] ? "Add a source image to edit."
     : !prompt.trim() ? "Enter a prompt to generate."
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
@@ -250,7 +251,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
               <div>
                 <label htmlFor="wanda-fibo-seed">Seed</label>
                 <div className="wanda-fibo-seed">
-                  <Input id="wanda-fibo-seed" type="number" min={0} max={2147483647} required={!randomize} value={seed}
+                  <Input id="wanda-fibo-seed" type="text" inputMode="numeric" maxLength={10} required={!randomize} value={seed}
                     disabled={!admitted || busy} onChange={(event) => { setSeed(event.target.value); setRandomize(false); }} />
                   <Button type="button" variant={randomize ? "secondary" : "outline"} size="icon-sm"
                     aria-label="Randomize seed" aria-pressed={randomize} disabled={!admitted || busy}
@@ -264,16 +265,15 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
               <label className="wanda-fibo-steps" htmlFor="wanda-fibo-steps">
                 <span>Steps <output htmlFor="wanda-fibo-steps">{steps}</output></span>
                 <Input id="wanda-fibo-steps" type="range" min={1} max={8} step={1} value={steps}
-                  disabled={!admitted || busy || !variableSteps}
-                  title={variableSteps ? undefined : "Adjustable steps require the private worker update"}
+                  disabled={busy}
+                  title={variableSteps ? undefined : "The current worker renders at 4 steps"}
                   onChange={(event) => setSteps(event.target.valueAsNumber)} />
               </label>
             </div>
-            <p id="wanda-fibo-worker-note" className="wanda-fibo-caption wanda-fibo-worker-note" role="status">
-              {busy ? status : blocker || status || "Ready to generate."}
-            </p>
+            <p className="wanda-fibo-caption wanda-fibo-worker-note" role="status">{status}</p>
+            <span id="wanda-fibo-blocker" className="sr-only">{blocker}</span>
             <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}
-              aria-describedby="wanda-fibo-worker-note">
+              title={blocker || undefined} aria-describedby={blocker ? "wanda-fibo-blocker" : undefined}>
               <Sparkles aria-hidden="true" />{busy ? "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
             </Button>
           </div>

@@ -385,7 +385,8 @@
 .wanda-fibo-fields textarea { min-block-size: clamp(142px, 18dvh, 256px); resize: none; }
 .wanda-fibo-extra { align-items: flex-start; flex-direction: column; gap: 0; margin-block-start: 6px; }
 .wanda-fibo-dock { margin-block-start: 24px; }
-.wanda-fibo-worker-note { min-block-size: 3em; overflow-wrap: anywhere; }
+.wanda-fibo-worker-note { overflow-wrap: anywhere; }
+.wanda-fibo-worker-note:empty { margin: 0; }
 .wanda-fibo-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: end; font-size: 12px; }
 .wanda-fibo-steps { grid-column: 1 / -1; }
 .wanda-fibo-steps > span { display: flex; justify-content: space-between; }
@@ -446,7 +447,7 @@
 /* Keep focus rings on interactive glass surfaces without resting outlines. */
 .wanda-fibo-workspace button,
 .wanda-fibo-workspace summary,
-.wanda-fibo-workspace input[type="number"] {
+.wanda-fibo-workspace :is(input[type="number"], #wanda-fibo-seed) {
   border: 0;
   border-radius: 999px;
 }
@@ -455,7 +456,7 @@
   border: 0;
   border-radius: 16px;
 }
-.wanda-fibo-workspace :is(textarea, input[type="number"], .wanda-fibo-tile > button:first-child,
+.wanda-fibo-workspace :is(textarea, input[type="number"], #wanda-fibo-seed, .wanda-fibo-tile > button:first-child,
   .wanda-fibo-aspect select, .wanda-fibo-seed button, .wanda-fibo-history button,
   .wanda-fibo-recents summary) {
   background: rgb(255 255 255 / 5%);
