@@ -4,6 +4,10 @@
 
 This document records the capability baseline that informs RenderLab. It distinguishes audited Saga reference behavior, currently verified RenderLab capability, and future extensibility categories.
 
+## Current RenderLab capability
+
+New creative work is **FIBO image generation and image editing only**. FLUX, Qwen, REDGraft LTX, video/animation, and image upscale are retired from new submissions. Historical jobs and media remain readable for continuity but are not reusable through a retired provider path.
+
 ## Authority and Scope
 - `renderlab` is the product source of truth.
 - Saga is a reference implementation, not the RenderLab specification.

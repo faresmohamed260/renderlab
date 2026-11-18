@@ -15,23 +15,16 @@ import type {
 } from "@/lib/capabilities/generation";
 import {
   defaultGenerationModelForOutput,
-  defaultVideoAudioEnabled,
-  defaultVideoResolution,
   generationAdvancedCapabilities,
   generationInputAlias,
   generationInputAliasPattern,
   generationInputRoleForIndex,
-  generationModelsForOutput,
   fiboGenerationModel,
   imageAspectRatios,
   maxGenerationInputsForOutput,
   qwenImageFixedGuidance,
   qwenImageFixedSteps,
   unresolvedGenerationPromptReferenceAliases,
-  videoAspectRatios,
-  videoDurations,
-  videoResolutions,
-  type VideoResolution,
 } from "@/lib/capabilities/generation";
 
 export type SubmitGenerationSuccess = {
@@ -60,13 +53,9 @@ export type SubmitGenerationError = {
 export type SubmitGenerationResponse = SubmitGenerationSuccess | SubmitGenerationError;
 
 const imageAspectRatioSet = new Set<AspectRatio>(imageAspectRatios);
-const videoAspectRatioSet = new Set<AspectRatio>(videoAspectRatios);
-const outputKinds = new Set<OutputKind>(["image", "video"]);
 const inputRoles = new Set<GenerationInput["role"]>(["reference", "primary-image", "first-frame"]);
 const inputSourceTypes = new Set<GenerationInput["source"]["type"]>(["temporary-source", "media-asset"]);
 const frameRates = new Set<number>(generationAdvancedCapabilities.video.frameRates);
-const videoDurationSet = new Set<number>(videoDurations);
-const videoResolutionSet = new Set<string>(videoResolutions);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -187,8 +176,8 @@ export function parseGenerationRequest(value: unknown):
   const audioEnabled = value.output.audioEnabled;
   const resolution = value.output.resolution;
 
-  if (typeof kind !== "string" || !outputKinds.has(kind as OutputKind)) {
-    return { ok: false, error: { code: "invalid_request", message: "Output kind must be image or video." } };
+  if (kind !== "image") {
+    return { ok: false, error: { code: "invalid_request", message: "Only FIBO image generation is available." } };
   }
 
   const inputs = parseInputs(value.inputs);
@@ -202,8 +191,7 @@ export function parseGenerationRequest(value: unknown):
     model = defaultGenerationModelForOutput(outputKind);
   } else if (
     typeof value.model !== "string"
-    || (!generationModelsForOutput(outputKind).includes(value.model as GenerationModel)
-      && !(outputKind === "image" && value.model === fiboGenerationModel))
+    || value.model !== fiboGenerationModel
   ) {
     return { ok: false, error: { code: "invalid_request", message: "Unsupported model for the selected output type." } };
   } else {
@@ -247,7 +235,7 @@ export function parseGenerationRequest(value: unknown):
     };
   }
 
-  const supportedAspectRatios = kind === "video" ? videoAspectRatioSet : imageAspectRatioSet;
+  const supportedAspectRatios = imageAspectRatioSet;
   if (
     typeof aspectRatio !== "string"
     || (aspectRatio !== "original" && !supportedAspectRatios.has(aspectRatio as AspectRatio))
@@ -261,22 +249,7 @@ export function parseGenerationRequest(value: unknown):
     };
   }
 
-  let normalizedVideoResolution: VideoResolution | undefined;
-  if (kind === "video") {
-    if (resolution === undefined) {
-      normalizedVideoResolution = defaultVideoResolution;
-    } else if (typeof resolution === "string" && videoResolutionSet.has(resolution)) {
-      normalizedVideoResolution = resolution as VideoResolution;
-    } else {
-      return { ok: false, error: { code: "invalid_request", message: "Unsupported video resolution." } };
-    }
-    if (typeof durationSeconds !== "number" || !videoDurationSet.has(durationSeconds)) {
-      return { ok: false, error: { code: "invalid_request", message: "Unsupported video duration." } };
-    }
-    if (audioEnabled !== undefined && typeof audioEnabled !== "boolean") {
-      return { ok: false, error: { code: "invalid_request", message: "Video audio setting must be on or off." } };
-    }
-  } else if (durationSeconds !== undefined || audioEnabled !== undefined || resolution !== undefined) {
+  if (durationSeconds !== undefined || audioEnabled !== undefined || resolution !== undefined) {
     return { ok: false, error: { code: "invalid_request", message: "Image requests cannot include video-only settings." } };
   }
 
@@ -301,15 +274,8 @@ export function parseGenerationRequest(value: unknown):
       model,
       prompt,
       output: {
-        kind: kind as OutputKind,
+        kind: "image",
         aspectRatio: aspectRatio as AspectRatio,
-        ...(kind === "video"
-          ? {
-              durationSeconds: durationSeconds as number,
-              audioEnabled: audioEnabled === undefined ? defaultVideoAudioEnabled : audioEnabled,
-              resolution: normalizedVideoResolution!,
-            }
-          : {}),
       },
       inputs,
       ...(advanced ? { advanced } : {}),

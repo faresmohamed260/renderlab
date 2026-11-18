@@ -21,7 +21,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   advancedDraftFromParameters,
   advancedParametersFromDraft,
@@ -60,7 +59,6 @@ import {
   generationModelDefinitions,
   imageAspectRatios,
   imageGenerationModels,
-  isImageGenerationModel,
   maxGenerationInputsForOutput,
   unresolvedGenerationPromptReferenceAliases,
   videoAspectRatios,
@@ -309,14 +307,10 @@ export function CreateWorkspace({
   const promptSelectionRef = useRef({ start: 0, end: 0 });
   const referenceDragDepth = useRef(0);
   const [prompt, setPrompt] = useState(() => initialRecipe?.request.prompt ?? "");
-  const [outputKind, setOutputKind] = useState<OutputKind>(() =>
-    initialRecipe?.request.output.kind ?? initialContinuation?.action.outputKind ?? "image",
-  );
-  const [imageModel, setImageModel] = useState<ImageGenerationModel>(() =>
-    initialRecipe?.request.output.kind === "image" && isImageGenerationModel(initialRecipe.request.model)
-      ? initialRecipe.request.model
-      : defaultImageGenerationModel,
-  );
+  // New creation is image-only. Historical recipes and media can still be
+  // viewed, but never restore the retired video composer.
+  const [outputKind] = useState<OutputKind>("image");
+  const [imageModel, setImageModel] = useState<ImageGenerationModel>(defaultImageGenerationModel);
   const [imageAspect, setImageAspect] = useState<AspectRatio>(() =>
     initialRecipe?.request.output.kind === "image"
       ? initialRecipe.request.output.aspectRatio
@@ -687,7 +681,7 @@ export function CreateWorkspace({
   }
 
   function startContinuation(action: ContinuationAction) {
-    if (!resultAsset) return;
+    if (!resultAsset || action.outputKind !== "image") return;
     const nextAlias = generationInputAlias(nextReferenceNumber);
     setReferences([{
       alias: nextAlias,
@@ -698,8 +692,6 @@ export function CreateWorkspace({
     setMentionMenuAnchorAlias(nextAlias);
     setNextReferenceNumber((current) => current + 1);
     setImageAspect("original");
-    setVideoAspect("original");
-    setOutputKind(action.outputKind);
     setJob(null);
     setError(null);
     window.requestAnimationFrame(() => document.getElementById("create-prompt")?.focus());
@@ -842,46 +834,7 @@ export function CreateWorkspace({
         </AnimatePresence>
 
         <div className="clear-composer-mode" data-create-mode-switch="true">
-          <ToggleGroup
-            type="single"
-            value={outputKind}
-            aria-label="Output type"
-            onValueChange={(value) => {
-              if (!value) return;
-              const kind = value as OutputKind;
-              if (references.length > maxGenerationInputsForOutput(kind)) {
-                setError("Video uses one source image. Remove one reference before switching to Video.");
-                return;
-              }
-              setOutputKind(kind);
-              setError(null);
-            }}
-            size="sm"
-            className="relative isolate shrink-0 overflow-hidden rounded-lg border border-white/[0.06] bg-black/20 p-0.5"
-          >
-            <ToggleGroupItem value="image" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
-              {outputKind === "image" ? (
-                <motion.span
-                  layoutId="create-output-mode-highlight"
-                  aria-hidden="true"
-                  className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(129,114,246,0.32),rgba(115,215,255,0.12))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(129,114,246,0.14)]"
-                  transition={reduceMotion ? { duration: 0 } : createMotionSpring}
-                />
-              ) : null}
-              <span className="relative z-10">Image</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="video" className="relative isolate overflow-hidden !px-1 data-[state=on]:bg-transparent data-[state=on]:text-text">
-              {outputKind === "video" ? (
-                <motion.span
-                  layoutId="create-output-mode-highlight"
-                  aria-hidden="true"
-                  className="absolute inset-0 z-0 rounded-[7px] bg-[linear-gradient(135deg,rgba(115,215,255,0.2),rgba(129,114,246,0.28))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_0_18px_rgba(115,215,255,0.12)]"
-                  transition={reduceMotion ? { duration: 0 } : createMotionSpring}
-                />
-              ) : null}
-              <span className="relative z-10">Video</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
+          <span className="rounded-lg border border-white/[0.06] bg-black/20 px-2 py-1 text-sm font-medium text-text">FIBO image</span>
         </div>
 
         <form

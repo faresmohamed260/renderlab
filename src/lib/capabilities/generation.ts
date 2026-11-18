@@ -1,13 +1,15 @@
 export type OutputKind = "image" | "video";
 
-export const imageGenerationModels = ["flux2-klein-9b", "qwen-image-edit-2511", "fibo2-edit-turbo"] as const;
-export const videoGenerationModels = ["ltx25-redgraft"] as const;
-export type ImageGenerationModel = (typeof imageGenerationModels)[number];
-export type VideoGenerationModel = (typeof videoGenerationModels)[number];
+export const imageGenerationModels: readonly ImageGenerationModel[] = ["fibo2-edit-turbo"];
+// Kept as a typed empty list so historical video records remain readable while
+// new video requests are not a product capability.
+export const videoGenerationModels = [] as const;
+export type ImageGenerationModel = "flux2-klein-9b" | "qwen-image-edit-2511" | "fibo2-edit-turbo";
+export type VideoGenerationModel = "ltx25-redgraft";
 export const fiboGenerationModel = "fibo2-edit-turbo" as const;
 export type GenerationModel = ImageGenerationModel | VideoGenerationModel;
 
-export const defaultImageGenerationModel: ImageGenerationModel = "flux2-klein-9b";
+export const defaultImageGenerationModel: ImageGenerationModel = fiboGenerationModel;
 export const defaultVideoGenerationModel: VideoGenerationModel = "ltx25-redgraft";
 export const qwenImageFixedSteps = 4;
 export const qwenImageFixedGuidance = 1;
@@ -247,7 +249,6 @@ export const videoDurations = [5, 10, 15, 20, 30] as const;
 
 const imageContinuationActions: ContinuationAction[] = [
   { id: "edit-image", label: "Edit", outputKind: "image", inputRole: "primary-image" },
-  { id: "animate-image", label: "Animate", outputKind: "video", inputRole: "first-frame" },
 ];
 
 export function continuationActionsForMedia(kind: OutputKind): ContinuationAction[] {

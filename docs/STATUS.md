@@ -17,8 +17,7 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity 
 
 ## Product capabilities
 
-- Image generation and reference-backed image editing
-- Image animation and video generation
+- FIBO image generation and reference-backed image editing
 - Durable uploads and generated-media persistence
 - Activity/job lifecycle tracking
 - Media Viewer continuation actions
@@ -46,6 +45,6 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity 
 
 ## Current direction
 
-Current work focuses on expanding creative workflows, improving continuation between media operations, strengthening organization/project workflows, and preserving production reliability as provider capability grows.
+RenderLab is being simplified to one FIBO image-generation path. FLUX, Qwen, LTX, video generation/animation, and image upscale are retired from new work; historical media remains readable.
 
 For capability detail use `docs/architecture/PRODUCT_CAPABILITIES.md`; for infrastructure and operational boundaries use `docs/architecture/INFRASTRUCTURE.md`; for exact historical phase/run chronology use `docs/audits/**` and `docs/archive/**`.

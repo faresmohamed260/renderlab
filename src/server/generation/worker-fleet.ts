@@ -20,82 +20,10 @@ const testGatewayOverride = process.env.RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE ==
   : null;
 const modalGatewayOriginPattern = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
 
-function gatewayUrl(productionUrl: string) {
-  return testGatewayOverride || productionUrl;
-}
-
-// Public routing metadata copied from the verified Saga worker registry.
-// No credentials are stored here. RenderLab owns this registry going forward.
-// Disabled registrations remain resolvable for historical in-flight/job metadata,
-// but new submissions only route through active entries.
-// The explicit test-only override lets configured CI exercise native lifecycle
-// semantics against a run-owned local worker without provider spend.
-export const generationWorkers: GenerationWorker[] = [
-  {
-    id: "flux-primary-01",
-    ecosystem: "flux2-klein-9b",
-    gatewayUrl: gatewayUrl("https://grimcircuit--saga-flux2-klein-gateway-web.modal.run"),
-    displayName: "FLUX.2 Klein 9B · Primary",
-    role: "primary",
-    routingStatus: "active",
-  },
-  {
-    id: "flux-standby-01",
-    ecosystem: "flux2-klein-9b",
-    gatewayUrl: gatewayUrl("https://silentspecter67--saga-flux2-klein-gateway-web.modal.run"),
-    displayName: "FLUX.2 Klein 9B · Standby",
-    role: "standby",
-    routingStatus: "disabled",
-  },
-  {
-    id: "ltx-primary-01",
-    ecosystem: "ltx25-redgraft",
-    gatewayUrl: gatewayUrl("https://dreadcipher67--saga-ltx25-gateway-web.modal.run"),
-    displayName: "REDGraft LTX 2.5 · Primary",
-    role: "primary",
-    routingStatus: "disabled",
-  },
-  {
-    id: "ltx-standby-01",
-    ecosystem: "ltx25-redgraft",
-    gatewayUrl: gatewayUrl("https://blackzerox67--saga-ltx25-gateway-web.modal.run"),
-    displayName: "REDGraft LTX 2.5 · Standby",
-    role: "standby",
-    routingStatus: "disabled",
-  },
-  {
-    id: "ltx-primary-02",
-    ecosystem: "ltx25-redgraft",
-    gatewayUrl: gatewayUrl("https://faresmohamed260--saga-ltx25-gateway-web.modal.run"),
-    displayName: "REDGraft LTX 2.5 · Primary",
-    role: "primary",
-    routingStatus: "active",
-  },
-  {
-    id: "ltx-standby-02",
-    ecosystem: "ltx25-redgraft",
-    gatewayUrl: gatewayUrl("https://bplay2086--saga-ltx25-gateway-web.modal.run"),
-    displayName: "REDGraft LTX 2.5 · Standby",
-    role: "standby",
-    routingStatus: "active",
-  },
-  {
-    id: "qwen-primary-01",
-    ecosystem: "qwen-image-edit-2511",
-    gatewayUrl: gatewayUrl("https://voidtrek--saga-qwen-image-edit-2511-gateway-web.modal.run"),
-    displayName: "Qwen Image Edit 2511 · Primary",
-    role: "primary",
-    routingStatus: "active",
-  },
-  {
-    id: "qwen-standby-01",
-    ecosystem: "qwen-image-edit-2511",
-    gatewayUrl: gatewayUrl("https://nyxprotocol--saga-qwen-image-edit-2511-gateway-web.modal.run"),
-    displayName: "Qwen Image Edit 2511 · Standby",
-    role: "standby",
-    routingStatus: "active",
-  },
-];
+// The sole live RenderLab worker is configured from server-only FIBO settings
+// below. Legacy FLUX, Qwen and LTX registrations were deliberately removed:
+// no new job can route to a retired Modal worker.
+export const generationWorkers: GenerationWorker[] = [];
 
 function configuredFiboWorker(): GenerationWorker | null {
   const url = process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim().replace(/\/$/, "");

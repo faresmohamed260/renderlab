@@ -458,6 +458,10 @@ The configured Library lifecycle is now hardened at both orchestration and ident
 
 ## Generation Worker Fleet
 
+### Current worker posture (2026-11-18)
+
+`faresmohamed260` is the only retained Modal workspace for RenderLab. The only deployed RenderLab generation service is `renderlab-fibo-native-gateway` (`ap-vNAFxva6ugq40CkXOkR9Lk`). The legacy FLUX, Qwen, LTX/video, and image-upscale applications were stopped; their registrations have been removed from the new-submission fleet. The server accepts only FIBO image requests. Historical worker/job records remain readable and do not reactivate a provider route.
+
 ### FIBO fleet candidate (not deployed)
 
 **Live qualification checkpoint (2026-11-18):** The owner approved private test gateway setup, dedicated credentials and test GPU execution, not production cutover. A read-only Modal check verified the approved workspace profile and main environment; the native candidate app was not listed. The installed Modal CLI lacked proxy-token commands; Modal 1.6.4 was verified in an isolated local environment. Automated credential setup was blocked before execution, so the new gateway was not deployed and no live qualification render ran. Keep FIBO admission disabled pending dedicated test credential provisioning, gateway verification and signed-in qualification. The existing private Studio app is not the native candidate.
