@@ -1,7 +1,7 @@
 import "server-only";
 import { fiboSizes } from "@/features/create/fibo-preview-sizes";
 import { spawn } from "node:child_process";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -479,7 +479,7 @@ export async function fiboPreview(request: Request, path: string): Promise<Respo
       if (!region || region.owner !== owner) return error("Mask is missing or expired.", 400);
       mask = region.data.toString("base64");
     }
-    const seed = data.randomize === true ? randomBytes(4).readUInt32BE() % 2147483647 + 1 : data.seed ?? 42;
+    const seed = data.randomize === true ? randomInt(1, 2_147_483_648) : data.seed ?? 42;
     if (typeof seed !== "number" || !Number.isInteger(seed) || seed < 0 || seed > 2147483647) {
       return error("Invalid seed.", 400);
     }
