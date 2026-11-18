@@ -710,16 +710,13 @@ Repository-local CI abstractions are deliberately smaller than workflow ownershi
 
 `scripts/start-ci-app.mjs` owns only configured production-server startup and bounded readiness: it invokes the fixed RenderLab `npm run start -- -p <port>` command, accepts validated port/timeout/log/PID parameters, permits HTTP readiness only on loopback with the health URL bound to the same port, treats existing curl-compatible 2xx/3xx readiness as success, writes caller-selected local diagnostic files, and fails closed with the captured server log. It does not accept arbitrary shell commands, credentials, fixture ownership or cleanup responsibilities.
 
-Engineering Quality scans immutable external `uses:` references under both `.github/workflows/**` and `.github/actions/**`, then applies an explicit ENT-010 contract to the migrated cohort. The contract prevents direct setup-node/npm-install drift, protects helper/action trigger coverage, preserves verifier and `if: always()` cleanup commands, keeps Activity and Library non-cancellable concurrency intact, and checks artifact/secret/startup invariants. Focused unit negative fixtures must reject mutable external actions, lost cleanup guards and lost protected concurrency; startup-helper tests cover real loopback readiness, timeout failure, input rejection and child/log/PID cleanup without shared services.
+Engineering Quality scans immutable external `uses:` references under both `.github/workflows/**` and `.github/actions/**`, then applies an explicit ENT-010 contract to the retained representative workflow. The contract prevents direct setup-node/npm-install drift, protects helper/action trigger coverage, preserves verifier and `if: always()` cleanup commands, and checks artifact/secret/startup invariants. Focused unit tests reject mutable external actions; startup-helper tests cover real loopback readiness, timeout failure, input rejection and child/log/PID cleanup without shared services.
 
-The bounded first cohort is Create Lifecycle Visual, Activity Visual, Library Lifecycle Visual and Account Identity Visual only. Their existing secrets, fixture lifecycle, R2 reconciliation, health routes, artifacts and scheduling semantics remain independent even though setup/startup plumbing is shared. This abstraction is not permission to merge unrelated configured workflows or broaden cancellation.
+The bounded retained cohort is Account Identity Visual. Retired multi-model, video, upscale and mock-generation workflows were removed on 2026-11-18; this abstraction is not permission to broaden cancellation or reintroduce retired execution paths.
 
 Key workflows:
-- `.github/workflows/ui-shell.yml` — UI purity audit, production build, credential-free signed-out UI/API behavior and responsive screenshots;
 - `.github/workflows/account-ownership.yml` — configured two-account private-record isolation, signed-out denial, foreign opaque-ID denial, raw-table denial and cleanup;
-- `.github/workflows/create-lifecycle-visual.yml` — configured real owner-bound generation lifecycle;
 - `.github/workflows/media-upload-integration.yml` — owner-bound persistent upload backend contract, no ComfyUI;
-- `.github/workflows/library-lifecycle-visual.yml` — real signed-in Upload → Library → Viewer → Create, responsive screenshots, cleanup; serialized with `concurrency: renderlab-library-lifecycle-shared` because it mutates shared Supabase/R2 fixture state;
 - `.github/workflows/library-search-visual.yml` — real owner-bound durable-media search fixtures, responsive result/no-match states, cleanup;
 - `.github/workflows/library-history-visual.yml` — real owner-bound R2/Supabase-backed controlled-timestamp fixtures, newest/oldest API + pagination/kind composition, real Dropdown Menu navigation, responsive screenshots and cleanup;
 - `.github/workflows/library-collections-visual.yml` — two-account Collections API/database integrity, composed Library filtering, Viewer create/add/remove membership, responsive Library/Viewer screenshots and exact DB/R2/Auth cleanup;
@@ -728,8 +725,6 @@ Key workflows:
 - `.github/workflows/media-rename-visual.yml` — real owner-bound generated/uploaded durable Rename, Search/Download invariants, desktop/mobile edit/renamed screenshots, cleanup;
 - `.github/workflows/account-identity-visual.yml` — real Supabase Auth fixture, Settings sign-in/session persistence/sign-out, responsive screenshots and exact fixture cleanup;
 - `.github/workflows/reference-upload-integration.yml` — owner-bound temporary reference persistence;
-- `.github/workflows/generation-bridge-integration.yml` — owner-bound Create Image/Edit Image persistence/continuation;
-- `.github/workflows/video-generation-integration.yml` — owner-bound Create Video/Animate Image plus temporary-reference ownership.
 
 Shared primitive/config/package paths are included in the affected visual workflow triggers. A change to `src/components/ui`, `components.json`, `package.json` or the shared primitive contract must not bypass Create/Library/Viewer regression coverage merely because a feature file itself was untouched.
 
