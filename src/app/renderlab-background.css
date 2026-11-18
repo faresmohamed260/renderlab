@@ -94,7 +94,8 @@
   align-items: stretch;
   justify-content: space-between;
   gap: 6px;
-  padding-inline: clamp(10px, 2vw, 28px);
+  --preview-header-gutter: clamp(10px, 2vw, 28px);
+  padding-inline: var(--preview-header-gutter);
   background: transparent;
 }
 
@@ -151,7 +152,7 @@
 .preview-section-panel,
 .preview-account-menu {
   position: absolute;
-  inset-block-start: 100%;
+  inset-block-start: 0;
   border: 1px solid rgb(221 211 255 / 13%);
   background: #191722;
   color: #f6f7fb;
@@ -162,11 +163,12 @@
   pointer-events: none;
 }
 .preview-section-panel {
-  inset-inline: 0;
+  inset-inline: var(--preview-header-gutter);
+  transform-origin: top left;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: 22px clamp(12px, 3vw, 42px);
-  max-block-size: calc(100dvh - 70px);
+  max-block-size: 100dvh;
   overflow: auto;
 }
 .preview-section-group { padding-inline: 16px; }
@@ -196,7 +198,7 @@
   outline-offset: -2px;
 }
 .preview-account-menu {
-  inset-inline-end: clamp(10px, 2vw, 28px);
+  inset-inline-end: var(--preview-header-gutter);
   inline-size: min(258px, calc(100vw - 20px));
   padding: 8px;
   border-radius: 0 0 16px 16px;
@@ -226,10 +228,17 @@
   background: #201b2b;
 
 }
-.preview-section-panel { padding-block-start: 36px; }
+.preview-section-panel,
 .preview-account-menu {
-  padding-block-start: 30px;
+  padding-block-start: 82px;
+}
 
+.preview-navigation-header :is(.preview-section-trigger, .preview-navigation-profile) {
+  position: relative;
+  z-index: 2;
+}
+.preview-navigation-header :is(.preview-section-trigger, .preview-navigation-profile)[aria-expanded="true"] {
+  background: transparent;
 }
 @supports (backdrop-filter: blur(1px)) {
   .preview-section-panel, .preview-account-menu {

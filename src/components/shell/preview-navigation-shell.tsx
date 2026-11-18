@@ -11,13 +11,39 @@ import { animated, useSpring } from "@react-spring/web";
 import { Button } from "@/components/ui/button";
 
 function MenuSilhouette({ id, right = false }: { id: string; right?: boolean }) {
+  const clip = useRef<SVGClipPathElement>(null);
+  const [size, setSize] = useState({ width: 258, height: 250 });
+
+  useEffect(() => {
+    const panel = clip.current?.ownerSVGElement?.nextElementSibling;
+    if (!panel) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const box = entry.borderBoxSize[0];
+      if (box) setSize({ width: box.inlineSize, height: box.blockSize });
+    });
+    observer.observe(panel);
+    return () => observer.disconnect();
+  }, []);
+
+  const { width, height } = size;
+  const shoulder = right ? 60 : 184;
+  const start = Math.min(shoulder, width - 58);
+  // Fixed-pixel curves keep the lip around the trigger even on a wide panel.
+  const d = `M 0 18 Q 0 0 18 0 H ${start}
+    C ${start + 30} 0 ${start + 12} 66 ${start + 46} 66
+    H ${width - 18} Q ${width} 66 ${width} 84 V ${height - 18}
+    Q ${width} ${height} ${width - 18} ${height} H 18
+    Q 0 ${height} 0 ${height - 18} Z`;
+
   return <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
-    <clipPath id={id} clipPathUnits="objectBoundingBox">
-      <path transform={right ? "translate(1 0) scale(-1 1)" : undefined}
-        d="M 0 .1 Q 0 0 .055 0 H .30 C .39 0 .35 .10 .44 .10 H .945 Q 1 .10 1 .20 V .90 Q 1 1 .945 1 H .055 Q 0 1 0 .90 Z" />
-    </clipPath>
+    <defs>
+      <clipPath ref={clip} id={id} clipPathUnits="userSpaceOnUse">
+        <path transform={right ? `translate(${width} 0) scale(-1 1)` : undefined} d={d} />
+      </clipPath>
+    </defs>
   </svg>;
 }
+
 
 const navigationSpring = { mass: 1, tension: 220, friction: 22 };
 
@@ -209,7 +235,7 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
           <animated.nav id={id} className="preview-section-panel" aria-label="RenderLab navigation"
             aria-hidden={!open} inert={!open} data-open={open}
             style={{ clipPath: "url(#" + id + "-shape)", opacity: reveal.progress.to([0, 1], [0, 1], "clamp"),
-              y: reveal.progress.to([0, 1], [-10, 0]) }}>
+              scaleY: reveal.progress }}>
             {navigationGroups.map((group) => (
               <section key={group.title} className="preview-section-group">
                 <p className="preview-section-title">{group.title}</p>
