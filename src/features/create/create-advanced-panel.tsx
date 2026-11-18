@@ -82,8 +82,9 @@ export function advancedParametersFromDraft(
   if (
     !Number.isInteger(steps)
     || steps < generationAdvancedCapabilities.steps.min
-    || steps > generationAdvancedCapabilities.steps.max
+    || steps > (imageModel === "fibo2-edit-turbo" ? 8 : generationAdvancedCapabilities.steps.max)
   ) return null;
+  if (imageModel === "fibo2-edit-turbo" && guidance !== 1) return null;
   if (
     !Number.isFinite(guidance)
     || guidance < generationAdvancedCapabilities.guidance.min
@@ -191,25 +192,29 @@ export function CreateAdvancedPanel({
                     id="advanced-steps"
                     type="number"
                     min={generationAdvancedCapabilities.steps.min}
-                    max={generationAdvancedCapabilities.steps.max}
+                    max={imageModel === "fibo2-edit-turbo" ? 8 : generationAdvancedCapabilities.steps.max}
                     step="1"
                     value={draft.steps}
                     onChange={(event) => onDraftChange({ ...draft, steps: event.target.value })}
                   />
                 </Field>
 
-                <Field>
-                  <FieldLabel htmlFor="advanced-guidance">{generationAdvancedCapabilities.guidance.label}</FieldLabel>
-                  <Input
-                    id="advanced-guidance"
-                    type="number"
-                    min={generationAdvancedCapabilities.guidance.min}
-                    max={generationAdvancedCapabilities.guidance.max}
-                    step={generationAdvancedCapabilities.guidance.step}
-                    value={draft.guidance}
-                    onChange={(event) => onDraftChange({ ...draft, guidance: event.target.value })}
-                  />
-                </Field>
+                {imageModel === "fibo2-edit-turbo" ? (
+                  <p className="self-end text-xs leading-5 text-text-muted">FIBO uses fixed guidance 1 and supports 1–8 steps.</p>
+                ) : (
+                  <Field>
+                    <FieldLabel htmlFor="advanced-guidance">{generationAdvancedCapabilities.guidance.label}</FieldLabel>
+                    <Input
+                      id="advanced-guidance"
+                      type="number"
+                      min={generationAdvancedCapabilities.guidance.min}
+                      max={generationAdvancedCapabilities.guidance.max}
+                      step={generationAdvancedCapabilities.guidance.step}
+                      value={draft.guidance}
+                      onChange={(event) => onDraftChange({ ...draft, guidance: event.target.value })}
+                    />
+                  </Field>
+                )}
               </>
             )
           ) : null}

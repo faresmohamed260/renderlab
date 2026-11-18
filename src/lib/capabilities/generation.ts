@@ -1,11 +1,11 @@
 export type OutputKind = "image" | "video";
 
-export const imageGenerationModels = ["flux2-klein-9b", "qwen-image-edit-2511"] as const;
+export const imageGenerationModels = ["flux2-klein-9b", "qwen-image-edit-2511", "fibo2-edit-turbo"] as const;
 export const videoGenerationModels = ["ltx25-redgraft"] as const;
 export type ImageGenerationModel = (typeof imageGenerationModels)[number];
 export type VideoGenerationModel = (typeof videoGenerationModels)[number];
 export const fiboGenerationModel = "fibo2-edit-turbo" as const;
-export type GenerationModel = ImageGenerationModel | VideoGenerationModel | typeof fiboGenerationModel;
+export type GenerationModel = ImageGenerationModel | VideoGenerationModel;
 
 export const defaultImageGenerationModel: ImageGenerationModel = "flux2-klein-9b";
 export const defaultVideoGenerationModel: VideoGenerationModel = "ltx25-redgraft";

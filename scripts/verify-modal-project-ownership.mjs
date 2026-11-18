@@ -40,6 +40,20 @@ for (const name of fs.readdirSync(workflowRoot)) {
     }
     continue;
   }
+  if (name === "fibo-production-deploy.yml") {
+    const guards = [
+      "workflow_dispatch:", "inputs.production_sha == github.sha", "github.ref == 'refs/heads/main'",
+      "environment: production", "assertRenderLabModalAccount", "scripts/deploy-fibo-production.sh",
+    ];
+    const script = fs.readFileSync(path.join(root, "scripts", "deploy-fibo-production.sh"), "utf8");
+    if (guards.some((guard) => !text.includes(guard))
+      || /^  (push|pull_request|pull_request_target|schedule|workflow_run):/m.test(text)
+      || !script.includes("faresmohamed260 (ac-88wJ5dCXYBOywnXXaGmUoV)")
+      || !script.includes("deploy -e main workers/fibo-studio/modal_native_production.py")) {
+      throw new Error("FIBO production deploy must remain scoped to the approved workspace and app.");
+    }
+    continue;
+  }
   if (/MODAL_TOKEN_ID|MODAL_TOKEN_SECRET|RENDERLAB_MODAL_TOKENS_JSON/.test(text)) {
     throw new Error(
       `Modal credential use requires an ownership-reviewed workflow; unexpected reference in ${name}.`,
