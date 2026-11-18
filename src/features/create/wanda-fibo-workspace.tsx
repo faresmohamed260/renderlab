@@ -89,6 +89,15 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   }
   const [steps, setSteps] = useState(4);
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
+  const [resultActions, setResultActions] = useState<HTMLDivElement | null>(null);
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const query = matchMedia("(min-width: 1025px)");
+    const update = () => setDesktop(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const [result, setResult] = useState<Result>();
   const [turns, setTurns] = useState<Record<Workflow, StageTurn<Result>[]>>({ edit: [], generate: [] });
   const [liveFrame, setLiveFrame] = useState<string>();
@@ -155,18 +164,34 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     return () => urls.forEach((url) => { if (url) URL.revokeObjectURL(url); });
   }, [files]);
 
+  function resultFile(image: { image_data: string; filename?: string }) {
+    const bytes = Uint8Array.from(atob(image.image_data.split(",")[1]), (ch) => ch.charCodeAt(0));
+    return new File([bytes], image.filename ?? "fibo-result.png", { type: "image/png" });
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit || active.current) return;
     const controller = new AbortController();
     const { signal } = controller;
     active.current = controller;
+    const editInputs = [...files];
+    const stageSource = mode === "edit" && !editInputs[0] ? result : undefined;
+    if (stageSource) {
+      try {
+        editInputs[0] = resultFile(stageSource);
+      } catch {
+        active.current = null;
+        setStatus("Could not read the result in view.");
+        return;
+      }
+    }
     const job = crypto.randomUUID().replaceAll("-", "");
     const threaded = matchMedia("(max-width: 760px)").matches;
     if (threaded) setTurns((previous) => ({
       ...previous,
       [mode]: [...previous[mode], { id: job, prompt: prompt.trim() || (manualVgl ? "VGL JSON" : ""),
-        input: mode === "edit" ? files[0] : manualVgl ? undefined : inspiration }].slice(-8),
+        input: mode === "edit" ? editInputs[0] : manualVgl ? undefined : inspiration }].slice(-8),
     }));
     function finishTurn(images: Result[], error?: string) {
       if (threaded) setTurns((previous) => ({
@@ -181,12 +206,17 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     try {
       const uploads: Record<string, string> = {};
       if (mode === "edit") {
-        for (const [index, file] of files.entries()) {
+        for (const [index, file] of editInputs.entries()) {
           if (!file) continue;
           const form = new FormData();
           form.set("files", file);
           const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
           uploads[["source", "ref2", "ref3", "ref4"][index]] = id;
+          if (index === 0 && stageSource) {
+            setFiles(editInputs);
+            setSelection(undefined);
+            setResult(undefined);
+          }
         }
       }
       if (mode === "generate" && inspiration && !manualVgl) {
@@ -204,7 +234,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       const run: RunSettings = {
         mask,
         mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex,
-        inputs: mode === "edit" ? [...files] : [],
+        inputs: mode === "edit" ? editInputs : [],
       };
       await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: manualVgl,
@@ -217,7 +247,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         setLiveFrame(update.preview);
         if (update.images.length > images.length) {
           images = [...images, ...update.images.slice(images.length).map((image) => ({
-            ...image, batchId: job, run, source: mode === "edit" ? files[0] : undefined,
+            ...image, batchId: job, run, source: mode === "edit" ? editInputs[0] : undefined,
           }))];
           setRunningBatch(images);
         }
@@ -318,7 +348,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const blocker = !admitted ? "Sign in with an account that has Create access."
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
     : !variableSteps && steps !== 4 ? "The current worker supports 4 steps. Select 4 to generate."
-    : mode === "edit" && !files[0] ? "Add a source image to edit."
+    : mode === "edit" && !files[0] && !result ? "Add a source image to edit."
     : mask && files.slice(1).some(Boolean) ? "Remove references to use a mask."
     : mask && !masksEnabled ? "Masked edits need the private worker update."
     : !vglValid ? "Enter a non-empty VGL JSON object."
@@ -497,6 +527,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
             <WandaFiboStage
+              desktopResultActions={desktop ? resultActions : undefined}
               workflow={mode}
               turns={turns[mode]}
               inlineMask={maskEditor === "inline" ? maskEditorNode : undefined}
@@ -528,8 +559,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               onUseInput={(file) => attachImage(file, 0)}
               onUseSource={(image) => {
                 try {
-                  const bytes = Uint8Array.from(atob(image.image_data.split(",")[1]), (ch) => ch.charCodeAt(0));
-                  attachImage(new File([bytes], image.filename ?? "fibo-result.png", { type: "image/png" }), 0);
+                  attachImage(resultFile(image), 0);
                   requestAnimationFrame(() => {
                     const button = sourceButton.current;
                     button?.focus({ preventScroll: true });
@@ -560,6 +590,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             next.click();
           }}>
           <h2 id="wanda-fibo-history-title">History</h2>
+          <div ref={setResultActions} className="wanda-fibo-history-result-actions" />
           {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
           {savedStatus && <p className="wanda-fibo-caption" role="status">{savedStatus}</p>}

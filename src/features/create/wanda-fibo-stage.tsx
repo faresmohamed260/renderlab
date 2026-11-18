@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type KeyboardEvent, type PointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { Download, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildWandaBatchZip } from "./wanda-fibo-batch-zip";
@@ -61,6 +62,7 @@ function TurnInput({ file, busy, onOpen, onReuse }: { file: File; busy: boolean;
 }
 
 type Props<T extends StageResult> = {
+  desktopResultActions?: HTMLElement | null;
   workflow?: "edit" | "generate";
   turns?: StageTurn<T>[];
   inlineMask?: ReactNode;
@@ -87,7 +89,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -122,8 +124,22 @@ export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], in
     update();
     const resize = new ResizeObserver(update);
     resize.observe(batchRow);
+    const wheel = (event: WheelEvent) => {
+      if (event.ctrlKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+      const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? batchRow.clientWidth : 1;
+      const next = Math.max(0, Math.min(batchRow.scrollWidth - batchRow.clientWidth,
+        batchRow.scrollLeft + event.deltaY * scale));
+      if (next === batchRow.scrollLeft) return;
+      event.preventDefault();
+      batchRow.scrollLeft = next;
+    };
     batchRow.addEventListener("scroll", update, { passive: true });
-    return () => { resize.disconnect(); batchRow.removeEventListener("scroll", update); };
+    batchRow.addEventListener("wheel", wheel, { passive: false });
+    return () => {
+      resize.disconnect();
+      batchRow.removeEventListener("scroll", update);
+      batchRow.removeEventListener("wheel", wheel);
+    };
   }, [batchRow, batch.length, result, busy]);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [notice, setNotice] = useState("");
@@ -234,7 +250,7 @@ export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], in
     return () => { current = false; };
   }, [busy, liveFrame]);
   const pending = busy && batch.length < expectedImages;
-  const showBatch = busy ? batch.length > 0 || expectedImages > 1 : batch.length > 1;
+  const showBatch = busy ? batch.length > 0 || pending : batch.length > 1;
   const shown = showingProgress ? undefined : (reviewing ? input : result?.image_data ?? input);
   const canCompare = !reviewing && !!source && result?.source === source && !!before && !busy;
   const compare = canCompare && compared === result;
@@ -406,6 +422,7 @@ export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], in
     pendingImage.current = undefined;
     onReturnToProgress();
     if (viewerOpen) dialog.current?.close();
+    else batchRow?.focus({ preventScroll: true });
   }
 
   function runActions() {
@@ -509,7 +526,7 @@ export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], in
             </Button>)}
         </div>
         {!viewerOpen && carousel()}
-        {!viewerOpen && runActions()}
+        {!viewerOpen && !desktopResultActions && runActions()}
         </div>
     );
   }
@@ -542,6 +559,7 @@ export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], in
         </div> : stageDocument()}
         {notice && !viewerOpen && <p className="wanda-fibo-stage-notice" role="status">{notice}</p>}
       </div>
+      {!viewerOpen && desktopResultActions && createPortal(runActions(), desktopResultActions)}
       <dialog ref={dialog} className="wanda-fibo-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer" onKeyDown={submittedImage ? undefined : stageKeys}
         onClose={() => { setViewerOpen(false); setSubmittedImage(undefined); setCompared(undefined); if (!restoring.current) (viewerOrigin.current?.isConnected ? viewerOrigin.current : opener.current)?.focus({ preventScroll: true }); restoring.current = false; }}>
         {viewerOpen && <>

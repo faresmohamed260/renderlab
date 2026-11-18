@@ -685,7 +685,7 @@
   border-radius: 20px;
   background: rgb(13 12 20 / 45%);
 }
-.wanda-fibo-stage-frame .wanda-fibo-stage-surface[data-empty="true"] { background: rgb(13 12 20 / 45%); }
+.wanda-fibo-stage-frame .wanda-fibo-stage-surface[data-empty="true"] { background: rgb(255 255 255 / 4.5%); }
 .wanda-fibo-stage-surface .wanda-fibo-canvas-upload {
   display: grid;
   gap: 0;
@@ -872,11 +872,33 @@
   border-radius: 12px;
 }
 .wanda-fibo-workspace .wanda-fibo-stage-batch .wanda-fibo-stage-pending {
-  inline-size: auto;
-  padding-inline: 9px;
-  font-size: 11px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  inline-size: 64px;
+  padding: 2px;
+  font-size: 9px;
+  color: #dedbed;
+  background: rgb(121 91 194 / 16%);
 }
-.wanda-fibo-stage-batch button[aria-current="true"] { background: #a5b4fc; }
+.wanda-fibo-stage-pending::before {
+  content: "";
+  inline-size: 16px;
+  block-size: 7px;
+  border-radius: 999px;
+  background: #a5b4fc;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wanda-fibo-stage-pending::before { animation: wanda-fibo-pending-pulse 1s ease-in-out infinite alternate; }
+}
+@keyframes wanda-fibo-pending-pulse { from { opacity: .45; } to { opacity: 1; } }
+.wanda-fibo-stage-batch button[aria-current="true"] {
+  outline: 2px solid #a5b4fc;
+  outline-offset: -2px;
+  box-shadow: 0 0 12px rgb(165 180 252 / 22%);
+}
+.wanda-fibo-stage-batch button:focus-visible { outline-offset: -3px; }
 .wanda-fibo-workspace .wanda-fibo-stage-batch img {
   inline-size: 100%;
   block-size: 100%;
@@ -998,7 +1020,7 @@
 .wanda-fibo-stage-mask-overlay {
   position: absolute;
   inset: 0;
-  background: rgb(165 180 252 / 52%);
+  background: rgb(165 180 252 / 28%);
   mask-mode: luminance;
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
@@ -1143,3 +1165,13 @@
 }
 .wanda-fibo-mask-outline[data-square="true"] { border-radius: 0; }
 .wanda-fibo-mask-viewport:has(.wanda-fibo-mask-outline:not([hidden])) canvas { cursor: none !important; }
+
+.wanda-fibo-history-result-actions > .wanda-fibo-stage-run-actions {
+  position: static;
+  justify-content: flex-start;
+  margin-block-end: 8px;
+}
+.wanda-fibo-history .wanda-fibo-stage-run-actions button {
+  inline-size: auto;
+  margin: 0;
+}
