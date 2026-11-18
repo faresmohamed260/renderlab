@@ -45,7 +45,7 @@ const fiboSecret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
 if (fiboEnabled && (!fiboUrl || !fiboKey || !fiboSecret)) {
   throw new Error("Enabled FIBO generation requires its gateway URL and server-only Modal proxy credentials.");
 }
-if (fiboUrl && (!/^https:\/\/[a-z0-9-]+\.modal\.run$/.test(fiboUrl) || !fiboKey || !fiboSecret)) {
+if (fiboUrl && (!/^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/.test(fiboUrl) || !fiboKey || !fiboSecret)) {
   throw new Error("FIBO gateway configuration must use a Modal HTTPS origin and complete proxy credentials.");
 }
 
