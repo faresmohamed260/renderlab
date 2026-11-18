@@ -1,4 +1,5 @@
 """Private FIBO Studio validation on RenderLab's Modal workspace."""
+import asyncio
 import hashlib
 import io
 import json
@@ -7,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import uuid
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -158,6 +160,12 @@ class FiboStudio:
     def text_to_image_with_setup(self, instruction: str, seed: int, width: int, height: int,
                                  inspiration: bytes | None = None, steps: int = 4,
                                  negative_prompt: str = "", json_instruction: str = ""):
+        return self._text_to_image_with_setup(instruction, seed, width, height, inspiration,
+                                              steps, negative_prompt, json_instruction)
+
+    def _text_to_image_with_setup(self, instruction: str, seed: int, width: int, height: int,
+                                 inspiration: bytes | None = None, steps: int = 4,
+                                 negative_prompt: str = "", json_instruction: str = "", preview_id=None):
         from PIL import Image
         if type(steps) is not int or not 1 <= steps <= 8:
             raise ValueError("Unsupported step count")
@@ -174,12 +182,16 @@ class FiboStudio:
                     raise ValueError("Inspiration exceeds the private worker pixel limit")
                 guide = image.convert("RGB")
         backend = self.backend_for(instruction, seed, json_instruction, negative_prompt)
-        return self.read_output(backend.generate(json_instruction, seed, steps, width, height, instruction, inspiration=guide,
+        return self.read_output(backend.generate(json_instruction, seed, steps, width, height, instruction, inspiration=guide, preview_id=preview_id,
                                                  negative_prompt=negative_prompt))
 
     @modal.method()
     def edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,
                    negative_prompt: str = "", json_instruction: str = "", mask: bytes | None = None):
+        return self._edit_image(images, instruction, seed, steps, negative_prompt, json_instruction, mask)
+
+    def _edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,
+                   negative_prompt: str = "", json_instruction: str = "", mask: bytes | None = None, preview_id=None):
         from PIL import Image
         if type(steps) is not int or not 1 <= steps <= 8:
             raise ValueError("Unsupported step count")
@@ -205,8 +217,65 @@ class FiboStudio:
             region = region.resize(decoded[0].size, Image.Resampling.NEAREST)
             if not region.getbbox():
                 raise ValueError("Mask must select an area")
-        return self.read_output(backend.render(decoded, json_instruction, seed, steps, region, instruction,
+        return self.read_output(backend.render(decoded, json_instruction, seed, steps, region, instruction, preview_id=preview_id,
                                                negative_prompt=negative_prompt))
+
+    @staticmethod
+    def preview_jpeg(message):
+        from PIL import Image
+        if len(message) <= 8 or len(message) > 4 * 1024 * 1024:
+            return None
+        if int.from_bytes(message[:4], "big") != 1:
+            return None
+        kind = int.from_bytes(message[4:8], "big")
+        if kind not in (1, 2):
+            return None
+        try:
+            with Image.open(io.BytesIO(message[8:]), formats=["JPEG" if kind == 1 else "PNG"]) as frame:
+                if frame.width * frame.height > 4_194_304:
+                    return None
+                frame.thumbnail((512, 512))
+                output = io.BytesIO()
+                frame.convert("RGB").save(output, format="JPEG", quality=75)
+                return output.getvalue()
+        except (OSError, ValueError):
+            return None
+
+    @modal.method(is_generator=True)
+    async def render_with_preview(self, mode: str, options: dict):
+        from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType
+        render = {"edit": self._edit_image, "generate": self._text_to_image_with_setup}[mode]
+        identifier = uuid.uuid4().hex
+        async with ClientSession(timeout=ClientTimeout(total=5)) as session:
+            try:
+                socket = await session.ws_connect(BASE + "/ws", params={"clientId": identifier},
+                                                  max_msg_size=4 * 1024 * 1024)
+            except (ClientError, asyncio.TimeoutError):
+                yield {"kind": "result", "result": await asyncio.to_thread(render, **options)}
+                return
+            async with socket:
+                task = asyncio.create_task(asyncio.to_thread(render, preview_id=identifier, **options))
+                sent = 0
+                try:
+                    while not task.done():
+                        try:
+                            event = await socket.receive(timeout=.25)
+                        except asyncio.TimeoutError:
+                            continue
+                        except ClientError:
+                            break
+                        if event.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.ERROR):
+                            break
+                        if event.type == WSMsgType.BINARY and sent < 12:
+                            frame = self.preview_jpeg(event.data)
+                            if frame and len(frame) <= 192 * 1024:
+                                sent += 1
+                                yield {"kind": "frame", "jpeg": frame}
+                    yield {"kind": "result", "result": await task}
+                finally:
+                    # Do not leave an inference thread racing the next RPC on this container.
+                    if not task.done():
+                        await task
 
     @modal.exit()
     def stop(self):

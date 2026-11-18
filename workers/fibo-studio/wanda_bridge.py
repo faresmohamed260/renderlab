@@ -21,7 +21,25 @@ render_options = {"steps": steps} if steps != 4 else {}
 for key in ("negative_prompt", "json_instruction"):
     if request.get(key):
         render_options[key] = request[key]
-if mode == "health":
+if request.get("preview") and mode in ("edit", "generate"):
+    options = {"instruction": request["instruction"], "seed": request["seed"], **render_options}
+    if mode == "edit":
+        options["images"] = [base64.b64decode(data, validate=True) for data in request["images"]]
+        if request.get("mask"):
+            options["mask"] = base64.b64decode(request["mask"], validate=True)
+    else:
+        options.update(width=request["width"], height=request["height"])
+        if request.get("inspiration"):
+            options["inspiration"] = base64.b64decode(request["inspiration"], validate=True)
+    result = None
+    for event in worker.render_with_preview.remote_gen(mode, options):
+        if event["kind"] == "frame":
+            print(json.dumps({"frame": base64.b64encode(event["jpeg"]).decode("ascii")}), flush=True)
+        elif event["kind"] == "result":
+            result = event["result"]
+    if result is None:
+        raise RuntimeError("Preview worker did not return a result")
+elif mode == "health":
     result = worker.health.spawn().get(timeout=130)
 elif mode == "generate" and (request.get("extended") or render_options):
     encoded = request.get("inspiration")

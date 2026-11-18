@@ -10,7 +10,7 @@ import { getWandaFiboOwner } from "./hosted-create";
 const origin = "http://127.0.0.1:3000";
 const mb = 1024 * 1024;
 const ttl = 60 * 60 * 1000;
-type Job = { owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; error?: string };
+type Job = { owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; preview?: string; error?: string };
 type Upload = { owner: string; created: number; data: Buffer };
 const shared = globalThis as typeof globalThis & {
   wandaFiboState?: { jobs: Map<string, Job>; uploads: Map<string, Upload>; healthUntil: number; healthCheck?: Promise<boolean> };
@@ -36,7 +36,7 @@ async function boundedBody(request: Request, limit: number) {
   } finally { reader.releaseLock(); }
 }
 
-function bridge(payload: Record<string, unknown>, timeoutMs = 430_000): Promise<Record<string, unknown>> {
+function bridge(payload: Record<string, unknown>, timeoutMs = 430_000, onFrame?: (frame: string) => void): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
     const child = spawn("C:/Windows/py.exe", ["-3.10", join(process.cwd(), "workers/fibo-studio/wanda_bridge.py")], {
       windowsHide: true, stdio: ["pipe", "pipe", "pipe"],
@@ -44,19 +44,45 @@ function bridge(payload: Record<string, unknown>, timeoutMs = 430_000): Promise<
     });
     const timer = setTimeout(() => child.kill(), timeoutMs);
     let size = 0;
-    const out: Buffer[] = [];
+    let pending: Buffer[] = [];
+    let result: Record<string, unknown> | undefined;
+    let malformed = false;
+    function line() {
+      const raw = Buffer.concat(pending).toString("utf8").trim();
+      pending = [];
+      if (!raw) return;
+      const value = JSON.parse(raw);
+      if (!value || typeof value !== "object" || Array.isArray(value) || result) throw new Error("Invalid bridge response");
+      if ("frame" in value) {
+        if (!onFrame || typeof value.frame !== "string" || value.frame.length > 256 * 1024
+          || !/^\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(value.frame)) throw new Error("Invalid preview frame");
+        onFrame("data:image/jpeg;base64," + value.frame);
+      } else result = value;
+    }
     child.stdout.on("data", (chunk: Buffer) => {
       size += chunk.length;
-      if (size > 16 * mb) child.kill();
-      else out.push(chunk);
+      if (size > (onFrame ? 20 : 16) * mb) { child.kill(); return; }
+      try {
+        let start = 0;
+        for (let end = chunk.indexOf(10); end !== -1; end = chunk.indexOf(10, start)) {
+          pending.push(chunk.subarray(start, end));
+          line();
+          start = end + 1;
+        }
+        if (start < chunk.length) pending.push(chunk.subarray(start));
+      } catch { malformed = true; child.kill(); }
     });
     child.stderr.resume();
     child.stdin.on("error", () => child.kill());
     child.on("error", (err) => { clearTimeout(timer); reject(err); });
     child.on("close", (code) => {
       clearTimeout(timer);
-      if (code !== 0 || size > 16 * mb) { reject(new Error("Modal call failed")); return; }
-      try { resolve(JSON.parse(Buffer.concat(out).toString("utf8"))); }
+      if (code !== 0 || malformed || size > (onFrame ? 20 : 16) * mb) { reject(new Error("Modal call failed")); return; }
+      try {
+        if (pending.length) line();
+        if (!result) throw new Error("Missing bridge result");
+        resolve(result);
+      }
       catch (err) { reject(err); }
     });
     child.stdin.end(JSON.stringify(payload));
@@ -96,7 +122,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       const job = state.jobs.get(render[1]);
       if (!job || job.owner !== owner) return error("Job not found.", 404);
       return json({ finished: job.finished, state: job.finished ? "finished" : "running",
-        images: job.images, ...(job.error ? { error: job.error } : {}) });
+        images: job.images, ...(job.preview ? { preview: job.preview } : {}), ...(job.error ? { error: job.error } : {}) });
     }
     if (upload) {
       const file = state.uploads.get(upload[1]);
@@ -218,9 +244,11 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
           const remaining = deadline - Date.now();
           if (remaining <= 0) throw new Error("Render time limit exceeded");
           const imageSeed = (seed + index) % 2147483648;
+          job.preview = undefined;
+          const preview = process.env.RENDERLAB_WANDA_FIBO_LIVE_PREVIEW === "1";
           const result = await bridge({
-            mode, instruction: prompt, seed: imageSeed, images, mask, width, height, extended, inspiration, steps, negative_prompt: negative.trim(), json_instruction: vgl,
-          }, remaining);
+            mode, preview, instruction: prompt, seed: imageSeed, images, mask, width, height, extended, inspiration, steps, negative_prompt: negative.trim(), json_instruction: vgl,
+          }, remaining, preview ? (frame) => { job.preview = frame; } : undefined);
           if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error("Invalid PNG");
           batchBytes += result.png.length;
           retainedBytes += result.png.length + "data:image/png;base64,".length;
@@ -234,7 +262,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
           ? "Only " + job.images.length + " of " + count + " images finished. See History for the completed images."
           : "The private Modal worker did not return a render.";
       }
-      finally { job.finished = true; }
+      finally { job.preview = undefined; job.finished = true; }
     });
     return json({ id, state: "running" }, 202);
   }

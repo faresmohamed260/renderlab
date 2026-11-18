@@ -22,13 +22,14 @@ type Props<T extends StageResult> = {
   browseDisabled?: boolean;
   maskAction?: { applied: boolean; blocked: boolean; open: () => void; clear: () => void };
   busy: boolean;
+  liveFrame?: string;
   renderRatio?: number;
   status: string;
   onBrowse: () => void;
   onUseSource: (result: StageResult) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -153,7 +154,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
         onPointerLeave={(event) => highlight(event.currentTarget)}
         onFocus={(event) => highlight(event.currentTarget)}
         onBlur={(event) => { const toolbar = event.currentTarget; requestAnimationFrame(() => highlight(toolbar)); }}>
-        {inspecting ? <Button type="button" variant="ghost" size="sm" onClick={returnToProgress}>Return to render</Button> : <>
+        {inspecting ? <Button type="button" variant="ghost" size="sm" onClick={returnToProgress}>{liveFrame ? "Live preview" : "Return to render"}</Button> : <>
         {canCompare && <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="C" aria-pressed={compare} title="Compare before and after"
           onClick={(event) => {
             const toolbar = event.currentTarget.parentElement as HTMLDivElement;
@@ -264,6 +265,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
           style={{ "--stage-media-ratio": ratio } as CSSProperties}>
           {showingProgress ? <>
             <div className="wanda-fibo-stage-backdrop" aria-hidden="true" />
+            {liveFrame && <img className="wanda-fibo-stage-live" src={liveFrame} alt="" draggable={false} />}
             <div className="wanda-fibo-stage-shimmer" aria-hidden="true" />
             <div className="wanda-fibo-stage-notice" role="status">{status || "Rendering…"}</div>
           </>

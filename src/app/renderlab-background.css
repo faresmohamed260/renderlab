@@ -937,3 +937,15 @@
 .wanda-fibo-mask-plane img { display: block; max-block-size: 53dvh; max-inline-size: min(86dvw, 680px); block-size: auto; }
 .wanda-fibo-mask-plane canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
 .wanda-fibo-mask-dialog p { font-size: 12px; margin-block: 8px; }
+
+.wanda-fibo-canvas .wanda-fibo-stage-live {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  max-block-size: none;
+  object-fit: contain;
+  filter: blur(30px);
+  transform: scale(1.04);
+  pointer-events: none;
+}

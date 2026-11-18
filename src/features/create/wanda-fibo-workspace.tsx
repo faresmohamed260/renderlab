@@ -90,6 +90,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [steps, setSteps] = useState(4);
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
   const [result, setResult] = useState<Result>();
+  const [liveFrame, setLiveFrame] = useState<string>();
   const [runningBatch, setRunningBatch] = useState<Result[]>([]);
   const [inspected, setInspected] = useState<Result>();
   const [sessionHistory, setHistory] = useState<Result[]>([]);
@@ -159,6 +160,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     const controller = new AbortController();
     const { signal } = controller;
     active.current = controller;
+    setLiveFrame(undefined);
     setRunningBatch([]);
     setInspected(undefined);
     setBusy(true);
@@ -199,7 +201,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       const end = Date.now() + 8 * 60_000;
       let images: Result[] = [];
       while (!signal.aborted && Date.now() < end) {
-        const update = await request<{ finished: boolean; images: Result[]; error?: string }>("local/render/" + job, { signal });
+        const update = await request<{ finished: boolean; images: Result[]; preview?: string; error?: string }>("local/render/" + job, { signal });
+        setLiveFrame(update.preview);
         if (update.images.length > images.length) {
           images = [...images, ...update.images.slice(images.length).map((image) => ({
             ...image, batchId: job, run, source: mode === "edit" ? files[0] : undefined,
@@ -486,6 +489,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               input={mode === "edit" ? previews[0] : inspirationPreview}
               inputLabel={mode === "edit" ? "Source image" : "Reference image"}
               busy={busy}
+              liveFrame={liveFrame}
               renderRatio={mode === "generate" ? size.width / size.height : undefined}
               status={status}
               onBrowse={() => chooseImage(mode === "edit" ? 0 : 4)}
