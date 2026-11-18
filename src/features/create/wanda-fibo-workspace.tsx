@@ -18,7 +18,7 @@ const api = "/wanda-fibo/";
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
 type Result = { image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
-type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number };
+type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number; filename?: string };
 type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
 type Poll = { state?: "pending" | "running" | "finished"; finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
 
@@ -31,7 +31,8 @@ function parseStageBookmark(raw: unknown): StageBookmark | undefined {
     || typeof value.expires !== "number" || !Number.isFinite(value.expires) || value.expires <= Date.now()) return;
   const aspect = typeof value.aspect === "number" && Number.isFinite(value.aspect) && value.aspect > 0
     ? value.aspect : undefined;
-  return { id: value.id, mode: value.mode, count: value.count, aspect, expires: value.expires };
+  const filename = typeof value.filename === "string" && value.filename.length <= 100 ? value.filename : undefined;
+  return { id: value.id, mode: value.mode, count: value.count, aspect, expires: value.expires, filename };
 }
 
 function readStageBookmark(key: string): StageBookmark | undefined {
@@ -406,6 +407,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   async function watchRender(bookmark: StageBookmark, signal: AbortSignal, run?: RunSettings, restoring = false) {
     const end = Date.now() + 24 * 60_000;
     let images: Result[] = [];
+    let recoveringInspection = restoring && !!bookmark.filename;
     while (!signal.aborted && Date.now() < end) {
       const update = await request<Poll>("local/render/" + bookmark.id, { signal });
       if (signal.aborted) throw new Error("Render polling stopped.");
@@ -424,12 +426,14 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       }
       if (update.finished) {
         if (!images[0]) throw new Error(update.error ?? "No image returned.");
-        // Keep progress (or the existing inspected image) until the final cover can display at its real aspect.
-        const first = images[0];
-        const cover = { ...first, aspect: await decodeAspect(first.image_data) };
+        // Decode the bookmarked image before replacing the live/previous view or changing its aspect.
+        const remembered = bookmarkKey ? readStageBookmark(bookmarkKey) : bookmark;
+        const filename = remembered?.id === bookmark.id ? remembered.filename : undefined;
+        const selected = images.find((image) => filename && image.filename === filename) ?? images[0];
+        const displayed = { ...selected, aspect: await decodeAspect(selected.image_data) };
         if (signal.aborted) throw new Error("Render polling stopped.");
-        images = [cover, ...images.slice(1)];
-        setResult((previous) => previous?.batchId === bookmark.id && previous !== first ? previous : cover);
+        images = images.map((image) => image === selected ? displayed : image);
+        setResult((previous) => previous?.batchId === bookmark.id && previous !== selected ? previous : displayed);
         setLiveFrame(undefined);
         setLiveBlur(undefined);
         setLiveCaption(undefined);
@@ -446,6 +450,21 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         setStatus(update.error ?? (images.length === 1 ? "Render complete." : images.length + " images ready in History."));
         if (restoring) setStageReady(true);
         return { images, error: update.error };
+      }
+      if (recoveringInspection) {
+        recoveringInspection = false;
+        const previous = images.find((image) => image.filename === bookmark.filename);
+        if (previous) {
+          const aspect = await decodeAspect(previous.image_data).catch(() => undefined);
+          if (signal.aborted) throw new Error("Render polling stopped.");
+          if (aspect) {
+            const restored = { ...previous, aspect };
+            images = images.map((image) => image === previous ? restored : image);
+            setRunningBatch(images);
+            setInspected(restored);
+            setResult(restored);
+          }
+        }
       }
       if (restoring) setStageReady(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -567,7 +586,12 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   function attachImage(file: File, index: number) {
     if (!admitted || busy) return;
     setMaskEditor(undefined);
-    if (index === 0) { setSelection(undefined); setMode("edit"); setResult(undefined); }
+    if (index === 0) {
+      if (desktop && !busy) writeStageBookmark(bookmarkKey);
+      setSelection(undefined);
+      setMode("edit");
+      setResult(undefined);
+    }
     updateDraft("edit", { vgl: "", generatedVgl: false });
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
@@ -816,10 +840,26 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               source={mode === "edit" ? files[0] : undefined}
               batch={busy ? runningBatch : result?.batchId ? history.filter((image) => image.batchId === result.batchId) : []}
               onSelect={(image) => {
-                if (busy) setInspected(image);
+                if (busy) {
+                  setInspected(image);
+                  const current = bookmarkKey && readStageBookmark(bookmarkKey);
+                  if (desktop && current && current.id === image.batchId) {
+                    writeStageBookmark(bookmarkKey, { ...current, filename: image.filename });
+                  }
+                } else if (desktop && image.batchId && image.filename) {
+                  writeStageBookmark(bookmarkKey, {
+                    id: image.batchId, mode, count: batches.get(image.batchId)?.length ?? 1,
+                    expires: Date.now() + 55 * 60_000, filename: image.filename,
+                  });
+                }
                 setResult(image);
               }}
-              onReturnToProgress={() => { setInspected(undefined); setResult(undefined); }}
+              onReturnToProgress={() => {
+                const current = bookmarkKey && readStageBookmark(bookmarkKey);
+                if (desktop && current && current.filename) writeStageBookmark(bookmarkKey, { ...current, filename: undefined });
+                setInspected(undefined);
+                setResult(undefined);
+              }}
               expectedImages={resuming?.count ?? Number(imageCount)}
               input={mode === "edit" ? previews[0] : inspirationPreview}
               inputLabel={mode === "edit" ? "Source image" : "Reference image"}
