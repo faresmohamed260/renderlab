@@ -41,7 +41,7 @@ image = (
         "python -m pip install --index-url https://download.pytorch.org/whl/cu128 torch==2.10.0 torchvision==0.25.0",
         f"python -m pip install -r {ROOT}/requirements.txt bria-vgl==0.10.2 && python -m pip check",
     )
-    .add_local_python_source("studio_gateway_contract")
+    .add_local_python_source("studio_gateway_contract", "native_generated_vgl")
 )
 if modal.is_local():
     snapshot_dir = os.environ.get("RENDERLAB_FIBO_SNAPSHOT", "").strip()
@@ -230,7 +230,8 @@ class FiboStudio:
             generated = result.get("prompt")
             if type(generated) is not str:
                 raise RuntimeError("Studio render did not return VGL")
-            return {"image_png": png, "generated_vgl": generated}
+            from native_generated_vgl import validate_generated_vgl
+            return {"image_png": png, "generated_vgl": validate_generated_vgl(generated)}
         return png
 
     def _edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,
