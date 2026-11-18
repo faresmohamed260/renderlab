@@ -1016,3 +1016,61 @@
   pointer-events: none;
 }
 .wanda-fibo-stage-mask-status { padding-inline: 6px; color: #e4ddeb; font-size: 12px; }
+
+.wanda-fibo-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  position: absolute;
+  inset: 0;
+  padding: 8px 4px 12px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y pinch-zoom;
+}
+.wanda-fibo-thread-turn { display: flex; flex-direction: column; flex: none; gap: 10px; }
+.wanda-fibo-thread-sent, .wanda-fibo-thread-reply { display: flex; flex-direction: column; gap: 7px; max-inline-size: 85%; }
+.wanda-fibo-thread-sent { align-self: flex-end; align-items: flex-end; }
+.wanda-fibo-thread-reply { align-self: flex-start; align-items: flex-start; inline-size: min(85%, 280px); }
+.wanda-fibo-thread-sent p, .wanda-fibo-thread-reply p {
+  padding: 9px 12px;
+  border-radius: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: rgb(135 105 198 / 20%);
+  font-size: 14px;
+  text-align: start;
+}
+.wanda-fibo-thread-reply p { background: rgb(255 255 255 / 5%); color: #bbb4ca; }
+.wanda-fibo-thread .wanda-fibo-thread-image {
+  display: block;
+  inline-size: min(100%, 280px);
+  block-size: auto;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 17px;
+}
+.wanda-fibo-thread-sent .wanda-fibo-thread-image { inline-size: min(100%, 195px); }
+.wanda-fibo-thread .wanda-fibo-thread-image img { inline-size: 100%; max-block-size: 350px; border-radius: inherit; }
+.wanda-fibo-thread-live {
+  container-type: size;
+  display: grid;
+  place-items: center;
+  flex: none;
+  block-size: min(43dvh, 350px);
+  inline-size: 100%;
+}
+.wanda-fibo-stage-viewer .wanda-fibo-thread-viewer-input {
+  max-inline-size: 100%;
+  max-block-size: 75dvh;
+  object-fit: contain;
+}
+
+.wanda-fibo-thread-image {
+  touch-action: pan-y pinch-zoom;
+  translate: var(--thread-swipe, 0px) 0;
+}
+.wanda-fibo-thread-image img { pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .wanda-fibo-thread-image:not([data-swiping]) { transition: translate .16s ease; }
+}

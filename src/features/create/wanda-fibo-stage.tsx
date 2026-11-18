@@ -6,7 +6,64 @@ import { Button } from "@/components/ui/button";
 import { buildWandaBatchZip } from "./wanda-fibo-batch-zip";
 
 type StageResult = { image_data: string; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
+export type StageTurn<T> = { id: string; prompt: string; input?: File; images?: T[]; error?: string };
+
+function TurnResult({ image, label, disabled, onOpen, onReuse }: {
+  image: StageResult; label: string; disabled: boolean; onOpen: () => void; onReuse: () => void;
+}) {
+  const drag = useRef<{ id: number; x: number; y: number; distance: number } | null>(null);
+  const swiped = useRef(false);
+  function finish(event: PointerEvent<HTMLButtonElement>) {
+    if (drag.current?.id !== event.pointerId) return;
+    const reuse = event.type === "pointerup" && drag.current.distance >= 58;
+    drag.current = null;
+    event.currentTarget.removeAttribute("data-swiping");
+    event.currentTarget.style.removeProperty("--thread-swipe");
+    if (reuse) onReuse();
+  }
+  return <Button type="button" variant="ghost" className="wanda-fibo-thread-image"
+    aria-label={label} aria-haspopup="dialog" title={label + ". Swipe right to use as source."} disabled={disabled}
+    onPointerDown={(event) => {
+      if (!event.isPrimary || event.button !== 0) return;
+      swiped.current = false;
+      drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, distance: 0 };
+    }}
+    onPointerMove={(event) => {
+      const start = drag.current;
+      if (start?.id !== event.pointerId) return;
+      const dx = event.clientX - start.x;
+      if (!swiped.current && (dx < -10 || Math.abs(event.clientY - start.y) > Math.max(12, dx))) {
+        drag.current = null;
+        return;
+      }
+      if (dx < 12 && !swiped.current) return;
+      if (!swiped.current) event.currentTarget.setPointerCapture(event.pointerId);
+      swiped.current = true;
+      start.distance = dx;
+      event.currentTarget.setAttribute("data-swiping", "");
+      event.currentTarget.style.setProperty("--thread-swipe", Math.max(0, Math.min(dx, 64)) + "px");
+    }}
+    onPointerUp={finish} onPointerCancel={finish} onLostPointerCapture={finish}
+    onClick={(event) => { if (!swiped.current || event.detail === 0) onOpen(); }}>
+    <img src={image.image_data} alt="" draggable={false} />
+  </Button>;
+}
+
+function TurnInput({ file, onOpen }: { file: File; onOpen: (url: string) => void }) {
+  const [url, setUrl] = useState<string>();
+  useEffect(() => {
+    const next = URL.createObjectURL(file);
+    setUrl(next);
+    return () => URL.revokeObjectURL(next);
+  }, [file]);
+  return url && <Button className="wanda-fibo-thread-image" type="button" variant="ghost"
+    aria-label="View submitted image" aria-haspopup="dialog" onClick={() => onOpen(url)}>
+    <img src={url} alt="" draggable={false} />
+  </Button>;
+}
+
 type Props<T extends StageResult> = {
+  turns?: StageTurn<T>[];
   result?: T;
   source?: File;
   batch: T[];
@@ -29,7 +86,7 @@ type Props<T extends StageResult> = {
   onUseSource: (result: StageResult) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ turns = [], result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -38,6 +95,32 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
   const [viewerOpen, setViewerOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
+  const [phone, setPhone] = useState(false);
+  const [submittedImage, setSubmittedImage] = useState<string>();
+  const thread = useRef<HTMLDivElement>(null);
+  const viewerOrigin = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const query = matchMedia("(max-width: 760px)");
+    const update = () => {
+      setPhone(query.matches);
+      if (!query.matches && dialog.current?.open) dialog.current.close();
+    };
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  const inThread = phone && turns.length > 0 && (busy || !result || turns.some((turn) => turn.images?.includes(result)));
+  useEffect(() => {
+    const row = thread.current;
+    if (row) row.scrollTop = row.scrollHeight;
+  }, [inThread, turns]);
+  function openViewer(inputUrl?: string) {
+    if (!dialog.current || dialog.current.open) return;
+    viewerOrigin.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setSubmittedImage(inputUrl);
+    dialog.current.showModal();
+    setViewerOpen(true);
+  }
   const frame = useRef<HTMLDivElement>(null);
   const restoring = useRef(false);
   const opener = useRef<HTMLButtonElement>(null);
@@ -77,7 +160,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
     if (!canCompare) setCompared(undefined);
   }, [result, input, busy, canCompare]);
 
-  async function select(image: T) {
+  async function select(image: T, open = false) {
     const version = ++selection.current;
     try {
       const decoded = new Image();
@@ -86,6 +169,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
       if (selection.current !== version) return;
       setDimensions({ url: image.image_data, ratio: decoded.naturalWidth / decoded.naturalHeight });
       onSelect(image);
+      if (open) openViewer();
     } catch {
       if (selection.current === version) setNotice("Could not open this image.");
     }
@@ -279,10 +363,8 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
     );
   }
 
-  return (
-    <>
-      <div ref={frame} className="wanda-fibo-stage-frame" onKeyDown={stageKeys} data-batch={showBatch}
-        style={{ "--stage-media-ratio": ratio } as CSSProperties}>
+  function stageDocument() {
+    return (
         <div className="wanda-fibo-stage-document">
         <div className="wanda-fibo-stage-label" aria-hidden="true">{label}</div>
         <div className="wanda-fibo-stage-surface" data-empty={!shown && !busy} role="group" tabIndex={0}
@@ -302,10 +384,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
               {!viewerOpen && media()}
               {!viewerOpen && tools()}
               <Button ref={opener} type="button" className="wanda-fibo-stage-open" variant="ghost" size="icon-sm"
-                aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => {
-                  dialog.current?.showModal();
-                  setViewerOpen(true);
-                }} />
+                aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => openViewer()} />
             </> : <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload"
               disabled={browseDisabled} title={browseDisabled ? "Sign in to upload an image" : "Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
               <svg className="wanda-fibo-stage-empty-icon" width="25" height="25" viewBox="0 0 24 24" fill="none"
@@ -318,17 +397,45 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
         {!viewerOpen && carousel()}
         {!viewerOpen && runActions()}
         </div>
+    );
+  }
+
+  return (
+    <>
+      <div ref={frame} className="wanda-fibo-stage-frame" onKeyDown={stageKeys} data-batch={showBatch}
+        style={{ "--stage-media-ratio": ratio } as CSSProperties}>
+        {inThread ? <div ref={thread} className="wanda-fibo-thread" aria-label="Render conversation" tabIndex={0}>
+          {turns.map((turn, index) => (
+            <article className="wanda-fibo-thread-turn" key={turn.id}>
+              <div className="wanda-fibo-thread-sent">
+                {turn.input && <TurnInput file={turn.input} onOpen={openViewer} />}
+                {turn.prompt && <p>{turn.prompt}</p>}
+              </div>
+              <div className="wanda-fibo-thread-reply">
+                {turn.images?.map((image, itemIndex) =>
+                  <TurnResult key={image.filename ?? itemIndex} image={image}
+                    label={"View generated image " + (itemIndex + 1)} disabled={busy}
+                    onOpen={() => void select(image, true)} onReuse={() => onUseSource(image)} />)}
+                {turn.error && <p role="status">{turn.error}</p>}
+              </div>
+              {busy && index === turns.length - 1 && <div className="wanda-fibo-thread-live">{stageDocument()}</div>}
+            </article>
+          ))}
+          {!busy && input && (!result || reviewing) && <div className="wanda-fibo-thread-live">{stageDocument()}</div>}
+        </div> : stageDocument()}
         {notice && !viewerOpen && <p className="wanda-fibo-stage-notice" role="status">{notice}</p>}
       </div>
-      <dialog ref={dialog} className="wanda-fibo-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer" onKeyDown={stageKeys}
-        onClose={() => { setViewerOpen(false); setCompared(undefined); if (!restoring.current) opener.current?.focus({ preventScroll: true }); restoring.current = false; }}>
+      <dialog ref={dialog} className="wanda-fibo-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer" onKeyDown={submittedImage ? undefined : stageKeys}
+        onClose={() => { setViewerOpen(false); setSubmittedImage(undefined); setCompared(undefined); if (!restoring.current) (viewerOrigin.current?.isConnected ? viewerOrigin.current : opener.current)?.focus({ preventScroll: true }); restoring.current = false; }}>
         {viewerOpen && <>
           <Button type="button" variant="ghost" size="icon-sm" className="wanda-fibo-stage-close"
             aria-label="Close image viewer" onClick={() => dialog.current?.close()}><X aria-hidden="true" /></Button>
-          {media()}
-          {tools()}
-          {carousel()}
-          {runActions()}
+          {submittedImage ? <img className="wanda-fibo-thread-viewer-input" src={submittedImage} alt="Submitted image" /> : <>
+            {media()}
+            {tools()}
+            {carousel()}
+            {runActions()}
+          </>}
           {notice && <p className="wanda-fibo-stage-notice" role="status">{notice}</p>}
         </>}
       </dialog>

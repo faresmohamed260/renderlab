@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { WandaFiboMaskEditor } from "./wanda-fibo-mask-editor";
 import { clearWandaEdits, readWandaEdits, saveWandaEdits } from "./wanda-fibo-saved-edits";
-import { WandaFiboStage } from "./wanda-fibo-stage";
+import { WandaFiboStage, type StageTurn } from "./wanda-fibo-stage";
 import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
 const api = "/wanda-fibo/";
@@ -90,6 +90,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [steps, setSteps] = useState(4);
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
   const [result, setResult] = useState<Result>();
+  const [turns, setTurns] = useState<Record<Workflow, StageTurn<Result>[]>>({ edit: [], generate: [] });
   const [liveFrame, setLiveFrame] = useState<string>();
   const [runningBatch, setRunningBatch] = useState<Result[]>([]);
   const [inspected, setInspected] = useState<Result>();
@@ -160,6 +161,18 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     const controller = new AbortController();
     const { signal } = controller;
     active.current = controller;
+    const job = crypto.randomUUID().replaceAll("-", "");
+    const threaded = matchMedia("(max-width: 760px)").matches;
+    if (threaded) setTurns((previous) => ({
+      ...previous,
+      [mode]: [...previous[mode], { id: job, prompt: prompt.trim() || (manualVgl ? "VGL JSON" : ""),
+        input: mode === "edit" ? files[0] : manualVgl ? undefined : inspiration }].slice(-8),
+    }));
+    function finishTurn(images: Result[], error?: string) {
+      if (threaded) setTurns((previous) => ({
+        ...previous, [mode]: previous[mode].map((turn) => turn.id === job ? { ...turn, images, error } : turn),
+      }));
+    }
     setLiveFrame(undefined);
     setRunningBatch([]);
     setInspected(undefined);
@@ -193,7 +206,6 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex,
         inputs: mode === "edit" ? [...files] : [],
       };
-      const job = crypto.randomUUID().replaceAll("-", "");
       await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: manualVgl,
           seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
@@ -211,6 +223,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         }
         if (update.finished) {
           if (!update.images[0]) throw new Error(update.error ?? "No image returned.");
+          finishTurn(images, update.error);
           const image = images[0];
           setResult((previous) => previous?.batchId === job ? previous : image);
           if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
@@ -225,7 +238,11 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       }
       throw new Error("Render status did not return before the local timeout.");
     } catch (cause) {
-      if (!signal.aborted) setStatus(cause instanceof Error ? cause.message : "Render failed.");
+      if (!signal.aborted) {
+        const message = cause instanceof Error ? cause.message : "Render failed.";
+        finishTurn([], message);
+        setStatus(message);
+      }
     } finally {
       active.current = null;
       if (!signal.aborted) setBusy(false);
@@ -469,6 +486,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
             <WandaFiboStage
+              turns={turns[mode]}
               browseDisabled={!admitted}
               maskAction={admitted && mode === "edit" && files[0] && !result && !busy ? {
                 mask, blocked: files.slice(1).some(Boolean), open: () => setMaskEditor(true),
