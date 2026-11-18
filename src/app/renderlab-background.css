@@ -213,6 +213,7 @@
   font-weight: 500;
 }
 .preview-account-row svg { flex: none; opacity: .8; }
+.preview-account-settings:is(:hover, :focus-visible, [aria-current="page"]) svg { opacity: 1; }
 .preview-account-row-meta {
   margin-inline-start: auto;
   flex: none;
@@ -220,12 +221,22 @@
   font-weight: 400;
   color: var(--color-text-muted);
 }
-.preview-account-settings:focus-visible {
-  background: rgb(221 211 255 / 12%);
+.preview-account-settings {
+  margin-inline: -6px;
+  padding-inline: 14px;
+  border-radius: 14px;
+}
+.preview-account-settings[aria-current="page"] {
+  background: rgb(221 211 255 / 16%);
+}
+.preview-account-settings:is(:hover, :focus-visible) {
+  background: rgb(221 211 255 / 23%);
+}
+.preview-account-settings:active {
+  background: rgb(221 211 255 / 30%);
 }
 
-.preview-account-settings:hover,
-.preview-account-settings[aria-current="page"],
+
 .preview-section-group a:hover,
 .preview-section-group a[aria-current="page"] {
   background: rgb(221 211 255 / 12%);
