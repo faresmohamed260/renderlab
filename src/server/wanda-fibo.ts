@@ -2,7 +2,7 @@ import "server-only";
 import { wandaFiboSizes } from "@/features/create/wanda-fibo-sizes";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after } from "next/server";
@@ -18,10 +18,11 @@ const previewCaptions: ReadonlyMap<unknown, string> = new Map([
   ["refine", "Refining details…"], ["finish", "Finishing image…"],
 ]);
 type PreviewUpdate = { frame: string; blur?: number } | { caption: string };
-type Job = { pending?: { bytes: number; run: () => Promise<void> }; owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
+type QueueRecord = { id: string; created: number; count: number; payload: Record<string, unknown> & { seed: number } };
+type Job = { pending?: { bytes: number; record: QueueRecord }; writing?: boolean; owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
 type Upload = { owner: string; created: number; data: Buffer };
 const shared = globalThis as typeof globalThis & {
-  wandaFiboState?: { jobs: Map<string, Job>; uploads: Map<string, Upload>; healthUntil: number; healthCheck?: Promise<boolean> };
+  wandaFiboState?: { jobs: Map<string, Job>; uploads: Map<string, Upload>; healthUntil: number; healthCheck?: Promise<boolean>; queueLoads?: Map<string, Promise<void>> };
 };
 const state: NonNullable<typeof shared.wandaFiboState> = shared.wandaFiboState ??= { jobs: new Map(), uploads: new Map(), healthUntil: 0 };
 const json = (value: unknown, status = 200) =>
@@ -139,15 +140,149 @@ function bridge(payload: Record<string, unknown>, timeoutMs = 430_000, onPreview
   });
 }
 
+const queueLimit = 48 * mb;
+const queueRoot = join(process.env.LOCALAPPDATA || tmpdir(), "RenderLab", "WandaFiboQueue");
+function queueDirectory(owner: string) {
+  return join(queueRoot, createHash("sha256").update("wanda-fibo-queue:" + owner).digest("hex"));
+}
+function queuePath(owner: string, id: string) { return join(queueDirectory(owner), id + ".json"); }
+
+async function storeQueueRecord(owner: string, record: QueueRecord) {
+  const data = JSON.stringify(record);
+  if (Buffer.byteLength(data) > queueLimit) throw new Error("Queue entry exceeds the disk limit");
+  const path = queuePath(owner, record.id);
+  const temp = path + "." + randomBytes(8).toString("hex") + ".tmp";
+  await mkdir(queueDirectory(owner), { recursive: true });
+  try {
+    await writeFile(temp, data, { flag: "wx", mode: 0o600 });
+    await rename(temp, path);
+  } finally { await unlink(temp).catch(() => {}); }
+}
+
+async function restoreWaiting(owner: string) {
+  state.queueLoads ??= new Map();
+  let loading = state.queueLoads.get(owner);
+  if (!loading) {
+    loading = (async () => {
+      const names = await readdir(queueDirectory(owner)).catch((cause: NodeJS.ErrnoException) => {
+        if (cause.code === "ENOENT") return [];
+        throw cause;
+      });
+      const records: { record: QueueRecord; bytes: number }[] = [];
+      for (const name of names.filter((entry) => /^[a-f0-9]{32}\.json$/.test(entry)).slice(0, 12)) {
+        const id = name.slice(0, -5);
+        if (state.jobs.has(id)) continue;
+        const file = await readFile(queuePath(owner, id)).catch((cause: NodeJS.ErrnoException) => {
+          if (cause.code === "ENOENT") return undefined;
+          throw cause;
+        });
+        if (!file || file.length > queueLimit) continue;
+        let record: QueueRecord;
+        try { record = JSON.parse(file.toString("utf8")); } catch { continue; }
+        if (!record || record.id !== id || !Number.isFinite(record.created)
+          || !Number.isInteger(record.count) || record.count < 1 || record.count > 4
+          || !record.payload || !Number.isInteger(record.payload.seed)
+          || !["generate", "edit"].includes(String(record.payload.mode))) continue;
+        if (Date.now() - record.created > ttl) {
+          await unlink(queuePath(owner, id)).catch(() => {});
+          continue;
+        }
+        const { images, inspiration, mask } = record.payload;
+        const bytes = (Array.isArray(images) ? images : []).reduce<number>((sum, value) => sum + String(value).length, 0)
+          + (typeof inspiration === "string" ? inspiration.length : 0) + (typeof mask === "string" ? mask.length : 0);
+        records.push({ record, bytes });
+      }
+      for (const { record, bytes } of records.sort((a, b) => a.record.created - b.record.created)) {
+        const outstanding = [...state.jobs.values()].filter((job) => !job.finished);
+        if (state.jobs.has(record.id)) continue;
+        if (state.jobs.size >= 12 || outstanding.length >= 3
+          || outstanding.reduce((sum, job) => sum + (job.pending?.bytes ?? 0), bytes) > queueLimit) break;
+        state.jobs.set(record.id, { owner, created: record.created, finished: false, images: [], pending: { record, bytes } });
+      }
+    })().finally(() => state.queueLoads?.delete(owner));
+    state.queueLoads.set(owner, loading);
+  }
+  await loading;
+}
+
 async function drainWandaQueue() {
   while (true) {
     const entries = [...state.jobs.values()];
     if (entries.some((job) => !job.finished && !job.pending)) return;
-    const next = entries.find((job) => !job.finished && job.pending);
-    if (!next?.pending) return;
-    const { run } = next.pending;
+    const next = entries.filter((job) => !job.finished && job.pending).sort((a, b) => a.created - b.created)[0];
+    if (!next?.pending || next.writing) return;
+    const { record } = next.pending;
     next.pending = undefined;
-    await run();
+    try {
+      // A job is never re-submitted after relay restart if its GPU call may already have begun.
+      await unlink(queuePath(next.owner, record.id));
+    } catch {
+      next.error = "Could not claim this waiting render. No render was submitted.";
+      next.finished = true;
+      continue;
+    }
+    if (Date.now() - record.created > ttl) {
+      next.error = "This waiting render expired before it started.";
+      next.finished = true;
+      continue;
+    }
+    await runQueuedRender(next, record);
+  }
+}
+
+async function runQueuedRender(job: Job, record: QueueRecord) {
+  const { id, count, payload } = record;
+  if ((payload.extended && process.env.RENDERLAB_WANDA_FIBO_EXTENDED !== "1")
+    || (payload.mask && process.env.RENDERLAB_WANDA_FIBO_MASKS !== "1")
+    || (payload.steps !== 4 && process.env.RENDERLAB_WANDA_FIBO_VARIABLE_STEPS !== "1")
+    || ((payload.negative_prompt || payload.json_instruction) && process.env.RENDERLAB_WANDA_FIBO_ADVANCED_PROMPT !== "1")) {
+    job.error = "This waiting render uses a capability no longer enabled on WANDA.";
+    job.finished = true;
+    return;
+  }
+  try {
+    const deadline = Date.now() + 430_000;
+    let batchBytes = 0;
+    let retainedBytes = [...state.jobs.values()].reduce((total, entry) =>
+      total + entry.images.reduce((bytes, image) => bytes + String(image.image_data).length, 0), 0);
+    for (let index = 0; index < count; index++) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) throw new Error("Render time limit exceeded");
+      const imageSeed = (payload.seed + index) % 2147483648;
+      job.preview = undefined;
+      job.previewBlur = undefined;
+      job.caption = undefined;
+      const preview = process.env.RENDERLAB_WANDA_FIBO_LIVE_PREVIEW === "1";
+      const result = await bridge({
+        ...payload, preview, seed: imageSeed,
+      }, remaining, preview ? (update) => {
+        if ("frame" in update) { job.preview = update.frame; job.previewBlur = update.blur; }
+        else job.caption = update.caption;
+      } : undefined);
+      if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error("Invalid PNG");
+      batchBytes += result.png.length;
+      retainedBytes += result.png.length + "data:image/png;base64,".length;
+      if (batchBytes > 16 * mb || retainedBytes > 96 * mb) throw new Error("Batch exceeds the preview result limit");
+      job.images.push({ image_data: "data:image/png;base64," + result.png,
+        filename: id + "-" + (index + 1) + ".png", seed: imageSeed, json_instruction: result.prompt,
+        seconds: result.seconds, vgl_seconds: result.vgl_seconds, total_seconds: result.total_seconds });
+    }
+  } catch {
+    job.error = job.images.length
+      ? "Only " + job.images.length + " of " + count + " images finished. See History for the completed images."
+      : "The private Modal worker did not return a render.";
+  }
+  finally {
+    try {
+      if (job.images.length) await saveHistory(id, job);
+    } catch {
+      job.error = [job.error, "This result could not be saved to local History."].filter(Boolean).join(" ");
+    } finally {
+      job.preview = undefined;
+      job.previewBlur = undefined;
+      job.caption = undefined;
+      job.finished = true;
+    }
   }
 }
 
@@ -162,7 +297,13 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
   const now = Date.now();
   for (const [id, upload] of state.uploads) if (now - upload.created > ttl) state.uploads.delete(id);
   for (const [id, job] of state.jobs) if (job.finished && now - job.created > ttl) state.jobs.delete(id);
+  if (/^local\/(?:queue(?:\/|$)|render\/|generate$|edit$)/.test(path)) {
+    try { await restoreWaiting(owner); }
+    catch { return error("Local Queue could not be opened.", 503); }
+  }
   if (request.method === "GET") {
+    if ((path === "local/queue" || path.startsWith("local/render/"))
+      && [...state.jobs.values()].some((job) => job.owner === owner && job.pending && !job.writing)) after(drainWandaQueue);
     if (path === "health") {
       if (state.healthUntil <= now) {
         state.healthCheck ??= bridge({ mode: "health" }).then((value) => {
@@ -208,10 +349,15 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
   if (request.method === "POST" && cancel) {
     const job = state.jobs.get(cancel[1]);
     if (!job || job.owner !== owner) return error("Job not found.", 404);
-    if (!job.pending) return error("Only waiting renders can be removed.", 409);
+    if (!job.pending || job.writing) return error("Only waiting renders can be removed.", 409);
+    job.writing = true;
+    try { await unlink(queuePath(owner, cancel[1])); }
+    catch { return error("Could not remove the waiting render.", 503); }
+    finally { job.writing = false; }
     job.pending = undefined;
     job.finished = true;
     job.error = "Removed from Queue.";
+    after(drainWandaQueue);
     return json({ id: cancel[1], state: "finished" });
   }
   if (path === "gradio_api/upload") {
@@ -313,59 +459,26 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     const outstanding = [...state.jobs.values()].filter((entry) => !entry.finished);
     const bytes = images.reduce((total, image) => total + image.length, 0)
       + (inspiration?.length ?? 0) + (mask?.length ?? 0);
+    if (bytes > queueLimit - 64 * 1024) return error("Inputs exceed the private Queue limit.", 413);
     const waitingBytes = outstanding.reduce((total, entry) => total + (entry.pending?.bytes ?? 0), 0);
     if (state.jobs.size >= 12 || outstanding.length >= 3 || (outstanding.length > 0 && waitingBytes + bytes > 48 * mb)) {
       return error("The private render queue is full.", 429);
     }
     const job: Job = { owner, created: now, finished: false, images: [] };
-    const run = async () => {
-      try {
-        const deadline = Date.now() + 430_000;
-        let batchBytes = 0;
-        let retainedBytes = [...state.jobs.values()].reduce((total, entry) =>
-          total + entry.images.reduce((bytes, image) => bytes + String(image.image_data).length, 0), 0);
-        for (let index = 0; index < count; index++) {
-          const remaining = deadline - Date.now();
-          if (remaining <= 0) throw new Error("Render time limit exceeded");
-          const imageSeed = (seed + index) % 2147483648;
-          job.preview = undefined;
-          job.previewBlur = undefined;
-          job.caption = undefined;
-          const preview = process.env.RENDERLAB_WANDA_FIBO_LIVE_PREVIEW === "1";
-          const result = await bridge({
-            mode, preview, instruction: prompt, seed: imageSeed, images, mask, width, height, extended, inspiration, steps, negative_prompt: negative.trim(), json_instruction: vgl,
-          }, remaining, preview ? (update) => {
-            if ("frame" in update) { job.preview = update.frame; job.previewBlur = update.blur; }
-            else job.caption = update.caption;
-          } : undefined);
-          if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error("Invalid PNG");
-          batchBytes += result.png.length;
-          retainedBytes += result.png.length + "data:image/png;base64,".length;
-          if (batchBytes > 16 * mb || retainedBytes > 96 * mb) throw new Error("Batch exceeds the preview result limit");
-          job.images.push({ image_data: "data:image/png;base64," + result.png,
-            filename: id + "-" + (index + 1) + ".png", seed: imageSeed, json_instruction: result.prompt,
-            seconds: result.seconds, vgl_seconds: result.vgl_seconds, total_seconds: result.total_seconds });
-        }
-      } catch {
-        job.error = job.images.length
-          ? "Only " + job.images.length + " of " + count + " images finished. See History for the completed images."
-          : "The private Modal worker did not return a render.";
-      }
-      finally {
-        try {
-          if (job.images.length) await saveHistory(id, job);
-        } catch {
-          job.error = [job.error, "This result could not be saved to local History."].filter(Boolean).join(" ");
-        } finally {
-          job.preview = undefined;
-          job.previewBlur = undefined;
-          job.caption = undefined;
-          job.finished = true;
-        }
-      }
+    const record: QueueRecord = {
+      id, created: now, count,
+      payload: { mode, instruction: prompt, seed, images, mask, width, height, extended, inspiration, steps,
+        negative_prompt: negative.trim(), json_instruction: vgl },
     };
-    job.pending = { bytes, run };
+    job.pending = { bytes, record };
+    job.writing = true;
     state.jobs.set(id, job);
+    try {
+      await storeQueueRecord(owner, record);
+    } catch {
+      state.jobs.delete(id);
+      return error("Local Queue could not save this render.", 503);
+    } finally { job.writing = false; }
     after(drainWandaQueue);
     return json({ id, state: outstanding.length ? "pending" : "running" }, 202);
   }

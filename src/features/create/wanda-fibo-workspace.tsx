@@ -661,6 +661,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                         <summary><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</summary>
             <div className="wanda-fibo-queue-jobs">
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
+              <div className="wanda-fibo-caption">Waiting requests keep their prompt and inputs on WANDA until they start, are removed, or expire.</div>
               {waiting.map(({ bookmark, run }) => (
                 <div className="wanda-fibo-queue-entry" key={bookmark.id}>
                   <span>{run?.prompt || (run ? "VGL edit" : bookmark.mode === "edit" ? "Queued image edit" : "Queued text-to-image render")}</span>
