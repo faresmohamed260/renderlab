@@ -36,18 +36,37 @@ def request(path, payload=None):
 
 @app.function(image=image, gpu="A10", cpu=2, memory=16384, timeout=420, max_containers=1,
               volumes={MODELS: modal.Volume.from_name("renderlab-fibo-models", environment_name="main")})
-def verify():
+def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
+           negative_prompt="", vgl=""):
+    """One isolated render. Do not send raw files from an unauthenticated client."""
     from PIL import Image
-    import torch
 
     sys.path.insert(0, "/opt/renderlab")
     from native_graph import build_graph
+    import torch
+    if not torch.cuda.is_available():
+        raise RuntimeError("Expected a Modal CUDA GPU")
 
-    assert torch.cuda.is_available(), "Expected Modal CUDA GPU"
+    if not isinstance(sources, (list, tuple)) or len(sources) > 4:
+        raise ValueError("Expected zero to four source images")
+    if any(type(item) is not bytes or not 0 < len(item) <= 16 * 1024 * 1024 for item in sources):
+        raise ValueError("Invalid source image byte size")
+    if sum(map(len, sources)) > 32 * 1024 * 1024:
+        raise ValueError("Source images exceed the combined limit")
+    names = [uuid4().hex + ".png" for _ in sources]
+    graph = build_graph(prompt=prompt, seed=seed, steps=steps, width=width, height=height,
+                        images=names, negative_prompt=negative_prompt, vgl=vgl)
     with tempfile.TemporaryDirectory(prefix="renderlab-fibo-") as temp:
         root = Path(temp)
         (root / "input").mkdir()
         (root / "output").mkdir()
+        from io import BytesIO
+        from PIL import ImageOps
+        for name, payload in zip(names, sources):
+            with Image.open(BytesIO(payload), formats=["PNG", "JPEG", "WEBP"]) as source:
+                if source.width * source.height > 16_777_216 or getattr(source, "is_animated", False):
+                    raise ValueError("Source image exceeds the pixel limit or is animated")
+                ImageOps.exif_transpose(source).convert("RGB").save(root / "input" / name)
         config = root / "models.yaml"
         config.write_text(f"fibo:\n  base_path: {MODELS}\n  diffusion_models: diffusion_models\n"
                           "  text_encoders: text_encoders\n  vae: vae\n")
@@ -68,35 +87,25 @@ def verify():
             else:
                 raise TimeoutError("Native FIBO node did not become ready")
 
-            results = {"gpu": torch.cuda.get_device_name(0)}
-            source = uuid4().hex + ".png"
-            Image.new("RGB", (256, 256), (210, 50, 45)).save(root / "input" / source)
-            for mode, prompt, sources in (
-                ("text", "A red ceramic cube on a white table.", ()),
-                ("edit", "Change the red image to blue.", (source,)),
-            ):
-                graph = build_graph(prompt=prompt, seed=42, steps=1, width=256, height=256, images=sources)
-                job = request("/prompt", {"prompt": graph})["prompt_id"]
-                for _ in range(65):
-                    record = request("/history/" + job).get(job)
-                    if record:
-                        break
-                    time.sleep(2)
-                else:
-                    raise TimeoutError("FIBO " + mode + " did not finish")
-                if record["status"]["status_str"] != "success":
-                    raise RuntimeError(f"FIBO {mode} failed: {record['status']['messages']!r}")
-                result, = record["outputs"]["output"]["images"]
-                output = (root / "output" / result["subfolder"] / result["filename"]).resolve()
-                if not output.is_relative_to(root / "output"):
-                    raise RuntimeError("Unexpected output path")
-                with Image.open(output) as decoded:
-                    decoded.load()
-                    if decoded.format != "PNG" or decoded.size != (256, 256):
-                        raise RuntimeError("Unexpected smoke result")
-                results[mode] = "256x256 PNG"
-                print(mode, results[mode], flush=True)
-            return results
+            job = request("/prompt", {"prompt": graph})["prompt_id"]
+            for _ in range(130):
+                record = request("/history/" + job).get(job)
+                if record:
+                    break
+                time.sleep(2)
+            else:
+                raise TimeoutError("FIBO render did not finish")
+            if record["status"]["status_str"] != "success":
+                raise RuntimeError("FIBO execution failed")
+            result, = record["outputs"]["output"]["images"]
+            output = (root / "output" / result["subfolder"] / result["filename"]).resolve()
+            if not output.is_relative_to(root / "output") or output.stat().st_size > 16 * 1024 * 1024:
+                raise RuntimeError("Unexpected FIBO output")
+            with Image.open(output, formats=["PNG"]) as decoded:
+                if decoded.width * decoded.height > 1536 * 1024 or (width and decoded.size != (width, height)):
+                    raise RuntimeError("Unexpected FIBO output dimensions")
+                decoded.load()
+            return output.read_bytes()
         finally:
             server.terminate()
             try:
@@ -105,7 +114,20 @@ def verify():
                 server.kill()
                 server.wait()
 
-
 @app.local_entrypoint()
 def main():
-    print(json.dumps(verify.remote(), sort_keys=True), flush=True)
+    from io import BytesIO
+    from PIL import Image
+
+    source = BytesIO()
+    Image.new("RGB", (256, 256), (210, 50, 45)).save(source, format="PNG")
+    for mode, prompt, sources in (
+        ("text", "A red ceramic cube on a white table.", ()),
+        ("edit", "Change the red image to blue.", (source.getvalue(),)),
+    ):
+        call = render.spawn(prompt=prompt, seed=42, steps=1, width=256, height=256, sources=sources)
+        with Image.open(BytesIO(call.get()), formats=["PNG"]) as decoded:
+            decoded.load()
+            if decoded.size != (256, 256):
+                raise RuntimeError("Unexpected smoke dimensions")
+        print(f"{mode}: decoded a 256x256 PNG from an asynchronous Modal job", flush=True)
