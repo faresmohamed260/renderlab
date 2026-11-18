@@ -27,12 +27,12 @@ case "$*" in
     fi ;;
   '-m modal secret list -e main --json')
     if [[ "$SCENARIO" = missing-signing-secret ]]; then echo '[]'
-    else echo '[{"Name":"renderlab-fibo-native-gateway"}]'; fi ;;
+    else echo '[{"name":"renderlab-fibo-native-gateway"}]'; fi ;;
   '-m modal deploy -e main workers/fibo-studio/modal_native_candidate.py')
     touch "$RUNNER_TEMP/dispatched" ;;
   '-m modal app list -e main --json')
     if [[ "$SCENARIO" = absent-app ]]; then echo '[]'
-    else echo '[{"Description":"renderlab-fibo-native-candidate","State":"deployed","App ID":"ap-fixture"}]'; fi ;;
+    else echo '[{"description":"renderlab-fibo-native-candidate","state":"deployed","app_id":"ap-fixture"}]'; fi ;;
   *) exit 99 ;;
 esac
 """, encoding="utf-8")
