@@ -96,38 +96,32 @@ const accountOptions = [
 ];
 
 const profileEndpoint = "/api/preview-account/profile";
-type AccountProfile = { displayName: string | null; avatarSrc: string | null };
-
-async function loadProfile(signal: AbortSignal): Promise<AccountProfile> {
-  const init = { cache: "no-store", signal } as const;
-  let response = await fetch(profileEndpoint, init);
-  const hosted = response.status !== 404;
-  if (!hosted) response = await fetch("/api/account/profile", init);
-  if (!response.ok) throw new Error("Profile unavailable");
+async function loadProfileName(hostedProfile: boolean, signal: AbortSignal): Promise<string | null> {
+  const response = await fetch(hostedProfile ? profileEndpoint : "/api/account/profile", { cache: "no-store", signal });
+  if (!response.ok) return null;
   const { profile } = await response.json();
-  return {
-    displayName: typeof profile?.displayName === "string" ? profile.displayName.trim() : null,
-    avatarSrc: hosted && profile?.avatarUrl === "/api/account/profile/avatar"
-      ? profileEndpoint + "/avatar" : null,
-  };
+  return typeof profile?.displayName === "string" ? profile.displayName.trim() : null;
 }
 
-function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
+function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | null; hostedProfile: boolean }) {
   const [open, setOpen] = useState(false);
   const reduced = usePreviewReducedMotion();
   const panel = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
-  const [profile, setProfile] = useState<AccountProfile | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [avatarUnavailable, setAvatarUnavailable] = useState(false);
   useEffect(() => {
     if (!accountId) return;
     const controller = new AbortController();
-    void loadProfile(controller.signal).then((value) => {
-      if (!controller.signal.aborted) setProfile(value);
-    }).catch(() => { /* Keep the generic account icon if the profile is unavailable. */ });
+    void loadProfileName(hostedProfile, controller.signal).then((value) => {
+      if (!controller.signal.aborted) setDisplayName(value);
+    }).catch(() => { /* The trigger retains a generic accessible label. */ });
     return () => controller.abort();
-  }, [accountId]);
+  }, [accountId, hostedProfile]);
 
-  const name = accountId ? profile?.displayName || "RenderLab account" : "Guest";
-  const avatarSrc = accountId ? profile?.avatarSrc : null;
+  const name = accountId ? displayName || "RenderLab account" : "Guest";
+  // Start the private thumbnail request from the server-rendered header, not after
+  // hydration and a second profile lookup. The thumbnail route authorizes every read.
+  const avatarSrc = accountId && hostedProfile && !avatarUnavailable ? profileEndpoint + "/avatar" : null;
   const id = useId();
   const card = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -173,9 +167,9 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
           pinned.current = !pinned.current;
           setOpen(pinned.current);
         }}>
-        {avatarSrc ? <Image src={avatarSrc} alt="" width={24} height={24} unoptimized
+        {avatarSrc ? <Image src={avatarSrc} alt="" width={24} height={24} unoptimized loading="eager"
           className="preview-navigation-avatar"
-          onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} /> : <UserRound size={24} aria-hidden="true" />}
+          onError={() => setAvatarUnavailable(true)} /> : <UserRound size={24} aria-hidden="true" />}
       </Button>
       <animated.div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}
         style={{ opacity: panel.progress.to([0, 1], [0, 1], "clamp") }}>
@@ -208,7 +202,7 @@ const navigationGroups = [
   { title: "Account", destinations: destinations.slice(4) },
 ];
 
-export function PreviewNavigationShell({ children, accountId }: { children: ReactNode; accountId: string | null }) {
+export function PreviewNavigationShell({ children, accountId, hostedProfile }: { children: ReactNode; accountId: string | null; hostedProfile: boolean }) {
   const pathname = usePathname();
   const current = destinations.find(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
   const [openPath, setOpenPath] = useState<string | null>(null);
@@ -280,7 +274,7 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
             ))}
           </animated.nav>
         </div>
-        <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} />
+        <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} hostedProfile={hostedProfile} />
       </header>
       <div className="preview-navigation-content">{children}</div>
     </div>
