@@ -69,7 +69,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!admitted || needsUpgrade || active.current || !prompt.trim() || (mode === "edit" && !files[0])) return;
+    if (!canSubmit || active.current) return;
     const controller = new AbortController();
     const { signal } = controller;
     active.current = controller;
@@ -132,7 +132,14 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
 
-  const canSubmit = admitted && !needsUpgrade && !busy && !!prompt.trim() && (mode !== "edit" || !!files[0]);
+  const seedValid = randomize || (/^\d+$/.test(seed) && Number(seed) <= 2147483647);
+  const blocker = !admitted ? "Sign in with an account that has Create access."
+    : needsUpgrade ? "Reference images and non-square renders need the private worker update."
+    : mode === "edit" && !files[0] ? "Add a source image to edit."
+    : !prompt.trim() ? "Enter a prompt to generate."
+    : !seedValid ? "Enter a seed from 0 to 2147483647."
+    : "";
+  const canSubmit = !busy && !blocker;
 
   return (
     <section className="wanda-fibo-workspace mx-auto w-full" aria-label="Create with FIBO">
@@ -149,7 +156,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
         </div>
       </div>
       <div className="wanda-fibo-grid">
-        <form className="wanda-fibo-controls" onSubmit={submit}
+        <form className="wanda-fibo-controls" noValidate onSubmit={submit}
           onKeyDown={(event) => {
             if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {
               event.preventDefault();
@@ -240,23 +247,23 @@ export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: bool
               <div>
                 <label htmlFor="wanda-fibo-seed">Seed</label>
                 <div className="wanda-fibo-seed">
-                  <Input id="wanda-fibo-seed" type="number" min={0} max={2147483647} required value={seed}
-                    disabled={!admitted || busy || randomize} onChange={(event) => setSeed(event.target.value)} />
+                  <Input id="wanda-fibo-seed" type="number" min={0} max={2147483647} required={!randomize} value={seed}
+                    disabled={!admitted || busy} onChange={(event) => { setSeed(event.target.value); setRandomize(false); }} />
                   <Button type="button" variant={randomize ? "secondary" : "outline"} size="icon-sm"
                     aria-label="Randomize seed" aria-pressed={randomize} disabled={!admitted || busy}
                     onClick={() => setRandomize(!randomize)}><Dices /></Button>
                 </div>
               </div>
-              <label>Images<Input type="number" value={1} disabled /></label>
-              <label className="wanda-fibo-steps"><span>Steps <output>4</output></span><Input type="range" min={1} max={8} value={4} disabled /></label>
+              <div>Images <span className="wanda-fibo-fixed-value">1 per render</span></div>
+              <p className="wanda-fibo-steps">Steps <span>4 · fixed in this preview</span></p>
             </div>
+            <p id="wanda-fibo-worker-note" className="wanda-fibo-caption wanda-fibo-worker-note" role="status">
+              {busy ? status : blocker || status || "Ready to generate."}
+            </p>
             <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}
-              aria-describedby={needsUpgrade ? "wanda-fibo-worker-note" : undefined}>
+              aria-describedby="wanda-fibo-worker-note">
               <Sparkles aria-hidden="true" />{busy ? "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
             </Button>
-            <p id="wanda-fibo-worker-note" className="wanda-fibo-caption wanda-fibo-worker-note" role="status">
-              {needsUpgrade ? "Reference images and non-square renders need the private worker update." : status}
-            </p>
           </div>
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas"
