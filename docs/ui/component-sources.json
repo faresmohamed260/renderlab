@@ -126,7 +126,7 @@
       "expectedVersion": "10.1.2",
       "licenseStatus": "lockfile-verified",
       "licenseSpdx": "MIT",
-      "notes": "UI-083: shared WANDA sidebar, route indicator, and account disclosure motion.",
+      "notes": "UI-083: WANDA account disclosure motion.",
       "searchLabel": null
     },
     {

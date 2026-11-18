@@ -24,16 +24,6 @@ function usePreviewReducedMotion() {
   return reduced;
 }
 
-function railOutline(height: number, center: number) {
-  const bottom = Math.max(120, height) - 8;
-  const y = Math.max(66, Math.min(bottom - 56, center));
-  const notch = center > 0
-    ? `V ${y - 46} C 74 ${y - 27} 12 ${y - 37} 12 ${y} S 74 ${y + 27} 74 ${y + 46}`
-    : "";
-  return `M 24 8 H 58 Q 74 8 74 24 ${notch} V ${bottom - 16}
-    Q 74 ${bottom} 58 ${bottom} H 24 Q 8 ${bottom} 8 ${bottom - 16} V 24 Q 8 8 24 8 Z`;
-}
-
 const accountOptions = [
   { label: "Profile", icon: UserRound },
   { label: "Personalization", icon: SlidersHorizontal },
@@ -120,7 +110,7 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
           setOpen(pinned.current);
         }}>
         {avatarSrc && (
-          <animated.span className="inline-flex shrink-0" style={{ x: panel.progress.to([0, 1], [0, 72], "clamp") }}>
+          <animated.span className="inline-flex shrink-0" style={{ x: panel.progress.to([0, 1], [0, 94], "clamp") }}>
             <Image src={avatarSrc} alt="" width={30} height={30} unoptimized
               className="preview-navigation-avatar"
               onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} />
@@ -162,39 +152,6 @@ const destinations = [
 
 export function PreviewNavigationShell({ children, accountId }: { children: ReactNode; accountId: string | null }) {
   const pathname = usePathname();
-  const railId = useId();
-  const rail = useRef<HTMLElement>(null);
-  const reduced = usePreviewReducedMotion();
-  const [height, setHeight] = useState(900);
-  const [activeY, setActiveY] = useState(0);
-  const [hoverY, setHoverY] = useState<number | null>(null);
-  const motion = useSpring({
-    center: hoverY ?? activeY,
-    config: sidebarSpring,
-    immediate: reduced,
-  });
-
-  useEffect(() => {
-    const element = rail.current;
-    if (!element) return;
-    const links = element.querySelector("nav");
-    function update() {
-      if (!element?.clientHeight) return;
-      const bounds = element.getBoundingClientRect();
-      const row = links?.querySelector('[aria-current="page"]')?.getBoundingClientRect();
-      setHeight(element.clientHeight);
-      setActiveY(row ? row.top + row.height / 2 - bounds.top : 0);
-    }
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    links?.addEventListener("scroll", update);
-    return () => {
-      observer.disconnect();
-      links?.removeEventListener("scroll", update);
-    };
-  }, [pathname]);
-
   function handleNavigation(event: MouseEvent<HTMLDivElement>) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey
       || event.shiftKey || event.altKey || !(event.target instanceof Element)) return;
@@ -204,17 +161,8 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
     link.closest("details")?.removeAttribute("open");
   }
 
-  const renderLinks = (desktop: boolean) => (
-    <nav aria-label="RenderLab navigation" className="preview-navigation-links"
-      onPointerOver={desktop ? (event) => {
-        if (event.pointerType !== "mouse" || !(event.target instanceof Element)) return;
-        const row = event.target.closest("a");
-        const bounds = rail.current?.getBoundingClientRect();
-        const item = row?.getBoundingClientRect();
-        setHoverY(bounds && item ? item.top + item.height / 2 - bounds.top : null);
-      } : undefined}
-      onPointerLeave={desktop ? () => setHoverY(null) : undefined}
-      onScroll={desktop ? () => setHoverY(null) : undefined}>
+  const links = (
+    <nav aria-label="RenderLab navigation" className="preview-navigation-links">
       {destinations.map(({ href, label, icon: Icon }) => {
         const current = href === "/" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
         return <Link key={href} href={href} aria-label={label} title={label} aria-current={current ? "page" : undefined}>
@@ -227,24 +175,16 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
 
   return (
     <div className="preview-navigation-shell" onClickCapture={handleNavigation}>
-      <aside ref={rail} className="preview-navigation-rail" aria-label="Sidebar">
-        <svg className="preview-account-clip" width="0" height="0" aria-hidden="true">
-          <defs>
-            <clipPath id={railId + "-glass"}>
-              <animated.path d={motion.center.to((y) => railOutline(height, y))} />
-            </clipPath>
-          </defs>
-        </svg>
-        <div className="preview-rail-glass" aria-hidden="true" style={{ clipPath: "url(#" + railId + "-glass)" }} />
+      <aside className="preview-navigation-rail" aria-label="Sidebar">
         <div className="preview-navigation-heading">
-          <RenderLabMark className="size-8" />
+          <RenderLabMark className="size-5" />
         </div>
-        {renderLinks(true)}
+        {links}
         <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} />
       </aside>
       <details className="preview-navigation-disclosure" key={pathname}>
         <summary><Menu size={18} aria-hidden="true" /> Menu</summary>
-        {renderLinks(false)}
+        {links}
       </details>
       <div className="preview-navigation-content">{children}</div>
     </div>
