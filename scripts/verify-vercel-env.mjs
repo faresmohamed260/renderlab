@@ -38,6 +38,17 @@ if (Boolean(externalBackendUrl) !== Boolean(externalBackendToken)) {
   );
 }
 
+const fiboEnabled = process.env.RENDERLAB_FIBO_GENERATION?.trim() === "1";
+const fiboUrl = process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim();
+const fiboKey = process.env.RENDERLAB_FIBO_MODAL_KEY?.trim();
+const fiboSecret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
+if (fiboEnabled && (!fiboUrl || !fiboKey || !fiboSecret)) {
+  throw new Error("Enabled FIBO generation requires its gateway URL and server-only Modal proxy credentials.");
+}
+if (fiboUrl && (!/^https:\/\/[a-z0-9-]+\.modal\.run$/.test(fiboUrl) || !fiboKey || !fiboSecret)) {
+  throw new Error("FIBO gateway configuration must use a Modal HTTPS origin and complete proxy credentials.");
+}
+
 const upscaleWorkerUrl = new URL(process.env.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL.trim());
 if (upscaleWorkerUrl.protocol !== "https:") {
   throw new Error("RENDERLAB_UPSCALE_WORKER_GATEWAY_URL must use HTTPS.");

@@ -99,7 +99,10 @@ const createMotionSpring = { type: "spring", stiffness: 420, damping: 38, mass: 
 const imageModelTriggerLabels: Record<ImageGenerationModel, string> = {
   "flux2-klein-9b": "FLUX",
   "qwen-image-edit-2511": "Qwen",
+  "fibo2-edit-turbo": "FIBO",
 };
+
+const fiboImageAspectRatios: readonly PresetAspectRatio[] = ["1:1", "4:3", "3:4", "16:9", "9:16"];
 
 function ImageModelMenu({
   value,
@@ -1084,14 +1087,26 @@ export function CreateWorkspace({
                       exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
                       transition={contextTransition}
                     >
-                      <ImageModelMenu value={imageModel} onValueChange={setImageModel} />
+                      <ImageModelMenu value={imageModel} onValueChange={(model) => {
+                        setImageModel(model);
+                        if (model === "fibo2-edit-turbo") {
+                          if (imageAspect !== "original" && !fiboImageAspectRatios.includes(imageAspect)) setImageAspect("1:1");
+                          setAdvancedDraft((draft) => ({
+                            ...draft,
+                            guidance: "1",
+                            steps: String(Math.min(8, Math.max(1, Number(draft.steps) || 4))),
+                          }));
+                        }
+                      }} />
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
 
                 <AspectRatioMenu
                   value={aspectRatio}
-                  options={outputKind === "image" ? imageAspectRatios : videoAspectRatios}
+                  options={outputKind === "image"
+                    ? imageModel === "fibo2-edit-turbo" ? fiboImageAspectRatios : imageAspectRatios
+                    : videoAspectRatios}
                   sourceAware={hasReference}
                   onValueChange={(value) => {
                     if (outputKind === "image") setImageAspect(value);

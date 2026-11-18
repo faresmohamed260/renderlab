@@ -41,10 +41,11 @@ test("generation model capability exposes contextual choices with stable default
   assert.equal(defaultImageGenerationModel, "flux2-klein-9b");
   assert.equal(defaultGenerationModelForOutput("image"), "flux2-klein-9b");
   assert.equal(defaultGenerationModelForOutput("video"), "ltx25-redgraft");
-  assert.deepEqual(generationModelsForOutput("image"), ["flux2-klein-9b", "qwen-image-edit-2511"]);
+  assert.deepEqual(generationModelsForOutput("image"), ["flux2-klein-9b", "qwen-image-edit-2511", "fibo2-edit-turbo"]);
   assert.deepEqual(generationModelsForOutput("video"), ["ltx25-redgraft"]);
   assert.equal(generationModelDefinitions["qwen-image-edit-2511"].label, "Qwen Image Edit");
   assert.equal(isImageGenerationModel("qwen-image-edit-2511"), true);
+  assert.equal(isImageGenerationModel("fibo2-edit-turbo"), true);
   assert.equal(isImageGenerationModel("ltx25-redgraft"), false);
 });
 
