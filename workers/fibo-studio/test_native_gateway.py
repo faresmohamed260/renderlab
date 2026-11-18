@@ -67,6 +67,32 @@ class GatewayTests(unittest.TestCase):
             })
             self.assertEqual(invalid.status_code, 422)
 
+    def test_mask_bytes_are_bounded_and_passed_only_for_single_source_edit(self):
+        png = bytes.fromhex("89504e470d0a1a0a") + b"synthetic-mask-payload"
+        data = {"prompt": "Edit selected area", "seed": 42,
+                "images": [base64.b64encode(b"source-image").decode()],
+                "mask": base64.b64encode(png).decode(), "width": 256, "height": 256}
+        response = self.client.post("/jobs/fibo", json=data)
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(self.spawns[-1]["mask"], png)
+        self.assertEqual(self.spawns[-1]["sources"], [b"source-image"])
+
+        # Original geometry is validated in the gateway shape and derived from
+        # the decoded real owner source by the worker before graph execution.
+        original = self.client.post("/jobs/fibo", json={**data, "width": 0, "height": 0})
+        self.assertEqual(original.status_code, 202)
+
+        for payload in (
+            {**data, "images": []},
+            {**data, "images": ["QQ==", "Qg=="]},
+            {**data, "mask": "***"},
+            {**data, "mask": base64.b64encode(b"not-png").decode()},
+            {**data, "mask": None},
+            {**data, "mask": 1},
+        ):
+            with self.subTest(payload=payload):
+                self.assertEqual(self.client.post("/jobs/fibo", json=payload).status_code, 422)
+
     def test_unknown_and_modified_ids_never_reach_modal(self):
         path = self.submit()
         for invalid in ("/jobs/" + self.call_id, path[:-1] + ("a" if path[-1] != "a" else "b")):

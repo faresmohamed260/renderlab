@@ -25,6 +25,7 @@ image = (
         f"python -m pip install -r {COMFY}/requirements.txt && python -m pip check",
     )
     .add_local_file(str(Path(__file__).with_name("native_graph.py")), "/opt/renderlab/native_graph.py")
+    .add_local_file(str(Path(__file__).with_name("native_mask.py")), "/opt/renderlab/native_mask.py")
 )
 
 
@@ -37,12 +38,13 @@ def request(path, payload=None):
 @app.function(image=image, gpu="A10", cpu=2, memory=16384, timeout=420, max_containers=1,
               volumes={MODELS: modal.Volume.from_name("renderlab-fibo-models", environment_name="main")})
 def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
-           negative_prompt="", vgl=""):
+           negative_prompt="", vgl="", mask=None):
     """One isolated render. Do not send raw files from an unauthenticated client."""
     from PIL import Image
 
     sys.path.insert(0, "/opt/renderlab")
     from native_graph import build_graph
+    from native_mask import normalize_mask_bytes
     import torch
     if not torch.cuda.is_available():
         raise RuntimeError("Expected a Modal CUDA GPU")
@@ -53,20 +55,32 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
         raise ValueError("Invalid source image byte size")
     if sum(map(len, sources)) > 32 * 1024 * 1024:
         raise ValueError("Source images exceed the combined limit")
+    if mask is not None and len(sources) != 1:
+        raise ValueError("A mask requires exactly one source image")
     names = [uuid4().hex + ".png" for _ in sources]
-    graph = build_graph(prompt=prompt, seed=seed, steps=steps, width=width, height=height,
-                        images=names, negative_prompt=negative_prompt, vgl=vgl)
+    mask_name = uuid4().hex + ".png" if mask is not None else None
     with tempfile.TemporaryDirectory(prefix="renderlab-fibo-") as temp:
         root = Path(temp)
         (root / "input").mkdir()
         (root / "output").mkdir()
         from io import BytesIO
         from PIL import ImageOps
+        first_source_size = None
         for name, payload in zip(names, sources):
             with Image.open(BytesIO(payload), formats=["PNG", "JPEG", "WEBP"]) as source:
                 if source.width * source.height > 16_777_216 or getattr(source, "is_animated", False):
                     raise ValueError("Source image exceeds the pixel limit or is animated")
-                ImageOps.exif_transpose(source).convert("RGB").save(root / "input" / name)
+                normalized = ImageOps.exif_transpose(source).convert("RGB")
+                if first_source_size is None:
+                    first_source_size = normalized.size
+                normalized.save(root / "input" / name)
+        if mask_name is not None:
+            normalized_mask = normalize_mask_bytes(mask, first_source_size)
+            (root / "input" / mask_name).write_bytes(normalized_mask)
+        graph = build_graph(prompt=prompt, seed=seed, steps=steps, width=width, height=height,
+                            images=names, negative_prompt=negative_prompt, vgl=vgl,
+                            mask=mask_name,
+                            source_dimensions=first_source_size if mask_name is not None and (width, height) == (0, 0) else None)
         config = root / "models.yaml"
         config.write_text(f"fibo:\n  base_path: {MODELS}\n  diffusion_models: diffusion_models\n"
                           "  text_encoders: text_encoders\n  vae: vae\n")
