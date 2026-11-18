@@ -23,6 +23,7 @@ type Props = {
 
 export function WandaFiboMaskEditor({ source, mask, enabled, inline = false, onClose, onSave }: Props) {
   const root = useRef<HTMLElement>(null);
+  const outline = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const undo = useRef<ImageData[]>([]);
   const redo = useRef<ImageData[]>([]);
@@ -243,6 +244,30 @@ export function WandaFiboMaskEditor({ source, mask, enabled, inline = false, onC
     ctx.putImageData(pixels, 0, 0);
   }
 
+  function updateOutline(event: PointerEvent<HTMLCanvasElement>) {
+    const marker = outline.current;
+    const region = viewport.current;
+    if (!marker || !region) return;
+    const box = event.currentTarget.getBoundingClientRect();
+    const bounds = region.getBoundingClientRect();
+    const x = event.clientX, y = event.clientY;
+    marker.hidden = !ready || saving || hand || space || review || event.pointerType === "touch"
+      || (tool !== "brush" && tool !== "eraser") || x < Math.max(box.left, bounds.left)
+      || x >= Math.min(box.right, bounds.right) || y < Math.max(box.top, bounds.top)
+      || y >= Math.min(box.bottom, bounds.bottom);
+    if (marker.hidden) return;
+    marker.style.left = x - bounds.left + "px";
+    marker.style.top = y - bounds.top + "px";
+    marker.style.width = size * box.width / event.currentTarget.width + "px";
+    marker.style.height = size * box.height / event.currentTarget.height + "px";
+  }
+
+  function hideOutline() {
+    if (outline.current) outline.current.hidden = true;
+  }
+
+  useEffect(hideOutline, [hand, space, review, tool, size, square, view, saving]);
+
   const Root = inline ? "div" : "dialog";
   return (
     <Root ref={(node: HTMLElement | null) => { root.current = node; }} className={inline ? "wanda-fibo-mask-inline" : "wanda-fibo-mask-dialog"}
@@ -315,7 +340,9 @@ export function WandaFiboMaskEditor({ source, mask, enabled, inline = false, onC
             paint(ctx, at, at);
             setDrawing(true);
           }}
+          onPointerEnter={updateOutline} onPointerLeave={hideOutline} onPointerCancel={hideOutline}
           onPointerMove={(event) => {
+            updateOutline(event);
             const drag = panDrag.current;
             const region = viewport.current;
             if (drag?.id === event.pointerId && region?.clientWidth && region.clientHeight) {
@@ -341,6 +368,7 @@ export function WandaFiboMaskEditor({ source, mask, enabled, inline = false, onC
             setDrawing(false);
           }} />
       </div>
+        {inline && <div ref={outline} className="wanda-fibo-mask-outline" data-square={square} aria-hidden="true" hidden />}
       </div>
       {!enabled && <p>Mask editing is available here. Rendering a masked edit requires the private worker update.</p>}
       {error && <p role="alert">{error}</p>}

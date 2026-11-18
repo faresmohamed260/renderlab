@@ -339,12 +339,39 @@ export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], in
     }
   }
 
+  const [toolbar, setToolbar] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!toolbar) return;
+    const sync = () => highlight(toolbar);
+    sync();
+    const resize = new ResizeObserver(sync);
+    resize.observe(toolbar);
+    // A label or disabled-state change can move an action without resizing the bar.
+    const changes = new MutationObserver(sync);
+    changes.observe(toolbar, { subtree: true, childList: true, characterData: true, attributes: true,
+      attributeFilter: ["disabled", "aria-pressed", "href"] });
+    return () => { resize.disconnect(); changes.disconnect(); };
+  }, [toolbar]);
+
+  const toolEvents = {
+    ref: setToolbar,
+    onPointerOver: (event: PointerEvent<HTMLDivElement>) => highlight(event.currentTarget),
+    onPointerLeave: (event: PointerEvent<HTMLDivElement>) => highlight(event.currentTarget),
+    onFocus: (event: React.FocusEvent<HTMLDivElement>) => highlight(event.currentTarget),
+    onBlur: (event: React.FocusEvent<HTMLDivElement>) => {
+      const node = event.currentTarget;
+      requestAnimationFrame(() => { if (node.isConnected) highlight(node); });
+    },
+  };
+
   function tools() {
     if (maskAction && !result && !busy) return (
-      <div className="wanda-fibo-stage-tools" role="group" aria-label="Mask actions">
+      <div className="wanda-fibo-stage-tools" role="group" aria-label="Mask actions" {...toolEvents}>
         <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="M" disabled={maskAction.blocked}
+          aria-label={maskAction.mask ? "Edit mask" : "Paint mask"}
           title={maskAction.blocked ? "Remove references to use a mask" : "Paint a mask on the source image"}
           onClick={() => { if (viewerOpen) dialog.current?.close(); maskAction.open(); }}>{maskAction.mask ? "Edit mask" : "Mask"}</Button>
+        {maskAction.blocked && <span className="wanda-fibo-stage-mask-status">Remove references to use a mask</span>}
         {maskAction.mask && <>
           <span className="wanda-fibo-stage-mask-status">Mask applied</span>
           <Button type="button" variant="ghost" size="sm" aria-pressed={reviewing}
@@ -354,12 +381,8 @@ export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], in
       </div>
     );
     return result && (
-      <div className="wanda-fibo-stage-tools" role="group" aria-label="Stage tools"
-        onPointerOver={(event) => highlight(event.currentTarget)}
-        onPointerLeave={(event) => highlight(event.currentTarget)}
-        onFocus={(event) => highlight(event.currentTarget)}
-        onBlur={(event) => { const toolbar = event.currentTarget; requestAnimationFrame(() => highlight(toolbar)); }}>
-        {inspecting ? <Button type="button" variant="ghost" size="sm" onClick={returnToProgress}>{liveFrame ? "Live preview" : "Return to render"}</Button> : <>
+      <div className="wanda-fibo-stage-tools" role="group" aria-label="Stage tools" {...toolEvents}>
+        {inspecting ? <Button type="button" variant="ghost" size="sm" onClick={returnToProgress}>Live preview</Button> : <>
         {canCompare && <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="C" aria-pressed={compare} title="Compare before and after"
           onClick={(event) => {
             const toolbar = event.currentTarget.parentElement as HTMLDivElement;

@@ -1131,3 +1131,15 @@
   font-size: 12px;
   pointer-events: none;
 }
+
+.wanda-fibo-mask-outline {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  border: 1px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 85%);
+  pointer-events: none;
+}
+.wanda-fibo-mask-outline[data-square="true"] { border-radius: 0; }
+.wanda-fibo-mask-viewport:has(.wanda-fibo-mask-outline:not([hidden])) canvas { cursor: none !important; }
