@@ -2,7 +2,7 @@
 
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
-import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
 import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -626,13 +626,46 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
 
+  const promptField = useRef<HTMLTextAreaElement>(null);
+  const recentMenu = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (!desktop) return;
+    const closeOutside = (event: PointerEvent) => {
+      const menu = recentMenu.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [desktop]);
+  const tileDragType = "application/x-renderlab-fibo-slot";
+
+  function imageTag(index: number) {
+    return "<image_" + files.slice(0, index + 1).filter(Boolean).length + ">";
+  }
+
+  function insertImageTag(index: number) {
+    const field = promptField.current;
+    if (!field || field.disabled) return;
+    const start = field.selectionStart, end = field.selectionEnd;
+    const tag = imageTag(index) + " ";
+    const value = prompt.slice(0, start) + tag + prompt.slice(end);
+    if (value.length > field.maxLength) return;
+    setPrompt(value);
+    requestAnimationFrame(() => {
+      field.focus({ preventScroll: true });
+      field.setSelectionRange(start + tag.length, start + tag.length);
+    });
+  }
+
   function uploadDropTarget(target: number | "canvas") {
     return {
       "data-drag-over": admitted && !busy && dragTarget === target ? "true" : undefined,
       onDragOver(event: DragEvent<HTMLElement>) {
-        if (!event.dataTransfer.types.includes("Files")) return;
+        const swap = desktop && typeof target === "number" && target < 4 && !!files[target]
+          && event.dataTransfer.types.includes(tileDragType);
+        if (!swap && !event.dataTransfer.types.includes("Files")) return;
         event.preventDefault();
-        event.dataTransfer.dropEffect = admitted && !busy ? "copy" : "none";
+        event.dataTransfer.dropEffect = admitted && !busy ? (swap ? "move" : "copy") : "none";
         if (admitted && !busy) setDragTarget(target);
       },
       onDragLeave(event: DragEvent<HTMLElement>) {
@@ -642,8 +675,33 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       onDrop(event: DragEvent<HTMLElement>) {
         event.preventDefault();
         setDragTarget(undefined);
+        if (!admitted || busy) return;
+        const from = event.dataTransfer.getData(tileDragType);
+        if (from) {
+          if (!desktop || typeof target !== "number" || target >= 4 || !/^[0-3]$/.test(from)) return;
+          const index = Number(from);
+          if (index === target || !files[index] || !files[target]) return;
+          if (index === 0 || target === 0) {
+            setSelection(undefined);
+            setResult(undefined);
+            writeStageBookmark(bookmarkKey);
+          }
+          setMaskEditor(undefined);
+          updateDraft("edit", { vgl: "", generatedVgl: false });
+          setFiles((previous) => {
+            const next = [...previous];
+            [next[index], next[target]] = [next[target], next[index]];
+            return next;
+          });
+          setStatus("Input images swapped.");
+          return;
+        }
         const file = event.dataTransfer.files[0];
-        if (!admitted || busy || !file?.type.startsWith("image/")) return;
+        if (desktop && event.dataTransfer.files.length > 1) {
+          setStatus("Drop one image at a time.");
+          return;
+        }
+        if (!file?.type.startsWith("image/")) return;
         if (target === 4 || (target === "canvas" && mode === "generate")) {
           setReference(file);
         }
@@ -740,16 +798,21 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 <div className="wanda-fibo-tiles" inert={mode !== "edit"}>
                   {slots.map((label, index) => (
                     <div className="wanda-fibo-tile" key={label} {...uploadDropTarget(index)}>
-                      <Button ref={index === 0 ? sourceButton : undefined} type="button" variant="outline" aria-label={"Choose " + label.toLowerCase() + " image"}
-                        title={files[index]?.name ?? label} disabled={!admitted || busy}
-                        onClick={() => chooseImage(index)}>
-                        {previews[index] ? <img src={previews[index]} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}<span>{label}</span>
+                      <Button ref={index === 0 ? sourceButton : undefined} type="button" variant="outline" aria-label={desktop && files[index] ? "Insert " + imageTag(index) + " into prompt" : "Choose " + label.toLowerCase() + " image"}
+                        title={desktop && files[index] ? "Insert " + imageTag(index) + " into prompt" : files[index]?.name ?? label}
+                        disabled={!admitted || busy} draggable={desktop && !!files[index] && !busy}
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData(tileDragType, String(index));
+                        }}
+                        onClick={() => desktop && files[index] ? insertImageTag(index) : chooseImage(index)}>
+                        {previews[index] ? <img src={previews[index]} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}<span>{label}</span>{desktop && previews[index] && <span aria-hidden="true" className="wanda-fibo-tile-tag">+ {imageTag(index)}</span>}
                       </Button>
                       {files[index] && <Button type="button" variant="secondary" size="icon-sm"
                         className="wanda-fibo-remove" aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
                         onClick={() => {
                           updateDraft("edit", { vgl: "", generatedVgl: false });
-                          if (index === 0) setSelection(undefined);
+                          if (index === 0) { setSelection(undefined); if (desktop) { setResult(undefined); writeStageBookmark(bookmarkKey); } }
                           setMaskEditor(undefined);
                           setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
                         }}><X /></Button>}
@@ -767,6 +830,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                       aria-label="Remove reference image" disabled={busy} onClick={() => setReference()}><X /></Button>}
                   </div>
                   <label className="wanda-fibo-aspect">Aspect ratio
+                    <span className="wanda-fibo-aspect-preview" aria-hidden="true"><span style={{ "--wanda-aspect": size.width / size.height } as CSSProperties} /></span>
                     <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
                       {wandaFiboSizes.map(({ label, width, height }, index) => (
                         <NativeSelectOption key={label} value={index}>{label} · {width} × {height}</NativeSelectOption>
@@ -786,16 +850,38 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             </section>
             <div className="wanda-fibo-prompt-heading">
               <label htmlFor="wanda-fibo-prompt">Prompt</label>
-              <details className="wanda-fibo-recents">
+              <details ref={recentMenu} className="wanda-fibo-recents" onKeyDown={(event) => {
+                if (!desktop || event.key !== "Escape" || !event.currentTarget.open) return;
+                event.preventDefault();
+                event.currentTarget.open = false;
+                event.currentTarget.querySelector("summary")?.focus();
+              }}>
                 <summary aria-label="Recent prompts" title="Recent prompts"><Clock size={16} aria-hidden="true" /></summary>
                 <div>
-                  {recent.length ? recent.map((value) => <Button key={value} type="button" variant="ghost" disabled={busy}
-                    onClick={(event) => { setPrompt(value); event.currentTarget.closest("details")?.removeAttribute("open"); }}>{value}</Button>)
-                    : <p>No recent prompts in this session.</p>}
+                  {desktop && <div className="wanda-fibo-recents-heading">
+                    <strong>Recent prompts</strong>
+                    {recent.length > 0 && <Button type="button" variant="ghost" size="sm" disabled={busy}
+                      onClick={() => { setRecent([]); recentMenu.current?.querySelector("summary")?.focus(); }}>Clear</Button>}
+                  </div>}
+                  {recent.length ? <div className="wanda-fibo-recents-list">
+                    {recent.map((value) => <div className="wanda-fibo-recents-row" key={value}>
+                      <Button type="button" variant="ghost" disabled={busy} onClick={() => {
+                        setPrompt(value);
+                        if (recentMenu.current) recentMenu.current.open = false;
+                        promptField.current?.focus();
+                      }}>{value}</Button>
+                      {desktop && <Button type="button" variant="ghost" size="icon-sm" disabled={busy}
+                        aria-label={"Remove recent prompt: " + value}
+                        onClick={() => {
+                          setRecent((items) => items.filter((item) => item !== value));
+                          recentMenu.current?.querySelector("summary")?.focus();
+                        }}><X aria-hidden="true" /></Button>}
+                    </div>)}
+                  </div> : <p>No recent prompts in this session.</p>}
                 </div>
               </details>
             </div>
-            <Textarea id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={!admitted || (busy && !desktop)} maxLength={4000}
+            <Textarea ref={promptField} id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={!admitted || (busy && !desktop)} maxLength={4000}
               placeholder={mask ? "Describe what to change in the masked area…" : "Describe the result you want…"}
               onChange={(event) => setPrompt(event.target.value)} />
             <div className="wanda-fibo-extra" key={mode}>
