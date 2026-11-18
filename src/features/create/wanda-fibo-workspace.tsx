@@ -155,6 +155,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [enqueueing, setEnqueueing] = useState(false);
   const [activeCancel, setActiveCancel] = useState<{ id: string; pending: boolean }>();
   const [sendingCancel, setSendingCancel] = useState(false);
+  const [cancelError, setCancelError] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [waiting, setWaiting] = useState<QueuedRender[]>([]);
   const [waitingReady, setWaitingReady] = useState(false);
@@ -408,6 +409,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
 
   async function watchRender(bookmark: StageBookmark, signal: AbortSignal, run?: RunSettings, restoring = false) {
     setActiveCancel(undefined);
+    setCancelError("");
     const end = Date.now() + 24 * 60_000;
     let images: Result[] = [];
     let recoveringInspection = restoring && !!bookmark.filename;
@@ -429,6 +431,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         setRunningBatch(images);
       }
       if (update.finished) {
+        setCancelError("");
         if (!images[0]) throw new Error(update.error ?? "No image returned.");
         // Decode the bookmarked image before replacing the live/previous view or changing its aspect.
         const remembered = bookmarkKey ? readStageBookmark(bookmarkKey) : bookmark;
@@ -557,11 +560,14 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   async function cancelActiveRender() {
     if (!activeCancel || activeCancel.pending || sendingCancel) return;
     setSendingCancel(true);
+    setCancelError("");
     setQueueNotice("");
     try {
       await request("local/queue/" + activeCancel.id + "/cancel", { method: "POST" });
     } catch (cause) {
-      setQueueNotice(cause instanceof Error ? cause.message : "Could not cancel this render.");
+      const message = cause instanceof Error ? cause.message : "Could not cancel this render.";
+      setQueueNotice(message);
+      setCancelError(message);
     } finally {
       setSendingCancel(false);
     }
@@ -834,12 +840,19 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                   onChange={(event) => setSteps(event.target.valueAsNumber)} />
               </label>
             </div>
-            <p className="wanda-fibo-caption wanda-fibo-worker-note" role="status">{status}</p>
+            <p className="wanda-fibo-caption wanda-fibo-worker-note" role="status">{cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
             <span id="wanda-fibo-blocker" className="sr-only">{blocker}</span>
-            <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}
-              title={blocker || undefined} aria-describedby={blocker ? "wanda-fibo-blocker" : undefined}>
-              <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
-            </Button>
+            <div className="wanda-fibo-submit-actions">
+              <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}
+                title={blocker || undefined} aria-describedby={blocker ? "wanda-fibo-blocker" : undefined}>
+                <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
+              </Button>
+              {busy && activeCancel && <Button type="button" variant="outline"
+                disabled={sendingCancel || activeCancel.pending} onClick={() => void cancelActiveRender()}
+                aria-label={sendingCancel || activeCancel.pending ? "Cancelling render" : "Cancel render"}>
+                {sendingCancel || activeCancel.pending ? "Cancelling…" : "Cancel"}
+              </Button>}
+            </div>
           </div>
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>

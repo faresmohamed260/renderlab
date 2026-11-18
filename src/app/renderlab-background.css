@@ -399,7 +399,8 @@
 }
 .wanda-fibo-settings input { min-inline-size: 0; margin-block-start: 4px; }
 .wanda-fibo-seed { display: flex; align-items: center; position: relative; }
-.wanda-fibo-generate { inline-size: 100%; margin-block-start: 12px; justify-content: flex-start; }
+.wanda-fibo-submit-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin-block-start: 12px; }
+.wanda-fibo-generate { flex: 1 1 auto; min-inline-size: 0; justify-content: flex-start; }
 .wanda-fibo-canvas {
   min-block-size: 0;
   display: grid;
