@@ -170,8 +170,9 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [savedEdits, setSavedEdits] = useState<Result[]>([]);
   const [savingEdits, setSavingEdits] = useState(false);
   const [savedStatus, setSavedStatus] = useState("");
-  const history = [...sessionHistory, ...savedEdits.filter((item) =>
-    !sessionHistory.some((image) => image.batchId === item.batchId && image.filename === item.filename))];
+  const matchesImage = (image: Result, item: Result) => image.batchId === item.batchId && image.filename === item.filename;
+  const history = [...sessionHistory.map((image) => image.run ? image : savedEdits.find((item) => matchesImage(image, item)) ?? image),
+    ...savedEdits.filter((item) => !sessionHistory.some((image) => matchesImage(image, item)))];
   const batches = new Map<string | Result, Result[]>();
   for (const image of history) {
     const key = image.batchId ?? image;
@@ -201,6 +202,23 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       if (current) setSavedEdits(rows);
     }).catch(() => { if (current) setSavedStatus("Saved edits could not be opened."); });
     return () => { current = false; };
+  }, [admitted, savedEditsAccount]);
+
+  useEffect(() => {
+    if (!admitted || !savedEditsAccount) return;
+    const controller = new AbortController();
+    void request<{ id: string; images: Result[] }[]>("local/history", { signal: controller.signal })
+      .then((runs) => {
+        if (controller.signal.aborted || !Array.isArray(runs)) return;
+        setHistory((current) => {
+          const present = new Set(current.map((item) => item.batchId));
+          return [...current, ...runs.flatMap(({ id, images }) => present.has(id) ? []
+            : images.map((image) => ({ ...image, batchId: id })))];
+        });
+      }).catch(() => {
+        if (!controller.signal.aborted) setSavedStatus("Local History could not be opened.");
+      });
+    return () => controller.abort();
   }, [admitted, savedEditsAccount]);
 
   async function saveEdit(image?: Result) {

@@ -1,7 +1,9 @@
 import "server-only";
 import { wandaFiboSizes } from "@/features/create/wanda-fibo-sizes";
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
+import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after } from "next/server";
 import sharp from "sharp";
@@ -25,6 +27,43 @@ const state: NonNullable<typeof shared.wandaFiboState> = shared.wandaFiboState ?
 const json = (value: unknown, status = 200) =>
   Response.json(value, { status, headers: { "cache-control": "private, no-store" } });
 const error = (message: string, status: number) => json({ error: message }, status);
+
+type ArchiveRun = { id: string; images: Record<string, unknown>[]; error?: string };
+const archiveLimit = 32 * mb;
+const archiveRoot = join(process.env.LOCALAPPDATA || tmpdir(), "RenderLab", "WandaFiboHistory");
+function archivePath(owner: string) {
+  return join(archiveRoot, createHash("sha256").update("wanda-fibo-history:" + owner).digest("hex") + ".json");
+}
+async function readArchive(owner: string): Promise<ArchiveRun[]> {
+  try {
+    const data = await readFile(archivePath(owner));
+    if (data.length > archiveLimit) throw new Error("History file is oversized");
+    const archive: unknown = JSON.parse(data.toString("utf8"));
+    if (!Array.isArray(archive)) throw new Error("Invalid History file");
+    return archive;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw err;
+  }
+}
+async function saveHistory(id: string, job: Job) {
+  const path = archivePath(job.owner);
+  const older = await readArchive(job.owner);
+  const images = job.images.map(({ image_data, filename, seed }) => ({ image_data, filename, seed }));
+  const runs: ArchiveRun[] = [{ id, images, error: job.error }, ...older.filter((item) => item.id !== id)].slice(0, 8);
+  let data = JSON.stringify(runs);
+  while (runs.length > 1 && Buffer.byteLength(data) > archiveLimit) {
+    runs.pop();
+    data = JSON.stringify(runs);
+  }
+  if (Buffer.byteLength(data) > archiveLimit) throw new Error("History limit exceeded");
+  await mkdir(archiveRoot, { recursive: true });
+  const temp = path + "." + randomBytes(8).toString("hex") + ".tmp";
+  try {
+    await writeFile(temp, data, { flag: "wx", mode: 0o600 });
+    await rename(temp, path);
+  } finally { await unlink(temp).catch(() => {}); }
+}
 
 async function boundedBody(request: Request, limit: number) {
   const reader = request.body?.getReader();
@@ -136,14 +175,23 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       }
       return json({ model: "FIBO 2.0 Edit Turbo", engine: "ComfyUI on Modal", generation_ready: state.healthUntil > Date.now() });
     }
-    if (path === "local/history") return json([]);
+    if (path === "local/history") {
+      try { return json(await readArchive(owner)); }
+      catch { return error("Local History could not be opened.", 503); }
+    }
     if (path === "local/queue") return json({ jobs: [...state.jobs].flatMap(([id, job]) =>
       job.owner === owner && !job.finished ? [{ id, state: job.pending ? "pending" : "running", completed: job.images.length, cancelling: false }] : []) });
     const render = /^local\/render\/([a-f0-9]{32})$/.exec(path);
     const upload = /^local\/upload\/([a-f0-9]{32}\.png)$/.exec(path);
     if (render) {
       const job = state.jobs.get(render[1]);
-      if (!job || job.owner !== owner) return error("Job not found.", 404);
+      if (!job || job.owner !== owner) {
+        try {
+          const stored = (await readArchive(owner)).find((item) => item.id === render[1]);
+          if (stored) return json({ finished: true, state: "finished", images: stored.images, error: stored.error });
+        } catch { return error("Local History could not be opened.", 503); }
+        return error("Job not found.", 404);
+      }
       return json({ finished: job.finished, state: job.finished ? "finished" : job.pending ? "pending" : "running",
         images: job.images, ...(job.preview ? { preview: job.preview, previewBlur: job.previewBlur } : {}), ...(job.caption ? { caption: job.caption } : {}), ...(job.error ? { error: job.error } : {}) });
     }
@@ -303,7 +351,18 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
           ? "Only " + job.images.length + " of " + count + " images finished. See History for the completed images."
           : "The private Modal worker did not return a render.";
       }
-      finally { job.preview = undefined; job.previewBlur = undefined; job.caption = undefined; job.finished = true; }
+      finally {
+        try {
+          if (job.images.length) await saveHistory(id, job);
+        } catch {
+          job.error = [job.error, "This result could not be saved to local History."].filter(Boolean).join(" ");
+        } finally {
+          job.preview = undefined;
+          job.previewBlur = undefined;
+          job.caption = undefined;
+          job.finished = true;
+        }
+      }
     };
     job.pending = { bytes, run };
     state.jobs.set(id, job);
