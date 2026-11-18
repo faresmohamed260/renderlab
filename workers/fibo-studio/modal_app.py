@@ -20,9 +20,6 @@ ROOT = "/opt/ComfyUI"
 SOURCE = "dea870e1a36614b3614c0008a820734d0fecdf4f"
 BASE = "http://127.0.0.1:8188"
 MODELS = "/opt/fibo-models"
-SNAPSHOT = Path(os.environ.get(
-    "RENDERLAB_FIBO_SNAPSHOT", "C:/Tools/renderlab-fibo-studio-reference/reference"
-))
 ASSETS = (
     ("comfy_backend.py", "/opt/fibo-reference/comfy_backend.py",
      "306850a04b03d63437e764fe1400ddbae9a25919111eeb232ad7089b1a610f9b"),
@@ -46,8 +43,12 @@ image = (
     )
 )
 if modal.is_local():
+    snapshot_dir = os.environ.get("RENDERLAB_FIBO_SNAPSHOT", "").strip()
+    if not snapshot_dir:
+        raise RuntimeError("Set RENDERLAB_FIBO_SNAPSHOT to the licensed private source directory.")
+    snapshot = Path(snapshot_dir)
     for relative, destination, expected in ASSETS:
-        source = SNAPSHOT / relative
+        source = snapshot / relative
         if hashlib.sha256(source.read_bytes()).hexdigest() != expected:
             raise RuntimeError(f"FIBO Studio source mismatch: {relative}")
         image = image.add_local_file(source, destination)

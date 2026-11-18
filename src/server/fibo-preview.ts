@@ -84,7 +84,11 @@ async function boundedBody(request: Request, limit: number) {
 
 function bridge(payload: Record<string, unknown>, timeoutMs = 430_000, onPreview?: (update: PreviewUpdate) => void): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
-    const child = spawn("C:/Windows/py.exe", ["-3.10", join(process.cwd(), "workers/fibo-studio/preview_bridge.py")], {
+    const configuredPython = process.env.RENDERLAB_FIBO_PREVIEW_PYTHON?.trim();
+    const useWindowsLauncher = !configuredPython && process.platform === "win32";
+    const python = configuredPython || (useWindowsLauncher ? "py.exe" : "python3");
+    const args = [...(useWindowsLauncher ? ["-3.10"] : []), join(process.cwd(), "workers/fibo-studio/preview_bridge.py")];
+    const child = spawn(python, args, {
       windowsHide: true, stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
     });
