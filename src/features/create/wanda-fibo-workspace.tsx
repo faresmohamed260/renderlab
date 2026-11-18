@@ -897,7 +897,15 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                       {files[index] && <Button type="button" variant="secondary" size="icon-sm"
                         className="wanda-fibo-remove" aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
                         onClick={() => {
-                          updateDraft("edit", { vgl: "", generatedVgl: false });
+                          setDrafts((previous) => ({
+                            ...previous,
+                            edit: {
+                              ...previous.edit,
+                              prompt: previous.edit.prompt.replaceAll(slotMarker(index) + " ", "").replaceAll(slotMarker(index), ""),
+                              vgl: "",
+                              generatedVgl: false,
+                            },
+                          }));
                           if (index === 0) { setSelection(undefined); if (desktop) { setResult(undefined); writeStageBookmark(bookmarkKey); } }
                           setMaskEditor(undefined);
                           setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
