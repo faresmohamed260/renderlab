@@ -198,16 +198,15 @@ html.renderlab-gradient-host:has(.wanda-create-background),
     align-items: center;
     flex: none;
     gap: 10px;
-    margin-block-start: auto;
     padding: 10px 12px;
     border-radius: 12px;
-    background: #1d1b27;
+    background: transparent;
     color: #f6f7fb;
     font-size: 13px;
     line-height: 1.35;
   }
   .preview-navigation-profile:hover {
-    background: #252230;
+    background: transparent;
   }
   .preview-navigation-avatar {
     display: grid;
@@ -242,27 +241,50 @@ html.renderlab-gradient-host:has(.wanda-create-background),
   }
 }
 
-/* Use the spring curve and timing exported by Sileo's stylesheet, not its toast runtime. */
+/* One connected surface. The expansion overlaps the card instead of floating above it. */
+.preview-account-card {
+  --account-surface: #1d1b27;
+  position: relative;
+  isolation: isolate;
+  flex: none;
+  margin-block-start: auto;
+  border-radius: 12px;
+  background: var(--account-surface);
+}
+
 .preview-account-menu {
-  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+  position: absolute;
+  z-index: -1;
+  inset: auto 0 calc(100% - 12px);
+  border-radius: 12px 12px 0 0;
+  padding: 8px 6px 12px;
+  background: var(--account-surface);
+  opacity: 0;
+  visibility: hidden;
+  transform: scaleY(0);
+  transform-origin: bottom;
+}
+
+.preview-account-card[data-open="true"] .preview-account-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: scaleY(1);
+}
+
+.preview-account-card[data-open="true"] .preview-account-chevron {
+  transform: rotate(180deg);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .preview-account-menu[data-state="open"] {
-    animation: preview-account-open var(--sileo-duration) var(--sileo-spring-easing) both;
+  .preview-account-menu {
+    transition: transform 220ms ease, opacity 160ms ease, visibility 0s 220ms;
   }
 
-  .preview-account-menu[data-state="closed"] {
-    animation: preview-account-close 140ms ease-in both;
+  .preview-account-card[data-open="true"] .preview-account-menu {
+    transition: transform var(--sileo-duration) var(--sileo-spring-easing), opacity 120ms ease;
   }
-}
 
-@keyframes preview-account-open {
-  from { opacity: 0; transform: translateY(8px) scale(0.92, 0.38); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes preview-account-close {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(4px) scale(0.97, 0.8); }
+  .preview-account-chevron {
+    transition: transform var(--sileo-duration) var(--sileo-spring-easing);
+  }
 }

@@ -3,16 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, ChevronUp, CircleHelp, House, Images, Menu, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
-import type { MouseEvent, ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 
 import "sileo/styles.css";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
 const accountOptions = [
   { label: "Profile", icon: UserRound },
   { label: "Personalization", icon: SlidersHorizontal },
@@ -21,30 +16,70 @@ const accountOptions = [
 ];
 
 function PreviewAccountMenu({ signedIn }: { signedIn: boolean }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const card = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const pinned = useRef(false);
+
+  useEffect(() => {
+    if (!open) return;
+    function dismiss(event: PointerEvent) {
+      if (event.target instanceof Node && !card.current?.contains(event.target)) {
+        pinned.current = false;
+        setOpen(false);
+      }
+    }
+    function escape(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (card.current?.contains(document.activeElement)) trigger.current?.focus();
+      pinned.current = false;
+      setOpen(false);
+    }
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open]);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" aria-label="Account menu" className="preview-navigation-profile h-auto w-full justify-start whitespace-normal text-left">
-          <span className="preview-navigation-avatar"><UserRound size={16} aria-hidden="true" /></span>
-          <span className="min-w-0 flex-1">
-            <span>{signedIn ? "RenderLab account" : "Guest"}</span>
-            <small data-signed-in={signedIn}>{signedIn ? "Signed in" : "Not signed in"}</small>
-          </span>
-          <ChevronUp size={15} aria-hidden="true" className="shrink-0 text-text-muted" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" sideOffset={8} collisionPadding={12}
-        className="preview-account-menu w-56 rounded-xl bg-[#1d1b27] p-1.5">
-        <DropdownMenuLabel>{signedIn ? "RenderLab account" : "Guest"}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {accountOptions.map(({ label, icon: Icon }) => (
-          <DropdownMenuItem key={label}
-            onSelect={(event) => event.preventDefault()}>
-            <Icon aria-hidden="true" /> {label} <span className="ml-auto text-xs text-text-muted">Coming soon</span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div ref={card} className="preview-account-card" data-open={open}
+      onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpen(true); }}
+      onPointerLeave={(event) => {
+        if (event.pointerType === "mouse" && !pinned.current) setOpen(false);
+      }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          pinned.current = false;
+          setOpen(false);
+        }
+      }}>
+      <Button ref={trigger} variant="ghost" aria-label="Account menu" aria-expanded={open} aria-controls={id}
+        className="preview-navigation-profile h-auto w-full justify-start whitespace-normal text-left"
+        onClick={() => {
+          pinned.current = !pinned.current;
+          setOpen(pinned.current);
+        }}>
+        <span className="preview-navigation-avatar"><UserRound size={16} aria-hidden="true" /></span>
+        <span className="min-w-0 flex-1">
+          <span>{signedIn ? "RenderLab account" : "Guest"}</span>
+          <small data-signed-in={signedIn}>{signedIn ? "Signed in" : "Not signed in"}</small>
+        </span>
+        <ChevronUp size={15} aria-hidden="true" className="preview-account-chevron shrink-0 text-text-muted" />
+      </Button>
+      <div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}>
+        <ul aria-label="Account options" className="preview-account-options">
+          {accountOptions.map(({ label, icon: Icon }) => (
+            <li key={label} className="flex items-center gap-2 px-2 py-2 text-sm">
+              <Icon size={16} aria-hidden="true" /> {label}
+              <span className="ml-auto text-xs text-text-muted">Coming soon</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
 
