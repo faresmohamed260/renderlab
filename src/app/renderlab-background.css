@@ -633,7 +633,8 @@
 .wanda-fibo-workspace .wanda-fibo-generate:disabled { opacity: .68; }
 
 .wanda-fibo-workspace .wanda-fibo-tile[data-drag-over="true"] > button:first-child,
-.wanda-fibo-workspace .wanda-fibo-canvas[data-drag-over="true"] {
+.wanda-fibo-workspace .wanda-fibo-canvas[data-drag-over="true"],
+.wanda-fibo-workspace .wanda-fibo-stage-surface[data-drag-over="true"] {
   outline: 2px solid #a5b4fc;
   outline-offset: -2px;
 }
@@ -645,13 +646,24 @@
   backdrop-filter: none;
 }
 @media (min-width: 1025px) {
+  /* Match the live Studio preview's viewport-relative side rails and 18px
+     insets. The centered workspace cap otherwise clips wide results. */
+  .wanda-fibo-workspace:has(.wanda-fibo-stage-frame) { max-inline-size: none; }
+  .wanda-fibo-grid:has(.wanda-fibo-stage-frame) {
+    margin-inline: calc(12px - var(--fibo-gutter));
+    column-gap: 18px;
+    grid-template-columns:
+      calc(clamp(300px, 26vw, 360px) - 12px)
+      minmax(0, 1fr)
+      calc(clamp(144px, 14vw, 214px) - 12px);
+  }
   .wanda-fibo-grid > .wanda-fibo-canvas:has(.wanda-fibo-stage-frame) {
     place-self: stretch;
     inline-size: auto;
     aspect-ratio: auto;
     border-radius: 0;
     /* The preview has its own vertical bounds; the controls' footer reserve is not stage padding. */
-    margin: -11px min(18px, 2cqw) calc(16px - var(--fibo-footer-reserve));
+    margin-block: -11px calc(16px - var(--fibo-footer-reserve));
     overflow: hidden;
   }
 }
@@ -909,6 +921,32 @@
 @keyframes wanda-fibo-pending-pulse { from { opacity: .45; } to { opacity: 1; } }
 @media (min-width: 1025px) {
   .wanda-fibo-stage-document > .wanda-fibo-stage-batch { justify-content: flex-start; }
+  .wanda-fibo-workspace .wanda-fibo-stage-document .wanda-fibo-stage-batch button {
+    flex: 0 0 64px;
+    padding: 0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .wanda-fibo-stage-surface > .wanda-fibo-stage-tools {
+    z-index: 4;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgb(16 15 21 / 43%);
+    text-shadow: 0 1px 3px rgb(0 0 0 / 65%);
+  }
+  .wanda-fibo-stage-surface > .wanda-fibo-stage-tools:has(> :only-child)::before {
+    inset: 0;
+    inline-size: auto;
+    block-size: auto;
+    transform: none;
+  }
+  .wanda-fibo-workspace .wanda-fibo-stage-surface > .wanda-fibo-stage-tools :is(button, a) {
+    gap: 5px;
+    color: #e4ddeb;
+    font-weight: 600;
+  }
+  .wanda-fibo-workspace .wanda-fibo-stage-surface > .wanda-fibo-stage-tools
+    :is(button, a):is(:hover:not(:disabled), [aria-pressed="true"]) { color: #fff; }
 }
 .wanda-fibo-stage-batch button[aria-current="true"] {
   outline: 2px solid #a5b4fc;

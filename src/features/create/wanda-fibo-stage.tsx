@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type KeyboardEvent, type PointerEvent, type HTMLAttributes } from "react";
 import { createPortal } from "react-dom";
 import { Download, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ function TurnInput({ file, busy, onOpen, onReuse }: { file: File; busy: boolean;
 type Props<T extends StageResult> = {
   historySelection?: { image: T };
   desktopArrows?: boolean;
+  dropTarget?: Pick<HTMLAttributes<HTMLDivElement>, "onDragOver" | "onDragLeave" | "onDrop"> & { "data-drag-over"?: string };
   desktopResultActions?: HTMLElement | null;
   workflow?: "edit" | "generate";
   turns?: StageTurn<T>[];
@@ -93,7 +94,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ historySelection, desktopArrows, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ historySelection, desktopArrows, dropTarget, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -518,7 +519,7 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
   function stageDocument() {
     return (
         <div className="wanda-fibo-stage-document">
-        <div className="wanda-fibo-stage-surface" data-empty={!shown && !busy} role="group" tabIndex={0}
+        <div className="wanda-fibo-stage-surface" {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
           aria-label={label} aria-busy={busy} data-portrait={ratio < 1}
           onClick={(event) => {
             if (event.target === event.currentTarget || event.target instanceof HTMLImageElement) {

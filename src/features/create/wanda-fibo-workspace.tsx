@@ -861,7 +861,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             </div>
           </div>
         </form>
-        <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
+        <section className="wanda-fibo-canvas" aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
             {stageReady && <WandaFiboStage
               desktopResultActions={desktop ? resultActions : undefined}
               workflow={mode}
@@ -876,6 +876,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               history={historyGroups.map((group) => group[0])}
               historySelection={historySelection}
               desktopArrows={desktop && !maskEditor}
+              dropTarget={desktop && !maskEditor ? uploadDropTarget("canvas") : undefined}
               onRestore={restoreRun}
               onSaveEdit={savedEditsAccount ? (image) => void saveEdit(image) : undefined}
               savingEdit={savingEdits}
