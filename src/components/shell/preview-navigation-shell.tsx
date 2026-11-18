@@ -232,21 +232,27 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
   const sectionLabel = isSettingsRoute(pathname) ? "Settings" : current?.label ?? "RenderLab";
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
+  const pinnedPath = useRef<string | null>(null);
   const id = useId();
   const disclosure = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const reduced = usePreviewReducedMotion();
   const reveal = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
 
+  function close() {
+    pinnedPath.current = null;
+    setOpenPath(null);
+  }
+
   useEffect(() => {
     if (!open) return;
     function outside(event: PointerEvent) {
-      if (event.target instanceof Node && !disclosure.current?.contains(event.target)) setOpenPath(null);
+      if (event.target instanceof Node && !disclosure.current?.contains(event.target)) close();
     }
     function escape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       if (disclosure.current?.contains(document.activeElement)) trigger.current?.focus();
-      setOpenPath(null);
+      close();
     }
     document.addEventListener("pointerdown", outside);
     document.addEventListener("keydown", escape);
@@ -262,20 +268,26 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
         <div ref={disclosure} className="preview-section-disclosure"
           onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpenPath(pathname); }}
           onPointerLeave={(event) => {
-            if (event.pointerType === "mouse" && !event.currentTarget.contains(document.activeElement)) setOpenPath(null);
+            if (event.pointerType === "mouse" && pinnedPath.current !== pathname && !event.currentTarget.contains(document.activeElement)) close();
           }}
           onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setOpenPath(null);
+            if (!event.currentTarget.contains(event.relatedTarget)) close();
           }}
           onKeyDown={(event) => {
             if (event.key !== "Escape" || !open) return;
             event.preventDefault();
             trigger.current?.focus();
-            setOpenPath(null);
+            close();
           }}>
           <Button ref={trigger} type="button" variant="ghost" className="preview-section-trigger"
             aria-label={"RenderLab sections: " + sectionLabel}
-            aria-expanded={open} aria-controls={id} onClick={() => setOpenPath(open ? null : pathname)}>
+            aria-expanded={open} aria-controls={id} onClick={() => {
+              if (open && pinnedPath.current === pathname) close();
+              else {
+                pinnedPath.current = pathname;
+                setOpenPath(pathname);
+              }
+            }}>
             <RenderLabMark className="size-6" />
             <span>{sectionLabel}</span>
             <Menu size={12} aria-hidden="true" />
@@ -290,7 +302,7 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
                 <p className="preview-section-title">{group.title}</p>
                 {group.destinations.map(({ href, label, icon: Icon }) => (
                   <Link key={href} href={href} aria-current={current?.href === href ? "page" : undefined}
-                    onNavigate={() => { trigger.current?.focus({ preventScroll: true }); setOpenPath(null); }}>
+                    onNavigate={() => { trigger.current?.focus({ preventScroll: true }); close(); }}>
                     <Icon size={18} aria-hidden="true" />
                     {label}
                   </Link>
