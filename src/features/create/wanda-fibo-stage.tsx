@@ -62,6 +62,8 @@ function TurnInput({ file, busy, onOpen, onReuse }: { file: File; busy: boolean;
 }
 
 type Props<T extends StageResult> = {
+  historySelection?: { image: T };
+  desktopArrows?: boolean;
   desktopResultActions?: HTMLElement | null;
   workflow?: "edit" | "generate";
   turns?: StageTurn<T>[];
@@ -89,7 +91,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ historySelection, desktopArrows, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -441,8 +443,8 @@ export function WandaFiboStage<T extends StageResult>({ desktopResultActions, wo
     );
   }
 
-  function stageKeys(event: KeyboardEvent<HTMLElement>) {
-    if (inlineMask || event.defaultPrevented || event.nativeEvent.isComposing || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
+  function stageKeys(event: KeyboardEvent<HTMLElement> | globalThis.KeyboardEvent) {
+    if (inlineMask || event.defaultPrevented || ("nativeEvent" in event ? event.nativeEvent.isComposing : event.isComposing) || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
     const target = event.target;
     if (!(target instanceof Element) || target.closest("input, textarea, select, [contenteditable], [role=slider]")) return;
     const key = event.key.toLowerCase();
@@ -462,7 +464,7 @@ export function WandaFiboStage<T extends StageResult>({ desktopResultActions, wo
     if (!busy && ["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key) && history.length) {
       const direction = key === "arrowup" || key === "arrowleft" ? -1 : 1;
       const selected = pendingImage.current ?? result;
-      const index = selected ? history.indexOf(selected) : -1;
+      const index = selected ? history.findIndex((item) => item === selected || (batch.includes(selected) && batch.includes(item))) : -1;
       const next = index < 0 ? (direction === 1 ? 0 : history.length - 1) : (index + direction + history.length) % history.length;
       event.preventDefault();
       void select(history[next]);
@@ -476,6 +478,22 @@ export function WandaFiboStage<T extends StageResult>({ desktopResultActions, wo
     event.preventDefault();
     action.click();
   }
+
+  useEffect(() => {
+    if (historySelection) void select(historySelection.image);
+  }, [historySelection]);
+
+  useEffect(() => {
+    if (!desktopArrows) return;
+    const keydown = (event: globalThis.KeyboardEvent) => {
+      if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+      if (event.target instanceof Element && event.target.closest("dialog, details[open], [data-wanda-history-image]")) return;
+      if (document.querySelector("dialog[open]")) return;
+      stageKeys(event);
+    };
+    document.addEventListener("keydown", keydown);
+    return () => document.removeEventListener("keydown", keydown);
+  });
 
   function carousel() {
     return showBatch && (

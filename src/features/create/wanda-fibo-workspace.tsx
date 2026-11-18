@@ -98,6 +98,11 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
+
+  const [busy, setBusy] = useState(false);
+  const queue = useRef<HTMLDetailsElement>(null);
+  const [historySelection, setHistorySelection] = useState<{ image: Result }>();
+  const [historyRail, setHistoryRail] = useState<HTMLDivElement | null>(null);
   const [result, setResult] = useState<Result>();
   const [turns, setTurns] = useState<Record<Workflow, StageTurn<Result>[]>>({ edit: [], generate: [] });
   const [liveFrame, setLiveFrame] = useState<string>();
@@ -108,7 +113,28 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [savingEdits, setSavingEdits] = useState(false);
   const [savedStatus, setSavedStatus] = useState("");
   const history = [...sessionHistory, ...savedEdits.filter((item) =>
-    !sessionHistory.some((image) => image.filename === item.filename))].slice(0, 8);
+    !sessionHistory.some((image) => image.batchId === item.batchId && image.filename === item.filename))];
+  const batches = new Map<string | Result, Result[]>();
+  for (const image of history) {
+    const key = image.batchId ?? image;
+    const group = batches.get(key);
+    if (group) group.push(image);
+    else batches.set(key, [image]);
+  }
+  const historyGroups = [...batches.values()].slice(0, 8);
+
+  useEffect(() => {
+    if (!historyRail) return;
+    const fade = () => {
+      historyRail.toggleAttribute("data-fade-top", historyRail.scrollTop > 1);
+      historyRail.toggleAttribute("data-fade-bottom", historyRail.scrollHeight - historyRail.scrollTop - historyRail.clientHeight > 1);
+    };
+    fade();
+    const observer = new ResizeObserver(fade);
+    observer.observe(historyRail);
+    historyRail.addEventListener("scroll", fade, { passive: true });
+    return () => { observer.disconnect(); historyRail.removeEventListener("scroll", fade); };
+  }, [historyRail, historyGroups.length, busy]);
 
   useEffect(() => {
     if (!admitted || !savedEditsAccount) return;
@@ -155,7 +181,6 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const slot = useRef(0);
   const [dragTarget, setDragTarget] = useState<number | "canvas">();
   const [status, setStatus] = useState("");
-  const [busy, setBusy] = useState(false);
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
   useEffect(() => {
@@ -259,7 +284,16 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
             updateDraft(mode, { vgl: image.json_instruction, generatedVgl: true });
           }
-          setHistory((items) => [...images, ...items].slice(0, 8));
+          setHistory((items) => {
+            const merged = [...images, ...items];
+            const ids = new Set<Result["batchId"]>();
+            return merged.filter((item) => {
+              if (ids.has(item.batchId)) return true;
+              if (ids.size >= 8) return false;
+              ids.add(item.batchId);
+              return true;
+            });
+          });
           if (prompt.trim()) setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
           setStatus(update.error ?? (update.images.length === 1 ? "Render complete." : update.images.length + " images ready in History."));
           return;
@@ -372,8 +406,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     <section className="wanda-fibo-workspace mx-auto w-full" aria-label="Create with FIBO">
       <div className="wanda-fibo-toolbar">
         <div className="wanda-fibo-tools">
-          <details className="wanda-fibo-queue">
-            <summary><ListOrdered size={16} aria-hidden="true" /> Queue</summary>
+          <details ref={queue} className="wanda-fibo-queue">
+            <summary><ListOrdered size={16} aria-hidden="true" /> Queue{busy && <span aria-label="1 active render">1</span>}</summary>
             <p role="status">{busy ? status : "No active render in this workspace."}</p>
           </details>
           <details className="wanda-fibo-queue">
@@ -537,7 +571,9 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 clear: () => { setSelection(undefined); updateDraft("edit", { vgl: "", generatedVgl: false }); },
               } : undefined}
               result={busy ? inspected : result}
-              history={history}
+              history={historyGroups.map((group) => group[0])}
+              historySelection={historySelection}
+              desktopArrows={desktop && !maskEditor}
               onRestore={restoreRun}
               onSaveEdit={savedEditsAccount ? (image) => void saveEdit(image) : undefined}
               savingEdit={savingEdits}
@@ -594,9 +630,27 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
           {savedStatus && <p className="wanda-fibo-caption" role="status">{savedStatus}</p>}
-          {history.length ? history.map((image, index) => (
-            <Button key={image.batchId ? image.batchId + ":" + index : image.filename ?? index} data-wanda-history-image type="button" variant="outline" disabled={busy} aria-current={result === image} onClick={() => { setMaskEditor(undefined); setResult(image); }}>Render {history.length - index} · {image.seed}</Button>
-          )) : <p className="wanda-fibo-caption">Finished images will appear here.</p>}
+          <div ref={setHistoryRail} className="wanda-fibo-history-rail">
+            {busy && <Button type="button" variant="ghost" className="wanda-fibo-history-progress"
+              aria-label="Open Queue, 1 active render" onClick={() => {
+                if (queue.current) {
+                  queue.current.open = true;
+                  queue.current.querySelector("summary")?.focus({ preventScroll: true });
+                }
+              }}>
+              <span>Rendering</span><span>1 active</span>
+            </Button>}
+            {historyGroups.length ? historyGroups.map((group, index) => {
+              const image = group[0];
+              return <Button key={image.batchId ?? image.filename ?? index} data-wanda-history-image type="button" variant="ghost"
+                className="wanda-fibo-history-cover" disabled={busy} aria-current={!!result && group.includes(result)}
+                aria-label={"Open render " + (historyGroups.length - index) + ", seed " + image.seed + ", " + group.length + (group.length === 1 ? " image" : " images")}
+                onClick={() => { setMaskEditor(undefined); setHistorySelection({ image }); }}>
+                <img src={image.image_data} alt="" draggable={false} loading="lazy" />
+                {group.length > 1 && <span className="wanda-fibo-history-stack" aria-hidden="true">▱ {group.length}</span>}
+              </Button>;
+            }) : !busy && <p className="wanda-fibo-caption">Finished images will appear here.</p>}
+          </div>
         </aside>
       </div>
     </section>

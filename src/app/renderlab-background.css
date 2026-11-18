@@ -1175,3 +1175,38 @@
   inline-size: auto;
   margin: 0;
 }
+
+.wanda-fibo-history { display: flex; flex-direction: column; min-block-size: 0; }
+.wanda-fibo-history-rail {
+  min-block-size: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to bottom, transparent, black var(--history-top, 0px),
+    black calc(100% - var(--history-bottom, 0px)), transparent);
+  scroll-padding-block: 20px;
+}
+.wanda-fibo-history-rail[data-fade-top] { --history-top: 20px; }
+.wanda-fibo-history-rail[data-fade-bottom] { --history-bottom: 20px; }
+.wanda-fibo-history .wanda-fibo-history-cover,
+.wanda-fibo-history .wanda-fibo-history-progress {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  block-size: auto;
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 4.5%);
+}
+.wanda-fibo-history-cover img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.wanda-fibo-history .wanda-fibo-history-cover[aria-current="true"]::after {
+  content: ""; position: absolute; inset: 0; border: 2px solid #a5b4fc; border-radius: inherit; pointer-events: none;
+}
+.wanda-fibo-history-stack {
+  position: absolute; inset: auto 8px 8px auto; padding: 3px 6px; border-radius: 999px;
+  background: rgb(16 15 21 / 69%); backdrop-filter: blur(18px); color: #fff; font-size: 11px;
+}
+.wanda-fibo-history .wanda-fibo-history-progress {
+  display: grid; place-content: center; gap: 6px; background: rgb(121 91 194 / 16%);
+  box-shadow: inset 0 0 0 1.5px #a5b4fc; font-size: 12px;
+}
