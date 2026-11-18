@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Clock, Dices, Images, ListOrdered, Plus, Sparkles, X } from "lucide-react";
+import { ChevronRight, Clock, Dices, Image as ImageIcon, Keyboard, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
 const api = "/wanda-fibo/";
@@ -94,7 +95,7 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
 
   function attachImage(file: File, index: number) {
     if (!admitted || busy) return;
-    if (index === 0) setResult(undefined);
+    if (index === 0) { setMode("edit"); setResult(undefined); }
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
 
@@ -109,13 +110,25 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
           <Button type="button" variant={mode === "edit" ? "secondary" : "ghost"} aria-pressed={mode === "edit"}
             disabled={busy} onClick={() => { if (mode !== "edit") setResult(undefined); setMode("edit"); }}>Image Editing</Button>
         </div>
-        <details className="wanda-fibo-queue">
-          <summary><ListOrdered size={16} aria-hidden="true" /> Render queue</summary>
-          <p role="status">{busy ? status : "No active render in this workspace."}</p>
-        </details>
+        <div className="wanda-fibo-tools">
+          <details className="wanda-fibo-queue">
+            <summary><ListOrdered size={16} aria-hidden="true" /> Queue</summary>
+            <p role="status">{busy ? status : "No active render in this workspace."}</p>
+          </details>
+          <details className="wanda-fibo-queue">
+            <summary><Keyboard size={16} aria-hidden="true" /> Shortcuts</summary>
+            <p>Ctrl + Enter to generate when the form is ready.</p>
+          </details>
+        </div>
       </div>
       <div className="wanda-fibo-grid">
-        <form className="wanda-fibo-controls" onSubmit={submit}>
+        <form className="wanda-fibo-controls" onSubmit={submit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {
+              event.preventDefault();
+              event.currentTarget.requestSubmit();
+            }
+          }}>
           <div className="wanda-fibo-fields">
             <section aria-labelledby="wanda-fibo-setup">
               <h2 id="wanda-fibo-setup">Image setup</h2>
@@ -135,8 +148,14 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
                   ))}
                 </div>
                 <div className="wanda-fibo-size" inert={mode !== "generate"}>
-                  <Button type="button" variant="outline" disabled>Inspiration</Button>
-                  <span>Square · 1024 × 1024</span>
+                  <div className="wanda-fibo-tile">
+                    <Button type="button" variant="outline" disabled><Plus size={14} aria-hidden="true" /> Inspiration</Button>
+                  </div>
+                  <label className="wanda-fibo-aspect">Aspect ratio
+                    <NativeSelect size="sm" defaultValue="square" disabled title="Only square output is supported in this preview">
+                      <NativeSelectOption value="square">1:1 · Square · 1024 × 1024</NativeSelectOption>
+                    </NativeSelect>
+                  </label>
                 </div>
               </div>
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
@@ -157,11 +176,11 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
               </details>
             </div>
             <Textarea id="wanda-fibo-prompt" required spellCheck value={prompt} disabled={!admitted || busy} maxLength={4000}
-              placeholder={mode === "edit" ? "Describe the edits you want…" : "Describe the image you want…"}
+              placeholder="Describe the result you want…"
               onChange={(event) => setPrompt(event.target.value)} />
             <div className="wanda-fibo-extra">
-              <Button variant="ghost" type="button" disabled>Negative prompt</Button>
-              <Button variant="ghost" type="button" disabled>VGL JSON</Button>
+              <Button variant="ghost" type="button" disabled><ChevronRight size={12} aria-hidden="true" />Negative prompt</Button>
+              <Button variant="ghost" type="button" disabled><ChevronRight size={12} aria-hidden="true" />VGL JSON</Button>
             </div>
           </div>
           <div className="wanda-fibo-dock">
@@ -180,19 +199,19 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
               <label className="wanda-fibo-steps"><span>Steps <output>4</output></span><Input type="range" min={1} max={8} value={4} disabled /></label>
             </div>
             <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}>
-              <Sparkles aria-hidden="true" />{busy ? "Rendering…" : "Generate"}
+              <Sparkles aria-hidden="true" />{busy ? "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
             </Button>
             {status && <p className="wanda-fibo-caption" role="status">{status}</p>}
           </div>
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas"
           onDragOver={(event) => {
-            if (mode === "edit" && admitted && !busy && event.dataTransfer.types.includes("Files")) event.preventDefault();
+            if (admitted && !busy && event.dataTransfer.types.includes("Files")) event.preventDefault();
           }}
           onDrop={(event) => {
             event.preventDefault();
             const file = event.dataTransfer.files[0];
-            if (mode === "edit" && file?.type.startsWith("image/")) attachImage(file, 0);
+            if (admitted && !busy && file?.type.startsWith("image/")) attachImage(file, 0);
           }}>
           {!admitted ? (
             <p>Sign in with an admitted RenderLab account to generate. <Link href="/settings" className="underline">Open Settings</Link></p>
@@ -203,19 +222,17 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
           ) : mode === "edit" && previews[0] ? (
             <figure><img src={previews[0]} alt="Source image" /><figcaption>Source</figcaption></figure>
           ) : (
-            mode === "edit" ? (
-              <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload" disabled={busy}
-                onClick={() => chooseImage(0)}>
-                <Images size={20} aria-hidden="true" /> Drop an image or click to upload
-              </Button>
-            ) : <p className="wanda-fibo-caption">Your generated image will appear here.</p>
+            <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload" disabled={busy}
+              title="Add a source image to start editing" onClick={() => chooseImage(0)}>
+              <ImageIcon size={20} aria-hidden="true" /> Drop an image or click to upload
+            </Button>
           )}
         </section>
         <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title">
           <h2 id="wanda-fibo-history-title">History</h2>
           {history.length ? history.map((image, index) => (
             <Button key={index} type="button" variant="outline" onClick={() => setResult(image)}>Render {history.length - index} · {image.seed}</Button>
-          )) : <p className="wanda-fibo-caption">No renders in this session.</p>}
+          )) : <p className="wanda-fibo-caption">Finished images will appear here.</p>}
         </aside>
       </div>
     </section>

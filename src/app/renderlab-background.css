@@ -307,9 +307,10 @@
 }
 .wanda-fibo-toolbar { position: relative; display: flex; justify-content: center; gap: 12px; margin-block-end: var(--fibo-panel-gap); }
 .wanda-fibo-modes { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgb(255 255 255 / 5%); }
-.wanda-fibo-queue { position: absolute; inset-inline-end: 0; inset-block-start: 5px; z-index: 1; }
+.wanda-fibo-tools { display: flex; gap: 4px; align-items: center; position: absolute; inset-inline-end: 0; inset-block-start: 0; }
+.wanda-fibo-queue { position: relative; z-index: 1; }
 .wanda-fibo-workspace summary { cursor: pointer; }
-.wanda-fibo-queue summary { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; }
+.wanda-fibo-queue summary { display: flex; align-items: center; gap: 6px; padding: 7px 9px; font-size: 12px; }
 .wanda-fibo-queue p, .wanda-fibo-recents > div { position: absolute; inset-inline-end: 0; margin-block-start: 4px; inline-size: 200px; border-radius: 16px; background: rgb(32 27 43 / 90%); backdrop-filter: blur(18px); box-shadow: 0 8px 28px rgb(0 0 0 / 24%); padding: 12px; font-size: 12px; }
 .wanda-fibo-grid {
   display: grid;
@@ -339,20 +340,20 @@
 }
 .wanda-fibo-tile img { inline-size: 100%; block-size: 55%; object-fit: cover; border-radius: 4px; }
 .wanda-fibo-remove { position: absolute; inset-block-start: 2px; inset-inline-end: 2px; }
-.wanda-fibo-size, .wanda-fibo-prompt-heading, .wanda-fibo-extra { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.wanda-fibo-prompt-heading { justify-content: space-between; min-block-size: 38px; margin-block: 16px 4px; }
+.wanda-fibo-prompt-heading, .wanda-fibo-extra { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.wanda-fibo-prompt-heading { justify-content: space-between; min-block-size: 38px; margin-block: 9px 3px; }
 .wanda-fibo-recents { position: relative; z-index: 1; }
 .wanda-fibo-recents summary { display: grid; place-items: center; inline-size: 32px; block-size: 32px; }
 .wanda-fibo-recents button { max-inline-size: 100%; overflow: hidden; justify-content: flex-start; }
-.wanda-fibo-fields textarea { min-block-size: clamp(142px, 18dvh, 256px); resize: vertical; }
+.wanda-fibo-fields textarea { min-block-size: clamp(142px, 18dvh, 256px); resize: none; }
 .wanda-fibo-extra { align-items: flex-start; flex-direction: column; gap: 0; margin-block-start: 6px; }
-.wanda-fibo-dock { border-block-start: 1px solid rgb(225 214 255 / 13%); margin-block-start: 24px; padding-block-start: 16px; }
+.wanda-fibo-dock { margin-block-start: 24px; }
 .wanda-fibo-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: end; font-size: 12px; }
 .wanda-fibo-steps { grid-column: 1 / -1; }
 .wanda-fibo-steps span { display: flex; justify-content: space-between; }
 .wanda-fibo-settings input { min-inline-size: 0; margin-block-start: 4px; }
-.wanda-fibo-seed { display: flex; align-items: center; gap: 3px; }
-.wanda-fibo-generate { inline-size: 100%; margin-block-start: 12px; }
+.wanda-fibo-seed { display: flex; align-items: center; position: relative; }
+.wanda-fibo-generate { inline-size: 100%; margin-block-start: 12px; justify-content: flex-start; }
 .wanda-fibo-canvas {
   min-block-size: 0;
   display: grid;
@@ -364,7 +365,7 @@
   overflow: hidden;
   padding: var(--fibo-panel-padding);
   text-align: center;
-  background: rgb(255 255 255 / 5%);
+  background: rgb(180 168 228 / 5%);
 }
 .wanda-fibo-canvas .wanda-fibo-canvas-upload {
   position: absolute;
@@ -388,8 +389,9 @@
   .wanda-fibo-grid { grid-template-columns: minmax(0, 1fr); min-block-size: 0; }
   .wanda-fibo-canvas { order: -1; inline-size: min(100%, 420px); }
   .wanda-fibo-toolbar { flex-wrap: wrap; align-items: center; }
-  .wanda-fibo-queue { position: relative; inset: auto; }
-  .wanda-fibo-queue p { inset-inline-end: 50%; transform: translateX(50%); }
+  .wanda-fibo-tools { position: relative; inset: auto; }
+  .wanda-fibo-queue p { inset-inline-end: auto; inset-inline-start: 0; }
+  .wanda-fibo-queue:last-child p { inset-inline-start: auto; inset-inline-end: 0; }
 }
 
 /* Keep focus rings on interactive glass surfaces without resting outlines. */
@@ -405,8 +407,8 @@
   border-radius: 16px;
 }
 .wanda-fibo-workspace :is(textarea, input[type="number"], .wanda-fibo-tile > button:first-child,
-  .wanda-fibo-size button, .wanda-fibo-seed button, .wanda-fibo-history button,
-  .wanda-fibo-queue summary, .wanda-fibo-recents summary) {
+  .wanda-fibo-aspect select, .wanda-fibo-seed button, .wanda-fibo-history button,
+  .wanda-fibo-recents summary) {
   background: rgb(255 255 255 / 5%);
   box-shadow: none;
 }
@@ -433,3 +435,72 @@
   outline: 2px solid #b7abff;
   outline-offset: -2px;
 }
+
+/* Align Create tools with the shared header on desktop without covering the menus. */
+@media (min-width: 1025px) {
+  .preview-navigation-shell:has(.wanda-fibo-workspace) > .preview-navigation-header {
+    pointer-events: none;
+  }
+  .preview-navigation-shell:has(.wanda-fibo-workspace) > .preview-navigation-header > div {
+    pointer-events: auto;
+  }
+  .wanda-fibo-workspace { padding-block: 0 28px; }
+  .wanda-fibo-toolbar { margin-block-start: -55px; margin-block-end: 28px; }
+  .wanda-fibo-tools { inset-inline-end: 60px; }
+  .wanda-fibo-grid { min-block-size: max(570px, calc(100dvh - 111px)); }
+  .wanda-fibo-canvas { inline-size: min(100%, max(295px, calc((100dvh - 177px) * .75))); }
+}
+.wanda-fibo-modes button { min-block-size: 30px; block-size: 30px; font-size: 12px; }
+.wanda-fibo-tools, .wanda-fibo-prompt-heading, .wanda-fibo-settings {
+  color: #bbb4ca;
+}
+.wanda-fibo-size {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  align-items: center;
+  gap: 6px;
+}
+.wanda-fibo-aspect { display: grid; gap: 4px; font-size: 12px; color: #bbb4ca; }
+.wanda-fibo-aspect select {
+  inline-size: 100%;
+  min-block-size: 32px;
+  border-radius: 999px;
+  border: 0;
+  padding-inline: 8px 26px;
+  font-size: 11px;
+  color: #ded8ec;
+}
+.wanda-fibo-extra button {
+  min-block-size: 28px;
+  block-size: 28px;
+  gap: 4px;
+  padding-inline: 0;
+  font-size: 12px;
+}
+.wanda-fibo-seed input { padding-inline-end: 38px; }
+.wanda-fibo-workspace .wanda-fibo-seed button {
+  position: absolute;
+  inset-inline-end: 4px;
+  inset-block-start: 50%;
+  transform: translateY(calc(-50% + 2px));
+}
+.wanda-fibo-steps input {
+  display: block;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  accent-color: #adabf6;
+  opacity: .78;
+}
+.wanda-fibo-steps output { color: #bdb5ff; }
+.wanda-fibo-generate kbd {
+  margin-inline-start: auto;
+  white-space: nowrap;
+  padding: 3px 6px;
+  border-radius: 7px;
+  background: rgb(22 15 62 / 32%);
+  font: inherit;
+  font-size: 10px;
+}
+.wanda-fibo-workspace .wanda-fibo-generate:disabled { opacity: .68; }
