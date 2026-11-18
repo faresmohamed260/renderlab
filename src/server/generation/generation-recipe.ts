@@ -63,6 +63,7 @@ export function reconstructGenerationRecipeRequest(
     output,
     inputs: row.inputs,
     ...(advanced === undefined ? {} : { advanced }),
+    ...(Object.hasOwn(row.parameters, "vgl") ? { vgl: row.parameters.vgl } : {}),
   });
   if (!parsed.ok) return null;
   if (parsed.request.output.kind !== row.output_kind) return null;

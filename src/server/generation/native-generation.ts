@@ -1,3 +1,4 @@
+import { resolveFiboVglReferences } from "@/lib/capabilities/fibo-vgl";
 import type {
   CreativeOperation,
   GenerationJob,
@@ -197,7 +198,8 @@ async function insertJob(ownerId: string, request: GenerationRequest, workflow: 
       model: workflow.model,
       ecosystem: workflow.ecosystem,
       inputs: request.inputs,
-      parameters: { model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {} },
+      parameters: { model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {},
+        ...(request.vgl ? { vgl: request.vgl } : {}) },
     }),
   });
   if (!rows?.[0]) throw new Error("Generation job could not be created.");
@@ -366,14 +368,17 @@ async function prepareWorkerSubmission(workflow: WorkflowConfig, request: Genera
       || sources.reduce((total, source) => total + source.bytes.length, 0) > 32 * 1024 * 1024) {
       throw new Error("Unsupported FIBO dimensions or input size.");
     }
-    const aliases = new Map<string, number>(request.inputs.map((input, index) => [input.alias, index + 1]));
-    const prompt = request.prompt.replace(/@image\d+\b/g, (mention) => {
+    const inputAliases = request.inputs.map((input) => input.alias);
+    const aliases = new Map<string, number>(inputAliases.map((alias, index) => [alias, index + 1]));
+    const prompt = request.vgl && request.prompt === request.vgl ? "" : request.prompt.replace(/@image\d+\b/g, (mention) => {
       const slot = aliases.get(mention.slice(1));
       return slot ? `<image_${slot}>` : mention;
     });
+    const vgl = request.vgl ? resolveFiboVglReferences(request.vgl, inputAliases) : undefined;
     return {
       body: JSON.stringify({ prompt, width: size[0], height: size[1], seed: request.advanced?.seed ?? 42,
         steps: request.advanced?.steps ?? 4, negative_prompt: request.advanced?.negativePrompt ?? "",
+        ...(vgl ? { vgl } : {}),
         images: sources.map((source) => source.bytes.toString("base64")) }),
       contentType: "application/json",
     };

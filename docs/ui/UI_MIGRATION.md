@@ -75,7 +75,7 @@ When a new UI phase or redesign is explicitly authorized:
 
 **Starting state:** Protected main at 8c02102c6b94be61da04f963b74fac82948c80cb is FIBO-only. The native worker accepts one output and does not implement masks; the API rejects VGL and lacks a multi-output durable job. WANDA feature/fibo-create-port at 09299d3b8aa7e03996a9b576e678752b9d5b25d3 contains reference UI modules but is diverged from main. Use selective import onto current main, not an indiscriminate merge. WANDA-only visual and hosted-relay experiments are preserved at docs/history/ui/FIBO_WANDA_VISUAL_PORT_2026-11-18.md.
 
-**Next gate:** Merge the bounded production contract before implementation, then qualify masks, generated/manual VGL, input/inspiration roles, batch persistence, negative prompting and existing single-FIBO request lifecycle before enabling the corresponding UI. Tests must prove responsive, keyboard, touch, reduced-motion and full worker-backed runtime behavior. Release or provider mutation requires separate owner authorization.
+**Next gate:** The bounded production contract merged as PR #422. Manual VGL request/persistence/worker mapping is the first candidate backend slice; the remaining work must qualify hosted signed-in generation, masks, generated VGL, inspiration, batch persistence, negative prompting and full FIBO Create lifecycle before enabling those controls. Tests must prove responsive, keyboard, touch, reduced-motion and full worker-backed runtime behavior. Release or provider mutation requires separate owner authorization.
 
 **Reporting:** Keep the implementation inventory and status in the contract and current capability/screen registries; do not turn this tracker into another run journal.
 

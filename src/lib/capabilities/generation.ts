@@ -194,6 +194,8 @@ export function advancedDefaultsForOutput(kind: OutputKind) {
 export type GenerationRequest = {
   model?: GenerationModel;
   prompt: string;
+  /** Validated manual FIBO JSON caption/instruction; omitted for ordinary prompts. */
+  vgl?: string;
   output: {
     kind: OutputKind;
     aspectRatio: AspectRatio;

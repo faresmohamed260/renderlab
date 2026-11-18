@@ -22,6 +22,12 @@ The owner intends every preserved image control to work in production. **A visua
 - WANDA development checkout `C:\rl-local` is `feature/fibo-create-port` at `09299d3b8aa7e03996a9b576e678752b9d5b25d3`; it contains the authored Create visual/interaction implementation and local preview/hosted-relay experiments. The branch is 164 commits ahead and 11 behind protected `main` at this checkpoint. Do not merge it wholesale. Unrelated WANDA working-tree changes must not be overwritten.
 - The current production application/rollback identity in `docs/production/current.json` is an **historically verified manifest**, not live provider read-back for an eventual release. No production change is included in this contract.
 
+## Current execution checkpoint — 2026-11-18
+
+Phase A's bounded production contract merged through PR #422 at `1bcd92f3dc90be2c55d5fd942d23f81a95bff830`; normal implementation is now authorized within the contract, **not** a production/provider change. Phase B/C work is in progress. The first vertical slice adds bounded manual VGL JSON to RenderLab's public FIBO generation request, validates attached image references, persists VGL with the durable job, revalidates it for retry/recipe reconstruction, and forwards JSON to the existing native gateway's already-supported `TextEncodeFibo2` path. Its tests use a fake provider spawn and are not live model qualification. VGL-only jobs persist the supplied JSON in the mandatory nonblank prompt column while submitting an empty plain-text prompt plus VGL to the worker; no schema migration is required.
+
+**Still not completed:** hosted signed-in manual VGL generation, generated VGL using FIBO's internal helper, masks, separate inspiration, multi-output durable batches, live cancellation/partial retries, complete workspace UI parity, staged smoke tests and release. Negative-prompt effectiveness remains unresolved at the existing guidance setting. Do not expose or mark these controls production-functional on the strength of request parsing or local mocks.
+
 ## Feature and contract inventory
 
 | Surface/operation | Required production behavior |
