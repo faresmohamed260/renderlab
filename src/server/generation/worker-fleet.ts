@@ -18,6 +18,7 @@ export type GenerationWorker = {
 const testGatewayOverride = process.env.RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE === "true"
   ? process.env.RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL?.trim().replace(/\/$/, "") || null
   : null;
+const modalGatewayOriginPattern = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
 
 function gatewayUrl(productionUrl: string) {
   return testGatewayOverride || productionUrl;
@@ -100,7 +101,7 @@ function configuredFiboWorker(): GenerationWorker | null {
   const url = process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim().replace(/\/$/, "");
   const key = process.env.RENDERLAB_FIBO_MODAL_KEY?.trim();
   const secret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
-  if (!url || !key || !secret || !/^https:\/\/[a-z0-9-]+\.modal\.run$/.test(url)) return null;
+  if (!url || !key || !secret || !modalGatewayOriginPattern.test(url)) return null;
   return { id: "renderlab-fibo-native-01", ecosystem: "fibo2-edit-turbo", gatewayUrl: url,
     policy: { transport: "modal-proxy", cancellation: true, reassignment: false,
       retryAmbiguousSubmit: false, resultMime: "image/png", timeoutMs: 30_000 },
