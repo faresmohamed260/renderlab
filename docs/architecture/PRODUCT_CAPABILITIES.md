@@ -8,6 +8,8 @@ This document records the capability baseline that informs RenderLab. It disting
 
 New creative work is **FIBO image generation and image editing only**. FLUX, Qwen, REDGraft LTX, video/animation, and image upscale are retired from new submissions. Historical jobs and media remain readable for continuity but are not reusable through a retired provider path.
 
+Historical edit/animate result-to-source comparison remains a read-only, owner-scoped media operation even when an old model recipe is no longer runnable; Retry/Reuse Settings still require current capability validation.
+
 The FIBO-only production Create workspace is an **in-progress implementation**, governed by `docs/architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md` and UI-084. Its manually supplied VGL JSON path now has request validation, per-slot reference validation, worker mapping, durable job parameter persistence and recipe/retry reconstruction in the current candidate code. This is an implementation statement, **not** a live hosted-provider qualification or a claim that the full workspace, masks, generated VGL, inspiration or 1–4 output batches are functional in production. The working WANDA FIBO Studio's source-free Edit Turbo generation is the parity reference, without substituting FIBO Dev.
 
 ## Authority and Scope

@@ -6,6 +6,7 @@ import type {
 import { isPromptGenerationOperation, resolveCreativeOperation } from "@/lib/capabilities/generation";
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
 import { persistedUpscaleSourceAssetId } from "@/lib/capabilities/upscale";
+import { comparisonSourceAssetId } from "@/lib/capabilities/generation-comparison";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { generationImageInputsAvailable } from "@/server/generation/submit-generation";
@@ -102,19 +103,12 @@ export async function loadGenerationComparisonSource(
     return publicMediaAsset(source);
   }
 
-  const primaryRole = row.operation === "edit-image"
-    ? "primary-image"
-    : row.operation === "animate-image"
-      ? "first-frame"
-      : null;
-  if (!primaryRole) return null;
-
-  const request = reconstructGenerationRecipeRequest(row);
-  if (!request) return null;
-  const primaryInput = request.inputs.find((input) => input.role === primaryRole);
-  if (!primaryInput || primaryInput.source.type !== "media-asset") return null;
-
-  const source = await getMediaAsset(ownerId, primaryInput.source.id);
+  // Comparing an existing result is read-only: retired model settings must not
+  // hide an otherwise valid historical source. Reuse/Retry still require the
+  // separate current-valid recipe parser; source ownership remains enforced.
+  const sourceId = comparisonSourceAssetId(row.operation, row.inputs);
+  if (!sourceId) return null;
+  const source = await getMediaAsset(ownerId, sourceId);
   if (!source || source.kind !== "image") return null;
   return publicMediaAsset(source);
 }
