@@ -5,14 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, CircleHelp, House, Images, Menu, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
-import { RenderLabBrand } from "@/components/brand/renderlab-brand";
+import { RenderLabMark } from "@/components/brand/renderlab-brand";
 
-import { animated, to, useSpring } from "@react-spring/web";
+import { animated, useSpring } from "@react-spring/web";
 import { Button } from "@/components/ui/button";
 
 const sidebarSpring = { mass: 1, tension: 220, friction: 22 };
-const collapsedWidth = 80;
-const expandedWidth = 256;
 
 function usePreviewReducedMotion() {
   const [reduced, setReduced] = useState(true);
@@ -26,17 +24,14 @@ function usePreviewReducedMotion() {
   return reduced;
 }
 
-function railOutline(width: number, height: number, center: number) {
-  const right = Math.max(76, width) - 6;
+function railOutline(height: number, center: number) {
   const bottom = Math.max(120, height) - 8;
-  const y = Math.max(60, Math.min(bottom - 52, center));
-  const edge = center > 0
-    ? "V " + (y + 42) + " C 8 " + (y + 22) + " 53 " + (y + 32) + " 53 " + y
-      + " S 8 " + (y - 24) + " 8 " + (y - 42)
+  const y = Math.max(66, Math.min(bottom - 56, center));
+  const notch = center > 0
+    ? `V ${y - 42} C 74 ${y - 22} 29 ${y - 32} 29 ${y} S 74 ${y + 24} 74 ${y + 42}`
     : "";
-  return "M 24 8 H " + (right - 16) + " Q " + right + " 8 " + right + " 24 V " + (bottom - 16)
-    + " Q " + right + " " + bottom + " " + (right - 16) + " " + bottom
-    + " H 24 Q 8 " + bottom + " 8 " + (bottom - 16) + " " + edge + " V 24 Q 8 8 24 8 Z";
+  return `M 24 8 H 58 Q 74 8 74 24 ${notch} V ${bottom - 16}
+    Q 74 ${bottom} 58 ${bottom} H 24 Q 8 ${bottom} 8 ${bottom - 16} V 24 Q 8 8 24 8 Z`;
 }
 
 const accountOptions = [
@@ -118,7 +113,7 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
           setOpen(false);
         }
       }}>
-      <Button ref={trigger} variant="ghost" aria-label={"Account menu: " + name} title={name} aria-expanded={open} aria-controls={id}
+      <Button ref={trigger} variant="ghost" aria-label={"Account menu: " + name} aria-expanded={open} aria-controls={id}
         className="preview-navigation-profile h-auto w-full justify-start whitespace-normal text-left"
         onClick={() => {
           pinned.current = !pinned.current;
@@ -127,19 +122,18 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
         {avatarSrc && <Image src={avatarSrc} alt="" width={30} height={30} unoptimized
           className="preview-navigation-avatar"
           onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} />}
-        <span className="preview-account-identity min-w-0 truncate">{name}</span>
+        {!avatarSrc && !open && <span className="min-w-0 truncate">{name}</span>}
       </Button>
       <animated.div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}
         style={{ opacity: panel.progress.to([0, 1], [0, 1], "clamp"), scaleY: panel.progress }}>
         <svg className="preview-account-clip" width="0" height="0" aria-hidden="true">
           <defs>
             <clipPath id={id + "-glass"} clipPathUnits="objectBoundingBox">
-              <path d="M .59 0 H .89 Q 1 0 1 .11 V .89 Q 1 1 .89 1 H .11 Q 0 1 0 .89 V .32 Q 0 .21 .11 .21 H .37 C .45 .21 .46 .18 .47 .11 C .48 .035 .51 0 .59 0 Z" />
+              <path d="M .09 0 H .91 Q 1 0 1 .09 V .71 Q 1 .8 .91 .8 H .77 C .69 .8 .68 .83 .67 .91 C .66 .975 .63 1 .55 1 H .09 Q 0 1 0 .91 V .09 Q 0 0 .09 0 Z" />
             </clipPath>
           </defs>
         </svg>
         <div aria-hidden="true" className="preview-account-glass" style={{ clipPath: "url(#" + id + "-glass)" }} />
-        <div aria-hidden="true" className="preview-account-kicker">Account</div>
         <ul aria-label="Account options" className="preview-account-options">
           {accountOptions.map(({ label, icon: Icon }) => (
             <li key={label} className="flex items-center gap-2 px-2 py-2 text-sm">
@@ -148,6 +142,7 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
             </li>
           ))}
         </ul>
+        <span className="preview-account-name" title={name}>{name}</span>
       </animated.div>
     </div>
   );
@@ -166,15 +161,10 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
   const railId = useId();
   const rail = useRef<HTMLElement>(null);
   const reduced = usePreviewReducedMotion();
-  const [hovered, setHovered] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
   const [height, setHeight] = useState(900);
   const [activeY, setActiveY] = useState(0);
   const [hoverY, setHoverY] = useState<number | null>(null);
-  const expanded = pinned || (hovered && !dismissed);
   const motion = useSpring({
-    width: expanded ? expandedWidth : collapsedWidth,
     center: hoverY ?? activeY,
     config: sidebarSpring,
     immediate: reduced,
@@ -200,11 +190,6 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
       links?.removeEventListener("scroll", update);
     };
   }, [pathname]);
-
-  function toggleSidebar() {
-    setPinned(!expanded);
-    setDismissed(expanded);
-  }
 
   function handleNavigation(event: MouseEvent<HTMLDivElement>) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey
@@ -237,40 +222,22 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
   );
 
   return (
-    <div className="preview-navigation-shell" data-sidebar-collapsed={!expanded} onClickCapture={handleNavigation}>
-      <animated.aside ref={rail} id={railId} className="preview-navigation-rail" aria-label="Sidebar"
-        style={{ width: motion.width }}
-        onPointerEnter={(event) => {
-          if (event.pointerType === "mouse") { setDismissed(false); setHovered(true); }
-        }}
-        onPointerLeave={(event) => {
-          if (event.pointerType === "mouse") { setHovered(false); setDismissed(false); setHoverY(null); }
-        }}
-        onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget)) setPinned(false);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") { setPinned(false); setDismissed(true); }
-        }}>
+    <div className="preview-navigation-shell" onClickCapture={handleNavigation}>
+      <aside ref={rail} className="preview-navigation-rail" aria-label="Sidebar">
         <svg className="preview-account-clip" width="0" height="0" aria-hidden="true">
           <defs>
             <clipPath id={railId + "-glass"}>
-              <animated.path d={to([motion.width, motion.center], (w, y) => railOutline(w, height, y))} />
+              <animated.path d={motion.center.to((y) => railOutline(height, y))} />
             </clipPath>
           </defs>
         </svg>
         <div className="preview-rail-glass" aria-hidden="true" style={{ clipPath: "url(#" + railId + "-glass)" }} />
         <div className="preview-navigation-heading">
-          <Button type="button" variant="ghost" className="preview-navigation-brand"
-            aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
-            title={expanded ? "Collapse sidebar" : "Expand sidebar"}
-            aria-controls={railId} aria-expanded={expanded} onClick={toggleSidebar}>
-            <RenderLabBrand markClassName="size-8" textClassName="text-base" />
-          </Button>
+          <RenderLabMark className="size-8" />
         </div>
         {renderLinks(true)}
         <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} />
-      </animated.aside>
+      </aside>
       <details className="preview-navigation-disclosure" key={pathname}>
         <summary><Menu size={18} aria-hidden="true" /> Menu</summary>
         {renderLinks(false)}
