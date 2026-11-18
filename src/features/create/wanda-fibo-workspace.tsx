@@ -512,6 +512,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               renderRatio={mode === "generate" ? size.width / size.height : undefined}
               status={status}
               onBrowse={() => chooseImage(mode === "edit" ? 0 : 4)}
+              onUseInput={(file) => attachImage(file, 0)}
               onUseSource={(image) => {
                 try {
                   const bytes = Uint8Array.from(atob(image.image_data.split(",")[1]), (ch) => ch.charCodeAt(0));

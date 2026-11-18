@@ -8,8 +8,8 @@ import { buildWandaBatchZip } from "./wanda-fibo-batch-zip";
 type StageResult = { image_data: string; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
 export type StageTurn<T> = { id: string; prompt: string; input?: File; images?: T[]; error?: string };
 
-function TurnResult({ image, label, disabled, onOpen, onReuse }: {
-  image: StageResult; label: string; disabled: boolean; onOpen: () => void; onReuse: () => void;
+function TurnImage({ url, label, disabled, onOpen, onReuse }: {
+  url: string; label: string; disabled?: boolean; onOpen: () => void; onReuse: () => void;
 }) {
   const drag = useRef<{ id: number; x: number; y: number; distance: number } | null>(null);
   const swiped = useRef(false);
@@ -45,21 +45,19 @@ function TurnResult({ image, label, disabled, onOpen, onReuse }: {
     }}
     onPointerUp={finish} onPointerCancel={finish} onLostPointerCapture={finish}
     onClick={(event) => { if (!swiped.current || event.detail === 0) onOpen(); }}>
-    <img src={image.image_data} alt="" draggable={false} />
+    <img src={url} alt="" draggable={false} />
   </Button>;
 }
 
-function TurnInput({ file, onOpen }: { file: File; onOpen: (url: string) => void }) {
+function TurnInput({ file, busy, onOpen, onReuse }: { file: File; busy: boolean; onOpen: (url: string) => void; onReuse: (file: File) => void }) {
   const [url, setUrl] = useState<string>();
   useEffect(() => {
     const next = URL.createObjectURL(file);
     setUrl(next);
     return () => URL.revokeObjectURL(next);
   }, [file]);
-  return url && <Button className="wanda-fibo-thread-image" type="button" variant="ghost"
-    aria-label="View submitted image" aria-haspopup="dialog" onClick={() => onOpen(url)}>
-    <img src={url} alt="" draggable={false} />
-  </Button>;
+  return url && <TurnImage url={url} label="View submitted image" onOpen={() => onOpen(url)}
+    onReuse={() => { if (!busy) onReuse(file); }} />;
 }
 
 type Props<T extends StageResult> = {
@@ -84,9 +82,10 @@ type Props<T extends StageResult> = {
   status: string;
   onBrowse: () => void;
   onUseSource: (result: StageResult) => void;
+  onUseInput?: (file: File) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ turns = [], result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ turns = [], result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -122,6 +121,61 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], result, sour
     setViewerOpen(true);
   }
   const frame = useRef<HTMLDivElement>(null);
+  const [pull, setPull] = useState(0);
+  useEffect(() => {
+    const region = inThread ? thread.current : frame.current;
+    if (!phone || busy || viewerOpen || !region) return;
+    let gesture: { x: number; y: number; distance: number } | undefined;
+    let suppressClick = false;
+    const start = (event: TouchEvent) => {
+      suppressClick = false;
+      gesture = undefined;
+      if (event.touches.length !== 1 || (inThread && region.scrollTop > 1)
+        || (event.target instanceof Element && event.target.closest(".wanda-fibo-stage-batch"))) return;
+      const { clientX: x, clientY: y } = event.touches[0];
+      gesture = { x, y, distance: 0 };
+    };
+    const move = (event: TouchEvent) => {
+      if (!gesture) return;
+      if (event.touches.length !== 1) { gesture = undefined; setPull(0); return; }
+      const { clientX, clientY } = event.touches[0];
+      const distance = clientY - gesture.y;
+      if (!gesture.distance && (distance < -8 || Math.abs(clientX - gesture.x) > Math.max(12, distance))) {
+        gesture = undefined;
+        return;
+      }
+      if ((!gesture.distance && distance < 12) || !event.cancelable) return;
+      event.preventDefault();
+      gesture.distance = Math.max(0, distance);
+      suppressClick = true;
+      setPull(gesture.distance);
+    };
+    const end = (event: TouchEvent) => {
+      const refresh = event.type === "touchend" && (gesture?.distance ?? 0) >= 76;
+      gesture = undefined;
+      setPull(0);
+      if (refresh) window.location.reload();
+    };
+    const click = (event: MouseEvent) => {
+      if (!suppressClick || !event.detail) return;
+      suppressClick = false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    region.addEventListener("touchstart", start, { passive: true });
+    region.addEventListener("touchmove", move, { passive: false });
+    region.addEventListener("touchend", end);
+    region.addEventListener("touchcancel", end);
+    region.addEventListener("click", click, true);
+    return () => {
+      region.removeEventListener("touchstart", start);
+      region.removeEventListener("touchmove", move);
+      region.removeEventListener("touchend", end);
+      region.removeEventListener("touchcancel", end);
+      region.removeEventListener("click", click, true);
+      setPull(0);
+    };
+  }, [phone, busy, viewerOpen, inThread]);
   const restoring = useRef(false);
   const opener = useRef<HTMLButtonElement>(null);
   const inspecting = busy && !!result;
@@ -150,9 +204,9 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], result, sour
   const shown = showingProgress ? undefined : (reviewing ? input : result?.image_data ?? input);
   const canCompare = !reviewing && !!source && result?.source === source && !!before && !busy;
   const compare = canCompare && compared === result;
-  const dimensionsUrl = showingProgress ? input : shown;
+  const dimensionsUrl = showingProgress ? (source ? input : undefined) : shown;
   const ratio = (showingProgress && renderRatio) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio : 0.75);
-  const label = showingProgress ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? (source ? "Source preview" : "Inspiration") : "Canvas";
+  const label = busy ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? (source ? "Source preview" : "Inspiration") : "Canvas";
 
   useEffect(() => {
     selection.current++;
@@ -402,18 +456,21 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], result, sour
 
   return (
     <>
-      <div ref={frame} className="wanda-fibo-stage-frame" onKeyDown={stageKeys} data-batch={showBatch}
+      <div ref={frame} className="wanda-fibo-stage-frame" onKeyDown={stageKeys} data-batch={showBatch} data-pull-ready={phone && !busy && !viewerOpen}
         style={{ "--stage-media-ratio": ratio } as CSSProperties}>
+        {pull >= 12 && <div className="wanda-fibo-stage-pull" style={{ translate: "0 " + Math.min(32, (pull - 12) / 2) + "px" }}>
+          {pull >= 76 ? "Release to refresh" : "Pull to refresh"}
+        </div>}
         {inThread ? <div ref={thread} className="wanda-fibo-thread" aria-label="Render conversation" tabIndex={0}>
           {turns.map((turn, index) => (
             <article className="wanda-fibo-thread-turn" key={turn.id}>
               <div className="wanda-fibo-thread-sent">
-                {turn.input && <TurnInput file={turn.input} onOpen={openViewer} />}
+                {turn.input && <TurnInput file={turn.input} busy={busy} onOpen={openViewer} onReuse={(file) => onUseInput?.(file)} />}
                 {turn.prompt && <p>{turn.prompt}</p>}
               </div>
               <div className="wanda-fibo-thread-reply">
                 {turn.images?.map((image, itemIndex) =>
-                  <TurnResult key={image.filename ?? itemIndex} image={image}
+                  <TurnImage key={image.filename ?? itemIndex} url={image.image_data}
                     label={"View generated image " + (itemIndex + 1)} disabled={busy}
                     onOpen={() => void select(image, true)} onReuse={() => onUseSource(image)} />)}
                 {turn.error && <p role="status">{turn.error}</p>}

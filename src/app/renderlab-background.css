@@ -1031,6 +1031,7 @@
 .wanda-fibo-thread-turn { display: flex; flex-direction: column; flex: none; gap: 10px; }
 .wanda-fibo-thread-sent, .wanda-fibo-thread-reply { display: flex; flex-direction: column; gap: 7px; max-inline-size: 85%; }
 .wanda-fibo-thread-sent { align-self: flex-end; align-items: flex-end; }
+.wanda-fibo-thread-sent:has(.wanda-fibo-thread-image) { inline-size: min(85%, 195px); }
 .wanda-fibo-thread-reply { align-self: flex-start; align-items: flex-start; inline-size: min(85%, 280px); }
 .wanda-fibo-thread-sent p, .wanda-fibo-thread-reply p {
   padding: 9px 12px;
@@ -1073,4 +1074,26 @@
 .wanda-fibo-thread-image img { pointer-events: none; }
 @media (prefers-reduced-motion: no-preference) {
   .wanda-fibo-thread-image:not([data-swiping]) { transition: translate .16s ease; }
+}
+
+.wanda-fibo-stage-pull {
+  position: absolute;
+  z-index: 5;
+  inset-block-start: 6px;
+  inset-inline: 0;
+  margin-inline: auto;
+  inline-size: max-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgb(25 21 39 / 84%);
+  color: #dedbed;
+  backdrop-filter: blur(14px);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .wanda-fibo-stage-frame[data-pull-ready="true"] > .wanda-fibo-stage-document > .wanda-fibo-stage-surface {
+    touch-action: pinch-zoom;
+  }
 }
