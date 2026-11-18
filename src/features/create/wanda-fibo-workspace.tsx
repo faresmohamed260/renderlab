@@ -19,19 +19,37 @@ const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
 type Result = { image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number };
-type QueuedRender = { bookmark: StageBookmark; run: RunSettings };
+type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
 type Poll = { state?: "pending" | "running" | "finished"; finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
 
+function parseStageBookmark(raw: unknown): StageBookmark | undefined {
+  if (!raw || typeof raw !== "object") return;
+  const value = raw as Partial<StageBookmark>;
+  if (typeof value.id !== "string" || !/^[a-f0-9]{32}$/.test(value.id)
+    || (value.mode !== "edit" && value.mode !== "generate") || typeof value.count !== "number"
+    || !Number.isInteger(value.count) || value.count < 1 || value.count > 4
+    || typeof value.expires !== "number" || !Number.isFinite(value.expires) || value.expires <= Date.now()) return;
+  const aspect = typeof value.aspect === "number" && Number.isFinite(value.aspect) && value.aspect > 0
+    ? value.aspect : undefined;
+  return { id: value.id, mode: value.mode, count: value.count, aspect, expires: value.expires };
+}
+
 function readStageBookmark(key: string): StageBookmark | undefined {
+  try { return parseStageBookmark(JSON.parse(sessionStorage.getItem(key) ?? "null")); }
+  catch { /* Session storage is optional. */ }
+}
+
+function readWaiting(key: string, activeId?: string): QueuedRender[] {
   try {
-    const value = JSON.parse(sessionStorage.getItem(key) ?? "null");
-    if (value && typeof value.id === "string" && /^[a-f0-9]{32}$/.test(value.id)
-      && (value.mode === "edit" || value.mode === "generate") && Number.isInteger(value.count)
-      && value.count >= 1 && value.count <= 4 && Number.isFinite(value.expires) && value.expires > Date.now()) {
-      const aspect = Number.isFinite(value.aspect) && value.aspect > 0 ? Number(value.aspect) : undefined;
-      return { id: value.id, mode: value.mode, count: value.count, aspect, expires: value.expires };
+    const stored: unknown = JSON.parse(sessionStorage.getItem(key + ":waiting") ?? "[]");
+    if (!Array.isArray(stored)) return [];
+    const entries: QueuedRender[] = [];
+    for (const value of stored.slice(0, 2)) {
+      const bookmark = parseStageBookmark(value);
+      if (bookmark && bookmark.id !== activeId && !entries.some((item) => item.bookmark.id === bookmark.id)) entries.push({ bookmark });
     }
-  } catch { /* Session storage is optional. */ }
+    return entries;
+  } catch { return []; }
 }
 
 function writeStageBookmark(key: string | undefined, value?: StageBookmark) {
@@ -136,6 +154,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [enqueueing, setEnqueueing] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [waiting, setWaiting] = useState<QueuedRender[]>([]);
+  const [waitingReady, setWaitingReady] = useState(false);
   const [queueNotice, setQueueNotice] = useState("");
   const queueCount = Number(busy) + waiting.length;
   const [historySelection, setHistorySelection] = useState<{ image: Result }>();
@@ -422,6 +441,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       return;
     }
     const bookmark = readStageBookmark(bookmarkKey);
+    setWaiting(readWaiting(bookmarkKey, bookmark?.id));
+    setWaitingReady(true);
     if (!bookmark) {
       setStageReady(true);
       return;
@@ -453,6 +474,15 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   }, [bookmarkKey]);
 
   useEffect(() => {
+    if (!bookmarkKey || !waitingReady) return;
+    try {
+      const key = bookmarkKey + ":waiting";
+      if (waiting.length) sessionStorage.setItem(key, JSON.stringify(waiting.map(({ bookmark }) => bookmark)));
+      else sessionStorage.removeItem(key);
+    } catch { /* A blocked storage policy does not affect the accepted jobs. */ }
+  }, [bookmarkKey, waiting, waitingReady]);
+
+  useEffect(() => {
     if (!stageReady || busy || active.current || !waiting.length) return;
     const next = waiting[0];
     const controller = new AbortController();
@@ -464,6 +494,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     setLiveFrame(undefined);
     setLiveBlur(undefined);
     setLiveCaption(undefined);
+    setMode(next.bookmark.mode);
     setResuming(next.bookmark);
     setAccepted(true);
     setStatus("Waiting in Queue…");
@@ -590,7 +621,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
               {waiting.map(({ bookmark, run }) => (
                 <div className="wanda-fibo-queue-entry" key={bookmark.id}>
-                  <span>{run.prompt || "VGL edit"}</span>
+                  <span>{run?.prompt || (run ? "VGL edit" : bookmark.mode === "edit" ? "Queued image edit" : "Queued text-to-image render")}</span>
                   <Button type="button" variant="ghost" size="sm"
                     onClick={() => void removeWaiting(bookmark.id)}>Remove waiting render</Button>
                 </div>
