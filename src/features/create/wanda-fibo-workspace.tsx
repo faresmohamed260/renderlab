@@ -282,7 +282,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 </div>
               </details>
             </div>
-            <Textarea id="wanda-fibo-prompt" required spellCheck value={prompt} disabled={!admitted || busy} maxLength={4000}
+            <Textarea id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={!admitted || busy} maxLength={4000}
               placeholder="Describe the result you want…"
               onChange={(event) => setPrompt(event.target.value)} />
             <div className="wanda-fibo-extra" key={mode}>
@@ -290,7 +290,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
               }}>
                 <summary id="wanda-fibo-negative-label">Negative prompt</summary>
-                <Textarea aria-labelledby="wanda-fibo-negative-label" rows={3} maxLength={4000} spellCheck
+                <Textarea aria-labelledby="wanda-fibo-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
                   placeholder="What should the image avoid?" value={negativePrompt} disabled={busy}
                   onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
               </details>
@@ -298,7 +298,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
               }}>
                 <summary id="wanda-fibo-vgl-label">VGL JSON</summary>
-                <Textarea aria-labelledby="wanda-fibo-vgl-label" className="wanda-fibo-vgl" rows={5} maxLength={8192} spellCheck={false}
+                <Textarea aria-labelledby="wanda-fibo-vgl-label" className="wanda-fibo-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
                   placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
                   title={!vglValid ? "Enter a non-empty JSON object." : undefined}
                   aria-describedby={!vglValid ? "wanda-fibo-vgl-invalid" : undefined}
@@ -312,7 +312,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               <div>
                 <label htmlFor="wanda-fibo-seed">Seed</label>
                 <div className="wanda-fibo-seed">
-                  <Input id="wanda-fibo-seed" type="text" inputMode="numeric" maxLength={10} required={!randomize} value={seed}
+                  <Input id="wanda-fibo-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10} required={!randomize} value={seed}
                     disabled={!admitted || busy} onChange={(event) => { setSeed(event.target.value); setRandomize(false); }} />
                   <Button type="button" variant={randomize ? "secondary" : "outline"} size="icon-sm"
                     aria-label="Randomize seed" aria-pressed={randomize} disabled={!admitted || busy}
