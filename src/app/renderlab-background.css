@@ -212,6 +212,19 @@
 .preview-navigation-header :is(.preview-section-trigger, .preview-navigation-profile)[aria-expanded="true"] {
   background: transparent;
 }
+.preview-account-display-name {
+  position: absolute;
+  inset-block-start: 37px;
+  inset-inline-end: 48px;
+  max-inline-size: calc(100% - 72px);
+  transform: translateY(-50%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 650;
+}
+
 .preview-menu-glass {
   position: absolute;
   inset: 0;

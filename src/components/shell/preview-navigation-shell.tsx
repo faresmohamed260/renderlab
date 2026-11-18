@@ -18,33 +18,38 @@ const pillPadding = 10;
 
 // Geometry reference: Sileo b70fd826, packages/sileo/src/{sileo.tsx,constants.ts}.
 // The filter joins the two rounded rectangles in an alpha mask so the glass is tinted only once.
-function MenuSilhouette({ id, trigger, progress, right = false }: {
+function MenuSilhouette({ id, trigger, progress, label, right = false }: {
   id: string;
   trigger: RefObject<HTMLButtonElement | null>;
   progress: SpringValue<number>;
+  label?: RefObject<HTMLSpanElement | null>;
   right?: boolean;
 }) {
   const layer = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: right ? 236 : 350, height: 220, triggerWidth: right ? 54 : 140 });
+  const [size, setSize] = useState({ width: right ? 236 : 350, height: 220, triggerWidth: right ? 54 : 140, labelWidth: 0 });
 
   useEffect(() => {
     const panel = layer.current?.parentElement;
     const button = trigger.current;
     if (!panel || !button) return;
+    const text = label?.current;
     const measure = () => {
-      const next = { width: panel.offsetWidth, height: panel.offsetHeight, triggerWidth: button.offsetWidth };
+      const next = { width: panel.offsetWidth, height: panel.offsetHeight, triggerWidth: button.offsetWidth, labelWidth: text?.offsetWidth ?? 0 };
       setSize((old) => old.width === next.width && old.height === next.height &&
-        old.triggerWidth === next.triggerWidth ? old : next);
+        old.triggerWidth === next.triggerWidth && old.labelWidth === next.labelWidth ? old : next);
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(panel);
     observer.observe(button);
+    if (text) observer.observe(text);
     return () => observer.disconnect();
-  }, [trigger]);
+  }, [trigger, label]);
 
   const { width, height } = size;
   const pillWidth = Math.min(width, Math.max(pillHeight, size.triggerWidth + pillPadding));
+  const openPillWidth = Math.min(width, pillWidth + size.labelWidth);
+  const animatedPillWidth = progress.to([0, 1], [pillWidth, openPillWidth], "clamp");
   const bodyTop = pillTop + pillHeight;
   const extend = progress.to([0, 1], [pillHeight, pillHeight + mergeBlur * 3], "clamp");
   const body = progress.to([0, 1], [0, Math.max(0, height - bodyTop)], "clamp");
@@ -63,7 +68,7 @@ function MenuSilhouette({ id, trigger, progress, right = false }: {
           </filter>
           <mask id={id} maskUnits="userSpaceOnUse" x="0" y="0" width={width} height={height} style={{ maskType: "alpha" }}>
             <g filter={`url(#${filter})`} fill="white">
-              <animated.rect x={right ? width - pillWidth : 0} y={pillTop} width={pillWidth}
+              <animated.rect x={right ? animatedPillWidth.to((value) => width - value) : 0} y={pillTop} width={animatedPillWidth}
                 rx={roundness} height={extend} />
               <animated.rect y={bodyTop} width={width} rx={roundness} height={body} />
             </g>
@@ -125,6 +130,7 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
   const id = useId();
   const card = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const visibleName = useRef<HTMLSpanElement>(null);
   const pinned = useRef(false);
 
   useEffect(() => {
@@ -173,7 +179,9 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
       </Button>
       <animated.div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}
         style={{ opacity: panel.progress.to([0, 1], [0, 1], "clamp") }}>
-        <MenuSilhouette id={id + "-shape"} trigger={trigger} progress={panel.progress} right />
+        <MenuSilhouette id={id + "-shape"} trigger={trigger} progress={panel.progress} label={visibleName} right />
+        <animated.span ref={visibleName} className="preview-account-display-name" aria-hidden="true"
+          style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>{name}</animated.span>
         <animated.ul aria-label="Account options" className="preview-account-options"
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>
           {accountOptions.map(({ label, icon: Icon }) => (
