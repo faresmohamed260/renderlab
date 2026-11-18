@@ -53,6 +53,15 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
   }, [savedMask]);
   const reviewing = !busy && !!savedMask && savedMask !== hiddenMask && overlay?.mask === savedMask;
   const showingProgress = busy && !inspecting;
+  const [decodedFrame, setDecodedFrame] = useState<string>();
+  useEffect(() => {
+    if (!busy || !liveFrame) { setDecodedFrame(undefined); return; }
+    let current = true;
+    const image = new Image();
+    image.src = liveFrame;
+    void image.decode().then(() => { if (current) setDecodedFrame(liveFrame); }, () => {});
+    return () => { current = false; };
+  }, [busy, liveFrame]);
   const pending = busy && batch.length < expectedImages;
   const showBatch = busy ? batch.length > 0 || expectedImages > 1 : batch.length > 1;
   const shown = showingProgress ? undefined : (reviewing ? input : result?.image_data ?? input);
@@ -60,6 +69,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
   const compare = canCompare && compared === result;
   const dimensionsUrl = showingProgress ? input : shown;
   const ratio = (showingProgress && renderRatio) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio : 0.75);
+  const label = showingProgress ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? (source ? "Source preview" : "Inspiration") : "Canvas";
 
   useEffect(() => {
     selection.current++;
@@ -271,20 +281,22 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
 
   return (
     <>
-      <div ref={frame} className="wanda-fibo-stage-frame" onKeyDown={stageKeys} data-batch={showBatch}>
+      <div ref={frame} className="wanda-fibo-stage-frame" onKeyDown={stageKeys} data-batch={showBatch}
+        style={{ "--stage-media-ratio": ratio } as CSSProperties}>
+        <div className="wanda-fibo-stage-document">
+        <div className="wanda-fibo-stage-label" aria-hidden="true">{label}</div>
         <div className="wanda-fibo-stage-surface" data-empty={!shown && !busy} role="group" tabIndex={0}
-          aria-label={showingProgress ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? inputLabel : "Canvas"} aria-busy={showingProgress}
+          aria-label={label} aria-busy={busy} data-portrait={ratio < 1}
           onClick={(event) => {
             if (event.target === event.currentTarget || event.target instanceof HTMLImageElement) {
               event.currentTarget.focus({ preventScroll: true });
             }
-          }}
-          style={{ "--stage-media-ratio": ratio } as CSSProperties}>
+          }}>
           {showingProgress ? <>
             <div className="wanda-fibo-stage-backdrop" aria-hidden="true" />
-            {liveFrame && <img className="wanda-fibo-stage-live" src={liveFrame} alt="" draggable={false} />}
+            {liveFrame && decodedFrame && <img className="wanda-fibo-stage-live" src={decodedFrame} alt="" draggable={false} />}
             <div className="wanda-fibo-stage-shimmer" aria-hidden="true" />
-            <div className="wanda-fibo-stage-notice" role="status">{status || "Rendering…"}</div>
+            <div className="wanda-fibo-stage-notice" role="status"><span>{status || "Rendering…"}</span></div>
           </>
             : shown ? <>
               {!viewerOpen && media()}
@@ -305,6 +317,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
         </div>
         {!viewerOpen && carousel()}
         {!viewerOpen && runActions()}
+        </div>
         {notice && !viewerOpen && <p className="wanda-fibo-stage-notice" role="status">{notice}</p>}
       </div>
       <dialog ref={dialog} className="wanda-fibo-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer" onKeyDown={stageKeys}
