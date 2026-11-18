@@ -422,7 +422,6 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], inlineMask, 
   function stageDocument() {
     return (
         <div className="wanda-fibo-stage-document">
-        <div className="wanda-fibo-stage-label" aria-hidden="true">{label}</div>
         <div className="wanda-fibo-stage-surface" data-empty={!shown && !busy} role="group" tabIndex={0}
           aria-label={label} aria-busy={busy} data-portrait={ratio < 1}
           onClick={(event) => {
