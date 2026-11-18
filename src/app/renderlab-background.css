@@ -467,21 +467,34 @@
 .wanda-fibo-workspace :is(button, summary):not(:disabled):hover {
   background-color: rgb(255 255 255 / 9%);
 }
-/* Give clickable setup controls a distinct glass highlight without shifting their bounds. */
-.wanda-fibo-workspace :is(
-  .wanda-fibo-tile > button:first-child,
-  .wanda-fibo-aspect select,
-  .wanda-fibo-recents summary,
-  .wanda-fibo-recents button
-):not(:disabled):is(:hover, :focus-visible) {
-  cursor: pointer;
-  background-color: rgb(175 146 255 / 20%);
-  box-shadow: inset 0 0 0 1px rgb(202 183 255 / 32%);
-  color: #f6f2ff;
+/* FIBO Studio uses a light wash on buttons, but only an accent color on summaries. */
+.wanda-fibo-workspace :is(.wanda-fibo-tile > button:first-child, .wanda-fibo-aspect select, .wanda-fibo-recents summary) {
+  background: rgb(255 255 255 / 4.5%);
 }
-.wanda-fibo-recents[open] > summary {
-  background-color: rgb(175 146 255 / 15%);
-  color: #f6f2ff;
+.wanda-fibo-workspace :is(.wanda-fibo-tile > button:first-child, .wanda-fibo-recents summary) {
+  color: rgb(235 232 255 / 55%);
+}
+.wanda-fibo-workspace :is(.wanda-fibo-tile > button:first-child, .wanda-fibo-aspect select) {
+  transition: background-color .16s, color .16s;
+}
+.wanda-fibo-workspace :is(.wanda-fibo-tile > button:first-child, .wanda-fibo-aspect select):not(:disabled):hover {
+  cursor: pointer;
+  background-color: rgb(235 232 255 / 9%);
+  color: #dedbed;
+}
+.wanda-fibo-workspace .wanda-fibo-recents summary:hover {
+  background: rgb(255 255 255 / 4.5%);
+  color: #a5b4fc;
+}
+.wanda-fibo-workspace .wanda-fibo-recents button:not(:disabled):is(:hover, :focus-visible) {
+  background-color: rgb(233 217 255 / 9%);
+}
+.wanda-fibo-workspace :is(.wanda-fibo-tile > button:first-child, .wanda-fibo-aspect select, .wanda-fibo-recents summary):focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wanda-fibo-workspace :is(.wanda-fibo-tile > button:first-child, .wanda-fibo-aspect select) { transition: none; }
 }
 
 .wanda-fibo-workspace .wanda-fibo-generate {
