@@ -464,6 +464,10 @@ The former configured Library lifecycle was hardened at both orchestration and i
 
 The obsolete repository-wide `SAGA_MODAL_TOKENS_JSON`, protected-environment Modal deployment tokens, and Production upscale gateway setting were removed on 2026-11-18. The retained FIBO proxy credentials are server-only Vercel Production secrets; they are not GitHub Actions, browser, or client credentials.
 
+### Native FIBO mask worker candidate (not deployed; 2026-11-18)
+
+The reviewed native worker candidate adds a bounded PNG mask to private `/jobs/fibo` requests when there is exactly one source image. The gateway validates mask base64, a PNG signature and an 8 MiB mask size limit before dispatch. The isolated Modal renderer verifies the decoded mask format/dimensions/nonempty selection, binary-normalizes/resizes it to the source image, then constructs a public-node ComfyUI graph using `VAEEncode`, `SetLatentNoiseMask`, `ImageToMask`, and `ImageCompositeMasked`. This path is neither deployed nor reachable from the current RenderLab product API. Only the worker contract and local GPU graph behavior were qualified; no credentials, worker deployment, API upload/schema, Vercel routing or production configuration changed. Detailed reproducible proof and limits: `docs/audits/FIBO_NATIVE_MASK_PUBLIC_NODE_PROOF_2026-11-18.md`.
+
 ### FIBO fleet candidate (not deployed)
 
 **Live qualification checkpoint (2026-11-18):** The owner approved private test gateway setup, dedicated credentials and test GPU execution, not production cutover. A read-only Modal check verified the approved workspace profile and main environment; the native candidate app was not listed. The installed Modal CLI lacked proxy-token commands; Modal 1.6.4 was verified in an isolated local environment. Automated credential setup was blocked before execution, so the new gateway was not deployed and no live qualification render ran. Keep FIBO admission disabled pending dedicated test credential provisioning, gateway verification and signed-in qualification. The existing private Studio app is not the native candidate.

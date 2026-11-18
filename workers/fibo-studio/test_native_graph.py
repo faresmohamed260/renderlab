@@ -19,9 +19,34 @@ class NativeGraphTests(unittest.TestCase):
         self.assertEqual(graph["encode"]["inputs"]["images.image_1"], ["image_1", 0])
         self.assertEqual(graph["encode"]["inputs"]["images.image_2"], ["image_2", 0])
 
+    def test_masked_edit_uses_public_inpaint_nodes_and_preserves_source(self):
+        source = "a" * 32 + ".png"
+        mask = "b" * 32 + ".png"
+        graph = build_graph(prompt="Paint the masked area yellow", seed=42,
+                            images=[source], mask=mask, width=256, height=256, steps=1)
+        self.assertEqual(graph["mask_image"]["inputs"]["image"], mask)
+        self.assertEqual(graph["mask_channel"]["class_type"], "ImageToMask")
+        self.assertEqual(graph["masked_latent"]["class_type"], "SetLatentNoiseMask")
+        self.assertEqual(graph["sample"]["inputs"]["latent_image"], ["masked_latent", 0])
+        self.assertEqual(graph["output"]["inputs"]["images"], ["masked_composite", 0])
+        self.assertEqual(graph["masked_composite"]["inputs"]["destination"], ["source_scaled", 0])
+        self.assertEqual(graph["masked_composite"]["inputs"]["mask"], ["mask_channel", 0])
+        self.assertEqual(len(graph), 15)
+
+    def test_mask_original_geometry_is_resolved_from_source(self):
+        graph = build_graph(prompt="Edit original", seed=42, images=["a" * 32 + ".png"],
+                            mask="b" * 32 + ".png", source_dimensions=(512, 512))
+        self.assertEqual((graph["encode"]["inputs"]["width"], graph["encode"]["inputs"]["height"]),
+                         (1024, 1024))
+        self.assertEqual(graph["mask_scaled"]["inputs"]["width"], 1024)
+
     def test_unsupported_or_unbounded_input_fails_closed(self):
         for args in (
-            {"mask": b"mask"}, {"images": ["../source.png"]}, {"steps": 9},
+            {"mask": b"mask"}, {"mask": "b" * 32 + ".png"},
+            {"mask": "../mask.png", "images": ["a" * 32 + ".png"]},
+            {"mask": "b" * 32 + ".png", "images": ["a" * 32 + ".png", "c" * 32 + ".png"]},
+            {"mask": "a" * 32 + ".png", "images": ["a" * 32 + ".png"], "width": 256, "height": 256},
+            {"images": ["../source.png"]}, {"steps": 9},
             {"width": 1280}, {"width": 1536, "height": 1536}, {"seed": True},
             {"vgl": "[]"}, {"prompt": ""},
         ):
