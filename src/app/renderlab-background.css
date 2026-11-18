@@ -1097,3 +1097,48 @@
     touch-action: pinch-zoom;
   }
 }
+/* Desktop FIBO mask tools stay on the stage; the phone editor remains a dialog. */
+.wanda-fibo-mask-inline {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+}
+.wanda-fibo-mask-inline .wanda-fibo-mask-viewport {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  margin: 0;
+  border-radius: inherit;
+  z-index: -1;
+}
+.wanda-fibo-mask-inline .wanda-fibo-mask-plane { inline-size: 100%; block-size: 100%; }
+.wanda-fibo-mask-inline .wanda-fibo-mask-plane img {
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
+  object-fit: contain;
+}
+.wanda-fibo-mask-inline .wanda-fibo-mask-toolbar {
+  position: relative;
+  margin: 8px 10px 0;
+  padding: 4px;
+  border-radius: 16px;
+  background: rgb(16 15 21 / 69%);
+  backdrop-filter: blur(18px);
+}
+.wanda-fibo-mask-inline .wanda-fibo-mask-toolbar:last-child {
+  position: absolute;
+  inset: auto 10px 14px;
+  inline-size: max-content;
+  margin-inline: auto;
+}
+.wanda-fibo-mask-inline > p {
+  position: absolute;
+  inset: auto 10px 58px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: rgb(16 15 21 / 75%);
+  font-size: 12px;
+  pointer-events: none;
+}

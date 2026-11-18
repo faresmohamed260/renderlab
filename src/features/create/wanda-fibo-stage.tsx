@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type KeyboardEvent, type PointerEvent } from "react";
 import { Download, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildWandaBatchZip } from "./wanda-fibo-batch-zip";
@@ -62,6 +62,7 @@ function TurnInput({ file, busy, onOpen, onReuse }: { file: File; busy: boolean;
 
 type Props<T extends StageResult> = {
   turns?: StageTurn<T>[];
+  inlineMask?: ReactNode;
   result?: T;
   source?: File;
   batch: T[];
@@ -85,7 +86,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ turns = [], result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -206,12 +207,13 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], result, sour
   const compare = canCompare && compared === result;
   const dimensionsUrl = showingProgress ? (source ? input : undefined) : shown;
   const ratio = (showingProgress && renderRatio) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio : 0.75);
-  const label = busy ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? (source ? "Source preview" : "Inspiration") : "Canvas";
+  const label = inlineMask ? "Mask canvas" : busy ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? (source ? "Source preview" : "Inspiration") : "Canvas";
 
   useEffect(() => {
     selection.current++;
     setNotice("");
-    if (!canCompare) setCompared(undefined);
+    setCompared(undefined);
+    setSplit(50);
   }, [result, input, busy, canCompare]);
 
   async function select(image: T, open = false) {
@@ -361,7 +363,7 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], result, sour
   }
 
   function stageKeys(event: KeyboardEvent<HTMLElement>) {
-    if (event.defaultPrevented || event.nativeEvent.isComposing || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    if (inlineMask || event.defaultPrevented || event.nativeEvent.isComposing || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
     const target = event.target;
     if (!(target instanceof Element) || target.closest("input, textarea, select, [contenteditable], [role=slider]")) return;
     const key = event.key.toLowerCase();
@@ -428,7 +430,7 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], result, sour
               event.currentTarget.focus({ preventScroll: true });
             }
           }}>
-          {showingProgress ? <>
+          {inlineMask || (showingProgress ? <>
             <div className="wanda-fibo-stage-backdrop" aria-hidden="true" />
             {liveFrame && decodedFrame && <img className="wanda-fibo-stage-live" src={decodedFrame} alt="" draggable={false} />}
             <div className="wanda-fibo-stage-shimmer" aria-hidden="true" />
@@ -446,7 +448,7 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], result, sour
                 <rect x="3" y="4" width="18" height="16" rx="3" /><path d="m4 17 5-5 4 4 3-3 4 4" /><circle cx="16" cy="9" r="1.5" />
               </svg>
               <span>Drop an image or click to upload</span>
-            </Button>}
+            </Button>)}
         </div>
         {!viewerOpen && carousel()}
         {!viewerOpen && runActions()}

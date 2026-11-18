@@ -16,12 +16,13 @@ type Props = {
   source: string;
   mask?: File;
   enabled: boolean;
+  inline?: boolean;
   onClose: () => void;
   onSave: (mask?: File) => void;
 };
 
-export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: Props) {
-  const dialog = useRef<HTMLDialogElement>(null);
+export function WandaFiboMaskEditor({ source, mask, enabled, inline = false, onClose, onSave }: Props) {
+  const root = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const undo = useRef<ImageData[]>([]);
   const redo = useRef<ImageData[]>([]);
@@ -46,7 +47,11 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
   const [counts, setCounts] = useState([0, 0]);
 
   useEffect(() => {
-    const viewer = dialog.current;
+    const viewer = root.current;
+    if (!(viewer instanceof HTMLDialogElement)) {
+      viewport.current?.focus({ preventScroll: true });
+      return;
+    }
     viewer?.showModal();
     return () => { if (viewer?.open) viewer.close(); };
   }, []);
@@ -119,7 +124,7 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
     };
   }, [ready, saving]);
 
-  function viewKeys(event: KeyboardEvent<HTMLDialogElement>) {
+  function viewKeys(event: KeyboardEvent<HTMLElement>) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === "Space" && !(event.target instanceof HTMLButtonElement)) {
       event.preventDefault();
@@ -238,14 +243,17 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
     ctx.putImageData(pixels, 0, 0);
   }
 
+  const Root = inline ? "div" : "dialog";
   return (
-    <dialog ref={dialog} className="wanda-fibo-mask-dialog" aria-label="Edit source mask"
+    <Root ref={(node: HTMLElement | null) => { root.current = node; }} className={inline ? "wanda-fibo-mask-inline" : "wanda-fibo-mask-dialog"}
+      role={inline ? "group" : undefined} aria-label="Edit source mask"
       onCancel={(event) => { event.preventDefault(); if (!saving) onClose(); }}
       onKeyUp={(event) => { if (event.code === "Space") setSpace(false); }}
       onKeyDown={(event) => {
         if (event.target instanceof HTMLInputElement || drawing || saving || !ready) return;
         viewKeys(event);
         const key = event.key.toLowerCase();
+        if (inline && key === "escape") { event.stopPropagation(); onClose(); return; }
         if ((event.ctrlKey || event.metaKey) && (key === "z" || key === "y")) {
           event.preventDefault();
           moveHistory(key === "z" && !event.shiftKey);
@@ -340,6 +348,6 @@ export function WandaFiboMaskEditor({ source, mask, enabled, onClose, onSave }: 
         <Button type="button" size="sm" variant="ghost" disabled={saving} onClick={onClose}>Cancel</Button>
         <Button type="button" size="sm" disabled={!ready || drawing || saving} onClick={finish}>Done masking</Button>
       </div>
-    </dialog>
+    </Root>
   );
 }

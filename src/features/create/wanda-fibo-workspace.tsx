@@ -67,7 +67,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     immediate: reducedMotion,
   });
   const [selection, setSelection] = useState<{ source: File; mask: File }>();
-  const [maskEditor, setMaskEditor] = useState(false);
+  const [maskEditor, setMaskEditor] = useState<"inline" | "dialog">();
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const mask = mode === "edit" && selection?.source === files[0] ? selection?.mask : undefined;
   const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
@@ -252,6 +252,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   function restoreRun(image: Result, reopen: boolean) {
     const run = image.run;
     if (!admitted || busy || !run || (reopen && run.mode !== "edit")) return;
+    setMaskEditor(undefined);
     setMode(run.mode);
     if (reopen) {
       setFiles([...run.inputs]);
@@ -274,7 +275,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
 
   function attachImage(file: File, index: number) {
     if (!admitted || busy) return;
-    if (index === 0) { setMaskEditor(false); setSelection(undefined); setMode("edit"); setResult(undefined); }
+    setMaskEditor(undefined);
+    if (index === 0) { setSelection(undefined); setMode("edit"); setResult(undefined); }
     updateDraft("edit", { vgl: "", generatedVgl: false });
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
@@ -326,7 +328,16 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
     : "";
-  const canSubmit = !busy && !blocker;
+  const canSubmit = !busy && !maskEditor && !blocker;
+  const maskEditorNode = maskEditor && mode === "edit" && files[0] && previews[0] && (
+    <WandaFiboMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
+      onSave={(region) => {
+        setSelection(region ? { source: files[0]!, mask: region } : undefined);
+        if (region) requestAnimationFrame(() => document.getElementById("wanda-fibo-prompt")?.focus({ preventScroll: true }));
+        updateDraft("edit", { vgl: "", generatedVgl: false });
+        setMaskEditor(undefined);
+      }} />
+  );
 
   return (
     <section className="wanda-fibo-workspace mx-auto w-full" aria-label="Create with FIBO">
@@ -356,7 +367,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 style={{ transform: modeSpring.position.to((position) => "translateX(" + (position * 44) + "px)") }} />
               <Button type="button" variant="ghost" aria-label="Text to Image" title="Text to Image"
                 aria-pressed={mode === "generate"} disabled={busy}
-                onClick={() => { if (mode !== "generate") setResult(undefined); setMode("generate"); }}>
+                onClick={() => { if (mode !== "generate") { setResult(undefined); setMaskEditor(undefined); } setMode("generate"); }}>
                 <ImagePlus aria-hidden="true" />
               </Button>
               <Button type="button" variant="ghost" aria-label="Image Editing" title="Image Editing"
@@ -381,6 +392,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                         onClick={() => {
                           updateDraft("edit", { vgl: "", generatedVgl: false });
                           if (index === 0) setSelection(undefined);
+                          setMaskEditor(undefined);
                           setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
                         }}><X /></Button>}
                     </div>
@@ -487,9 +499,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
             <WandaFiboStage
               turns={turns[mode]}
+              inlineMask={maskEditor === "inline" ? maskEditorNode : undefined}
               browseDisabled={!admitted}
               maskAction={admitted && mode === "edit" && files[0] && !result && !busy ? {
-                mask, blocked: files.slice(1).some(Boolean), open: () => setMaskEditor(true),
+                mask, blocked: files.slice(1).some(Boolean), open: () => setMaskEditor(matchMedia("(min-width: 1025px)").matches ? "inline" : "dialog"),
                 clear: () => { setSelection(undefined); updateDraft("edit", { vgl: "", generatedVgl: false }); },
               } : undefined}
               result={busy ? inspected : result}
@@ -531,15 +544,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 } catch { setStatus("Could not use this result as the source."); }
               }}
             />
-            {maskEditor && mode === "edit" && files[0] && previews[0] && (
-              <WandaFiboMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} onClose={() => setMaskEditor(false)}
-                onSave={(region) => {
-                  setSelection(region ? { source: files[0]!, mask: region } : undefined);
-                  if (region) requestAnimationFrame(() => document.getElementById("wanda-fibo-prompt")?.focus({ preventScroll: true }));
-                  updateDraft("edit", { vgl: "", generatedVgl: false });
-                  setMaskEditor(false);
-                }} />
-            )}
+            {maskEditor === "dialog" && maskEditorNode}
             {!admitted && <Link href="/settings" className="wanda-fibo-stage-sign-in">Sign in to upload</Link>}
         </section>
         <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title"
@@ -559,7 +564,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
           {savedStatus && <p className="wanda-fibo-caption" role="status">{savedStatus}</p>}
           {history.length ? history.map((image, index) => (
-            <Button key={image.filename ?? index} type="button" variant="outline" disabled={busy} aria-current={result === image} onClick={() => setResult(image)}>Render {history.length - index} · {image.seed}</Button>
+            <Button key={image.filename ?? index} type="button" variant="outline" disabled={busy} aria-current={result === image} onClick={() => { setMaskEditor(undefined); setResult(image); }}>Render {history.length - index} · {image.seed}</Button>
           )) : <p className="wanda-fibo-caption">Finished images will appear here.</p>}
         </aside>
       </div>
