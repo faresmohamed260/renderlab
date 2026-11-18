@@ -116,32 +116,77 @@ html.renderlab-gradient-host:has(.wanda-create-background),
   .preview-navigation-rail {
     position: sticky;
     inset-block-start: 0;
-    display: block;
+    display: flex;
+    flex-direction: column;
     align-self: start;
     block-size: 100dvh;
     overflow-y: auto;
-    padding: 20px 24px 20px 16px;
-    /* A soft shadow on the canvas, not an outlined navigation surface. */
-    background-image: linear-gradient(90deg,
-      rgb(7 8 16 / 87%), rgb(7 8 16 / 78%) 64%,
-      rgb(7 8 16 / 40%) 86%, transparent);
+    padding: 20px 16px;
+    background: #15141e;
   }
   .preview-navigation-rail .preview-navigation-links {
     gap: 4px;
+    margin-block-end: 20px;
     padding: 0;
   }
   .preview-navigation-rail .preview-navigation-links a {
     gap: 11px;
     min-block-size: 48px;
     padding-inline: 12px;
-    border-radius: 7px;
+    border-radius: 10px;
     color: #dce0ec;
     font-size: 15px;
     font-weight: 500;
   }
+  .preview-navigation-rail .preview-navigation-links a[href="/settings"] {
+    margin-block-start: 32px;
+  }
+  .preview-navigation-rail .preview-navigation-links a svg {
+    flex: none;
+    color: #8e8d9c;
+  }
   .preview-navigation-rail .preview-navigation-links a[aria-current="page"] {
     color: #fff;
-    background: linear-gradient(90deg, rgb(129 114 246 / 28%), rgb(129 114 246 / 12%));
+    background: #252230;
+  }
+  .preview-navigation-rail .preview-navigation-links a[aria-current="page"] svg {
+    color: #d9c0ea;
+  }
+  .preview-navigation-profile {
+    display: flex;
+    align-items: center;
+    flex: none;
+    gap: 10px;
+    margin-block-start: auto;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #1d1b27;
+    color: #f6f7fb;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .preview-navigation-profile:hover {
+    background: #252230;
+  }
+  .preview-navigation-avatar {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border: 1px solid rgb(178 167 255 / 55%);
+    border-radius: 50%;
+    color: #d9c0ea;
+    box-shadow: 0 0 9px rgb(129 114 246 / 22%);
+  }
+  .preview-navigation-profile small {
+    display: block;
+    margin-block-start: 2px;
+    color: #a5a3b4;
+    font-size: 11px;
+  }
+  .preview-navigation-profile small[data-signed-in="true"] {
+    color: #2dd4bf;
   }
   .preview-navigation-brand {
     display: flex;

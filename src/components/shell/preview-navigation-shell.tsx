@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, House, Images, Menu, Settings, Sparkles } from "lucide-react";
+import { Activity, House, Images, Menu, Settings, Sparkles, UserRound } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 
@@ -14,7 +14,7 @@ const destinations = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function PreviewNavigationShell({ children }: { children: ReactNode }) {
+export function PreviewNavigationShell({ children, signedIn }: { children: ReactNode; signedIn: boolean }) {
   const pathname = usePathname();
 
   function handleNavigation(event: MouseEvent<HTMLDivElement>) {
@@ -50,6 +50,13 @@ export function PreviewNavigationShell({ children }: { children: ReactNode }) {
           <RenderLabBrand markClassName="size-8" textClassName="text-base" />
         </Link>
         {links}
+        <Link href="/settings" className="preview-navigation-profile">
+          <span className="preview-navigation-avatar"><UserRound size={16} aria-hidden="true" /></span>
+          <span>
+            <span>{signedIn ? "RenderLab account" : "Guest"}</span>
+            <small data-signed-in={signedIn}>{signedIn ? "Signed in" : "Sign in"}</small>
+          </span>
+        </Link>
       </aside>
       <details className="preview-navigation-disclosure" key={pathname}>
         <summary><Menu size={18} aria-hidden="true" /> Menu</summary>
