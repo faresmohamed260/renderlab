@@ -97,10 +97,10 @@ const settingsPath = "/settings";
 const isSettingsRoute = (pathname: string) => pathname === settingsPath || pathname.startsWith(settingsPath + "/");
 
 const accountOptions = [
-  { label: "Profile", icon: UserRound },
   { label: "Personalization", icon: SlidersHorizontal },
+  { label: "Profile", icon: UserRound },
   { label: "Settings", icon: Settings, href: settingsPath },
-  { label: "Help", icon: CircleHelp },
+  { label: "Help", icon: CircleHelp, separated: true },
 ];
 
 const profileEndpoint = "/api/preview-account/profile";
@@ -188,22 +188,22 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>{name}</animated.span>
         <animated.ul aria-label="Account options" className="preview-account-options"
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>
-          {accountOptions.map(({ label, icon: Icon, href }) => (
-            <li key={label}>
+          {accountOptions.map(({ label, icon: Icon, href, separated }) => (
+            <li key={label} className={separated ? "preview-account-row-separated" : undefined}>
               {href ? (
-                <Link href={href} className="preview-account-settings flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm"
+                <Link href={href} className="preview-account-row preview-account-settings"
                   aria-current={isSettingsRoute(pathname) ? "page" : undefined}
                   onNavigate={() => {
                     trigger.current?.focus({ preventScroll: true });
                     pinned.current = false;
                     setOpen(false);
                   }}>
-                  <Icon size={16} aria-hidden="true" /> {label}
+                  <Icon size={14} aria-hidden="true" /> {label}
                 </Link>
               ) : (
-                <div className="flex min-h-9 items-center gap-2 px-2 text-sm">
-                  <Icon size={16} aria-hidden="true" /> {label}
-                  <span className="ml-auto text-xs text-text-muted">Coming soon</span>
+                <div className="preview-account-row">
+                  <Icon size={14} aria-hidden="true" /> {label}
+                  <span className="preview-account-row-meta">Coming soon</span>
                 </div>
               )}
             </li>
