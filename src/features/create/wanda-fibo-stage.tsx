@@ -103,13 +103,13 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
   const pendingImage = useRef<T | undefined>(undefined);
   const [inputDimensions, setInputDimensions] = useState<{ url: string; ratio: number }>();
   useEffect(() => {
-    if (!input) return;
+    if (!input) { setInputDimensions(undefined); return; }
     let current = true;
     const image = new Image();
     image.src = input;
     void image.decode().then(() => {
       if (current && image.naturalHeight) setInputDimensions({ url: input, ratio: image.naturalWidth / image.naturalHeight });
-    }, () => {});
+    }, () => { if (current) setInputDimensions(undefined); });
     return () => { current = false; };
   }, [input]);
 
@@ -256,12 +256,19 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
   }, [busy, liveFrame, liveBlur]);
   const pending = busy && !cancelling && batch.length < expectedImages;
   const showBatch = busy ? batch.length > 0 || pending : batch.length > 1;
-  const shown = showingProgress ? undefined : (reviewing ? input : result?.image_data ?? input);
+  // An input URL can be available before the browser knows its dimensions.
+  // Keep the last decoded input during replacement, and swap its URL and ratio together.
+  const inputPending = !!input && inputDimensions?.url !== input;
+  const decodedInput = input ? inputDimensions : undefined;
+  const displayedResult = reviewing ? undefined : result;
+  const shown = showingProgress ? undefined : displayedResult?.image_data ?? decodedInput?.url;
   const canCompare = !reviewing && !!source && result?.source === source && !!before && !busy;
   const compare = canCompare && compared === result;
-  const dimensionsUrl = showingProgress ? (source ? input : undefined) : shown;
-  const ratio = (showingProgress && renderRatio) || (!reviewing && shown === result?.image_data && result?.aspect) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio
-    : dimensionsUrl && inputDimensions?.url === dimensionsUrl ? inputDimensions.ratio : 0.75);
+  const ratio = showingProgress
+    ? renderRatio ?? (source ? decodedInput?.ratio : undefined) ?? 0.75
+    : displayedResult
+      ? displayedResult.aspect ?? (dimensions?.url === shown ? dimensions?.ratio : undefined) ?? 0.75
+      : decodedInput?.ratio ?? 0.75;
   const label = inlineMask ? "Mask canvas" : busy ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? (source ? "Source preview" : "Inspiration") : "Canvas";
 
   useEffect(() => {
@@ -386,7 +393,7 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
   };
 
   function tools() {
-    if (maskAction && !result && !busy) return (
+    if (maskAction && !result && !busy && !inputPending) return (
       <div className="wanda-fibo-stage-tools" role="group" aria-label="Mask actions" {...toolEvents}>
         <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="M" disabled={maskAction.blocked}
           aria-label={maskAction.mask ? "Edit mask" : "Paint mask"}
@@ -520,7 +527,7 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
     return (
         <div className="wanda-fibo-stage-document">
         <div className="wanda-fibo-stage-surface" {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
-          aria-label={label} aria-busy={busy} data-portrait={ratio < 1}
+          aria-label={label} aria-busy={busy || inputPending} data-portrait={ratio < 1}
           onClick={(event) => {
             if (event.target === event.currentTarget || event.target instanceof HTMLImageElement) {
               event.currentTarget.focus({ preventScroll: true });
@@ -538,7 +545,7 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
               <Button ref={opener} type="button" className="wanda-fibo-stage-open" variant="ghost" size="icon-sm"
                 aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => openViewer()} />
             </> : <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload"
-              disabled={browseDisabled} title={browseDisabled ? "Sign in to upload an image" : "Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
+              disabled={browseDisabled || inputPending} title={browseDisabled ? "Sign in to upload an image" : "Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
               <svg className="wanda-fibo-stage-empty-icon" width="25" height="25" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="16" rx="3" /><path d="m4 17 5-5 4 4 3-3 4 4" /><circle cx="16" cy="9" r="1.5" />
