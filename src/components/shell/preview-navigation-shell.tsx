@@ -177,7 +177,7 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
           pinned.current = !pinned.current;
           setOpen(pinned.current);
         }}>
-        {avatarSrc ? <Image src={avatarSrc} alt="" width={24} height={24} unoptimized loading="eager"
+        {avatarSrc ? <Image src={avatarSrc} alt="" width={24} height={24} unoptimized loading="eager" fetchPriority="high"
           className="preview-navigation-avatar"
           onError={() => setAvatarUnavailable(true)} /> : <UserRound size={24} aria-hidden="true" />}
       </Button>

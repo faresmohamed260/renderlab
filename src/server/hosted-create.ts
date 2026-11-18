@@ -41,16 +41,21 @@ export async function getHostedCreateState() {
   return { generationAvailable: generation?.available === true, accountAvailable: media?.ok === true, mediaUploadAvailable: upload?.available === true };
 }
 
-async function relayPreviewAvatar(upstream: Response) {
-  const location = upstream.headers.get("location");
-  if (upstream.status !== 307 || !location) return new Response(null, {
-    status: upstream.ok || upstream.status < 400 ? 502 : upstream.status,
-    headers: { "cache-control": "private, no-store" },
-  });
+const previewAvatarTtlMs = 15_000;
+const previewAvatarCacheLimit = 32;
+const previewAvatarCache = new Map<string, { thumbnail: Buffer; expiresAt: number }>();
 
-  // The existing, fixed RenderLab endpoint issues a short-lived signed avatar URL.
-  const url = new URL(location);
-  if (url.protocol !== "https:" || url.username || url.password) throw new Error("Invalid avatar URL");
+async function getPreviewAvatarThumbnail(url: URL) {
+  // Only reached after the hosted endpoint authorizes this read and returns a
+  // signed source. The object path stays the same on replacement, so bound staleness.
+  const key = url.origin + url.pathname;
+  const now = Date.now();
+  for (const [path, entry] of previewAvatarCache) {
+    if (entry.expiresAt <= now) previewAvatarCache.delete(path);
+  }
+  const cached = previewAvatarCache.get(key);
+  if (cached) return cached.thumbnail;
+
   const source = await fetch(url, {
     cache: "no-store", redirect: "error", signal: AbortSignal.timeout(8000),
   });
@@ -64,6 +69,26 @@ async function relayPreviewAvatar(upstream: Response) {
   }
   const thumbnail = await sharp(Buffer.concat(chunks), { limitInputPixels: 512 * 512 })
     .resize(64, 64, { fit: "cover", withoutEnlargement: true }).webp({ quality: 78 }).toBuffer();
+  previewAvatarCache.delete(key);
+  if (previewAvatarCache.size >= previewAvatarCacheLimit) {
+    const oldest = previewAvatarCache.keys().next().value;
+    if (oldest !== undefined) previewAvatarCache.delete(oldest);
+  }
+  previewAvatarCache.set(key, { thumbnail, expiresAt: now + previewAvatarTtlMs });
+  return thumbnail;
+}
+
+async function relayPreviewAvatar(upstream: Response) {
+  const location = upstream.headers.get("location");
+  if (upstream.status !== 307 || !location) return new Response(null, {
+    status: upstream.ok || upstream.status < 400 ? 502 : upstream.status,
+    headers: { "cache-control": "private, no-store" },
+  });
+
+  // The existing, fixed RenderLab endpoint issues a short-lived signed avatar URL.
+  const url = new URL(location);
+  if (url.protocol !== "https:" || url.username || url.password) throw new Error("Invalid avatar URL");
+  const thumbnail = await getPreviewAvatarThumbnail(url);
   return new Response(new Uint8Array(thumbnail), {
     headers: { "content-type": "image/webp", "cache-control": "private, no-store" },
   });
