@@ -7,8 +7,38 @@ import { Activity, CircleHelp, House, Images, Menu, Settings, SlidersHorizontal,
 import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 
-import "sileo/styles.css";
+import { animated, to, useSpring } from "@react-spring/web";
 import { Button } from "@/components/ui/button";
+
+const sidebarSpring = { mass: 1, tension: 220, friction: 22 };
+const collapsedWidth = 80;
+const expandedWidth = 256;
+
+function usePreviewReducedMotion() {
+  const [reduced, setReduced] = useState(true);
+  useEffect(() => {
+    const query = matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+function railOutline(width: number, height: number, center: number) {
+  const right = Math.max(76, width) - 6;
+  const bottom = Math.max(120, height) - 8;
+  const y = Math.max(60, Math.min(bottom - 52, center));
+  const edge = center > 0
+    ? "V " + (y + 42) + " C 8 " + (y + 24) + " 62 " + (y + 32) + " 62 " + y
+      + " S 8 " + (y - 24) + " 8 " + (y - 42)
+    : "";
+  return "M 24 8 H " + (right - 16) + " Q " + right + " 8 " + right + " 24 V " + (bottom - 16)
+    + " Q " + right + " " + bottom + " " + (right - 16) + " " + bottom
+    + " H 24 Q 8 " + bottom + " 8 " + (bottom - 16) + " " + edge + " V 24 Q 8 8 24 8 Z";
+}
+
 const accountOptions = [
   { label: "Profile", icon: UserRound },
   { label: "Personalization", icon: SlidersHorizontal },
@@ -35,6 +65,8 @@ async function loadProfile(signal: AbortSignal): Promise<AccountProfile> {
 
 function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
   const [open, setOpen] = useState(false);
+  const reduced = usePreviewReducedMotion();
+  const panel = useSpring({ progress: open ? 1 : 0, config: sidebarSpring, immediate: reduced });
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   useEffect(() => {
     if (!accountId) return;
@@ -97,7 +129,8 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
           onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} />}
         <span className="preview-account-identity min-w-0 truncate">{name}</span>
       </Button>
-      <div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}>
+      <animated.div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}
+        style={{ opacity: panel.progress.to([0, 1], [0, 1], "clamp"), scaleY: panel.progress }}>
         <svg className="preview-account-clip" width="0" height="0" aria-hidden="true">
           <defs>
             <clipPath id={id + "-glass"} clipPathUnits="objectBoundingBox">
@@ -115,7 +148,7 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
             </li>
           ))}
         </ul>
-      </div>
+      </animated.div>
     </div>
   );
 }
@@ -131,21 +164,46 @@ const destinations = [
 export function PreviewNavigationShell({ children, accountId }: { children: ReactNode; accountId: string | null }) {
   const pathname = usePathname();
   const railId = useId();
-  const [collapsed, setCollapsed] = useState(false);
+  const rail = useRef<HTMLElement>(null);
+  const reduced = usePreviewReducedMotion();
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [height, setHeight] = useState(900);
+  const [activeY, setActiveY] = useState(0);
+  const expanded = pinned || (hovered && !dismissed);
+  const motion = useSpring({
+    width: expanded ? expandedWidth : collapsedWidth,
+    center: activeY,
+    config: sidebarSpring,
+    immediate: reduced,
+  });
+  const active = destinations.some(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
 
   useEffect(() => {
-    try {
-      sessionStorage.removeItem("renderlab.preview.profile");
-      setCollapsed(sessionStorage.getItem("renderlab.preview.sidebar") === "collapsed");
+    const element = rail.current;
+    if (!element) return;
+    const links = element.querySelector("nav");
+    function update() {
+      if (!element?.clientHeight) return;
+      const bounds = element.getBoundingClientRect();
+      const row = links?.querySelector('[aria-current="page"]')?.getBoundingClientRect();
+      setHeight(element.clientHeight);
+      setActiveY(row ? row.top + row.height / 2 - bounds.top : 0);
     }
-    catch { /* Sidebar still works with browser storage disabled. */ }
-  }, []);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    links?.addEventListener("scroll", update);
+    return () => {
+      observer.disconnect();
+      links?.removeEventListener("scroll", update);
+    };
+  }, [pathname]);
 
   function toggleSidebar() {
-    const next = !collapsed;
-    setCollapsed(next);
-    try { sessionStorage.setItem("renderlab.preview.sidebar", next ? "collapsed" : "expanded"); }
-    catch { /* The current view retains the user's choice. */ }
+    setPinned(!expanded);
+    setDismissed(expanded);
   }
 
   function handleNavigation(event: MouseEvent<HTMLDivElement>) {
@@ -170,19 +228,41 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
   );
 
   return (
-    <div className="preview-navigation-shell" data-sidebar-collapsed={collapsed} onClickCapture={handleNavigation}>
-      <aside id={railId} className="preview-navigation-rail" aria-label="Sidebar">
+    <div className="preview-navigation-shell" data-sidebar-collapsed={!expanded} onClickCapture={handleNavigation}>
+      <animated.aside ref={rail} id={railId} className="preview-navigation-rail" aria-label="Sidebar"
+        style={{ width: motion.width }}
+        onPointerEnter={(event) => {
+          if (event.pointerType === "mouse") { setDismissed(false); setHovered(true); }
+        }}
+        onPointerLeave={(event) => {
+          if (event.pointerType === "mouse") { setHovered(false); setDismissed(false); }
+        }}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setPinned(false);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") { setPinned(false); setDismissed(true); }
+        }}>
+        <svg className="preview-account-clip" width="0" height="0" aria-hidden="true">
+          <defs>
+            <clipPath id={railId + "-glass"}>
+              <animated.path d={to([motion.width, motion.center], (w, y) => railOutline(w, height, active ? y : 0))} />
+            </clipPath>
+          </defs>
+        </svg>
+        <div className="preview-rail-glass" aria-hidden="true" style={{ clipPath: "url(#" + railId + "-glass)" }} />
+        {active && activeY > 0 && <animated.div className="preview-rail-marker" aria-hidden="true" style={{ top: motion.center }} />}
         <div className="preview-navigation-heading">
           <Button type="button" variant="ghost" className="preview-navigation-brand"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-controls={railId} aria-expanded={!collapsed} onClick={toggleSidebar}>
+            aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
+            title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+            aria-controls={railId} aria-expanded={expanded} onClick={toggleSidebar}>
             <RenderLabBrand markClassName="size-8" textClassName="text-base" />
           </Button>
         </div>
         {links}
         <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} />
-      </aside>
+      </animated.aside>
       <details className="preview-navigation-disclosure" key={pathname}>
         <summary><Menu size={18} aria-hidden="true" /> Menu</summary>
         {links}

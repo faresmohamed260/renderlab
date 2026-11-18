@@ -137,7 +137,7 @@
 @media (width >= 75rem) {
   .preview-navigation-shell {
     display: grid;
-    grid-template-columns: 16rem minmax(0, 1fr);
+    grid-template-columns: 80px minmax(0, 1fr);
     gap: 0;
   }
   .preview-navigation-disclosure {
@@ -150,19 +150,23 @@
     flex-direction: column;
     align-self: start;
     block-size: 100dvh;
-    overflow-y: auto;
+    z-index: 10;
+    isolation: isolate;
     padding: 20px 16px;
     background: transparent;
   }
   .preview-navigation-rail .preview-navigation-links {
     gap: 4px;
+    min-block-size: 0;
+    overflow: auto;
+    scrollbar-width: none;
     margin-block-end: 20px;
     padding: 0;
   }
   .preview-navigation-rail .preview-navigation-links a {
     gap: 11px;
     min-block-size: 48px;
-    padding-inline: 12px;
+    padding-inline: 14px;
     border-radius: 10px;
     color: #dce0ec;
     font-size: 15px;
@@ -177,7 +181,7 @@
   }
   .preview-navigation-rail .preview-navigation-links a[aria-current="page"] {
     color: #fff;
-    background: #252230;
+    background: transparent;
   }
   .preview-navigation-rail .preview-navigation-links a[aria-current="page"] svg {
     color: #d9c0ea;
@@ -221,7 +225,7 @@
 
 /* The account trigger has no surface; only the revealed options have a fill. */
 .preview-account-card {
-  --account-surface: #1d1b27;
+
   position: relative;
   isolation: isolate;
   flex: none;
@@ -234,9 +238,7 @@
   z-index: -1;
   inset: auto 0 100%;
   padding: 42px 10px 10px;
-  opacity: 0;
-  visibility: hidden;
-  transform: scaleY(0);
+  pointer-events: none;
   transform-origin: bottom;
 }
 
@@ -249,13 +251,13 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--account-surface);
+  background: var(--preview-glass-solid);
   pointer-events: none;
 }
 
 @supports (backdrop-filter: blur(1px)) {
   .preview-account-glass {
-    background: linear-gradient(145deg, rgb(43 36 61 / 72%), rgb(19 17 29 / 65%));
+    background: var(--preview-glass-tint);
     backdrop-filter: blur(18px) saturate(140%);
   }
 }
@@ -271,48 +273,66 @@
 }
 
 .preview-account-card[data-open="true"] .preview-account-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: scaleY(1);
+  pointer-events: auto;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .preview-account-menu {
-    transition: transform 220ms ease, opacity 160ms ease, visibility 0s 220ms;
-  }
+.preview-rail-glass {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--preview-glass-solid);
+  pointer-events: none;
+}
 
-  .preview-account-card[data-open="true"] .preview-account-menu {
-    transition: transform var(--sileo-duration) var(--sileo-spring-easing), opacity 120ms ease;
-  }
+.preview-rail-marker {
+  position: absolute;
+  z-index: -1;
+  left: 14px;
+  width: 48px;
+  height: 48px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--preview-glass-solid);
+  pointer-events: none;
+}
 
+@supports (backdrop-filter: blur(1px)) {
+  .preview-rail-glass, .preview-rail-marker {
+    background: var(--preview-glass-tint);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
 }
 
 @media (width >= 75rem) {
-  .preview-navigation-shell[data-sidebar-collapsed="true"] {
-    grid-template-columns: 5rem minmax(0, 1fr);
+  .preview-navigation-rail .preview-navigation-links a {
+    white-space: nowrap;
+    overflow: hidden;
   }
-  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-rail {
-    overflow: visible;
-    z-index: 10;
+  .preview-navigation-rail .preview-navigation-links a:hover {
+    background: transparent;
   }
-  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-heading {
-    flex-direction: column;
-    gap: 4px;
+  .preview-navigation-rail .preview-navigation-links a:focus-visible {
+    outline: 2px solid #d9c0ea;
+    outline-offset: -2px;
   }
-  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-links {
-    min-block-size: 0;
-    overflow-y: auto;
-    padding: 2px;
+  .preview-navigation-rail [data-renderlab-brand] {
+    min-inline-size: 0;
+    overflow: hidden;
   }
-  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-links a,
-  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-profile {
+  .preview-navigation-rail [data-renderlab-brand] svg {
+    flex: none;
+  }
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-rail :is(
+    [data-renderlab-wordmark], .preview-navigation-links a span,
+    .preview-account-card[data-has-photo="true"] .preview-account-identity
+  ) {
+    visibility: hidden;
+  }
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-account-card[data-has-photo="true"] .preview-navigation-profile {
     justify-content: center;
     padding-inline: 0;
   }
-  .preview-navigation-shell[data-sidebar-collapsed="true"] :is(
-    [data-renderlab-wordmark], .preview-navigation-rail .preview-navigation-links a span,
-    .preview-account-card[data-has-photo="true"] .preview-account-identity
-  ) {
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-account-card[data-has-photo="true"] .preview-account-identity {
     display: none;
   }
   .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-account-menu {
@@ -321,8 +341,7 @@
   }
 }
 
-@media (width >= 75rem) and (prefers-reduced-motion: no-preference) {
-  .preview-navigation-shell {
-    transition: grid-template-columns 250ms ease;
-  }
+.preview-navigation-shell {
+  --preview-glass-solid: #1d1b27;
+  --preview-glass-tint: linear-gradient(145deg, rgb(43 36 61 / 72%), rgb(19 17 29 / 65%));
 }

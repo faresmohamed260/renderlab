@@ -45,8 +45,8 @@ Search these before implementing reusable interaction mechanics from scratch.
 **Role:** Discovery layer for maintained shadcn-compatible implementations.  
 **Policy:** Registry presence does not automatically approve a component; review quality, accessibility, licensing, maintenance and dependency cost first.
 
-### Sileo
-**Role:** Spring easing and timing for opening the WANDA profile menu (MIT, pinned to 0.1.6). Only the published CSS is imported; the profile card uses a button disclosure with a noninteractive placeholder list. Not part of production UI.
+### React Spring
+**Role:** MIT-licensed @react-spring/web 10.1.2. Drives the WANDA sidebar width, active notch, and profile disclosure with one reduced-motion-aware spring preset (UI-083).
 
 ## External Source Search Order
 1. Existing `APPROVED`/`LOCKED` RenderLab component

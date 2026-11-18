@@ -114,19 +114,19 @@
       "searchLabel": "React Bits"
     },
     {
-      "id": "sileo",
-      "name": "Sileo",
-      "catalogHeading": "Sileo",
+      "id": "react-spring",
+      "name": "React Spring",
+      "catalogHeading": "React Spring",
       "tier": "specialized",
       "policyStatus": "approved",
       "searchOrder": null,
       "adoptionMode": "package-dependency",
       "activeUse": true,
-      "packageName": "sileo",
-      "expectedVersion": "0.1.6",
+      "packageName": "@react-spring/web",
+      "expectedVersion": "10.1.2",
       "licenseStatus": "lockfile-verified",
       "licenseSpdx": "MIT",
-      "notes": "Owner-directed WANDA prototype; exported CSS spring tokens only, no toast runtime.",
+      "notes": "UI-083: shared WANDA sidebar, route indicator, and account disclosure motion.",
       "searchLabel": null
     },
     {
