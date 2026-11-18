@@ -26,14 +26,14 @@ function MenuSilhouette({ id, right = false }: { id: string; right?: boolean }) 
   }, []);
 
   const { width, height } = size;
-  const shoulder = right ? 60 : 184;
+  const shoulder = right ? 58 : 172;
   const start = Math.min(shoulder, width - 58);
   // Fixed-pixel curves keep the lip around the trigger even on a wide panel.
-  const d = `M 0 18 Q 0 0 18 0 H ${start}
-    C ${start + 30} 0 ${start + 12} 66 ${start + 46} 66
-    H ${width - 18} Q ${width} 66 ${width} 84 V ${height - 18}
-    Q ${width} ${height} ${width - 18} ${height} H 18
-    Q 0 ${height} 0 ${height - 18} Z`;
+  const d = `M 0 16 Q 0 0 16 0 H ${start}
+    C ${start + 28} 0 ${start + 12} 52 ${start + 44} 52
+    H ${width - 16} Q ${width} 52 ${width} 68 V ${height - 16}
+    Q ${width} ${height} ${width - 16} ${height} H 16
+    Q 0 ${height} 0 ${height - 16} Z`;
 
   return <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
     <defs>
@@ -153,7 +153,7 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
         style={{ clipPath: "url(#" + id + "-shape)", opacity: panel.progress.to([0, 1], [0, 1], "clamp"), scaleY: panel.progress }}>
         <ul aria-label="Account options" className="preview-account-options">
           {accountOptions.map(({ label, icon: Icon }) => (
-            <li key={label} className="flex items-center gap-2 px-2 py-2 text-sm">
+            <li key={label} className="flex min-h-9 items-center gap-2 px-2 text-sm">
               <Icon size={16} aria-hidden="true" /> {label}
               <span className="ml-auto text-xs text-text-muted">Coming soon</span>
             </li>
@@ -238,7 +238,7 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
               scaleY: reveal.progress }}>
             {navigationGroups.map((group) => (
               <section key={group.title} className="preview-section-group">
-                <p className="preview-section-title">{group.title}</p>
+                <p className={group.destinations.length === 1 ? "sr-only" : "preview-section-title"}>{group.title}</p>
                 {group.destinations.map(({ href, label, icon: Icon }) => (
                   <Link key={href} href={href} aria-current={current?.href === href ? "page" : undefined}
                     onNavigate={() => { trigger.current?.focus({ preventScroll: true }); setOpenPath(null); }}>

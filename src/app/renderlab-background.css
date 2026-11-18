@@ -104,12 +104,12 @@
   display: flex;
   align-items: center;
   min-inline-size: 0;
-  padding-block: 8px;
+  padding-block: 4px;
 }
 
 .preview-navigation-header :is(.preview-section-trigger, .preview-navigation-profile) {
   gap: 10px;
-  min-block-size: 54px;
+  min-block-size: 48px;
   padding-inline: 12px;
   border-radius: 14px;
   color: #f6f7fb;
@@ -126,10 +126,6 @@
 .preview-navigation-header .preview-navigation-profile > svg {
   inline-size: 26px;
   block-size: 26px;
-}
-
-.preview-section-trigger[aria-expanded="true"] {
-  background: rgb(221 211 255 / 13%);
 }
 
 .preview-navigation-header .preview-section-trigger {
@@ -149,44 +145,51 @@
   object-fit: cover;
 }
 
+/* Sileo-inspired compact footprints; the SVG shoulder encloses the real trigger. */
 .preview-section-panel,
 .preview-account-menu {
   position: absolute;
   inset-block-start: 0;
-  border: 1px solid rgb(221 211 255 / 13%);
-  background: #191722;
+  max-block-size: 100dvh;
+  overflow: auto;
+  background: #201b2b;
   color: #f6f7fb;
-  box-shadow: 0 16px 32px rgb(0 0 0 / 26%);
 }
 .preview-section-panel[data-open="false"],
 .preview-account-menu[aria-hidden="true"] {
   pointer-events: none;
 }
 .preview-section-panel {
-  inset-inline: var(--preview-header-gutter);
-  transform-origin: top left;
+  inset-inline-start: var(--preview-header-gutter);
+  inline-size: min(350px, calc(100% - 2 * var(--preview-header-gutter)));
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 22px clamp(12px, 3vw, 42px);
-  max-block-size: 100dvh;
-  overflow: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+  padding: 60px 10px 10px;
+  transform-origin: top left;
 }
-.preview-section-group { padding-inline: 16px; }
-.preview-section-group + .preview-section-group {
+.preview-section-group:nth-child(2) {
+  padding-inline-start: 8px;
   border-inline-start: 1px solid rgb(221 211 255 / 13%);
 }
+.preview-section-group:last-child {
+  grid-column: 1 / -1;
+  padding-block-start: 4px;
+  border-block-start: 1px solid rgb(221 211 255 / 13%);
+}
 .preview-section-title {
-  padding: 0 12px 8px;
-  font-size: 15px;
+  padding: 0 8px 2px;
+  font-size: 12px;
   font-weight: 650;
+  color: #d7cfe3;
 }
 .preview-section-group a {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-block-size: 44px;
-  padding-inline: 12px;
-  border-radius: 10px;
+  gap: 8px;
+  min-block-size: 36px;
+  padding-inline: 8px;
+  border-radius: 8px;
   font-size: 14px;
 }
 .preview-section-group a:hover,
@@ -199,40 +202,11 @@
 }
 .preview-account-menu {
   inset-inline-end: var(--preview-header-gutter);
-  inline-size: min(258px, calc(100vw - 20px));
-  padding: 8px;
-  border-radius: 0 0 16px 16px;
+  inline-size: min(236px, calc(100% - 2 * var(--preview-header-gutter)));
+  padding: 60px 8px 8px;
   transform-origin: top right;
   z-index: 1;
 }
-@supports (backdrop-filter: blur(1px)) {
-  .preview-account-menu {
-    background: rgb(30 25 43 / 87%);
-    backdrop-filter: blur(20px) saturate(165%);
-  }
-}
-@media (width < 40rem) {
-  .preview-section-panel { grid-template-columns: 1fr; padding-block: 12px; }
-  .preview-section-group { padding: 6px; }
-  .preview-section-group + .preview-section-group {
-    border-inline-start: none;
-    border-block-start: 1px solid rgb(221 211 255 / 13%);
-  }
-}
-
-/* One stepped glass silhouette per disclosure, mirrored at the two header ends. */
-.preview-section-panel,
-.preview-account-menu {
-  border: 0;
-  border-radius: 0;
-  background: #201b2b;
-
-}
-.preview-section-panel,
-.preview-account-menu {
-  padding-block-start: 82px;
-}
-
 .preview-navigation-header :is(.preview-section-trigger, .preview-navigation-profile) {
   position: relative;
   z-index: 2;
@@ -242,7 +216,11 @@
 }
 @supports (backdrop-filter: blur(1px)) {
   .preview-section-panel, .preview-account-menu {
-    background: rgb(49 40 66 / 73%);
+    background: rgb(38 31 51 / 68%);
     backdrop-filter: blur(20px) saturate(165%);
   }
+}
+
+@media (any-pointer: coarse) {
+  .preview-section-group a, .preview-account-options li { min-block-size: 44px; }
 }
