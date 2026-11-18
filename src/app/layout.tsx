@@ -31,7 +31,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     && (await headers()).get("host") === "127.0.0.1:3000";
   return (
     <html lang="en" className={gradient ? "renderlab-gradient-host" : undefined}>
-      <body className={gradient ? "renderlab-gradient" : undefined}>{children}</body>
+      <body className={gradient ? "renderlab-gradient" : undefined}>
+        {gradient && <div className="renderlab-reference-atmosphere" aria-hidden="true">
+          <div className="renderlab-reference-wash" />
+        </div>}
+        {children}
+      </body>
     </html>
   );
 }

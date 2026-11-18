@@ -1,32 +1,65 @@
-/* Background declarations extracted from https://chatrlabs.com/.
-   Only their selectors are adapted to the WANDA preview. */
-.renderlab-gradient { min-block-size: 100dvh; }
+/* ChatrLabs background layers. Calibrate to the reference canvas, not each route's scroll height. */
 .renderlab-gradient {
-      --bg: #07070a;
-      background:
-        radial-gradient(circle at 75% 5%, rgba(91, 73, 255, 0.18), transparent 27rem),
-        radial-gradient(circle at 18% 31%, rgba(255, 64, 210, 0.1), transparent 25rem),
-        var(--bg);
+  --bg: #07070a;
+  position: relative;
+  isolation: isolate;
+  display: flow-root;
+  min-block-size: 100dvh;
+  background: var(--bg);
 }
 
-.renderlab-gradient [data-landing-section="hero"]::before {
-      content: "";
-      position: absolute;
-      inset: 20px 10% auto;
-      height: 360px;
-      border-radius: 50%;
-      background: linear-gradient(90deg, rgba(255, 70, 210, 0.15), rgba(87, 74, 255, 0.22), rgba(68, 188, 255, 0.12));
-      filter: blur(90px);
-      pointer-events: none;
-    }
+.renderlab-reference-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: clip;
+  pointer-events: none;
+}
 
-/* Neutralize inherited RenderLab effects on the transferred layer. */
-.renderlab-gradient [data-landing-section="hero"]::before { mask-image: none; opacity: 1; }
+.renderlab-reference-atmosphere::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  block-size: 3355px;
+  background:
+    radial-gradient(circle at 75% 5%, rgba(91, 73, 255, 0.18), transparent 27rem),
+    radial-gradient(circle at 18% 31%, rgba(255, 64, 210, 0.1), transparent 25rem),
+    var(--bg);
+}
 
-/* The host document owns the atmosphere. The Create iframe must not paint a second copy. */
+.renderlab-reference-wash {
+  position: absolute;
+  inset: 92px 0 auto;
+  width: min(1180px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+.renderlab-reference-wash::before {
+  content: "";
+  position: absolute;
+  inset: 20px 10% auto;
+  height: 360px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, rgba(255, 70, 210, 0.15), rgba(87, 74, 255, 0.22), rgba(68, 188, 255, 0.12));
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+@media (max-width: 520px) {
+  .renderlab-reference-atmosphere::before { block-size: 4801px; }
+  .renderlab-reference-wash { inset-block-start: 78px; width: calc(100% - 28px); }
+}
+
+/* Use the shared wash, not a second effect clipped by the legacy Home hero. */
+.renderlab-gradient [data-landing-section="hero"]::before { display: none; }
+
+/* The preview iframe shows the host's atmosphere through its transparent document. */
 html.renderlab-gradient-host:has(.wanda-create-background),
 .renderlab-gradient:has(.wanda-create-background) {
   background: transparent;
+}
+.renderlab-gradient:has(.wanda-create-background) .renderlab-reference-atmosphere {
+  display: none;
 }
 .wanda-create-background {
   min-block-size: 100dvh;
