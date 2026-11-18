@@ -6,7 +6,7 @@ import { Download, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildWandaBatchZip } from "./wanda-fibo-batch-zip";
 
-type StageResult = { image_data: string; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
+type StageResult = { image_data: string; aspect?: number; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
 export type StageTurn<T> = { id: string; prompt: string; input?: File; images?: T[]; error?: string };
 
 function TurnImage({ url, label, disabled, onOpen, onReuse }: {
@@ -258,7 +258,7 @@ export function WandaFiboStage<T extends StageResult>({ historySelection, deskto
   const canCompare = !reviewing && !!source && result?.source === source && !!before && !busy;
   const compare = canCompare && compared === result;
   const dimensionsUrl = showingProgress ? (source ? input : undefined) : shown;
-  const ratio = (showingProgress && renderRatio) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio
+  const ratio = (showingProgress && renderRatio) || (!reviewing && shown === result?.image_data && result?.aspect) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio
     : dimensionsUrl && inputDimensions?.url === dimensionsUrl ? inputDimensions.ratio : 0.75);
   const label = inlineMask ? "Mask canvas" : busy ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? (source ? "Source preview" : "Inspiration") : "Canvas";
 

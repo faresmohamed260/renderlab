@@ -16,8 +16,38 @@ import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
 const api = "/wanda-fibo/";
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { image_data: string; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
+type Result = { image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
+type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number };
+type Poll = { finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
+
+function readStageBookmark(key: string): StageBookmark | undefined {
+  try {
+    const value = JSON.parse(sessionStorage.getItem(key) ?? "null");
+    if (value && typeof value.id === "string" && /^[a-f0-9]{32}$/.test(value.id)
+      && (value.mode === "edit" || value.mode === "generate") && Number.isInteger(value.count)
+      && value.count >= 1 && value.count <= 4 && Number.isFinite(value.expires) && value.expires > Date.now()) {
+      const aspect = Number.isFinite(value.aspect) && value.aspect > 0 ? Number(value.aspect) : undefined;
+      return { id: value.id, mode: value.mode, count: value.count, aspect, expires: value.expires };
+    }
+  } catch { /* Session storage is optional. */ }
+}
+
+function writeStageBookmark(key: string | undefined, value?: StageBookmark) {
+  if (!key) return;
+  try {
+    if (value) sessionStorage.setItem(key, JSON.stringify(value));
+    else sessionStorage.removeItem(key);
+  } catch { /* Session storage is optional. */ }
+}
+
+async function decodeAspect(url: string) {
+  const image = new Image();
+  image.src = url;
+  await image.decode();
+  if (!image.naturalWidth || !image.naturalHeight) throw new Error("Could not open this image.");
+  return image.naturalWidth / image.naturalHeight;
+}
 type RunSettings = {
   mode: Workflow;
   prompt: string;
@@ -184,7 +214,13 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [dragTarget, setDragTarget] = useState<number | "canvas">();
   const [status, setStatus] = useState("");
   const active = useRef<AbortController | null>(null);
-  useEffect(() => () => active.current?.abort(), []);
+  const bookmarkKey = admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
+  const [stageReady, setStageReady] = useState(!bookmarkKey);
+  const [resuming, setResuming] = useState<StageBookmark>();
+  useEffect(() => () => {
+    active.current?.abort();
+    active.current = null;
+  }, []);
   useEffect(() => {
     const urls = files.map((file) => file ? URL.createObjectURL(file) : undefined);
     setPreviews(urls);
@@ -269,48 +305,23 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: manualVgl,
           seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
       setStatus("Rendering on Modal...");
-      const end = Date.now() + 8 * 60_000;
-      let images: Result[] = [];
-      while (!signal.aborted && Date.now() < end) {
-        const update = await request<{ finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string }>("local/render/" + job, { signal });
-        setLiveFrame(update.preview);
-        setLiveBlur(update.previewBlur);
-        setLiveCaption(update.caption);
-        if (update.images.length > images.length) {
-          images = [...images, ...update.images.slice(images.length).map((image) => ({
-            ...image, batchId: job, run, source: mode === "edit" ? editInputs[0] : undefined,
-          }))];
-          setRunningBatch(images);
-        }
-        if (update.finished) {
-          if (!update.images[0]) throw new Error(update.error ?? "No image returned.");
-          finishTurn(images, update.error);
-          const image = images[0];
-          setResult((previous) => previous?.batchId === job ? previous : image);
-          if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
-            updateDraft(mode, { vgl: image.json_instruction, generatedVgl: true });
-          }
-          setHistory((items) => {
-            const merged = [...images, ...items];
-            const ids = new Set<Result["batchId"]>();
-            return merged.filter((item) => {
-              if (ids.has(item.batchId)) return true;
-              if (ids.size >= 8) return false;
-              ids.add(item.batchId);
-              return true;
-            });
-          });
-          if (prompt.trim()) setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
-          setStatus(update.error ?? (update.images.length === 1 ? "Render complete." : update.images.length + " images ready in History."));
-          return;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+      const aspect = mode === "generate" ? size.width / size.height
+        : previews[0] ? await decodeAspect(previews[0]).catch(() => undefined) : stageSource?.aspect;
+      const bookmark: StageBookmark = { id: job, mode, count: Number(imageCount), aspect, expires: Date.now() + 55 * 60_000 };
+      if (desktop && !signal.aborted) writeStageBookmark(bookmarkKey, bookmark);
+      const { images, error } = await watchRender(bookmark, signal, run);
+      if (signal.aborted) return;
+      finishTurn(images, error);
+      const image = images[0];
+      if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
+        updateDraft(mode, { vgl: image.json_instruction, generatedVgl: true });
       }
-      throw new Error("Render status did not return before the local timeout.");
+      if (prompt.trim()) setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
     } catch (cause) {
       if (!signal.aborted) {
         const message = cause instanceof Error ? cause.message : "Render failed.";
         finishTurn([], message);
+        if (desktop) writeStageBookmark(bookmarkKey);
         setStatus(message);
       }
     } finally {
@@ -318,6 +329,88 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       if (!signal.aborted) setBusy(false);
     }
   }
+
+  async function watchRender(bookmark: StageBookmark, signal: AbortSignal, run?: RunSettings, restoring = false) {
+    const end = Date.now() + 8 * 60_000;
+    let images: Result[] = [];
+    while (!signal.aborted && Date.now() < end) {
+      const update = await request<Poll>("local/render/" + bookmark.id, { signal });
+      if (signal.aborted) throw new Error("Render polling stopped.");
+      if (!update.finished) {
+        setLiveFrame(update.preview);
+        setLiveBlur(update.previewBlur);
+        setLiveCaption(update.caption);
+      }
+      if (update.images.length > images.length) {
+        images = [...images, ...update.images.slice(images.length).map((image) => ({
+          ...image, batchId: bookmark.id, run, source: run?.inputs[0],
+        }))];
+        setRunningBatch(images);
+      }
+      if (update.finished) {
+        if (!images[0]) throw new Error(update.error ?? "No image returned.");
+        // Keep progress (or the existing inspected image) until the final cover can display at its real aspect.
+        const first = images[0];
+        const cover = { ...first, aspect: await decodeAspect(first.image_data) };
+        if (signal.aborted) throw new Error("Render polling stopped.");
+        images = [cover, ...images.slice(1)];
+        setResult((previous) => previous?.batchId === bookmark.id && previous !== first ? previous : cover);
+        setLiveFrame(undefined);
+        setLiveBlur(undefined);
+        setLiveCaption(undefined);
+        setHistory((items) => {
+          const merged = [...images, ...items.filter((item) => item.batchId !== bookmark.id)];
+          const ids = new Set<Result["batchId"]>();
+          return merged.filter((item) => {
+            if (ids.has(item.batchId)) return true;
+            if (ids.size >= 8) return false;
+            ids.add(item.batchId);
+            return true;
+          });
+        });
+        setStatus(update.error ?? (images.length === 1 ? "Render complete." : images.length + " images ready in History."));
+        if (restoring) setStageReady(true);
+        return { images, error: update.error };
+      }
+      if (restoring) setStageReady(true);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+    throw new Error("Render status did not return before the local timeout.");
+  }
+
+  useEffect(() => {
+    if (!bookmarkKey || !matchMedia("(min-width: 1025px)").matches) {
+      setStageReady(true);
+      return;
+    }
+    const bookmark = readStageBookmark(bookmarkKey);
+    if (!bookmark) {
+      setStageReady(true);
+      return;
+    }
+    const controller = new AbortController();
+    active.current = controller;
+    setMode(bookmark.mode);
+    setBusy(true);
+    setResuming(bookmark);
+    setStatus("Restoring render…");
+    void watchRender(bookmark, controller.signal, undefined, true).catch(() => {
+      if (!controller.signal.aborted) {
+        writeStageBookmark(bookmarkKey);
+        setStatus("The previous render is no longer available.");
+      }
+    }).finally(() => {
+      if (active.current !== controller) return;
+      active.current = null;
+      setBusy(false);
+      setResuming(undefined);
+      setStageReady(true);
+    });
+    return () => {
+      controller.abort();
+      if (active.current === controller) active.current = null;
+    };
+  }, [bookmarkKey]);
 
   function restoreRun(image: Result, reopen: boolean) {
     const run = image.run;
@@ -397,7 +490,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
     : "";
-  const canSubmit = !busy && !maskEditor && !blocker;
+  const canSubmit = stageReady && !busy && !maskEditor && !blocker;
   const maskEditorNode = maskEditor && mode === "edit" && files[0] && previews[0] && (
     <WandaFiboMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
       onSave={(region) => {
@@ -566,7 +659,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           </div>
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
-            <WandaFiboStage
+            {stageReady && <WandaFiboStage
               desktopResultActions={desktop ? resultActions : undefined}
               workflow={mode}
               turns={turns[mode]}
@@ -590,13 +683,13 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 setResult(image);
               }}
               onReturnToProgress={() => { setInspected(undefined); setResult(undefined); }}
-              expectedImages={Number(imageCount)}
+              expectedImages={resuming?.count ?? Number(imageCount)}
               input={mode === "edit" ? previews[0] : inspirationPreview}
               inputLabel={mode === "edit" ? "Source image" : "Reference image"}
               busy={busy}
               liveFrame={liveFrame}
               liveBlur={liveBlur}
-              renderRatio={mode === "generate" ? size.width / size.height : undefined}
+              renderRatio={resuming ? resuming.aspect : mode === "generate" ? size.width / size.height : undefined}
               status={liveCaption ?? status}
               onBrowse={() => chooseImage(mode === "edit" ? 0 : 4)}
               onUseInput={(file) => attachImage(file, 0)}
@@ -616,7 +709,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                   });
                 } catch { setStatus("Could not use this result as the source."); }
               }}
-            />
+            />}
             {maskEditor === "dialog" && maskEditorNode}
             {!admitted && <Link href="/settings" className="wanda-fibo-stage-sign-in">Sign in to upload</Link>}
         </section>
