@@ -19,7 +19,7 @@ const previewCaptions: ReadonlyMap<unknown, string> = new Map([
 ]);
 type PreviewUpdate = { frame: string; blur?: number } | { caption: string };
 type QueueRecord = { id: string; created: number; count: number; payload: Record<string, unknown> & { seed: number } };
-type Job = { pending?: { bytes: number; record: QueueRecord }; writing?: boolean; owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
+type Job = { pending?: { bytes: number; record: QueueRecord }; writing?: boolean; cancelToken?: string; cancelling?: boolean; owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
 type Upload = { owner: string; created: number; data: Buffer };
 const shared = globalThis as typeof globalThis & {
   wandaFiboState?: { jobs: Map<string, Job>; uploads: Map<string, Upload>; healthUntil: number; healthCheck?: Promise<boolean>; queueLoads?: Map<string, Promise<void>> };
@@ -253,12 +253,19 @@ async function runQueuedRender(job: Job, record: QueueRecord) {
       job.previewBlur = undefined;
       job.caption = undefined;
       const preview = process.env.RENDERLAB_WANDA_FIBO_LIVE_PREVIEW === "1";
+      job.cancelToken = preview && process.env.RENDERLAB_WANDA_FIBO_CANCEL === "1" ? randomBytes(16).toString("hex") : undefined;
       const result = await bridge({
-        ...payload, preview, seed: imageSeed,
+        ...payload, preview, seed: imageSeed, cancel_token: job.cancelToken,
       }, remaining, preview ? (update) => {
+        if (job.cancelling) return;
         if ("frame" in update) { job.preview = update.frame; job.previewBlur = update.blur; }
         else job.caption = update.caption;
       } : undefined);
+      job.cancelToken = undefined;
+      if (result.cancelled === true) {
+        job.error = job.images.length ? "Render cancelled. Completed images are in History." : "Render cancelled.";
+        break;
+      }
       if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error("Invalid PNG");
       batchBytes += result.png.length;
       retainedBytes += result.png.length + "data:image/png;base64,".length;
@@ -266,6 +273,10 @@ async function runQueuedRender(job: Job, record: QueueRecord) {
       job.images.push({ image_data: "data:image/png;base64," + result.png,
         filename: id + "-" + (index + 1) + ".png", seed: imageSeed, json_instruction: result.prompt,
         seconds: result.seconds, vgl_seconds: result.vgl_seconds, total_seconds: result.total_seconds });
+      if (job.cancelling && index + 1 < count) {
+        job.error = "Remaining images cancelled. Completed images are in History.";
+        break;
+      }
     }
   } catch {
     job.error = job.images.length
@@ -281,6 +292,8 @@ async function runQueuedRender(job: Job, record: QueueRecord) {
       job.preview = undefined;
       job.previewBlur = undefined;
       job.caption = undefined;
+      job.cancelToken = undefined;
+      job.cancelling = false;
       job.finished = true;
     }
   }
@@ -321,7 +334,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       catch { return error("Local History could not be opened.", 503); }
     }
     if (path === "local/queue") return json({ jobs: [...state.jobs].flatMap(([id, job]) =>
-      job.owner === owner && !job.finished ? [{ id, state: job.pending ? "pending" : "running", completed: job.images.length, cancelling: false }] : []) });
+      job.owner === owner && !job.finished ? [{ id, state: job.pending ? "pending" : "running", completed: job.images.length, cancelling: !!job.cancelling }] : []) });
     const render = /^local\/render\/([a-f0-9]{32})$/.exec(path);
     const upload = /^local\/upload\/([a-f0-9]{32}\.png)$/.exec(path);
     if (render) {
@@ -334,7 +347,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
         return error("Job not found.", 404);
       }
       return json({ finished: job.finished, state: job.finished ? "finished" : job.pending ? "pending" : "running",
-        images: job.images, ...(job.preview ? { preview: job.preview, previewBlur: job.previewBlur } : {}), ...(job.caption ? { caption: job.caption } : {}), ...(job.error ? { error: job.error } : {}) });
+        images: job.images, canCancel: !!job.cancelToken, cancelling: !!job.cancelling, ...(job.preview ? { preview: job.preview, previewBlur: job.previewBlur } : {}), ...(job.caption ? { caption: job.caption } : {}), ...(job.error ? { error: job.error } : {}) });
     }
     if (upload) {
       const file = state.uploads.get(upload[1]);
@@ -349,7 +362,19 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
   if (request.method === "POST" && cancel) {
     const job = state.jobs.get(cancel[1]);
     if (!job || job.owner !== owner) return error("Job not found.", 404);
-    if (!job.pending || job.writing) return error("Only waiting renders can be removed.", 409);
+    if (!job.pending) {
+      const token = job.cancelToken;
+      if (job.finished || !token) return error("This render cannot be cancelled.", 409);
+      if (job.cancelling) return json({ accepted: true }, 202);
+      job.cancelling = true;
+      try {
+        const result = await bridge({ mode: "cancel", token }, 18_000);
+        if (result.accepted === true) return json({ accepted: true }, 202);
+      } catch { /* Worker unavailable; allow a retry without marking the render cancelled. */ }
+      job.cancelling = false;
+      return error("Could not cancel this render. Try again.", 409);
+    }
+    if (job.writing) return error("Wait for Queue to finish updating.", 409);
     job.writing = true;
     try { await unlink(queuePath(owner, cancel[1])); }
     catch { return error("Could not remove the waiting render.", 503); }

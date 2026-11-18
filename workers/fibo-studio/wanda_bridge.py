@@ -31,6 +31,8 @@ if request.get("preview") and mode in ("edit", "generate"):
         options.update(width=request["width"], height=request["height"])
         if request.get("inspiration"):
             options["inspiration"] = base64.b64decode(request["inspiration"], validate=True)
+    if request.get("cancel_token"):
+        options["cancel_token"] = request["cancel_token"]
     result = None
     for event in worker.render_with_preview.remote_gen(mode, options):
         if event["kind"] == "frame":
@@ -41,6 +43,8 @@ if request.get("preview") and mode in ("edit", "generate"):
             result = event["result"]
     if result is None:
         raise RuntimeError("Preview worker did not return a result")
+elif mode == "cancel":
+    result = worker.cancel_render.spawn(request["token"]).get(timeout=15)
 elif mode == "health":
     result = worker.health.spawn().get(timeout=130)
 elif mode == "generate" and (request.get("extended") or render_options):

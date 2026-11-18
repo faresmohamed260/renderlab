@@ -20,7 +20,7 @@ type Result = { image_data: string; aspect?: number; seed: number; filename?: st
 type Workflow = "edit" | "generate";
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number; filename?: string };
 type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
-type Poll = { state?: "pending" | "running" | "finished"; finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
+type Poll = { canCancel?: boolean; cancelling?: boolean; state?: "pending" | "running" | "finished"; finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
 
 function parseStageBookmark(raw: unknown): StageBookmark | undefined {
   if (!raw || typeof raw !== "object") return;
@@ -153,6 +153,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const queue = useRef<HTMLDetailsElement>(null);
   const preparing = useRef<AbortController | null>(null);
   const [enqueueing, setEnqueueing] = useState(false);
+  const [activeCancel, setActiveCancel] = useState<{ id: string; pending: boolean }>();
+  const [sendingCancel, setSendingCancel] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [waiting, setWaiting] = useState<QueuedRender[]>([]);
   const [waitingReady, setWaitingReady] = useState(false);
@@ -405,18 +407,20 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   }
 
   async function watchRender(bookmark: StageBookmark, signal: AbortSignal, run?: RunSettings, restoring = false) {
+    setActiveCancel(undefined);
     const end = Date.now() + 24 * 60_000;
     let images: Result[] = [];
     let recoveringInspection = restoring && !!bookmark.filename;
     while (!signal.aborted && Date.now() < end) {
       const update = await request<Poll>("local/render/" + bookmark.id, { signal });
       if (signal.aborted) throw new Error("Render polling stopped.");
+      setActiveCancel(!update.finished && update.canCancel ? { id: bookmark.id, pending: !!update.cancelling } : undefined);
       if (!update.finished) {
         if (update.state === "pending") setStatus("Waiting in Queue…");
         else if (update.state === "running") setStatus("Rendering on Modal...");
         setLiveFrame(update.preview);
         setLiveBlur(update.previewBlur);
-        setLiveCaption(update.caption);
+        setLiveCaption(update.cancelling ? "Cancelling…" : update.caption);
       }
       if (update.images.length > images.length) {
         images = [...images, ...update.images.slice(images.length).map((image) => ({
@@ -491,10 +495,11 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     setResuming(bookmark);
     setAccepted(true);
     setStatus("Restoring render…");
-    void watchRender(bookmark, controller.signal, undefined, true).catch(() => {
+    void watchRender(bookmark, controller.signal, undefined, true).catch((cause: unknown) => {
       if (!controller.signal.aborted) {
         writeStageBookmark(bookmarkKey);
-        setStatus("The previous render is no longer available.");
+        setStatus(cause instanceof Error && cause.message !== "Job not found."
+          ? cause.message : "The previous render is no longer available.");
       }
     }).finally(() => {
       if (active.current !== controller) return;
@@ -548,6 +553,19 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       setResuming(undefined);
     });
   }, [stageReady, busy, waiting, bookmarkKey]);
+
+  async function cancelActiveRender() {
+    if (!activeCancel || activeCancel.pending || sendingCancel) return;
+    setSendingCancel(true);
+    setQueueNotice("");
+    try {
+      await request("local/queue/" + activeCancel.id + "/cancel", { method: "POST" });
+    } catch (cause) {
+      setQueueNotice(cause instanceof Error ? cause.message : "Could not cancel this render.");
+    } finally {
+      setSendingCancel(false);
+    }
+  }
 
   async function removeWaiting(id: string) {
     try {
@@ -662,6 +680,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             <div className="wanda-fibo-queue-jobs">
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
               <div className="wanda-fibo-caption">Waiting requests keep their prompt and inputs on WANDA until they start, are removed, or expire.</div>
+              {busy && activeCancel && <Button type="button" variant="ghost" size="sm"
+                disabled={sendingCancel || activeCancel.pending} onClick={() => void cancelActiveRender()}>
+                {sendingCancel || activeCancel.pending ? "Cancelling…" : "Cancel active render"}
+              </Button>}
               {waiting.map(({ bookmark, run }) => (
                 <div className="wanda-fibo-queue-entry" key={bookmark.id}>
                   <span>{run?.prompt || (run ? "VGL edit" : bookmark.mode === "edit" ? "Queued image edit" : "Queued text-to-image render")}</span>

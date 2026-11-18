@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import threading
 import uuid
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -59,12 +60,16 @@ volumes = {MODELS: modal.Volume.from_name(volume_name, environment_name="main")}
 @app.cls(image=image, gpu=["A10", "L4"], cpu=2, memory=16384, startup_timeout=180,
          timeout=960, min_containers=0, max_containers=1, scaledown_window=15,
          volumes=volumes)
+@modal.concurrent(max_inputs=2)
 class FiboStudio:
     @modal.enter()
     def start(self):
         for _, destination, expected in ASSETS:
             if hashlib.sha256(Path(destination).read_bytes()).hexdigest() != expected:
                 raise RuntimeError(f"Mounted FIBO source mismatch: {destination}")
+        self.render_lock = threading.Lock()
+        self.cancel_lock = threading.Lock()
+        self.active_render = None
         self.runtime = Path("/tmp/fibo-runtime")
         self.runtime.mkdir(exist_ok=True)
         (self.runtime / "input").mkdir(exist_ok=True)
@@ -153,19 +158,18 @@ class FiboStudio:
 
     @modal.method()
     def text_to_image(self, instruction: str, seed: int = 1):
-        backend = self.backend_for(instruction, seed)
-        return self.read_output(backend.generate("", seed, 4, 1024, 1024, instruction))
+        return self._serialized_render(self._text_to_image_with_setup, instruction, seed, 1024, 1024)
 
     @modal.method()
     def text_to_image_with_setup(self, instruction: str, seed: int, width: int, height: int,
                                  inspiration: bytes | None = None, steps: int = 4,
                                  negative_prompt: str = "", json_instruction: str = ""):
-        return self._text_to_image_with_setup(instruction, seed, width, height, inspiration,
+        return self._serialized_render(self._text_to_image_with_setup, instruction, seed, width, height, inspiration,
                                               steps, negative_prompt, json_instruction)
 
     def _text_to_image_with_setup(self, instruction: str, seed: int, width: int, height: int,
                                  inspiration: bytes | None = None, steps: int = 4,
-                                 negative_prompt: str = "", json_instruction: str = "", preview_id=None):
+                                 negative_prompt: str = "", json_instruction: str = "", preview_id=None, cancel=None):
         from PIL import Image
         if type(steps) is not int or not 1 <= steps <= 8:
             raise ValueError("Unsupported step count")
@@ -183,15 +187,15 @@ class FiboStudio:
                 guide = image.convert("RGB")
         backend = self.backend_for(instruction, seed, json_instruction, negative_prompt)
         return self.read_output(backend.generate(json_instruction, seed, steps, width, height, instruction, inspiration=guide, preview_id=preview_id,
-                                                 negative_prompt=negative_prompt))
+                                                 negative_prompt=negative_prompt, cancel=cancel))
 
     @modal.method()
     def edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,
                    negative_prompt: str = "", json_instruction: str = "", mask: bytes | None = None):
-        return self._edit_image(images, instruction, seed, steps, negative_prompt, json_instruction, mask)
+        return self._serialized_render(self._edit_image, images, instruction, seed, steps, negative_prompt, json_instruction, mask)
 
     def _edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,
-                   negative_prompt: str = "", json_instruction: str = "", mask: bytes | None = None, preview_id=None):
+                   negative_prompt: str = "", json_instruction: str = "", mask: bytes | None = None, preview_id=None, cancel=None):
         from PIL import Image
         if type(steps) is not int or not 1 <= steps <= 8:
             raise ValueError("Unsupported step count")
@@ -218,7 +222,7 @@ class FiboStudio:
             if not region.getbbox():
                 raise ValueError("Mask must select an area")
         return self.read_output(backend.render(decoded, json_instruction, seed, steps, region, instruction, preview_id=preview_id,
-                                               negative_prompt=negative_prompt))
+                                               negative_prompt=negative_prompt, cancel=cancel))
 
     @staticmethod
     def preview_jpeg(message):
@@ -264,20 +268,49 @@ class FiboStudio:
         phase = "shapes" if fraction <= .34 else "details" if fraction < .75 else "refine"
         return phase, round(90 - 60 * blur_fraction)
 
+    def _serialized_render(self, render, *args, cancel_token=None, **options):
+        with self.render_lock:
+            if cancel_token is None:
+                return render(*args, **options)
+            cancel = threading.Event()
+            with self.cancel_lock:
+                self.active_render = (cancel_token, cancel)
+            try:
+                return render(*args, cancel=cancel, **options)
+            except Exception as error:
+                from comfy_backend import RenderCancelled
+                if cancel.is_set() and isinstance(error, RenderCancelled):
+                    return {"cancelled": True}
+                raise
+            finally:
+                with self.cancel_lock:
+                    self.active_render = None
+
+    @modal.method()
+    def cancel_render(self, token: str):
+        with self.cancel_lock:
+            if self.active_render is None or self.active_render[0] != token:
+                return {"accepted": False}
+            self.active_render[1].set()
+            return {"accepted": True}
+
     @modal.method(is_generator=True)
     async def render_with_preview(self, mode: str, options: dict):
         from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType
         render = {"edit": self._edit_image, "generate": self._text_to_image_with_setup}[mode]
         identifier = uuid.uuid4().hex
+        token = options.pop("cancel_token", None)
+        if token is not None and (not isinstance(token, str) or len(token) != 32 or any(c not in "0123456789abcdef" for c in token)):
+            raise ValueError("Invalid cancellation token")
         async with ClientSession(timeout=ClientTimeout(total=5)) as session:
             try:
                 socket = await session.ws_connect(BASE + "/ws", params={"clientId": identifier},
                                                   max_msg_size=4 * 1024 * 1024)
             except (ClientError, asyncio.TimeoutError):
-                yield {"kind": "result", "result": await asyncio.to_thread(render, **options)}
+                yield {"kind": "result", "result": await asyncio.to_thread(self._serialized_render, render, cancel_token=token, **options)}
                 return
             async with socket:
-                task = asyncio.create_task(asyncio.to_thread(render, preview_id=identifier, **options))
+                task = asyncio.create_task(asyncio.to_thread(self._serialized_render, render, preview_id=identifier, cancel_token=token, **options))
                 sent = 0
                 progress_sent = 0
                 last_progress = None
