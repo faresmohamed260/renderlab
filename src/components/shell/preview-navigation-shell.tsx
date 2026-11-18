@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, ChevronUp, CircleHelp, House, Images, Menu, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
+import { Activity, ChevronUp, CircleHelp, House, Images, Menu, PanelLeftClose, PanelLeftOpen, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 
@@ -63,7 +63,7 @@ function PreviewAccountMenu({ signedIn }: { signedIn: boolean }) {
           setOpen(pinned.current);
         }}>
         <span className="preview-navigation-avatar"><UserRound size={16} aria-hidden="true" /></span>
-        <span className="min-w-0 flex-1">
+        <span className="preview-account-identity min-w-0 flex-1">
           <span>{signedIn ? "RenderLab account" : "Guest"}</span>
           <small data-signed-in={signedIn}>{signedIn ? "Signed in" : "Not signed in"}</small>
         </span>
@@ -93,6 +93,22 @@ const destinations = [
 
 export function PreviewNavigationShell({ children, signedIn }: { children: ReactNode; signedIn: boolean }) {
   const pathname = usePathname();
+  const railId = useId();
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try { setCollapsed(sessionStorage.getItem("renderlab.preview.sidebar") === "collapsed"); }
+    catch { /* Sidebar still works with browser storage disabled. */ }
+  }, []);
+
+  function toggleSidebar() {
+    const next = !collapsed;
+    setCollapsed(next);
+    try { sessionStorage.setItem("renderlab.preview.sidebar", next ? "collapsed" : "expanded"); }
+    catch { /* The current view retains the user's choice. */ }
+  }
+
+  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
 
   function handleNavigation(event: MouseEvent<HTMLDivElement>) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey
@@ -112,7 +128,7 @@ export function PreviewNavigationShell({ children, signedIn }: { children: React
     <nav aria-label="RenderLab navigation" className="preview-navigation-links">
       {destinations.map(({ href, label, icon: Icon }) => {
         const current = href === "/" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
-        return <Link key={href} href={href} aria-current={current ? "page" : undefined}>
+        return <Link key={href} href={href} aria-label={label} title={label} aria-current={current ? "page" : undefined}>
           <Icon size={19} aria-hidden="true" />
           <span>{label}</span>
         </Link>;
@@ -121,11 +137,19 @@ export function PreviewNavigationShell({ children, signedIn }: { children: React
   );
 
   return (
-    <div className="preview-navigation-shell" onClickCapture={handleNavigation}>
-      <aside className="preview-navigation-rail" aria-label="Sidebar">
-        <Link href="/" className="preview-navigation-brand" aria-label="RenderLab home">
-          <RenderLabBrand markClassName="size-8" textClassName="text-base" />
-        </Link>
+    <div className="preview-navigation-shell" data-sidebar-collapsed={collapsed} onClickCapture={handleNavigation}>
+      <aside id={railId} className="preview-navigation-rail" aria-label="Sidebar">
+        <div className="preview-navigation-heading">
+          <Link href="/" className="preview-navigation-brand" aria-label="RenderLab home">
+            <RenderLabBrand markClassName="size-8" textClassName="text-base" />
+          </Link>
+          <Button type="button" variant="ghost" size="icon" className="preview-sidebar-toggle"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-controls={railId} aria-expanded={!collapsed} onClick={toggleSidebar}>
+            <ToggleIcon size={19} aria-hidden="true" />
+          </Button>
+        </div>
         {links}
         <PreviewAccountMenu signedIn={signedIn} />
       </aside>

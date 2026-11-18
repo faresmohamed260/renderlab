@@ -228,12 +228,22 @@ html.renderlab-gradient-host:has(.wanda-create-background),
   .preview-navigation-profile small[data-signed-in="true"] {
     color: #2dd4bf;
   }
+  .preview-navigation-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-end: 20px;
+  }
+  .preview-sidebar-toggle {
+    flex: none;
+    min-inline-size: 44px;
+    min-block-size: 44px;
+  }
   .preview-navigation-brand {
     display: flex;
     align-items: center;
     min-block-size: 44px;
     padding-inline: 10px;
-    margin-block-end: 20px;
     border-radius: 9px;
   }
   .preview-create-frame {
@@ -286,5 +296,45 @@ html.renderlab-gradient-host:has(.wanda-create-background),
 
   .preview-account-chevron {
     transition: transform var(--sileo-duration) var(--sileo-spring-easing);
+  }
+}
+
+@media (width >= 75rem) {
+  .preview-navigation-shell[data-sidebar-collapsed="true"] {
+    grid-template-columns: 5rem minmax(0, 1fr);
+  }
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-rail {
+    overflow: visible;
+    z-index: 10;
+  }
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-heading {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-links {
+    min-block-size: 0;
+    overflow-y: auto;
+    padding: 2px;
+  }
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-links a,
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-navigation-profile {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .preview-navigation-shell[data-sidebar-collapsed="true"] :is(
+    [data-renderlab-wordmark], .preview-navigation-rail .preview-navigation-links a span,
+    .preview-account-identity, .preview-account-chevron
+  ) {
+    display: none;
+  }
+  .preview-navigation-shell[data-sidebar-collapsed="true"] .preview-account-menu {
+    inset-inline-end: auto;
+    inline-size: 14rem;
+  }
+}
+
+@media (width >= 75rem) and (prefers-reduced-motion: no-preference) {
+  .preview-navigation-shell {
+    transition: grid-template-columns 250ms ease;
   }
 }
