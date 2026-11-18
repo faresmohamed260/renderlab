@@ -41,6 +41,7 @@ image = (
         "python -m pip install --index-url https://download.pytorch.org/whl/cu128 torch==2.10.0 torchvision==0.25.0",
         f"python -m pip install -r {ROOT}/requirements.txt bria-vgl==0.10.2 && python -m pip check",
     )
+    .add_local_python_source("studio_gateway_contract")
 )
 if modal.is_local():
     snapshot_dir = os.environ.get("RENDERLAB_FIBO_SNAPSHOT", "").strip()
@@ -194,6 +195,43 @@ class FiboStudio:
     def edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,
                    negative_prompt: str = "", json_instruction: str = "", mask: bytes | None = None):
         return self._serialized_render(self._edit_image, images, instruction, seed, steps, negative_prompt, json_instruction, mask)
+
+    @modal.method()
+    def render_gateway(self, *, prompt, seed, sources=(), width=0, height=0, steps=4,
+                       negative_prompt="", vgl="", mask=None, inspiration=None, generate_vgl=False):
+        """Execute the existing Studio path for the authenticated RenderLab gateway.
+
+        VGL generation stays inside the retained FIBO Studio container and uses
+        its already-loaded Qwen3-VL encoder. It is not exposed as another
+        RenderLab model or network service.
+        """
+        from studio_gateway_contract import validate_studio_options
+        validate_studio_options(
+            prompt=prompt, seed=seed, width=width, height=height, steps=steps,
+            negative_prompt=negative_prompt, vgl=vgl, generate_vgl=generate_vgl,
+            source_count=len(sources) if isinstance(sources, (list, tuple)) else -1,
+            has_mask=mask is not None, has_inspiration=inspiration is not None,
+        )
+        if sources:
+            result = self._serialized_render(
+                self._edit_image, list(sources), prompt, seed, steps, negative_prompt, vgl, mask,
+            )
+        else:
+            result = self._serialized_render(
+                self._text_to_image_with_setup, prompt, seed, width, height, inspiration,
+                steps, negative_prompt, vgl,
+            )
+        if result.get("cancelled"):
+            return result
+        png = result.get("png")
+        if type(png) is not bytes:
+            raise RuntimeError("Studio render did not return PNG bytes")
+        if generate_vgl:
+            generated = result.get("prompt")
+            if type(generated) is not str:
+                raise RuntimeError("Studio render did not return VGL")
+            return {"image_png": png, "generated_vgl": generated}
+        return png
 
     def _edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,
                    negative_prompt: str = "", json_instruction: str = "", mask: bytes | None = None, preview_id=None, cancel=None):

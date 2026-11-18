@@ -10,15 +10,15 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
-from native_graph import build_graph
 from native_generated_vgl import validate_generated_vgl
+from studio_gateway_contract import validate_studio_options
 
 MAX_BODY = 46 * 1024 * 1024
 MAX_IMAGES = 32 * 1024 * 1024
 MAX_MASK = 8 * 1024 * 1024
 PNG_HEADER = bytes.fromhex("89504e470d0a1a0a")
 CALL_ID = re.compile(r"fc-[A-Za-z0-9]{16,64}")
-FIELDS = {"prompt", "seed", "width", "height", "steps", "negative_prompt", "vgl", "images", "mask", "generate_vgl"}
+FIELDS = {"prompt", "seed", "width", "height", "steps", "negative_prompt", "vgl", "images", "mask", "inspiration", "generate_vgl"}
 
 
 def validated_worker_result(result):
@@ -39,8 +39,7 @@ def validate_payload(payload):
     images = payload.get("images", [])
     if not isinstance(images, list) or len(images) > 4:
         raise ValueError("Expected up to four source images")
-    options = {key: payload[key] for key in FIELDS - {"images", "mask"} if key in payload}
-    staged_names = [f"{slot:032x}.png" for slot in range(len(images))]
+    options = {key: payload[key] for key in FIELDS - {"images", "mask", "inspiration"} if key in payload}
     mask = None
     if "mask" in payload:
         if len(images) != 1:
@@ -51,12 +50,6 @@ def validate_payload(payload):
         mask = base64.b64decode(encoded, validate=True)
         if not 0 < len(mask) <= MAX_MASK or not mask.startswith(PNG_HEADER):
             raise ValueError("Expected a bounded PNG mask")
-    # The gateway does not own source image dimensions. For Original geometry,
-    # this placeholder verifies the request shape only; the isolated render
-    # decodes its real owner-validated source and derives the exact FIBO size.
-    build_graph(**options, images=staged_names, mask=f"{len(images):032x}.png" if mask is not None else None,
-                source_dimensions=(1024, 1024) if mask is not None and
-                (options.get("width", 0), options.get("height", 0)) == (0, 0) else None)
     sources = []
     for encoded in images:
         if not isinstance(encoded, str) or len(encoded) > 4 * ((16 * 1024 * 1024 + 2) // 3):
@@ -67,7 +60,27 @@ def validate_payload(payload):
         sources.append(data)
     if sum(map(len, sources)) > MAX_IMAGES:
         raise ValueError("Combined input limit exceeded")
-    return {**options, "sources": sources, **({"mask": mask} if mask is not None else {})}
+    inspiration = None
+    if "inspiration" in payload:
+        encoded = payload["inspiration"]
+        if not isinstance(encoded, str) or len(encoded) > 4 * ((16 * 1024 * 1024 + 2) // 3):
+            raise ValueError("Invalid inspiration size")
+        inspiration = base64.b64decode(encoded, validate=True)
+        if not 0 < len(inspiration) <= 16 * 1024 * 1024:
+            raise ValueError("Invalid inspiration size")
+    validate_studio_options(
+        prompt=options.get("prompt", ""), seed=options.get("seed"), width=options.get("width", 0),
+        height=options.get("height", 0), steps=options.get("steps", 4),
+        negative_prompt=options.get("negative_prompt", ""), vgl=options.get("vgl", ""),
+        generate_vgl=options.get("generate_vgl", False), source_count=len(sources),
+        has_mask=mask is not None, has_inspiration=inspiration is not None,
+    )
+    # Preserve the current public API boundary: its `generate_vgl` field is
+    # source-free until the image-aware product request shape is introduced.
+    if options.get("generate_vgl") and (sources or mask is not None or inspiration is not None):
+        raise ValueError("Generated VGL currently requires source-free text-to-image")
+    return {**options, "sources": sources, **({"mask": mask} if mask is not None else {}),
+            **({"inspiration": inspiration} if inspiration is not None else {})}
 
 
 def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors):
