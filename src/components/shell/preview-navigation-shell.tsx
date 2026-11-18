@@ -4,46 +4,75 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, CircleHelp, House, Images, Menu, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { RenderLabMark } from "@/components/brand/renderlab-brand";
 
-import { animated, useSpring } from "@react-spring/web";
+import { animated, useSpring, type SpringValue } from "@react-spring/web";
 import { Button } from "@/components/ui/button";
 
-function MenuSilhouette({ id, right = false }: { id: string; right?: boolean }) {
-  const clip = useRef<SVGClipPathElement>(null);
-  const [size, setSize] = useState({ width: 258, height: 250 });
+const pillTop = 17;
+const pillHeight = 40;
+const roundness = 16;
+const mergeBlur = roundness * 0.5;
+const pillPadding = 10;
+
+// Geometry reference: Sileo b70fd826, packages/sileo/src/{sileo.tsx,constants.ts}.
+// The filter joins the two rounded rectangles in an alpha mask so the glass is tinted only once.
+function MenuSilhouette({ id, trigger, progress, right = false }: {
+  id: string;
+  trigger: RefObject<HTMLButtonElement | null>;
+  progress: SpringValue<number>;
+  right?: boolean;
+}) {
+  const layer = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: right ? 236 : 350, height: 220, triggerWidth: right ? 54 : 140 });
 
   useEffect(() => {
-    const panel = clip.current?.ownerSVGElement?.nextElementSibling;
-    if (!panel) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const box = entry.borderBoxSize[0];
-      if (box) setSize({ width: box.inlineSize, height: box.blockSize });
-    });
+    const panel = layer.current?.parentElement;
+    const button = trigger.current;
+    if (!panel || !button) return;
+    const measure = () => {
+      const next = { width: panel.offsetWidth, height: panel.offsetHeight, triggerWidth: button.offsetWidth };
+      setSize((old) => old.width === next.width && old.height === next.height &&
+        old.triggerWidth === next.triggerWidth ? old : next);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
     observer.observe(panel);
+    observer.observe(button);
     return () => observer.disconnect();
-  }, []);
+  }, [trigger]);
 
   const { width, height } = size;
-  const shoulder = right ? 58 : 172;
-  const start = Math.min(shoulder, width - 58);
-  // Fixed-pixel curves keep the lip around the trigger even on a wide panel.
-  const d = `M 0 16 Q 0 0 16 0 H ${start}
-    C ${start + 28} 0 ${start + 12} 52 ${start + 44} 52
-    H ${width - 16} Q ${width} 52 ${width} 68 V ${height - 16}
-    Q ${width} ${height} ${width - 16} ${height} H 16
-    Q 0 ${height} 0 ${height - 16} Z`;
+  const pillWidth = Math.min(width, Math.max(pillHeight, size.triggerWidth + pillPadding));
+  const bodyTop = pillTop + pillHeight;
+  const extend = progress.to([0, 1], [pillHeight, pillHeight + mergeBlur * 3], "clamp");
+  const body = progress.to([0, 1], [0, Math.max(0, height - bodyTop)], "clamp");
+  const filter = id + "-join";
 
-  return <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
-    <defs>
-      <clipPath ref={clip} id={id} clipPathUnits="userSpaceOnUse">
-        <path transform={right ? `translate(${width} 0) scale(-1 1)` : undefined} d={d} />
-      </clipPath>
-    </defs>
-  </svg>;
+  return (
+    <div ref={layer} className="preview-menu-glass" aria-hidden="true" style={{ maskImage: `url(#${id})` }}>
+      <svg width="0" height="0" className="absolute" aria-hidden="true">
+        <defs>
+          <filter id={filter} x="-25%" y="-50%" width="150%" height="200%" colorInterpolationFilters="sRGB">
+            <feGaussianBlur stdDeviation={mergeBlur} result="soft" />
+            <feComponentTransfer in="soft" result="joined">
+              <feFuncA type="linear" slope="20" intercept="-10" />
+            </feComponentTransfer>
+            <feComposite in="SourceGraphic" in2="joined" operator="atop" />
+          </filter>
+          <mask id={id} maskUnits="userSpaceOnUse" x="0" y="0" width={width} height={height} style={{ maskType: "alpha" }}>
+            <g filter={`url(#${filter})`} fill="white">
+              <animated.rect x={right ? width - pillWidth : 0} y={pillTop} width={pillWidth}
+                rx={roundness} height={extend} />
+              <animated.rect y={bodyTop} width={width} rx={roundness} height={body} />
+            </g>
+          </mask>
+        </defs>
+      </svg>
+    </div>
+  );
 }
-
 
 const navigationSpring = { mass: 1, tension: 220, friction: 22 };
 
@@ -148,17 +177,18 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
           className="preview-navigation-avatar"
           onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} /> : <UserRound size={24} aria-hidden="true" />}
       </Button>
-      <MenuSilhouette id={id + "-shape"} right />
       <animated.div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}
-        style={{ clipPath: "url(#" + id + "-shape)", opacity: panel.progress.to([0, 1], [0, 1], "clamp"), scaleY: panel.progress }}>
-        <ul aria-label="Account options" className="preview-account-options">
+        style={{ opacity: panel.progress.to([0, 1], [0, 1], "clamp") }}>
+        <MenuSilhouette id={id + "-shape"} trigger={trigger} progress={panel.progress} right />
+        <animated.ul aria-label="Account options" className="preview-account-options"
+          style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>
           {accountOptions.map(({ label, icon: Icon }) => (
             <li key={label} className="flex min-h-9 items-center gap-2 px-2 text-sm">
               <Icon size={16} aria-hidden="true" /> {label}
               <span className="ml-auto text-xs text-text-muted">Coming soon</span>
             </li>
           ))}
-        </ul>
+        </animated.ul>
       </animated.div>
     </div>
   );
@@ -231,13 +261,13 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
             <span>{current?.label ?? "RenderLab"}</span>
             <Menu size={12} aria-hidden="true" />
           </Button>
-          <MenuSilhouette id={id + "-shape"} />
           <animated.nav id={id} className="preview-section-panel" aria-label="RenderLab navigation"
             aria-hidden={!open} inert={!open} data-open={open}
-            style={{ clipPath: "url(#" + id + "-shape)", opacity: reveal.progress.to([0, 1], [0, 1], "clamp"),
-              scaleY: reveal.progress }}>
+            style={{ opacity: reveal.progress.to([0, 1], [0, 1], "clamp") }}>
+            <MenuSilhouette id={id + "-shape"} trigger={trigger} progress={reveal.progress} />
             {navigationGroups.map((group) => (
-              <section key={group.title} className="preview-section-group">
+              <animated.section key={group.title} className="preview-section-group"
+                style={{ opacity: reveal.progress.to([0.84, 1], [0, 1], "clamp") }}>
                 <p className={group.destinations.length === 1 ? "sr-only" : "preview-section-title"}>{group.title}</p>
                 {group.destinations.map(({ href, label, icon: Icon }) => (
                   <Link key={href} href={href} aria-current={current?.href === href ? "page" : undefined}
@@ -246,7 +276,7 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
                     {label}
                   </Link>
                 ))}
-              </section>
+              </animated.section>
             ))}
           </animated.nav>
         </div>
