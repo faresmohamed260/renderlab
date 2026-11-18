@@ -3,17 +3,18 @@
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
-import { Clock, Dice5, Image as ImageIcon, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
+import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { WandaFiboStage } from "./wanda-fibo-stage";
 import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
 const api = "/wanda-fibo/";
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { image_data: string; seed: number; json_instruction?: string };
+type Result = { image_data: string; seed: number; filename?: string; json_instruction?: string; source?: File };
 type Workflow = "edit" | "generate";
 type PromptDraft = {
   prompt: string;
@@ -86,6 +87,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     setInspirationPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [inspiration]);
+  const sourceButton = useRef<HTMLButtonElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const slot = useRef(0);
   const [dragTarget, setDragTarget] = useState<number | "canvas">();
@@ -134,12 +136,13 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         const update = await request<{ finished: boolean; images: Result[]; error?: string }>("local/render/" + job, { signal });
         if (update.finished) {
           if (!update.images[0]) throw new Error(update.error ?? "No image returned.");
-          const image = update.images[0];
+          const images = update.images.map((image) => ({ ...image, source: mode === "edit" ? files[0] : undefined }));
+          const image = images[0];
           setResult(image);
           if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
             updateDraft(mode, { vgl: image.json_instruction, generatedVgl: true });
           }
-          setHistory((items) => [...update.images, ...items].slice(0, 8));
+          setHistory((items) => [...images, ...items].slice(0, 8));
           if (prompt.trim()) setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
           setStatus(update.error ?? (update.images.length === 1 ? "Render complete." : update.images.length + " images ready in History."));
           return;
@@ -186,7 +189,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         setDragTarget(undefined);
         const file = event.dataTransfer.files[0];
         if (!admitted || busy || !file?.type.startsWith("image/")) return;
-        if (target === 4) setReference(file);
+        if (target === 4 || (target === "canvas" && mode === "generate")) {
+          setReference(file);
+          setResult(undefined);
+        }
         else attachImage(file, target === "canvas" ? 0 : target);
       },
     };
@@ -255,7 +261,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 <div className="wanda-fibo-tiles" inert={mode !== "edit"}>
                   {slots.map((label, index) => (
                     <div className="wanda-fibo-tile" key={label} {...uploadDropTarget(index)}>
-                      <Button type="button" variant="outline" aria-label={"Choose " + label.toLowerCase() + " image"}
+                      <Button ref={index === 0 ? sourceButton : undefined} type="button" variant="outline" aria-label={"Choose " + label.toLowerCase() + " image"}
                         title={files[index]?.name ?? label} disabled={!admitted || busy}
                         onClick={() => chooseImage(index)}>
                         {previews[index] ? <img src={previews[index]} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}<span>{label}</span>
@@ -291,7 +297,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (file && admitted && !busy) {
-                  if (slot.current === 4) setReference(file);
+                  if (slot.current === 4) { setReference(file); setResult(undefined); }
                   else attachImage(file, slot.current);
                 }
                 event.currentTarget.value = "";
@@ -370,17 +376,22 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
           {!admitted ? (
             <p>Sign in with an admitted RenderLab account to generate. <Link href="/settings" className="underline">Open Settings</Link></p>
-          ) : result ? (
-            <figure><img src={result.image_data} alt="Generated result" />
-              <figcaption>Seed {result.seed} · <a href={result.image_data} download="fibo-result.png">Download image</a></figcaption>
-            </figure>
-          ) : mode === "edit" && previews[0] ? (
-            <figure><img src={previews[0]} alt="Source image" /><figcaption>Source</figcaption></figure>
           ) : (
-            <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload" disabled={busy}
-              title="Add a source image to start editing" onClick={() => chooseImage(0)}>
-              <ImageIcon size={20} aria-hidden="true" /> Drop an image or click to upload
-            </Button>
+            <WandaFiboStage
+              result={result}
+              input={mode === "edit" ? previews[0] : inspirationPreview}
+              inputLabel={mode === "edit" ? "Source image" : "Reference image"}
+              busy={busy}
+              status={status}
+              onBrowse={() => chooseImage(mode === "edit" ? 0 : 4)}
+              onUseSource={(image) => {
+                try {
+                  const bytes = Uint8Array.from(atob(image.image_data.split(",")[1]), (ch) => ch.charCodeAt(0));
+                  attachImage(new File([bytes], image.filename ?? "fibo-result.png", { type: "image/png" }), 0);
+                  requestAnimationFrame(() => sourceButton.current?.focus({ preventScroll: true }));
+                } catch { setStatus("Could not use this result as the source."); }
+              }}
+            />
           )}
         </section>
         <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title">

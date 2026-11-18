@@ -636,3 +636,161 @@
   outline: 2px solid #a5b4fc;
   outline-offset: -2px;
 }
+
+/* FIBO-style preview actions are inside the fixed RenderLab stage. */
+.wanda-fibo-stage-surface {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+.wanda-fibo-stage-media {
+  position: relative;
+  inline-size: min(100cqw, calc(100cqh * var(--stage-media-ratio)));
+  aspect-ratio: var(--stage-media-ratio);
+}
+.wanda-fibo-stage-surface .wanda-fibo-stage-media img,
+.wanda-fibo-stage-viewer .wanda-fibo-stage-media img {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  max-block-size: none;
+  object-fit: contain;
+  border-radius: 0;
+}
+.wanda-fibo-stage-before { clip-path: inset(0 calc(100% - var(--stage-split)) 0 0); }
+.wanda-fibo-stage-divider {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--stage-split);
+  inline-size: 28px;
+  transform: translateX(-50%);
+  cursor: ew-resize;
+  touch-action: none;
+}
+.wanda-fibo-stage-divider::before, .wanda-fibo-stage-divider::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.wanda-fibo-stage-divider::before { inset-block: 0; inline-size: 2px; background: rgb(255 255 255 / 85%); }
+.wanda-fibo-stage-divider::after {
+  top: calc(50% - 12px);
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: 50%;
+  background: rgb(37 32 49 / 80%);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgb(255 255 255 / 60%);
+}
+.wanda-fibo-stage-divider:focus-visible { outline: 2px solid #a5b4fc; outline-offset: -2px; }
+.wanda-fibo-stage-tools {
+  isolation: isolate;
+  position: absolute;
+  inset: 10px auto auto 10px;
+  max-inline-size: calc(100% - 20px);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 3px;
+  border-radius: 18px;
+  background: rgb(37 32 49 / 58%);
+  backdrop-filter: blur(18px);
+}
+.wanda-fibo-stage-tools::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 auto auto 0;
+  inline-size: var(--stage-highlight-w, 0px);
+  block-size: var(--stage-highlight-h, 0px);
+  transform: translate(var(--stage-highlight-x, 0px), var(--stage-highlight-y, 0px));
+  border-radius: 999px;
+  background: rgb(255 255 255 / 23%);
+  pointer-events: none;
+  opacity: 0;
+  transition: transform .2s ease, inline-size .2s ease, block-size .2s ease, opacity .14s ease;
+}
+.wanda-fibo-stage-tools[data-highlight]::before { opacity: 1; }
+.wanda-fibo-workspace .wanda-fibo-stage-tools :is(button, a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 30px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #dedbed;
+  background: transparent;
+  font-size: 12px;
+}
+.wanda-fibo-workspace .wanda-fibo-stage-tools :is(button, a):is(:hover, [aria-pressed="true"]) { color: white; background: transparent; }
+.wanda-fibo-stage-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-inline-size: 90%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  color: #fff;
+  background: rgb(37 32 49 / 58%);
+  font-size: 12px;
+}
+.wanda-fibo-stage-notice i {
+  inline-size: 14px;
+  block-size: 14px;
+  flex: none;
+  border: 2px solid rgb(255 255 255 / 22%);
+  border-block-start-color: #a5b4fc;
+  border-radius: 50%;
+  animation: wanda-fibo-stage-spin .8s linear infinite;
+}
+@keyframes wanda-fibo-stage-spin { to { rotate: 1turn; } }
+.wanda-fibo-stage-open { display: none; }
+.wanda-fibo-stage-viewer:not([open]) { display: none; }
+.wanda-fibo-stage-viewer[open] {
+  position: fixed;
+  inset: 0;
+  inline-size: 100dvw;
+  block-size: 100dvh;
+  max-inline-size: none;
+  max-block-size: none;
+  display: grid;
+  place-items: center;
+  container-type: size;
+  background: #121018;
+  color: #dedbed;
+}
+.wanda-fibo-stage-viewer .wanda-fibo-stage-media {
+  inline-size: min(100cqw, calc((100cqh - 116px) * var(--stage-media-ratio)));
+}
+.wanda-fibo-stage-viewer .wanda-fibo-stage-tools {
+  inset: auto auto max(14px, env(safe-area-inset-bottom)) 50%;
+  transform: translateX(-50%);
+  inline-size: max-content;
+}
+.wanda-fibo-stage-close { position: absolute; z-index: 1; inset: 12px 12px auto auto; }
+@media (max-width: 760px) {
+  .wanda-fibo-stage-surface .wanda-fibo-stage-tools { display: none; }
+  .wanda-fibo-workspace .wanda-fibo-stage-open {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    display: flex;
+    align-items: end;
+    justify-content: end;
+    padding: 12px;
+    color: white;
+    background: transparent;
+    border-radius: 0;
+  }
+  .wanda-fibo-workspace .wanda-fibo-stage-open:hover { background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wanda-fibo-stage-tools::before { transition: none; }
+  .wanda-fibo-stage-notice i { animation: none; }
+}
