@@ -114,6 +114,22 @@
       "searchLabel": "React Bits"
     },
     {
+      "id": "sileo",
+      "name": "Sileo",
+      "catalogHeading": "Sileo",
+      "tier": "specialized",
+      "policyStatus": "approved",
+      "searchOrder": null,
+      "adoptionMode": "package-dependency",
+      "activeUse": true,
+      "packageName": "sileo",
+      "expectedVersion": "0.1.6",
+      "licenseStatus": "lockfile-verified",
+      "licenseSpdx": "MIT",
+      "notes": "Owner-directed WANDA prototype; exported CSS spring tokens only, no toast runtime.",
+      "searchLabel": null
+    },
+    {
       "id": "lucide-react",
       "name": "Lucide React",
       "catalogHeading": "Lucide React",

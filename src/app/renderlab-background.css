@@ -241,3 +241,28 @@ html.renderlab-gradient-host:has(.wanda-create-background),
     block-size: 100dvh;
   }
 }
+
+/* Use the spring curve and timing exported by Sileo's stylesheet, not its toast runtime. */
+.preview-account-menu {
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .preview-account-menu[data-state="open"] {
+    animation: preview-account-open var(--sileo-duration) var(--sileo-spring-easing) both;
+  }
+
+  .preview-account-menu[data-state="closed"] {
+    animation: preview-account-close 140ms ease-in both;
+  }
+}
+
+@keyframes preview-account-open {
+  from { opacity: 0; transform: translateY(8px) scale(0.92, 0.38); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes preview-account-close {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(4px) scale(0.97, 0.8); }
+}

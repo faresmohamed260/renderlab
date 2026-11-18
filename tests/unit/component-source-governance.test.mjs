@@ -22,8 +22,8 @@ function clone(value) {
 
 test("checked-in component source registry matches catalog, package manifest, and lockfile", async () => {
   const result = await verifyComponentSourceRegistry({ rootDir });
-  assert.equal(result.sources, 9);
-  assert.equal(result.activeSources, 4);
+  assert.equal(result.sources, 10);
+  assert.equal(result.activeSources, 5);
 });
 
 test("component source registry rejects missing catalog coverage and unknown catalog headings", async () => {
