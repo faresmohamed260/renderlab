@@ -222,44 +222,36 @@
   color: var(--color-text-muted);
 }
 /* Inset the paint, not the link, so the dividers and hit target stay intact. */
-.preview-account-settings {
+:is(.preview-account-settings, .preview-section-group a) {
   position: relative;
   isolation: isolate;
 }
-.preview-account-settings::before {
+:is(.preview-account-settings, .preview-section-group a)::before {
   position: absolute;
   inset: 4px 2px;
   z-index: -1;
   border-radius: 10px;
-  background: var(--preview-account-highlight, transparent);
+  background: var(--preview-row-highlight, transparent);
   pointer-events: none;
   content: "";
 }
-.preview-account-settings[aria-current="page"] {
-  --preview-account-highlight: rgb(221 211 255 / 16%);
+:is(.preview-account-settings, .preview-section-group a)[aria-current="page"] {
+  --preview-row-highlight: rgb(221 211 255 / 16%);
 }
-.preview-account-settings:is(:hover, :focus-visible) {
-  --preview-account-highlight: rgb(221 211 255 / 23%);
+:is(.preview-account-settings, .preview-section-group a):is(:hover, :focus-visible) {
+  --preview-row-highlight: rgb(221 211 255 / 23%);
 }
-.preview-account-settings:active {
-  --preview-account-highlight: rgb(221 211 255 / 30%);
+:is(.preview-account-settings, .preview-section-group a):active {
+  --preview-row-highlight: rgb(221 211 255 / 30%);
 }
-.preview-account-settings:focus-visible {
+:is(.preview-account-settings, .preview-section-group a):focus-visible {
   outline: none;
 }
-.preview-account-settings:focus-visible::before {
+:is(.preview-account-settings, .preview-section-group a):focus-visible::before {
   outline: 2px solid #d9c0ea;
   outline-offset: -2px;
 }
 
-.preview-section-group a:hover,
-.preview-section-group a[aria-current="page"] {
-  background: rgb(221 211 255 / 12%);
-}
-.preview-section-group a:focus-visible {
-  outline: 2px solid #d9c0ea;
-  outline-offset: -2px;
-}
 .preview-account-menu {
   inset-inline-end: var(--preview-header-gutter);
   inline-size: min(236px, calc(100% - 2 * var(--preview-header-gutter)));
