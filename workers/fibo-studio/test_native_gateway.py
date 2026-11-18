@@ -49,6 +49,24 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(self.client.delete(path).json(), {"status": "cancelled"})
         self.assertEqual(self.cancels, [self.call_id])
 
+    def test_manual_vgl_is_worker_input_for_source_free_and_reference_edits(self):
+        # FIBO Studio already uses Edit Turbo to generate with no references.
+        # The production gateway must retain the JSON-caption path, not use
+        # the plain prompt as a substitute or drop ordered image inputs.
+        vgl = '{"caption":"A sunlit glass garden"}'
+        response = self.client.post("/jobs/fibo", json={
+            "prompt": "", "vgl": vgl, "seed": 7, "images": [],
+        })
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(self.spawns[-1]["vgl"], vgl)
+        self.assertEqual(self.spawns[-1]["prompt"], "")
+        self.assertEqual(self.spawns[-1]["sources"], [])
+        for bad in ("[]", "{}", "{invalid}"):
+            invalid = self.client.post("/jobs/fibo", json={
+                "prompt": "", "vgl": bad, "seed": 7, "images": [],
+            })
+            self.assertEqual(invalid.status_code, 422)
+
     def test_unknown_and_modified_ids_never_reach_modal(self):
         path = self.submit()
         for invalid in ("/jobs/" + self.call_id, path[:-1] + ("a" if path[-1] != "a" else "b")):

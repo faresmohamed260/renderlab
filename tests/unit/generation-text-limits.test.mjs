@@ -29,9 +29,9 @@ test("generation prompt text has explicit product resource bounds", () => {
 });
 
 test("server generation parser wires both text bounds before persistence or dispatch", () => {
-  assert.ok(generationContractSource.includes("generationPromptWithinLimit(value.prompt)"));
+  assert.ok(generationContractSource.includes("generationPromptWithinLimit(textPrompt)"));
   assert.ok(
     generationContractSource.includes("generationNegativePromptWithinLimit(value.negativePrompt)"),
   );
-  assert.ok(generationContractSource.includes("const prompt = value.prompt.trim()"));
+  assert.ok(generationContractSource.includes('const textPrompt = typeof value.prompt === "string"'));
 });

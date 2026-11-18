@@ -13,6 +13,7 @@ import type { ContinuationAction } from "@/lib/capabilities/generation";
 import {
   continuationActionForMedia,
   defaultGenerationModelForOutput,
+  fiboPreferenceAspectRatio,
 } from "@/lib/capabilities/generation";
 import { CreateWorkspace } from "@/features/create/create-workspace";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
@@ -38,26 +39,17 @@ function isContinuationActionId(value: string): value is ContinuationAction["id"
 }
 
 function preferenceSeedRecipe(preferences: RenderLabCreatePreferences): InitialGenerationRecipe {
-  const kind = preferences.outputKind;
+  // Retired Video defaults remain readable in account history but must not
+  // resurrect a non-FIBO Create mode or create an unsubmit-able Image ratio.
+  const ratio = fiboPreferenceAspectRatio(preferences.imageAspectRatio);
   return {
     jobId: "account-preferences",
     references: [],
     request: {
-      model: defaultGenerationModelForOutput(kind),
+      model: defaultGenerationModelForOutput("image"),
       prompt: "",
       inputs: [],
-      output: kind === "image"
-        ? {
-            kind,
-            aspectRatio: preferences.imageAspectRatio,
-          }
-        : {
-            kind,
-            aspectRatio: "16:9",
-            resolution: preferences.videoResolution,
-            durationSeconds: preferences.videoDurationSeconds,
-            audioEnabled: preferences.videoAudioEnabled,
-          },
+      output: { kind: "image", aspectRatio: ratio },
     },
   };
 }

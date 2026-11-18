@@ -70,6 +70,13 @@ export type PresetAspectRatio =
 
 export type AspectRatio = "original" | PresetAspectRatio;
 
+/** Dimensions actually accepted by the retained production FIBO Edit Turbo graph. */
+export const fiboImageAspectRatios: readonly PresetAspectRatio[] = ["1:1", "4:3", "3:4", "16:9", "9:16"];
+
+export function fiboPreferenceAspectRatio(value: PresetAspectRatio): PresetAspectRatio {
+  return fiboImageAspectRatios.includes(value) ? value : "1:1";
+}
+
 export type GenerationInputRole = "reference" | "primary-image" | "first-frame";
 
 export type GenerationInputAlias = `image${number}`;
@@ -194,6 +201,8 @@ export function advancedDefaultsForOutput(kind: OutputKind) {
 export type GenerationRequest = {
   model?: GenerationModel;
   prompt: string;
+  /** Validated manual FIBO JSON caption/instruction; omitted for ordinary prompts. */
+  vgl?: string;
   output: {
     kind: OutputKind;
     aspectRatio: AspectRatio;

@@ -1,3 +1,4 @@
+import { normalizeFiboVgl } from "@/lib/capabilities/fibo-vgl";
 import {
   generationNegativePromptWithinLimit,
   generationPromptWithinLimit,
@@ -152,10 +153,11 @@ export function parseGenerationRequest(value: unknown):
     return { ok: false, error: { code: "invalid_request", message: "Generation request must be an object." } };
   }
 
-  if (typeof value.prompt !== "string" || !value.prompt.trim()) {
-    return { ok: false, error: { code: "invalid_request", message: "A prompt is required." } };
+  if (value.prompt !== undefined && typeof value.prompt !== "string") {
+    return { ok: false, error: { code: "invalid_request", message: "Prompt must be text." } };
   }
-  if (!generationPromptWithinLimit(value.prompt)) {
+  const textPrompt = typeof value.prompt === "string" ? value.prompt.trim() : "";
+  if (textPrompt && !generationPromptWithinLimit(textPrompt)) {
     return {
       ok: false,
       error: {
@@ -164,7 +166,6 @@ export function parseGenerationRequest(value: unknown):
       },
     };
   }
-  const prompt = value.prompt.trim();
 
   if (!isRecord(value.output)) {
     return { ok: false, error: { code: "invalid_request", message: "Output settings are required." } };
@@ -221,9 +222,20 @@ export function parseGenerationRequest(value: unknown):
     }
   }
 
+  const aliases = inputs.map((input) => input.alias);
+  const vgl = value.vgl === undefined ? undefined : normalizeFiboVgl(value.vgl, aliases);
+  if (value.vgl !== undefined && vgl === null) {
+    return { ok: false, error: { code: "invalid_request", message: "VGL must be a bounded non-empty JSON object with attached image references." } };
+  }
+  if (!textPrompt && !vgl) {
+    return { ok: false, error: { code: "invalid_request", message: "A prompt or VGL JSON is required." } };
+  }
+  // Persist meaningful text for VGL-only jobs without a schema change. The
+  // worker receives an empty plain prompt and the separate VGL document.
+  const prompt = textPrompt || vgl!;
   const unresolvedReferences = unresolvedGenerationPromptReferenceAliases(
-    prompt,
-    inputs.map((input) => input.alias),
+    textPrompt,
+    aliases,
   );
   if (unresolvedReferences.length) {
     return {
@@ -261,8 +273,8 @@ export function parseGenerationRequest(value: unknown):
   if (model === fiboGenerationModel && (
     !["original", "1:1", "4:3", "3:4", "16:9", "9:16"].includes(String(aspectRatio))
     || (advanced?.steps ?? 4) > 8
-    || Array.from(prompt).length > 4000 || Array.from(advanced?.negativePrompt ?? "").length > 4000
-    || "mask" in value || "vgl" in value || "json_instruction" in value
+    || (Array.from(prompt).length > 4000 && !(vgl && !textPrompt)) || Array.from(advanced?.negativePrompt ?? "").length > 4000
+    || "mask" in value || "json_instruction" in value
     || (advanced?.guidance ?? 1) !== 1
   )) {
     return { ok: false, error: { code: "invalid_request", message: "Unsupported FIBO size, inputs, or tuning." } };
@@ -278,6 +290,7 @@ export function parseGenerationRequest(value: unknown):
         aspectRatio: aspectRatio as AspectRatio,
       },
       inputs,
+      ...(vgl ? { vgl } : {}),
       ...(advanced ? { advanced } : {}),
     },
   };
