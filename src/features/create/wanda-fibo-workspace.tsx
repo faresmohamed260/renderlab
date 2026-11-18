@@ -10,6 +10,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea";
 
 import { WandaFiboMaskEditor } from "./wanda-fibo-mask-editor";
+import { clearWandaEdits, readWandaEdits, saveWandaEdits } from "./wanda-fibo-saved-edits";
 import { WandaFiboStage } from "./wanda-fibo-stage";
 import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
@@ -50,7 +51,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false }: { admitted: boolean; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, savedEditsAccount }: { admitted: boolean; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const [mode, setMode] = useState<Workflow>("edit");
   const [reducedMotion, setReducedMotion] = useState(true);
   useEffect(() => {
@@ -91,7 +92,41 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [result, setResult] = useState<Result>();
   const [runningBatch, setRunningBatch] = useState<Result[]>([]);
   const [inspected, setInspected] = useState<Result>();
-  const [history, setHistory] = useState<Result[]>([]);
+  const [sessionHistory, setHistory] = useState<Result[]>([]);
+  const [savedEdits, setSavedEdits] = useState<Result[]>([]);
+  const [savingEdits, setSavingEdits] = useState(false);
+  const [savedStatus, setSavedStatus] = useState("");
+  const history = [...sessionHistory, ...savedEdits.filter((item) =>
+    !sessionHistory.some((image) => image.filename === item.filename))].slice(0, 8);
+
+  useEffect(() => {
+    if (!admitted || !savedEditsAccount) return;
+    let current = true;
+    void readWandaEdits<Result>(savedEditsAccount).then((rows) => {
+      if (current) setSavedEdits(rows);
+    }).catch(() => { if (current) setSavedStatus("Saved edits could not be opened."); });
+    return () => { current = false; };
+  }, [admitted, savedEditsAccount]);
+
+  async function saveEdit(image?: Result) {
+    if (!admitted || !savedEditsAccount || savingEdits || image && image.run?.mode !== "edit") return;
+    if (!image && !window.confirm("Remove this account's saved edits from this browser? Current session results will stay until you leave.")) return;
+    setSavingEdits(true);
+    try {
+      if (image) {
+        const batch = image.batchId ? history.filter((item) => item.batchId === image.batchId) : [];
+        setSavedEdits(await saveWandaEdits(savedEditsAccount, batch.length ? batch : [image]));
+        setSavedStatus("Edit saved in this browser.");
+      } else {
+        await clearWandaEdits(savedEditsAccount);
+        setResult((previous) => previous && !sessionHistory.includes(previous) ? undefined : previous);
+        setSavedEdits([]);
+        setSavedStatus("Saved edits cleared from this browser.");
+      }
+    } catch {
+      setSavedStatus("Could not update saved edits. Check available browser storage.");
+    } finally { setSavingEdits(false); }
+  }
   const [recent, setRecent] = useState<string[]>([]);
   const [sizeIndex, setSizeIndex] = useState(0);
   const [inspiration, setInspiration] = useState<File>();
@@ -438,6 +473,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               result={busy ? inspected : result}
               history={history}
               onRestore={restoreRun}
+              onSaveEdit={savedEditsAccount ? (image) => void saveEdit(image) : undefined}
+              savingEdit={savingEdits}
               source={mode === "edit" ? files[0] : undefined}
               batch={busy ? runningBatch : result?.batchId ? history.filter((image) => image.batchId === result.batchId) : []}
               onSelect={(image) => {
@@ -493,6 +530,9 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             next.click();
           }}>
           <h2 id="wanda-fibo-history-title">History</h2>
+          {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}
+            onClick={() => void saveEdit()}>Clear saved edits</Button>}
+          {savedStatus && <p className="wanda-fibo-caption" role="status">{savedStatus}</p>}
           {history.length ? history.map((image, index) => (
             <Button key={image.filename ?? index} type="button" variant="outline" disabled={busy} aria-current={result === image} onClick={() => setResult(image)}>Render {history.length - index} · {image.seed}</Button>
           )) : <p className="wanda-fibo-caption">Finished images will appear here.</p>}

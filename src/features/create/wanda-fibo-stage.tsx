@@ -12,6 +12,8 @@ type Props<T extends StageResult> = {
   batch: T[];
   history: T[];
   onRestore: (image: T, reopen: boolean) => void;
+  onSaveEdit?: (image: T) => void;
+  savingEdit?: boolean;
   onSelect: (image: T) => void;
   onReturnToProgress: () => void;
   expectedImages: number;
@@ -26,7 +28,7 @@ type Props<T extends StageResult> = {
   onUseSource: (result: StageResult) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ result, source, batch, history, onRestore, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -186,6 +188,8 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
       <div className="wanda-fibo-stage-run-actions" role="group" aria-label="Result settings">
         <Button type="button" variant="ghost" size="sm" onClick={() => restore(false)}>Reuse settings</Button>
         {result.run.mode === "edit" && <Button type="button" variant="ghost" size="sm" onClick={() => restore(true)}>Reopen edit</Button>}
+        {result.run.mode === "edit" && onSaveEdit && <Button type="button" variant="ghost" size="sm" disabled={savingEdit}
+          title="Keep the original images and settings in this browser" onClick={() => onSaveEdit(result)}>Save on this device</Button>}
       </div>
     );
   }
