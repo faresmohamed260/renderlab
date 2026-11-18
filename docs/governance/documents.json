@@ -105,6 +105,17 @@
       "supersededBy": []
     },
     {
+      "path": "docs/architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-18",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
       "path": "docs/architecture/FRONTEND_ARCHITECTURE.md",
       "kind": "normative-policy",
       "authority": "normative",
