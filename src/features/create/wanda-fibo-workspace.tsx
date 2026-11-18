@@ -2,7 +2,7 @@
 
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
 import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import { WandaFiboStage, type StageTurn } from "./wanda-fibo-stage";
 import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
 const api = "/wanda-fibo/";
+const slotMarker = (index: number) => "\uE000" + index + "\uE001";
+const slotMarkers = /\uE000([0-3])\uE001/g;
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
 type Result = { image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
@@ -121,7 +123,13 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const mask = mode === "edit" && selection?.source === files[0] ? selection?.mask : undefined;
   const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
-  const { prompt, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen, seed, randomize, imageCount } = drafts[mode];
+  const { prompt: promptDraft, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen, seed, randomize, imageCount } = drafts[mode];
+  let missingPromptImage = false;
+  const prompt = promptDraft.replace(slotMarkers, (_, slot: string) => {
+    const index = Number(slot);
+    if (!files[index]) missingPromptImage = true;
+    return imageTag(index);
+  });
   // Legacy workers can return VGL, but cannot accept it back as a manual instruction.
   const manualVgl = !advancedPrompt && generatedVgl ? "" : vgl.trim();
 
@@ -626,7 +634,84 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
 
-  const promptField = useRef<HTMLTextAreaElement>(null);
+  const promptEditor = useRef<HTMLDivElement>(null);
+  const promptRange = useRef<Range | null>(null);
+  const editorValue = useRef<string | null>(null);
+  const richPrompt = desktop && mode === "edit";
+  const promptDisabled = !admitted || (busy && !desktop);
+  const placeholder = mask ? "Describe what to change in the masked area…" : "Describe the result you want…";
+
+  function makeChip(index: number) {
+    const chip = document.createElement("span");
+    chip.className = "wanda-fibo-prompt-chip";
+    chip.contentEditable = "false";
+    chip.dataset.slot = String(index);
+    chip.textContent = files[index] ? imageTag(index) : "<image_" + (index + 1) + ">";
+    return chip;
+  }
+
+  useLayoutEffect(() => {
+    const editor = promptEditor.current;
+    if (!editor) {
+      editorValue.current = null;
+      promptRange.current = null;
+      return;
+    }
+    if (editorValue.current !== promptDraft) {
+      const parts = promptDraft.split(slotMarkers);
+      editor.replaceChildren(...parts.map((part, i) => i % 2 ? makeChip(Number(part)) : document.createTextNode(part)));
+      editorValue.current = promptDraft;
+      promptRange.current = null;
+    }
+    for (const chip of editor.querySelectorAll<HTMLElement>("[data-slot]")) {
+      const index = Number(chip.dataset.slot);
+      const missing = !files[index];
+      chip.toggleAttribute("data-missing", missing);
+      chip.title = missing ? "Upload this image again or delete this tag." : "";
+      const label = missing ? "<image_" + (index + 1) + ">" : imageTag(index);
+      if (!missing || !chip.textContent) {
+        if (chip.textContent !== label) chip.textContent = label;
+      }
+    }
+  });
+
+  useEffect(() => {
+    if (!richPrompt) return;
+    const remember = () => {
+      const selected = window.getSelection();
+      if (!selected?.rangeCount) return;
+      const range = selected.getRangeAt(0);
+      if (promptEditor.current?.contains(range.commonAncestorContainer)) promptRange.current = range.cloneRange();
+    };
+    document.addEventListener("selectionchange", remember);
+    return () => document.removeEventListener("selectionchange", remember);
+  }, [richPrompt]);
+
+  function readPromptEditor() {
+    const editor = promptEditor.current;
+    if (!editor) return;
+    // Serialize text and chip identities, not editable HTML or current alias numbers.
+    function read(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) return (node.textContent ?? "").replace(/[\uE000\uE001]/g, "");
+      if (!(node instanceof HTMLElement)) return "";
+      if (node.dataset.slot && /^[0-3]$/.test(node.dataset.slot)) return slotMarker(Number(node.dataset.slot));
+      if (node.tagName === "BR") return "\n";
+      let value = "";
+      for (const child of node.childNodes) {
+        if (child instanceof HTMLElement && ["DIV", "P"].includes(child.tagName) && value && !value.endsWith("\n")) value += "\n";
+        value += read(child);
+      }
+      return value;
+    }
+    const value = read(editor).replaceAll("\u00a0", " ");
+    const limited = value.slice(0, 4000).replace(/\uE000[0-3]?$/, "");
+    editorValue.current = limited === value ? value : null;
+    setPrompt(limited);
+    if (value !== limited && limited === promptDraft) {
+      editor.replaceChildren(...limited.split(slotMarkers).map((part, i) => i % 2 ? makeChip(Number(part)) : document.createTextNode(part)));
+      editorValue.current = limited;
+    }
+  }
   const recentMenu = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     if (!desktop) return;
@@ -644,19 +729,19 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   }
 
   function insertImageTag(index: number) {
-    const field = promptField.current;
-    if (!field || field.disabled) return;
-    const start = field.selectionStart, end = field.selectionEnd;
-    const tag = imageTag(index) + " ";
-    const value = prompt.slice(0, start) + tag + prompt.slice(end);
-    if (value.length > field.maxLength) return;
-    setPrompt(value);
-    requestAnimationFrame(() => {
-      field.focus({ preventScroll: true });
-      field.setSelectionRange(start + tag.length, start + tag.length);
-    });
+    const editor = promptEditor.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || promptDisabled || !files[index]) return;
+    const prior = promptRange.current;
+    const range = prior && editor.contains(prior.commonAncestorContainer) ? prior : document.createRange();
+    if (range !== prior) { range.selectNodeContents(editor); range.collapse(false); }
+    editor.focus({ preventScroll: true });
+    selection.removeAllRanges();
+    selection.addRange(range);
+    // Native editing keeps insertion and its trailing space in one undo operation.
+    document.execCommand("insertHTML", false, makeChip(index).outerHTML + "&nbsp;");
+    readPromptEditor();
   }
-
   function uploadDropTarget(target: number | "canvas") {
     return {
       "data-drag-over": admitted && !busy && dragTarget === target ? "true" : undefined,
@@ -726,6 +811,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     : mask && !masksEnabled ? "Masked edits need the private worker update."
     : !vglValid ? "Enter a non-empty VGL JSON object."
     : !advancedPrompt && (manualVgl || negativePrompt.trim()) ? "Advanced prompts need the private worker update."
+    : !manualVgl && missingPromptImage ? "Restore the missing image or remove its prompt tag."
     : !manualVgl && !prompt.trim() ? "Enter a prompt or VGL JSON to generate."
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
@@ -849,7 +935,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               }} />
             </section>
             <div className="wanda-fibo-prompt-heading">
-              <label htmlFor="wanda-fibo-prompt">Prompt</label>
+              <label id="wanda-fibo-main-prompt-label" htmlFor={richPrompt ? undefined : "wanda-fibo-prompt"} onClick={() => { if (richPrompt) promptEditor.current?.focus(); }}>Prompt</label>
               <details ref={recentMenu} className="wanda-fibo-recents" onKeyDown={(event) => {
                 if (!desktop || event.key !== "Escape" || !event.currentTarget.open) return;
                 event.preventDefault();
@@ -868,7 +954,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                       <Button type="button" variant="ghost" disabled={busy} onClick={() => {
                         setPrompt(value);
                         if (recentMenu.current) recentMenu.current.open = false;
-                        promptField.current?.focus();
+                        document.getElementById("wanda-fibo-prompt")?.focus();
                       }}>{value}</Button>
                       {desktop && <Button type="button" variant="ghost" size="icon-sm" disabled={busy}
                         aria-label={"Remove recent prompt: " + value}
@@ -881,9 +967,21 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 </div>
               </details>
             </div>
-            <Textarea ref={promptField} id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={!admitted || (busy && !desktop)} maxLength={4000}
-              placeholder={mask ? "Describe what to change in the masked area…" : "Describe the result you want…"}
-              onChange={(event) => setPrompt(event.target.value)} />
+            {richPrompt ? (
+              <div ref={promptEditor} id="wanda-fibo-prompt" className="wanda-fibo-rich-prompt"
+                role="textbox" aria-labelledby="wanda-fibo-main-prompt-label" aria-multiline="true"
+                aria-disabled={promptDisabled} aria-placeholder={placeholder} data-empty={!promptDraft.trim()}
+                contentEditable={!promptDisabled} spellCheck autoCorrect="on"
+                onInput={readPromptEditor}
+                onPaste={(event) => {
+                  event.preventDefault();
+                  document.execCommand("insertText", false, event.clipboardData.getData("text/plain").replace(/[\uE000\uE001]/g, ""));
+                }}
+                onDrop={(event) => event.preventDefault()} />
+            ) : (
+              <Textarea id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
+                maxLength={4000} placeholder={placeholder} onChange={(event) => setPrompt(event.target.value)} />
+            )}
             <div className="wanda-fibo-extra" key={mode}>
               <details open={negativeOpen} onToggle={(event) => {
                 if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });

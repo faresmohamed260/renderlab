@@ -1410,3 +1410,36 @@
     background: linear-gradient(145deg, rgb(223 198 255 / 22%), rgb(171 154 255 / 8%));
   }
 }
+
+.wanda-fibo-rich-prompt {
+  position: relative;
+  inline-size: 100%;
+  overflow: auto;
+  border-radius: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.wanda-fibo-rich-prompt[data-empty="true"]::before {
+  position: absolute;
+  inset: 10px 11px auto;
+  content: attr(aria-placeholder);
+  color: #878794;
+  pointer-events: none;
+  user-select: none;
+}
+.wanda-fibo-rich-prompt:focus {
+  outline: none;
+  box-shadow: 0 0 16px rgb(165 180 252 / 27%);
+}
+.wanda-fibo-rich-prompt[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+.wanda-fibo-prompt-chip {
+  display: inline-block;
+  padding-inline: 5px;
+  border-radius: 999px;
+  color: #dedaff;
+  background: #24203e;
+  font: 12px/1.5 ui-monospace, Consolas, monospace;
+  vertical-align: baseline;
+}
+.wanda-fibo-prompt-chip[data-missing] { color: #ffd2d2; background: #471e26; }
