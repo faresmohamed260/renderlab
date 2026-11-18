@@ -314,7 +314,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 <label htmlFor="wanda-fibo-seed">Seed</label>
                 <div className="wanda-fibo-seed">
                   <Input id="wanda-fibo-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
-                    required={!randomize} value={seed} disabled={busy} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
+                    required={!randomize} value={seed} disabled={busy || randomize} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
                   <label className="wanda-fibo-seed-dice" title="Randomize seed each time">
                     <Input type="checkbox" aria-label="Randomize seed each time" checked={randomize} disabled={busy}
                       onChange={(event) => updateDraft(mode, { randomize: event.target.checked })} />

@@ -618,7 +618,7 @@
   cursor: pointer;
 }
 .wanda-fibo-seed-dice:has(input:checked) { color: #e2d9ff; background: #382858; }
-.wanda-fibo-seed-dice:focus-within { box-shadow: 0 0 14px rgb(165 180 252 / 48%); }
+.wanda-fibo-seed-dice:has(input:focus-visible) { outline: 2px solid #a5b4fc; outline-offset: 2px; }
 .wanda-fibo-seed-dice:has(input:disabled) { opacity: .5; cursor: not-allowed; }
 .wanda-fibo-generate kbd {
   margin-inline-start: auto;
