@@ -99,6 +99,15 @@ function PreviewAccountMenu({ signedIn }: { signedIn: boolean }) {
         <span className="preview-account-identity min-w-0 truncate">{name}</span>
       </Button>
       <div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}>
+        <svg className="preview-account-clip" width="0" height="0" aria-hidden="true">
+          <defs>
+            <clipPath id={id + "-glass"} clipPathUnits="objectBoundingBox">
+              <path d="M .59 0 H .89 Q 1 0 1 .11 V .89 Q 1 1 .89 1 H .11 Q 0 1 0 .89 V .32 Q 0 .21 .11 .21 H .37 C .45 .21 .46 .18 .47 .11 C .48 .035 .51 0 .59 0 Z" />
+            </clipPath>
+          </defs>
+        </svg>
+        <div aria-hidden="true" className="preview-account-glass" style={{ clipPath: "url(#" + id + "-glass)" }} />
+        <div aria-hidden="true" className="preview-account-kicker">Account</div>
         <ul aria-label="Account options" className="preview-account-options">
           {accountOptions.map(({ label, icon: Icon }) => (
             <li key={label} className="flex items-center gap-2 px-2 py-2 text-sm">
