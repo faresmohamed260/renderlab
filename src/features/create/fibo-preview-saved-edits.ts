@@ -4,7 +4,7 @@ type SavedImage = { image_data: string; filename?: string; run?: { inputs: (File
 
 async function access<T>(account: string, update?: (rows: T[]) => T[]): Promise<T[]> {
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
-    const open = indexedDB.open("renderlab-wanda-fibo-edits", 1);
+    const open = indexedDB.open("renderlab-fibo-preview-edits", 1);
     open.onupgradeneeded = () => open.result.createObjectStore("accounts");
     open.onsuccess = () => resolve(open.result);
     open.onerror = () => reject(open.error);
@@ -32,10 +32,10 @@ async function access<T>(account: string, update?: (rows: T[]) => T[]): Promise<
   } finally { db.close(); }
 }
 
-export function readWandaEdits<T>(account: string) { return access<T>(account); }
-export function clearWandaEdits(account: string) { return access(account, () => []); }
+export function readFiboEdits<T>(account: string) { return access<T>(account); }
+export function clearFiboEdits(account: string) { return access(account, () => []); }
 
-export function saveWandaEdits<T extends SavedImage>(account: string, additions: T[]) {
+export function saveFiboEdits<T extends SavedImage>(account: string, additions: T[]) {
   return access<T>(account, (rows) => {
     let bytes = 0;
     const seen = new Set<File>();

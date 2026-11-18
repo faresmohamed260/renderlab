@@ -3,6 +3,8 @@ import "server-only";
 import sharp from "sharp";
 import { headers } from "next/headers";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
+import type { RenderLabCreatePreferences } from "@/server/account/account-preferences";
 import { validateSameOriginMutation } from "@/server/security/same-origin-validation";
 
 const production = "https://renderlab.faresuniform.uk";
@@ -21,7 +23,7 @@ function enabled(host: string | null) {
 async function hostedFetch(path: string, init: RequestInit = {}, accessToken?: string) {
   // Production verifies this normal user token and owns all access decisions.
   let token = accessToken;
-  if (!token) {
+  if (token === undefined) {
     const supabase = await createServerSupabaseClient();
     const session = await supabase?.auth.getSession();
     token = session?.data.session?.access_token;
@@ -36,12 +38,31 @@ async function hostedFetch(path: string, init: RequestInit = {}, accessToken?: s
 
 export async function getHostedCreateState() {
   if (!enabled((await headers()).get("host"))) return null;
+  const session = await (await createServerSupabaseClient())?.auth.getSession();
+  const token = session?.data.session?.access_token ?? "";
   const [generation, media, upload] = await Promise.all([
-    hostedFetch("/api/generation/jobs").then((r) => r.ok ? r.json() : null).catch(() => null),
-    hostedFetch("/api/media/assets?limit=1").then((r) => r.ok ? r.json() : null).catch(() => null),
-    hostedFetch("/api/media/uploads/upload-tickets").then((r) => r.ok ? r.json() : null).catch(() => null),
+    hostedFetch("/api/generation/jobs", {}, token).then((r) => r.ok ? r.json() : null).catch(() => null),
+    hostedFetch("/api/media/assets?limit=1", {}, token).then((r) => r.ok ? r.json() : null).catch(() => null),
+    hostedFetch("/api/media/uploads/upload-tickets", {}, token).then((r) => r.ok ? r.json() : null).catch(() => null),
   ]);
   return { generationAvailable: generation?.available === true, accountAvailable: media?.ok === true, mediaUploadAvailable: upload?.available === true };
+}
+
+export async function getHostedCreateMedia(id: string): Promise<PublicMediaAsset | null> {
+  if (!enabled((await headers()).get("host")) || !new RegExp("^" + assetId + "$", "i").test(id)) return null;
+  const response = await hostedFetch("/api/media/assets/" + id);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("Hosted media could not be loaded.");
+  const payload = await response.json() as { ok: boolean; asset?: PublicMediaAsset };
+  return payload.ok ? payload.asset ?? null : null;
+}
+
+export async function getHostedCreatePreferences(): Promise<RenderLabCreatePreferences | null> {
+  if (!enabled((await headers()).get("host"))) return null;
+  const response = await hostedFetch("/api/account/preferences");
+  if (!response.ok) return null;
+  const payload = await response.json() as { ok: boolean; preferences?: { create: RenderLabCreatePreferences } };
+  return payload.ok ? payload.preferences?.create ?? null : null;
 }
 
 const previewAvatarTtlMs = 15_000;
@@ -101,7 +122,7 @@ export async function relayHostedCreate(request: Request, path: string) {
   if (!enabled(request.headers.get("host"))) return null;
   const url = new URL(request.url);
   // Profile reads are preview-only; the upstream still enforces account ownership and MFA.
-  const isPreviewProfile = process.env.RENDERLAB_WANDA_FIBO === "1" && request.method === "GET"
+  const isPreviewProfile = process.env.RENDERLAB_FIBO_PREVIEW === "1" && request.method === "GET"
     && (path === "/api/account/profile" || path === "/api/account/profile/avatar");
   if (!isPreviewProfile && !routes[request.method]?.test(path)) return null;
   const json = { "content-type": "application/json", "cache-control": "no-store" };
@@ -130,7 +151,7 @@ export async function relayHostedCreate(request: Request, path: string) {
 }
 
 /** A real Supabase user whose normal session passes hosted RenderLab admission. */
-export async function getWandaFiboOwner() {
+export async function getFiboPreviewOwner() {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
   const { data: { session } } = await supabase.auth.getSession();

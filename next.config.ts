@@ -37,7 +37,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  ...(process.env.RENDERLAB_WANDA_FIBO === "1" ? { devIndicators: false as const } : {}),
+  ...(process.env.RENDERLAB_FIBO_PREVIEW === "1" ? { devIndicators: false as const } : {}),
   env: {
     // Supabase project URL + publishable key are intentionally public browser configuration.
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
     if (process.env.NODE_ENV !== "development") return [];
     const host = [{ type: "host" as const, value: "127\\.0\\.0\\.1" }];
     const hosted = process.env.RENDERLAB_HOSTED_CREATE === "1";
-    const previewProfile = hosted && process.env.RENDERLAB_WANDA_FIBO === "1"
+    const previewProfile = hosted && process.env.RENDERLAB_FIBO_PREVIEW === "1"
       ? ["account/profile", "account/profile/avatar"].map((path) => ({
           source: "/api/preview-account/" + path.slice("account/".length),
           destination: "/hosted-create-relay/" + path,

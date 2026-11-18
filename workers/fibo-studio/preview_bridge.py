@@ -1,4 +1,4 @@
-"""Private WANDA server-to-server bridge. Browser requests never carry a Modal credential."""
+"""Private FIBO preview server-to-server bridge. Browser requests never carry a Modal credential."""
 import base64
 import json
 import os

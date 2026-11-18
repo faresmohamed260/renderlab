@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { WandaFiboMaskEditor } from "./wanda-fibo-mask-editor";
-import { clearWandaEdits, readWandaEdits, saveWandaEdits } from "./wanda-fibo-saved-edits";
-import { WandaFiboStage, type StageTurn } from "./wanda-fibo-stage";
-import { wandaFiboSizes } from "./wanda-fibo-sizes";
+import { FiboPreviewMaskEditor } from "./fibo-preview-mask-editor";
+import { clearFiboEdits, readFiboEdits, saveFiboEdits } from "./fibo-preview-saved-edits";
+import { FiboPreviewStage, type StageTurn } from "./fibo-preview-stage";
+import { fiboSizes } from "./fibo-preview-sizes";
 
-const api = "/wanda-fibo/";
+const api = "/fibo-preview/";
 const slotMarker = (index: number) => "\uE000" + index + "\uE001";
 const slotMarkers = /\uE000([0-3])\uE001/g;
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
@@ -103,7 +103,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, savedEditsAccount }: { admitted: boolean; hostedOnly?: boolean; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, savedEditsAccount }: { admitted: boolean; hostedOnly?: boolean; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const bookmarkKey = admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
   const [stageReady, setStageReady] = useState(!bookmarkKey);
   const [mode, setMode] = useState<Workflow>("edit");
@@ -212,7 +212,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   useEffect(() => {
     if (!admitted || !savedEditsAccount) return;
     let current = true;
-    void readWandaEdits<Result>(savedEditsAccount).then((rows) => {
+    void readFiboEdits<Result>(savedEditsAccount).then((rows) => {
       if (current) setSavedEdits(rows);
     }).catch(() => { if (current) setSavedStatus("Saved edits could not be opened."); });
     return () => { current = false; };
@@ -251,10 +251,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     try {
       if (image) {
         const batch = image.batchId ? history.filter((item) => item.batchId === image.batchId) : [];
-        setSavedEdits(await saveWandaEdits(savedEditsAccount, batch.length ? batch : [image]));
+        setSavedEdits(await saveFiboEdits(savedEditsAccount, batch.length ? batch : [image]));
         setSavedStatus("Edit saved in this browser.");
       } else {
-        await clearWandaEdits(savedEditsAccount);
+        await clearFiboEdits(savedEditsAccount);
         setResult((previous) => previous && !sessionHistory.includes(previous) ? undefined : previous);
         setSavedEdits([]);
         setSavedStatus("Saved edits cleared from this browser.");
@@ -267,7 +267,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [sizeIndex, setSizeIndex] = useState(0);
   const [inspiration, setInspiration] = useState<File>();
   const [inspirationPreview, setInspirationPreview] = useState<string>();
-  const size = wandaFiboSizes[sizeIndex] ?? wandaFiboSizes[0];
+  const size = fiboSizes[sizeIndex] ?? fiboSizes[0];
   const needsUpgrade = mode === "generate" && !extendedSetup && (sizeIndex !== 0 || (!!inspiration && !manualVgl));
   useEffect(() => {
     if (!inspiration) { setInspirationPreview(undefined); return; }
@@ -623,7 +623,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       prompt: run.prompt, negativePrompt: run.negativePrompt, vgl: run.vgl,
       generatedVgl: false, seed: String(image.seed), randomize: false, imageCount: run.imageCount,
     });
-    requestAnimationFrame(() => document.getElementById("wanda-fibo-prompt")?.focus({ preventScroll: true }));
+    requestAnimationFrame(() => document.getElementById("fibo-preview-prompt")?.focus({ preventScroll: true }));
   }
 
   function chooseImage(index: number) {
@@ -654,7 +654,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
 
   function makeChip(index: number) {
     const chip = document.createElement("span");
-    chip.className = "wanda-fibo-prompt-chip";
+    chip.className = "fibo-preview-prompt-chip";
     chip.contentEditable = "false";
     chip.dataset.slot = String(index);
     chip.textContent = files[index] ? imageTag(index) : "<image_" + (index + 1) + ">";
@@ -830,30 +830,30 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     : "");
   const canSubmit = stageReady && !enqueueing && (!busy || desktop && accepted && queueCount < 3) && !maskEditor && !blocker;
   const maskEditorNode = maskEditor && mode === "edit" && files[0] && previews[0] && (
-    <WandaFiboMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
+    <FiboPreviewMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
       onSave={(region) => {
         setSelection(region ? { source: files[0]!, mask: region } : undefined);
-        if (region) requestAnimationFrame(() => document.getElementById("wanda-fibo-prompt")?.focus({ preventScroll: true }));
+        if (region) requestAnimationFrame(() => document.getElementById("fibo-preview-prompt")?.focus({ preventScroll: true }));
         updateDraft("edit", { vgl: "", generatedVgl: false });
         setMaskEditor(undefined);
       }} />
   );
 
   return (
-    <section className="wanda-fibo-workspace mx-auto w-full" aria-label="Create with FIBO">
-      <div className="wanda-fibo-toolbar">
-        <div className="wanda-fibo-tools">
-          <details ref={queue} className="wanda-fibo-queue">
+    <section className="fibo-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
+      <div className="fibo-preview-toolbar">
+        <div className="fibo-preview-tools">
+          <details ref={queue} className="fibo-preview-queue">
                         <summary><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</summary>
-            <div className="wanda-fibo-queue-jobs">
+            <div className="fibo-preview-queue-jobs">
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
-              <div className="wanda-fibo-caption">Waiting requests keep their prompt and inputs on WANDA until they start, are removed, or expire.</div>
+              <div className="fibo-preview-caption">Waiting requests keep their prompt and inputs in this preview until they start, are removed, or expire.</div>
               {busy && activeCancel && <Button type="button" variant="ghost" size="sm"
                 disabled={sendingCancel || activeCancel.pending} onClick={() => void cancelActiveRender()}>
                 {sendingCancel || activeCancel.pending ? "Cancelling…" : "Cancel active render"}
               </Button>}
               {waiting.map(({ bookmark, run }) => (
-                <div className="wanda-fibo-queue-entry" key={bookmark.id}>
+                <div className="fibo-preview-queue-entry" key={bookmark.id}>
                   <span>{run?.prompt || (run ? "VGL edit" : bookmark.mode === "edit" ? "Queued image edit" : "Queued text-to-image render")}</span>
                   <Button type="button" variant="ghost" size="sm"
                     onClick={() => void removeWaiting(bookmark.id)}>Remove waiting render</Button>
@@ -861,23 +861,23 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               ))}
             </div>
           </details>
-          <details className="wanda-fibo-queue">
+          <details className="fibo-preview-queue">
             <summary><Keyboard size={16} aria-hidden="true" /> Shortcuts</summary>
             <p>Ctrl + Enter to generate when the form is ready.</p>
           </details>
         </div>
       </div>
-      <div className="wanda-fibo-grid">
-        <form className="wanda-fibo-controls" noValidate onSubmit={submit}
+      <div className="fibo-preview-grid">
+        <form className="fibo-preview-controls" noValidate onSubmit={submit}
           onKeyDown={(event) => {
             if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {
               event.preventDefault();
               event.currentTarget.requestSubmit();
             }
           }}>
-          <div className="wanda-fibo-fields">
-            <div className="wanda-fibo-modes" role="group" aria-label="Workflow">
-              <animated.span className="wanda-fibo-mode-highlight" aria-hidden="true"
+          <div className="fibo-preview-fields">
+            <div className="fibo-preview-modes" role="group" aria-label="Workflow">
+              <animated.span className="fibo-preview-mode-highlight" aria-hidden="true"
                 style={{ transform: modeSpring.position.to((position) => "translateX(" + (position * 44) + "px)") }} />
               <Button type="button" variant="ghost" aria-label="Text to Image" title="Text to Image"
                 aria-pressed={mode === "generate"} disabled={busy}
@@ -890,12 +890,12 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 <Pencil aria-hidden="true" />
               </Button>
             </div>
-            <section aria-labelledby="wanda-fibo-setup">
-              <h2 id="wanda-fibo-setup">Image setup</h2>
-              <div className="wanda-fibo-setup-slot">
-                <div className="wanda-fibo-tiles" inert={mode !== "edit"}>
+            <section aria-labelledby="fibo-preview-setup">
+              <h2 id="fibo-preview-setup">Image setup</h2>
+              <div className="fibo-preview-setup-slot">
+                <div className="fibo-preview-tiles" inert={mode !== "edit"}>
                   {slots.map((label, index) => (
-                    <div className="wanda-fibo-tile" key={label} {...uploadDropTarget(index)}>
+                    <div className="fibo-preview-tile" key={label} {...uploadDropTarget(index)}>
                       <Button ref={index === 0 ? sourceButton : undefined} type="button" variant="outline" aria-label={desktop && files[index] ? "Insert " + imageTag(index) + " into prompt" : "Choose " + label.toLowerCase() + " image"}
                         title={desktop && files[index] ? "Insert " + imageTag(index) + " into prompt" : files[index]?.name ?? label}
                         disabled={!admitted || busy} draggable={desktop && !!files[index] && !busy}
@@ -904,10 +904,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                           event.dataTransfer.setData(tileDragType, String(index));
                         }}
                         onClick={() => desktop && files[index] ? insertImageTag(index) : chooseImage(index)}>
-                        {previews[index] ? <img src={previews[index]} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}<span>{label}</span>{desktop && previews[index] && <span aria-hidden="true" className="wanda-fibo-tile-tag">+ {imageTag(index)}</span>}
+                        {previews[index] ? <img src={previews[index]} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}<span>{label}</span>{desktop && previews[index] && <span aria-hidden="true" className="fibo-preview-tile-tag">+ {imageTag(index)}</span>}
                       </Button>
                       {files[index] && <Button type="button" variant="secondary" size="icon-sm"
-                        className="wanda-fibo-remove" aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
+                        className="fibo-preview-remove" aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
                         onClick={() => {
                           setDrafts((previous) => ({
                             ...previous,
@@ -925,20 +925,20 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                     </div>
                   ))}
                 </div>
-                <div className="wanda-fibo-size" inert={mode !== "generate"}>
-                  <div className="wanda-fibo-tile" {...uploadDropTarget(4)}>
+                <div className="fibo-preview-size" inert={mode !== "generate"}>
+                  <div className="fibo-preview-tile" {...uploadDropTarget(4)}>
                     <Button type="button" variant="outline" disabled={!admitted || busy}
                       aria-label="Choose reference image" onClick={() => chooseImage(4)}>
                       {inspirationPreview ? <img src={inspirationPreview} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}
                       <span>Reference</span>
                     </Button>
-                    {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="wanda-fibo-remove"
+                    {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="fibo-preview-remove"
                       aria-label="Remove reference image" disabled={busy} onClick={() => setReference()}><X /></Button>}
                   </div>
-                  <label className="wanda-fibo-aspect">Aspect ratio
-                    <span className="wanda-fibo-aspect-preview" aria-hidden="true"><span style={{ "--wanda-aspect": size.width / size.height } as CSSProperties} /></span>
+                  <label className="fibo-preview-aspect">Aspect ratio
+                    <span className="fibo-preview-aspect-preview" aria-hidden="true"><span style={{ "--fibo-aspect": size.width / size.height } as CSSProperties} /></span>
                     <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
-                      {wandaFiboSizes.map(({ label, width, height }, index) => (
+                      {fiboSizes.map(({ label, width, height }, index) => (
                         <NativeSelectOption key={label} value={index}>{label} · {width} × {height}</NativeSelectOption>
                       ))}
                     </NativeSelect>
@@ -954,9 +954,9 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 event.currentTarget.value = "";
               }} />
             </section>
-            <div className="wanda-fibo-prompt-heading">
-              <label id="wanda-fibo-main-prompt-label" htmlFor={richPrompt ? undefined : "wanda-fibo-prompt"} onClick={() => { if (richPrompt) promptEditor.current?.focus(); }}>Prompt</label>
-              <details ref={recentMenu} className="wanda-fibo-recents" onKeyDown={(event) => {
+            <div className="fibo-preview-prompt-heading">
+              <label id="fibo-preview-main-prompt-label" htmlFor={richPrompt ? undefined : "fibo-preview-prompt"} onClick={() => { if (richPrompt) promptEditor.current?.focus(); }}>Prompt</label>
+              <details ref={recentMenu} className="fibo-preview-recents" onKeyDown={(event) => {
                 if (!desktop || event.key !== "Escape" || !event.currentTarget.open) return;
                 event.preventDefault();
                 event.currentTarget.open = false;
@@ -964,17 +964,17 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               }}>
                 <summary aria-label="Recent prompts" title="Recent prompts"><Clock size={16} aria-hidden="true" /></summary>
                 <div>
-                  {desktop && <div className="wanda-fibo-recents-heading">
+                  {desktop && <div className="fibo-preview-recents-heading">
                     <strong>Recent prompts</strong>
                     {recent.length > 0 && <Button type="button" variant="ghost" size="sm" disabled={busy}
                       onClick={() => { setRecent([]); recentMenu.current?.querySelector("summary")?.focus(); }}>Clear</Button>}
                   </div>}
-                  {recent.length ? <div className="wanda-fibo-recents-list">
-                    {recent.map((value) => <div className="wanda-fibo-recents-row" key={value}>
+                  {recent.length ? <div className="fibo-preview-recents-list">
+                    {recent.map((value) => <div className="fibo-preview-recents-row" key={value}>
                       <Button type="button" variant="ghost" disabled={busy} onClick={() => {
                         setPrompt(value);
                         if (recentMenu.current) recentMenu.current.open = false;
-                        document.getElementById("wanda-fibo-prompt")?.focus();
+                        document.getElementById("fibo-preview-prompt")?.focus();
                       }}>{value}</Button>
                       {desktop && <Button type="button" variant="ghost" size="icon-sm" disabled={busy}
                         aria-label={"Remove recent prompt: " + value}
@@ -988,8 +988,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               </details>
             </div>
             {richPrompt ? (
-              <div ref={promptEditor} id="wanda-fibo-prompt" className="wanda-fibo-rich-prompt"
-                role="textbox" aria-labelledby="wanda-fibo-main-prompt-label" aria-multiline="true"
+              <div ref={promptEditor} id="fibo-preview-prompt" className="fibo-preview-rich-prompt"
+                role="textbox" aria-labelledby="fibo-preview-main-prompt-label" aria-multiline="true"
                 aria-disabled={promptDisabled} aria-placeholder={placeholder} data-empty={!promptDraft.trim()}
                 contentEditable={!promptDisabled} spellCheck autoCorrect="on"
                 onInput={readPromptEditor}
@@ -999,62 +999,62 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 }}
                 onDrop={(event) => event.preventDefault()} />
             ) : (
-              <Textarea id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
+              <Textarea id="fibo-preview-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
                 maxLength={4000} placeholder={placeholder} onChange={(event) => setPrompt(event.target.value)} />
             )}
-            <div className="wanda-fibo-extra" key={mode}>
+            <div className="fibo-preview-extra" key={mode}>
               <details open={negativeOpen} onToggle={(event) => {
                 if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
               }}>
-                <summary id="wanda-fibo-negative-label">Negative prompt</summary>
-                <Textarea aria-labelledby="wanda-fibo-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
+                <summary id="fibo-preview-negative-label">Negative prompt</summary>
+                <Textarea aria-labelledby="fibo-preview-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
                   placeholder="What should the image avoid?" value={negativePrompt} disabled={busy}
                   onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
               </details>
               <details open={vglOpen} onToggle={(event) => {
                 if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
               }}>
-                <summary id="wanda-fibo-vgl-label">VGL JSON</summary>
-                <Textarea aria-labelledby="wanda-fibo-vgl-label" className="wanda-fibo-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
+                <summary id="fibo-preview-vgl-label">VGL JSON</summary>
+                <Textarea aria-labelledby="fibo-preview-vgl-label" className="fibo-preview-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
                   placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
                   title={!vglValid ? "Enter a non-empty JSON object." : undefined}
-                  aria-describedby={!vglValid ? "wanda-fibo-vgl-invalid" : undefined}
+                  aria-describedby={!vglValid ? "fibo-preview-vgl-invalid" : undefined}
                   onChange={(event) => updateDraft(mode, { vgl: event.target.value, generatedVgl: false })} />
-                {!vglValid && <span id="wanda-fibo-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
+                {!vglValid && <span id="fibo-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
               </details>
             </div>
           </div>
-          <div className="wanda-fibo-dock">
-            <div className="wanda-fibo-settings">
-              <div className="wanda-fibo-render-field">
-                <label htmlFor="wanda-fibo-seed">Seed</label>
-                <div className="wanda-fibo-seed">
-                  <Input id="wanda-fibo-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
+          <div className="fibo-preview-dock">
+            <div className="fibo-preview-settings">
+              <div className="fibo-preview-render-field">
+                <label htmlFor="fibo-preview-seed">Seed</label>
+                <div className="fibo-preview-seed">
+                  <Input id="fibo-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
                     required={!randomize} value={seed} disabled={busy || randomize} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
-                  <label className="wanda-fibo-seed-dice" title="Randomize seed each time">
+                  <label className="fibo-preview-seed-dice" title="Randomize seed each time">
                     <Input type="checkbox" aria-label="Randomize seed each time" checked={randomize} disabled={busy}
                       onChange={(event) => updateDraft(mode, { randomize: event.target.checked })} />
                     <Dice5 aria-hidden="true" />
                   </label>
                 </div>
               </div>
-              <label className="wanda-fibo-render-field" htmlFor="wanda-fibo-count">Images
-                <Input id="wanda-fibo-count" type="number" min={1} max={4} step={1} required value={imageCount}
+              <label className="fibo-preview-render-field" htmlFor="fibo-preview-count">Images
+                <Input id="fibo-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
                   disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} />
               </label>
-              <label className="wanda-fibo-steps" htmlFor="wanda-fibo-steps">
-                <span>Steps <output htmlFor="wanda-fibo-steps">{steps}</output></span>
-                <Input id="wanda-fibo-steps" type="range" min={1} max={8} step={1} value={steps}
+              <label className="fibo-preview-steps" htmlFor="fibo-preview-steps">
+                <span>Steps <output htmlFor="fibo-preview-steps">{steps}</output></span>
+                <Input id="fibo-preview-steps" type="range" min={1} max={8} step={1} value={steps}
                   disabled={busy}
                   title={variableSteps ? undefined : "The current worker renders at 4 steps"}
                   onChange={(event) => setSteps(event.target.valueAsNumber)} />
               </label>
             </div>
-            <p className="wanda-fibo-caption wanda-fibo-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
-            <span id="wanda-fibo-blocker" className="sr-only">{blocker}</span>
-            <div className="wanda-fibo-submit-actions">
-              <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}
-                title={blocker || undefined} aria-describedby={blocker ? "wanda-fibo-blocker" : undefined}>
+            <p className="fibo-preview-caption fibo-preview-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
+            <span id="fibo-preview-blocker" className="sr-only">{blocker}</span>
+            <div className="fibo-preview-submit-actions">
+              <Button type="submit" className="fibo-preview-generate" disabled={!canSubmit}
+                title={blocker || undefined} aria-describedby={blocker ? "fibo-preview-blocker" : undefined}>
                 <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
               </Button>
               {busy && activeCancel && <Button type="button" variant="outline"
@@ -1065,8 +1065,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             </div>
           </div>
         </form>
-        <section className="wanda-fibo-canvas" aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
-            {stageReady && <WandaFiboStage
+        <section className="fibo-preview-canvas" aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
+            {stageReady && <FiboPreviewStage
               desktopResultActions={desktop ? resultActions : undefined}
               workflow={mode}
               turns={turns[mode]}
@@ -1136,13 +1136,13 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               }}
             />}
             {maskEditor === "dialog" && maskEditorNode}
-            {!admitted && <Link href="/settings" className="wanda-fibo-stage-sign-in">Sign in to upload</Link>}
+            {!admitted && <Link href="/settings" className="fibo-preview-stage-sign-in">Sign in to upload</Link>}
         </section>
-        <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title"
+        <aside className="fibo-preview-history" aria-labelledby="fibo-preview-history-title"
           onKeyDown={(event) => {
             if (busy || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
             const direction = ["ArrowUp", "ArrowLeft"].includes(event.key) ? -1 : ["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : 0;
-            const chips = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("[data-wanda-history-image]:not(:disabled)")];
+            const chips = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("[data-fibo-history-image]:not(:disabled)")];
             const from = chips.indexOf(document.activeElement as HTMLButtonElement);
             if (!direction || from < 0) return;
             event.preventDefault();
@@ -1150,13 +1150,13 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             next.focus();
             next.click();
           }}>
-          <h2 id="wanda-fibo-history-title">History</h2>
-          <div ref={setResultActions} className="wanda-fibo-history-result-actions" />
+          <h2 id="fibo-preview-history-title">History</h2>
+          <div ref={setResultActions} className="fibo-preview-history-result-actions" />
           {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
-          {savedStatus && <p className="wanda-fibo-caption" role="status">{savedStatus}</p>}
-          <div ref={setHistoryRail} className="wanda-fibo-history-rail">
-            {queueCount > 0 && <Button type="button" variant="ghost" className="wanda-fibo-history-progress"
+          {savedStatus && <p className="fibo-preview-caption" role="status">{savedStatus}</p>}
+          <div ref={setHistoryRail} className="fibo-preview-history-rail">
+            {queueCount > 0 && <Button type="button" variant="ghost" className="fibo-preview-history-progress"
               aria-label={"Open Queue, " + queueCount + (queueCount === 1 ? " active render" : " renders")} onClick={() => {
                 if (queue.current) {
                   queue.current.open = true;
@@ -1167,14 +1167,14 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             </Button>}
             {historyGroups.length ? historyGroups.map((group, index) => {
               const image = group[0];
-              return <Button key={image.batchId ?? image.filename ?? index} data-wanda-history-image type="button" variant="ghost"
-                className="wanda-fibo-history-cover" disabled={busy} aria-current={!!result && group.includes(result)}
+              return <Button key={image.batchId ?? image.filename ?? index} data-fibo-history-image type="button" variant="ghost"
+                className="fibo-preview-history-cover" disabled={busy} aria-current={!!result && group.includes(result)}
                 aria-label={"Open render " + (historyGroups.length - index) + ", seed " + image.seed + ", " + group.length + (group.length === 1 ? " image" : " images")}
                 onClick={() => { setMaskEditor(undefined); setHistorySelection({ image }); }}>
                 <img src={image.image_data} alt="" draggable={false} loading="lazy" />
-                {group.length > 1 && <span className="wanda-fibo-history-stack" aria-hidden="true">▱ {group.length}</span>}
+                {group.length > 1 && <span className="fibo-preview-history-stack" aria-hidden="true">▱ {group.length}</span>}
               </Button>;
-            }) : !busy && <p className="wanda-fibo-caption">Finished images will appear here.</p>}
+            }) : !busy && <p className="fibo-preview-caption">Finished images will appear here.</p>}
           </div>
         </aside>
       </div>

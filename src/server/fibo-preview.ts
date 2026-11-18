@@ -1,5 +1,5 @@
 import "server-only";
-import { wandaFiboSizes } from "@/features/create/wanda-fibo-sizes";
+import { fiboSizes } from "@/features/create/fibo-preview-sizes";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after } from "next/server";
 import sharp from "sharp";
-import { getWandaFiboOwner } from "./hosted-create";
+import { getFiboPreviewOwner } from "./hosted-create";
 
 const origin = "http://127.0.0.1:3000";
 const mb = 1024 * 1024;
@@ -22,18 +22,18 @@ type QueueRecord = { id: string; created: number; count: number; payload: Record
 type Job = { pending?: { bytes: number; record: QueueRecord }; writing?: boolean; cancelToken?: string; cancelling?: boolean; owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
 type Upload = { owner: string; created: number; data: Buffer };
 const shared = globalThis as typeof globalThis & {
-  wandaFiboState?: { jobs: Map<string, Job>; uploads: Map<string, Upload>; healthUntil: number; healthCheck?: Promise<boolean>; queueLoads?: Map<string, Promise<void>> };
+  fiboPreviewState?: { jobs: Map<string, Job>; uploads: Map<string, Upload>; healthUntil: number; healthCheck?: Promise<boolean>; queueLoads?: Map<string, Promise<void>> };
 };
-const state: NonNullable<typeof shared.wandaFiboState> = shared.wandaFiboState ??= { jobs: new Map(), uploads: new Map(), healthUntil: 0 };
+const state: NonNullable<typeof shared.fiboPreviewState> = shared.fiboPreviewState ??= { jobs: new Map(), uploads: new Map(), healthUntil: 0 };
 const json = (value: unknown, status = 200) =>
   Response.json(value, { status, headers: { "cache-control": "private, no-store" } });
 const error = (message: string, status: number) => json({ error: message }, status);
 
 type ArchiveRun = { id: string; images: Record<string, unknown>[]; error?: string };
 const archiveLimit = 32 * mb;
-const archiveRoot = join(process.env.LOCALAPPDATA || tmpdir(), "RenderLab", "WandaFiboHistory");
+const archiveRoot = join(process.env.LOCALAPPDATA || tmpdir(), "RenderLab", "FiboPreviewHistory");
 function archivePath(owner: string) {
-  return join(archiveRoot, createHash("sha256").update("wanda-fibo-history:" + owner).digest("hex") + ".json");
+  return join(archiveRoot, createHash("sha256").update("fibo-preview-history:" + owner).digest("hex") + ".json");
 }
 async function readArchive(owner: string): Promise<ArchiveRun[]> {
   try {
@@ -84,7 +84,7 @@ async function boundedBody(request: Request, limit: number) {
 
 function bridge(payload: Record<string, unknown>, timeoutMs = 430_000, onPreview?: (update: PreviewUpdate) => void): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
-    const child = spawn("C:/Windows/py.exe", ["-3.10", join(process.cwd(), "workers/fibo-studio/wanda_bridge.py")], {
+    const child = spawn("C:/Windows/py.exe", ["-3.10", join(process.cwd(), "workers/fibo-studio/preview_bridge.py")], {
       windowsHide: true, stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
     });
@@ -141,9 +141,9 @@ function bridge(payload: Record<string, unknown>, timeoutMs = 430_000, onPreview
 }
 
 const queueLimit = 48 * mb;
-const queueRoot = join(process.env.LOCALAPPDATA || tmpdir(), "RenderLab", "WandaFiboQueue");
+const queueRoot = join(process.env.LOCALAPPDATA || tmpdir(), "RenderLab", "FiboPreviewQueue");
 function queueDirectory(owner: string) {
-  return join(queueRoot, createHash("sha256").update("wanda-fibo-queue:" + owner).digest("hex"));
+  return join(queueRoot, createHash("sha256").update("fibo-preview-queue:" + owner).digest("hex"));
 }
 function queuePath(owner: string, id: string) { return join(queueDirectory(owner), id + ".json"); }
 
@@ -205,7 +205,7 @@ async function restoreWaiting(owner: string) {
   await loading;
 }
 
-async function drainWandaQueue() {
+async function drainFiboPreviewQueue() {
   while (true) {
     const entries = [...state.jobs.values()];
     if (entries.some((job) => !job.finished && !job.pending)) return;
@@ -232,11 +232,11 @@ async function drainWandaQueue() {
 
 async function runQueuedRender(job: Job, record: QueueRecord) {
   const { id, count, payload } = record;
-  if ((payload.extended && process.env.RENDERLAB_WANDA_FIBO_EXTENDED !== "1")
-    || (payload.mask && process.env.RENDERLAB_WANDA_FIBO_MASKS !== "1")
-    || (payload.steps !== 4 && process.env.RENDERLAB_WANDA_FIBO_VARIABLE_STEPS !== "1")
-    || ((payload.negative_prompt || payload.json_instruction) && process.env.RENDERLAB_WANDA_FIBO_ADVANCED_PROMPT !== "1")) {
-    job.error = "This waiting render uses a capability no longer enabled on WANDA.";
+  if ((payload.extended && process.env.RENDERLAB_FIBO_PREVIEW_EXTENDED !== "1")
+    || (payload.mask && process.env.RENDERLAB_FIBO_PREVIEW_MASKS !== "1")
+    || (payload.steps !== 4 && process.env.RENDERLAB_FIBO_PREVIEW_VARIABLE_STEPS !== "1")
+    || ((payload.negative_prompt || payload.json_instruction) && process.env.RENDERLAB_FIBO_PREVIEW_ADVANCED_PROMPT !== "1")) {
+    job.error = "This waiting render uses a capability no longer enabled in this preview.";
     job.finished = true;
     return;
   }
@@ -252,8 +252,8 @@ async function runQueuedRender(job: Job, record: QueueRecord) {
       job.preview = undefined;
       job.previewBlur = undefined;
       job.caption = undefined;
-      const preview = process.env.RENDERLAB_WANDA_FIBO_LIVE_PREVIEW === "1";
-      job.cancelToken = preview && process.env.RENDERLAB_WANDA_FIBO_CANCEL === "1" ? randomBytes(16).toString("hex") : undefined;
+      const preview = process.env.RENDERLAB_FIBO_PREVIEW_LIVE_PREVIEW === "1";
+      job.cancelToken = preview && process.env.RENDERLAB_FIBO_PREVIEW_CANCEL === "1" ? randomBytes(16).toString("hex") : undefined;
       const result = await bridge({
         ...payload, preview, seed: imageSeed, cancel_token: job.cancelToken,
       }, remaining, preview ? (update) => {
@@ -299,14 +299,14 @@ async function runQueuedRender(job: Job, record: QueueRecord) {
   }
 }
 
-export async function wandaFibo(request: Request, path: string): Promise<Response> {
-  if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_WANDA_FIBO !== "1"
+export async function fiboPreview(request: Request, path: string): Promise<Response> {
+  if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_FIBO_PREVIEW !== "1"
     || request.headers.get("host") !== "127.0.0.1:3000") return error("Not found.", 404);
   if (process.env.RENDERLAB_HOSTED_CREATE === "1") return error("The local FIBO backend is disabled in hosted Create mode.", 503);
   if (request.method === "POST" && request.headers.get("origin") !== origin) {
     return error("Same-origin request required.", 403);
   }
-  const owner = await getWandaFiboOwner().catch(() => null);
+  const owner = await getFiboPreviewOwner().catch(() => null);
   if (!owner) return error("An admitted RenderLab account is required.", 401);
   const now = Date.now();
   for (const [id, upload] of state.uploads) if (now - upload.created > ttl) state.uploads.delete(id);
@@ -317,7 +317,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
   }
   if (request.method === "GET") {
     if ((path === "local/queue" || path.startsWith("local/render/"))
-      && [...state.jobs.values()].some((job) => job.owner === owner && job.pending && !job.writing)) after(drainWandaQueue);
+      && [...state.jobs.values()].some((job) => job.owner === owner && job.pending && !job.writing)) after(drainFiboPreviewQueue);
     if (path === "health") {
       if (state.healthUntil <= now) {
         state.healthCheck ??= bridge({ mode: "health" }).then((value) => {
@@ -359,7 +359,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
         "content-type": "image/png", "cache-control": "private, no-store",
       } });
     }
-    return error("This Studio endpoint is not connected on WANDA.", 404);
+    return error("This Studio endpoint is not connected in this preview.", 404);
   }
   const cancel = /^local\/queue\/([a-f0-9]{32})\/cancel$/.exec(path);
   if (request.method === "POST" && cancel) {
@@ -385,7 +385,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     job.pending = undefined;
     job.finished = true;
     job.error = "Removed from Queue.";
-    after(drainWandaQueue);
+    after(drainFiboPreviewQueue);
     return json({ id: cancel[1], state: "finished" });
   }
   if (path === "gradio_api/upload") {
@@ -428,7 +428,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
         if (value === null || typeof value !== "object" || Array.isArray(value) || !Object.keys(value).length) throw new Error();
       } catch { return error("Enter a non-empty VGL JSON object.", 422); }
     }
-    if ((vgl || negative.trim()) && process.env.RENDERLAB_WANDA_FIBO_ADVANCED_PROMPT !== "1") {
+    if ((vgl || negative.trim()) && process.env.RENDERLAB_FIBO_PREVIEW_ADVANCED_PROMPT !== "1") {
       return error("Advanced prompts need the private worker update.", 503);
     }
     if (typeof id !== "string" || !/^[a-f0-9]{32}$/.test(id)
@@ -441,18 +441,18 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       || typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > 4) {
       return error("Choose 1 to 8 steps and 1 to 4 images.", 422);
     }
-    if (steps !== 4 && process.env.RENDERLAB_WANDA_FIBO_VARIABLE_STEPS !== "1") {
+    if (steps !== 4 && process.env.RENDERLAB_FIBO_PREVIEW_VARIABLE_STEPS !== "1") {
       return error("Adjustable steps need the private worker update.", 503);
     }
     const width = data.width ?? 1024;
     const height = data.height ?? 1024;
     if (data.append_to
       || (mode === "edit" && data.inspiration != null)
-      || (mode === "generate" && !wandaFiboSizes.some((size) => size.width === width && size.height === height))) {
+      || (mode === "generate" && !fiboSizes.some((size) => size.width === width && size.height === height))) {
       return error("Use a supported preset without history appends.", 422);
     }
     const extended = mode === "generate" && (width !== 1024 || height !== 1024 || (data.inspiration != null && !vgl));
-    if (extended && process.env.RENDERLAB_WANDA_FIBO_EXTENDED !== "1") {
+    if (extended && process.env.RENDERLAB_FIBO_PREVIEW_EXTENDED !== "1") {
       return error("Inspiration and non-square renders need the private worker update.", 503);
     }
     let inspiration: string | undefined;
@@ -474,7 +474,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     let mask: string | undefined;
     if (data.mask != null) {
       if (mode !== "edit" || images.length !== 1) return error("A mask requires one source and no references.", 422);
-      if (process.env.RENDERLAB_WANDA_FIBO_MASKS !== "1") return error("Masked edits need the private worker update.", 503);
+      if (process.env.RENDERLAB_FIBO_PREVIEW_MASKS !== "1") return error("Masked edits need the private worker update.", 503);
       const region = typeof data.mask === "string" ? state.uploads.get(data.mask) : undefined;
       if (!region || region.owner !== owner) return error("Mask is missing or expired.", 400);
       mask = region.data.toString("base64");
@@ -507,8 +507,8 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       state.jobs.delete(id);
       return error("Local Queue could not save this render.", 503);
     } finally { job.writing = false; }
-    after(drainWandaQueue);
+    after(drainFiboPreviewQueue);
     return json({ id, state: outstanding.length ? "pending" : "running" }, 202);
   }
-  return error("This Studio endpoint is not connected on WANDA.", 404);
+  return error("This Studio endpoint is not connected in this preview.", 404);
 }

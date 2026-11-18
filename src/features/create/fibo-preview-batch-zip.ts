@@ -4,7 +4,7 @@ const crcTable = Uint32Array.from({ length: 256 }, (_, byte) => {
   return byte >>> 0;
 });
 
-export function buildWandaBatchZip(images: readonly { image_data: string }[]) {
+export function buildFiboBatchZip(images: readonly { image_data: string }[]) {
   if (images.length < 2 || images.length > 4) throw new Error("Invalid batch size.");
   const entries: BlobPart[] = [];
   const directory: BlobPart[] = [];
