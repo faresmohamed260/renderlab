@@ -22,7 +22,7 @@ type Result = { image_data: string; aspect?: number; seed: number; filename?: st
 type Workflow = "edit" | "generate";
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number; filename?: string };
 type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
-type Poll = { canCancel?: boolean; cancelling?: boolean; state?: "pending" | "running" | "finished"; finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
+type Poll = { canCancel?: boolean; cancelling?: boolean; state?: "pending" | "running" | "finished"; finished: boolean; images: Result[]; imageOffset?: number; preview?: string; previewBlur?: number; caption?: string; error?: string };
 
 function parseStageBookmark(raw: unknown): StageBookmark | undefined {
   if (!raw || typeof raw !== "object") return;
@@ -104,6 +104,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, savedEditsAccount }: { admitted: boolean; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+  const bookmarkKey = admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
+  const [stageReady, setStageReady] = useState(!bookmarkKey);
   const [mode, setMode] = useState<Workflow>("edit");
   const [reducedMotion, setReducedMotion] = useState(true);
   useEffect(() => {
@@ -217,21 +219,30 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   }, [admitted, savedEditsAccount]);
 
   useEffect(() => {
-    if (!admitted || !savedEditsAccount) return;
+    if (!admitted || !savedEditsAccount || !stageReady) return;
     const controller = new AbortController();
-    void request<{ id: string; images: Result[] }[]>("local/history", { signal: controller.signal })
-      .then((runs) => {
-        if (controller.signal.aborted || !Array.isArray(runs)) return;
-        setHistory((current) => {
-          const present = new Set(current.map((item) => item.batchId));
-          return [...current, ...runs.flatMap(({ id, images }) => present.has(id) ? []
-            : images.map((image) => ({ ...image, batchId: id })))];
+    // Restoring the selected stage takes priority over parsing the full archive.
+    const loadHistory = () => {
+      void request<{ id: string; images: Result[] }[]>("local/history", { signal: controller.signal })
+        .then((runs) => {
+          if (controller.signal.aborted || !Array.isArray(runs)) return;
+          setHistory((current) => {
+            const present = new Set(current.map((item) => item.batchId));
+            return [...current, ...runs.flatMap(({ id, images }) => present.has(id) ? []
+              : images.map((image) => ({ ...image, batchId: id })))];
+          });
+        }).catch(() => {
+          if (!controller.signal.aborted) setSavedStatus("Local History could not be opened.");
         });
-      }).catch(() => {
-        if (!controller.signal.aborted) setSavedStatus("Local History could not be opened.");
-      });
-    return () => controller.abort();
-  }, [admitted, savedEditsAccount]);
+    };
+    const useIdle = typeof window.requestIdleCallback === "function";
+    const task = useIdle ? window.requestIdleCallback(loadHistory, { timeout: 750 }) : window.setTimeout(loadHistory, 0);
+    return () => {
+      if (useIdle) window.cancelIdleCallback(task);
+      else window.clearTimeout(task);
+      controller.abort();
+    };
+  }, [admitted, savedEditsAccount, stageReady]);
 
   async function saveEdit(image?: Result) {
     if (!admitted || !savedEditsAccount || savingEdits || image && image.run?.mode !== "edit") return;
@@ -270,8 +281,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [dragTarget, setDragTarget] = useState<number | "canvas">();
   const [status, setStatus] = useState("");
   const active = useRef<AbortController | null>(null);
-  const bookmarkKey = admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
-  const [stageReady, setStageReady] = useState(!bookmarkKey);
+
   const [resuming, setResuming] = useState<StageBookmark>();
   useEffect(() => () => {
     preparing.current?.abort();
@@ -423,7 +433,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     let recoveringInspection = restoring && !!bookmark.filename;
     try {
       while (!signal.aborted && Date.now() < end) {
-        const update = await request<Poll>("local/render/" + bookmark.id, { signal });
+        const update = await request<Poll>("local/render/" + bookmark.id + "?afterImages=" + images.length, { signal });
         if (signal.aborted) throw new Error("Render polling stopped.");
         setActiveCancel(!update.finished && update.canCancel ? { id: bookmark.id, pending: !!update.cancelling } : undefined);
         if (!update.finished) {
@@ -433,8 +443,9 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           setLiveBlur(update.previewBlur);
           setLiveCaption(update.cancelling ? "Cancelling…" : update.caption);
         }
-        if (update.images.length > images.length) {
-          images = [...images, ...update.images.slice(images.length).map((image) => ({
+        const newImages = update.images.slice(Math.max(0, images.length - (update.imageOffset ?? 0)));
+        if (newImages.length) {
+          images = [...images, ...newImages.map((image) => ({
             ...image, batchId: bookmark.id, run, source: run?.inputs[0],
           }))];
           setRunningBatch(images);

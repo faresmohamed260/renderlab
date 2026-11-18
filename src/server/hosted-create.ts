@@ -18,11 +18,14 @@ function enabled(host: string | null) {
     && process.env.RENDERLAB_HOSTED_CREATE === "1" && host === loopback;
 }
 
-async function hostedFetch(path: string, init: RequestInit = {}) {
-  const supabase = await createServerSupabaseClient();
+async function hostedFetch(path: string, init: RequestInit = {}, accessToken?: string) {
   // Production verifies this normal user token and owns all access decisions.
-  const session = await supabase?.auth.getSession();
-  const token = session?.data.session?.access_token;
+  let token = accessToken;
+  if (!token) {
+    const supabase = await createServerSupabaseClient();
+    const session = await supabase?.auth.getSession();
+    token = session?.data.session?.access_token;
+  }
   const requestHeaders = new Headers(init.headers);
   if (token) requestHeaders.set("authorization", "Bearer " + token);
   return fetch(production + path, {
@@ -129,9 +132,15 @@ export async function relayHostedCreate(request: Request, path: string) {
 /** A real Supabase user whose normal session passes hosted RenderLab admission. */
 export async function getWandaFiboOwner() {
   const supabase = await createServerSupabaseClient();
-  const verified = await supabase?.auth.getUser();
-  if (!verified?.data.user || verified.error) return null;
-  const admission = await hostedFetch("/api/media/assets?limit=1");
+  if (!supabase) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return null;
+  // Both authorities verify the same token independently; neither result is cached.
+  const [verified, admission] = await Promise.all([
+    supabase.auth.getUser(session.access_token),
+    hostedFetch("/api/media/assets?limit=1", {}, session.access_token),
+  ]);
+  if (!verified.data.user || verified.error) return null;
   if (!admission.ok || (await admission.json()).ok !== true) return null;
   return verified.data.user.id;
 }

@@ -338,16 +338,18 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     const render = /^local\/render\/([a-f0-9]{32})$/.exec(path);
     const upload = /^local\/upload\/([a-f0-9]{32}\.png)$/.exec(path);
     if (render) {
+      const offset = new URL(request.url).searchParams.get("afterImages");
+      const afterImages = offset !== null && /^[0-4]$/.test(offset) ? Number(offset) : 0;
       const job = state.jobs.get(render[1]);
       if (!job || job.owner !== owner) {
         try {
           const stored = (await readArchive(owner)).find((item) => item.id === render[1]);
-          if (stored) return json({ finished: true, state: "finished", images: stored.images, error: stored.error });
+          if (stored) return json({ finished: true, state: "finished", images: stored.images.slice(afterImages), imageOffset: afterImages, error: stored.error });
         } catch { return error("Local History could not be opened.", 503); }
         return error("Job not found.", 404);
       }
       return json({ finished: job.finished, state: job.finished ? "finished" : job.pending ? "pending" : "running",
-        images: job.images, canCancel: !!job.cancelToken, cancelling: !!job.cancelling, ...(job.preview ? { preview: job.preview, previewBlur: job.previewBlur } : {}), ...(job.caption ? { caption: job.caption } : {}), ...(job.error ? { error: job.error } : {}) });
+        images: job.images.slice(afterImages), imageOffset: afterImages, canCancel: !!job.cancelToken, cancelling: !!job.cancelling, ...(job.preview ? { preview: job.preview, previewBlur: job.previewBlur } : {}), ...(job.caption ? { caption: job.caption } : {}), ...(job.error ? { error: job.error } : {}) });
     }
     if (upload) {
       const file = state.uploads.get(upload[1]);
