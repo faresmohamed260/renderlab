@@ -134,10 +134,25 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     } catch { return error("Invalid request.", 400); }
     const mode = path === "local/edit" ? "edit" : "generate";
     const id = data.job_id;
-    const prompt = data.instruction;
+    const prompt = data.instruction ?? "";
+    const negative = data.negative_prompt ?? "";
+    const rawVgl = data.json_instruction ?? "";
+    if (typeof negative !== "string" || negative.length > 4000 || typeof rawVgl !== "string" || rawVgl.length > 8192) {
+      return error("Advanced prompt exceeds the preview limits.", 422);
+    }
+    const vgl = rawVgl.trim();
+    if (vgl) {
+      try {
+        const value: unknown = JSON.parse(vgl);
+        if (value === null || typeof value !== "object" || Array.isArray(value) || !Object.keys(value).length) throw new Error();
+      } catch { return error("Enter a non-empty VGL JSON object.", 422); }
+    }
+    if ((vgl || negative.trim()) && process.env.RENDERLAB_WANDA_FIBO_ADVANCED_PROMPT !== "1") {
+      return error("Advanced prompts need the private worker update.", 503);
+    }
     if (typeof id !== "string" || !/^[a-f0-9]{32}$/.test(id)
-      || typeof prompt !== "string" || !prompt.trim() || prompt.length > 4000) {
-      return error("Enter a prompt and submit a valid job.", 400);
+      || typeof prompt !== "string" || (!prompt.trim() && !vgl) || prompt.length > 4000) {
+      return error("Enter a prompt or VGL JSON and submit a valid job.", 400);
     }
     const steps = data.steps ?? 4;
     const count = data.image_count ?? 1;
@@ -150,17 +165,17 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     }
     const width = data.width ?? 1024;
     const height = data.height ?? 1024;
-    if (data.mask || data.json_instruction || data.negative_prompt || data.append_to
+    if (data.mask || data.append_to
       || (mode === "edit" && data.inspiration != null)
       || (mode === "generate" && !wandaFiboSizes.some((size) => size.width === width && size.height === height))) {
-      return error("Use a supported preset and a plain prompt.", 422);
+      return error("Use a supported preset without masks or history appends.", 422);
     }
-    const extended = mode === "generate" && (width !== 1024 || height !== 1024 || data.inspiration != null);
+    const extended = mode === "generate" && (width !== 1024 || height !== 1024 || (data.inspiration != null && !vgl));
     if (extended && process.env.RENDERLAB_WANDA_FIBO_EXTENDED !== "1") {
       return error("Inspiration and non-square renders need the private worker update.", 503);
     }
     let inspiration: string | undefined;
-    if (data.inspiration != null) {
+    if (data.inspiration != null && !vgl) {
       const file = typeof data.inspiration === "string" ? state.uploads.get(data.inspiration) : null;
       if (!file || file.owner !== owner) return error("Inspiration image is missing or expired.", 400);
       inspiration = file.data.toString("base64");
@@ -196,7 +211,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
           if (remaining <= 0) throw new Error("Render time limit exceeded");
           const imageSeed = (seed + index) % 2147483648;
           const result = await bridge({
-            mode, instruction: prompt, seed: imageSeed, images, width, height, extended, inspiration, steps,
+            mode, instruction: prompt, seed: imageSeed, images, width, height, extended, inspiration, steps, negative_prompt: negative.trim(), json_instruction: vgl,
           }, remaining);
           if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error("Invalid PNG");
           batchBytes += result.png.length;

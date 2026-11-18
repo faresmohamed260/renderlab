@@ -21,7 +21,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: { admitted: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt }: { admitted: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const [mode, setMode] = useState<"edit" | "generate">("edit");
   const [reducedMotion, setReducedMotion] = useState(true);
   useEffect(() => {
@@ -38,6 +38,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
   });
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const [prompt, setPrompt] = useState("");
+  const [negativePrompt, setNegativePrompt] = useState("");
+  const [vgl, setVgl] = useState("");
   const [imageCount, setImageCount] = useState("1");
   const [steps, setSteps] = useState(4);
   const [seed, setSeed] = useState("42");
@@ -50,7 +52,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
   const [inspiration, setInspiration] = useState<File>();
   const [inspirationPreview, setInspirationPreview] = useState<string>();
   const size = wandaFiboSizes[sizeIndex] ?? wandaFiboSizes[0];
-  const needsUpgrade = mode === "generate" && !extendedSetup && (sizeIndex !== 0 || !!inspiration);
+  const needsUpgrade = mode === "generate" && !extendedSetup && (sizeIndex !== 0 || (!!inspiration && !vgl.trim()));
   useEffect(() => {
     if (!inspiration) { setInspirationPreview(undefined); return; }
     const url = URL.createObjectURL(inspiration);
@@ -88,7 +90,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
           uploads[["source", "ref2", "ref3", "ref4"][index]] = id;
         }
       }
-      if (mode === "generate" && inspiration) {
+      if (mode === "generate" && inspiration && !vgl.trim()) {
         const form = new FormData();
         form.set("files", inspiration);
         const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
@@ -96,7 +98,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
       }
       const job = crypto.randomUUID().replaceAll("-", "");
       await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(),
+        body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: vgl.trim(),
           seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
       setStatus("Rendering on Modal...");
       const end = Date.now() + 8 * 60_000;
@@ -107,7 +109,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
           const image = update.images[0];
           setResult(image);
           setHistory((items) => [...update.images, ...items].slice(0, 8));
-          setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
+          if (prompt.trim()) setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
           setStatus(update.error ?? (update.images.length === 1 ? "Render complete." : update.images.length + " images ready in History."));
           return;
         }
@@ -135,11 +137,21 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
   }
 
   const seedValid = randomize || (/^\d+$/.test(seed) && Number(seed) <= 2147483647);
+  const manualVgl = vgl.trim();
+  const vglValid = (() => {
+    if (!manualVgl) return true;
+    try {
+      const value: unknown = JSON.parse(manualVgl);
+      return value !== null && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
+    } catch { return false; }
+  })();
   const blocker = !admitted ? "Sign in with an account that has Create access."
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
     : !variableSteps && steps !== 4 ? "The current worker supports 4 steps. Select 4 to generate."
     : mode === "edit" && !files[0] ? "Add a source image to edit."
-    : !prompt.trim() ? "Enter a prompt to generate."
+    : !vglValid ? "Enter a non-empty VGL JSON object."
+    : !advancedPrompt && (manualVgl || negativePrompt.trim()) ? "Advanced prompts need the private worker update."
+    : !manualVgl && !prompt.trim() ? "Enter a prompt or VGL JSON to generate."
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
     : "";
@@ -242,8 +254,24 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps }: {
               placeholder="Describe the result you want…"
               onChange={(event) => setPrompt(event.target.value)} />
             <div className="wanda-fibo-extra">
-              <Button variant="ghost" type="button" disabled><ChevronRight size={12} aria-hidden="true" />Negative prompt</Button>
-              <Button variant="ghost" type="button" disabled><ChevronRight size={12} aria-hidden="true" />VGL JSON</Button>
+              <details>
+                <summary id="wanda-fibo-negative-label"><ChevronRight size={12} aria-hidden="true" />Negative prompt</summary>
+                <Textarea aria-labelledby="wanda-fibo-negative-label" rows={3} maxLength={4000} spellCheck
+                  placeholder="What should the image avoid?" value={negativePrompt} disabled={busy}
+                  onChange={(event) => setNegativePrompt(event.target.value)} />
+                {!advancedPrompt && <p className="wanda-fibo-caption">Rendering with a negative prompt needs the private worker update.</p>}
+              </details>
+              <details>
+                <summary id="wanda-fibo-vgl-label"><ChevronRight size={12} aria-hidden="true" />VGL JSON</summary>
+                <Textarea aria-labelledby="wanda-fibo-vgl-label" className="wanda-fibo-vgl" rows={5} maxLength={8192} spellCheck={false}
+                  placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
+                  aria-describedby="wanda-fibo-vgl-help" onChange={(event) => setVgl(event.target.value)} />
+                <p id="wanda-fibo-vgl-help" className="wanda-fibo-caption">
+                  {!vglValid ? "Enter a non-empty JSON object." : !advancedPrompt
+                    ? "Rendering with VGL JSON needs the private worker update."
+                    : "Manual VGL replaces prompt conversion and the Text to Image reference."}
+                </p>
+              </details>
             </div>
           </div>
           <div className="wanda-fibo-dock">
