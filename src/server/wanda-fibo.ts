@@ -16,7 +16,7 @@ const previewCaptions: ReadonlyMap<unknown, string> = new Map([
   ["refine", "Refining details…"], ["finish", "Finishing image…"],
 ]);
 type PreviewUpdate = { frame: string; blur?: number } | { caption: string };
-type Job = { owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
+type Job = { pending?: { bytes: number; run: () => Promise<void> }; owner: string; created: number; finished: boolean; images: Record<string, unknown>[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
 type Upload = { owner: string; created: number; data: Buffer };
 const shared = globalThis as typeof globalThis & {
   wandaFiboState?: { jobs: Map<string, Job>; uploads: Map<string, Upload>; healthUntil: number; healthCheck?: Promise<boolean> };
@@ -100,6 +100,18 @@ function bridge(payload: Record<string, unknown>, timeoutMs = 430_000, onPreview
   });
 }
 
+async function drainWandaQueue() {
+  while (true) {
+    const entries = [...state.jobs.values()];
+    if (entries.some((job) => !job.finished && !job.pending)) return;
+    const next = entries.find((job) => !job.finished && job.pending);
+    if (!next?.pending) return;
+    const { run } = next.pending;
+    next.pending = undefined;
+    await run();
+  }
+}
+
 export async function wandaFibo(request: Request, path: string): Promise<Response> {
   if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_WANDA_FIBO !== "1"
     || request.headers.get("host") !== "127.0.0.1:3000") return error("Not found.", 404);
@@ -126,13 +138,13 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     }
     if (path === "local/history") return json([]);
     if (path === "local/queue") return json({ jobs: [...state.jobs].flatMap(([id, job]) =>
-      job.owner === owner && !job.finished ? [{ id, state: "running", completed: 0, cancelling: false }] : []) });
+      job.owner === owner && !job.finished ? [{ id, state: job.pending ? "pending" : "running", completed: job.images.length, cancelling: false }] : []) });
     const render = /^local\/render\/([a-f0-9]{32})$/.exec(path);
     const upload = /^local\/upload\/([a-f0-9]{32}\.png)$/.exec(path);
     if (render) {
       const job = state.jobs.get(render[1]);
       if (!job || job.owner !== owner) return error("Job not found.", 404);
-      return json({ finished: job.finished, state: job.finished ? "finished" : "running",
+      return json({ finished: job.finished, state: job.finished ? "finished" : job.pending ? "pending" : "running",
         images: job.images, ...(job.preview ? { preview: job.preview, previewBlur: job.previewBlur } : {}), ...(job.caption ? { caption: job.caption } : {}), ...(job.error ? { error: job.error } : {}) });
     }
     if (upload) {
@@ -143,6 +155,16 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       } });
     }
     return error("This Studio endpoint is not connected on WANDA.", 404);
+  }
+  const cancel = /^local\/queue\/([a-f0-9]{32})\/cancel$/.exec(path);
+  if (request.method === "POST" && cancel) {
+    const job = state.jobs.get(cancel[1]);
+    if (!job || job.owner !== owner) return error("Job not found.", 404);
+    if (!job.pending) return error("Only waiting renders can be removed.", 409);
+    job.pending = undefined;
+    job.finished = true;
+    job.error = "Removed from Queue.";
+    return json({ id: cancel[1], state: "finished" });
   }
   if (path === "gradio_api/upload") {
     try {
@@ -240,12 +262,15 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       return error("Invalid seed.", 400);
     }
     if (state.jobs.has(id)) return error("Job already exists.", 409);
-    if (state.jobs.size >= 12 || [...state.jobs.values()].some((job) => !job.finished)) {
-      return error("The private worker is busy or local storage is full.", 429);
+    const outstanding = [...state.jobs.values()].filter((entry) => !entry.finished);
+    const bytes = images.reduce((total, image) => total + image.length, 0)
+      + (inspiration?.length ?? 0) + (mask?.length ?? 0);
+    const waitingBytes = outstanding.reduce((total, entry) => total + (entry.pending?.bytes ?? 0), 0);
+    if (state.jobs.size >= 12 || outstanding.length >= 3 || (outstanding.length > 0 && waitingBytes + bytes > 48 * mb)) {
+      return error("The private render queue is full.", 429);
     }
     const job: Job = { owner, created: now, finished: false, images: [] };
-    state.jobs.set(id, job);
-    after(async () => {
+    const run = async () => {
       try {
         const deadline = Date.now() + 430_000;
         let batchBytes = 0;
@@ -279,8 +304,11 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
           : "The private Modal worker did not return a render.";
       }
       finally { job.preview = undefined; job.previewBlur = undefined; job.caption = undefined; job.finished = true; }
-    });
-    return json({ id, state: "running" }, 202);
+    };
+    job.pending = { bytes, run };
+    state.jobs.set(id, job);
+    after(drainWandaQueue);
+    return json({ id, state: outstanding.length ? "pending" : "running" }, 202);
   }
   return error("This Studio endpoint is not connected on WANDA.", 404);
 }

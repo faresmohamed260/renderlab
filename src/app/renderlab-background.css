@@ -1214,3 +1214,19 @@
 @media (prefers-reduced-motion: no-preference) {
   .wanda-fibo-canvas .wanda-fibo-stage-live { transition: filter .24s ease-out; }
 }
+
+.wanda-fibo-queue-jobs {
+  position: absolute;
+  inset-inline-end: 0;
+  margin-block-start: 4px;
+  inline-size: min(300px, 80vw);
+  max-block-size: 50dvh;
+  overflow: auto;
+  border-radius: 16px;
+  background: rgb(32 27 43 / 95%);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 24%);
+  padding: 12px;
+  font-size: 12px;
+}
+.wanda-fibo-queue-entry { display: grid; gap: 4px; margin-block-start: 8px; overflow-wrap: anywhere; }

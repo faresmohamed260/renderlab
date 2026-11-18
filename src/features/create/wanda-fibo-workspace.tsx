@@ -19,7 +19,8 @@ const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
 type Result = { image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number };
-type Poll = { finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
+type QueuedRender = { bookmark: StageBookmark; run: RunSettings };
+type Poll = { state?: "pending" | "running" | "finished"; finished: boolean; images: Result[]; preview?: string; previewBlur?: number; caption?: string; error?: string };
 
 function readStageBookmark(key: string): StageBookmark | undefined {
   try {
@@ -131,6 +132,12 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
 
   const [busy, setBusy] = useState(false);
   const queue = useRef<HTMLDetailsElement>(null);
+  const preparing = useRef<AbortController | null>(null);
+  const [enqueueing, setEnqueueing] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const [waiting, setWaiting] = useState<QueuedRender[]>([]);
+  const [queueNotice, setQueueNotice] = useState("");
+  const queueCount = Number(busy) + waiting.length;
   const [historySelection, setHistorySelection] = useState<{ image: Result }>();
   const [historyRail, setHistoryRail] = useState<HTMLDivElement | null>(null);
   const [result, setResult] = useState<Result>();
@@ -218,6 +225,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [stageReady, setStageReady] = useState(!bookmarkKey);
   const [resuming, setResuming] = useState<StageBookmark>();
   useEffect(() => () => {
+    preparing.current?.abort();
     active.current?.abort();
     active.current = null;
   }, []);
@@ -234,18 +242,29 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit || active.current) return;
+    if (!canSubmit || preparing.current || (!desktop && active.current)) return;
+    const background = !!active.current || waiting.length > 0;
     const controller = new AbortController();
     const { signal } = controller;
-    active.current = controller;
+    if (background) {
+      preparing.current = controller;
+      setEnqueueing(true);
+      setQueueNotice("");
+    } else active.current = controller;
     const editInputs = [...files];
     const stageSource = mode === "edit" && !editInputs[0] ? result : undefined;
     if (stageSource) {
       try {
         editInputs[0] = resultFile(stageSource);
       } catch {
-        active.current = null;
-        setStatus("Could not read the result in view.");
+        if (background) {
+          preparing.current = null;
+          setEnqueueing(false);
+          setQueueNotice("Could not read the result in view.");
+        } else {
+          active.current = null;
+          setStatus("Could not read the result in view.");
+        }
         return;
       }
     }
@@ -261,13 +280,15 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         ...previous, [mode]: previous[mode].map((turn) => turn.id === job ? { ...turn, images, error } : turn),
       }));
     }
-    setLiveFrame(undefined);
-    setLiveBlur(undefined);
-    setLiveCaption(undefined);
-    setRunningBatch([]);
-    setInspected(undefined);
-    setBusy(true);
-    setStatus(mode === "edit" ? "Uploading images..." : "Submitting render...");
+    if (!background) {
+      setLiveFrame(undefined);
+      setLiveBlur(undefined);
+      setLiveCaption(undefined);
+      setRunningBatch([]);
+      setInspected(undefined);
+      setBusy(true);
+      setStatus(mode === "edit" ? "Uploading images..." : "Submitting render...");
+    }
     try {
       const uploads: Record<string, string> = {};
       if (mode === "edit") {
@@ -277,7 +298,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           form.set("files", file);
           const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
           uploads[["source", "ref2", "ref3", "ref4"][index]] = id;
-          if (index === 0 && stageSource) {
+          if (index === 0 && stageSource && !background) {
             setFiles(editInputs);
             setSelection(undefined);
             setResult(undefined);
@@ -304,11 +325,18 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: manualVgl,
           seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
-      setStatus("Rendering on Modal...");
+      if (!background) setStatus("Rendering on Modal...");
       const aspect = mode === "generate" ? size.width / size.height
         : previews[0] ? await decodeAspect(previews[0]).catch(() => undefined) : stageSource?.aspect;
       const bookmark: StageBookmark = { id: job, mode, count: Number(imageCount), aspect, expires: Date.now() + 55 * 60_000 };
-      if (desktop && !signal.aborted) writeStageBookmark(bookmarkKey, bookmark);
+      if (signal.aborted) return;
+      if (background) {
+        setWaiting((items) => [...items, { bookmark, run }]);
+        setQueueNotice("Added to Queue.");
+        return;
+      }
+      setAccepted(true);
+      if (desktop) writeStageBookmark(bookmarkKey, bookmark);
       const { images, error } = await watchRender(bookmark, signal, run);
       if (signal.aborted) return;
       finishTurn(images, error);
@@ -320,23 +348,33 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     } catch (cause) {
       if (!signal.aborted) {
         const message = cause instanceof Error ? cause.message : "Render failed.";
-        finishTurn([], message);
-        if (desktop) writeStageBookmark(bookmarkKey);
-        setStatus(message);
+        if (background) setQueueNotice(message);
+        else {
+          finishTurn([], message);
+          if (desktop) writeStageBookmark(bookmarkKey);
+          setStatus(message);
+        }
       }
     } finally {
-      active.current = null;
-      if (!signal.aborted) setBusy(false);
+      if (background) {
+        if (preparing.current === controller) preparing.current = null;
+        if (!signal.aborted) setEnqueueing(false);
+      } else if (active.current === controller) {
+        active.current = null;
+        if (!signal.aborted) { setAccepted(false); setBusy(false); }
+      }
     }
   }
 
   async function watchRender(bookmark: StageBookmark, signal: AbortSignal, run?: RunSettings, restoring = false) {
-    const end = Date.now() + 8 * 60_000;
+    const end = Date.now() + 24 * 60_000;
     let images: Result[] = [];
     while (!signal.aborted && Date.now() < end) {
       const update = await request<Poll>("local/render/" + bookmark.id, { signal });
       if (signal.aborted) throw new Error("Render polling stopped.");
       if (!update.finished) {
+        if (update.state === "pending") setStatus("Waiting in Queue…");
+        else if (update.state === "running") setStatus("Rendering on Modal...");
         setLiveFrame(update.preview);
         setLiveBlur(update.previewBlur);
         setLiveCaption(update.caption);
@@ -393,6 +431,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     setMode(bookmark.mode);
     setBusy(true);
     setResuming(bookmark);
+    setAccepted(true);
     setStatus("Restoring render…");
     void watchRender(bookmark, controller.signal, undefined, true).catch(() => {
       if (!controller.signal.aborted) {
@@ -403,6 +442,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       if (active.current !== controller) return;
       active.current = null;
       setBusy(false);
+      setAccepted(false);
       setResuming(undefined);
       setStageReady(true);
     });
@@ -411,6 +451,45 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       if (active.current === controller) active.current = null;
     };
   }, [bookmarkKey]);
+
+  useEffect(() => {
+    if (!stageReady || busy || active.current || !waiting.length) return;
+    const next = waiting[0];
+    const controller = new AbortController();
+    active.current = controller;
+    setWaiting((items) => items.filter((item) => item !== next));
+    setBusy(true);
+    setInspected(undefined);
+    setRunningBatch([]);
+    setLiveFrame(undefined);
+    setLiveBlur(undefined);
+    setLiveCaption(undefined);
+    setResuming(next.bookmark);
+    setAccepted(true);
+    setStatus("Waiting in Queue…");
+    writeStageBookmark(bookmarkKey, next.bookmark);
+    void watchRender(next.bookmark, controller.signal, next.run).catch((cause: unknown) => {
+      if (controller.signal.aborted) return;
+      writeStageBookmark(bookmarkKey);
+      setStatus(cause instanceof Error ? cause.message : "Could not open queued render.");
+    }).finally(() => {
+      if (active.current !== controller) return;
+      active.current = null;
+      setBusy(false);
+      setAccepted(false);
+      setResuming(undefined);
+    });
+  }, [stageReady, busy, waiting, bookmarkKey]);
+
+  async function removeWaiting(id: string) {
+    try {
+      await request("local/queue/" + id + "/cancel", { method: "POST" });
+      setWaiting((items) => items.filter((item) => item.bookmark.id !== id));
+      setQueueNotice("Removed from Queue.");
+    } catch (cause) {
+      setQueueNotice(cause instanceof Error ? cause.message : "Could not remove this render.");
+    }
+  }
 
   function restoreRun(image: Result, reopen: boolean) {
     const run = image.run;
@@ -490,7 +569,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
     : "";
-  const canSubmit = stageReady && !busy && !maskEditor && !blocker;
+  const canSubmit = stageReady && !enqueueing && (!busy || desktop && accepted && queueCount < 3) && !maskEditor && !blocker;
   const maskEditorNode = maskEditor && mode === "edit" && files[0] && previews[0] && (
     <WandaFiboMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
       onSave={(region) => {
@@ -506,8 +585,17 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       <div className="wanda-fibo-toolbar">
         <div className="wanda-fibo-tools">
           <details ref={queue} className="wanda-fibo-queue">
-            <summary><ListOrdered size={16} aria-hidden="true" /> Queue{busy && <span aria-label="1 active render">1</span>}</summary>
-            <p role="status">{busy ? status : "No active render in this workspace."}</p>
+                        <summary><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</summary>
+            <div className="wanda-fibo-queue-jobs">
+              <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
+              {waiting.map(({ bookmark, run }) => (
+                <div className="wanda-fibo-queue-entry" key={bookmark.id}>
+                  <span>{run.prompt || "VGL edit"}</span>
+                  <Button type="button" variant="ghost" size="sm"
+                    onClick={() => void removeWaiting(bookmark.id)}>Remove waiting render</Button>
+                </div>
+              ))}
+            </div>
           </details>
           <details className="wanda-fibo-queue">
             <summary><Keyboard size={16} aria-hidden="true" /> Shortcuts</summary>
@@ -599,7 +687,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 </div>
               </details>
             </div>
-            <Textarea id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={!admitted || busy} maxLength={4000}
+            <Textarea id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={!admitted || (busy && !desktop)} maxLength={4000}
               placeholder={mask ? "Describe what to change in the masked area…" : "Describe the result you want…"}
               onChange={(event) => setPrompt(event.target.value)} />
             <div className="wanda-fibo-extra" key={mode}>
@@ -654,7 +742,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             <span id="wanda-fibo-blocker" className="sr-only">{blocker}</span>
             <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}
               title={blocker || undefined} aria-describedby={blocker ? "wanda-fibo-blocker" : undefined}>
-              <Sparkles aria-hidden="true" />{busy ? "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
+              <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
             </Button>
           </div>
         </form>
@@ -731,14 +819,14 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
           {savedStatus && <p className="wanda-fibo-caption" role="status">{savedStatus}</p>}
           <div ref={setHistoryRail} className="wanda-fibo-history-rail">
-            {busy && <Button type="button" variant="ghost" className="wanda-fibo-history-progress"
-              aria-label="Open Queue, 1 active render" onClick={() => {
+            {queueCount > 0 && <Button type="button" variant="ghost" className="wanda-fibo-history-progress"
+              aria-label={"Open Queue, " + queueCount + (queueCount === 1 ? " active render" : " renders")} onClick={() => {
                 if (queue.current) {
                   queue.current.open = true;
                   queue.current.querySelector("summary")?.focus({ preventScroll: true });
                 }
               }}>
-              <span>Rendering</span><span>1 active</span>
+              <span>Rendering</span><span>{queueCount} in Queue</span>
             </Button>}
             {historyGroups.length ? historyGroups.map((group, index) => {
               const image = group[0];
