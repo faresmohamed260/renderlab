@@ -1,0 +1,38 @@
+name: FIBO private gateway qualification deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Exact reviewed commit SHA on protected main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fibo-private-gateway-qualification
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'faresmohamed260/renderlab' && github.ref == 'refs/heads/main' && inputs.candidate_sha == github.sha
+    environment: fibo-qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify RenderLab account ownership
+        run: node --input-type=module -e 'import { assertRenderLabModalAccount } from "./scripts/lib/modal-project-ownership.mjs"; assertRenderLabModalAccount("modal-01");'
+      - name: Install pinned Modal CLI
+        run: |
+          python3 -m venv "${RUNNER_TEMP}/modal-cli"
+          "${RUNNER_TEMP}/modal-cli/bin/python" -m pip install 'modal==1.6.4'
+      - name: Verify workspace and deploy private qualification gateway
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.RENDERLAB_MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.RENDERLAB_MODAL_TOKEN_SECRET }}
+        run: bash scripts/deploy-fibo-qualification.sh
