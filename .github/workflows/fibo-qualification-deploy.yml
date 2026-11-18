@@ -27,6 +27,8 @@ jobs:
           persist-credentials: false
       - name: Verify RenderLab account ownership
         run: node --input-type=module -e 'import { assertRenderLabModalAccount } from "./scripts/lib/modal-project-ownership.mjs"; assertRenderLabModalAccount("modal-01");'
+      - name: Test deployment guards without credentials
+        run: python3 scripts/tests/test_fibo_deploy_guards.py
       - name: Install pinned Modal CLI
         run: |
           python3 -m venv "${RUNNER_TEMP}/modal-cli"
