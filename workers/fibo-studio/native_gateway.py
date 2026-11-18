@@ -17,7 +17,7 @@ MAX_IMAGES = 32 * 1024 * 1024
 MAX_MASK = 8 * 1024 * 1024
 PNG_HEADER = bytes.fromhex("89504e470d0a1a0a")
 CALL_ID = re.compile(r"fc-[A-Za-z0-9]{16,64}")
-FIELDS = {"prompt", "seed", "width", "height", "steps", "negative_prompt", "vgl", "images", "mask"}
+FIELDS = {"prompt", "seed", "width", "height", "steps", "negative_prompt", "vgl", "images", "mask", "generate_vgl"}
 
 
 def validate_payload(payload):

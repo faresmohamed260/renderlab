@@ -93,6 +93,27 @@ class GatewayTests(unittest.TestCase):
             with self.subTest(payload=payload):
                 self.assertEqual(self.client.post("/jobs/fibo", json=payload).status_code, 422)
 
+    def test_source_free_generated_vgl_is_an_explicit_bounded_worker_mode(self):
+        accepted = self.client.post("/jobs/fibo", json={
+            "prompt": "A ceramic red cube", "seed": 42,
+            "width": 256, "height": 256, "images": [], "generate_vgl": True,
+        })
+        self.assertEqual(accepted.status_code, 202)
+        self.assertEqual(self.spawns[-1]["generate_vgl"], True)
+        self.assertEqual(self.spawns[-1]["sources"], [])
+        for invalid in (
+            {"images": [base64.b64encode(b"source").decode()]},
+            {"generate_vgl": 1},
+            {"generate_vgl": "true"},
+            {"vgl": '{"short_description":"manual"}'},
+            {"width": 0, "height": 0},
+            {"prompt": ""},
+        ):
+            payload = {"prompt": "A ceramic red cube", "seed": 42,
+                       "width": 256, "height": 256, "images": [], "generate_vgl": True}
+            with self.subTest(invalid=invalid):
+                self.assertEqual(self.client.post("/jobs/fibo", json={**payload, **invalid}).status_code, 422)
+
     def test_unknown_and_modified_ids_never_reach_modal(self):
         path = self.submit()
         for invalid in ("/jobs/" + self.call_id, path[:-1] + ("a" if path[-1] != "a" else "b")):
