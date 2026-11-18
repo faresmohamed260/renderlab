@@ -3,7 +3,7 @@
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronRight, Clock, Dices, Image as ImageIcon, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
+import { Clock, Dices, Image as ImageIcon, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -13,7 +13,19 @@ import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
 const api = "/wanda-fibo/";
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { image_data: string; seed: number };
+type Result = { image_data: string; seed: number; json_instruction?: string };
+type Workflow = "edit" | "generate";
+type PromptDraft = {
+  prompt: string;
+  negativePrompt: string;
+  vgl: string;
+  generatedVgl: boolean;
+  negativeOpen: boolean;
+  vglOpen: boolean;
+};
+const emptyDraft: PromptDraft = {
+  prompt: "", negativePrompt: "", vgl: "", generatedVgl: false, negativeOpen: false, vglOpen: false,
+};
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(api + path, { cache: "no-store", ...init });
   const data = await response.json();
@@ -22,7 +34,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt }: { admitted: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
-  const [mode, setMode] = useState<"edit" | "generate">("edit");
+  const [mode, setMode] = useState<Workflow>("edit");
   const [reducedMotion, setReducedMotion] = useState(true);
   useEffect(() => {
     const query = matchMedia("(prefers-reduced-motion: reduce)");
@@ -37,9 +49,23 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     immediate: reducedMotion,
   });
   const [files, setFiles] = useState<(File | undefined)[]>([]);
-  const [prompt, setPrompt] = useState("");
-  const [negativePrompt, setNegativePrompt] = useState("");
-  const [vgl, setVgl] = useState("");
+  const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
+  const { prompt, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen } = drafts[mode];
+  // Legacy workers can return VGL, but cannot accept it back as a manual instruction.
+  const manualVgl = !advancedPrompt && generatedVgl ? "" : vgl.trim();
+
+  function updateDraft(workflow: Workflow, patch: Partial<PromptDraft>) {
+    setDrafts((previous) => ({ ...previous, [workflow]: { ...previous[workflow], ...patch } }));
+  }
+
+  function setPrompt(value: string) {
+    updateDraft(mode, { prompt: value, vgl: "", generatedVgl: false });
+  }
+
+  function setReference(file?: File) {
+    setInspiration(file);
+    updateDraft("generate", { vgl: "", generatedVgl: false });
+  }
   const [imageCount, setImageCount] = useState("1");
   const [steps, setSteps] = useState(4);
   const [seed, setSeed] = useState("42");
@@ -52,7 +78,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [inspiration, setInspiration] = useState<File>();
   const [inspirationPreview, setInspirationPreview] = useState<string>();
   const size = wandaFiboSizes[sizeIndex] ?? wandaFiboSizes[0];
-  const needsUpgrade = mode === "generate" && !extendedSetup && (sizeIndex !== 0 || (!!inspiration && !vgl.trim()));
+  const needsUpgrade = mode === "generate" && !extendedSetup && (sizeIndex !== 0 || (!!inspiration && !manualVgl));
   useEffect(() => {
     if (!inspiration) { setInspirationPreview(undefined); return; }
     const url = URL.createObjectURL(inspiration);
@@ -90,7 +116,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           uploads[["source", "ref2", "ref3", "ref4"][index]] = id;
         }
       }
-      if (mode === "generate" && inspiration && !vgl.trim()) {
+      if (mode === "generate" && inspiration && !manualVgl) {
         const form = new FormData();
         form.set("files", inspiration);
         const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
@@ -98,7 +124,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       }
       const job = crypto.randomUUID().replaceAll("-", "");
       await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: vgl.trim(),
+        body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: manualVgl,
           seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
       setStatus("Rendering on Modal...");
       const end = Date.now() + 8 * 60_000;
@@ -108,6 +134,9 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           if (!update.images[0]) throw new Error(update.error ?? "No image returned.");
           const image = update.images[0];
           setResult(image);
+          if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
+            updateDraft(mode, { vgl: image.json_instruction, generatedVgl: true });
+          }
           setHistory((items) => [...update.images, ...items].slice(0, 8));
           if (prompt.trim()) setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
           setStatus(update.error ?? (update.images.length === 1 ? "Render complete." : update.images.length + " images ready in History."));
@@ -133,11 +162,11 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   function attachImage(file: File, index: number) {
     if (!admitted || busy) return;
     if (index === 0) { setMode("edit"); setResult(undefined); }
+    updateDraft("edit", { vgl: "", generatedVgl: false });
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
 
   const seedValid = randomize || (/^\d+$/.test(seed) && Number(seed) <= 2147483647);
-  const manualVgl = vgl.trim();
   const vglValid = (() => {
     if (!manualVgl) return true;
     try {
@@ -207,7 +236,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                       </Button>
                       {files[index] && <Button type="button" variant="secondary" size="icon-sm"
                         className="wanda-fibo-remove" aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
-                        onClick={() => setFiles((previous) => previous.map((file, i) => i === index ? undefined : file))}><X /></Button>}
+                        onClick={() => {
+                          updateDraft("edit", { vgl: "", generatedVgl: false });
+                          setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
+                        }}><X /></Button>}
                     </div>
                   ))}
                 </div>
@@ -219,7 +251,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                       <span>Reference</span>
                     </Button>
                     {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="wanda-fibo-remove"
-                      aria-label="Remove reference image" disabled={busy} onClick={() => setInspiration(undefined)}><X /></Button>}
+                      aria-label="Remove reference image" disabled={busy} onClick={() => setReference()}><X /></Button>}
                   </div>
                   <label className="wanda-fibo-aspect">Aspect ratio
                     <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
@@ -233,7 +265,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (file && admitted && !busy) {
-                  if (slot.current === 4) setInspiration(file);
+                  if (slot.current === 4) setReference(file);
                   else attachImage(file, slot.current);
                 }
                 event.currentTarget.value = "";
@@ -253,24 +285,25 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             <Textarea id="wanda-fibo-prompt" required spellCheck value={prompt} disabled={!admitted || busy} maxLength={4000}
               placeholder="Describe the result you want…"
               onChange={(event) => setPrompt(event.target.value)} />
-            <div className="wanda-fibo-extra">
-              <details>
-                <summary id="wanda-fibo-negative-label"><ChevronRight size={12} aria-hidden="true" />Negative prompt</summary>
+            <div className="wanda-fibo-extra" key={mode}>
+              <details open={negativeOpen} onToggle={(event) => {
+                if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
+              }}>
+                <summary id="wanda-fibo-negative-label">Negative prompt</summary>
                 <Textarea aria-labelledby="wanda-fibo-negative-label" rows={3} maxLength={4000} spellCheck
                   placeholder="What should the image avoid?" value={negativePrompt} disabled={busy}
-                  onChange={(event) => setNegativePrompt(event.target.value)} />
-                {!advancedPrompt && <p className="wanda-fibo-caption">Rendering with a negative prompt needs the private worker update.</p>}
+                  onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
               </details>
-              <details>
-                <summary id="wanda-fibo-vgl-label"><ChevronRight size={12} aria-hidden="true" />VGL JSON</summary>
+              <details open={vglOpen} onToggle={(event) => {
+                if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
+              }}>
+                <summary id="wanda-fibo-vgl-label">VGL JSON</summary>
                 <Textarea aria-labelledby="wanda-fibo-vgl-label" className="wanda-fibo-vgl" rows={5} maxLength={8192} spellCheck={false}
                   placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
-                  aria-describedby="wanda-fibo-vgl-help" onChange={(event) => setVgl(event.target.value)} />
-                <p id="wanda-fibo-vgl-help" className="wanda-fibo-caption">
-                  {!vglValid ? "Enter a non-empty JSON object." : !advancedPrompt
-                    ? "Rendering with VGL JSON needs the private worker update."
-                    : "Manual VGL replaces prompt conversion and the Text to Image reference."}
-                </p>
+                  title={!vglValid ? "Enter a non-empty JSON object." : undefined}
+                  aria-describedby={!vglValid ? "wanda-fibo-vgl-invalid" : undefined}
+                  onChange={(event) => updateDraft(mode, { vgl: event.target.value, generatedVgl: false })} />
+                {!vglValid && <span id="wanda-fibo-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
               </details>
             </div>
           </div>
