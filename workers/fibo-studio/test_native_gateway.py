@@ -49,6 +49,41 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(self.client.delete(path).json(), {"status": "cancelled"})
         self.assertEqual(self.cancels, [self.call_id])
 
+    def test_generated_vgl_sidecar_retains_plain_png_results_and_signed_access(self):
+        path = self.submit()
+        png = bytes.fromhex("89504e470d0a1a0a") + b"synthetic-image"
+        self.result = png
+        self.assertEqual(self.client.get(path).content, png)
+        self.assertEqual(self.client.get(path + "/vgl").status_code, 404)
+
+        caption = '{"short_description":"A sunlit garden","lighting":"soft"}'
+        self.result = {"image_png": png, "generated_vgl": caption}
+        image = self.client.get(path)
+        self.assertEqual(image.status_code, 200)
+        self.assertEqual(image.content, png)
+        self.assertEqual(image.headers["content-type"], "image/png")
+        sidecar = self.client.get(path + "/vgl")
+        self.assertEqual(sidecar.status_code, 200)
+        self.assertEqual(sidecar.json(), {"vgl": caption})
+        self.assertEqual(sidecar.headers["cache-control"], "private, no-store")
+        self.assertEqual(self.client.get(path[:-1] + "x/vgl").status_code, 404)
+        self.assertEqual(self.reads[-1], self.call_id)
+
+    def test_generated_vgl_sidecar_fails_closed_on_invalid_provider_output(self):
+        path = self.submit()
+        png = bytes.fromhex("89504e470d0a1a0a") + b"synthetic-image"
+        for invalid in (
+            {"image_png": png, "generated_vgl": "not json"},
+            {"image_png": png, "generated_vgl": '{"short_description":""}'},
+            {"image_png": png, "generated_vgl": '{"short_description":"ok","edit_instruction":"bad"}'},
+            {"image_png": b"not-png", "generated_vgl": '{"short_description":"ok"}'},
+            {"image_png": png, "generated_vgl": '{"short_description":"ok"}', "unexpected": "field"},
+        ):
+            with self.subTest(invalid=str(invalid)[:100]):
+                self.result = invalid
+                self.assertEqual(self.client.get(path).status_code, 502)
+                self.assertEqual(self.client.get(path + "/vgl").status_code, 502)
+
     def test_manual_vgl_is_worker_input_for_source_free_and_reference_edits(self):
         # FIBO Studio already uses Edit Turbo to generate with no references.
         # The production gateway must retain the JSON-caption path, not use

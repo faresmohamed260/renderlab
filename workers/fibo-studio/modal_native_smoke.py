@@ -114,11 +114,12 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
                 raise TimeoutError("FIBO render did not finish")
             if record["status"]["status_str"] != "success":
                 raise RuntimeError("FIBO execution failed")
+            generated_vgl = None
             if generate_vgl:
                 generated = record["outputs"].get("auto_vgl_result", {}).get("text")
                 if not isinstance(generated, list) or len(generated) != 1:
                     raise ValueError("Generated VGL was not captured from native ComfyUI")
-                validate_generated_vgl(generated[0])
+                generated_vgl = validate_generated_vgl(generated[0])
             result, = record["outputs"]["output"]["images"]
             output = (root / "output" / result["subfolder"] / result["filename"]).resolve()
             if not output.is_relative_to(root / "output") or output.stat().st_size > 16 * 1024 * 1024:
@@ -127,7 +128,10 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
                 if decoded.width * decoded.height > 1536 * 1024 or (width and decoded.size != (width, height)):
                     raise RuntimeError("Unexpected FIBO output dimensions")
                 decoded.load()
-            return output.read_bytes()
+            image_bytes = output.read_bytes()
+            # Existing image-only jobs preserve the exact historical PNG return.
+            # Only explicit source-free auto-VGL jobs provide a typed sidecar.
+            return {"image_png": image_bytes, "generated_vgl": generated_vgl} if generate_vgl else image_bytes
         finally:
             server.terminate()
             try:

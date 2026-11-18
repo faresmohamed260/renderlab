@@ -34,6 +34,13 @@ export function isFiboMaskGenerationAvailable() {
   return process.env.RENDERLAB_FIBO_MASK_ENABLED === "true" && isFiboGenerationAvailable();
 }
 
+/** Do not route source-free generated-VGL requests to the older deployed
+ * PNG-only gateway until the signed result sidecar has been qualified.
+ */
+export function isFiboAutoVglAvailable() {
+  return process.env.RENDERLAB_FIBO_AUTOVGL_ENABLED === "true" && isFiboGenerationAvailable();
+}
+
 export function isGenerationBackendConfigured() {
   return isExternalGenerationBackendConfigured() || isNativeGenerationConfigured();
 }
@@ -144,6 +151,9 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
   };
 
   const isFibo = request.model === fiboGenerationModel;
+  if (request.autoVgl && !isFiboAutoVglAvailable()) {
+    return reject({ ok: false, error: { code: "generation_disabled", message: "Generated FIBO VGL has not been qualified for this environment." } });
+  }
   if (request.mask && !isFiboMaskGenerationAvailable()) {
     return reject({ ok: false, error: { code: "generation_disabled", message: "FIBO masked editing has not been qualified for this environment." } });
   }

@@ -1,4 +1,5 @@
 import { buildFiboWorkerPayload } from "@/server/generation/fibo-worker-payload";
+import { parseGeneratedFiboSidecar } from "@/lib/capabilities/fibo-generated-vgl";
 import { fiboMaskMaxBytes, fiboMaskUsage, persistFiboMaskInputs, splitPersistedFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
 import { getReadyFiboMaskSource } from "@/server/media/reference-uploads";
@@ -201,7 +202,8 @@ async function insertJob(ownerId: string, request: GenerationRequest, workflow: 
       ecosystem: workflow.ecosystem,
       inputs: persistFiboMaskInputs(request.inputs, request.mask),
       parameters: { model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {},
-        ...(request.vgl ? { vgl: request.vgl } : {}) },
+        ...(request.vgl ? { vgl: request.vgl } : {}),
+        ...(request.autoVgl ? { autoVgl: true } : {}) },
     }),
   });
   if (!rows?.[0]) throw new Error("Generation job could not be created.");
@@ -563,6 +565,8 @@ async function persistGeneratedMedia({
           workflowId: row.workflow_id,
           model: row.model,
           prompt: row.prompt,
+          ...(typeof row.parameters.generatedVgl === "string"
+            ? { generatedVgl: row.parameters.generatedVgl, vglSource: "fibo-public-qwen3vl" } : {}),
         },
         metadata: { ecosystem: row.ecosystem, workerId: row.worker_id },
       }),
@@ -684,6 +688,30 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
   });
 }
 
+/** Same owner-assigned, signed native worker call as the PNG poll.
+ * A generated caption is fetched and persisted BEFORE the image finalization
+ * transitions to persisting, so recovery cannot lose its provenance.
+ */
+class InvalidGeneratedFiboSidecarError extends Error {}
+
+async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string): Promise<string> {
+  const options = workerGatewayOptions(worker);
+  const headers = new Headers(options.headers);
+  headers.set("accept", "application/json");
+  const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(callId)}/vgl`, {
+    ...options, method: "GET", headers, cache: "no-store",
+  });
+  if (response.status === 202) throw new Error("Generated FIBO VGL is still being prepared.");
+  if ([404, 410, 422, 502].includes(response.status)) {
+    throw new InvalidGeneratedFiboSidecarError("Generated FIBO VGL is absent or could not be validated.");
+  }
+  if (!response.ok) throw new Error("Generated FIBO VGL sidecar is temporarily unavailable.");
+  const payload: unknown = await response.json().catch(() => null);
+  const caption = parseGeneratedFiboSidecar(payload);
+  if (!caption) throw new InvalidGeneratedFiboSidecarError("Generated FIBO VGL sidecar returned invalid JSON.");
+  return caption;
+}
+
 async function fetchPoster(worker: GenerationWorker, callId: string) {
   try {
     const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(callId)}/poster`, {
@@ -711,6 +739,7 @@ function requestFromJobRow(row: JobRow): GenerationRequest {
     inputs: persisted.inputs,
     advanced: row.parameters.advanced,
     ...(Object.hasOwn(row.parameters, "vgl") ? { vgl: row.parameters.vgl } : {}),
+    ...(row.parameters.autoVgl === true ? { autoVgl: true } : {}),
     ...(persisted.mask ? { mask: persisted.mask } : {}),
   });
   if (!parsed.ok || parsed.request.output.kind !== row.output_kind
@@ -967,7 +996,31 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   if (row.output_kind === "image" && !contentType.startsWith("image/")) throw new Error("Worker returned a non-image result.");
   if (row.output_kind === "video" && !contentType.startsWith("video/")) throw new Error("Worker returned a non-video result.");
 
-  const persisting = await patchJob(row.owner_id, row.id, { status: "persisting", worker_state: "finalizing" });
+  let generatedVgl: string | null = null;
+  if (row.parameters.autoVgl === true) {
+    try {
+      generatedVgl = await getGeneratedFiboCaption(worker, row.provider_job_id);
+    } catch (error) {
+      if (error instanceof InvalidGeneratedFiboSidecarError) {
+        const failed = await failJob(row, "generation_vgl_invalid", "Generated FIBO scene JSON could not be verified.");
+        return toGenerationJob(failed);
+      }
+      // Transient sidecar fetch problems keep normal polling retryable, but
+      // never strand a ready worker output forever after a lost sidecar.
+      if (Date.now() - Date.parse(row.updated_at) >= retryableProviderStaleMs) {
+        const failed = await failJob(row, "generation_vgl_stalled", "Generated FIBO scene JSON could not be retrieved.");
+        return toGenerationJob(failed);
+      }
+      throw error;
+    }
+  }
+  const persisting = await patchJob(row.owner_id, row.id, {
+    status: "persisting",
+    worker_state: "finalizing",
+    ...(generatedVgl ? {
+      parameters: { ...row.parameters, generatedVgl, generatedVglSource: "fibo-public-qwen3vl" },
+    } : {}),
+  });
   await emitDiagnosticEvent({
     event: "generation.reconciliation",
     correlationId: correlationIdForGenerationJob(row.id),

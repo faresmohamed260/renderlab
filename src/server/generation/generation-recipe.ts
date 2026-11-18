@@ -68,6 +68,7 @@ export function reconstructGenerationRecipeRequest(
     inputs: persisted.inputs,
     ...(advanced === undefined ? {} : { advanced }),
     ...(Object.hasOwn(row.parameters, "vgl") ? { vgl: row.parameters.vgl } : {}),
+    ...(row.parameters.autoVgl === true ? { autoVgl: true } : {}),
     ...(persisted.mask ? { mask: persisted.mask } : {}),
   });
   if (!parsed.ok) return null;
@@ -136,7 +137,7 @@ export async function loadInitialGenerationRecipe(
   // Until the normal Create composer supports displaying and preserving masks,
   // do not open a masked recipe as an unmasked draft. Server-owned retry still
   // reconstructs and revalidates the mask through this same request parser.
-  if (request.mask) return null;
+  if (request.mask || request.autoVgl) return null;
 
   const references = await Promise.all(request.inputs.map(async (input) => {
     if (input.source.type === "media-asset") {
