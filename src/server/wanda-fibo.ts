@@ -1,4 +1,5 @@
 import "server-only";
+import { wandaFiboSizes } from "@/features/create/wanda-fibo-sizes";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
@@ -138,10 +139,23 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
       || typeof prompt !== "string" || !prompt.trim() || prompt.length > 4000) {
       return error("Enter a prompt and submit a valid job.", 400);
     }
-    if (data.mask || data.inspiration || data.json_instruction || data.negative_prompt || data.append_to
+    const width = data.width ?? 1024;
+    const height = data.height ?? 1024;
+    if (data.mask || data.json_instruction || data.negative_prompt || data.append_to
       || (data.steps != null && data.steps !== 4) || (data.image_count != null && data.image_count !== 1)
-      || (mode === "generate" && ((data.width ?? 1024) !== 1024 || (data.height ?? 1024) !== 1024))) {
-      return error("This checkpoint supports plain prompts, four steps and one output (1024 x 1024 for text-to-image). Masks, inspiration, JSON, negative prompts and batch options aren't connected yet.", 422);
+      || (mode === "edit" && data.inspiration != null)
+      || (mode === "generate" && !wandaFiboSizes.some((size) => size.width === width && size.height === height))) {
+      return error("Use a supported preset, plain prompt, four steps and one output.", 422);
+    }
+    const extended = mode === "generate" && (width !== 1024 || height !== 1024 || data.inspiration != null);
+    if (extended && process.env.RENDERLAB_WANDA_FIBO_EXTENDED !== "1") {
+      return error("Inspiration and non-square renders need the private worker update.", 503);
+    }
+    let inspiration: string | undefined;
+    if (data.inspiration != null) {
+      const file = typeof data.inspiration === "string" ? state.uploads.get(data.inspiration) : null;
+      if (!file || file.owner !== owner) return error("Inspiration image is missing or expired.", 400);
+      inspiration = file.data.toString("base64");
     }
     const images: string[] = [];
     if (mode === "edit") {
@@ -165,7 +179,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     state.jobs.set(id, job);
     after(async () => {
       try {
-        const result = await bridge({ mode, instruction: prompt, seed, images });
+        const result = await bridge({ mode, instruction: prompt, seed, images, width, height, extended, inspiration });
         if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error();
         job.images.push({ image_data: "data:image/png;base64," + result.png, filename: id + ".png",
           seed, json_instruction: result.prompt, seconds: result.seconds, vgl_seconds: result.vgl_seconds,

@@ -149,6 +149,25 @@ class FiboStudio:
         return self.read_output(backend.generate("", seed, 4, 1024, 1024, instruction))
 
     @modal.method()
+    def text_to_image_with_setup(self, instruction: str, seed: int, width: int, height: int,
+                                 inspiration: bytes | None = None):
+        from PIL import Image
+        if (type(width) is not int or type(height) is not int
+                or not all(256 <= side <= 1536 and side % 16 == 0 for side in (width, height))
+                or width * height > 1536 * 1024):
+            raise ValueError("Unsupported generation dimensions")
+        guide = None
+        if inspiration is not None:
+            if len(inspiration) > 16 * 1024 * 1024:
+                raise ValueError("Inspiration exceeds the private worker byte limit")
+            with Image.open(io.BytesIO(inspiration)) as image:
+                if image.width * image.height > 16_777_216:
+                    raise ValueError("Inspiration exceeds the private worker pixel limit")
+                guide = image.convert("RGB")
+        backend = self.backend_for(instruction, seed)
+        return self.read_output(backend.generate("", seed, 4, width, height, instruction, inspiration=guide))
+
+    @modal.method()
     def edit_image(self, images: list[bytes], instruction: str, seed: int = 1):
         from PIL import Image
         if not 1 <= len(images) <= 4:

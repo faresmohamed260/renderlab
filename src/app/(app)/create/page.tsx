@@ -7,5 +7,5 @@ export default async function CreatePage() {
   if (!await isWandaPreview()) return <CreateWorkspace />;
 
   const owner = await getWandaFiboOwner().catch(() => null);
-  return <WandaFiboWorkspace admitted={!!owner} />;
+  return <WandaFiboWorkspace admitted={!!owner} extendedSetup={process.env.RENDERLAB_WANDA_FIBO_EXTENDED === "1"} />;
 }

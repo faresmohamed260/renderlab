@@ -348,6 +348,8 @@
 .wanda-fibo-fields textarea { min-block-size: clamp(142px, 18dvh, 256px); resize: none; }
 .wanda-fibo-extra { align-items: flex-start; flex-direction: column; gap: 0; margin-block-start: 6px; }
 .wanda-fibo-dock { margin-block-start: 24px; }
+.wanda-fibo-worker-note { min-block-size: 3em; overflow-wrap: anywhere; }
+.wanda-fibo-worker-note:empty { visibility: hidden; }
 .wanda-fibo-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: end; font-size: 12px; }
 .wanda-fibo-steps { grid-column: 1 / -1; }
 .wanda-fibo-steps span { display: flex; justify-content: space-between; }
@@ -456,11 +458,11 @@
 }
 .wanda-fibo-size {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
   gap: 6px;
 }
-.wanda-fibo-aspect { display: grid; gap: 4px; font-size: 12px; color: #bbb4ca; }
+.wanda-fibo-aspect { grid-column: 2 / -1; min-inline-size: 0; display: grid; gap: 4px; font-size: 12px; color: #bbb4ca; }
 .wanda-fibo-aspect select {
   inline-size: 100%;
   min-block-size: 32px;

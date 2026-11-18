@@ -17,6 +17,12 @@ request = json.load(sys.stdin)
 mode = request["mode"]
 if mode == "health":
     result = worker.health.spawn().get(timeout=130)
+elif mode == "generate" and request.get("extended"):
+    encoded = request.get("inspiration")
+    inspiration = base64.b64decode(encoded, validate=True) if encoded is not None else None
+    result = worker.text_to_image_with_setup.spawn(
+        request["instruction"], request["seed"], request["width"], request["height"], inspiration
+    ).get(timeout=400)
 elif mode == "generate":
     result = worker.text_to_image.spawn(request["instruction"], request["seed"]).get(timeout=400)
 elif mode == "edit":

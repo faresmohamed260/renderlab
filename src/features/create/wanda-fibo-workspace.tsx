@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { wandaFiboSizes } from "./wanda-fibo-sizes";
+
 const api = "/wanda-fibo/";
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
 type Result = { image_data: string; seed: number };
@@ -18,7 +20,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
+export function WandaFiboWorkspace({ admitted, extendedSetup }: { admitted: boolean; extendedSetup: boolean }) {
   const [mode, setMode] = useState<"edit" | "generate">("edit");
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const [prompt, setPrompt] = useState("");
@@ -28,6 +30,17 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
   const [result, setResult] = useState<Result>();
   const [history, setHistory] = useState<Result[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
+  const [sizeIndex, setSizeIndex] = useState(0);
+  const [inspiration, setInspiration] = useState<File>();
+  const [inspirationPreview, setInspirationPreview] = useState<string>();
+  const size = wandaFiboSizes[sizeIndex] ?? wandaFiboSizes[0];
+  const needsUpgrade = mode === "generate" && !extendedSetup && (sizeIndex !== 0 || !!inspiration);
+  useEffect(() => {
+    if (!inspiration) { setInspirationPreview(undefined); return; }
+    const url = URL.createObjectURL(inspiration);
+    setInspirationPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [inspiration]);
   const picker = useRef<HTMLInputElement>(null);
   const slot = useRef(0);
   const [status, setStatus] = useState("");
@@ -42,7 +55,7 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!admitted || active.current || !prompt.trim() || (mode === "edit" && !files[0])) return;
+    if (!admitted || needsUpgrade || active.current || !prompt.trim() || (mode === "edit" && !files[0])) return;
     const controller = new AbortController();
     const { signal } = controller;
     active.current = controller;
@@ -59,10 +72,16 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
           uploads[["source", "ref2", "ref3", "ref4"][index]] = id;
         }
       }
+      if (mode === "generate" && inspiration) {
+        const form = new FormData();
+        form.set("files", inspiration);
+        const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
+        uploads.inspiration = id;
+      }
       const job = crypto.randomUUID().replaceAll("-", "");
       await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(),
-          seed: Number(seed), randomize, steps: 4, image_count: 1, width: 1024, height: 1024 }) });
+          seed: Number(seed), randomize, steps: 4, image_count: 1, width: size.width, height: size.height }) });
       setStatus("Rendering on Modal...");
       const end = Date.now() + 8 * 60_000;
       while (!signal.aborted && Date.now() < end) {
@@ -99,7 +118,7 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
 
-  const canSubmit = admitted && !busy && !!prompt.trim() && (mode !== "edit" || !!files[0]);
+  const canSubmit = admitted && !needsUpgrade && !busy && !!prompt.trim() && (mode !== "edit" || !!files[0]);
 
   return (
     <section className="wanda-fibo-workspace mx-auto w-full" aria-label="Create with FIBO">
@@ -149,18 +168,29 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
                 </div>
                 <div className="wanda-fibo-size" inert={mode !== "generate"}>
                   <div className="wanda-fibo-tile">
-                    <Button type="button" variant="outline" disabled><Plus size={14} aria-hidden="true" /> Inspiration</Button>
+                    <Button type="button" variant="outline" disabled={!admitted || busy}
+                      aria-label="Choose inspiration image" onClick={() => chooseImage(4)}>
+                      {inspirationPreview ? <img src={inspirationPreview} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}
+                      <span>Inspiration</span>
+                    </Button>
+                    {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="wanda-fibo-remove"
+                      aria-label="Remove inspiration image" disabled={busy} onClick={() => setInspiration(undefined)}><X /></Button>}
                   </div>
                   <label className="wanda-fibo-aspect">Aspect ratio
-                    <NativeSelect size="sm" defaultValue="square" disabled title="Only square output is supported in this preview">
-                      <NativeSelectOption value="square">1:1 · Square · 1024 × 1024</NativeSelectOption>
+                    <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
+                      {wandaFiboSizes.map(({ label, width, height }, index) => (
+                        <NativeSelectOption key={label} value={index}>{label} · {width} × {height}</NativeSelectOption>
+                      ))}
                     </NativeSelect>
                   </label>
                 </div>
               </div>
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
-                if (file) attachImage(file, slot.current);
+                if (file && admitted && !busy) {
+                  if (slot.current === 4) setInspiration(file);
+                  else attachImage(file, slot.current);
+                }
                 event.currentTarget.value = "";
               }} />
             </section>
@@ -198,10 +228,13 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
               <label>Images<Input type="number" value={1} disabled /></label>
               <label className="wanda-fibo-steps"><span>Steps <output>4</output></span><Input type="range" min={1} max={8} value={4} disabled /></label>
             </div>
-            <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}>
+            <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}
+              aria-describedby={needsUpgrade ? "wanda-fibo-worker-note" : undefined}>
               <Sparkles aria-hidden="true" />{busy ? "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
             </Button>
-            {status && <p className="wanda-fibo-caption" role="status">{status}</p>}
+            <p id="wanda-fibo-worker-note" className="wanda-fibo-caption wanda-fibo-worker-note" role="status">
+              {needsUpgrade ? "Inspiration and non-square renders need the private worker update." : status}
+            </p>
           </div>
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas"
