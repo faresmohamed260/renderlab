@@ -7,7 +7,7 @@ import {
   claimGenerationReconciliation,
   releaseGenerationReconciliation,
 } from "@/server/generation/generation-reconciliation-claim";
-import { findWorker } from "@/server/generation/worker-fleet";
+import { findWorker, workerGatewayOptions, workerSupportsCancellation } from "@/server/generation/worker-fleet";
 import { getImageUpscaleWorker } from "@/server/generation/upscale-worker";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
@@ -76,7 +76,7 @@ async function hasIndexedDurableOutput(ownerId: string, jobId: string) {
 
 function cancellationGatewayForWorker(workerId: string) {
   const worker = findWorker(workerId);
-  if (worker && (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft")) {
+  if (worker && workerSupportsCancellation(worker)) {
     return worker.gatewayUrl;
   }
   const upscaleWorker = getImageUpscaleWorker();
@@ -118,12 +118,14 @@ async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancell
     return { kind: "retryable", status: null, reason: "unsupported-worker" };
   }
 
+  const worker = findWorker(row.worker_id);
+  const options = worker ? workerGatewayOptions(worker, providerCancellationTimeoutMs)
+    : { signal: AbortSignal.timeout(providerCancellationTimeoutMs) };
+  const headers = new Headers(options.headers);
+  headers.set("accept", "application/json");
   try {
     const response = await fetch(`${gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
-      method: "DELETE",
-      headers: { accept: "application/json" },
-      cache: "no-store",
-      signal: AbortSignal.timeout(providerCancellationTimeoutMs),
+      ...options, method: "DELETE", headers, cache: "no-store",
     });
     if (response.ok) return { kind: "confirmed", status: response.status };
     if (response.status === 404 || response.status === 410) {

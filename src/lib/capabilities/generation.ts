@@ -4,7 +4,8 @@ export const imageGenerationModels = ["flux2-klein-9b", "qwen-image-edit-2511"] 
 export const videoGenerationModels = ["ltx25-redgraft"] as const;
 export type ImageGenerationModel = (typeof imageGenerationModels)[number];
 export type VideoGenerationModel = (typeof videoGenerationModels)[number];
-export type GenerationModel = ImageGenerationModel | VideoGenerationModel;
+export const fiboGenerationModel = "fibo2-edit-turbo" as const;
+export type GenerationModel = ImageGenerationModel | VideoGenerationModel | typeof fiboGenerationModel;
 
 export const defaultImageGenerationModel: ImageGenerationModel = "flux2-klein-9b";
 export const defaultVideoGenerationModel: VideoGenerationModel = "ltx25-redgraft";
@@ -15,6 +16,7 @@ export const generationModelDefinitions: Record<
   GenerationModel,
   { label: string; version: string; outputKind: OutputKind }
 > = {
+  [fiboGenerationModel]: { label: "Bria FIBO", version: "2.0 Edit Turbo", outputKind: "image" },
   "flux2-klein-9b": { label: "FLUX.2 Klein", version: "9B", outputKind: "image" },
   "qwen-image-edit-2511": { label: "Qwen Image Edit", version: "2511", outputKind: "image" },
   "ltx25-redgraft": { label: "REDGraft LTX", version: "2.5", outputKind: "video" },

@@ -703,3 +703,9 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 **Consequences:** Viewer is the first implementation checkpoint. Activity is explicitly audited for the same prompt-as-headline failure. Library/Create/account/Admin/Landing/shell are audited for corresponding density, readability and space-allocation issues without erasing their approved expressiveness differences. Product behavior, routes, security/ownership, generation/media contracts, locked RenderLabBrand geometry and Landing quarter-circle remain unchanged. The binding execution contract is `docs/history/contracts/ui/MEDIA_FIRST_HIERARCHY_CORRECTION_CONTRACT.md`.
 
 **Release rule:** work proceeds in small documented checkpoints. No production deployment occurs until the full exact-head affected workflow set, rendered desktop/390px/reduced-motion review, merge, merged-main verification and guarded rollout gates pass.
+
+### UI-083 — React Spring is the animation standard for the frontend rebuild
+**Status:** Accepted
+**Scope:** All RenderLab screens and shared components as they are built or reworked in the WANDA frontend rebuild.
+**Decision:** Use React Spring for animated UI interactions, including disclosures, sidebar movement, and transitions. React and the existing accessible primitives continue to own behavior, focus, keyboard/touch input, and semantics. Do not add motion where it does not help communicate state. Respect reduced-motion preferences with equivalent nonanimated behavior.
+**Rollout:** Adopt at the first implementation checkpoint after validating package compatibility, licensing, and dependency footprint under the component catalog policy. Migrate existing effects as their surfaces are reworked; do not install or remove motion runtimes solely to record this decision. Existing Motion for React and Sileo usage is unchanged until its replacement is implemented and tested. The existing production UI is unaffected.

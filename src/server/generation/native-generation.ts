@@ -8,6 +8,7 @@ import {
   defaultVideoResolution,
   generationInputAlias,
   generationModelForRequest,
+  fiboGenerationModel,
   qwenImageFixedGuidance,
   qwenImageFixedSteps,
   resolveCreativeOperation,
@@ -16,7 +17,7 @@ import {
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
-import { findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
+import { acceptedWorkerCallId, findWorker, workerGatewayOptions, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import {
@@ -40,7 +41,7 @@ type WorkflowConfig = {
   model: string;
   ecosystem: GenerationWorker["ecosystem"];
   kind: "image" | "video";
-  submitPath: "/jobs/edit" | "/jobs/video";
+  submitPath: "/jobs/edit" | "/jobs/video" | "/jobs/fibo";
   outputMimeType: string;
   defaults: {
     seed: number;
@@ -104,6 +105,14 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
   const requestedModel = generationModelForRequest(request);
 
   if (operation === "create-image" || operation === "edit-image") {
+    if (requestedModel === fiboGenerationModel) {
+      return {
+        id: operation === "edit-image" ? "fibo2-turbo-edit" : "fibo2-turbo-text",
+        model: "Bria FIBO 2.0 Edit Turbo", ecosystem: fiboGenerationModel, kind: "image",
+        submitPath: "/jobs/fibo", outputMimeType: "image/png",
+        defaults: { seed: 42, steps: 4, megapixels: 1 },
+      };
+    }
     if (requestedModel === "qwen-image-edit-2511") {
       return {
         id: operation === "edit-image" ? "qwen-image-edit-2511-edit" : "qwen-image-edit-2511-generate",
@@ -347,25 +356,59 @@ function gatewayUrlForWorker(worker: GenerationWorker) {
   return worker.gatewayUrl;
 }
 
-async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
+async function prepareWorkerSubmission(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
+  if (workflow.ecosystem === fiboGenerationModel) {
+    const sizes = { original: [0, 0], "1:1": [1024, 1024], "4:3": [1152, 864],
+      "3:4": [864, 1152], "16:9": [1280, 720], "9:16": [720, 1280] } as const;
+    const ratio = request.output.aspectRatio;
+    const size = Object.hasOwn(sizes, ratio) ? sizes[ratio as keyof typeof sizes] : undefined;
+    if (!size || sources.some((source) => source.bytes.length > 16 * 1024 * 1024)
+      || sources.reduce((total, source) => total + source.bytes.length, 0) > 32 * 1024 * 1024) {
+      throw new Error("Unsupported FIBO dimensions or input size.");
+    }
+    const aliases = new Map<string, number>(request.inputs.map((input, index) => [input.alias, index + 1]));
+    const prompt = request.prompt.replace(/@image\d+\b/g, (mention) => {
+      const slot = aliases.get(mention.slice(1));
+      return slot ? `<image_${slot}>` : mention;
+    });
+    return {
+      body: JSON.stringify({ prompt, width: size[0], height: size[1], seed: request.advanced?.seed ?? 42,
+        steps: request.advanced?.steps ?? 4, negative_prompt: request.advanced?.negativePrompt ?? "",
+        images: sources.map((source) => source.bytes.toString("base64")) }),
+      contentType: "application/json",
+    };
+  }
   const prepared = await prepareWorkerPayload(request, workflow, sources);
+  return { body: buildForm(request, workflow, prepared) };
+}
+
+function dispatchWorker(worker: GenerationWorker, workflow: WorkflowConfig, submission: Awaited<ReturnType<typeof prepareWorkerSubmission>>) {
+  const options = workerGatewayOptions(worker);
+  const headers = new Headers(options.headers);
+  if (submission.contentType) headers.set("content-type", submission.contentType);
+  const origin = worker.policy?.transport === "modal-proxy" ? worker.gatewayUrl : gatewayUrlForWorker(worker);
+  return fetch(origin + workflow.submitPath, {
+    ...options, method: "POST", body: submission.body, headers, cache: "no-store",
+  });
+}
+
+async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
+  const submission = await prepareWorkerSubmission(workflow, request, sources);
   const failures: Array<Record<string, unknown>> = [];
   for (const worker of workersForEcosystem(workflow.ecosystem)) {
     try {
-      const response = await fetch(`${gatewayUrlForWorker(worker)}${workflow.submitPath}`, {
-        method: "POST",
-        body: buildForm(request, workflow, prepared),
-        cache: "no-store",
-      });
+      const response = await dispatchWorker(worker, workflow, submission);
       if (!response.ok) {
         const body = await errorBody(response);
         const kind = failureKind(response.status, body);
         failures.push({ workerId: worker.id, kind, status: response.status, at: new Date().toISOString() });
-        if (kind === "failed") throw new Error(String(body.error || body.detail || `Worker rejected generation (${response.status}).`));
+        if (worker.policy?.retryAmbiguousSubmit === false || kind === "failed") throw new Error(String(body.error || body.detail || `Worker rejected generation (${response.status}).`));
         continue;
       }
       const payload = await response.json() as { call_id?: string; worker_state?: string; workerState?: string };
-      if (!payload.call_id) throw new Error("Generation worker did not return a call ID.");
+      if (!acceptedWorkerCallId(worker, response.status, payload.call_id)) {
+        throw new Error("Generation worker did not return a valid call ID.");
+      }
       return {
         worker,
         callId: payload.call_id,
@@ -373,6 +416,7 @@ async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest
         failures,
       };
     } catch (error) {
+      if (worker.policy?.retryAmbiguousSubmit === false) throw new Error("Worker submission could not be confirmed; it was not retried.");
       failures.push({ workerId: worker.id, kind: "unavailable", message: error instanceof Error ? error.message : String(error), at: new Date().toISOString() });
     }
   }
@@ -685,7 +729,7 @@ function attemptedWorkerIds(row: JobRow) {
 }
 
 async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification) {
-  if (!failure.safeToReassign || pollReassignmentAttemptCount(row) >= maxPollReassignmentAttempts) return null;
+  if ((row.worker_id && findWorker(row.worker_id)?.policy?.reassignment === false) || !failure.safeToReassign || pollReassignmentAttemptCount(row) >= maxPollReassignmentAttempts) return null;
 
   const request = requestFromJobRow(row);
   const workflow = workflowFor(request);
@@ -694,7 +738,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
   }
 
   const sources = await resolveInputs(row.owner_id, request);
-  const prepared = await prepareWorkerPayload(request, workflow, sources);
+  const submission = await prepareWorkerSubmission(workflow, request, sources);
   const excluded = attemptedWorkerIds(row);
   const candidate = workersForEcosystem(workflow.ecosystem).find((worker) => !excluded.has(worker.id));
   if (!candidate) return null;
@@ -725,11 +769,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
 
   let response: Response;
   try {
-    response = await fetch(`${candidate.gatewayUrl}${workflow.submitPath}`, {
-      method: "POST",
-      body: buildForm(request, workflow, prepared),
-      cache: "no-store",
-    });
+    response = await dispatchWorker(candidate, workflow, submission);
   } catch {
     throw new Error("Standby reassignment could not be confirmed, so RenderLab will not retry that worker automatically.");
   }
@@ -740,7 +780,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
   }
 
   const payload = await response.json().catch(() => ({})) as { call_id?: string; worker_state?: string; workerState?: string };
-  if (!payload.call_id) {
+  if (!acceptedWorkerCallId(candidate, response.status, payload.call_id)) {
     throw new Error("Standby worker did not return a call ID; RenderLab will not retry the ambiguous reassignment automatically.");
   }
 
@@ -839,9 +879,11 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     return toGenerationJob(failed);
   }
 
+  const options = workerGatewayOptions(worker);
+  const headers = new Headers(options.headers);
+  headers.set("accept", row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json");
   const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
-    method: "GET",
-    headers: { accept: row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json" },
+    ...options, method: "GET", headers,
     cache: "no-store",
   });
 
@@ -912,6 +954,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     .split(";")[0]
     .trim()
     .toLowerCase();
+  if (worker.policy?.resultMime && contentType !== worker.policy.resultMime) throw new Error("Worker returned an unexpected result format.");
   if (row.output_kind === "image" && !contentType.startsWith("image/")) throw new Error("Worker returned a non-image result.");
   if (row.output_kind === "video" && !contentType.startsWith("video/")) throw new Error("Worker returned a non-video result.");
 

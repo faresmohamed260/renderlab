@@ -114,6 +114,22 @@
       "searchLabel": "React Bits"
     },
     {
+      "id": "react-spring",
+      "name": "React Spring",
+      "catalogHeading": "React Spring",
+      "tier": "specialized",
+      "policyStatus": "approved",
+      "searchOrder": null,
+      "adoptionMode": "package-dependency",
+      "activeUse": true,
+      "packageName": "@react-spring/web",
+      "expectedVersion": "10.1.2",
+      "licenseStatus": "lockfile-verified",
+      "licenseSpdx": "MIT",
+      "notes": "UI-083: WANDA section and account disclosure motion.",
+      "searchLabel": null
+    },
+    {
       "id": "lucide-react",
       "name": "Lucide React",
       "catalogHeading": "Lucide React",

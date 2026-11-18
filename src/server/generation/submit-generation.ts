@@ -1,8 +1,9 @@
 import "server-only";
 
-import { resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
+import { fiboGenerationModel, resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
+import { workersForEcosystem } from "@/server/generation/worker-fleet";
 import { getMediaAsset } from "@/server/media/media-assets";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { correlationIdForGenerationJob, createDiagnosticCorrelationId, emitDiagnosticEvent } from "@/server/observability/diagnostics";
@@ -17,6 +18,10 @@ const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
 
 function isExternalGenerationBackendConfigured() {
   return Boolean(backendUrl && backendToken);
+}
+
+export function isFiboGenerationAvailable() {
+  return workersForEcosystem(fiboGenerationModel).length > 0 && isNativeGenerationConfigured();
 }
 
 export function isGenerationBackendConfigured() {
@@ -127,6 +132,11 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
     return response;
   };
 
+  const isFibo = request.model === fiboGenerationModel;
+  if (isFibo && !isFiboGenerationAvailable()) {
+    return reject({ ok: false, error: { code: "generation_backend_unavailable", message: "FIBO generation is not enabled." } });
+  }
+
   if (!isGenerationBackendConfigured()) {
     return reject({
       ok: false,
@@ -148,7 +158,7 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
   if (!admission.ok) return reject(admission);
 
   const reservationId = admission.reservation.id;
-  const submitted = isExternalGenerationBackendConfigured()
+  const submitted = !isFibo && isExternalGenerationBackendConfigured()
     ? await submitToRenderLabBackend(ownerId, request)
     : await submitNativeGeneration(ownerId, request);
 

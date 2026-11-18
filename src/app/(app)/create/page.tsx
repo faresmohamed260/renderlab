@@ -1,3 +1,13 @@
+import { createHash } from "node:crypto";
+import { Suspense } from "react";
+import { FiboPreviewWorkspace } from "@/features/create/fibo-preview-workspace";
+import {
+  getFiboPreviewOwner,
+  getHostedCreateMedia,
+  getHostedCreatePreferences,
+  getHostedCreateState,
+} from "@/server/hosted-create";
+import { isFiboPreview } from "@/server/fibo-preview-mode";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import type { ContinuationAction } from "@/lib/capabilities/generation";
 import {
@@ -57,8 +67,12 @@ export default async function CreatePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  if (await isFiboPreview()) return <Suspense fallback={<p className="fibo-preview-create-loading" role="status">Loading Create…</p>}><FiboPreviewCreate /></Suspense>;
+
   const params = await searchParams;
-  const account = await getCurrentRenderLabAccount();
+  const hosted = await getHostedCreateState();
+  const account = hosted ? null : await getCurrentRenderLabAccount();
+  const accountAvailable = hosted?.accountAvailable ?? Boolean(account);
   const recipeId = firstValue(params.recipe);
   const sourceId = firstValue(params.source);
   const requestedAction = firstValue(params.action);
@@ -71,9 +85,11 @@ export default async function CreatePage({
   } else if (recipeId) {
     if (!uuidPattern.test(recipeId)) {
       initialNavigationError = "That saved generation link is invalid. Start a new creation instead.";
-    } else if (!account) {
+    } else if (!accountAvailable) {
       initialNavigationError = "Sign in from Settings to reuse private RenderLab generation settings.";
-    } else if (!isSupabaseConfigured() || !isR2Configured()) {
+    } else if (hosted) {
+      initialNavigationError = "Saved recipes can be reopened on the hosted RenderLab site.";
+    } else if (!account || !isSupabaseConfigured() || !isR2Configured()) {
       initialNavigationError = "That saved generation cannot be loaded in this environment. Start a new creation instead.";
     } else {
       try {
@@ -88,20 +104,21 @@ export default async function CreatePage({
   } else if (sourceId || requestedAction) {
     if (!sourceId || !requestedAction || !uuidPattern.test(sourceId) || !isContinuationActionId(requestedAction)) {
       initialNavigationError = "That continuation link is invalid. Start a new creation or return to Library.";
-    } else if (!account) {
+    } else if (!accountAvailable) {
       initialNavigationError = "Sign in from Settings to continue from private RenderLab media.";
-    } else if (!isSupabaseConfigured() || !isR2Configured()) {
+    } else if (!hosted && (!account || !isSupabaseConfigured() || !isR2Configured())) {
       initialNavigationError = "That media item cannot be loaded in this environment. Start a new creation or return to Library.";
     } else {
       try {
-        const asset = await getMediaAsset(account.id, sourceId);
+        const ownedAsset = account ? await getMediaAsset(account.id, sourceId) : null;
+        const asset = hosted ? await getHostedCreateMedia(sourceId) : ownedAsset && publicMediaAsset(ownedAsset);
         const action = asset ? continuationActionForMedia(asset.kind, requestedAction) : null;
         if (!asset) {
           initialNavigationError = "That media item is no longer available. Start a new creation or return to Library.";
         } else if (!action) {
           initialNavigationError = "That action is not available for this media item. Start a new creation or return to Library.";
         } else {
-          initialContinuation = { asset: publicMediaAsset(asset), action };
+          initialContinuation = { asset, action };
         }
       } catch {
         initialNavigationError = "That media item could not be loaded. Start a new creation or return to Library.";
@@ -110,9 +127,11 @@ export default async function CreatePage({
   }
 
   let initialPreferenceRecipe: InitialGenerationRecipe | null = null;
-  if (account && !recipeId && !sourceId && !requestedAction) {
+  if (accountAvailable && !recipeId && !sourceId && !requestedAction) {
     try {
-      initialPreferenceRecipe = preferenceSeedRecipe((await getRenderLabAccountPreferences(account.id)).create);
+      const preferences = hosted ? await getHostedCreatePreferences()
+        : account ? (await getRenderLabAccountPreferences(account.id)).create : null;
+      initialPreferenceRecipe = preferences ? preferenceSeedRecipe(preferences) : null;
     } catch {
       initialPreferenceRecipe = null;
     }
@@ -120,12 +139,22 @@ export default async function CreatePage({
 
   return (
     <CreateWorkspace
-      accountAvailable={Boolean(account)}
-      generationAvailable={isGenerationBackendConfigured()}
-      mediaUploadAvailable={isMediaUploadConfigured()}
+      accountAvailable={accountAvailable}
+      generationAvailable={hosted?.generationAvailable ?? isGenerationBackendConfigured()}
+      mediaUploadAvailable={hosted?.mediaUploadAvailable ?? isMediaUploadConfigured()}
       initialContinuation={initialContinuation}
       initialRecipe={initialRecipe ?? initialPreferenceRecipe}
       initialContinuationError={initialNavigationError}
     />
   );
+}
+
+async function FiboPreviewCreate() {
+  const hostedOnly = process.env.RENDERLAB_HOSTED_CREATE === "1";
+  const owner = await getFiboPreviewOwner().catch(() => null);
+  const hosted = hostedOnly && owner ? await getHostedCreateState().catch(() => null) : null;
+  const hostedFibo = !!(hosted?.fiboAvailable && hosted.mediaUploadAvailable && hosted.accountAvailable && owner);
+  const accountKey = owner && hostedFibo ? createHash("sha256").update("fibo-hosted-stage:" + owner).digest("hex") : undefined;
+  const savedEditsAccount = owner && !hostedOnly ? createHash("sha256").update("fibo-preview-edits:" + owner).digest("hex") : undefined;
+  return <FiboPreviewWorkspace key={accountKey ?? savedEditsAccount ?? "guest"} hostedFibo={hostedFibo} hostedAccountKey={accountKey} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={!hostedOnly && process.env.RENDERLAB_FIBO_PREVIEW_MASKS === "1"} advancedPrompt={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_ADVANCED_PROMPT === "1"} variableSteps={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_VARIABLE_STEPS === "1"} extendedSetup={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_EXTENDED === "1"} />;
 }

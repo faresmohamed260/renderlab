@@ -52,6 +52,9 @@ jobs:
       - name: Verify Modal project ownership boundary
         run: npm run verify:modal-project-ownership
 
+      - name: Test FIBO deployment guards without secrets
+        run: python3 scripts/tests/test_fibo_deploy_guards.py
+
       - name: Verify reciprocal S.A.G.A. Modal ownership
         run: npm run verify:modal-cross-repo-ownership
 

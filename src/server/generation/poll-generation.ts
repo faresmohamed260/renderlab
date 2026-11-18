@@ -24,7 +24,7 @@ function parseBackendJob(value: unknown): GenerationJob | null {
 
 export async function pollGenerationJob(ownerId: string, jobId: string): Promise<GenerationJob | null> {
   const localJob = await getJobRow(ownerId, jobId).catch(() => null);
-  if (localJob?.operation === "upscale-image") {
+  if (localJob?.operation === "upscale-image" || localJob?.ecosystem === "fibo2-edit-turbo") {
     return reconcileNativeGeneration(ownerId, jobId);
   }
 

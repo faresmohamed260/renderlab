@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
+import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
+import { isFiboPreview } from "@/server/fibo-preview-mode";
 
 import "./globals.css";
+import "./renderlab-background.css";
 import "./create-clear-composer.css";
 
 const title = "RenderLab — Image & video creative workspace";
@@ -24,10 +28,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const preview = await isFiboPreview();
+  const account = preview ? await getCurrentRenderLabIdentity().catch(() => null) : null;
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={preview ? "renderlab-gradient" : undefined}>
+        {preview && <div className="renderlab-reference-atmosphere" aria-hidden="true">
+          <div className="renderlab-reference-wash" />
+        </div>}
+        {preview ? <PreviewNavigationShell accountId={account?.id ?? null} hostedProfile={process.env.RENDERLAB_HOSTED_CREATE === "1"}>{children}</PreviewNavigationShell> : children}
+      </body>
     </html>
   );
 }

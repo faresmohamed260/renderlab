@@ -183,7 +183,7 @@ export function LandingExperience() {
   return (
     <main className={styles.page} data-landing-experience="approved-lab-matrix">
       <GeometryDefs />
-      <header className={styles.nav}>
+      <header className={styles.nav} data-landing-header="">
         <Link href="/" aria-label="RenderLab home" className={styles.brandLink}>
           <RenderLabBrand markClassName="size-7" textClassName="text-base" />
         </Link>
@@ -409,7 +409,7 @@ export function LandingExperience() {
         </div>
       </section>
 
-      <footer className={styles.siteFooter}>
+      <footer className={styles.siteFooter} data-landing-footer="">
         <Link href="/" aria-label="RenderLab home"><RenderLabBrand markClassName="size-6" textClassName="text-sm" /></Link>
         <span>Creative image &amp; video workspace · Closed beta</span>
         <div><Link href="/create">Open Create</Link><Link href="/settings">Sign in</Link></div>
