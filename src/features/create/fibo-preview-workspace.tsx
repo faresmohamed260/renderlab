@@ -14,11 +14,33 @@ import { clearFiboEdits, readFiboEdits, saveFiboEdits } from "./fibo-preview-sav
 import { FiboPreviewStage, type StageTurn } from "./fibo-preview-stage";
 import { fiboSizes } from "./fibo-preview-sizes";
 
+import { fiboGenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
+import { isMediaUploadMimeType } from "@/lib/api/media-upload-contract";
+import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
+import { uploadPersistentImageFile } from "@/lib/browser/media-upload-client";
+
+const hostedJobId = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
+const hostedRatios = ["1:1", "4:3", "3:4", "16:9", "9:16"] as const;
+const hostedModelLabel = "Bria FIBO 2.0 Edit Turbo";
+
+async function hostedRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, { ...init, cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok || data.ok !== true) throw new Error(data.error?.message ?? "Hosted request failed.");
+  return data as T;
+}
+
+function hostedResult(asset: PublicMediaAsset): Result {
+  return { image_data: "/api/media/assets/" + asset.id + "/content", assetId: asset.id,
+    filename: asset.originalFilename ?? "fibo-result.png", seed: 0, batchId: asset.generationJobId ?? asset.id,
+    aspect: asset.width && asset.height ? asset.width / asset.height : undefined };
+}
+
 const api = "/fibo-preview/";
 const slotMarker = (index: number) => "\uE000" + index + "\uE001";
 const slotMarkers = /\uE000([0-3])\uE001/g;
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
+type Result = { assetId?: string; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number; filename?: string };
 type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
@@ -27,7 +49,7 @@ type Poll = { canCancel?: boolean; cancelling?: boolean; state?: "pending" | "ru
 function parseStageBookmark(raw: unknown): StageBookmark | undefined {
   if (!raw || typeof raw !== "object") return;
   const value = raw as Partial<StageBookmark>;
-  if (typeof value.id !== "string" || !/^[a-f0-9]{32}$/.test(value.id)
+  if (typeof value.id !== "string" || !(/^[a-f0-9]{32}$/.test(value.id) || hostedJobId.test(value.id))
     || (value.mode !== "edit" && value.mode !== "generate") || typeof value.count !== "number"
     || !Number.isInteger(value.count) || value.count < 1 || value.count > 4
     || typeof value.expires !== "number" || !Number.isFinite(value.expires) || value.expires <= Date.now()) return;
@@ -103,8 +125,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, savedEditsAccount }: { admitted: boolean; hostedOnly?: boolean; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
-  const bookmarkKey = admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
+export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, hostedFibo = false, hostedAccountKey, savedEditsAccount }: { admitted: boolean; hostedOnly?: boolean; hostedFibo?: boolean; hostedAccountKey?: string; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+  const bookmarkKey = hostedFibo && hostedAccountKey ? "renderlab:hosted-fibo-stage:" + hostedAccountKey
+    : admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
   const [stageReady, setStageReady] = useState(!bookmarkKey);
   const [mode, setMode] = useState<Workflow>("edit");
   const [reducedMotion, setReducedMotion] = useState(true);
@@ -244,6 +267,19 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
     };
   }, [admitted, savedEditsAccount, stageReady]);
 
+  useEffect(() => {
+    if (!hostedFibo) return;
+    const controller = new AbortController();
+    void hostedRequest<{ items: PublicMediaAsset[] }>("/api/media/assets?kind=image&origin=generated&limit=48", { signal: controller.signal })
+      .then(({ items }) => {
+        if (controller.signal.aborted) return;
+        const rows = items.filter((asset) => asset.model === hostedModelLabel).map(hostedResult);
+        setHistory((current) => [...current, ...rows.filter((row) => !current.some((item) => item.assetId === row.assetId))].slice(0, 8));
+      })
+      .catch(() => { if (!controller.signal.aborted) setSavedStatus("Hosted History could not be loaded."); });
+    return () => controller.abort();
+  }, [hostedFibo]);
+
   async function saveEdit(image?: Result) {
     if (!admitted || !savedEditsAccount || savingEdits || image && image.run?.mode !== "edit") return;
     if (!image && !window.confirm("Remove this account's saved edits from this browser? Current session results will stay until you leave.")) return;
@@ -312,7 +348,7 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
     } else active.current = controller;
     const editInputs = [...files];
     const stageSource = mode === "edit" && !editInputs[0] ? result : undefined;
-    if (stageSource) {
+    if (stageSource && !stageSource.assetId) {
       try {
         editInputs[0] = resultFile(stageSource);
       } catch {
@@ -349,45 +385,79 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
       setStatus(mode === "edit" ? "Uploading images..." : "Submitting render...");
     }
     try {
+      let acceptedId = job;
       const uploads: Record<string, string> = {};
-      if (mode === "edit") {
-        for (const [index, file] of editInputs.entries()) {
-          if (!file) continue;
-          const form = new FormData();
-          form.set("files", file);
-          const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
-          uploads[["source", "ref2", "ref3", "ref4"][index]] = id;
-          if (index === 0 && stageSource && !background) {
-            setFiles(editInputs);
-            setSelection(undefined);
-            setResult(undefined);
+      if (hostedFibo) {
+        const inputs: GenerationInput[] = [];
+        const aliases = new Map<number, string>();
+        if (mode === "edit") {
+          for (const [index, file] of editInputs.entries()) {
+            const existing = index === 0 ? stageSource?.assetId : undefined;
+            if (!existing && !file) continue;
+            let id = existing;
+            if (!id && file) {
+              if (!isMediaUploadMimeType(file.type)) throw new Error("Use a PNG, JPEG or WebP image.");
+              id = (await uploadPersistentImageFile(file, file.type, signal)).id;
+            }
+            if (!id) throw new Error("Source image could not be attached.");
+            const alias = ("image" + (inputs.length + 1)) as GenerationInput["alias"];
+            aliases.set(index + 1, alias);
+            inputs.push({ alias, role: inputs.length === 0 ? "primary-image" : "reference", source: { type: "media-asset", id } });
           }
         }
-      }
-      if (mode === "generate" && inspiration && !manualVgl) {
-        const form = new FormData();
-        form.set("files", inspiration);
-        const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
-        uploads.inspiration = id;
-      }
-      if (mask) {
-        const form = new FormData();
-        form.set("files", mask);
-        const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
-        uploads.mask = id;
+        const hostedPrompt = prompt.trim().replace(/@image(\d+)/g, (original, index: string) => {
+          const alias = aliases.get(Number(index));
+          return alias ? "@" + alias : original;
+        });
+        const response = await hostedRequest<{ job: GenerationJob }>("/api/generation/jobs", {
+          method: "POST", signal, headers: { "content-type": "application/json" },
+          body: JSON.stringify({ model: fiboGenerationModel, prompt: hostedPrompt, inputs,
+            output: { kind: "image", aspectRatio: mode === "edit" ? "original" : hostedRatios[sizeIndex] },
+            advanced: { steps, negativePrompt: negativePrompt.trim(),
+              seed: randomize ? (crypto.getRandomValues(new Uint32Array(1))[0]! & 0x7fffffff) : Number(seed) } }),
+        });
+        if (!hostedJobId.test(response.job.id)) throw new Error("Hosted job ID was invalid.");
+        acceptedId = response.job.id;
+      } else {
+        if (mode === "edit") {
+          for (const [index, file] of editInputs.entries()) {
+            if (!file) continue;
+            const form = new FormData();
+            form.set("files", file);
+            const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
+            uploads[["source", "ref2", "ref3", "ref4"][index]] = id;
+            if (index === 0 && stageSource && !background) {
+              setFiles(editInputs);
+              setSelection(undefined);
+              setResult(undefined);
+            }
+          }
+        }
+        if (mode === "generate" && inspiration && !manualVgl) {
+          const form = new FormData();
+          form.set("files", inspiration);
+          const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
+          uploads.inspiration = id;
+        }
+        if (mask) {
+          const form = new FormData();
+          form.set("files", mask);
+          const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
+          uploads.mask = id;
+        }
       }
       const run: RunSettings = {
         mask,
         mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex,
         inputs: mode === "edit" ? editInputs : [],
       };
-      await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
+      if (!hostedFibo) await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: manualVgl,
           seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
       if (!background) setStatus("Rendering on Modal...");
       const aspect = mode === "generate" ? size.width / size.height
         : previews[0] ? await decodeAspect(previews[0]).catch(() => undefined) : stageSource?.aspect;
-      const bookmark: StageBookmark = { id: job, mode, count: Number(imageCount), aspect, expires: Date.now() + 55 * 60_000 };
+      const bookmark: StageBookmark = { id: acceptedId, mode, count: Number(imageCount), aspect, expires: Date.now() + 55 * 60_000 };
       if (signal.aborted) return;
       if (background) {
         setWaiting((items) => [...items, { bookmark, run }]);
@@ -395,7 +465,7 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
         return;
       }
       setAccepted(true);
-      if (desktop) writeStageBookmark(bookmarkKey, bookmark);
+      if (desktop || hostedFibo) writeStageBookmark(bookmarkKey, bookmark);
       const { images, error } = await watchRender(bookmark, signal, run);
       if (signal.aborted) return;
       finishTurn(images, error);
@@ -425,6 +495,23 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
     }
   }
 
+  async function pollHostedRender(id: string, signal: AbortSignal): Promise<Poll> {
+    if (!hostedJobId.test(id)) throw new Error("Hosted job ID was invalid.");
+    const { job } = await hostedRequest<{ job: GenerationJob }>("/api/generation/jobs/" + id, { signal });
+    if (job.status === "succeeded") {
+      const assets = await Promise.all(job.outputAssetIds.map(async (assetId) => {
+        const { asset } = await hostedRequest<{ asset: PublicMediaAsset }>("/api/media/assets/" + assetId, { signal });
+        return hostedResult(asset);
+      }));
+      return { finished: true, images: assets };
+    }
+    if (job.status === "failed" || job.status === "cancelled") {
+      return { finished: true, images: [], error: job.error?.message ?? (job.status === "cancelled" ? "Render cancelled." : "Render failed.") };
+    }
+    return { finished: false, images: [], state: job.status === "queued" ? "pending" : "running",
+      cancelling: job.status === "cancelling", canCancel: ["queued", "preparing", "running", "cancelling"].includes(job.status) };
+  }
+
   async function watchRender(bookmark: StageBookmark, signal: AbortSignal, run?: RunSettings, restoring = false) {
     setActiveCancel(undefined);
     setCancelError("");
@@ -433,7 +520,9 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
     let recoveringInspection = restoring && !!bookmark.filename;
     try {
       while (!signal.aborted && Date.now() < end) {
-        const update = await request<Poll>("local/render/" + bookmark.id + "?afterImages=" + images.length, { signal });
+        const update = hostedFibo
+          ? await pollHostedRender(bookmark.id, signal)
+          : await request<Poll>("local/render/" + bookmark.id + "?afterImages=" + images.length, { signal });
         if (signal.aborted) throw new Error("Render polling stopped.");
         setActiveCancel(!update.finished && update.canCancel ? { id: bookmark.id, pending: !!update.cancelling } : undefined);
         if (!update.finished) {
@@ -505,7 +594,7 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
   }
 
   useEffect(() => {
-    if (!bookmarkKey || !matchMedia("(min-width: 1025px)").matches) {
+    if (!bookmarkKey || (!hostedFibo && !matchMedia("(min-width: 1025px)").matches)) {
       setStageReady(true);
       return;
     }
@@ -588,7 +677,8 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
     setCancelError("");
     setQueueNotice("");
     try {
-      await request("local/queue/" + activeCancel.id + "/cancel", { method: "POST" });
+      if (hostedFibo) await hostedRequest("/api/generation/jobs/" + activeCancel.id + "/cancel", { method: "POST" });
+      else await request("local/queue/" + activeCancel.id + "/cancel", { method: "POST" });
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Could not cancel this render.";
       setQueueNotice(message);
@@ -814,7 +904,10 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
       return value !== null && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
     } catch { return false; }
   })();
-  const hostedBlocker = hostedOnly ? "This Create preview cannot render until production supports the FIBO workflow." : "";
+  const hostedBlocker = hostedOnly && !hostedFibo
+    ? "This Create preview cannot render until production supports the FIBO workflow."
+    : hostedFibo && (manualVgl || mask || inspiration && mode === "generate" || imageCount !== "1")
+      ? "Hosted FIBO supports one image per job, without masks, VGL, or inspiration." : "";
   const blocker = hostedBlocker || (!admitted ? "Sign in with an account that has Create access."
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
     : !variableSteps && steps !== 4 ? "The current worker supports 4 steps. Select 4 to generate."
@@ -828,7 +921,7 @@ export function FiboPreviewWorkspace({ admitted, extendedSetup, variableSteps, a
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
     : "");
-  const canSubmit = stageReady && !enqueueing && (!busy || desktop && accepted && queueCount < 3) && !maskEditor && !blocker;
+  const canSubmit = stageReady && !enqueueing && (!busy || !hostedFibo && desktop && accepted && queueCount < 3) && !maskEditor && !blocker;
   const maskEditorNode = maskEditor && mode === "edit" && files[0] && previews[0] && (
     <FiboPreviewMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
       onSave={(region) => {

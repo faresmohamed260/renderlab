@@ -20,6 +20,10 @@ function isExternalGenerationBackendConfigured() {
   return Boolean(backendUrl && backendToken);
 }
 
+export function isFiboGenerationAvailable() {
+  return process.env.RENDERLAB_FIBO_GENERATION === "1" && !!getFiboWorker() && isNativeGenerationConfigured();
+}
+
 export function isGenerationBackendConfigured() {
   return isExternalGenerationBackendConfigured() || isNativeGenerationConfigured();
 }
@@ -129,7 +133,7 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
   };
 
   const isFibo = request.model === fiboGenerationModel;
-  if (isFibo && (process.env.RENDERLAB_FIBO_GENERATION !== "1" || !getFiboWorker() || !isNativeGenerationConfigured())) {
+  if (isFibo && !isFiboGenerationAvailable()) {
     return reject({ ok: false, error: { code: "generation_backend_unavailable", message: "FIBO generation is not enabled." } });
   }
 

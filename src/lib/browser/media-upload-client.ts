@@ -20,8 +20,10 @@ async function readImageDimensions(file: File) {
 export async function uploadPersistentImageFile(
   file: File,
   mimeType: MediaUploadMimeType,
+  signal?: AbortSignal,
 ) {
   const ticketResponse = await fetch("/api/media/uploads/upload-tickets", {
+    signal,
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -36,6 +38,7 @@ export async function uploadPersistentImageFile(
   }
 
   const uploadResponse = await fetch(ticketPayload.ticket.uploadUrl, {
+    signal,
     method: ticketPayload.ticket.method,
     headers: ticketPayload.ticket.headers,
     body: file,
@@ -44,6 +47,7 @@ export async function uploadPersistentImageFile(
 
   const dimensions = await readImageDimensions(file);
   const completionResponse = await fetch("/api/media/uploads/upload-completions", {
+    signal,
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ uploadId: ticketPayload.ticket.uploadId, ...dimensions }),

@@ -45,7 +45,7 @@ export async function getHostedCreateState() {
     hostedFetch("/api/media/assets?limit=1", {}, token).then((r) => r.ok ? r.json() : null).catch(() => null),
     hostedFetch("/api/media/uploads/upload-tickets", {}, token).then((r) => r.ok ? r.json() : null).catch(() => null),
   ]);
-  return { generationAvailable: generation?.available === true, accountAvailable: media?.ok === true, mediaUploadAvailable: upload?.available === true };
+  return { generationAvailable: generation?.available === true, fiboAvailable: generation?.fiboAvailable === true, accountAvailable: media?.ok === true, mediaUploadAvailable: upload?.available === true };
 }
 
 export async function getHostedCreateMedia(id: string): Promise<PublicMediaAsset | null> {

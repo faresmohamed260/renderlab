@@ -210,7 +210,7 @@ export function parseGenerationRequest(value: unknown):
     model = value.model as GenerationModel;
   }
 
-  const maxInputs = maxGenerationInputsForOutput(outputKind);
+  const maxInputs = model === fiboGenerationModel ? 4 : maxGenerationInputsForOutput(outputKind);
   if (inputs.length > maxInputs) {
     return {
       ok: false,
@@ -221,7 +221,7 @@ export function parseGenerationRequest(value: unknown):
     };
   }
   for (const [index, input] of inputs.entries()) {
-    const expectedRole = generationInputRoleForIndex(outputKind, index);
+    const expectedRole = model === fiboGenerationModel ? (index === 0 ? "primary-image" : "reference") : generationInputRoleForIndex(outputKind, index);
     if (!expectedRole || input.role !== expectedRole) {
       return {
         ok: false,
@@ -287,7 +287,7 @@ export function parseGenerationRequest(value: unknown):
 
   if (model === fiboGenerationModel && (
     !["original", "1:1", "4:3", "3:4", "16:9", "9:16"].includes(String(aspectRatio))
-    || inputs.length > 4 || (advanced?.steps ?? 4) > 8
+    || (advanced?.steps ?? 4) > 8
     || Array.from(prompt).length > 4000 || Array.from(advanced?.negativePrompt ?? "").length > 4000
     || "mask" in value || "vgl" in value || "json_instruction" in value
     || (advanced?.guidance ?? 1) !== 1

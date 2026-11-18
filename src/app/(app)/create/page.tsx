@@ -152,6 +152,9 @@ export default async function CreatePage({
 async function FiboPreviewCreate() {
   const hostedOnly = process.env.RENDERLAB_HOSTED_CREATE === "1";
   const owner = await getFiboPreviewOwner().catch(() => null);
+  const hosted = hostedOnly && owner ? await getHostedCreateState().catch(() => null) : null;
+  const hostedFibo = !!(hosted?.fiboAvailable && hosted.mediaUploadAvailable && hosted.accountAvailable && owner);
+  const accountKey = owner && hostedFibo ? createHash("sha256").update("fibo-hosted-stage:" + owner).digest("hex") : undefined;
   const savedEditsAccount = owner && !hostedOnly ? createHash("sha256").update("fibo-preview-edits:" + owner).digest("hex") : undefined;
-  return <FiboPreviewWorkspace key={savedEditsAccount ?? "guest"} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={process.env.RENDERLAB_FIBO_PREVIEW_MASKS === "1"} advancedPrompt={process.env.RENDERLAB_FIBO_PREVIEW_ADVANCED_PROMPT === "1"} variableSteps={process.env.RENDERLAB_FIBO_PREVIEW_VARIABLE_STEPS === "1"} extendedSetup={process.env.RENDERLAB_FIBO_PREVIEW_EXTENDED === "1"} />;
+  return <FiboPreviewWorkspace key={accountKey ?? savedEditsAccount ?? "guest"} hostedFibo={hostedFibo} hostedAccountKey={accountKey} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={!hostedOnly && process.env.RENDERLAB_FIBO_PREVIEW_MASKS === "1"} advancedPrompt={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_ADVANCED_PROMPT === "1"} variableSteps={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_VARIABLE_STEPS === "1"} extendedSetup={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_EXTENDED === "1"} />;
 }
