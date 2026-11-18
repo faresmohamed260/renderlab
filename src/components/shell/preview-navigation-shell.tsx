@@ -31,7 +31,7 @@ function railOutline(width: number, height: number, center: number) {
   const bottom = Math.max(120, height) - 8;
   const y = Math.max(60, Math.min(bottom - 52, center));
   const edge = center > 0
-    ? "V " + (y + 42) + " C 8 " + (y + 24) + " 62 " + (y + 32) + " 62 " + y
+    ? "V " + (y + 42) + " C 8 " + (y + 22) + " 53 " + (y + 32) + " 53 " + y
       + " S 8 " + (y - 24) + " 8 " + (y - 42)
     : "";
   return "M 24 8 H " + (right - 16) + " Q " + right + " 8 " + right + " 24 V " + (bottom - 16)
@@ -171,14 +171,14 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
   const [dismissed, setDismissed] = useState(false);
   const [height, setHeight] = useState(900);
   const [activeY, setActiveY] = useState(0);
+  const [hoverY, setHoverY] = useState<number | null>(null);
   const expanded = pinned || (hovered && !dismissed);
   const motion = useSpring({
     width: expanded ? expandedWidth : collapsedWidth,
-    center: activeY,
+    center: hoverY ?? activeY,
     config: sidebarSpring,
     immediate: reduced,
   });
-  const active = destinations.some(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
 
   useEffect(() => {
     const element = rail.current;
@@ -215,8 +215,17 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
     link.closest("details")?.removeAttribute("open");
   }
 
-  const links = (
-    <nav aria-label="RenderLab navigation" className="preview-navigation-links">
+  const renderLinks = (desktop: boolean) => (
+    <nav aria-label="RenderLab navigation" className="preview-navigation-links"
+      onPointerOver={desktop ? (event) => {
+        if (event.pointerType !== "mouse" || !(event.target instanceof Element)) return;
+        const row = event.target.closest("a");
+        const bounds = rail.current?.getBoundingClientRect();
+        const item = row?.getBoundingClientRect();
+        setHoverY(bounds && item ? item.top + item.height / 2 - bounds.top : null);
+      } : undefined}
+      onPointerLeave={desktop ? () => setHoverY(null) : undefined}
+      onScroll={desktop ? () => setHoverY(null) : undefined}>
       {destinations.map(({ href, label, icon: Icon }) => {
         const current = href === "/" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
         return <Link key={href} href={href} aria-label={label} title={label} aria-current={current ? "page" : undefined}>
@@ -235,7 +244,7 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
           if (event.pointerType === "mouse") { setDismissed(false); setHovered(true); }
         }}
         onPointerLeave={(event) => {
-          if (event.pointerType === "mouse") { setHovered(false); setDismissed(false); }
+          if (event.pointerType === "mouse") { setHovered(false); setDismissed(false); setHoverY(null); }
         }}
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setPinned(false);
@@ -246,12 +255,11 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
         <svg className="preview-account-clip" width="0" height="0" aria-hidden="true">
           <defs>
             <clipPath id={railId + "-glass"}>
-              <animated.path d={to([motion.width, motion.center], (w, y) => railOutline(w, height, active ? y : 0))} />
+              <animated.path d={to([motion.width, motion.center], (w, y) => railOutline(w, height, y))} />
             </clipPath>
           </defs>
         </svg>
         <div className="preview-rail-glass" aria-hidden="true" style={{ clipPath: "url(#" + railId + "-glass)" }} />
-        {active && activeY > 0 && <animated.div className="preview-rail-marker" aria-hidden="true" style={{ top: motion.center }} />}
         <div className="preview-navigation-heading">
           <Button type="button" variant="ghost" className="preview-navigation-brand"
             aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
@@ -260,12 +268,12 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
             <RenderLabBrand markClassName="size-8" textClassName="text-base" />
           </Button>
         </div>
-        {links}
+        {renderLinks(true)}
         <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} />
       </animated.aside>
       <details className="preview-navigation-disclosure" key={pathname}>
         <summary><Menu size={18} aria-hidden="true" /> Menu</summary>
-        {links}
+        {renderLinks(false)}
       </details>
       <div className="preview-navigation-content">{children}</div>
     </div>
