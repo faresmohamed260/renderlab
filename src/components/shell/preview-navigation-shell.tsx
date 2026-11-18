@@ -58,7 +58,7 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
     const controller = new AbortController();
     void loadProfile(controller.signal).then((value) => {
       if (!controller.signal.aborted) setProfile(value);
-    }).catch(() => { /* Keep the name-only fallback if the profile is unavailable. */ });
+    }).catch(() => { /* Keep the generic account icon if the profile is unavailable. */ });
     return () => controller.abort();
   }, [accountId]);
 
@@ -104,15 +104,14 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
         }
       }}>
       <Button ref={trigger} variant="ghost" aria-label={"Account menu: " + name} aria-expanded={open} aria-controls={id}
-        className="preview-navigation-profile h-auto w-full justify-start whitespace-normal text-left"
+        className="preview-navigation-profile"
         onClick={() => {
           pinned.current = !pinned.current;
           setOpen(pinned.current);
         }}>
-        {avatarSrc && <Image src={avatarSrc} alt="" width={30} height={30} unoptimized
+        {avatarSrc ? <Image src={avatarSrc} alt="" width={40} height={40} unoptimized
           className="preview-navigation-avatar"
-          onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} />}
-        <span>{name}</span>
+          onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} /> : <UserRound size={26} aria-hidden="true" />}
       </Button>
       <animated.div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}
         style={{ opacity: panel.progress.to([0, 1], [0, 1], "clamp"), scaleY: panel.progress }}>
@@ -179,9 +178,9 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
           <Button ref={trigger} type="button" variant="ghost" className="preview-section-trigger"
             aria-label={"RenderLab sections: " + (current?.label ?? "RenderLab")}
             aria-expanded={open} aria-controls={id} onClick={() => setOpenPath(open ? null : pathname)}>
-            <RenderLabMark className="size-6" />
+            <RenderLabMark className="size-9" />
             <span>{current?.label ?? "RenderLab"}</span>
-            <Menu size={16} aria-hidden="true" />
+            <Menu size={20} aria-hidden="true" />
           </Button>
           <animated.nav id={id} className="preview-section-panel" aria-label="RenderLab navigation"
             aria-hidden={!open} inert={!open} data-open={open}

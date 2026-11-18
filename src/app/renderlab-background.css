@@ -92,10 +92,10 @@
   z-index: 20;
   display: flex;
   align-items: stretch;
+  justify-content: space-between;
   gap: 6px;
   padding-inline: clamp(10px, 2vw, 28px);
-  background: rgb(13 12 20 / 94%);
-  border-block-end: 1px solid rgb(221 211 255 / 10%);
+  background: transparent;
 }
 
 .preview-section-disclosure,
@@ -107,23 +107,40 @@
 }
 
 .preview-navigation-header :is(.preview-section-trigger, .preview-navigation-profile) {
-  gap: 8px;
-  min-block-size: 44px;
+  gap: 10px;
+  min-block-size: 54px;
   padding-inline: 12px;
   border-radius: 14px;
   color: #f6f7fb;
+}
+
+.preview-navigation-header .preview-section-trigger > svg {
+  inline-size: 20px;
+  block-size: 20px;
+}
+.preview-navigation-header .preview-section-trigger [data-renderlab-mark] {
+  inline-size: 36px;
+  block-size: 36px;
+}
+.preview-navigation-header .preview-navigation-profile > svg {
+  inline-size: 26px;
+  block-size: 26px;
 }
 
 .preview-section-trigger[aria-expanded="true"] {
   background: rgb(221 211 255 / 13%);
 }
 
-.preview-navigation-header .preview-navigation-profile {
-  max-inline-size: min(42vw, 240px);
+.preview-navigation-header .preview-section-trigger {
+  font-size: 18px;
+  font-weight: 650;
 }
-.preview-navigation-profile span {
-  overflow: hidden;
-  text-overflow: ellipsis;
+
+.preview-navigation-header .preview-navigation-profile {
+  inline-size: 54px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
 }
 .preview-navigation-profile img {
   flex: none;
@@ -149,7 +166,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: 22px clamp(12px, 3vw, 42px);
-  max-block-size: calc(100dvh - 64px);
+  max-block-size: calc(100dvh - 70px);
   overflow: auto;
 }
 .preview-section-group { padding-inline: 16px; }
@@ -179,11 +196,11 @@
   outline-offset: -2px;
 }
 .preview-account-menu {
-  inset-inline-start: clamp(10px, 2vw, 28px);
+  inset-inline-end: clamp(10px, 2vw, 28px);
   inline-size: min(258px, calc(100vw - 20px));
   padding: 8px;
   border-radius: 0 0 16px 16px;
-  transform-origin: top;
+  transform-origin: top right;
   z-index: 1;
 }
 @supports (backdrop-filter: blur(1px)) {
