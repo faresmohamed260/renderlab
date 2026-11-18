@@ -4,58 +4,6 @@ const START_HELPER_PATH = "scripts/start-ci-app.mjs";
 const SETUP_NODE_REF = "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020";
 
 const cohort = {
-  "create-lifecycle-visual.yml": {
-    timeoutMinutes: 20,
-    healthUrl: "http://127.0.0.1:3000/",
-    verifier: "node scripts/verify-create-lifecycle.mjs",
-    cleanup: "node scripts/verify-create-lifecycle.mjs --cleanup-only",
-    artifactName: "renderlab-create-lifecycle-screenshots",
-    artifactPath: "artifacts/create-lifecycle-*.png",
-    secrets: [
-      "SUPABASE_SERVICE_ROLE_KEY",
-      "R2_ACCOUNT_ID",
-      "R2_ACCESS_KEY_ID",
-      "R2_SECRET_ACCESS_KEY",
-      "R2_BUCKET_NAME",
-    ],
-  },
-  "activity-visual.yml": {
-    timeoutMinutes: 15,
-    healthUrl: "http://127.0.0.1:3000/activity",
-    verifier: "node scripts/verify-activity.mjs",
-    cleanup: "node scripts/verify-activity.mjs --cleanup-only",
-    artifactName: "renderlab-activity-screenshots",
-    artifactPath: "artifacts/activity-*.png",
-    secrets: ["SUPABASE_SERVICE_ROLE_KEY"],
-    concurrency: {
-      group: "renderlab-activity-${{ github.ref }}",
-      cancelInProgress: false,
-    },
-  },
-  "library-lifecycle-visual.yml": {
-    timeoutMinutes: 15,
-    healthUrl: "http://127.0.0.1:3000/library",
-    verifier: "node scripts/verify-library-lifecycle.mjs",
-    cleanup: "node scripts/verify-library-lifecycle.mjs --cleanup-only",
-    artifactName: "renderlab-library-lifecycle-screenshots",
-    artifactPath: "artifacts/library-lifecycle-*.png",
-    secrets: [
-      "SUPABASE_SERVICE_ROLE_KEY",
-      "R2_ACCOUNT_ID",
-      "R2_ACCESS_KEY_ID",
-      "R2_SECRET_ACCESS_KEY",
-      "R2_BUCKET_NAME",
-      "CLOUDFLARE_API_TOKEN",
-      "CF_API_TOKEN",
-      "CLOUDFLARE_TOKEN",
-      "CF_TOKEN",
-      "CLOUDFLARE_R2_ADMIN_TOKEN",
-    ],
-    concurrency: {
-      group: "renderlab-library-lifecycle-shared",
-      cancelInProgress: false,
-    },
-  },
   "account-identity-visual.yml": {
     timeoutMinutes: 15,
     healthUrl: "http://127.0.0.1:3000/settings",

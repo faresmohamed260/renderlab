@@ -454,9 +454,15 @@ Configured Media Rename Visual `33074480356` used real generated/uploaded R2-bac
 
 During PR #12 verification, two older leaked Library lifecycle assets surfaced with the same fixed human fixture name. Each failing run cleaned its own newly created upload correctly; the stale database rows were removed separately. One-off cleanup run `33075125636` deleted the first orphaned R2 object. One-off cleanup run `33076888858` deleted and then HEAD-verified absence of the second orphaned R2 object `renderlab/uploads/2026/08/dde3c1c0-d65e-498a-a4b1-78cc9cbd0264.png`. The temporary cleanup script/workflow was removed from the branch after each cleanup.
 
-The configured Library lifecycle is now hardened at both orchestration and identity boundaries. `.github/workflows/library-lifecycle-visual.yml` uses `concurrency: renderlab-library-lifecycle-shared` with `cancel-in-progress: false` so shared mutable lifecycle windows do not overlap for workflow revisions that include the rule. Independently, `scripts/verify-library-lifecycle.mjs` locates the exact Library card by the durable `media-asset` ID returned by its own upload completion and separately asserts the expected display name. Same-name durable assets therefore cannot make the verifier ambiguous even if unrelated stale state exists.
+The former configured Library lifecycle was hardened at both orchestration and identity boundaries. Its workflow was retired with the legacy generation/video suite on 2026-11-18; the script remains historical implementation evidence only and is not a production gate.
 
 ## Generation Worker Fleet
+
+### Current worker posture (2026-11-18)
+
+`faresmohamed260` is the only retained Modal workspace for RenderLab. The only deployed RenderLab generation service is `renderlab-fibo-native-gateway` (`ap-vNAFxva6ugq40CkXOkR9Lk`). The legacy FLUX, Qwen, LTX/video, and image-upscale applications were stopped; their registrations have been removed from the new-submission fleet. The server accepts only FIBO image requests. Historical worker/job records remain readable and do not reactivate a provider route.
+
+The obsolete repository-wide `SAGA_MODAL_TOKENS_JSON`, protected-environment Modal deployment tokens, and Production upscale gateway setting were removed on 2026-11-18. The retained FIBO proxy credentials are server-only Vercel Production secrets; they are not GitHub Actions, browser, or client credentials.
 
 ### FIBO fleet candidate (not deployed)
 
@@ -749,16 +755,13 @@ Ordinary UI CI runs without production secrets and validates truthful unavailabl
 Actions budget discipline:
 - the repository is public, so normal GitHub-hosted public-repository runner usage is the approved mid-development validation path;
 - final exact-head validation remains mandatory; budget pressure or runner-start failure is not permission to waive a required gate;
-- only workflows whose interrupted state is safely reconstructible use `cancel-in-progress: true`. Current cancellation-safe workflows are UI Shell, Persistent Media Upload Integration, and Reference Upload Integration;
-- worker-backed Create/Generation/Video workflows, the shared Library Lifecycle/Drag Drop lock, and visual fixtures that can place R2 objects before their DB row remain non-canceling;
+- only workflows whose interrupted state is safely reconstructible use `cancel-in-progress: true`. Current cancellation-safe workflows are Persistent Media Upload Integration and Reference Upload Integration;
+- retained shared-resource visual fixtures that can place R2 objects before their DB row remain non-canceling;
 - configured helper accounts use deterministic `GITHUB_RUN_ID`-scoped owner identities (or an explicit test-scope override): reruns of the same workflow can reconstruct their own cleanup, while separate workflow runs cannot delete each other's Auth owner or owned rows;
 - connector-driven repository writes should batch cohesive changes into as few commits as practical so intermediate heads do not launch redundant workflows.
 
-Key workflows:
-- `verify-create-lifecycle.mjs` + `create-lifecycle-visual.yml`
-- `verify-activity.mjs` + `activity-visual.yml` — two-account generation-history privacy, lifecycle/status rendering, internal-error redaction, active-result filtering, bounded pagination, responsive screenshots and exact cleanup
+Retained workflows include:
 - `verify-media-upload.mjs` + `media-upload-integration.yml`
-- `verify-library-lifecycle.mjs` + `library-lifecycle-visual.yml` — shared-resource lifecycle is serialized and exact durable fixture identity is used for browser targeting
 - `verify-library-batch-delete.mjs` + `library-batch-delete-visual.yml` — page-scoped selection, per-item partial success, R2/database cleanup, ownership isolation, idempotence and responsive confirmation
 - `verify-library-search.mjs` + `library-search-visual.yml`
 - `verify-media-download.mjs` + `media-download-visual.yml`
@@ -766,8 +769,7 @@ Key workflows:
 - `verify-account-identity.mjs` + `account-identity-visual.yml` — exact run-owned confirmed Auth user, real Settings session lifecycle, responsive screenshots and exact cleanup; now also validates the canonical `SUPABASE_PUBLISHABLE_KEY` → browser-bundle mapping
 - `verify-account-ownership.mjs` + `account-ownership.yml` — two-account private-record isolation, signed-out denial, foreign opaque-ID denial, raw table-access denial and exact fixture cleanup
 - `verify-reference-upload.mjs` + `reference-upload-integration.yml` — owner-bound temporary source persistence
-- `verify-generation-bridge.mjs` + `generation-bridge-integration.yml` — owner-bound Create Image/Edit Image persistence and continuation plus actual output-dimension assertions for fixed Create geometry, Edit `Original` and explicit Edit override
-- `verify-video-generation.mjs` + `video-generation-integration.yml` — owner-bound Create Video/Animate Image plus temporary reference ownership; CI installs `ffmpeg`/`ffprobe` so real persisted MP4 dimensions verify fixed Video and source-derived Animate `Original` geometry
+- retired model, video, upscale, and mock-generation lifecycle workflows were removed on 2026-11-18. New FIBO production routing is protected by the required unit, type, quality, and deployment-readiness checks while a dedicated FIBO browser workflow is not yet approved.
 - `verify-vercel-env.mjs` + `deployment-readiness.yml` — non-deploying Next.js/Vercel configuration, canonical Vercel environment preflight and production-build gate
 - `ensure-r2-browser-cors.mjs` for idempotent exact-origin upload-CORS reconciliation
 
@@ -987,9 +989,9 @@ The shared database schema is intentionally ahead of the currently deployed appl
 - Therefore repository verification proves the Phase 14/15 candidate behavior, but production does not receive autonomous reconciliation, indexed new-output finalization, user-facing Cancel or maintenance until a separately authorized exact-candidate rollout and scheduler activation occurs.
 
 ### Phase 16 Creative Iteration configured verification
-Phase 16A–16C add no production infrastructure, schema migration, scheduler or provider-routing change. Their dedicated `.github/workflows/creative-iteration.yml` is development/verification infrastructure only. It builds the production app, runs UI purity, starts a local mock external generation backend, and exercises authenticated browser/API behavior against run-owned rows/objects in the approved shared Supabase/R2 resources.
+Phase 16A–16C added no production infrastructure, schema migration, scheduler or provider-routing change. Its former dedicated `.github/workflows/creative-iteration.yml` used a local mock external generation backend; it was retired on 2026-11-18 with the old generation suite and is no longer a CI path.
 
-The workflow owns real mutable fixtures, so its concurrency group is serialized per PR/ref with `cancel-in-progress: false`; a superseding commit must not interrupt cleanup and strand shared database/R2 state merely to save hosted minutes. `scripts/verify-creative-iteration.mjs` uses deterministic configured test-account namespaces, records no production user data, and always deletes the run-owned Auth/database/R2 fixtures. Exact run `33959979016` cleaned owner assets/sources/objects plus the foreign-owner fixture and then passed a separate cleanup-only step. This CI workflow does not authorize production generation, a Vercel deployment or scheduler activation.
+The retired workflow owned real mutable fixtures, so its historical concurrency group was serialized per PR/ref with `cancel-in-progress: false`. `scripts/verify-creative-iteration.mjs` and its evidence remain historical records only; no current CI workflow may invoke its mock-generation path.
 
 ## Phase 17 engineering quality / diagnostics — verified historical baseline
 - `Engineering Quality` remains the cheap local-only CI gate: Oxlint, TypeScript no-emit, Node unit tests, negative gate fixtures and UI-purity verification. It installs no Chromium and requires no Supabase, R2 or generation-provider secret. Existing configured/live workflows remain authoritative when their paths are affected.

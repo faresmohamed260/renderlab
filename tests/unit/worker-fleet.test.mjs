@@ -10,27 +10,13 @@ import {
   workersForEcosystem,
 } from "../../src/server/generation/worker-fleet.ts";
 
-test("disabled fleet registrations remain historical and FLUX routes only through the recovered primary", () => {
-  assert.equal(findWorker("flux-primary-01")?.routingStatus, "active");
-  assert.equal(findWorker("flux-standby-01")?.routingStatus, "disabled");
-  assert.equal(findWorker("ltx-primary-01")?.routingStatus, "disabled");
-  assert.equal(findWorker("ltx-standby-01")?.routingStatus, "disabled");
-
-  assert.deepEqual(
-    workersForEcosystem("flux2-klein-9b").map((worker) => worker.id),
-    ["flux-primary-01"],
-  );
-  assert.deepEqual(
-    workersForEcosystem("ltx25-redgraft").map((worker) => worker.id),
-    ["ltx-primary-02", "ltx-standby-02"],
-  );
-});
-
-test("healthy Qwen routing preserves primary then standby order", () => {
-  assert.deepEqual(
-    workersForEcosystem("qwen-image-edit-2511").map((worker) => worker.id),
-    ["qwen-primary-01", "qwen-standby-01"],
-  );
+test("retired FLUX, Qwen, and LTX workers cannot be resolved or routed", () => {
+  for (const id of ["flux-primary-01", "qwen-primary-01", "ltx-primary-02"]) {
+    assert.equal(findWorker(id), null);
+  }
+  for (const ecosystem of ["flux2-klein-9b", "ltx25-redgraft", "qwen-image-edit-2511"]) {
+    assert.deepEqual(workersForEcosystem(ecosystem), []);
+  }
 });
 
 test("all routed workers are explicitly active", () => {
@@ -39,11 +25,6 @@ test("all routed workers are explicitly active", () => {
     assert.equal(worker.routingStatus, "active");
   }
 
-  for (const ecosystem of ["flux2-klein-9b", "ltx25-redgraft", "qwen-image-edit-2511"]) {
-    for (const worker of workersForEcosystem(ecosystem)) {
-      assert.equal(worker.routingStatus, "active");
-    }
-  }
 });
 
 test("FIBO gateway fails closed without complete credentials or a Modal HTTPS origin", () => {
@@ -78,13 +59,6 @@ test("FIBO gateway fails closed without complete credentials or a Modal HTTPS or
     assert.equal(acceptedWorkerCallId(worker, 202, signed), true);
     assert.equal(acceptedWorkerCallId(worker, 200, signed), false);
     assert.equal(acceptedWorkerCallId(worker, 202, "fc-unsigned"), false);
-    for (const [id, cancels] of [["flux-primary-01", true], ["ltx-primary-02", true], ["qwen-primary-01", false]]) {
-      const established = findWorker(id);
-      assert.deepEqual(workerGatewayOptions(established), {});
-      assert.equal(workerSupportsCancellation(established), cancels);
-      assert.equal(acceptedWorkerCallId(established, 200, "provider-id"), true);
-    }
-    assert.equal(workersForEcosystem("flux2-klein-9b")[0].id, "flux-primary-01");
     delete process.env.RENDERLAB_FIBO_GENERATION;
     assert.deepEqual(workersForEcosystem("fibo2-edit-turbo"), []);
     assert.deepEqual(findWorker("renderlab-fibo-native-01"), worker);

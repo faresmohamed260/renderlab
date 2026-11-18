@@ -38,30 +38,3 @@ test("immutable action verification rejects mutable external action refs", () =>
   assert.equal(problems.length, 1);
   assert.match(problems[0], /non-immutable external action ref: actions\/setup-node@v4/);
 });
-
-test("ENT-010 CI workflow contract rejects a missing always cleanup guard", async () => {
-  const inputs = await currentContractInputs();
-  inputs.workflows["activity-visual.yml"] = inputs.workflows["activity-visual.yml"].replace(
-    "      - name: Cleanup Activity fixtures\n        if: always()\n        run: node scripts/verify-activity.mjs --cleanup-only",
-    "      - name: Cleanup Activity fixtures\n        run: node scripts/verify-activity.mjs --cleanup-only",
-  );
-
-  const result = assessCiWorkflowContract(inputs);
-  assert.equal(result.ok, false);
-  assert.match(result.problems.join("\n"), /activity-visual\.yml cleanup must remain guarded by if: always\(\)/);
-});
-
-test("ENT-010 CI workflow contract rejects lost protected concurrency", async () => {
-  const inputs = await currentContractInputs();
-  inputs.workflows["library-lifecycle-visual.yml"] = inputs.workflows["library-lifecycle-visual.yml"].replace(
-    "  cancel-in-progress: false",
-    "  cancel-in-progress: true",
-  );
-
-  const result = assessCiWorkflowContract(inputs);
-  assert.equal(result.ok, false);
-  assert.match(
-    result.problems.join("\n"),
-    /library-lifecycle-visual\.yml must preserve concurrency group renderlab-library-lifecycle-shared with cancel-in-progress: false/,
-  );
-});

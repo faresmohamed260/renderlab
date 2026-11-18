@@ -38,13 +38,13 @@ test("generation aliases and prompt references remain deterministic", () => {
 });
 
 test("generation model capability exposes contextual choices with stable defaults", () => {
-  assert.equal(defaultImageGenerationModel, "flux2-klein-9b");
-  assert.equal(defaultGenerationModelForOutput("image"), "flux2-klein-9b");
+  assert.equal(defaultImageGenerationModel, "fibo2-edit-turbo");
+  assert.equal(defaultGenerationModelForOutput("image"), "fibo2-edit-turbo");
   assert.equal(defaultGenerationModelForOutput("video"), "ltx25-redgraft");
-  assert.deepEqual(generationModelsForOutput("image"), ["flux2-klein-9b", "qwen-image-edit-2511", "fibo2-edit-turbo"]);
-  assert.deepEqual(generationModelsForOutput("video"), ["ltx25-redgraft"]);
-  assert.equal(generationModelDefinitions["qwen-image-edit-2511"].label, "Qwen Image Edit");
-  assert.equal(isImageGenerationModel("qwen-image-edit-2511"), true);
+  assert.deepEqual(generationModelsForOutput("image"), ["fibo2-edit-turbo"]);
+  assert.deepEqual(generationModelsForOutput("video"), []);
+  assert.equal(generationModelDefinitions["fibo2-edit-turbo"].label, "Bria FIBO");
+  assert.equal(isImageGenerationModel("qwen-image-edit-2511"), false);
   assert.equal(isImageGenerationModel("fibo2-edit-turbo"), true);
   assert.equal(isImageGenerationModel("ltx25-redgraft"), false);
 });
@@ -127,7 +127,7 @@ test("upscale Viewer metadata eligibility is conservative and capability-derived
 
 test("continuation and advanced defaults stay capability-derived", () => {
   assert.equal(continuationActionForMedia("image", "edit-image")?.inputRole, "primary-image");
-  assert.equal(continuationActionForMedia("image", "animate-image")?.inputRole, "first-frame");
+  assert.equal(continuationActionForMedia("image", "animate-image"), null);
   assert.equal(continuationActionForMedia("video", "edit-image"), null);
   assert.deepEqual(advancedDefaultsForOutput("image"), { seed: 42, steps: 4, guidance: 1 });
   assert.deepEqual(advancedDefaultsForOutput("video"), { seed: 42, frameRate: 24 });
