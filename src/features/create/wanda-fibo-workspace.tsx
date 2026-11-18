@@ -74,6 +74,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
   const [steps, setSteps] = useState(4);
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
   const [result, setResult] = useState<Result>();
+  const [runningBatch, setRunningBatch] = useState<Result[]>([]);
+  const [inspected, setInspected] = useState<Result>();
   const [history, setHistory] = useState<Result[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
   const [sizeIndex, setSizeIndex] = useState(0);
@@ -107,6 +109,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     const controller = new AbortController();
     const { signal } = controller;
     active.current = controller;
+    setRunningBatch([]);
+    setInspected(undefined);
     setBusy(true);
     setStatus(mode === "edit" ? "Uploading images..." : "Submitting render...");
     try {
@@ -132,13 +136,19 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
       setStatus("Rendering on Modal...");
       const end = Date.now() + 8 * 60_000;
+      let images: Result[] = [];
       while (!signal.aborted && Date.now() < end) {
         const update = await request<{ finished: boolean; images: Result[]; error?: string }>("local/render/" + job, { signal });
+        if (update.images.length > images.length) {
+          images = [...images, ...update.images.slice(images.length).map((image) => ({
+            ...image, batchId: job, source: mode === "edit" ? files[0] : undefined,
+          }))];
+          setRunningBatch(images);
+        }
         if (update.finished) {
           if (!update.images[0]) throw new Error(update.error ?? "No image returned.");
-          const images = update.images.map((image) => ({ ...image, batchId: job, source: mode === "edit" ? files[0] : undefined }));
           const image = images[0];
-          setResult(image);
+          setResult((previous) => previous?.batchId === job ? previous : image);
           if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
             updateDraft(mode, { vgl: image.json_instruction, generatedVgl: true });
           }
@@ -378,10 +388,15 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             <p>Sign in with an admitted RenderLab account to generate. <Link href="/settings" className="underline">Open Settings</Link></p>
           ) : (
             <WandaFiboStage
-              result={result}
+              result={busy ? inspected : result}
               source={mode === "edit" ? files[0] : undefined}
-              batch={result?.batchId ? history.filter((image) => image.batchId === result.batchId) : []}
-              onSelect={setResult}
+              batch={busy ? runningBatch : result?.batchId ? history.filter((image) => image.batchId === result.batchId) : []}
+              onSelect={(image) => {
+                if (busy) setInspected(image);
+                setResult(image);
+              }}
+              onReturnToProgress={() => { setInspected(undefined); setResult(undefined); }}
+              expectedImages={Number(imageCount)}
               input={mode === "edit" ? previews[0] : inspirationPreview}
               inputLabel={mode === "edit" ? "Source image" : "Reference image"}
               busy={busy}

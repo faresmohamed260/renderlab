@@ -803,6 +803,11 @@
   padding: 2px;
   border-radius: 12px;
 }
+.wanda-fibo-workspace .wanda-fibo-stage-batch .wanda-fibo-stage-pending {
+  inline-size: auto;
+  padding-inline: 9px;
+  font-size: 11px;
+}
 .wanda-fibo-stage-batch button[aria-current="true"] { background: #a5b4fc; }
 .wanda-fibo-workspace .wanda-fibo-stage-batch img {
   inline-size: 100%;
