@@ -257,7 +257,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
 
   function attachImage(file: File, index: number) {
     if (!admitted || busy) return;
-    if (index === 0) { setMode("edit"); setResult(undefined); }
+    if (index === 0) { setMaskEditor(false); setSelection(undefined); setMode("edit"); setResult(undefined); }
     updateDraft("edit", { vgl: "", generatedVgl: false });
     setFiles((previous) => { const next = [...previous]; next[index] = file; return next; });
   }
@@ -363,6 +363,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                         className="wanda-fibo-remove" aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
                         onClick={() => {
                           updateDraft("edit", { vgl: "", generatedVgl: false });
+                          if (index === 0) setSelection(undefined);
                           setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
                         }}><X /></Button>}
                     </div>
@@ -408,7 +409,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               </details>
             </div>
             <Textarea id="wanda-fibo-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={!admitted || busy} maxLength={4000}
-              placeholder="Describe the result you want…"
+              placeholder={mask ? "Describe what to change in the masked area…" : "Describe the result you want…"}
               onChange={(event) => setPrompt(event.target.value)} />
             <div className="wanda-fibo-extra" key={mode}>
               <details open={negativeOpen} onToggle={(event) => {
@@ -470,7 +471,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
             <WandaFiboStage
               browseDisabled={!admitted}
               maskAction={admitted && mode === "edit" && files[0] && !result && !busy ? {
-                applied: !!mask, blocked: files.slice(1).some(Boolean), open: () => setMaskEditor(true),
+                mask, blocked: files.slice(1).some(Boolean), open: () => setMaskEditor(true),
                 clear: () => { setSelection(undefined); updateDraft("edit", { vgl: "", generatedVgl: false }); },
               } : undefined}
               result={busy ? inspected : result}
@@ -515,6 +516,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               <WandaFiboMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} onClose={() => setMaskEditor(false)}
                 onSave={(region) => {
                   setSelection(region ? { source: files[0]!, mask: region } : undefined);
+                  if (region) requestAnimationFrame(() => document.getElementById("wanda-fibo-prompt")?.focus({ preventScroll: true }));
                   updateDraft("edit", { vgl: "", generatedVgl: false });
                   setMaskEditor(false);
                 }} />

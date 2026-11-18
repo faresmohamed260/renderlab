@@ -20,7 +20,7 @@ type Props<T extends StageResult> = {
   input?: string;
   inputLabel: string;
   browseDisabled?: boolean;
-  maskAction?: { applied: boolean; blocked: boolean; open: () => void; clear: () => void };
+  maskAction?: { mask?: File; blocked: boolean; open: () => void; clear: () => void };
   busy: boolean;
   liveFrame?: string;
   renderRatio?: number;
@@ -42,11 +42,21 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
   const restoring = useRef(false);
   const opener = useRef<HTMLButtonElement>(null);
   const inspecting = busy && !!result;
+  const [hiddenMask, setHiddenMask] = useState<File>();
+  const [overlay, setOverlay] = useState<{ mask: File; url: string }>();
+  const savedMask = maskAction?.mask;
+  useEffect(() => {
+    if (!savedMask) { setOverlay(undefined); return; }
+    const url = URL.createObjectURL(savedMask);
+    setOverlay({ mask: savedMask, url });
+    return () => URL.revokeObjectURL(url);
+  }, [savedMask]);
+  const reviewing = !busy && !!savedMask && savedMask !== hiddenMask && overlay?.mask === savedMask;
   const showingProgress = busy && !inspecting;
   const pending = busy && batch.length < expectedImages;
   const showBatch = busy ? batch.length > 0 || expectedImages > 1 : batch.length > 1;
-  const shown = showingProgress ? undefined : result?.image_data ?? input;
-  const canCompare = !!source && result?.source === source && !!before && !busy;
+  const shown = showingProgress ? undefined : (reviewing ? input : result?.image_data ?? input);
+  const canCompare = !reviewing && !!source && result?.source === source && !!before && !busy;
   const compare = canCompare && compared === result;
   const dimensionsUrl = showingProgress ? input : shown;
   const ratio = (showingProgress && renderRatio) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio : 0.75);
@@ -92,11 +102,13 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
   function media() {
     return shown && (
       <div className="wanda-fibo-stage-media" style={{ "--stage-media-ratio": ratio, "--stage-split": split + "%" } as CSSProperties}>
-        <img key={shown} src={shown} alt={result ? "Generated result" : inputLabel} draggable={false}
+        <img key={shown} src={shown} alt={result && !reviewing ? "Generated result" : inputLabel} draggable={false}
           onLoad={(event) => {
             const image = event.currentTarget;
             if (image.naturalHeight) setDimensions({ url: shown, ratio: image.naturalWidth / image.naturalHeight });
           }} />
+        {reviewing && <div className="wanda-fibo-stage-mask-overlay" role="img" aria-label="Selected region"
+          style={{ maskImage: "url(" + overlay.url + ")" }} />}
         {compare && <div className="wanda-fibo-stage-before"><img src={before} alt="Source image" draggable={false} /></div>}
         {compare && (
           <div className="wanda-fibo-stage-divider" role="slider" tabIndex={0} aria-label="Source and result comparison"
@@ -140,12 +152,17 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
   }
 
   function tools() {
-    if (!result && maskAction && !busy) return (
+    if (maskAction && !result && !busy) return (
       <div className="wanda-fibo-stage-tools" role="group" aria-label="Mask actions">
-        <Button type="button" variant="ghost" size="sm" disabled={maskAction.blocked}
+        <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="M" disabled={maskAction.blocked}
           title={maskAction.blocked ? "Remove references to use a mask" : "Paint a mask on the source image"}
-          onClick={() => { if (viewerOpen) dialog.current?.close(); maskAction.open(); }}>{maskAction.applied ? "Edit mask" : "Mask"}</Button>
-        {maskAction.applied && <Button type="button" variant="ghost" size="sm" onClick={maskAction.clear}>Clear mask</Button>}
+          onClick={() => { if (viewerOpen) dialog.current?.close(); maskAction.open(); }}>{maskAction.mask ? "Edit mask" : "Mask"}</Button>
+        {maskAction.mask && <>
+          <span className="wanda-fibo-stage-mask-status">Mask applied</span>
+          <Button type="button" variant="ghost" size="sm" aria-pressed={reviewing}
+            onClick={() => { setCompared(undefined); setHiddenMask(reviewing ? savedMask : undefined); }}>{reviewing ? "Hide overlay" : "Show overlay"}</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => { setHiddenMask(undefined); maskAction.clear(); }}>Clear mask</Button>
+        </>}
       </div>
     );
     return result && (
@@ -180,7 +197,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
   }
 
   function runActions() {
-    if (!result?.run || busy) return null;
+    if (!result?.run || busy || reviewing) return null;
     const restore = (reopen: boolean) => {
       if (viewerOpen) { restoring.current = true; dialog.current?.close(); }
       onRestore(result, reopen);
@@ -223,9 +240,9 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
     }
     if (busy || event.repeat) return;
     const shortcut = key === "escape" && compare ? "C" : key.toUpperCase();
-    if (!["C", "D", "U"].includes(shortcut)) return;
+    if (!["M", "C", "D", "U"].includes(shortcut)) return;
     const action = scope?.querySelector<HTMLElement>('[aria-keyshortcuts="' + shortcut + '"]');
-    if (!action?.getClientRects().length) return;
+    if (!action?.getClientRects().length || action.matches(":disabled")) return;
     event.preventDefault();
     action.click();
   }
@@ -256,7 +273,7 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
     <>
       <div ref={frame} className="wanda-fibo-stage-frame" onKeyDown={stageKeys} data-batch={showBatch}>
         <div className="wanda-fibo-stage-surface" data-empty={!shown && !busy} role="group" tabIndex={0}
-          aria-label={showingProgress ? "Generating" : result ? "Result" : input ? inputLabel : "Canvas"} aria-busy={showingProgress}
+          aria-label={showingProgress ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? inputLabel : "Canvas"} aria-busy={showingProgress}
           onClick={(event) => {
             if (event.target === event.currentTarget || event.target instanceof HTMLImageElement) {
               event.currentTarget.focus({ preventScroll: true });
