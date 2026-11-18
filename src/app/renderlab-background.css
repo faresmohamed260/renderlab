@@ -638,12 +638,39 @@
 }
 
 /* FIBO-style preview actions are inside the fixed RenderLab stage. */
-.wanda-fibo-stage-surface {
+.wanda-fibo-canvas:has(.wanda-fibo-stage-frame) { background: transparent; }
+.wanda-fibo-stage-frame {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
   container-type: size;
+}
+.wanda-fibo-stage-frame[data-batch="true"] { inset-block-end: 66px; }
+.wanda-fibo-stage-frame .wanda-fibo-stage-surface {
+  position: relative;
+  inset: auto;
+  inline-size: min(100cqw, calc(100cqh * var(--stage-media-ratio)));
+  aspect-ratio: var(--stage-media-ratio);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 20px;
+  background: rgb(13 12 20 / 45%);
+}
+.wanda-fibo-stage-frame .wanda-fibo-stage-surface[data-empty="true"] { background: rgb(255 255 255 / 4.5%); }
+.wanda-fibo-stage-surface .wanda-fibo-canvas-upload {
+  padding: 14px;
+  color: #dbdbe4;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.wanda-fibo-workspace .wanda-fibo-stage-surface .wanda-fibo-canvas-upload:hover { background: rgb(255 255 255 / 3.5%); }
+.wanda-fibo-stage-surface {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  container-type: inline-size;
 }
 .wanda-fibo-stage-media {
   position: relative;
@@ -660,7 +687,7 @@
   object-fit: contain;
   border-radius: 0;
 }
-.wanda-fibo-stage-before { clip-path: inset(0 calc(100% - var(--stage-split)) 0 0); }
+.wanda-fibo-stage-before { position: absolute; inset: 0; background: #09090c; clip-path: inset(0 calc(100% - var(--stage-split)) 0 0); }
 .wanda-fibo-stage-divider {
   position: absolute;
   inset-block: 0;
@@ -671,20 +698,15 @@
   touch-action: none;
 }
 .wanda-fibo-stage-divider::before, .wanda-fibo-stage-divider::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.wanda-fibo-stage-divider::before { inset-block: 0; inline-size: 2px; background: rgb(255 255 255 / 85%); }
-.wanda-fibo-stage-divider::after {
-  top: calc(50% - 12px);
-  inline-size: 24px;
-  block-size: 24px;
-  border-radius: 50%;
-  background: rgb(37 32 49 / 80%);
+  content: "‹ ›";
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #fff;
+  white-space: nowrap;
+  background: rgb(16 15 21 / 43%);
   backdrop-filter: blur(18px);
-  border: 1px solid rgb(255 255 255 / 60%);
 }
 .wanda-fibo-stage-divider:focus-visible { outline: 2px solid #a5b4fc; outline-offset: -2px; }
 .wanda-fibo-stage-tools {
@@ -728,27 +750,71 @@
   font-size: 12px;
 }
 .wanda-fibo-workspace .wanda-fibo-stage-tools :is(button, a):is(:hover, [aria-pressed="true"]) { color: white; background: transparent; }
+.wanda-fibo-stage-backdrop, .wanda-fibo-stage-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.wanda-fibo-stage-backdrop {
+  background:
+    radial-gradient(ellipse at 20% 28%, #503151, transparent 67%),
+    radial-gradient(ellipse at 82% 19%, #3b3467, transparent 65%),
+    radial-gradient(ellipse at 77% 87%, #26304c, transparent 70%),
+    linear-gradient(145deg, #292239, #141521);
+}
+@property --wanda-stage-sweep {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: -28%;
+}
+.wanda-fibo-stage-shimmer {
+  background: linear-gradient(108deg, transparent calc(var(--wanda-stage-sweep) - 28%),
+    rgb(238 224 255 / 13%) calc(var(--wanda-stage-sweep) - 5%), rgb(238 224 255 / 20%) var(--wanda-stage-sweep),
+    rgb(238 224 255 / 13%) calc(var(--wanda-stage-sweep) + 5%), transparent calc(var(--wanda-stage-sweep) + 28%));
+  animation: wanda-fibo-stage-sweep 2.8s ease-in-out infinite;
+}
+@keyframes wanda-fibo-stage-sweep { to { --wanda-stage-sweep: 128%; } }
 .wanda-fibo-stage-notice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-inline-size: 90%;
-  padding: 8px 12px;
-  border-radius: 14px;
-  color: #fff;
-  background: rgb(37 32 49 / 58%);
+  position: absolute;
+  inset: calc(50% + 24px) 12px auto;
+  inline-size: fit-content;
+  margin-inline: auto;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: white;
+  background: rgb(16 15 21 / 43%);
+  backdrop-filter: blur(18px);
   font-size: 12px;
+  font-weight: 600;
 }
-.wanda-fibo-stage-notice i {
-  inline-size: 14px;
-  block-size: 14px;
-  flex: none;
-  border: 2px solid rgb(255 255 255 / 22%);
-  border-block-start-color: #a5b4fc;
-  border-radius: 50%;
-  animation: wanda-fibo-stage-spin .8s linear infinite;
+.wanda-fibo-stage-batch {
+  display: flex;
+  gap: 6px;
+  position: absolute;
+  inset: calc(100% + 8px) 0 auto;
+  justify-content: safe center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
 }
-@keyframes wanda-fibo-stage-spin { to { rotate: 1turn; } }
+.wanda-fibo-workspace .wanda-fibo-stage-batch button {
+  inline-size: 52px;
+  block-size: 52px;
+  padding: 2px;
+  border-radius: 12px;
+}
+.wanda-fibo-stage-batch button[aria-current="true"] { background: #a5b4fc; }
+.wanda-fibo-workspace .wanda-fibo-stage-batch img {
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.wanda-fibo-stage-viewer .wanda-fibo-stage-batch { inset: auto 0 64px; }
+.wanda-fibo-stage-viewer[data-batch="true"] .wanda-fibo-stage-media {
+  inline-size: min(100cqw, calc(max(72px, 100cqh - 240px) * var(--stage-media-ratio)));
+}
+.wanda-fibo-stage-frame .wanda-fibo-stage-media { inline-size: 100%; }
 .wanda-fibo-stage-open { display: none; }
 .wanda-fibo-stage-viewer:not([open]) { display: none; }
 .wanda-fibo-stage-viewer[open] {
@@ -792,5 +858,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .wanda-fibo-stage-tools::before { transition: none; }
-  .wanda-fibo-stage-notice i { animation: none; }
+  .wanda-fibo-stage-shimmer { animation: none; }
 }

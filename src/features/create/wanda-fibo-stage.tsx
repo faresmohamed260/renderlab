@@ -1,31 +1,57 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
-import { Download, ImagePlus, Maximize2, Undo2, X } from "lucide-react";
+import { Download, Maximize2, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type StageResult = { image_data: string; filename?: string; source?: File };
-type Props = {
-  result?: StageResult;
+type StageResult = { image_data: string; seed: number; filename?: string; source?: File };
+type Props<T extends StageResult> = {
+  result?: T;
+  source?: File;
+  batch: T[];
+  onSelect: (image: T) => void;
   input?: string;
   inputLabel: string;
   busy: boolean;
+  renderRatio?: number;
   status: string;
   onBrowse: () => void;
   onUseSource: (result: StageResult) => void;
 };
 
-export function WandaFiboStage({ result, input, inputLabel, busy, status, onBrowse, onUseSource }: Props) {
+export function WandaFiboStage<T extends StageResult>({ result, source, batch, onSelect, input, inputLabel, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
-  const [ratio, setRatio] = useState(0.75);
+  const [dimensions, setDimensions] = useState<{ url: string; ratio: number }>();
+  const selection = useRef(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
   const shown = busy ? undefined : result?.image_data ?? input;
-  const compare = !!result && compared === result && !!before && !busy;
-  const source = result?.source;
+  const canCompare = !!source && result?.source === source && !!before && !busy;
+  const compare = canCompare && compared === result;
+  const dimensionsUrl = busy ? input : shown;
+  const ratio = (busy && renderRatio) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio : 0.75);
+
+  useEffect(() => {
+    selection.current++;
+    if (!canCompare) setCompared(undefined);
+  }, [result, input, busy, canCompare]);
+
+  async function select(image: T) {
+    const version = ++selection.current;
+    try {
+      const decoded = new Image();
+      decoded.src = image.image_data;
+      await decoded.decode();
+      if (selection.current !== version) return;
+      setDimensions({ url: image.image_data, ratio: decoded.naturalWidth / decoded.naturalHeight });
+      onSelect(image);
+    } catch {
+      // Leave the current preview in place if the candidate cannot be decoded.
+    }
+  }
   useEffect(() => {
     if (!source) { setBefore(undefined); return; }
     const url = URL.createObjectURL(source);
@@ -35,7 +61,7 @@ export function WandaFiboStage({ result, input, inputLabel, busy, status, onBrow
 
   function drag(event: PointerEvent<HTMLDivElement>) {
     const box = event.currentTarget.parentElement?.getBoundingClientRect();
-    if (box?.width) setSplit(Math.max(3, Math.min(97, (event.clientX - box.left) / box.width * 100)));
+    if (box?.width) setSplit(Math.round(Math.max(3, Math.min(97, (event.clientX - box.left) / box.width * 100))));
   }
 
   function nudge(event: KeyboardEvent<HTMLDivElement>) {
@@ -51,16 +77,15 @@ export function WandaFiboStage({ result, input, inputLabel, busy, status, onBrow
         <img key={shown} src={shown} alt={result ? "Generated result" : inputLabel} draggable={false}
           onLoad={(event) => {
             const image = event.currentTarget;
-            if (image.naturalHeight) setRatio(image.naturalWidth / image.naturalHeight);
+            if (image.naturalHeight) setDimensions({ url: shown, ratio: image.naturalWidth / image.naturalHeight });
           }} />
-        {compare && <img className="wanda-fibo-stage-before" src={before} alt="Source image" draggable={false} />}
+        {compare && <div className="wanda-fibo-stage-before"><img src={before} alt="Source image" draggable={false} /></div>}
         {compare && (
           <div className="wanda-fibo-stage-divider" role="slider" tabIndex={0} aria-label="Source and result comparison"
             aria-valuemin={3} aria-valuemax={97} aria-valuenow={Math.round(split)}
             onKeyDown={nudge}
             onPointerDown={(event) => {
               event.currentTarget.setPointerCapture(event.pointerId);
-              drag(event);
             }}
             onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) drag(event); }} />
         )}
@@ -70,7 +95,8 @@ export function WandaFiboStage({ result, input, inputLabel, busy, status, onBrow
 
   function highlight(toolbar: HTMLDivElement) {
     const actions = [...toolbar.querySelectorAll<HTMLElement>("button:not(:disabled), a[href]")];
-    const target = actions.find((item) => item.matches(":hover, :focus-visible"))
+    const target = (matchMedia("(any-hover: hover)").matches ? actions.find((item) => item.matches(":hover")) : undefined)
+      ?? actions.find((item) => item.matches(":focus-visible"))
       ?? actions.find((item) => item.getAttribute("aria-pressed") === "true");
     toolbar.toggleAttribute("data-highlight", !!target);
     if (!target) return;
@@ -88,7 +114,7 @@ export function WandaFiboStage({ result, input, inputLabel, busy, status, onBrow
         onPointerLeave={(event) => highlight(event.currentTarget)}
         onFocus={(event) => highlight(event.currentTarget)}
         onBlur={(event) => { const toolbar = event.currentTarget; requestAnimationFrame(() => highlight(toolbar)); }}>
-        {before && <Button type="button" variant="ghost" size="sm" aria-pressed={compare} title="Compare before and after"
+        {canCompare && <Button type="button" variant="ghost" size="sm" aria-pressed={compare} title="Compare before and after"
           onClick={(event) => {
             const toolbar = event.currentTarget.parentElement as HTMLDivElement;
             setCompared(compare ? undefined : result);
@@ -103,30 +129,53 @@ export function WandaFiboStage({ result, input, inputLabel, busy, status, onBrow
     );
   }
 
+  function carousel() {
+    return batch.length > 1 && !busy && (
+      <div className="wanda-fibo-stage-batch" role="group" aria-label="Batch results">
+        {batch.map((image, index) => (
+          <Button key={image.filename ?? index} type="button" variant="ghost"
+            aria-label={"View batch image " + (index + 1)} aria-current={result === image}
+            onClick={() => void select(image)}>
+            <img src={image.image_data} alt="" draggable={false} />
+          </Button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className="wanda-fibo-stage-surface" aria-busy={busy}>
-        {busy ? <div className="wanda-fibo-stage-notice" role="status"><i aria-hidden="true" />{status || "Rendering…"}</div>
-          : shown ? <>
-            {!viewerOpen && media()}
-            {!viewerOpen && tools()}
-            <Button ref={opener} type="button" className="wanda-fibo-stage-open" variant="ghost" size="icon-sm"
-              aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => {
-                dialog.current?.showModal();
-                setViewerOpen(true);
-              }}><Maximize2 aria-hidden="true" /></Button>
-          </> : <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload"
-            title={"Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
-            <ImagePlus size={20} aria-hidden="true" /> Drop an image or click to upload
-          </Button>}
+      <div className="wanda-fibo-stage-frame" data-batch={batch.length > 1 && !busy}>
+        <div className="wanda-fibo-stage-surface" data-empty={!shown && !busy} aria-busy={busy}
+          style={{ "--stage-media-ratio": ratio } as CSSProperties}>
+          {busy ? <>
+            <div className="wanda-fibo-stage-backdrop" aria-hidden="true" />
+            <div className="wanda-fibo-stage-shimmer" aria-hidden="true" />
+            <div className="wanda-fibo-stage-notice" role="status">{status || "Rendering…"}</div>
+          </>
+            : shown ? <>
+              {!viewerOpen && media()}
+              {!viewerOpen && tools()}
+              <Button ref={opener} type="button" className="wanda-fibo-stage-open" variant="ghost" size="icon-sm"
+                aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => {
+                  dialog.current?.showModal();
+                  setViewerOpen(true);
+                }}><Maximize2 aria-hidden="true" /></Button>
+            </> : <Button type="button" variant="ghost" className="wanda-fibo-canvas-upload"
+              title={"Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
+              Drop an image or click to upload
+            </Button>}
+        </div>
+        {!viewerOpen && carousel()}
       </div>
-      <dialog ref={dialog} className="wanda-fibo-stage-viewer" aria-label="Image viewer"
+      <dialog ref={dialog} className="wanda-fibo-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer"
         onClose={() => { setViewerOpen(false); setCompared(undefined); opener.current?.focus({ preventScroll: true }); }}>
         {viewerOpen && <>
           <Button type="button" variant="ghost" size="icon-sm" className="wanda-fibo-stage-close"
             aria-label="Close image viewer" onClick={() => dialog.current?.close()}><X aria-hidden="true" /></Button>
           {media()}
           {tools()}
+          {carousel()}
         </>}
       </dialog>
     </>

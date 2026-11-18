@@ -14,7 +14,7 @@ import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
 const api = "/wanda-fibo/";
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { image_data: string; seed: number; filename?: string; json_instruction?: string; source?: File };
+type Result = { image_data: string; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string };
 type Workflow = "edit" | "generate";
 type PromptDraft = {
   prompt: string;
@@ -136,7 +136,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         const update = await request<{ finished: boolean; images: Result[]; error?: string }>("local/render/" + job, { signal });
         if (update.finished) {
           if (!update.images[0]) throw new Error(update.error ?? "No image returned.");
-          const images = update.images.map((image) => ({ ...image, source: mode === "edit" ? files[0] : undefined }));
+          const images = update.images.map((image) => ({ ...image, batchId: job, source: mode === "edit" ? files[0] : undefined }));
           const image = images[0];
           setResult(image);
           if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
@@ -379,9 +379,13 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
           ) : (
             <WandaFiboStage
               result={result}
+              source={mode === "edit" ? files[0] : undefined}
+              batch={result?.batchId ? history.filter((image) => image.batchId === result.batchId) : []}
+              onSelect={setResult}
               input={mode === "edit" ? previews[0] : inspirationPreview}
               inputLabel={mode === "edit" ? "Source image" : "Reference image"}
               busy={busy}
+              renderRatio={mode === "generate" ? size.width / size.height : undefined}
               status={status}
               onBrowse={() => chooseImage(mode === "edit" ? 0 : 4)}
               onUseSource={(image) => {
