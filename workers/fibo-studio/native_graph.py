@@ -9,6 +9,8 @@ import json
 import math
 import re
 
+from native_generated_vgl import generated_vgl_instruction
+
 NAME = re.compile(r"[a-f0-9]{32}\.png")
 MAX_PIXELS = 1536 * 1024
 
@@ -41,7 +43,8 @@ def original_fibo_size(width, height):
 
 
 def build_graph(*, prompt, seed, images=(), width=0, height=0, steps=4,
-                negative_prompt="", vgl="", mask=None, source_dimensions=None):
+                negative_prompt="", vgl="", mask=None, source_dimensions=None,
+                generate_vgl=False):
     if type(seed) is not int or not 0 <= seed <= 2_147_483_647:
         raise ValueError("Invalid seed")
     if type(steps) is not int or not 1 <= steps <= 8:
@@ -50,6 +53,11 @@ def build_graph(*, prompt, seed, images=(), width=0, height=0, steps=4,
         raise ValueError("Invalid prompt")
     if type(vgl) is not str or len(vgl) > 8192:
         raise ValueError("Invalid VGL")
+    if type(generate_vgl) is not bool:
+        raise ValueError("Generated VGL must be a boolean")
+    if generate_vgl and (vgl or mask is not None or len(images) != 0
+                         or not prompt.strip() or (width, height) == (0, 0)):
+        raise ValueError("Generated VGL only supports source-free image generation with explicit dimensions")
     if vgl:
         caption = json.loads(vgl)
         if not isinstance(caption, dict) or not caption:
@@ -97,6 +105,25 @@ def build_graph(*, prompt, seed, images=(), width=0, height=0, steps=4,
         key = f"image_{slot}"
         graph[key] = node("LoadImage", image=name)
         graph["encode"]["inputs"][f"images.{key}"] = [key, 0]
+
+    if generate_vgl:
+        graph["auto_vgl_text"] = node(
+            "TextGenerate",
+            clip=["clip", 0],
+            prompt=generated_vgl_instruction(prompt),
+            max_length=256,
+            sampling_mode="off",
+            thinking=False,
+            use_default_template=True,
+            mtp="off",
+        )
+        # ComfyUI history retains this optional text. Validate it before the
+        # renderer returns success; never silently substitute arbitrary output.
+        graph["auto_vgl_result"] = node(
+            "SaveText", text=["auto_vgl_text", 0],
+            filename_prefix="renderlab-fibo-generated-vgl", format="json",
+        )
+        graph["encode"]["inputs"]["prompt"] = ["auto_vgl_text", 0]
 
     if mask is not None:
         graph.update({

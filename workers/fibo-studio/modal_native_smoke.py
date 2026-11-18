@@ -26,6 +26,7 @@ image = (
     )
     .add_local_file(str(Path(__file__).with_name("native_graph.py")), "/opt/renderlab/native_graph.py")
     .add_local_file(str(Path(__file__).with_name("native_mask.py")), "/opt/renderlab/native_mask.py")
+    .add_local_file(str(Path(__file__).with_name("native_generated_vgl.py")), "/opt/renderlab/native_generated_vgl.py")
 )
 
 
@@ -38,13 +39,14 @@ def request(path, payload=None):
 @app.function(image=image, gpu="A10", cpu=2, memory=16384, timeout=420, max_containers=1,
               volumes={MODELS: modal.Volume.from_name("renderlab-fibo-models", environment_name="main")})
 def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
-           negative_prompt="", vgl="", mask=None):
+           negative_prompt="", vgl="", mask=None, generate_vgl=False):
     """One isolated render. Do not send raw files from an unauthenticated client."""
     from PIL import Image
 
     sys.path.insert(0, "/opt/renderlab")
     from native_graph import build_graph
     from native_mask import normalize_mask_bytes
+    from native_generated_vgl import validate_generated_vgl
     import torch
     if not torch.cuda.is_available():
         raise RuntimeError("Expected a Modal CUDA GPU")
@@ -80,7 +82,8 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
         graph = build_graph(prompt=prompt, seed=seed, steps=steps, width=width, height=height,
                             images=names, negative_prompt=negative_prompt, vgl=vgl,
                             mask=mask_name,
-                            source_dimensions=first_source_size if mask_name is not None and (width, height) == (0, 0) else None)
+                            source_dimensions=first_source_size if mask_name is not None and (width, height) == (0, 0) else None,
+                            generate_vgl=generate_vgl)
         config = root / "models.yaml"
         config.write_text(f"fibo:\n  base_path: {MODELS}\n  diffusion_models: diffusion_models\n"
                           "  text_encoders: text_encoders\n  vae: vae\n")
@@ -111,6 +114,11 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
                 raise TimeoutError("FIBO render did not finish")
             if record["status"]["status_str"] != "success":
                 raise RuntimeError("FIBO execution failed")
+            if generate_vgl:
+                generated = record["outputs"].get("auto_vgl_result", {}).get("text")
+                if not isinstance(generated, list) or len(generated) != 1:
+                    raise ValueError("Generated VGL was not captured from native ComfyUI")
+                validate_generated_vgl(generated[0])
             result, = record["outputs"]["output"]["images"]
             output = (root / "output" / result["subfolder"] / result["filename"]).resolve()
             if not output.is_relative_to(root / "output") or output.stat().st_size > 16 * 1024 * 1024:
