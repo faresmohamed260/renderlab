@@ -61,6 +61,7 @@ function TurnInput({ file, busy, onOpen, onReuse }: { file: File; busy: boolean;
 }
 
 type Props<T extends StageResult> = {
+  workflow?: "edit" | "generate";
   turns?: StageTurn<T>[];
   inlineMask?: ReactNode;
   result?: T;
@@ -86,12 +87,44 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, liveFrame, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
   const [dimensions, setDimensions] = useState<{ url: string; ratio: number }>();
   const selection = useRef(0);
+  const pendingImage = useRef<T | undefined>(undefined);
+  const [inputDimensions, setInputDimensions] = useState<{ url: string; ratio: number }>();
+  useEffect(() => {
+    if (!input) return;
+    let current = true;
+    const image = new Image();
+    image.src = input;
+    void image.decode().then(() => {
+      if (current && image.naturalHeight) setInputDimensions({ url: input, ratio: image.naturalWidth / image.naturalHeight });
+    }, () => {});
+    return () => { current = false; };
+  }, [input]);
+
+  const [batchRow, setBatchRow] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!batchRow) return;
+    const update = () => {
+      batchRow.toggleAttribute("data-overflow-start", batchRow.scrollLeft > 1);
+      batchRow.toggleAttribute("data-overflow-end", batchRow.scrollWidth - batchRow.clientWidth - batchRow.scrollLeft > 1);
+    };
+    const selected = batchRow.querySelector('[aria-current="true"]');
+    if (selected) {
+      const row = batchRow.getBoundingClientRect(), chip = selected.getBoundingClientRect();
+      if (chip.left < row.left) batchRow.scrollLeft += chip.left - row.left - 2;
+      else if (chip.right > row.right) batchRow.scrollLeft += chip.right - row.right + 2;
+    }
+    update();
+    const resize = new ResizeObserver(update);
+    resize.observe(batchRow);
+    batchRow.addEventListener("scroll", update, { passive: true });
+    return () => { resize.disconnect(); batchRow.removeEventListener("scroll", update); };
+  }, [batchRow, batch.length, result, busy]);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
@@ -206,18 +239,21 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], inlineMask, 
   const canCompare = !reviewing && !!source && result?.source === source && !!before && !busy;
   const compare = canCompare && compared === result;
   const dimensionsUrl = showingProgress ? (source ? input : undefined) : shown;
-  const ratio = (showingProgress && renderRatio) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio : 0.75);
+  const ratio = (showingProgress && renderRatio) || (dimensionsUrl && dimensions?.url === dimensionsUrl ? dimensions.ratio
+    : dimensionsUrl && inputDimensions?.url === dimensionsUrl ? inputDimensions.ratio : 0.75);
   const label = inlineMask ? "Mask canvas" : busy ? "Generating" : reviewing ? "Mask review" : result ? "Result" : input ? (source ? "Source preview" : "Inspiration") : "Canvas";
 
   useEffect(() => {
     selection.current++;
+    pendingImage.current = undefined;
     setNotice("");
     setCompared(undefined);
     setSplit(50);
-  }, [result, input, busy, canCompare]);
+  }, [workflow, result, input, busy, canCompare]);
 
   async function select(image: T, open = false) {
     const version = ++selection.current;
+    pendingImage.current = image;
     try {
       const decoded = new Image();
       decoded.src = image.image_data;
@@ -228,6 +264,8 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], inlineMask, 
       if (open) openViewer();
     } catch {
       if (selection.current === version) setNotice("Could not open this image.");
+    } finally {
+      if (selection.current === version) pendingImage.current = undefined;
     }
   }
   useEffect(() => {
@@ -342,6 +380,7 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], inlineMask, 
 
   function returnToProgress() {
     selection.current++;
+    pendingImage.current = undefined;
     onReturnToProgress();
     if (viewerOpen) dialog.current?.close();
   }
@@ -382,7 +421,8 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], inlineMask, 
     }
     if (!busy && ["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key) && history.length) {
       const direction = key === "arrowup" || key === "arrowleft" ? -1 : 1;
-      const index = result ? history.indexOf(result) : -1;
+      const selected = pendingImage.current ?? result;
+      const index = selected ? history.indexOf(selected) : -1;
       const next = index < 0 ? (direction === 1 ? 0 : history.length - 1) : (index + direction + history.length) % history.length;
       event.preventDefault();
       void select(history[next]);
@@ -401,11 +441,7 @@ export function WandaFiboStage<T extends StageResult>({ turns = [], inlineMask, 
     return showBatch && (
       <div className="wanda-fibo-stage-batch" role="group" aria-label="Batch results" tabIndex={0}
         aria-keyshortcuts="ArrowLeft ArrowRight"
-        onScroll={(event) => {
-          const row = event.currentTarget;
-          row.toggleAttribute("data-overflow-start", row.scrollLeft > 1);
-          row.toggleAttribute("data-overflow-end", row.scrollWidth - row.clientWidth - row.scrollLeft > 1);
-        }}>
+        ref={setBatchRow}>
         {batch.map((image, index) => (
           <Button key={image.filename ?? index} type="button" variant="ghost"
             aria-label={"View batch image " + (index + 1)} aria-current={result === image}

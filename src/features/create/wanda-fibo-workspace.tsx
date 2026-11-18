@@ -301,7 +301,6 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         if (!admitted || busy || !file?.type.startsWith("image/")) return;
         if (target === 4 || (target === "canvas" && mode === "generate")) {
           setReference(file);
-          setResult(undefined);
         }
         else attachImage(file, target === "canvas" ? 0 : target);
       },
@@ -367,12 +366,12 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 style={{ transform: modeSpring.position.to((position) => "translateX(" + (position * 44) + "px)") }} />
               <Button type="button" variant="ghost" aria-label="Text to Image" title="Text to Image"
                 aria-pressed={mode === "generate"} disabled={busy}
-                onClick={() => { if (mode !== "generate") { setResult(undefined); setMaskEditor(undefined); } setMode("generate"); }}>
+                onClick={() => { setMaskEditor(undefined); setMode("generate"); }}>
                 <ImagePlus aria-hidden="true" />
               </Button>
               <Button type="button" variant="ghost" aria-label="Image Editing" title="Image Editing"
                 aria-pressed={mode === "edit"} disabled={busy}
-                onClick={() => { if (mode !== "edit") setResult(undefined); setMode("edit"); }}>
+                onClick={() => { setMode("edit"); }}>
                 <Pencil aria-hidden="true" />
               </Button>
             </div>
@@ -420,7 +419,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (file && admitted && !busy) {
-                  if (slot.current === 4) { setReference(file); setResult(undefined); }
+                  if (slot.current === 4) setReference(file);
                   else attachImage(file, slot.current);
                 }
                 event.currentTarget.value = "";
@@ -498,6 +497,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         </form>
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
             <WandaFiboStage
+              workflow={mode}
               turns={turns[mode]}
               inlineMask={maskEditor === "inline" ? maskEditorNode : undefined}
               browseDisabled={!admitted}
