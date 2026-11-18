@@ -327,6 +327,10 @@
 }
 .wanda-fibo-controls { display: flex; flex-direction: column; justify-content: space-between; padding: var(--fibo-panel-padding); }
 .wanda-fibo-fields h2, .wanda-fibo-history h2 { font-size: 14px; font-weight: 650; margin-block-end: 10px; }
+/* Both setups reserve the same track; only the active one is visible and interactive. */
+.wanda-fibo-setup-slot { display: grid; }
+.wanda-fibo-setup-slot > div { grid-area: 1 / 1; min-inline-size: 0; }
+.wanda-fibo-setup-slot > [inert] { visibility: hidden; }
 .wanda-fibo-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .wanda-fibo-tile { position: relative; min-inline-size: 0; }
 .wanda-fibo-tile > button:first-child {
@@ -350,19 +354,18 @@
 .wanda-fibo-seed { display: flex; align-items: center; gap: 3px; }
 .wanda-fibo-generate { inline-size: 100%; margin-block-start: 12px; }
 .wanda-fibo-canvas {
-  --fibo-stage-ratio: .75;
+  min-block-size: 0;
   display: grid;
   place-items: center;
   position: relative;
   place-self: center;
-  inline-size: min(100%, max(295px, calc((100dvh - 254px) * var(--fibo-stage-ratio))));
-  aspect-ratio: var(--fibo-stage-ratio);
+  inline-size: min(100%, max(295px, calc((100dvh - 254px) * .75)));
+  aspect-ratio: 3 / 4;
   overflow: hidden;
   padding: var(--fibo-panel-padding);
   text-align: center;
   background: rgb(255 255 255 / 5%);
 }
-.wanda-fibo-canvas[data-workflow="generate"] { --fibo-stage-ratio: 1; }
 .wanda-fibo-canvas .wanda-fibo-canvas-upload {
   position: absolute;
   inset: 0;

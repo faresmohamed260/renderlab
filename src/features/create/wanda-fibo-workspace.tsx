@@ -119,8 +119,8 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
           <div className="wanda-fibo-fields">
             <section aria-labelledby="wanda-fibo-setup">
               <h2 id="wanda-fibo-setup">Image setup</h2>
-              {mode === "edit" ? (
-                <div className="wanda-fibo-tiles">
+              <div className="wanda-fibo-setup-slot">
+                <div className="wanda-fibo-tiles" inert={mode !== "edit"}>
                   {slots.map((label, index) => (
                     <div className="wanda-fibo-tile" key={label}>
                       <Button type="button" variant="outline" aria-label={"Choose " + label.toLowerCase() + " image"}
@@ -134,12 +134,11 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="wanda-fibo-size">
+                <div className="wanda-fibo-size" inert={mode !== "generate"}>
                   <Button type="button" variant="outline" disabled>Inspiration</Button>
                   <span>Square · 1024 × 1024</span>
                 </div>
-              )}
+              </div>
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (file) attachImage(file, slot.current);
@@ -186,7 +185,7 @@ export function WandaFiboWorkspace({ admitted }: { admitted: boolean }) {
             {status && <p className="wanda-fibo-caption" role="status">{status}</p>}
           </div>
         </form>
-        <section className="wanda-fibo-canvas" aria-label="Canvas" data-workflow={mode}
+        <section className="wanda-fibo-canvas" aria-label="Canvas"
           onDragOver={(event) => {
             if (mode === "edit" && admitted && !busy && event.dataTransfer.types.includes("Files")) event.preventDefault();
           }}
