@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, ChevronUp, CircleHelp, House, Images, Menu, PanelLeftClose, PanelLeftOpen, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
+import { Activity, CircleHelp, House, Images, Menu, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
 
@@ -15,8 +16,38 @@ const accountOptions = [
   { label: "Help", icon: CircleHelp },
 ];
 
+const profileEndpoint = "/api/preview-account/profile";
+type AccountProfile = { displayName: string | null; avatarSrc: string | null };
+
 function PreviewAccountMenu({ signedIn }: { signedIn: boolean }) {
   const [open, setOpen] = useState(false);
+  const [profile, setProfile] = useState<AccountProfile | null>(null);
+
+  useEffect(() => {
+    if (!signedIn) { setProfile(null); return; }
+    const controller = new AbortController();
+    async function loadProfile() {
+      const init = { cache: "no-store", signal: controller.signal } as const;
+      let endpoint = profileEndpoint;
+      let response = await fetch(endpoint, init);
+      if (response.status === 404) {
+        endpoint = "/api/account/profile";
+        response = await fetch(endpoint, init);
+      }
+      if (!response.ok) return;
+      const { profile } = await response.json();
+      if (controller.signal.aborted || !profile) return;
+      setProfile({
+        displayName: typeof profile.displayName === "string" ? profile.displayName.trim() : null,
+        avatarSrc: profile.avatarUrl === "/api/account/profile/avatar" ? endpoint + "/avatar" : null,
+      });
+    }
+    void loadProfile().catch(() => { /* Keep the control available if the profile is unavailable. */ });
+    return () => controller.abort();
+  }, [signedIn]);
+
+  const name = signedIn ? profile?.displayName || "RenderLab account" : "Guest";
+  const avatarSrc = signedIn ? profile?.avatarSrc : null;
   const id = useId();
   const card = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -45,7 +76,7 @@ function PreviewAccountMenu({ signedIn }: { signedIn: boolean }) {
   }, [open]);
 
   return (
-    <div ref={card} className="preview-account-card" data-open={open}
+    <div ref={card} className="preview-account-card" data-open={open} data-has-photo={Boolean(avatarSrc)}
       onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpen(true); }}
       onPointerLeave={(event) => {
         if (event.pointerType === "mouse" && !pinned.current) setOpen(false);
@@ -56,18 +87,16 @@ function PreviewAccountMenu({ signedIn }: { signedIn: boolean }) {
           setOpen(false);
         }
       }}>
-      <Button ref={trigger} variant="ghost" aria-label="Account menu" aria-expanded={open} aria-controls={id}
+      <Button ref={trigger} variant="ghost" aria-label={"Account menu: " + name} title={name} aria-expanded={open} aria-controls={id}
         className="preview-navigation-profile h-auto w-full justify-start whitespace-normal text-left"
         onClick={() => {
           pinned.current = !pinned.current;
           setOpen(pinned.current);
         }}>
-        <span className="preview-navigation-avatar"><UserRound size={16} aria-hidden="true" /></span>
-        <span className="preview-account-identity min-w-0 flex-1">
-          <span>{signedIn ? "RenderLab account" : "Guest"}</span>
-          <small data-signed-in={signedIn}>{signedIn ? "Signed in" : "Not signed in"}</small>
-        </span>
-        <ChevronUp size={15} aria-hidden="true" className="preview-account-chevron shrink-0 text-text-muted" />
+        {avatarSrc && <Image src={avatarSrc} alt="" width={30} height={30} unoptimized
+          className="preview-navigation-avatar"
+          onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : current)} />}
+        <span className="preview-account-identity min-w-0 truncate">{name}</span>
       </Button>
       <div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}>
         <ul aria-label="Account options" className="preview-account-options">
@@ -108,8 +137,6 @@ export function PreviewNavigationShell({ children, signedIn }: { children: React
     catch { /* The current view retains the user's choice. */ }
   }
 
-  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
-
   function handleNavigation(event: MouseEvent<HTMLDivElement>) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey
       || event.shiftKey || event.altKey || !(event.target instanceof Element)) return;
@@ -140,14 +167,11 @@ export function PreviewNavigationShell({ children, signedIn }: { children: React
     <div className="preview-navigation-shell" data-sidebar-collapsed={collapsed} onClickCapture={handleNavigation}>
       <aside id={railId} className="preview-navigation-rail" aria-label="Sidebar">
         <div className="preview-navigation-heading">
-          <Link href="/" className="preview-navigation-brand" aria-label="RenderLab home">
-            <RenderLabBrand markClassName="size-8" textClassName="text-base" />
-          </Link>
-          <Button type="button" variant="ghost" size="icon" className="preview-sidebar-toggle"
+          <Button type="button" variant="ghost" className="preview-navigation-brand"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-controls={railId} aria-expanded={!collapsed} onClick={toggleSidebar}>
-            <ToggleIcon size={19} aria-hidden="true" />
+            <RenderLabBrand markClassName="size-8" textClassName="text-base" />
           </Button>
         </div>
         {links}

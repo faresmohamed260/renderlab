@@ -43,7 +43,10 @@ export async function getHostedCreateState() {
 export async function relayHostedCreate(request: Request, path: string) {
   if (!enabled(request.headers.get("host"))) return null;
   const url = new URL(request.url);
-  if (!routes[request.method]?.test(path)) return null;
+  // Profile reads are preview-only; the upstream still enforces account ownership and MFA.
+  const isPreviewProfile = process.env.RENDERLAB_WANDA_FIBO === "1" && request.method === "GET"
+    && (path === "/api/account/profile" || path === "/api/account/profile/avatar");
+  if (!isPreviewProfile && !routes[request.method]?.test(path)) return null;
   const json = { "content-type": "application/json", "cache-control": "no-store" };
   if (request.method === "POST" && (!validateSameOriginMutation(request).ok
     || request.headers.get("origin") !== "http://" + loopback)) {

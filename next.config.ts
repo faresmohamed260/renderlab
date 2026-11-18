@@ -46,17 +46,25 @@ const nextConfig: NextConfig = {
   async rewrites() {
     if (process.env.NODE_ENV !== "development") return [];
     const host = [{ type: "host" as const, value: "127\\.0\\.0\\.1" }];
-    if (process.env.RENDERLAB_HOSTED_CREATE !== "1") return [];
+    const hosted = process.env.RENDERLAB_HOSTED_CREATE === "1";
+    const previewProfile = hosted && process.env.RENDERLAB_WANDA_FIBO === "1"
+      ? ["account/profile", "account/profile/avatar"].map((path) => ({
+          source: "/api/preview-account/" + path.slice("account/".length),
+          destination: "/hosted-create-relay/" + path,
+          has: host,
+        }))
+      : [];
+    if (!hosted) return [];
     const paths = [
       "generation/jobs", "generation/jobs/:id", "generation/jobs/:id/cancel",
       "media/assets", "media/assets/:id([a-f0-9-]{36})", "media/assets/:id/content", "media/assets/:id/thumbnail",
       "media/uploads/upload-tickets", "media/uploads/upload-completions",
     ];
-    return { beforeFiles: paths.map((path) => ({
+    return { beforeFiles: [...previewProfile, ...paths.map((path) => ({
       source: "/api/" + path,
       destination: "/hosted-create-relay/" + path.replace(":id([a-f0-9-]{36})", ":id"),
       has: host,
-    })), afterFiles: [], fallback: [] };
+    }))], afterFiles: [], fallback: [] };
   },
   async headers() {
     const base = [

@@ -209,24 +209,11 @@ html.renderlab-gradient-host:has(.wanda-create-background),
     background: transparent;
   }
   .preview-navigation-avatar {
-    display: grid;
     flex: none;
-    place-items: center;
     inline-size: 30px;
     block-size: 30px;
-    border: 1px solid rgb(178 167 255 / 55%);
     border-radius: 50%;
-    color: #d9c0ea;
-    box-shadow: 0 0 9px rgb(129 114 246 / 22%);
-  }
-  .preview-navigation-profile small {
-    display: block;
-    margin-block-start: 2px;
-    color: #a5a3b4;
-    font-size: 11px;
-  }
-  .preview-navigation-profile small[data-signed-in="true"] {
-    color: #2dd4bf;
+    object-fit: cover;
   }
   .preview-navigation-heading {
     display: flex;
@@ -234,16 +221,11 @@ html.renderlab-gradient-host:has(.wanda-create-background),
     justify-content: space-between;
     margin-block-end: 20px;
   }
-  .preview-sidebar-toggle {
-    flex: none;
-    min-inline-size: 44px;
-    min-block-size: 44px;
-  }
   .preview-navigation-brand {
     display: flex;
     align-items: center;
     min-block-size: 44px;
-    padding-inline: 10px;
+    padding-inline: 8px;
     border-radius: 9px;
   }
   .preview-create-frame {
@@ -251,22 +233,21 @@ html.renderlab-gradient-host:has(.wanda-create-background),
   }
 }
 
-/* One connected surface. The expansion overlaps the card instead of floating above it. */
+/* The account trigger has no surface; only the revealed options have a fill. */
 .preview-account-card {
   --account-surface: #1d1b27;
   position: relative;
   isolation: isolate;
   flex: none;
   margin-block-start: auto;
-  border-radius: 12px;
-  background: var(--account-surface);
+
 }
 
 .preview-account-menu {
   position: absolute;
   z-index: -1;
-  inset: auto 0 calc(100% - 12px);
-  border-radius: 12px 12px 0 0;
+  inset: auto 0 100%;
+  border-radius: 12px;
   padding: 8px 6px 12px;
   background: var(--account-surface);
   opacity: 0;
@@ -281,10 +262,6 @@ html.renderlab-gradient-host:has(.wanda-create-background),
   transform: scaleY(1);
 }
 
-.preview-account-card[data-open="true"] .preview-account-chevron {
-  transform: rotate(180deg);
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .preview-account-menu {
     transition: transform 220ms ease, opacity 160ms ease, visibility 0s 220ms;
@@ -294,9 +271,6 @@ html.renderlab-gradient-host:has(.wanda-create-background),
     transition: transform var(--sileo-duration) var(--sileo-spring-easing), opacity 120ms ease;
   }
 
-  .preview-account-chevron {
-    transition: transform var(--sileo-duration) var(--sileo-spring-easing);
-  }
 }
 
 @media (width >= 75rem) {
@@ -323,7 +297,7 @@ html.renderlab-gradient-host:has(.wanda-create-background),
   }
   .preview-navigation-shell[data-sidebar-collapsed="true"] :is(
     [data-renderlab-wordmark], .preview-navigation-rail .preview-navigation-links a span,
-    .preview-account-identity, .preview-account-chevron
+    .preview-account-card[data-has-photo="true"] .preview-account-identity
   ) {
     display: none;
   }
