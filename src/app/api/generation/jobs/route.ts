@@ -14,7 +14,7 @@ function submissionStatus(code: SubmitGenerationErrorCode) {
 export async function GET() {
   return NextResponse.json({
     available: isGenerationBackendConfigured(),
-    fiboAvailable: isFiboGenerationAvailable(),
+    ...(isFiboGenerationAvailable() ? { fiboAvailable: true } : {}),
   });
 }
 
