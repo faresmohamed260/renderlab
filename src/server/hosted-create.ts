@@ -1,5 +1,6 @@
 import "server-only";
 
+import sharp from "sharp";
 import { headers } from "next/headers";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { validateSameOriginMutation } from "@/server/security/same-origin-validation";
@@ -40,6 +41,34 @@ export async function getHostedCreateState() {
   return { generationAvailable: generation?.available === true, accountAvailable: media?.ok === true, mediaUploadAvailable: upload?.available === true };
 }
 
+async function relayPreviewAvatar(upstream: Response) {
+  const location = upstream.headers.get("location");
+  if (upstream.status !== 307 || !location) return new Response(null, {
+    status: upstream.ok || upstream.status < 400 ? 502 : upstream.status,
+    headers: { "cache-control": "private, no-store" },
+  });
+
+  // The existing, fixed RenderLab endpoint issues a short-lived signed avatar URL.
+  const url = new URL(location);
+  if (url.protocol !== "https:" || url.username || url.password) throw new Error("Invalid avatar URL");
+  const source = await fetch(url, {
+    cache: "no-store", redirect: "error", signal: AbortSignal.timeout(8000),
+  });
+  if (!source.ok || !source.body) throw new Error("Avatar unavailable");
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for await (const chunk of source.body as unknown as AsyncIterable<Uint8Array>) {
+    total += chunk.byteLength;
+    if (total > 1024 * 1024) throw new Error("Avatar exceeds download limit");
+    chunks.push(chunk);
+  }
+  const thumbnail = await sharp(Buffer.concat(chunks), { limitInputPixels: 512 * 512 })
+    .resize(64, 64, { fit: "cover", withoutEnlargement: true }).webp({ quality: 78 }).toBuffer();
+  return new Response(new Uint8Array(thumbnail), {
+    headers: { "content-type": "image/webp", "cache-control": "private, no-store" },
+  });
+}
+
 export async function relayHostedCreate(request: Request, path: string) {
   if (!enabled(request.headers.get("host"))) return null;
   const url = new URL(request.url);
@@ -60,6 +89,7 @@ export async function relayHostedCreate(request: Request, path: string) {
         headers: { "content-type": "application/json", origin: production },
       } : {}),
     });
+    if (isPreviewProfile && path === "/api/account/profile/avatar") return await relayPreviewAvatar(upstream);
     const responseHeaders = new Headers({ "cache-control": "private, no-store" });
     for (const name of ["content-type", "location"]) {
       const value = upstream.headers.get(name);

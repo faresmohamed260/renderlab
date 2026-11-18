@@ -19,35 +19,98 @@ const accountOptions = [
 const profileEndpoint = "/api/preview-account/profile";
 type AccountProfile = { displayName: string | null; avatarSrc: string | null };
 
-function PreviewAccountMenu({ signedIn }: { signedIn: boolean }) {
+// One verified account at a time. The short tab cache survives the Create document boundary.
+let cachedProfile: { accountId: string; expires: number; value: Promise<AccountProfile>; ready?: AccountProfile } | undefined;
+
+function readThumbnail(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject();
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+const profileCacheKey = "renderlab.preview.profile";
+const profileCacheLifetime = 60_000;
+
+function readTabProfile(accountId: string) {
+  try {
+    const raw = sessionStorage.getItem(profileCacheKey);
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    if (entry.accountId === accountId && entry.expires > Date.now()
+      && entry.expires <= Date.now() + profileCacheLifetime
+      && (entry.ready?.displayName === null || typeof entry.ready?.displayName === "string")
+      && (entry.ready?.avatarSrc === null || (typeof entry.ready?.avatarSrc === "string"
+        && entry.ready.avatarSrc.startsWith("data:image/webp;base64,") && entry.ready.avatarSrc.length < 32768))) {
+      return entry as { accountId: string; expires: number; ready: AccountProfile };
+    }
+    sessionStorage.removeItem(profileCacheKey);
+  } catch { /* Storage is optional. */ }
+  return null;
+}
+
+function loadProfile(accountId: string) {
+  if (cachedProfile?.accountId === accountId && cachedProfile.expires > Date.now()) return cachedProfile.value;
+  const stored = readTabProfile(accountId);
+  if (stored) {
+    cachedProfile = { ...stored, value: Promise.resolve(stored.ready) };
+    return cachedProfile.value;
+  }
+  const value = (async () => {
+    let response = await fetch(profileEndpoint, { cache: "no-store" });
+    const hosted = response.status !== 404;
+    if (!hosted) response = await fetch("/api/account/profile", { cache: "no-store" });
+    if (!response.ok) throw new Error("Profile unavailable");
+    const { profile } = await response.json();
+    const displayName = typeof profile?.displayName === "string" ? profile.displayName.trim() : null;
+    let avatarSrc: string | null = null;
+    if (hosted && profile?.avatarUrl === "/api/account/profile/avatar") {
+      try {
+        const avatar = await fetch(profileEndpoint + "/avatar", { cache: "no-store", redirect: "error" });
+        if (avatar.ok && avatar.headers.get("content-type") === "image/webp") {
+          avatarSrc = await readThumbnail(await avatar.blob());
+        }
+      } catch { /* Name-only fallback; never request the full avatar in the browser. */ }
+    }
+    return { displayName, avatarSrc };
+  })();
+  const entry: NonNullable<typeof cachedProfile> = { accountId, expires: Date.now() + profileCacheLifetime, value };
+  cachedProfile = entry;
+  void value.then((profile) => {
+    if (cachedProfile !== entry) return;
+    entry.ready = profile;
+    try { sessionStorage.setItem(profileCacheKey, JSON.stringify({ accountId, expires: entry.expires, ready: profile })); }
+    catch { /* Keep the memory cache when storage is unavailable. */ }
+  }, () => {
+    if (cachedProfile === entry) cachedProfile = undefined;
+  });
+  return value;
+}
+
+function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
-
   useEffect(() => {
-    if (!signedIn) { setProfile(null); return; }
-    const controller = new AbortController();
-    async function loadProfile() {
-      const init = { cache: "no-store", signal: controller.signal } as const;
-      let endpoint = profileEndpoint;
-      let response = await fetch(endpoint, init);
-      if (response.status === 404) {
-        endpoint = "/api/account/profile";
-        response = await fetch(endpoint, init);
-      }
-      if (!response.ok) return;
-      const { profile } = await response.json();
-      if (controller.signal.aborted || !profile) return;
-      setProfile({
-        displayName: typeof profile.displayName === "string" ? profile.displayName.trim() : null,
-        avatarSrc: profile.avatarUrl === "/api/account/profile/avatar" ? endpoint + "/avatar" : null,
-      });
+    if (!accountId) {
+      cachedProfile = undefined;
+      try { sessionStorage.removeItem(profileCacheKey); } catch { /* Storage is optional. */ }
+      return;
     }
-    void loadProfile().catch(() => { /* Keep the control available if the profile is unavailable. */ });
-    return () => controller.abort();
-  }, [signedIn]);
+    const stored = readTabProfile(accountId);
+    if (stored) setProfile(stored.ready);
+    let active = true;
+    void loadProfile(accountId).then((value) => {
+      if (active) setProfile(value);
+    }).catch(() => { /* Keep the control available if the profile is unavailable. */ });
+    return () => { active = false; };
+  }, [accountId]);
 
-  const name = signedIn ? profile?.displayName || "RenderLab account" : "Guest";
-  const avatarSrc = signedIn ? profile?.avatarSrc : null;
+  const current = profile ?? (cachedProfile?.accountId === accountId && cachedProfile.expires > Date.now()
+    ? cachedProfile.ready : null);
+  const name = accountId ? current?.displayName || "RenderLab account" : "Guest";
+  const avatarSrc = accountId ? current?.avatarSrc : null;
   const id = useId();
   const card = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -95,7 +158,7 @@ function PreviewAccountMenu({ signedIn }: { signedIn: boolean }) {
         }}>
         {avatarSrc && <Image src={avatarSrc} alt="" width={30} height={30} unoptimized
           className="preview-navigation-avatar"
-          onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : current)} />}
+          onError={() => setProfile(current ? { ...current, avatarSrc: null } : null)} />}
         <span className="preview-account-identity min-w-0 truncate">{name}</span>
       </Button>
       <div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}>
@@ -129,7 +192,7 @@ const destinations = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function PreviewNavigationShell({ children, signedIn }: { children: ReactNode; signedIn: boolean }) {
+export function PreviewNavigationShell({ children, accountId }: { children: ReactNode; accountId: string | null }) {
   const pathname = usePathname();
   const railId = useId();
   const [collapsed, setCollapsed] = useState(false);
@@ -184,7 +247,7 @@ export function PreviewNavigationShell({ children, signedIn }: { children: React
           </Button>
         </div>
         {links}
-        <PreviewAccountMenu signedIn={signedIn} />
+        <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} />
       </aside>
       <details className="preview-navigation-disclosure" key={pathname}>
         <summary><Menu size={18} aria-hidden="true" /> Menu</summary>

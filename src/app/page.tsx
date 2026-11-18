@@ -35,5 +35,5 @@ export default async function LandingPage({
   const preview = process.env.NODE_ENV === "development" && process.env.RENDERLAB_WANDA_FIBO === "1"
     && (await headers()).get("host") === "127.0.0.1:3000";
   const landing = <LandingExperience />;
-  return preview ? <PreviewNavigationShell signedIn={Boolean(await getCurrentRenderLabIdentity().catch(() => null))}>{landing}</PreviewNavigationShell> : landing;
+  return preview ? <PreviewNavigationShell accountId={(await getCurrentRenderLabIdentity().catch(() => null))?.id ?? null}>{landing}</PreviewNavigationShell> : landing;
 }
