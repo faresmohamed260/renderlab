@@ -64,7 +64,8 @@ Detailed implementation, verification, merge, rollout, and deployment chronology
 **Consequences:** Application-shell design should make Create and Library primary. New backend workflows do not automatically add navigation destinations.
 
 ### UI-009 — One creation workspace, multiple creative operations
-**Status:** Accepted
+**Status:** Superseded
+**Superseded by:** UI-084
 **Decision:** The initial product uses one Create workspace for Create Image, Edit Image, Create Video, and Animate Image rather than four separate applications/screens. Operation resolution may use intent and supplied inputs, with explicit selection available when ambiguity matters.  
 **Reason:** These operations share the same core loop—intent, inputs, relevant controls, asynchronous generation, durable result, continuation—and separating them prematurely would fragment the experience.  
 **Consequences:** Create must adapt contextually to the resolved operation. Future operations should first be evaluated as additions/continuations within this workspace before receiving dedicated top-level surfaces.
@@ -100,13 +101,15 @@ Detailed implementation, verification, merge, rollout, and deployment chronology
 **Consequences:** Phase 2 may implement stable shell chrome without locking the Create or Library layout. Idle shell state should not show an unnecessary persistent “ready” status; global status becomes prominent only when user attention is useful.
 
 ### UI-015 — Output media is the primary Create-mode choice
-**Status:** Accepted
+**Status:** Superseded
+**Superseded by:** UI-084
 **Decision:** The default Create experience presents the primary explicit choice as output media—`Image` or `Video`—rather than exposing backend workflow IDs, model ecosystems, or separate top-level Edit/Animate modes. Image is the initial default output.  
 **Reason:** Average users understand the output they want more readily than backend workflow taxonomy, and the same Create workspace can resolve the appropriate operation from output intent plus supplied inputs.  
 **Consequences:** The primary composer may expose a compact Image/Video selector. Workflow and model resolution remains behind product capability logic unless a user-facing model choice provides concrete value.
 
 ### UI-016 — Reference media resolves Create context
-**Status:** Accepted
+**Status:** Superseded
+**Superseded by:** UI-084
 **Decision:** Supplying compatible reference media changes the creative operation context without requiring a separate screen: Image output + image reference resolves to image editing; Video output + image reference resolves to image animation/video generation from the reference. The UI must communicate this resolved context and allow the reference to be removed or replaced.  
 **Reason:** References are first-class reusable inputs, and automatic contextual resolution keeps the default workflow simple while preserving explicit control over the intended output type.  
 **Consequences:** Create should display concise contextual language such as editing/animating the attached reference rather than adding permanent Edit/Animate navigation or mode clutter.
@@ -576,7 +579,8 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 
 
 ### UI-073 — Clear Composer keeps Create familiar while expression belongs to media
-**Status:** Accepted
+**Status:** Superseded
+**Superseded by:** UI-084
 **Decision:** Create uses one stable Clear Composer grammar: obvious Image/Video intent, labelled reference or Start image semantics, explicit attached-media roles, dominant prompt, visible essential settings and Advanced disclosure, and one stable conventional Generate action. Generation/result expression belongs primarily to truthful media-stage and result composition; ordinary authoring controls stay stationary and understandable. Continuation keeps the stable `Create an image` / `Create a video` workspace heading and communicates Edit/Animate context through `Primary image` / `Reference image` / `Start image` roles rather than changing the whole screen title.
 **Reason:** Approved v0.5 R&D showed that familiar creative-tool grammar produces substantially better first-use clarity than abstract/orbital workspaces while the Landing-derived Lab Matrix visual language can still give RenderLab a distinctive authored identity.
 **Consequences:** Create must preserve current product/API/security/data contracts, maintained control semantics and real video controls. Image result continuation remains capability-derived; Animate binds the durable image as Video Start image. Generating state must be truthful and cannot invent progress, ETA, queue/provider stages or workflow mechanics. 390px and reduced-motion states must reach the same usable result, and result actions must remain clear of fixed shell navigation. Do not reintroduce giant abstract stages, hidden essential actions, 3D/orbital controls, generic SaaS glass-card nesting or a second animation runtime without a new explicit decision.
@@ -709,3 +713,14 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 **Scope:** All RenderLab screens and shared components as they are built or reworked in the WANDA frontend rebuild.
 **Decision:** Use React Spring for animated UI interactions, including disclosures, sidebar movement, and transitions. React and the existing accessible primitives continue to own behavior, focus, keyboard/touch input, and semantics. Do not add motion where it does not help communicate state. Respect reduced-motion preferences with equivalent nonanimated behavior.
 **Rollout:** Adopt at the first implementation checkpoint after validating package compatibility, licensing, and dependency footprint under the component catalog policy. Migrate existing effects as their surfaces are reworked; do not install or remove motion runtimes solely to record this decision. Existing Motion for React and Sileo usage is unchanged until its replacement is implemented and tested. The existing production UI is unaffected.
+
+### UI-084 — FIBO workspace replaces Clear Composer for production Create
+**Status:** Accepted
+**Date:** 2026-11-18
+**Supersedes:** UI-009, UI-015, UI-016, UI-073
+
+**Decision:** The normal /create route becomes the owner-approved, WANDA-preserved FIBO image generation/edit workspace with its responsive dock/stage/history, image input roles, controls, effects, motion, keyboard/touch and result interactions. New creation accepts FIBO image/edit only; Image/Video output selection and Create Video/Animate entry points from the superseded initial Create contract are not restored. Every exposed image control must have real API and worker support; a control that cannot execute is not productized merely because its UI can render. The binding implementation/worker/persistence and acceptance specification is docs/architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md.
+
+**Reason:** The owner explicitly chose full WANDA FIBO workspace fidelity, FIBO-only generation, and real mask/VGL/inspiration/multi-output functionality over the earlier Clear Composer and preview-only fallback.
+
+**Consequences:** Adapt the authored WANDA presentation selectively onto current main; do not merge legacy preview/relay/worker routes wholesale. Preserve unrelated product routes, ownership, session security, durable media, same-origin protections, truthful progress, reduced motion and accessible focus. No unsupported control may be silently disabled or faked to claim full completion. UI-074 remains authoritative for the application shell outside scoped Create composition unless a separate approved shell redesign supersedes it. This decision is not a provider mutation or deployment authorization.
