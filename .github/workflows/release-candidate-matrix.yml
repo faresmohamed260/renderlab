@@ -95,7 +95,6 @@ jobs:
             media-upload-integration.yml
             create-durable-upload.yml
             generation-bridge-integration.yml
-            video-generation-integration.yml
             create-lifecycle-visual.yml
             library-lifecycle-visual.yml
             library-search-visual.yml
@@ -214,7 +213,6 @@ jobs:
             media-upload-integration.yml
             create-durable-upload.yml
             generation-bridge-integration.yml
-            video-generation-integration.yml
             create-lifecycle-visual.yml
             library-lifecycle-visual.yml
             library-search-visual.yml
