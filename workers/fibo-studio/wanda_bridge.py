@@ -33,6 +33,8 @@ elif mode == "generate":
     result = worker.text_to_image.spawn(request["instruction"], request["seed"]).get(timeout=400)
 elif mode == "edit":
     images = [base64.b64decode(data, validate=True) for data in request["images"]]
+    if request.get("mask"):
+        render_options["mask"] = base64.b64decode(request["mask"], validate=True)
     result = worker.edit_image.spawn(images, request["instruction"], request["seed"], **render_options).get(timeout=400)
 else:
     raise ValueError("Unsupported bridge operation")

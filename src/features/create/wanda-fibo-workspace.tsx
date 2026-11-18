@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { WandaFiboMaskEditor } from "./wanda-fibo-mask-editor";
 import { WandaFiboStage } from "./wanda-fibo-stage";
 import { wandaFiboSizes } from "./wanda-fibo-sizes";
 
@@ -25,6 +26,7 @@ type RunSettings = {
   imageCount: string;
   sizeIndex: number;
   inputs: (File | undefined)[];
+  mask?: File;
 };
 type PromptDraft = {
   prompt: string;
@@ -48,7 +50,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt }: { admitted: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false }: { admitted: boolean; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const [mode, setMode] = useState<Workflow>("edit");
   const [reducedMotion, setReducedMotion] = useState(true);
   useEffect(() => {
@@ -63,7 +65,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     config: { mass: 1, tension: 220, friction: 22 },
     immediate: reducedMotion,
   });
+  const [selection, setSelection] = useState<{ source: File; mask: File }>();
+  const [maskEditor, setMaskEditor] = useState(false);
   const [files, setFiles] = useState<(File | undefined)[]>([]);
+  const mask = mode === "edit" && selection?.source === files[0] ? selection?.mask : undefined;
   const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
   const { prompt, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen, seed, randomize, imageCount } = drafts[mode];
   // Legacy workers can return VGL, but cannot accept it back as a manual instruction.
@@ -140,7 +145,14 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
         uploads.inspiration = id;
       }
+      if (mask) {
+        const form = new FormData();
+        form.set("files", mask);
+        const [id] = await request<string[]>("gradio_api/upload", { method: "POST", body: form, signal });
+        uploads.mask = id;
+      }
       const run: RunSettings = {
+        mask,
         mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex,
         inputs: mode === "edit" ? [...files] : [],
       };
@@ -186,7 +198,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     const run = image.run;
     if (!admitted || busy || !run || (reopen && run.mode !== "edit")) return;
     setMode(run.mode);
-    if (reopen) setFiles([...run.inputs]);
+    if (reopen) {
+      setFiles([...run.inputs]);
+      setSelection(run.mask && run.inputs[0] ? { source: run.inputs[0], mask: run.mask } : undefined);
+    }
     if (run.mode === "generate") setSizeIndex(run.sizeIndex);
     setSteps(run.steps);
     updateDraft(run.mode, {
@@ -248,6 +263,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
     : !variableSteps && steps !== 4 ? "The current worker supports 4 steps. Select 4 to generate."
     : mode === "edit" && !files[0] ? "Add a source image to edit."
+    : mask && files.slice(1).some(Boolean) ? "Remove references to use a mask."
+    : mask && !masksEnabled ? "Masked edits need the private worker update."
     : !vglValid ? "Enter a non-empty VGL JSON object."
     : !advancedPrompt && (manualVgl || negativePrompt.trim()) ? "Advanced prompts need the private worker update."
     : !manualVgl && !prompt.trim() ? "Enter a prompt or VGL JSON to generate."
@@ -414,6 +431,10 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
         <section className="wanda-fibo-canvas" aria-label="Canvas" {...uploadDropTarget("canvas")}>
             <WandaFiboStage
               browseDisabled={!admitted}
+              maskAction={admitted && mode === "edit" && files[0] && !result && !busy ? {
+                applied: !!mask, blocked: files.slice(1).some(Boolean), open: () => setMaskEditor(true),
+                clear: () => { setSelection(undefined); updateDraft("edit", { vgl: "", generatedVgl: false }); },
+              } : undefined}
               result={busy ? inspected : result}
               history={history}
               onRestore={restoreRun}
@@ -449,6 +470,14 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                 } catch { setStatus("Could not use this result as the source."); }
               }}
             />
+            {maskEditor && mode === "edit" && files[0] && previews[0] && (
+              <WandaFiboMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} onClose={() => setMaskEditor(false)}
+                onSave={(region) => {
+                  setSelection(region ? { source: files[0]!, mask: region } : undefined);
+                  updateDraft("edit", { vgl: "", generatedVgl: false });
+                  setMaskEditor(false);
+                }} />
+            )}
             {!admitted && <Link href="/settings" className="wanda-fibo-stage-sign-in">Sign in to upload</Link>}
         </section>
         <aside className="wanda-fibo-history" aria-labelledby="wanda-fibo-history-title"

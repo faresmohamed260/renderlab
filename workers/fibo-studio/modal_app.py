@@ -179,7 +179,7 @@ class FiboStudio:
 
     @modal.method()
     def edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,
-                   negative_prompt: str = "", json_instruction: str = ""):
+                   negative_prompt: str = "", json_instruction: str = "", mask: bytes | None = None):
         from PIL import Image
         if type(steps) is not int or not 1 <= steps <= 8:
             raise ValueError("Unsupported step count")
@@ -194,7 +194,18 @@ class FiboStudio:
                     raise ValueError("Image exceeds the private worker pixel limit")
                 decoded.append(image.convert("RGB"))
         backend = self.backend_for(instruction, seed, json_instruction, negative_prompt)
-        return self.read_output(backend.render(decoded, json_instruction, seed, steps, None, instruction,
+        region = None
+        if mask is not None:
+            if len(decoded) != 1 or len(mask) > 16 * 1024 * 1024:
+                raise ValueError("A mask requires exactly one source image")
+            with Image.open(io.BytesIO(mask)) as image:
+                if image.width * image.height > 16_777_216:
+                    raise ValueError("Mask exceeds the worker pixel limit")
+                region = image.convert("L").point(lambda value: 255 if value > 8 else 0)
+            region = region.resize(decoded[0].size, Image.Resampling.NEAREST)
+            if not region.getbbox():
+                raise ValueError("Mask must select an area")
+        return self.read_output(backend.render(decoded, json_instruction, seed, steps, region, instruction,
                                                negative_prompt=negative_prompt))
 
     @modal.exit()

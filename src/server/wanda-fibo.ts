@@ -165,10 +165,10 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
     }
     const width = data.width ?? 1024;
     const height = data.height ?? 1024;
-    if (data.mask || data.append_to
+    if (data.append_to
       || (mode === "edit" && data.inspiration != null)
       || (mode === "generate" && !wandaFiboSizes.some((size) => size.width === width && size.height === height))) {
-      return error("Use a supported preset without masks or history appends.", 422);
+      return error("Use a supported preset without history appends.", 422);
     }
     const extended = mode === "generate" && (width !== 1024 || height !== 1024 || (data.inspiration != null && !vgl));
     if (extended && process.env.RENDERLAB_WANDA_FIBO_EXTENDED !== "1") {
@@ -189,6 +189,14 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
         if (!file || file.owner !== owner) return error("An input is missing or expired.", 400);
         images.push(file.data.toString("base64"));
       }
+    }
+    let mask: string | undefined;
+    if (data.mask != null) {
+      if (mode !== "edit" || images.length !== 1) return error("A mask requires one source and no references.", 422);
+      if (process.env.RENDERLAB_WANDA_FIBO_MASKS !== "1") return error("Masked edits need the private worker update.", 503);
+      const region = typeof data.mask === "string" ? state.uploads.get(data.mask) : undefined;
+      if (!region || region.owner !== owner) return error("Mask is missing or expired.", 400);
+      mask = region.data.toString("base64");
     }
     const seed = data.randomize === true ? randomBytes(4).readUInt32BE() % 2147483647 + 1 : data.seed ?? 42;
     if (typeof seed !== "number" || !Number.isInteger(seed) || seed < 0 || seed > 2147483647) {
@@ -211,7 +219,7 @@ export async function wandaFibo(request: Request, path: string): Promise<Respons
           if (remaining <= 0) throw new Error("Render time limit exceeded");
           const imageSeed = (seed + index) % 2147483648;
           const result = await bridge({
-            mode, instruction: prompt, seed: imageSeed, images, width, height, extended, inspiration, steps, negative_prompt: negative.trim(), json_instruction: vgl,
+            mode, instruction: prompt, seed: imageSeed, images, mask, width, height, extended, inspiration, steps, negative_prompt: negative.trim(), json_instruction: vgl,
           }, remaining);
           if (typeof result.png !== "string" || !result.png.startsWith("iVBORw0KGgo")) throw new Error("Invalid PNG");
           batchBytes += result.png.length;

@@ -18,6 +18,7 @@ type Props<T extends StageResult> = {
   input?: string;
   inputLabel: string;
   browseDisabled?: boolean;
+  maskAction?: { applied: boolean; blocked: boolean; open: () => void; clear: () => void };
   busy: boolean;
   renderRatio?: number;
   status: string;
@@ -25,7 +26,7 @@ type Props<T extends StageResult> = {
   onUseSource: (result: StageResult) => void;
 };
 
-export function WandaFiboStage<T extends StageResult>({ result, source, batch, history, onRestore, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
+export function WandaFiboStage<T extends StageResult>({ result, source, batch, history, onRestore, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, renderRatio, status, onBrowse, onUseSource }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -136,6 +137,14 @@ export function WandaFiboStage<T extends StageResult>({ result, source, batch, h
   }
 
   function tools() {
+    if (!result && maskAction && !busy) return (
+      <div className="wanda-fibo-stage-tools" role="group" aria-label="Mask actions">
+        <Button type="button" variant="ghost" size="sm" disabled={maskAction.blocked}
+          title={maskAction.blocked ? "Remove references to use a mask" : "Paint a mask on the source image"}
+          onClick={() => { if (viewerOpen) dialog.current?.close(); maskAction.open(); }}>{maskAction.applied ? "Edit mask" : "Mask"}</Button>
+        {maskAction.applied && <Button type="button" variant="ghost" size="sm" onClick={maskAction.clear}>Clear mask</Button>}
+      </div>
+    );
     return result && (
       <div className="wanda-fibo-stage-tools" role="group" aria-label="Stage tools"
         onPointerOver={(event) => highlight(event.currentTarget)}
