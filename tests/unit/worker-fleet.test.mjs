@@ -44,7 +44,7 @@ test("all routed workers are explicitly active", () => {
 });
 
 test("FIBO gateway fails closed without complete credentials or a Modal HTTPS origin", () => {
-  const names = ["RENDERLAB_FIBO_GATEWAY_URL", "RENDERLAB_FIBO_MODAL_KEY", "RENDERLAB_FIBO_MODAL_SECRET"];
+  const names = ["RENDERLAB_FIBO_GENERATION", "RENDERLAB_FIBO_GATEWAY_URL", "RENDERLAB_FIBO_MODAL_KEY", "RENDERLAB_FIBO_MODAL_SECRET"];
   const before = names.map((name) => process.env[name]);
   try {
     for (const name of names) delete process.env[name];
@@ -60,6 +60,13 @@ test("FIBO gateway fails closed without complete credentials or a Modal HTTPS or
     assert.equal(worker?.gatewayUrl, "https://test-worker.modal.run");
     assert.doesNotMatch(JSON.stringify(worker), /test-secret|test-key/);
     assert.deepEqual(workersForEcosystem("fibo2-edit-turbo"), []);
+    process.env.RENDERLAB_FIBO_GENERATION = "1";
+    assert.deepEqual(workersForEcosystem("fibo2-edit-turbo"), [worker]);
+    assert.equal(worker.role, "primary");
+    assert.equal(workersForEcosystem("flux2-klein-9b")[0].id, "flux-primary-01");
+    delete process.env.RENDERLAB_FIBO_GENERATION;
+    assert.deepEqual(workersForEcosystem("fibo2-edit-turbo"), []);
+    assert.deepEqual(findWorker("renderlab-fibo-native-01"), worker);
   } finally {
     for (const [i, name] of names.entries()) {
       if (before[i] === undefined) delete process.env[name];

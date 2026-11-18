@@ -3,7 +3,7 @@ import "server-only";
 import { fiboGenerationModel, resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
-import { getFiboWorker } from "@/server/generation/worker-fleet";
+import { workersForEcosystem } from "@/server/generation/worker-fleet";
 import { getMediaAsset } from "@/server/media/media-assets";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { correlationIdForGenerationJob, createDiagnosticCorrelationId, emitDiagnosticEvent } from "@/server/observability/diagnostics";
@@ -21,7 +21,7 @@ function isExternalGenerationBackendConfigured() {
 }
 
 export function isFiboGenerationAvailable() {
-  return process.env.RENDERLAB_FIBO_GENERATION === "1" && !!getFiboWorker() && isNativeGenerationConfigured();
+  return workersForEcosystem(fiboGenerationModel).length > 0 && isNativeGenerationConfigured();
 }
 
 export function isGenerationBackendConfigured() {

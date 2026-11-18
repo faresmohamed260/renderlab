@@ -88,7 +88,7 @@ export const generationWorkers: GenerationWorker[] = [
   },
 ];
 
-export function getFiboWorker(): GenerationWorker | null {
+function configuredFiboWorker(): GenerationWorker | null {
   const url = process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim().replace(/\/$/, "");
   const key = process.env.RENDERLAB_FIBO_MODAL_KEY?.trim();
   const secret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
@@ -104,13 +104,18 @@ export function fiboWorkerHeaders() {
   };
 }
 
+function registeredWorkers() {
+  const candidate = configuredFiboWorker();
+  return candidate ? [...generationWorkers, candidate] : generationWorkers;
+}
+
 export function workersForEcosystem(ecosystem: GenerationWorker["ecosystem"]) {
-  return generationWorkers
+  if (ecosystem === "fibo2-edit-turbo" && process.env.RENDERLAB_FIBO_GENERATION !== "1") return [];
+  return registeredWorkers()
     .filter((worker) => worker.ecosystem === ecosystem && worker.routingStatus === "active")
     .sort((a, b) => (a.role === b.role ? a.id.localeCompare(b.id) : a.role === "primary" ? -1 : 1));
 }
 
 export function findWorker(workerId: string) {
-  if (workerId === "renderlab-fibo-native-01") return getFiboWorker();
-  return generationWorkers.find((worker) => worker.id === workerId) ?? null;
+  return registeredWorkers().find((worker) => worker.id === workerId) ?? null;
 }

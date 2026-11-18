@@ -458,6 +458,12 @@ The configured Library lifecycle is now hardened at both orchestration and ident
 
 ## Generation Worker Fleet
 
+### FIBO fleet candidate (not deployed)
+
+FIBO uses the native worker fleet lookup, submission and response-handling path, with model-specific JSON encoding and a private Modal proxy. The candidate conforms to the asynchronous job contract: submit returns a provider call ID; GET polls or returns image bytes; DELETE requests cancellation. Provider-call IDs are signed, and requests carrying proxy credentials must not follow redirects. Other workers retain their existing transports and routing. No new owner, storage, or job-state backend is introduced.
+
+New FIBO jobs require an explicitly enabled server-side flag and configured proxy credentials. Disabling admission while retaining gateway configuration keeps an existing FIBO worker ID resolvable for in-flight polls and cancellation. Do not configure the gateway until the exact Modal app and workspace pass ADR-002 ownership verification and the required provider authorization. The candidate has one primary; do not add or auto-reassign to a standby until ownership, capacity and duplicate-dispatch safety are qualified. Endpoint deployment, secret provisioning, provider execution and production cutover are separate operations under GOVERNANCE.md. See the UI migration tracker for live qualification status.
+
 ### Owner direction: one Modal account for RenderLab (2026-11-17)
 
 All future RenderLab Modal worker operations are to use the owner’s main Modal account, `faresmohamed260`, only. The owner reports adding a payment method and replacing that account’s prior API keys. On 2026-11-17 the fresh WANDA profile was verified: the CLI showed workspace faresmohamed260 and an explicit-profile read-only app listing returned zero entries in its default environment. GPU access remains unverified. This is the target state, not a worker migration or production routing change. Do not use legacy accounts or credentials for new work.

@@ -17,7 +17,7 @@ import {
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
-import { fiboWorkerHeaders, findWorker, getFiboWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
+import { fiboWorkerHeaders, findWorker, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import {
@@ -356,10 +356,8 @@ function gatewayUrlForWorker(worker: GenerationWorker) {
   return worker.gatewayUrl;
 }
 
-async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
+async function prepareWorkerSubmission(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
   if (workflow.ecosystem === fiboGenerationModel) {
-    const worker = getFiboWorker();
-    if (!worker || process.env.RENDERLAB_FIBO_GENERATION !== "1") throw new Error("FIBO generation is disabled.");
     const sizes = { original: [0, 0], "1:1": [1024, 1024], "4:3": [1152, 864],
       "3:4": [864, 1152], "16:9": [1280, 720], "9:16": [720, 1280] } as const;
     const ratio = request.output.aspectRatio;
@@ -373,27 +371,30 @@ async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest
       const slot = aliases.get(mention.slice(1));
       return slot ? `<image_${slot}>` : mention;
     });
-    const response = await fetch(`${worker.gatewayUrl}/jobs/fibo`, {
-      method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30_000),
-      headers: { ...fiboWorkerHeaders(), "content-type": "application/json" },
+    return {
       body: JSON.stringify({ prompt, width: size[0], height: size[1], seed: request.advanced?.seed ?? 42,
         steps: request.advanced?.steps ?? 4, negative_prompt: request.advanced?.negativePrompt ?? "",
         images: sources.map((source) => source.bytes.toString("base64")) }),
-    });
-    if (response.status !== 202) throw new Error("FIBO submission was not confirmed.");
-    const result: { call_id?: unknown } = await response.json();
-    if (typeof result.call_id !== "string" || !/^fc-[A-Za-z0-9]{16,64}\.[0-9a-f]{64}$/.test(result.call_id)) {
-      throw new Error("FIBO gateway returned an invalid job ID.");
-    }
-    return { worker, callId: result.call_id, workerState: "queued", failures: [] };
+      contentType: "application/json",
+    };
   }
   const prepared = await prepareWorkerPayload(request, workflow, sources);
+  return { body: buildForm(request, workflow, prepared) };
+}
+
+async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[]) {
+  const submission = await prepareWorkerSubmission(workflow, request, sources);
   const failures: Array<Record<string, unknown>> = [];
   for (const worker of workersForEcosystem(workflow.ecosystem)) {
     try {
-      const response = await fetch(`${gatewayUrlForWorker(worker)}${workflow.submitPath}`, {
+      const privateGateway = worker.ecosystem === fiboGenerationModel;
+      const response = await fetch(`${privateGateway ? worker.gatewayUrl : gatewayUrlForWorker(worker)}${workflow.submitPath}`, {
         method: "POST",
-        body: buildForm(request, workflow, prepared),
+        body: submission.body,
+        ...(privateGateway ? {
+          headers: { ...fiboWorkerHeaders(), "content-type": submission.contentType! },
+          redirect: "error", signal: AbortSignal.timeout(30_000),
+        } : {}),
         cache: "no-store",
       });
       if (!response.ok) {
@@ -404,7 +405,10 @@ async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest
         continue;
       }
       const payload = await response.json() as { call_id?: string; worker_state?: string; workerState?: string };
-      if (!payload.call_id) throw new Error("Generation worker did not return a call ID.");
+      if (typeof payload.call_id !== "string" || !payload.call_id
+        || (privateGateway && (response.status !== 202 || !/^fc-[A-Za-z0-9]{16,64}\.[0-9a-f]{64}$/.test(payload.call_id)))) {
+        throw new Error("Generation worker did not return a valid call ID.");
+      }
       return {
         worker,
         callId: payload.call_id,
