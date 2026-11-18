@@ -46,7 +46,7 @@ Search these before implementing reusable interaction mechanics from scratch.
 **Policy:** Registry presence does not automatically approve a component; review quality, accessibility, licensing, maintenance and dependency cost first.
 
 ### React Spring
-**Role:** MIT-licensed @react-spring/web 10.1.2. Drives the WANDA profile disclosure with one reduced-motion-aware spring preset (UI-083).
+**Role:** MIT-licensed @react-spring/web 10.1.2. Drives the WANDA section and profile disclosures with one reduced-motion-aware spring preset (UI-083).
 
 ## External Source Search Order
 1. Existing `APPROVED`/`LOCKED` RenderLab component
