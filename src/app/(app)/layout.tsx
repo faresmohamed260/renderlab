@@ -1,13 +1,8 @@
 import type { ReactNode } from "react";
-import { headers } from "next/headers";
-import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
-
 import { AppShell } from "@/components/shell/app-shell";
-import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
+import { isWandaPreview } from "@/server/wanda-preview";
 
 export default async function ApplicationLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const wandaFrame = process.env.NODE_ENV === "development" && process.env.RENDERLAB_WANDA_FIBO === "1"
-    && (await headers()).get("host") === "127.0.0.1:3000";
-  if (wandaFrame) return <PreviewNavigationShell accountId={(await getCurrentRenderLabIdentity().catch(() => null))?.id ?? null}><main>{children}</main></PreviewNavigationShell>;
+  if (await isWandaPreview()) return <main>{children}</main>;
   return <AppShell>{children}</AppShell>;
 }

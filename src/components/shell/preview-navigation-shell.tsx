@@ -19,98 +19,34 @@ const accountOptions = [
 const profileEndpoint = "/api/preview-account/profile";
 type AccountProfile = { displayName: string | null; avatarSrc: string | null };
 
-// One verified account at a time. The short tab cache survives the Create document boundary.
-let cachedProfile: { accountId: string; expires: number; value: Promise<AccountProfile>; ready?: AccountProfile } | undefined;
-
-function readThumbnail(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject();
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
-
-const profileCacheKey = "renderlab.preview.profile";
-const profileCacheLifetime = 60_000;
-
-function readTabProfile(accountId: string) {
-  try {
-    const raw = sessionStorage.getItem(profileCacheKey);
-    if (!raw) return null;
-    const entry = JSON.parse(raw);
-    if (entry.accountId === accountId && entry.expires > Date.now()
-      && entry.expires <= Date.now() + profileCacheLifetime
-      && (entry.ready?.displayName === null || typeof entry.ready?.displayName === "string")
-      && (entry.ready?.avatarSrc === null || (typeof entry.ready?.avatarSrc === "string"
-        && entry.ready.avatarSrc.startsWith("data:image/webp;base64,") && entry.ready.avatarSrc.length < 32768))) {
-      return entry as { accountId: string; expires: number; ready: AccountProfile };
-    }
-    sessionStorage.removeItem(profileCacheKey);
-  } catch { /* Storage is optional. */ }
-  return null;
-}
-
-function loadProfile(accountId: string) {
-  if (cachedProfile?.accountId === accountId && cachedProfile.expires > Date.now()) return cachedProfile.value;
-  const stored = readTabProfile(accountId);
-  if (stored) {
-    cachedProfile = { ...stored, value: Promise.resolve(stored.ready) };
-    return cachedProfile.value;
-  }
-  const value = (async () => {
-    let response = await fetch(profileEndpoint, { cache: "no-store" });
-    const hosted = response.status !== 404;
-    if (!hosted) response = await fetch("/api/account/profile", { cache: "no-store" });
-    if (!response.ok) throw new Error("Profile unavailable");
-    const { profile } = await response.json();
-    const displayName = typeof profile?.displayName === "string" ? profile.displayName.trim() : null;
-    let avatarSrc: string | null = null;
-    if (hosted && profile?.avatarUrl === "/api/account/profile/avatar") {
-      try {
-        const avatar = await fetch(profileEndpoint + "/avatar", { cache: "no-store", redirect: "error" });
-        if (avatar.ok && avatar.headers.get("content-type") === "image/webp") {
-          avatarSrc = await readThumbnail(await avatar.blob());
-        }
-      } catch { /* Name-only fallback; never request the full avatar in the browser. */ }
-    }
-    return { displayName, avatarSrc };
-  })();
-  const entry: NonNullable<typeof cachedProfile> = { accountId, expires: Date.now() + profileCacheLifetime, value };
-  cachedProfile = entry;
-  void value.then((profile) => {
-    if (cachedProfile !== entry) return;
-    entry.ready = profile;
-    try { sessionStorage.setItem(profileCacheKey, JSON.stringify({ accountId, expires: entry.expires, ready: profile })); }
-    catch { /* Keep the memory cache when storage is unavailable. */ }
-  }, () => {
-    if (cachedProfile === entry) cachedProfile = undefined;
-  });
-  return value;
+async function loadProfile(signal: AbortSignal): Promise<AccountProfile> {
+  const init = { cache: "no-store", signal } as const;
+  let response = await fetch(profileEndpoint, init);
+  const hosted = response.status !== 404;
+  if (!hosted) response = await fetch("/api/account/profile", init);
+  if (!response.ok) throw new Error("Profile unavailable");
+  const { profile } = await response.json();
+  return {
+    displayName: typeof profile?.displayName === "string" ? profile.displayName.trim() : null,
+    avatarSrc: hosted && profile?.avatarUrl === "/api/account/profile/avatar"
+      ? profileEndpoint + "/avatar" : null,
+  };
 }
 
 function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   useEffect(() => {
-    if (!accountId) {
-      cachedProfile = undefined;
-      try { sessionStorage.removeItem(profileCacheKey); } catch { /* Storage is optional. */ }
-      return;
-    }
-    const stored = readTabProfile(accountId);
-    if (stored) setProfile(stored.ready);
-    let active = true;
-    void loadProfile(accountId).then((value) => {
-      if (active) setProfile(value);
-    }).catch(() => { /* Keep the control available if the profile is unavailable. */ });
-    return () => { active = false; };
+    if (!accountId) return;
+    const controller = new AbortController();
+    void loadProfile(controller.signal).then((value) => {
+      if (!controller.signal.aborted) setProfile(value);
+    }).catch(() => { /* Keep the name-only fallback if the profile is unavailable. */ });
+    return () => controller.abort();
   }, [accountId]);
 
-  const current = profile ?? (cachedProfile?.accountId === accountId && cachedProfile.expires > Date.now()
-    ? cachedProfile.ready : null);
-  const name = accountId ? current?.displayName || "RenderLab account" : "Guest";
-  const avatarSrc = accountId ? current?.avatarSrc : null;
+  const name = accountId ? profile?.displayName || "RenderLab account" : "Guest";
+  const avatarSrc = accountId ? profile?.avatarSrc : null;
   const id = useId();
   const card = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -158,7 +94,7 @@ function PreviewAccountMenu({ accountId }: { accountId: string | null }) {
         }}>
         {avatarSrc && <Image src={avatarSrc} alt="" width={30} height={30} unoptimized
           className="preview-navigation-avatar"
-          onError={() => setProfile(current ? { ...current, avatarSrc: null } : null)} />}
+          onError={() => setProfile((current) => current ? { ...current, avatarSrc: null } : null)} />}
         <span className="preview-account-identity min-w-0 truncate">{name}</span>
       </Button>
       <div id={id} className="preview-account-menu" inert={!open} aria-hidden={!open}>
@@ -198,7 +134,10 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    try { setCollapsed(sessionStorage.getItem("renderlab.preview.sidebar") === "collapsed"); }
+    try {
+      sessionStorage.removeItem("renderlab.preview.profile");
+      setCollapsed(sessionStorage.getItem("renderlab.preview.sidebar") === "collapsed");
+    }
     catch { /* Sidebar still works with browser storage disabled. */ }
   }, []);
 
@@ -216,11 +155,6 @@ export function PreviewNavigationShell({ children, accountId }: { children: Reac
     if (!(link instanceof HTMLAnchorElement) || link.origin !== location.origin
       || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
     link.closest("details")?.removeAttribute("open");
-    // Create still has a document-specific iframe policy in this local preview.
-    if ((link.pathname === "/create") !== (pathname === "/create")) {
-      event.preventDefault();
-      location.assign(link.href);
-    }
   }
 
   const links = (

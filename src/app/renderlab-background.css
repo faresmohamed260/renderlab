@@ -53,14 +53,6 @@
 /* Use the shared wash, not a second effect clipped by the legacy Home hero. */
 .renderlab-gradient [data-landing-section="hero"]::before { display: none; }
 
-/* The preview iframe shows the host's atmosphere through its transparent document. */
-html.renderlab-gradient-host:has(.wanda-create-background),
-.renderlab-gradient:has(.wanda-create-background) {
-  background: transparent;
-}
-.renderlab-gradient:has(.wanda-create-background) .renderlab-reference-atmosphere {
-  display: none;
-}
 .wanda-create-background {
   min-block-size: 100dvh;
 }
@@ -132,9 +124,6 @@ html.renderlab-gradient-host:has(.wanda-create-background),
 .preview-navigation-links a[aria-current="page"] {
   color: #fff;
   background: rgb(129 114 246 / 17%);
-}
-.preview-create-frame {
-  block-size: calc(100dvh - 70px);
 }
 .preview-navigation-shell [data-landing-section="hero"] {
   min-block-size: auto;
@@ -227,9 +216,6 @@ html.renderlab-gradient-host:has(.wanda-create-background),
     min-block-size: 44px;
     padding-inline: 8px;
     border-radius: 9px;
-  }
-  .preview-create-frame {
-    block-size: 100dvh;
   }
 }
 

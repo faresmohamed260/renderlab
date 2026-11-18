@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { headers } from "next/headers";
+import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
+import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
+import { isWandaPreview } from "@/server/wanda-preview";
 
 import "./globals.css";
 import "./renderlab-background.css";
@@ -27,15 +29,15 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const gradient = process.env.NODE_ENV === "development" && process.env.RENDERLAB_WANDA_FIBO === "1"
-    && (await headers()).get("host") === "127.0.0.1:3000";
+  const preview = await isWandaPreview();
+  const account = preview ? await getCurrentRenderLabIdentity().catch(() => null) : null;
   return (
-    <html lang="en" className={gradient ? "renderlab-gradient-host" : undefined}>
-      <body className={gradient ? "renderlab-gradient" : undefined}>
-        {gradient && <div className="renderlab-reference-atmosphere" aria-hidden="true">
+    <html lang="en">
+      <body className={preview ? "renderlab-gradient" : undefined}>
+        {preview && <div className="renderlab-reference-atmosphere" aria-hidden="true">
           <div className="renderlab-reference-wash" />
         </div>}
-        {children}
+        {preview ? <PreviewNavigationShell accountId={account?.id ?? null}>{children}</PreviewNavigationShell> : children}
       </body>
     </html>
   );

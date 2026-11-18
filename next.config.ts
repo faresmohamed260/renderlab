@@ -67,25 +67,7 @@ const nextConfig: NextConfig = {
     }))], afterFiles: [], fallback: [] };
   },
   async headers() {
-    const base = [
-      {
-        source: "/:path*",
-        headers: [...securityHeaders],
-      },
-    ];
-    if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_WANDA_FIBO !== "1") return base;
-    const host = [{ type: "host" as const, value: "127.0.0.1" }].map(
-      (rule) => ({ ...rule, value: rule.value.replaceAll(".", "\\.") }),
-    );
-    return [...base,
-      { source: "/create", has: host, headers: [
-        { key: "Content-Security-Policy", value: contentSecurityPolicy.replace("frame-src 'none'", "frame-src 'self'") },
-      ] },
-      { source: "/wanda-fibo-frame", has: host, headers: [
-        { key: "Content-Security-Policy", value: contentSecurityPolicy.replace("frame-ancestors 'none'", "frame-ancestors 'self'") },
-        { key: "X-Frame-Options", value: "SAMEORIGIN" },
-      ] },
-    ];
+    return [{ source: "/:path*", headers: [...securityHeaders] }];
   },
 };
 

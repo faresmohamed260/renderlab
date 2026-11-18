@@ -1,6 +1,3 @@
-import { headers } from "next/headers";
-import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
-import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
 import { redirect } from "next/navigation";
 
 import { LandingExperience } from "@/features/landing/landing-experience";
@@ -32,8 +29,5 @@ export default async function LandingPage({
     redirect(query ? `/create?${query}` : "/create");
   }
 
-  const preview = process.env.NODE_ENV === "development" && process.env.RENDERLAB_WANDA_FIBO === "1"
-    && (await headers()).get("host") === "127.0.0.1:3000";
-  const landing = <LandingExperience />;
-  return preview ? <PreviewNavigationShell accountId={(await getCurrentRenderLabIdentity().catch(() => null))?.id ?? null}>{landing}</PreviewNavigationShell> : landing;
+  return <LandingExperience />;
 }
