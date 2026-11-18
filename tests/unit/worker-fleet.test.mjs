@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  acceptedWorkerCallId,
   findWorker,
+  workerGatewayOptions,
+  workerSupportsCancellation,
   generationWorkers,
   workersForEcosystem,
 } from "../../src/server/generation/worker-fleet.ts";
@@ -63,6 +66,24 @@ test("FIBO gateway fails closed without complete credentials or a Modal HTTPS or
     process.env.RENDERLAB_FIBO_GENERATION = "1";
     assert.deepEqual(workersForEcosystem("fibo2-edit-turbo"), [worker]);
     assert.equal(worker.role, "primary");
+    assert.equal(worker.policy.reassignment, false);
+    assert.equal(worker.policy.retryAmbiguousSubmit, false);
+    assert.equal(workerSupportsCancellation(worker), true);
+    const options = workerGatewayOptions(worker);
+    assert.equal(options.redirect, "error");
+    assert.equal(options.headers["Modal-Key"], "test-key");
+    assert.equal(options.headers["Modal-Secret"], "test-secret");
+    assert.ok(options.signal instanceof AbortSignal);
+    const signed = "fc-" + "a".repeat(26) + "." + "f".repeat(64);
+    assert.equal(acceptedWorkerCallId(worker, 202, signed), true);
+    assert.equal(acceptedWorkerCallId(worker, 200, signed), false);
+    assert.equal(acceptedWorkerCallId(worker, 202, "fc-unsigned"), false);
+    for (const [id, cancels] of [["flux-primary-01", true], ["ltx-primary-02", true], ["qwen-primary-01", false]]) {
+      const established = findWorker(id);
+      assert.deepEqual(workerGatewayOptions(established), {});
+      assert.equal(workerSupportsCancellation(established), cancels);
+      assert.equal(acceptedWorkerCallId(established, 200, "provider-id"), true);
+    }
     assert.equal(workersForEcosystem("flux2-klein-9b")[0].id, "flux-primary-01");
     delete process.env.RENDERLAB_FIBO_GENERATION;
     assert.deepEqual(workersForEcosystem("fibo2-edit-turbo"), []);

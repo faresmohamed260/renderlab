@@ -2,6 +2,14 @@ export type GenerationWorker = {
   id: string;
   ecosystem: "flux2-klein-9b" | "ltx25-redgraft" | "qwen-image-edit-2511" | "fibo2-edit-turbo";
   gatewayUrl: string;
+  policy?: {
+    transport: "modal-proxy";
+    cancellation: boolean;
+    reassignment: boolean;
+    retryAmbiguousSubmit: boolean;
+    resultMime: string;
+    timeoutMs: number;
+  };
   displayName: string;
   role: "primary" | "standby";
   routingStatus: "active" | "disabled";
@@ -94,14 +102,32 @@ function configuredFiboWorker(): GenerationWorker | null {
   const secret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
   if (!url || !key || !secret || !/^https:\/\/[a-z0-9-]+\.modal\.run$/.test(url)) return null;
   return { id: "renderlab-fibo-native-01", ecosystem: "fibo2-edit-turbo", gatewayUrl: url,
+    policy: { transport: "modal-proxy", cancellation: true, reassignment: false,
+      retryAmbiguousSubmit: false, resultMime: "image/png", timeoutMs: 30_000 },
     displayName: "Bria FIBO 2.0 Edit Turbo", role: "primary", routingStatus: "active" };
 }
 
-export function fiboWorkerHeaders() {
+function fiboWorkerHeaders() {
   return {
     "Modal-Key": process.env.RENDERLAB_FIBO_MODAL_KEY!.trim(),
     "Modal-Secret": process.env.RENDERLAB_FIBO_MODAL_SECRET!.trim(),
   };
+}
+
+export function workerSupportsCancellation(worker: GenerationWorker) {
+  return worker.policy?.cancellation ?? (worker.ecosystem === "flux2-klein-9b" || worker.ecosystem === "ltx25-redgraft");
+}
+
+export function workerGatewayOptions(worker: GenerationWorker, timeoutMs = worker.policy?.timeoutMs): RequestInit {
+  return {
+    ...(worker.policy?.transport === "modal-proxy" ? { headers: fiboWorkerHeaders(), redirect: "error" as const } : {}),
+    ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
+  };
+}
+
+export function acceptedWorkerCallId(worker: GenerationWorker, status: number, id: unknown): id is string {
+  return typeof id === "string" && !!id && (worker.policy?.transport !== "modal-proxy"
+    || (status === 202 && /^fc-[A-Za-z0-9]{16,64}\.[0-9a-f]{64}$/.test(id)));
 }
 
 function registeredWorkers() {
