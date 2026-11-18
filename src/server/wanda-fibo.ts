@@ -302,6 +302,7 @@ async function runQueuedRender(job: Job, record: QueueRecord) {
 export async function wandaFibo(request: Request, path: string): Promise<Response> {
   if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_WANDA_FIBO !== "1"
     || request.headers.get("host") !== "127.0.0.1:3000") return error("Not found.", 404);
+  if (process.env.RENDERLAB_HOSTED_CREATE === "1") return error("The local FIBO backend is disabled in hosted Create mode.", 503);
   if (request.method === "POST" && request.headers.get("origin") !== origin) {
     return error("Same-origin request required.", 403);
   }

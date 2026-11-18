@@ -103,7 +103,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, savedEditsAccount }: { admitted: boolean; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, savedEditsAccount }: { admitted: boolean; hostedOnly?: boolean; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const bookmarkKey = admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
   const [stageReady, setStageReady] = useState(!bookmarkKey);
   const [mode, setMode] = useState<Workflow>("edit");
@@ -814,7 +814,8 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
       return value !== null && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
     } catch { return false; }
   })();
-  const blocker = !admitted ? "Sign in with an account that has Create access."
+  const hostedBlocker = hostedOnly ? "This Create preview cannot render until production supports the FIBO workflow." : "";
+  const blocker = hostedBlocker || (!admitted ? "Sign in with an account that has Create access."
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
     : !variableSteps && steps !== 4 ? "The current worker supports 4 steps. Select 4 to generate."
     : mode === "edit" && !files[0] && !result ? "Add a source image to edit."
@@ -826,7 +827,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
     : !manualVgl && !prompt.trim() ? "Enter a prompt or VGL JSON to generate."
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
-    : "";
+    : "");
   const canSubmit = stageReady && !enqueueing && (!busy || desktop && accepted && queueCount < 3) && !maskEditor && !blocker;
   const maskEditorNode = maskEditor && mode === "edit" && files[0] && previews[0] && (
     <WandaFiboMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
@@ -1049,7 +1050,7 @@ export function WandaFiboWorkspace({ admitted, extendedSetup, variableSteps, adv
                   onChange={(event) => setSteps(event.target.valueAsNumber)} />
               </label>
             </div>
-            <p className="wanda-fibo-caption wanda-fibo-worker-note" role="status">{cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
+            <p className="wanda-fibo-caption wanda-fibo-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
             <span id="wanda-fibo-blocker" className="sr-only">{blocker}</span>
             <div className="wanda-fibo-submit-actions">
               <Button type="submit" className="wanda-fibo-generate" disabled={!canSubmit}
