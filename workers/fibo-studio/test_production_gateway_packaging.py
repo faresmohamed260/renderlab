@@ -41,6 +41,17 @@ class GatewayPackagingTest(unittest.TestCase):
             self.assertIn('modal.Function.from_name(APP_NAMES["image"], "render", environment_name=environment)', source)
             self.assertNotIn(".include(", source)
 
+    def test_gateway_and_worker_images_pin_the_postgres_driver(self):
+        for module in ("modal_native_production", "modal_native_candidate", RENDERER):
+            with self.subTest(module=module):
+                source = (DIRECTORY / (module + ".py")).read_text(encoding="utf-8")
+                self.assertIn('"psycopg[binary]==3.2.13"', source)
+
+        store = (DIRECTORY / "dispatch_supabase.py").read_text(encoding="utf-8")
+        self.assertIn('"RENDERLAB_DISPATCH_DATABASE_URL"', store)
+        self.assertNotIn("RENDERLAB_DISPATCH_SUPABASE_API_KEY", store)
+        self.assertNotIn("RENDERLAB_DISPATCH_SUPABASE_URL", store)
+
     def test_smoke_runner_reuses_the_worker_and_owns_the_local_entrypoint(self):
         smoke = syntax(SMOKE)
         self.assertTrue(any(

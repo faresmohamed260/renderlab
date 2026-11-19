@@ -6,7 +6,9 @@ import modal
 from workload_environment import APP_NAMES
 
 app = modal.App("renderlab-generation-gateway-candidate")
-gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi==0.137.2")
+gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install(
+    "fastapi==0.137.2", "psycopg[binary]==3.2.13"
+)
 gateway_image = gateway_image.add_local_python_source(
     "dispatch_core", "dispatch_supabase", "modal_dispatch_backend", "native_gateway", "native_graph",
     "native_generated_vgl", "workload_contract", "workload_environment"
