@@ -1,6 +1,6 @@
 # Screen Registry
 
-> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+> **Repository scope (2026-11-19):** The web frontend is restored from the existing Create UI branch, without changing the current backend. The Create preview still uses its development-only flag; this integration does not promote it to the production Create route or change the deployed version.
 
 Tracks approved product surfaces and actual route/status/component composition.
 

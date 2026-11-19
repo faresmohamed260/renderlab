@@ -1,6 +1,6 @@
 # RenderLab Product & UI Foundation
 
-> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+> **Repository scope (2026-11-19):** The web frontend is restored from the existing Create UI branch, without changing the current backend. The Create preview still uses its development-only flag; this integration does not promote it to the production Create route or change the deployed version. The GitHub default and ongoing development baseline remain feature/fibo-create-port.
 
 > **History separation:** the full UI migration/phase journal that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`. It is historical evidence, not a competing current tracker.
 

@@ -1,0 +1,249 @@
+"use client";
+
+import { Dices, RotateCcw } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { CollapsibleContent } from "@/components/ui/collapsible";
+import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import type {
+  GenerationAdvancedParameters,
+  GenerationFrameRate,
+  ImageGenerationModel,
+  OutputKind,
+} from "@/lib/capabilities/generation";
+import {
+  advancedDefaultsForOutput,
+  defaultImageGenerationModel,
+  generationAdvancedCapabilities,
+  randomGenerationSeed,
+} from "@/lib/capabilities/generation";
+
+export type AdvancedDraft = {
+  negativePrompt: string;
+  seed: string;
+  steps: string;
+  guidance: string;
+  frameRate: GenerationFrameRate;
+};
+
+export function createAdvancedDraft(kind: OutputKind): AdvancedDraft {
+  const defaults = advancedDefaultsForOutput(kind);
+  return {
+    negativePrompt: "",
+    seed: String(defaults.seed),
+    steps: kind === "image" ? String(generationAdvancedCapabilities.image.defaults.steps) : "",
+    guidance: kind === "image" ? String(generationAdvancedCapabilities.image.defaults.guidance) : "",
+    frameRate: generationAdvancedCapabilities.video.defaults.frameRate,
+  };
+}
+
+export function advancedDraftFromParameters(
+  kind: OutputKind,
+  parameters: GenerationAdvancedParameters | undefined,
+): AdvancedDraft {
+  const defaults = createAdvancedDraft(kind);
+  return {
+    negativePrompt: parameters?.negativePrompt ?? "",
+    seed: String(parameters?.seed ?? defaults.seed),
+    steps: kind === "image" ? String(parameters?.steps ?? defaults.steps) : "",
+    guidance: kind === "image" ? String(parameters?.guidance ?? defaults.guidance) : "",
+    frameRate: kind === "video"
+      ? parameters?.frameRate ?? defaults.frameRate
+      : defaults.frameRate,
+  };
+}
+
+export function advancedParametersFromDraft(
+  draft: AdvancedDraft,
+  kind: OutputKind,
+  imageModel: ImageGenerationModel = defaultImageGenerationModel,
+): GenerationAdvancedParameters | null {
+  if (!draft.seed.trim()) return null;
+
+  const seed = Number(draft.seed);
+  if (!Number.isSafeInteger(seed)) return null;
+
+  const common = {
+    ...(draft.negativePrompt.trim() ? { negativePrompt: draft.negativePrompt.trim() } : {}),
+    seed,
+  };
+
+  if (kind === "video") {
+    return { ...common, frameRate: draft.frameRate };
+  }
+
+  if (imageModel === "qwen-image-edit-2511") return common;
+
+  if (!draft.steps.trim() || !draft.guidance.trim()) return null;
+  const steps = Number(draft.steps);
+  const guidance = Number(draft.guidance);
+  if (
+    !Number.isInteger(steps)
+    || steps < generationAdvancedCapabilities.steps.min
+    || steps > (imageModel === "fibo2-edit-turbo" ? 8 : generationAdvancedCapabilities.steps.max)
+  ) return null;
+  if (imageModel === "fibo2-edit-turbo" && guidance !== 1) return null;
+  if (
+    !Number.isFinite(guidance)
+    || guidance < generationAdvancedCapabilities.guidance.min
+    || guidance > generationAdvancedCapabilities.guidance.max
+  ) return null;
+
+  return { ...common, steps, guidance };
+}
+
+export function CreateAdvancedPanel({
+  outputKind,
+  imageModel = defaultImageGenerationModel,
+  draft,
+  onDraftChange,
+  onReset,
+}: {
+  outputKind: OutputKind;
+  imageModel?: ImageGenerationModel;
+  draft: AdvancedDraft;
+  onDraftChange: (next: AdvancedDraft) => void;
+  onReset: () => void;
+}) {
+  const reduceMotion = Boolean(useReducedMotion());
+  const transition = reduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
+
+  return (
+    <CollapsibleContent className="clear-create-advanced kinetic-precision-deck overflow-hidden border-t px-3 py-3 sm:px-4 sm:py-3.5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="clear-create-advanced-title text-text">Advanced</p>
+          <p className="clear-create-advanced-copy text-text-muted">Secondary controls</p>
+        </div>
+        <Button type="button" variant="ghost" size="sm" onClick={onReset} className="shrink-0">
+          <RotateCcw aria-hidden="true" data-icon="inline-start" />
+          Reset
+        </Button>
+      </div>
+
+      <AnimatePresence initial={false} mode="wait">
+        <motion.div
+          key={`${outputKind}:${imageModel}`}
+          data-create-motion="advanced-fields"
+          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+          transition={transition}
+        >
+          <FieldSet>
+            <FieldLegend className="sr-only">Advanced generation controls</FieldLegend>
+            <FieldGroup className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Field className="col-span-2 sm:col-span-3">
+            <FieldLabel htmlFor="advanced-negative-prompt">
+              {generationAdvancedCapabilities.negativePrompt.label}
+            </FieldLabel>
+            <Input
+              id="advanced-negative-prompt"
+              type="text"
+              value={draft.negativePrompt}
+              onChange={(event) => onDraftChange({ ...draft, negativePrompt: event.target.value })}
+              placeholder="Optional things to avoid…"
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="advanced-seed">{generationAdvancedCapabilities.seed.label}</FieldLabel>
+            <div className="flex items-center gap-2">
+              <Input
+                id="advanced-seed"
+                type="number"
+                step="1"
+                value={draft.seed}
+                onChange={(event) => onDraftChange({ ...draft, seed: event.target.value })}
+                className="min-w-0 flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                className="shrink-0"
+                aria-label="Randomize seed"
+                title="Randomize seed"
+                onClick={() => {
+                  const currentSeed = Number(draft.seed);
+                  onDraftChange({
+                    ...draft,
+                    seed: String(randomGenerationSeed(Number.isSafeInteger(currentSeed) ? currentSeed : undefined)),
+                  });
+                }}
+              >
+                <Dices aria-hidden="true" />
+              </Button>
+            </div>
+          </Field>
+
+          {outputKind === "image" ? (
+            imageModel === "qwen-image-edit-2511" ? (
+              <p className="col-span-2 text-xs leading-5 text-text-muted sm:col-span-3">
+                Qwen uses its optimized fixed 4-step image tuning. Steps and Guidance are managed by the model.
+              </p>
+            ) : (
+              <>
+                <Field>
+                  <FieldLabel htmlFor="advanced-steps">{generationAdvancedCapabilities.steps.label}</FieldLabel>
+                  <Input
+                    id="advanced-steps"
+                    type="number"
+                    min={generationAdvancedCapabilities.steps.min}
+                    max={imageModel === "fibo2-edit-turbo" ? 8 : generationAdvancedCapabilities.steps.max}
+                    step="1"
+                    value={draft.steps}
+                    onChange={(event) => onDraftChange({ ...draft, steps: event.target.value })}
+                  />
+                </Field>
+
+                {imageModel === "fibo2-edit-turbo" ? (
+                  <p className="self-end text-xs leading-5 text-text-muted">FIBO uses fixed guidance 1 and supports 1–8 steps.</p>
+                ) : (
+                  <Field>
+                    <FieldLabel htmlFor="advanced-guidance">{generationAdvancedCapabilities.guidance.label}</FieldLabel>
+                    <Input
+                      id="advanced-guidance"
+                      type="number"
+                      min={generationAdvancedCapabilities.guidance.min}
+                      max={generationAdvancedCapabilities.guidance.max}
+                      step={generationAdvancedCapabilities.guidance.step}
+                      value={draft.guidance}
+                      onChange={(event) => onDraftChange({ ...draft, guidance: event.target.value })}
+                    />
+                  </Field>
+                )}
+              </>
+            )
+          ) : null}
+
+          {outputKind === "video" ? (
+            <Field>
+              <FieldLabel htmlFor="advanced-frame-rate">Frame rate</FieldLabel>
+              <NativeSelect
+                id="advanced-frame-rate"
+                value={draft.frameRate}
+                onChange={(event) =>
+                  onDraftChange({
+                    ...draft,
+                    frameRate: Number(event.target.value) as GenerationFrameRate,
+                  })
+                }
+              >
+                {generationAdvancedCapabilities.video.frameRates.map((frameRate) => (
+                  <NativeSelectOption key={frameRate} value={frameRate}>
+                    {frameRate} fps
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+          ) : null}
+            </FieldGroup>
+          </FieldSet>
+        </motion.div>
+      </AnimatePresence>
+    </CollapsibleContent>
+  );
+}
