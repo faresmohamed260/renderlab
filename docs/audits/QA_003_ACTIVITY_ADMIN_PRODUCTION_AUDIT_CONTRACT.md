@@ -16,6 +16,10 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - Artifact `10559613086` (`sha256:fcba296a446a28c0867654018ec4692c2af5c2779902902a6774f3020f18e92c`) contains 32 screenshots plus `manifest.json`. Human review accepted desktop, 390px, focus and reduced-motion evidence without a horizontal-overflow blocker or sensitive-value exposure.
 - Exact pre/post DB/Auth fixture absence passed; the manifest records verified cleanup with four R2 objects checked. No P0–P3 defect was reproduced by the completed QA-003 contract. QA-004 is now unblocked but remains a separate operation.
 
+## Current FIBO-only harness
+
+The earlier automated pass recorded above does not qualify the current FIBO release. Manual production Cancel, Retry, Library result and MFA-protected Admin checks are recorded in #452. The updated workflow checks the canonical live deployment before fixture changes, uses the hosted Create controls and a run-owned FIBO failed row, and checks that Retry and Run Again each create exactly one saved result. Cancel is requested immediately from Activity before capturing terminal evidence; the assertion is durable cancellation with no published output, not early GPU interruption. The refreshed automated suite still requires a separately authorized live run (at most three run-owned submissions).
+
 ## In scope
 1. Use only run-owned Activity state. Seed the failed historical row directly, but allow a bounded provider-backed generation budget where the production action intrinsically requires it: one cancellable run-owned generation for Cancel, one generation created by Retry, and one generation created by Run Again.
 2. Exercise Cancel, Retry and Run Again from the live production UI only against those run-owned jobs. Cancel must be requested promptly after dispatch; Retry and Run Again must be observed through truthful terminal Activity state.
@@ -38,7 +42,7 @@ Verify, from the live custom domain and with real browser behavior, that Activit
 - The permanent QA-003 workflow is `workflow_dispatch` only. Pull requests must not automatically spend provider work against production.
 - Dispatch requires an explicit exact 40-character production Git SHA plus confirmation of the bounded fixture-only provider-work contract.
 - Before dispatch, the operator must independently verify that the supplied SHA is production-live. The workflow records that SHA in its manifest; it does not authorize deployment.
-- The former completion gate is now fulfilled: the live source contains the verified #285 fix and final run `35374052822` passed the full contract. Future reruns remain manual and must preserve the same exact-SHA and bounded-provider confirmation.
+- The historical completion gate was fulfilled: the live source contains the verified #285 fix and final run `35374052822` passed the full contract. Future reruns remain manual and must preserve the same exact-SHA and bounded-provider confirmation.
 
 ## Architecture and security boundaries
 - `auth.users.id` remains the canonical principal.

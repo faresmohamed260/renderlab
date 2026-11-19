@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   production-qa003:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.confirm_fixture_only_provider_work }}
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
@@ -56,6 +57,14 @@ jobs:
             echo "::error::expected_production_sha must be an exact 40-character Git SHA."
             exit 1
           fi
+
+      - name: Verify live release before fixture work
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/verify-production-documentation-sync.mjs
+          node scripts/verify-production-live-state.mjs
 
       - name: Validate shared-resource secrets
         shell: bash
