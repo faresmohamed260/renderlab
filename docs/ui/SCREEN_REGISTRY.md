@@ -1,6 +1,6 @@
 # Screen Registry
 
-> **Repository scope (2026-11-19):** The web frontend is restored from the existing Create UI branch, without changing the current backend. The Create preview still uses its development-only flag; this integration does not promote it to the production Create route or change the deployed version.
+> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
 
 Tracks approved product surfaces and actual route/status/component composition.
 

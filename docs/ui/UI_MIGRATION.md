@@ -1,6 +1,6 @@
 # RenderLab Product & UI Foundation
 
-> **Repository scope (2026-11-19):** The web frontend is restored from the existing Create UI branch, without changing the current backend. The Create preview still uses its development-only flag; this integration does not promote it to the production Create route or change the deployed version. The GitHub default and ongoing development baseline remain feature/fibo-create-port.
+> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
 
 > **History separation:** the full UI migration/phase journal that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`. It is historical evidence, not a competing current tracker.
 
