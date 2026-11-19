@@ -8,14 +8,11 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity 
 
 ## Production
 
-**Deployment:** `PRODUCTION-LIVE`. **Verification:** `PRODUCTION-VERIFIED`.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves application 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 from dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP (https://renderlab-kifsx4bv0-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T02:13:34.966Z.
 
-- Public product: https://renderlab.faresuniform.uk; access is closed beta / invitation only.
-- Canonical production manifest: `docs/production/current.json`; exact application source `d7571a230b3f1c5719552628db020823adb4da73`.
-- READY deployment: `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` at `https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`; public domain `renderlab.faresuniform.uk`.
-- Release qualification passed Deployment Readiness `37930497565` and Release Candidate Matrix `37934750620`; qualification completed at `2026-10-09T13:22:15.000Z`, and the verified cutover occurred at `2026-10-09T13:25:40.464Z`.
-- Immediate verified rollback anchor: deployment `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` at application source `bcb2de305b15f4be15ed42674d22998c30b8c811`.
-- Protected `main` may be newer because documentation, CI/tooling, and verification-only changes do not automatically deploy. Automatic Git -> Vercel deployment remains disabled.
+Exact-source CI completed at 2026-11-19T02:12:40.000Z: Deployment Readiness 44442391493; protected check runs 135286156860, 135286156260, 135286156283, 135286156346, 135286157177, 135286156805. This evidence verifies the build and required checks, not signed-in generation.
+
+Previous alias target: dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV (READY, source SHA unverified). Do not treat it as a source-verified rollback. The October matrix-qualified record is retained in docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Product capabilities
 

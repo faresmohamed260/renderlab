@@ -1,7 +1,5 @@
 # Project
 
-> **November 19 Create release:** Vercel read-back confirms the custom domain serves application commit 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13. The October production manifest below is the last release recorded under the retired matrix-based schema, not the current alias target. The UI migration tracker records the cutover and qualification gaps.
-
 RenderLab is an AI image/video creation platform using cloud-hosted ComfyUI workflows as the generation backend.
 
 > **History separation:** the full Project chronology that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md`. Earlier Phase 0–13 chronology remains in `docs/archive/PROJECT_PRE_CYCLE3_2026-09-03.md`. Those files are historical evidence, not current authority.
@@ -60,18 +58,14 @@ Contextual/utility:
 
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
-## Last manifest-recorded production release - 2026-10-09
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
+## Current production - 2026-11-19
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 -->
 
-**Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves application 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 from dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP (https://renderlab-kifsx4bv0-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T02:13:34.966Z.
 
-- Exact production application source: `d7571a230b3f1c5719552628db020823adb4da73`.
-- READY Vercel deployment: `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` at `https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`.
-- Public custom domain: `renderlab.faresuniform.uk`.
-- Immediate verified rollback anchor: deployment `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` at application source `bcb2de305b15f4be15ed42674d22998c30b8c811`.
-- Release qualification passed Deployment Readiness `37930497565` and Release Candidate Matrix `37934750620` attempt 1 on the exact production source; the matrix accepted all 23 configured children.
-- All completed application/runtime changes included in that exact source are `PRODUCTION-LIVE`. Protected `main` may be newer because documentation, CI/tooling and verification-only changes do not automatically deploy.
-- Automatic Git → Vercel deployment remains disabled. Deployment, alias movement and production/shared-resource mutation remain separately authorized operations.
+Exact-source CI completed at 2026-11-19T02:12:40.000Z: Deployment Readiness 44442391493; protected check runs 135286156860, 135286156260, 135286156283, 135286156346, 135286157177, 135286156805. This evidence verifies the build and required checks, not signed-in generation.
+
+Previous alias target: dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV (READY, source SHA unverified). Do not treat it as a source-verified rollback. The October matrix-qualified record is retained in docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Current product and engineering state
 

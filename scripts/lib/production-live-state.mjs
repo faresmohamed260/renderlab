@@ -1,4 +1,4 @@
-import { validateProductionManifest } from "./production-documentation-sync.mjs";
+import { PROTECTED_CHECK_CONTEXTS_V2, validateProductionManifest } from "./production-documentation-sync.mjs";
 
 export const RENDERLAB_VERCEL_TEAM_ID = "team_r09C6RLmb2acHapENECQIn9T";
 export const RENDERLAB_VERCEL_PROJECT_ID = "prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU";
@@ -28,7 +28,7 @@ function assertEqual(actual, expected, label) {
   }
 }
 
-export function compareProductionLiveState({ manifest, deployment, alias, rollbackDeployment, releaseMatrixRun, readinessRun }) {
+export function compareProductionLiveState({ manifest, deployment, alias, rollbackDeployment, releaseMatrixRun, readinessRun, protectedChecks }) {
   validateProductionManifest(manifest);
 
   assertEqual(deployment?.id, manifest.deploymentId, "Vercel production deployment ID");
@@ -46,22 +46,40 @@ export function compareProductionLiveState({ manifest, deployment, alias, rollba
   assertEqual(rollbackDeployment?.id, manifest.rollbackDeploymentId, "Vercel rollback deployment ID");
   assertEqual(deploymentState(rollbackDeployment), "READY", "Vercel rollback deployment state");
   assertEqual(rollbackDeployment?.project?.id, RENDERLAB_VERCEL_PROJECT_ID, "Vercel rollback project ID");
-  assertEqual(
-    deploymentSha(rollbackDeployment).toLowerCase(),
-    manifest.rollbackApplicationSha.toLowerCase(),
-    "Vercel rollback Git SHA",
-  );
+  if (manifest.rollbackApplicationSha !== null) {
+    assertEqual(
+      deploymentSha(rollbackDeployment).toLowerCase(),
+      manifest.rollbackApplicationSha.toLowerCase(),
+      "Vercel rollback Git SHA",
+    );
+  }
 
   const qualification = manifest.releaseQualification;
   assertEqual(readinessRun?.id, qualification.deploymentReadinessRunId, "Deployment Readiness run ID");
   assertEqual(readinessRun?.conclusion, "success", "Deployment Readiness conclusion");
   assertEqual(readinessRun?.head_sha?.toLowerCase(), manifest.applicationSha.toLowerCase(), "Deployment Readiness head SHA");
 
-  assertEqual(releaseMatrixRun?.id, qualification.releaseMatrixRunId, "Release Candidate Matrix run ID");
-  assertEqual(releaseMatrixRun?.conclusion, "success", "Release Candidate Matrix conclusion");
-  assertEqual(releaseMatrixRun?.head_sha?.toLowerCase(), manifest.applicationSha.toLowerCase(), "Release Candidate Matrix head SHA");
-  assertEqual(releaseMatrixRun?.run_attempt, qualification.releaseMatrixAttempt, "Release Candidate Matrix attempt");
-  assertEqual(new Date(releaseMatrixRun?.updated_at).toISOString(), qualification.qualifiedAt, "Release qualification time");
+  if (manifest.schemaVersion === 1) {
+    assertEqual(releaseMatrixRun?.id, qualification.releaseMatrixRunId, "Release Candidate Matrix run ID");
+    assertEqual(releaseMatrixRun?.conclusion, "success", "Release Candidate Matrix conclusion");
+    assertEqual(releaseMatrixRun?.head_sha?.toLowerCase(), manifest.applicationSha.toLowerCase(), "Release Candidate Matrix head SHA");
+    assertEqual(releaseMatrixRun?.run_attempt, qualification.releaseMatrixAttempt, "Release Candidate Matrix attempt");
+    assertEqual(new Date(releaseMatrixRun?.updated_at).toISOString(), qualification.qualifiedAt, "Release qualification time");
+  } else {
+    assertEqual(readinessRun?.path?.split("@")[0], ".github/workflows/deployment-readiness.yml", "Deployment Readiness workflow");
+    let latest = Date.parse(readinessRun?.updated_at);
+    if (!Number.isFinite(latest)) throw new Error("Missing readiness completion time.");
+    for (const context of PROTECTED_CHECK_CONTEXTS_V2) {
+      const check = protectedChecks?.[context];
+      assertEqual(check?.id, qualification.requiredCheckRunIds[context], context + " ID");
+      assertEqual(check?.name, context, context + " name");
+      assertEqual(check?.app?.id, 15368, context + " GitHub Actions app");
+      assertEqual(check?.conclusion, "success", context + " conclusion");
+      assertEqual(check?.head_sha?.toLowerCase(), manifest.applicationSha.toLowerCase(), context + " head SHA");
+      latest = Math.max(latest, Date.parse(check?.completed_at));
+    }
+    assertEqual(isoFromMilliseconds(latest, "Protected check completion"), qualification.qualifiedAt, "Release qualification time");
+  }
 
   return {
     applicationSha: manifest.applicationSha,
@@ -69,6 +87,8 @@ export function compareProductionLiveState({ manifest, deployment, alias, rollba
     domain: manifest.domain,
     rollbackDeploymentId: manifest.rollbackDeploymentId,
     releaseMatrixRunId: qualification.releaseMatrixRunId,
+    rollbackSourceVerified: manifest.rollbackApplicationSha !== null,
+    qualificationType: qualification.type ?? "release-matrix",
     cutoverAt: manifest.cutoverAt,
   };
 }
@@ -110,22 +130,28 @@ export async function verifyProductionLiveState({
   const deploymentUrl = `https://api.vercel.com/v13/deployments/${encodeURIComponent(manifest.deploymentId)}?withGitRepoInfo=true&${teamQuery}`;
   const aliasUrl = `https://api.vercel.com/v4/aliases/${encodeURIComponent(manifest.domain)}?${projectQuery}&${teamQuery}`;
   const rollbackUrl = `https://api.vercel.com/v13/deployments/${encodeURIComponent(manifest.rollbackDeploymentId)}?withGitRepoInfo=true&${teamQuery}`;
-  const githubBase = `https://api.github.com/repos/${githubRepository}/actions/runs`;
+  const githubRepo = `https://api.github.com/repos/${githubRepository}`;
+  const githubBase = githubRepo + "/actions/runs";
 
-  const [deployment, alias, rollbackDeployment, releaseMatrixRun, readinessRun] = await Promise.all([
+  const [deployment, alias, rollbackDeployment, releaseMatrixRun, readinessRun, protectedChecks] = await Promise.all([
     fetchJson(deploymentUrl, { token: vercelToken, fetchImpl, label: "Vercel production deployment" }),
     fetchJson(aliasUrl, { token: vercelToken, fetchImpl, label: "Vercel production alias" }),
     fetchJson(rollbackUrl, { token: vercelToken, fetchImpl, label: "Vercel rollback deployment" }),
-    fetchJson(`${githubBase}/${manifest.releaseQualification.releaseMatrixRunId}`, {
+    manifest.schemaVersion === 1 ? fetchJson(`${githubBase}/${manifest.releaseQualification.releaseMatrixRunId}`, {
       token: githubToken,
       fetchImpl,
       label: "GitHub Release Candidate Matrix",
-    }),
+    }) : null,
     fetchJson(`${githubBase}/${manifest.releaseQualification.deploymentReadinessRunId}`, {
       token: githubToken,
       fetchImpl,
       label: "GitHub Deployment Readiness",
     }),
+    manifest.schemaVersion === 2 ? Promise.all(Object.entries(manifest.releaseQualification.requiredCheckRunIds).map(
+      async ([context, id]) => [context, await fetchJson(githubRepo + "/check-runs/" + id, {
+        token: githubToken, fetchImpl, label: context,
+      })],
+    )).then(Object.fromEntries) : null,
   ]);
 
   return compareProductionLiveState({
@@ -135,5 +161,6 @@ export async function verifyProductionLiveState({
     rollbackDeployment,
     releaseMatrixRun,
     readinessRun,
+    protectedChecks,
   });
 }

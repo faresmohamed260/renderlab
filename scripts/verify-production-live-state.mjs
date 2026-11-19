@@ -12,7 +12,7 @@ try {
     githubRepository: process.env.GITHUB_REPOSITORY?.trim(),
   });
   console.log(
-    `PRODUCTION_LIVE_STATE ${result.applicationSha} ${result.deploymentId} ${result.domain} rollback=${result.rollbackDeploymentId} matrix=${result.releaseMatrixRunId} cutover=${result.cutoverAt}`,
+    `PRODUCTION_LIVE_STATE ${result.applicationSha} ${result.deploymentId} ${result.domain} rollback=${result.rollbackDeploymentId} rollbackSourceVerified=${result.rollbackSourceVerified} evidence=${result.qualificationType} cutover=${result.cutoverAt}`,
   );
   console.log("Read-only production verification passed against GitHub and Vercel.");
 } catch (error) {

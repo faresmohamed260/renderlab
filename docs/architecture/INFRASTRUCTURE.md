@@ -4,20 +4,16 @@
 
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
-## Current production rollout - 2026-10-09
+## Current production - 2026-11-19
 
 <!-- EXTERNAL_FACT: vercel-release-boundary -->
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
-**Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 -->
 
-- Exact repository source `d7571a230b3f1c5719552628db020823adb4da73` is production-live as READY Vercel deployment `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` (`https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`), with `renderlab.faresuniform.uk` explicitly mapped to that deployment.
-- Exact-main release qualification passed Engineering Quality `37930497585`, Unit Coverage `37930497751`, CodeQL `37930497674`, Developer Portability `37930497688`, Deployment Readiness `37930497565`, UI Shell Validation `37930497739`, Creative Iteration `37930497900`, and Reference Upload Integration `37930497803`. Release Candidate Matrix `37934750620` attempt 1 accepted all 23 configured exact-SHA child workflows.
-- The authenticated Vercel deployment API created the production-target deployment directly from exact Git source. Vercel build logs confirm the exact `d7571a2` clone, successful production environment verification, Next.js 16.3.8 compilation, TypeScript/static generation, and READY state before custom-domain cutover.
-- The custom domain remained on the prior deployment until the new build was independently READY. After explicit alias assignment, signed-out custom-domain smoke returned 200 for root, Create, Library, Activity, Settings, Password, Profile and Preferences, and the expected 404 for concealed signed-out Admin. Rollback was therefore not invoked.
-- Bounded post-cutover Vercel inspection found no runtime-error clusters in the rollout window and no error/fatal log entries scoped to `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF`.
-- Immediately before cutover, Vercel independently resolved `renderlab.faresuniform.uk` to READY deployment `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` at source `bcb2de305b15f4be15ed42674d22998c30b8c811`; that deployment remains the immediate alias-restoration rollback anchor.
-- The rollout changes application deployment/alias state only. No Supabase schema/RLS/Auth-policy, Cloudflare R2 resource configuration, worker/provider routing, scheduler, or production environment-variable mutation occurred. Automatic Git -> Vercel deployment remains disabled.
-- All completed application/runtime changes through exact production source `d7571a230b3f1c5719552628db020823adb4da73` are `PRODUCTION-LIVE`, including the UI-082 application changes and `sharp@0.35.5`. The exact repository source also contains CI/tooling/documentation changes such as ENT-010 closure, but those are repository state rather than application deployment state. Protected `main` may be newer because documentation, verification, CI/tooling, or other non-deployed commits do not automatically change production. Historical per-phase `NOT DEPLOYED` statements remain accurate closure-time evidence and are superseded for present deployment truth by this rollout record; draft PRs #313/#316 and research issue #221 remain outside the release.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves application 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 from dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP (https://renderlab-kifsx4bv0-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T02:13:34.966Z.
+
+Exact-source CI completed at 2026-11-19T02:12:40.000Z: Deployment Readiness 44442391493; protected check runs 135286156860, 135286156260, 135286156283, 135286156346, 135286157177, 135286156805. This evidence verifies the build and required checks, not signed-in generation.
+
+Previous alias target: dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV (READY, source SHA unverified). Do not treat it as a source-verified rollback. The October matrix-qualified record is retained in docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Documentation governance linting — 2026-10-10
 - `npm run verify:docs-governance` is a credential-free repository check. It validates `docs/governance/documents.json` against the local schema contract, enforces reciprocal document/UI-decision supersession, canonical structured status enums, current-document review intervals, closed-contract checklist closure, unique normalized `Current ...` H2 sections, local documentation references, and checked-in production-manifest/mirror consistency.
