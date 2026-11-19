@@ -4,7 +4,7 @@ const crcTable = Uint32Array.from({ length: 256 }, (_, byte) => {
   return byte >>> 0;
 });
 
-export function buildFiboBatchZip(images: readonly { image_data: string }[]) {
+export function buildImageBatchZip(images: readonly { image_data: string }[]) {
   if (images.length < 2 || images.length > 4) throw new Error("Invalid batch size.");
   const entries: BlobPart[] = [];
   const directory: BlobPart[] = [];
@@ -17,7 +17,7 @@ export function buildFiboBatchZip(images: readonly { image_data: string }[]) {
     encodedBytes += image.image_data.length;
     if (!image.image_data.startsWith(prefix) || encodedBytes > 17 * 1024 * 1024) throw new Error("Invalid batch image.");
     const bytes = Uint8Array.from(atob(image.image_data.slice(prefix.length)), (char) => char.charCodeAt(0));
-    const name = encoder.encode("fibo-" + (index + 1) + ".png");
+    const name = encoder.encode("image-" + (index + 1) + ".png");
     let crc = 0xffffffff;
     for (const byte of bytes) crc = (crc >>> 8) ^ crcTable[(crc ^ byte) & 255];
     crc = (crc ^ 0xffffffff) >>> 0;

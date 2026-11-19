@@ -122,7 +122,7 @@ export async function relayHostedCreate(request: Request, path: string) {
   if (!enabled(request.headers.get("host"))) return null;
   const url = new URL(request.url);
   // Profile reads are preview-only; the upstream still enforces account ownership and MFA.
-  const isPreviewProfile = process.env.RENDERLAB_FIBO_PREVIEW === "1" && request.method === "GET"
+  const isPreviewProfile = process.env.RENDERLAB_CREATE_PREVIEW === "1" && request.method === "GET"
     && (path === "/api/account/profile" || path === "/api/account/profile/avatar");
   if (!isPreviewProfile && !routes[request.method]?.test(path)) return null;
   const json = { "content-type": "application/json", "cache-control": "no-store" };
@@ -151,7 +151,7 @@ export async function relayHostedCreate(request: Request, path: string) {
 }
 
 /** A real Supabase user whose normal session passes hosted RenderLab admission. */
-export async function getFiboPreviewOwner() {
+export async function getCreatePreviewOwner() {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
   const { data: { session } } = await supabase.auth.getSession();
