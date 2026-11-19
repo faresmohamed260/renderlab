@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 2,
+  "applicationSha": "8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13",
+  "deploymentId": "dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP",
+  "deploymentUrl": "https://renderlab-kifsx4bv0-faresmohamed260-6733s-projects.vercel.app",
+  "domain": "renderlab.faresuniform.uk",
+  "rollbackDeploymentId": "dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV",
+  "rollbackApplicationSha": null,
+  "releaseQualification": {
+    "type": "protected-main-checks",
+    "deploymentReadinessRunId": 44442391493,
+    "requiredCheckRunIds": {
+      "quality": 135286156860,
+      "governance": 135286156260,
+      "unit-coverage": 135286156283,
+      "javascript-typescript": 135286156346,
+      "clean-room (ubuntu-latest)": 135286157177,
+      "clean-room (windows-latest)": 135286156805
+    },
+    "qualifiedAt": "2026-11-19T02:12:40.000Z"
+  },
+  "cutoverAt": "2026-11-19T02:13:34.966Z"
+}
