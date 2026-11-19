@@ -36,11 +36,34 @@ First qualify the renderer in `renderlab-image-generation` with unchanged FIBO w
 
 Cancel must interrupt the specific active render, not merely hide its output. Verify the render is no longer executing and its files and queued work cannot contaminate the next job. Apply the same safety gate after timeouts or crashes. Recycle a worker if it cannot be confirmed clean. Preserve Library saving and existing authorization throughout.
 
+## Required closed-demo operating scope
+
+RenderLab remains a personal, closed, noncommercial demo. These requirements protect jobs, files, and infrastructure spend; they do not introduce customer billing or product limits.
+
+### Routing and capacity
+
+Route each job to a configured model and worker that support the requested operation. Validate inputs against that model's limits, such as image dimensions, file size, and number of reference images, before starting GPU work. Keep FIBO as the only live model. If the requested model or operation is unavailable, report that clearly rather than silently switching to another model.
+
+Keep one GPU slot, run one render at a time, and let the worker shut down after the measured idle window. If the worker is busy, the next accepted job waits in the durable queue. These are worker capacity controls, not per-user rate limits. Do not add user credits, quotas, price-based routing, or separate batch queues.
+
+### Large files and multi-step jobs
+
+Keep the existing bounded image-transfer path for FIBO. Keep files private, isolate temporary files by job, and clean them up after success, failure, or cancellation. Mark a job complete only after its result is saved and can be reopened from Library.
+
+Do not build a large-file transfer system or multi-step pipeline in this delivery. If a future video feature needs them, define how workers access private files directly from storage and how a failed step can be retried without redoing completed work. Neither is required for this release.
+
+### Operations and data
+
+Make it possible to tell from job status and logs whether work is queued, running, saving, failed, or stuck. Use a non-secret job reference for troubleshooting. Keep prompts, media, credentials, and signed job handles out of operational logs, including provider access logs. Set a simple provider spend alert for the owner under separate authorization for the provider configuration change; do not build user billing or a billing dashboard.
+
+Verify changes in an isolated test setup before cutover and keep a tested rollback that can still render. A permanent staging environment is not required. Document where the current job inputs and outputs are stored or temporarily retained. Before adding any future model or provider, verify that its license permits the intended closed-demo use and review where it sends or retains media.
+
 ## Acceptance and release gates
 
 - **Repository:** Verify catalog selection/defaults/rejections, backend binding across catalog changes, shared runner behavior with both test adapters, and app isolation. Check deployment commands fail closed for unexpected workspace/environment and verify actual app identities after deployment. Use environment-local volumes and least-privilege credentials in line with the [Modal ownership contract](MODAL_PROJECT_ISOLATION_CONTRACT.md). Use non-secret correlation IDs in logs.
 - **Dispatch fault tests:** With a fake backend in local/CI tests, simulate duplicate delivery, dispatcher restart, confirmed transient and permanent failures, cancellation while queued, and acceptance followed by a lost response. Prove the accepted attempt is recovered without a second render, bounded retry stops at its limit, and unresolvable acceptance does not auto-resubmit. Qualify the idempotency or reconciliation mechanism for the actual Modal path before cutover; fake-backend tests alone are not release evidence.
 - **Hosted, only with separate approval:** Verify dashboard apps and dormant readiness without starting GPU work in the empty apps. Qualify the moved renderer and the reusable worker against text-to-image, reference editing, masked editing, job status, active render interruption, next-job recovery, and Library saving. Measure cold startup, a warm follow-up, and idle GPU time; verify scale-to-zero and record latency/cost evidence before approving the idle window. Do not run performance experiments in production by default.
+- **Closed-demo controls:** Verify model input limits reject invalid requests before GPU work and that an accepted second job waits while the single render slot is busy. Verify private file handling, cleanup after success, failure and cancellation, and saved-result access from Library. Inspect job status and logs for the required states and absence of sensitive values, document storage and temporary retention, and verify the owner spend alert after its separately authorized configuration.
 - **Cutover and handoff:** Verify a working rollback, reconcile old in-flight jobs, make the separately approved routing switch, and verify production without assuming a merge deployed it. Record exact source, deployed app/function versions, route, qualification evidence, and recovery procedure in the existing infrastructure authority. Do not mark the architecture complete while any requirement remains unverified.
 
 ## Out of scope
