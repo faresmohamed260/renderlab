@@ -11,10 +11,10 @@ from dispatch_core import DispatchIntent, Lookup, LookupState
 
 
 class SupabaseDispatchStore:
-    def __init__(self, *, url=None, access_token=None):
+    def __init__(self, *, url=None, api_key=None):
         self.url = (url or os.environ.get("RENDERLAB_DISPATCH_SUPABASE_URL", "")).rstrip("/")
-        self.access_token = access_token or os.environ.get("RENDERLAB_DISPATCH_SUPABASE_ACCESS_TOKEN", "")
-        if not self.url or not self.access_token:
+        self.api_key = api_key or os.environ.get("RENDERLAB_DISPATCH_SUPABASE_API_KEY", "")
+        if not self.url or not self.api_key:
             raise RuntimeError("Dispatcher storage credentials are unavailable")
         self.claim_token = str(uuid4())
 
@@ -22,8 +22,7 @@ class SupabaseDispatchStore:
         data = None if payload is None else json.dumps(payload).encode()
         request = Request(
             f"{self.url}/rest/v1/{path}", data=data, method=method,
-            headers={"apikey": self.access_token, "authorization": f"Bearer {self.access_token}",
-                     "content-type": "application/json"},
+            headers={"apikey": self.api_key, "content-type": "application/json"},
         )
         with urlopen(request, timeout=15) as response:
             body = response.read()
