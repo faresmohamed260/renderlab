@@ -7,7 +7,12 @@ from modal_native_smoke import app as render_app, render
 
 app = modal.App("renderlab-fibo-native-gateway").include(render_app)
 gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi==0.137.2")
-gateway_image = gateway_image.add_local_python_source("native_gateway", "native_graph", "native_generated_vgl")
+# Modal imports this entrypoint inside the CPU gateway before calling web().
+# The included render app is a separate function; include its defining module in
+# the gateway image as well so that the top-level import resolves on cold start.
+gateway_image = gateway_image.add_local_python_source(
+    "modal_native_smoke", "native_gateway", "native_graph", "native_generated_vgl"
+)
 
 
 @app.function(image=gateway_image, secrets=[modal.Secret.from_name("renderlab-fibo-native-gateway")])
