@@ -1,56 +1,59 @@
-"""Narrow Supabase REST client for the Modal dispatcher and attempt guard."""
+"""Least-privilege PostgreSQL store for Modal dispatch and attempt guards."""
 from __future__ import annotations
 
 from datetime import datetime
-import json
 import os
-from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from dispatch_core import DispatchIntent, Lookup, LookupState
 
 
 class SupabaseDispatchStore:
-    def __init__(self, *, url=None, api_key=None):
-        self.url = (url or os.environ.get("RENDERLAB_DISPATCH_SUPABASE_URL", "")).rstrip("/")
-        self.api_key = api_key or os.environ.get("RENDERLAB_DISPATCH_SUPABASE_API_KEY", "")
-        if not self.url or not self.api_key:
-            raise RuntimeError("Dispatcher storage credentials are unavailable")
+    def __init__(self, *, database_url=None):
+        self.database_url = database_url or os.environ.get("RENDERLAB_DISPATCH_DATABASE_URL", "")
+        parsed = urlsplit(self.database_url)
+        if parsed.scheme not in ("postgres", "postgresql") or not parsed.hostname or not parsed.username:
+            raise RuntimeError("Dispatcher database credentials are unavailable")
         self.claim_token = str(uuid4())
 
-    def _request(self, path, payload=None, method="POST"):
-        data = None if payload is None else json.dumps(payload).encode()
-        request = Request(
-            f"{self.url}/rest/v1/{path}", data=data, method=method,
-            headers={"apikey": self.api_key, "content-type": "application/json"},
+    def _connect(self):
+        import psycopg
+        from psycopg.rows import dict_row
+
+        return psycopg.connect(
+            self.database_url,
+            connect_timeout=15,
+            sslmode="require",
+            application_name="renderlab-modal-dispatch",
+            row_factory=dict_row,
         )
-        with urlopen(request, timeout=15) as response:
-            body = response.read()
-        return json.loads(body) if body else None
+
+    def _query(self, statement, parameters):
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(statement, parameters)
+                return cursor.fetchall()
 
     def claim_due(self, *, now, lease_until, limit):
-        rows = self._request("rpc/renderlab_claim_generation_dispatch", {
-            "p_claim_token": self.claim_token,
-            "p_lease_seconds": max(30, int((lease_until - now).total_seconds())),
-            "p_limit": limit,
-        }) or []
+        rows = self._query(
+            "select * from public.renderlab_claim_generation_dispatch(%s::uuid, %s::integer, %s::integer)",
+            (self.claim_token, max(30, int((lease_until - now).total_seconds())), limit),
+        )
         return [DispatchIntent(
-            attempt_id=row["attempt_id"], job_id=row["job_id"], backend=row["backend_key"],
+            attempt_id=str(row["attempt_id"]), job_id=str(row["job_id"]), backend=row["backend_key"],
             model_key=row["model_key"], model_version=row["model_version"], operation=row["operation"],
             payload=row["payload"], attempt_count=row["delivery_count"] - 1,
-            admission_deadline=datetime.fromisoformat(row["admission_deadline"].replace("Z", "+00:00")),
+            admission_deadline=row["admission_deadline"] if isinstance(row["admission_deadline"], datetime)
+            else datetime.fromisoformat(row["admission_deadline"].replace("Z", "+00:00")),
         ) for row in rows]
 
     def _finish(self, intent, status, *, handle=None, next_attempt_at=None, error=None):
-        accepted = self._request("rpc/renderlab_finish_generation_dispatch", {
-            "p_attempt_id": intent.attempt_id,
-            "p_claim_token": self.claim_token,
-            "p_status": status,
-            "p_provider_job_id": handle,
-            "p_next_attempt_at": next_attempt_at.isoformat() if next_attempt_at else None,
-            "p_error": error,
-        })
-        if accepted is not True:
+        rows = self._query(
+            "select public.renderlab_finish_generation_dispatch(%s::uuid, %s::uuid, %s::text, %s::text, %s::timestamptz, %s::text) as accepted",
+            (intent.attempt_id, self.claim_token, status, handle, next_attempt_at, error),
+        )
+        if len(rows) != 1 or rows[0]["accepted"] is not True:
             raise RuntimeError("Dispatch claim was lost before its outcome could be committed")
 
     def mark_dispatched(self, intent, handle): self._finish(intent, "dispatched", handle=handle)
@@ -59,7 +62,10 @@ class SupabaseDispatchStore:
     def mark_unresolved(self, intent, *, error): self._finish(intent, "unresolved", error=error)
 
     def lookup(self, attempt_id):
-        rows = self._request("rpc/renderlab_lookup_generation_attempt", {"p_attempt_id": attempt_id}) or []
+        rows = self._query(
+            "select * from public.renderlab_lookup_generation_attempt(%s::uuid)",
+            (attempt_id,),
+        )
         if not rows:
             return Lookup(LookupState.UNRESOLVED)
         row = rows[0]
@@ -72,9 +78,9 @@ class SupabaseDispatchStore:
 
 def begin_generation_attempt(attempt_id, admission_deadline):
     store = SupabaseDispatchStore()
-    accepted = store._request("rpc/renderlab_begin_generation_attempt", {
-        "p_attempt_id": attempt_id,
-        "p_admission_deadline": admission_deadline,
-    })
-    if accepted is not True:
+    rows = store._query(
+        "select public.renderlab_begin_generation_attempt(%s::uuid, %s::timestamptz) as accepted",
+        (attempt_id, admission_deadline),
+    )
+    if len(rows) != 1 or rows[0]["accepted"] is not True:
         raise RuntimeError("Generation attempt is duplicate, cancelled, stale or unverifiable")

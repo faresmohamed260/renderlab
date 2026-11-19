@@ -20,6 +20,7 @@ ORIGIN = "http://127.0.0.1:8188"
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("git", "libgl1", "libglib2.0-0")
+    .pip_install("psycopg[binary]==3.2.13")
     .run_commands(
         f"git init {COMFY} && git -C {COMFY} fetch --depth=1 https://github.com/Comfy-Org/ComfyUI.git {REVISION} && git -C {COMFY} checkout --detach FETCH_HEAD",
         "python -m pip install --index-url https://download.pytorch.org/whl/cu128 torch==2.10.0 torchvision==0.25.0",

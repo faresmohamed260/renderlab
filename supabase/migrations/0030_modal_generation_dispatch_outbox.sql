@@ -43,8 +43,9 @@ begin
 end;
 $$;
 
+alter role renderlab_modal_dispatcher with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls connection limit 4;
+alter role renderlab_modal_worker with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls connection limit 2;
 grant usage on schema public to renderlab_modal_dispatcher, renderlab_modal_worker;
-grant renderlab_modal_dispatcher, renderlab_modal_worker to authenticator;
 
 create index generation_dispatch_due_idx
   on public.generation_dispatch_outbox (next_attempt_at, claim_until, created_at)

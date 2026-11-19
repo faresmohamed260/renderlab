@@ -1,6 +1,6 @@
 # Modal direct-production cutover
 
-**Status:** Direction approved by the project owner on 2026-11-20. Hosted execution is not approved. This runbook becomes executable only after it merges to protected `main` and the project owner separately approves both scopes defined under [Approval boundary](#approval-boundary).
+**Status:** Credential correction authorized by the project owner on 2026-11-20; hosted execution paused. The earlier Scope D/G approval was bound to superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` and expired without any hosted mutation or GPU run when preflight found that Supabase API keys cannot assume custom PostgreSQL roles. This runbook becomes executable only after the corrected implementation merges, its exact source is recorded here, and the project owner renews both scopes for that source.
 
 ## Purpose and one-time exception
 
@@ -21,7 +21,7 @@ It does **not** waive exact-source CI, zero-in-flight verification, least privil
 
 | Boundary | Exact target |
 | --- | --- |
-| Replacement application and Modal source | `e47d3ae7e1928b563cec5adb14678cb712c3beaf` |
+| Replacement application and Modal source | Pending corrected implementation merge; `e47d3ae7e1928b563cec5adb14678cb712c3beaf` is superseded and must not be deployed |
 | Recovery application and combined Modal source | `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` |
 | Modal workspace | `faresmohamed260` / `ac-88wJ5dCXYBOywnXXaGmUoV` |
 | Modal environment | existing `main`; no new environment |
@@ -49,26 +49,26 @@ Read-only planning inspection on 2026-11-20 observed 14 active media assets, 70 
 
 ## Credential permissions
 
-Create two separate modern Supabase API keys and store each only in its matching Modal secret:
+After migration, generate two independent high-entropy passwords, enable the two dedicated PostgreSQL login roles, and store one TLS-required connection URL only in its matching Modal secret:
 
-| Key | Postgres role | Allowed RPC execution | Explicitly forbidden |
+| Credential | Postgres role | Allowed RPC execution | Explicitly forbidden |
 | --- | --- | --- | --- |
-| Dispatcher | `renderlab_modal_dispatcher` | `renderlab_claim_generation_dispatch`, `renderlab_finish_generation_dispatch`, `renderlab_lookup_generation_attempt` | attempt admission, job acceptance, cleanup, direct table access, browser use, service-role privileges |
-| Image worker | `renderlab_modal_worker` | `renderlab_begin_generation_attempt` | claim/finish/lookup, job acceptance, cleanup, direct table access, browser use, service-role privileges |
+| Dispatcher connection | `renderlab_modal_dispatcher` | `renderlab_claim_generation_dispatch`, `renderlab_finish_generation_dispatch`, `renderlab_lookup_generation_attempt` | attempt admission, job acceptance, cleanup, direct table access, browser use, inherited roles, RLS bypass, service-role privileges |
+| Image-worker connection | `renderlab_modal_worker` | `renderlab_begin_generation_attempt` | claim/finish/lookup, job acceptance, cleanup, direct table access, browser use, inherited roles, RLS bypass, service-role privileges |
 
-The keys are sent only as Supabase `apikey` headers. Neither Modal secret receives the Supabase service-role key. The existing Vercel server retains its already-authorized service-role access for application-owned acceptance, cancellation, persistence, and cleanup RPCs. Verify the effective grants after migration and before storing either key.
+Each Modal secret contains only `RENDERLAB_DISPATCH_DATABASE_URL` for its own role. Use the hosted Supabase pooler identity for project `rashyleshocuvpgcooxy`, percent-encode the generated password, and require `sslmode=require`; runtime independently forces TLS. Neither secret receives a Supabase publishable/secret API key, legacy JWT, service-role key, shared login, or the other role's password. The existing Vercel server retains its already-authorized service-role access for application-owned acceptance, cancellation, persistence, and cleanup RPCs. Before storing credentials, verify both roles are `NOINHERIT`, `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, `NOREPLICATION`, `NOBYPASSRLS`, connection-limited, not members of `authenticator`, and have no direct table privileges. After creating each Modal secret, test only its permitted RPCs and prove representative forbidden RPC and table access fail.
 
 ## Pre-outage gates
 
 All gates are fail-closed. Do not stop or deploy anything unless every gate passes on the execution date.
 
-1. Confirm protected-main CI remains successful for replacement source `e47d3ae7e1928b563cec5adb14678cb712c3beaf`.
+1. Confirm protected-main CI remains successful for the corrected replacement source recorded in [Exact identities](#exact-identities).
 2. Confirm the production domain still serves recorded deployment `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH` at recovery source `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb`.
 3. Confirm Modal token identity is workspace `faresmohamed260` / `ac-88wJ5dCXYBOywnXXaGmUoV`, environment `main`.
 4. Confirm `renderlab-generation-gateway` has zero Modal tasks and capture its app ID/history.
 5. Query Supabase and require zero `generation_jobs` in `queued`, `preparing`, `running`, `cancelling`, or `persisting`. If migration is already present, also require zero outbox rows in `pending`, `claimed`, `retry_wait`, or `unresolved`.
 6. Capture the Library/database baseline and verify the model volume and gateway secret still exist without reading or logging secret values.
-7. Validate the exact recovery checkout at `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` and the exact replacement checkout at `e47d3ae7e1928b563cec5adb14678cb712c3beaf`; both must be pristine.
+7. Validate the exact recovery checkout at `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` and the corrected replacement checkout recorded in [Exact identities](#exact-identities); both must be pristine.
 8. Arm both recovery methods before outage: Modal rollback to captured combined-gateway version when history remains available, and source redeployment from exact recovery SHA when it does not. Arm Vercel alias restoration to `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH`.
 
 Any nonzero active work, identity mismatch, missing preserved resource, dirty checkout, or unavailable recovery source aborts the operation without forced cancellation.
@@ -78,7 +78,7 @@ Any nonzero active work, identity mismatch, missing preserved resource, dirty ch
 1. Declare the outage window and repeat the zero-in-flight/database and zero-task checks.
 2. Stop `renderlab-generation-gateway` in Modal `main`. The outage begins here.
 3. Apply migration `0030` transactionally to shared Supabase and verify the table, RLS, functions, role grants, and absence of browser execution. Run Supabase security advisors and compare new findings with the expected server-owned/RLS-without-policy posture.
-4. Create the two scoped API keys and the two new Modal secrets. Preserve the existing gateway secret and volume.
+4. Generate and provision the two dedicated login passwords without printing or persisting them outside the provider/secret-store transaction. Create the two new Modal secrets with their separate TLS connection URLs. Preserve the existing gateway secret and volume.
 5. From pristine replacement source, deploy `renderlab-image-generation` to `main` with one A10 slot, zero warm GPUs, the existing model volume, the worker secret, and the existing per-job ComfyUI lifecycle.
 6. Deploy replacement `renderlab-generation-gateway` to `main` with the preserved gateway secret, the dispatcher secret, and its one-minute CPU schedule. Verify it resolves only `renderlab-image-generation` in `main` and that the private renderer has no public endpoint.
 7. Deploy Vercel from the exact replacement source, preserving existing production environment values. Do not change `RENDERLAB_GENERATION_GATEWAY_URL`, `RENDERLAB_FIBO_MODAL_KEY`, or `RENDERLAB_FIBO_MODAL_SECRET`. Move `renderlab.faresuniform.uk` to the new READY deployment only after provider identity/readiness checks pass.
@@ -94,7 +94,7 @@ Any nonzero active work, identity mismatch, missing preserved resource, dirty ch
 
 ## Recovery and stop conditions
 
-If any replacement step fails before the production alias moves, leave or restore the current Vercel deployment, restore the combined gateway, stop `renderlab-image-generation`, and revoke/remove only the new scoped keys/secrets.
+If any replacement step fails before the production alias moves, leave or restore the current Vercel deployment, restore the combined gateway, stop `renderlab-image-generation`, disable login on the two new roles, and remove only the new Modal secrets.
 
 If the first replacement smoke, recovery drill, or final forward smoke fails:
 
@@ -102,7 +102,7 @@ If the first replacement smoke, recovery drill, or final forward smoke fails:
 2. restore Vercel alias `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH`;
 3. restore Modal combined gateway `v1` by rollback, or redeploy exact source `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` with the preserved gateway secret and model volume;
 4. run the bounded recovery smoke and keep the outage open until rendering and Library reopen are verified;
-5. stop and remove the failed image-worker deployment, disable its schedule path, revoke the two new scoped keys, and remove only the two new Modal secrets after evidence capture;
+5. stop and remove the failed image-worker deployment, disable its schedule path, set the two database roles back to `NOLOGIN`, rotate away their passwords, and remove only the two new Modal secrets after evidence capture;
 6. leave migration `0030` applied but dormant. It is additive and compatible with the recovery application; do not attempt destructive schema rollback during the outage.
 
 If recovery rendering cannot be restored, keep generation unavailable, preserve Library/data access, stop further mutations, and report the blocker. Do not delete the preserved model volume, gateway secret, current Vercel deployment, existing Library data, or R2 media.
@@ -125,13 +125,13 @@ The 2026-11-20 direction decision does not authorize execution. Execution requir
 
 ### Scope D — direct production mutation and cutover
 
-Authorizes the exact Supabase migration, scoped-key creation, Modal secret changes, planned outage, old-gateway stop, two `main` app deployments, one-minute dispatcher schedule, exact-source Vercel deployment, alias movements for the recovery drill and final cutover, failure recovery actions, retirement of the old running stack, and post-release documentation closure described here. It authorizes no additional environment, app, model, weight change, feature gate, credential, schema change, or destructive data cleanup.
+Authorizes the exact Supabase migration, two dedicated database-login/password provisions, Modal secret changes, planned outage, old-gateway stop, two `main` app deployments, one-minute dispatcher schedule, exact-source Vercel deployment, alias movements for the recovery drill and final cutover, failure recovery actions, retirement of the old running stack, and post-release documentation closure described here. It authorizes no additional environment, app, model, weight change, feature gate, credential, schema change, or destructive data cleanup.
 
 ### Scope G — bounded GPU verification
 
 Authorizes only the three disposable four-step A10 renders and 15-A10-minute aggregate ceiling described above. It authorizes no ComfyUI-reuse qualification or other GPU experiment.
 
-Do not begin the outage unless both Scope D and Scope G are explicitly approved for replacement source `e47d3ae7e1928b563cec5adb14678cb712c3beaf`.
+Do not begin the outage unless both Scope D and Scope G are explicitly renewed for the corrected replacement source recorded in [Exact identities](#exact-identities).
 
 ## Closure
 
