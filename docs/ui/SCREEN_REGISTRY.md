@@ -1,5 +1,7 @@
 # Screen Registry
 
+> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+
 Tracks approved product surfaces and actual route/status/component composition.
 
 ## UI maturity statuses

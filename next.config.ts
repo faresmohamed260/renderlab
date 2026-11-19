@@ -37,34 +37,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  ...(process.env.RENDERLAB_FIBO_PREVIEW === "1" ? { devIndicators: false as const } : {}),
   env: {
     // Supabase project URL + publishable key are intentionally public browser configuration.
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: supabasePublishableKey,
-  },
-  async rewrites() {
-    if (process.env.NODE_ENV !== "development") return [];
-    const host = [{ type: "host" as const, value: "127\\.0\\.0\\.1" }];
-    const hosted = process.env.RENDERLAB_HOSTED_CREATE === "1";
-    const previewProfile = hosted && process.env.RENDERLAB_FIBO_PREVIEW === "1"
-      ? ["account/profile", "account/profile/avatar"].map((path) => ({
-          source: "/api/preview-account/" + path.slice("account/".length),
-          destination: "/hosted-create-relay/" + path,
-          has: host,
-        }))
-      : [];
-    if (!hosted) return [];
-    const paths = [
-      "generation/jobs", "generation/jobs/:id", "generation/jobs/:id/cancel",
-      "media/assets", "media/assets/:id([a-f0-9-]{36})", "media/assets/:id/content", "media/assets/:id/thumbnail",
-      "media/uploads/upload-tickets", "media/uploads/upload-completions",
-    ];
-    return { beforeFiles: [...previewProfile, ...paths.map((path) => ({
-      source: "/api/" + path,
-      destination: "/hosted-create-relay/" + path.replace(":id([a-f0-9-]{36})", ":id"),
-      has: host,
-    }))], afterFiles: [], fallback: [] };
   },
   async headers() {
     return [{ source: "/:path*", headers: [...securityHeaders] }];

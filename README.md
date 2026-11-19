@@ -2,6 +2,8 @@
   <img src="public/renderlab-mark-color.svg" alt="RenderLab mark" width="88" />
 </p>
 
+> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+
 <h1 align="center">RenderLab</h1>
 
 <p align="center">

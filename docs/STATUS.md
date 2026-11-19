@@ -1,5 +1,7 @@
 # RenderLab Status
 
+> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+
 This page is the concise public current-status summary. `PROJECT.md` is the compact internal handoff. Detailed enterprise-hardening, workflow, artifact, PR/merge, and closure chronology is historical evidence under `docs/archive/**` and `docs/audits/**`; the pre-compaction status record is preserved at `docs/archive/STATUS_PRE_PUBLIC_SUMMARY_2026-10-13.md`.
 
 Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity remains canonical in `docs/production/current.json`.

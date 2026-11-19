@@ -11,7 +11,7 @@ import {
 
 const coverageSummaryPath = "coverage/coverage-summary.json";
 const lcovPath = "coverage/lcov.info";
-const allSourceProofFile = "src/app/page.tsx";
+const allSourceProofFile = "src/app/api/health/route.ts";
 const repositoryRoot = process.cwd();
 
 const git = spawnSync("git", ["ls-files", "-z", "src"], {

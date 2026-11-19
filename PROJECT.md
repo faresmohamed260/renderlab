@@ -1,5 +1,7 @@
 # Project
 
+> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+
 RenderLab is an AI image/video creation platform using cloud-hosted ComfyUI workflows as the generation backend.
 
 > **History separation:** the full Project chronology that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md`. Earlier Phase 0–13 chronology remains in `docs/archive/PROJECT_PRE_CYCLE3_2026-09-03.md`. Those files are historical evidence, not current authority.
@@ -18,16 +20,9 @@ Users interact with understandable creative goals rather than ComfyUI graphs, wo
 
 ## Stack
 
-### Frontend
+### API runtime
 
-- Next.js App Router
-- React
-- TypeScript
-- Tailwind CSS
-- shadcn/ui Radix Nova + `radix-ui` through the approved maintained component ecosystem
-- Motion for React `13.1.1` for feature-local, reduced-motion-aware interaction continuity
-- RenderLab-owned normalized primitive layer under `src/components/ui`
-- Server Components by default; Client Components for interactive feature behavior
+Next.js App Router hosts API and authentication route handlers only. No web pages, client components, or public web assets are shipped from the current source.
 
 ### Infrastructure
 
@@ -48,7 +43,7 @@ Generation inputs and media actions use opaque product identities. R2 storage ke
 
 The application must not require a browser session to complete accepted backend work. Once RenderLab accepts a generation, server-owned lifecycle machinery must be able to reconcile it to a truthful terminal state and durable output without relying on the initiating tab remaining open.
 
-## Product Areas
+## Historical web product areas
 
 Public:
 - **Brand / Landing** `/`
