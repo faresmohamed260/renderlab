@@ -11,6 +11,7 @@ export const PRODUCTION_DOCUMENTATION_AUTHORITIES = Object.freeze([
 export const PRODUCTION_STATUS_SUMMARY = "docs/STATUS.md";
 
 export const PRODUCTION_SHA_MARKER_TOKEN = "RENDERLAB_CURRENT_PRODUCTION_SHA:";
+export const PROTECTED_CHECK_CONTEXTS_V2 = Object.freeze(["quality", "governance", "unit-coverage", "javascript-typescript", "clean-room (ubuntu-latest)", "clean-room (windows-latest)"]);
 const SHA_PATTERN = /^[0-9a-f]{40}$/i;
 const DEPLOYMENT_ID_PATTERN = /^dpl_[A-Za-z0-9]+$/;
 const MARKER_PATTERN = /<!--\s*RENDERLAB_CURRENT_PRODUCTION_SHA:\s*([0-9a-f]{40})\s*-->/gi;
@@ -37,12 +38,14 @@ export function validateProductionManifest(manifest) {
   if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
     throw new Error("production manifest must be a JSON object.");
   }
-  if (manifest.schemaVersion !== 1) {
-    throw new Error("production manifest schemaVersion must be 1.");
+  if (![1, 2].includes(manifest.schemaVersion)) {
+    throw new Error("production manifest schemaVersion must be 1 or 2.");
   }
 
   assertExactSha(manifest.applicationSha, "production manifest applicationSha");
-  assertExactSha(manifest.rollbackApplicationSha, "production manifest rollbackApplicationSha");
+  if (manifest.schemaVersion === 1 || manifest.rollbackApplicationSha !== null) {
+    assertExactSha(manifest.rollbackApplicationSha, "production manifest rollbackApplicationSha");
+  }
 
   if (!DEPLOYMENT_ID_PATTERN.test(manifest.deploymentId || "")) {
     throw new Error("production manifest deploymentId must be a Vercel deployment ID.");
@@ -69,12 +72,26 @@ export function validateProductionManifest(manifest) {
     throw new Error("production manifest releaseQualification must be an object.");
   }
   assertPositiveInteger(qualification.deploymentReadinessRunId, "releaseQualification.deploymentReadinessRunId");
-  assertPositiveInteger(qualification.releaseMatrixRunId, "releaseQualification.releaseMatrixRunId");
-  assertPositiveInteger(qualification.releaseMatrixAttempt, "releaseQualification.releaseMatrixAttempt");
-  assertPositiveInteger(qualification.acceptedChildren, "releaseQualification.acceptedChildren");
-  assertPositiveInteger(qualification.expectedChildren, "releaseQualification.expectedChildren");
-  if (qualification.acceptedChildren > qualification.expectedChildren) {
-    throw new Error("releaseQualification.acceptedChildren cannot exceed expectedChildren.");
+  if (manifest.schemaVersion === 1) {
+    assertPositiveInteger(qualification.releaseMatrixRunId, "releaseQualification.releaseMatrixRunId");
+    assertPositiveInteger(qualification.releaseMatrixAttempt, "releaseQualification.releaseMatrixAttempt");
+    assertPositiveInteger(qualification.acceptedChildren, "releaseQualification.acceptedChildren");
+    assertPositiveInteger(qualification.expectedChildren, "releaseQualification.expectedChildren");
+    if (qualification.acceptedChildren > qualification.expectedChildren) {
+      throw new Error("releaseQualification.acceptedChildren cannot exceed expectedChildren.");
+    }
+  } else {
+    const checks = qualification.requiredCheckRunIds;
+    if (qualification.type !== "protected-main-checks" || !checks || typeof checks !== "object" ||
+        Object.keys(checks).length !== PROTECTED_CHECK_CONTEXTS_V2.length) {
+      throw new Error("Invalid protected-main release evidence.");
+    }
+    for (const context of PROTECTED_CHECK_CONTEXTS_V2) {
+      assertPositiveInteger(checks[context], context);
+    }
+    if (new Set(Object.values(checks)).size !== PROTECTED_CHECK_CONTEXTS_V2.length) {
+      throw new Error("Protected check run IDs must be distinct.");
+    }
   }
   assertIsoTimestamp(qualification.qualifiedAt, "releaseQualification.qualifiedAt");
   assertIsoTimestamp(manifest.cutoverAt, "production manifest cutoverAt");
@@ -137,9 +154,11 @@ function requiredManifestValues(manifest) {
     manifest.deploymentUrl,
     manifest.domain,
     manifest.rollbackDeploymentId,
-    manifest.rollbackApplicationSha,
+    manifest.rollbackApplicationSha ?? "source SHA unverified",
     String(manifest.releaseQualification.deploymentReadinessRunId),
-    String(manifest.releaseQualification.releaseMatrixRunId),
+    ...(manifest.schemaVersion === 1
+      ? [String(manifest.releaseQualification.releaseMatrixRunId)]
+      : Object.values(manifest.releaseQualification.requiredCheckRunIds).map(String)),
     manifest.releaseQualification.qualifiedAt,
     manifest.cutoverAt,
   ];

@@ -94,3 +94,31 @@ test("live verifier binds cutover time to the alias update timestamp", () => {
   state.alias.updatedAt += 1_000;
   assert.throws(() => compareProductionLiveState(state), /custom-domain cutover time mismatch/);
 });
+
+test("v2 verifies exact protected check evidence and reports unknown rollback provenance", () => {
+  const state = liveState();
+  const contexts = ["quality", "governance", "unit-coverage", "javascript-typescript",
+    "clean-room (ubuntu-latest)", "clean-room (windows-latest)"];
+  const ids = Object.fromEntries(contexts.map((name, index) => [name, 201 + index]));
+  state.manifest = {
+    ...manifest, schemaVersion: 2, rollbackApplicationSha: null,
+    releaseQualification: {
+      type: "protected-main-checks", deploymentReadinessRunId: 101, requiredCheckRunIds: ids,
+      qualifiedAt: manifest.releaseQualification.qualifiedAt,
+    },
+  };
+  state.readinessRun.path = ".github/workflows/deployment-readiness.yml";
+  state.readinessRun.updated_at = state.manifest.releaseQualification.qualifiedAt;
+  state.protectedChecks = Object.fromEntries(contexts.map((name) => [name, {
+    id: ids[name], name, app: { id: 15368 }, conclusion: "success", head_sha: applicationSha,
+    completed_at: state.manifest.releaseQualification.qualifiedAt,
+  }]));
+  assert.equal(compareProductionLiveState(state).rollbackSourceVerified, false);
+  state.protectedChecks.governance.conclusion = "failure";
+  assert.throws(() => compareProductionLiveState(state), /governance conclusion mismatch/);
+  state.protectedChecks.governance.conclusion = "success";
+  state.protectedChecks.governance.head_sha = rollbackSha;
+  assert.throws(() => compareProductionLiveState(state), /governance head SHA mismatch/);
+  delete state.protectedChecks.governance;
+  assert.throws(() => compareProductionLiveState(state), /governance ID mismatch/);
+});

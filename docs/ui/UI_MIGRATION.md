@@ -1,10 +1,6 @@
 # RenderLab Product & UI Foundation
 
-> **November 19 Create release:** Vercel read-back confirms the custom domain serves application commit 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13. The October production manifest below is the last release recorded under the retired matrix-based schema, not the current alias target. The UI migration tracker records the cutover and qualification gaps.
-
 > **History separation:** the full UI migration/phase journal that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`. It is historical evidence, not a competing current tracker.
-
-> **Verified Create cutover (2026-11-19):** The custom domain renderlab.faresuniform.uk now serves the Create workspace from main application commit 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 (Vercel dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP; previous alias target dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV). Deployment Readiness run 44442391493 and all six protected-branch checks passed at the release SHA. Live /create serves the new canvas; /library and /settings return 200, the private preview worker route returns 404, and generation and upload readiness report available. Signed-in generation was not exercised. The legacy production manifest still requires an exact-SHA Release Candidate Matrix run, but the workflow was retired; its schema and current-production mirrors still need reconciliation and must not be populated with fabricated matrix evidence. Provider read-back confirmed the alias target and the previous deployment in READY state. The previous deployment was created via CLI and Vercel did not return its Git SHA; the provenance must be established independently or explicitly modeled as unavailable before updating the canonical manifest.
 
 ## Objective
 
@@ -21,18 +17,14 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Keep repository documentation synchronized with verified implementation.
 - Preserve approved surfaces in Integration Mode unless the user explicitly reopens a named surface for redesign.
 
-## Last manifest-recorded production and whole-product audit - 2026-10-09
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
+## Current production - 2026-11-19
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 -->
 
-**Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves application 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 from dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP (https://renderlab-kifsx4bv0-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T02:13:34.966Z.
 
-**Deployment:** `PRODUCTION-LIVE`. **Verification:** `PRODUCTION-VERIFIED`.
+Exact-source CI completed at 2026-11-19T02:12:40.000Z: Deployment Readiness 44442391493; protected check runs 135286156860, 135286156260, 135286156283, 135286156346, 135286157177, 135286156805. This evidence verifies the build and required checks, not signed-in generation.
 
-- Exact current production source is `d7571a230b3f1c5719552628db020823adb4da73` at READY deployment `dpl_5LZbW2kA6bFZpYvy2p8bFXzZ2ABF` (`https://renderlab-de7i5y37u-faresmohamed260-6733s-projects.vercel.app`), explicitly serving `renderlab.faresuniform.uk`.
-- Release qualification passed Deployment Readiness `37930497565` and Release Candidate Matrix `37934750620` attempt 1 on the exact production source; the matrix accepted all 23 configured children.
-- The immediately previous verified live deployment `dpl_4E38yZarWfooA4wfEuW5USmPnNsN` at source `bcb2de305b15f4be15ed42674d22998c30b8c811` remains the immediate rollback anchor.
-- All completed application/runtime changes through the exact production source are `PRODUCTION-LIVE`, including the accepted whole-product hierarchy corrections. Repository `main` may be newer because documentation, verification, CI/tooling and other non-deployed commits do not automatically change production.
-- Automatic Git → Vercel deployment remains disabled; future production releases remain separately explicit.
+Previous alias target: dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV (READY, source SHA unverified). Do not treat it as a source-verified rollback. The October matrix-qualified record is retained in docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Current UI foundation
 
