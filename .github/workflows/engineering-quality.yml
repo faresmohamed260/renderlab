@@ -53,7 +53,9 @@ jobs:
         run: npm run verify:modal-project-ownership
 
       - name: Test FIBO deployment guards without secrets
-        run: python3 scripts/tests/test_fibo_deploy_guards.py
+        run: |
+          python3 -m unittest discover -s scripts/tests -p "test_*.py"
+          python3 -m unittest discover -s workers/fibo-studio -p "test_*.py"
 
       - name: Verify reciprocal S.A.G.A. Modal ownership
         run: npm run verify:modal-cross-repo-ownership

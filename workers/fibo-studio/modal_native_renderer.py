@@ -1,5 +1,6 @@
 """Shared GPU renderer for the native FIBO gateways and smoke test."""
 import json
+import os
 import sys
 import tempfile
 import time
@@ -11,7 +12,7 @@ from uuid import uuid4
 
 import modal
 
-app = modal.App("renderlab-fibo-native-renderer")
+app = modal.App("renderlab-image-generation")
 COMFY = "/opt/ComfyUI"
 REVISION = "dea870e1a36614b3614c0008a820734d0fecdf4f"
 MODELS = "/opt/fibo-models"
@@ -30,6 +31,13 @@ image = (
 )
 
 
+def deployment_resource(name):
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"{name} must be set explicitly for a Modal deployment")
+    return value
+
+
 def request(path, payload=None):
     with urlopen(Request(ORIGIN + path, data=None if payload is None else json.dumps(payload).encode(),
                          headers={"Content-Type": "application/json"}), timeout=8) as response:
@@ -37,7 +45,11 @@ def request(path, payload=None):
 
 
 @app.function(image=image, gpu="A10", cpu=2, memory=16384, timeout=420, max_containers=1,
-              volumes={MODELS: modal.Volume.from_name("renderlab-fibo-models", environment_name="main")})
+              scaledown_window=60,
+              volumes={MODELS: modal.Volume.from_name(
+                  deployment_resource("RENDERLAB_MODAL_MODEL_VOLUME"),
+                  environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
+              )})
 def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
            negative_prompt="", vgl="", mask=None, generate_vgl=False):
     """One isolated render. Do not send raw files from an unauthenticated client."""

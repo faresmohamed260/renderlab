@@ -13,7 +13,7 @@ def syntax(name):
 
 
 class GatewayPackagingTest(unittest.TestCase):
-    def test_gateways_bundle_the_renderer_without_the_smoke_harness(self):
+    def test_gateways_do_not_bundle_the_gpu_renderer_or_smoke_harness(self):
         for gateway in ("modal_native_production", "modal_native_candidate"):
             with self.subTest(gateway=gateway):
                 bundled = {
@@ -24,7 +24,7 @@ class GatewayPackagingTest(unittest.TestCase):
                     and call.func.attr == "add_local_python_source"
                     for arg in call.args
                 }
-                self.assertIn(RENDERER, bundled)
+                self.assertNotIn(RENDERER, bundled)
                 self.assertNotIn(SMOKE, bundled)
                 for name in (gateway, *sorted(bundled)):
                     for statement in ast.walk(syntax(name)):
@@ -33,10 +33,13 @@ class GatewayPackagingTest(unittest.TestCase):
                         module = statement.module.split(".")[0]
                         if not (DIRECTORY / (module + ".py")).is_file():
                             continue
-                        # Imports inside render() are served by the separate GPU image.
-                        if name == RENDERER and statement.col_offset:
-                            continue
                         self.assertIn(module, bundled, f"{name} imports unbundled {module}")
+
+    def test_gateway_resolves_the_environment_local_image_worker(self):
+        for gateway in ("modal_native_production", "modal_native_candidate"):
+            source = (DIRECTORY / (gateway + ".py")).read_text(encoding="utf-8")
+            self.assertIn('modal.Function.from_name(APP_NAMES["image"], "render", environment_name=environment)', source)
+            self.assertNotIn(".include(", source)
 
     def test_smoke_runner_reuses_the_worker_and_owns_the_local_entrypoint(self):
         smoke = syntax(SMOKE)
