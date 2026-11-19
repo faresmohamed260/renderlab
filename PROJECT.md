@@ -4,6 +4,8 @@ RenderLab is an AI image/video creation platform using cloud-hosted ComfyUI work
 
 > **History separation:** the full Project chronology that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/PROJECT_PRE_HISTORY_SEPARATION_2026-10-10.md`. Earlier Phase 0–13 chronology remains in `docs/archive/PROJECT_PRE_CYCLE3_2026-09-03.md`. Those files are historical evidence, not current authority.
 
+> **Development baseline (2026-11-19):** Continue the existing Create UI work on the GitHub default branch, `feature/fibo-create-port`. This is a branch promotion, not a production release. The former default `main` is retained unchanged; its newer backend commits are not implicitly merged. Use the production manifest for deployed state.
+
 ## Product Direction
 
 RenderLab is a fresh application, not a direct migration or visual clone of the previous Studio implementation in `saga`.
