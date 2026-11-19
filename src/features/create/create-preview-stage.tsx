@@ -6,7 +6,7 @@ import { Download, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildImageBatchZip } from "./create-preview-batch-zip";
 
-type StageResult = { image_data: string; aspect?: number; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
+type StageResult = { assetId?: string; image_data: string; aspect?: number; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
 export type StageTurn<T> = { id: string; prompt: string; input?: File; images?: T[]; error?: string };
 
 function TurnImage({ url, label, disabled, onOpen, onReuse }: {

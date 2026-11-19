@@ -13,6 +13,7 @@ import { CreatePreviewMaskEditor } from "./create-preview-mask-editor";
 import { clearSavedEdits, readSavedEdits, saveEdits } from "./create-preview-saved-edits";
 import { CreatePreviewStage, type StageTurn } from "./create-preview-stage";
 import { previewImageSizes } from "./create-preview-sizes";
+import { loadCreateResultSource } from "./create-result-source";
 
 import { type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
 import { isMediaUploadMimeType } from "@/lib/api/media-upload-contract";
@@ -316,10 +317,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [dragTarget, setDragTarget] = useState<number | "canvas">();
   const [status, setStatus] = useState("");
   const active = useRef<AbortController | null>(null);
+  const sourceLoad = useRef<AbortController | null>(null);
+  const sourceAssets = useRef(new WeakMap<File, string>());
 
   const [resuming, setResuming] = useState<StageBookmark>();
   useEffect(() => () => {
     preparing.current?.abort();
+    sourceLoad.current?.abort();
     active.current?.abort();
     active.current = null;
   }, []);
@@ -336,7 +340,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit || preparing.current || (!desktop && active.current)) return;
+    if (!canSubmit || sourceLoad.current || preparing.current || (!desktop && active.current)) return;
     const background = !!active.current || waiting.length > 0;
     const controller = new AbortController();
     const { signal } = controller;
@@ -391,7 +395,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
         const aliases = new Map<number, string>();
         if (mode === "edit") {
           for (const [index, file] of editInputs.entries()) {
-            const existing = index === 0 ? stageSource?.assetId : undefined;
+            const existing = file ? sourceAssets.current.get(file) : index === 0 ? stageSource?.assetId : undefined;
             if (!existing && !file) continue;
             let id = existing;
             if (!id && file) {
@@ -723,6 +727,11 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
 
   function attachImage(file: File, index: number) {
     if (!admitted || busy) return;
+    if (index === 0 && sourceLoad.current) {
+      sourceLoad.current.abort();
+      sourceLoad.current = null;
+      setStatus("");
+    }
     setMaskEditor(undefined);
     if (index === 0) {
       if (desktop && !busy) writeStageBookmark(bookmarkKey);
@@ -1210,9 +1219,19 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               status={liveCaption ?? status}
               onBrowse={() => chooseImage(mode === "edit" ? 0 : 4)}
               onUseInput={(file) => attachImage(file, 0)}
-              onUseSource={(image) => {
+              onUseSource={async (image) => {
+                if (!admitted || busy) return;
+                sourceLoad.current?.abort();
+                const controller = new AbortController();
+                sourceLoad.current = controller;
                 try {
-                  attachImage(resultFile(image), 0);
+                  if (image.assetId) setStatus("Loading source image…");
+                  const file = await loadCreateResultSource(image, controller.signal, isMediaUploadMimeType);
+                  if (image.assetId) sourceAssets.current.set(file, image.assetId);
+                  if (controller.signal.aborted || active.current || preparing.current) return;
+                  sourceLoad.current = null;
+                  attachImage(file, 0);
+                  setStatus("Source image attached.");
                   requestAnimationFrame(() => {
                     const button = sourceButton.current;
                     button?.focus({ preventScroll: true });
@@ -1224,7 +1243,11 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                       ], { duration: 900, easing: "ease-out" });
                     }
                   });
-                } catch { setStatus("Could not use this result as the source."); }
+                } catch {
+                  if (!controller.signal.aborted) setStatus("Could not use this result as the source.");
+                } finally {
+                  if (sourceLoad.current === controller) sourceLoad.current = null;
+                }
               }}
             />}
             {maskEditor === "dialog" && maskEditorNode}
