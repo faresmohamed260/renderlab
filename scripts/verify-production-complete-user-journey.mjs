@@ -11,9 +11,10 @@ import {
 
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "https://renderlab.faresuniform.uk").replace(/\/$/, "");
 const artifactDir = process.env.RENDERLAB_COMPLETE_JOURNEY_ARTIFACT_DIR || "artifacts/production-complete-user-journey";
-const recordWalkthrough = process.env.RENDERLAB_RECORD_WALKTHROUGH === "true";
+const smoke = process.env.RENDERLAB_FIBO_SMOKE === "true";
+const recordWalkthrough = !smoke && process.env.RENDERLAB_RECORD_WALKTHROUGH === "true";
 const cleanupOnly = process.argv.includes("--cleanup-only");
-const namespace = "production-complete-user-journey";
+const namespace = smoke ? "production-fibo-smoke" : "production-complete-user-journey";
 const desktop = { width: 1440, height: 1024 };
 const mobile = { width: 390, height: 844 };
 const expectedSource = process.env.RENDERLAB_EXPECTED_PRODUCTION_SHA?.trim() || "";
@@ -328,7 +329,7 @@ async function submitCurrentCreate(page, { kind, prompt, label, submitViewport }
   const promptField = page.getByRole("textbox", { name: "Prompt" });
   await promptField.waitFor({ state: "visible", timeout: 60_000 });
   await promptField.fill(prompt);
-  assert(await page.getByRole("radio", { name: kind === "video" ? "Video" : "Image", exact: true }).isChecked(), `${label} opened in the wrong Create mode.`);
+  if (!smoke) assert(await page.getByRole("radio", { name: kind === "video" ? "Video" : "Image", exact: true }).isChecked(), `${label} opened in the wrong Create mode.`);
   await assertNoOverflow(page, `${label} Create`);
 
   const generate = page.getByRole("button", { name: "Generate", exact: true });
@@ -345,8 +346,10 @@ async function submitCurrentCreate(page, { kind, prompt, label, submitViewport }
   console.log(`${label} accepted job=${payload.job.id}`);
 
   const active = page.locator("[data-create-lifecycle-state]");
-  await active.waitFor({ state: "visible", timeout: 30_000 });
-  await screenshot(page, `${label}-create-active-${submitViewport.width}`);
+  if (!smoke) {
+    await active.waitFor({ state: "visible", timeout: 30_000 });
+    await screenshot(page, `${label}-create-active-${submitViewport.width}`);
+  }
 
   const assetId = await observeActivityToCompletion(page, prompt, label);
   await verifyViewerBothViewports(page, kind, label);
@@ -385,10 +388,11 @@ let cleanup = null;
 let publicRoutes = [];
 let accountRoutes = [];
 const generations = [];
+const expectedGenerations = smoke ? 1 : 4;
 
 try {
   browser = await chromium.launch({ headless: true });
-  publicRoutes = await verifyPublicCoverage(browser);
+  if (!smoke) publicRoutes = await verifyPublicCoverage(browser);
 
   account = await createConfiguredTestAccount(namespace);
   const context = await browser.newContext({ viewport: desktop, colorScheme: "dark", reducedMotion: "no-preference", ...(recordWalkthrough ? { recordVideo: { dir: artifactDir + "/video", size: desktop } } : {}) });
@@ -414,47 +418,59 @@ try {
   }
 
   await page.goto(baseUrl + "/create", { waitUntil: "networkidle", timeout: 60_000 });
+  if (smoke) {
+    const workspace = page.getByRole("region", { name: "Create with FIBO" });
+    await workspace.getByRole("button", { name: "Text to Image" }).click({ timeout: 30_000 });
+  }
   const image = await submitCurrentCreate(page, {
     kind: "image",
     label: "01-create-image-desktop",
-    prompt: "QA journey 01: a matte cobalt-blue sphere centered in a warm gray studio, soft light, no text",
+    prompt: (smoke ? "FIBO smoke " + runId + ": " : "QA journey 01: ") + "a matte cobalt-blue sphere centered in a warm gray studio, soft light, no text",
     submitViewport: desktop,
   });
   generations.push({ operation: "create-image", jobId: image.jobId, assetId: image.assetId });
 
-  await beginContinuation(page, "Edit", "image");
-  const edited = await submitCurrentCreate(page, {
-    kind: "image",
-    label: "02-edit-image-mobile",
-    prompt: "QA journey 02: keep the cobalt sphere composition and add a narrow amber rim light, no text",
-    submitViewport: mobile,
-  });
-  generations.push({ operation: "edit-image", jobId: edited.jobId, assetId: edited.assetId });
+  if (!smoke) {
+    await beginContinuation(page, "Edit", "image");
+    const edited = await submitCurrentCreate(page, {
+      kind: "image",
+      label: "02-edit-image-mobile",
+      prompt: "QA journey 02: keep the cobalt sphere composition and add a narrow amber rim light, no text",
+      submitViewport: mobile,
+    });
+    generations.push({ operation: "edit-image", jobId: edited.jobId, assetId: edited.assetId });
 
-  await beginContinuation(page, "Animate", "video");
-  const animated = await submitCurrentCreate(page, {
-    kind: "video",
-    label: "03-animate-image-desktop",
-    prompt: "QA journey 03: slowly rotate the sphere with a steady camera and subtle light movement, no text",
-    submitViewport: desktop,
-  });
-  generations.push({ operation: "animate-image", jobId: animated.jobId, assetId: animated.assetId });
+    await beginContinuation(page, "Animate", "video");
+    const animated = await submitCurrentCreate(page, {
+      kind: "video",
+      label: "03-animate-image-desktop",
+      prompt: "QA journey 03: slowly rotate the sphere with a steady camera and subtle light movement, no text",
+      submitViewport: desktop,
+    });
+    generations.push({ operation: "animate-image", jobId: animated.jobId, assetId: animated.assetId });
 
-  await page.goto(baseUrl + "/create", { waitUntil: "networkidle", timeout: 60_000 });
-  await page.getByRole("radio", { name: "Video", exact: true }).click();
-  await page.waitForTimeout(500);
-  const video = await submitCurrentCreate(page, {
-    kind: "video",
-    label: "04-create-video-mobile",
-    prompt: "QA journey 04: a cobalt glass sphere rotating slowly on a neutral studio background, steady camera, no text",
-    submitViewport: mobile,
-  });
-  generations.push({ operation: "create-video", jobId: video.jobId, assetId: video.assetId });
+    await page.goto(baseUrl + "/create", { waitUntil: "networkidle", timeout: 60_000 });
+    await page.getByRole("radio", { name: "Video", exact: true }).click();
+    await page.waitForTimeout(500);
+    const video = await submitCurrentCreate(page, {
+      kind: "video",
+      label: "04-create-video-mobile",
+      prompt: "QA journey 04: a cobalt glass sphere rotating slowly on a neutral studio background, steady camera, no text",
+      submitViewport: mobile,
+    });
+    generations.push({ operation: "create-video", jobId: video.jobId, assetId: video.assetId });
+  }
 
   await page.setViewportSize(desktop);
   await page.goto(baseUrl + "/library", { waitUntil: "networkidle", timeout: 60_000 });
   for (const generation of generations) {
-    await page.locator('a[href="/library/' + generation.assetId + '"]').first().waitFor({ state: "visible", timeout: 30_000 });
+    const asset = page.locator('a[href="/library/' + generation.assetId + '"]').first();
+    await asset.waitFor({ state: "visible", timeout: 30_000 });
+    if (smoke) {
+      await asset.click();
+      await page.waitForURL(baseUrl + "/library/" + generation.assetId, { timeout: 30_000 });
+      await waitForViewerMedia(page, "image");
+    }
   }
   await assertNoOverflow(page, "Library desktop");
   await screenshot(page, "05-library-desktop");
@@ -463,8 +479,10 @@ try {
   await assertNoOverflow(page, "Library mobile");
   await screenshot(page, "05-library-mobile");
 
-  accountRoutes = await verifyReadOnlyAccountSurfaces(page);
-  await assertReadOnlyAccountMetadata(account.id);
+  if (!smoke) {
+    accountRoutes = await verifyReadOnlyAccountSurfaces(page);
+    await assertReadOnlyAccountMetadata(account.id);
+  }
 
   console.log("Complete production user journey passed owner=" + account.id + " generations=" + generations.length + ".");
 } catch (error) {
@@ -486,7 +504,7 @@ try {
 }
 
 const manifest = {
-  audit: "QA-002",
+  audit: smoke ? "FIBO production smoke" : "QA-002",
   runId,
   runAttempt,
   baseUrl,
@@ -500,11 +518,11 @@ const manifest = {
   accountRoutes,
   cleanup,
   evidenceFiles: await evidenceFiles(),
-  passed: !primaryError && cleanup?.verified === true && generations.length === 4,
+  passed: !primaryError && cleanup?.verified === true && generations.length === expectedGenerations,
   completedAt: new Date().toISOString(),
 };
 await writeFile(artifactDir + "/manifest.json", JSON.stringify(manifest, null, 2) + "\n", "utf8");
 
 if (primaryError) throw primaryError;
-assert(generations.length === 4, "QA-002 did not complete exactly four contracted provider-backed generations.");
+assert(generations.length === expectedGenerations, smoke ? "Smoke did not complete exactly one generation." : "QA-002 did not complete exactly four contracted provider-backed generations.");
 console.log("QA-002 permanent production user journey passed.");

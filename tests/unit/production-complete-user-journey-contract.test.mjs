@@ -36,3 +36,15 @@ test("QA-002 verifier covers exact provenance, account read-only surfaces, manif
   assert.doesNotMatch(verifier, /sign out other devices/i);
   assert.doesNotMatch(verifier, /challengeAndVerify/);
 });
+
+test("FIBO smoke is manually bounded, checks the live SHA before fixtures, and retains failure cleanup", () => {
+  const smoke = readFileSync(".github/workflows/production-fibo-smoke.yml", "utf8");
+  assert.match(smoke, /workflow_dispatch:/);
+  assert.match(smoke, /refs\/heads\/main/);
+  assert.match(smoke, /exactly one FIBO generation/);
+  assert.doesNotMatch(smoke, /RENDERLAB_TEST_GENERATION_ADMISSION_BYPASS/);
+  assert.ok(smoke.indexOf("node scripts/verify-production-live-state.mjs") < smoke.indexOf("--cleanup-only"));
+  assert.match(smoke, /steps.fixture.outcome/);
+  assert.match(verifier, /expectedGenerations = smoke \? 1 : 4/);
+  assert.match(workflow, /if: \$\{\{ false \}\}/);
+});

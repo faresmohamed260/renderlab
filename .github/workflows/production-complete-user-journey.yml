@@ -27,6 +27,8 @@ concurrency:
 
 jobs:
   journey:
+    # Historical harness requires retired animation and video operations.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
