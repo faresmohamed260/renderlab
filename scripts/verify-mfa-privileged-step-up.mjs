@@ -146,7 +146,7 @@ async function expectSecondEnrollmentRejected(label) {
     await user.auth.mfa.unenroll({ factorId: attempt.data.id }).catch(() => undefined);
     throw new Error(`${label}: hosted Auth accepted a second direct TOTP enrollment; factor cap is not enforced.`);
   }
-  console.log(`${label}=rejected (${attempt.error.message})`);
+  console.log(`${label}=rejected`);
 }
 
 async function main() {
@@ -197,14 +197,14 @@ async function main() {
 
     const directUnenrollAtAal1 = await user.auth.mfa.unenroll({ factorId: currentFactorId });
     assert(directUnenrollAtAal1.error, "Hosted Auth accepted verified-factor unenroll at AAL1.");
-    console.log(`DIRECT_FACTOR_UNENROLL_AT_AAL1=rejected (${directUnenrollAtAal1.error.message})`);
+    console.log("DIRECT_FACTOR_UNENROLL_AT_AAL1=rejected");
 
     const directPasswordUpdate = await user.auth.updateUser({ password: replacementPassword });
     assert(
       directPasswordUpdate.error,
       "Hosted Auth accepted direct password replacement at AAL1 despite an enrolled MFA factor.",
     );
-    console.log(`DIRECT_PASSWORD_UPDATE_AT_AAL1=rejected (${directPasswordUpdate.error.message})`);
+    console.log("DIRECT_PASSWORD_UPDATE_AT_AAL1=rejected");
 
     const factors = await user.auth.mfa.listFactors();
     if (factors.error) throw factors.error;
@@ -301,9 +301,15 @@ async function main() {
     await user.auth.signOut({ scope: "local" }).catch(() => undefined);
     if (fixtureUserId) {
       const deleted = await service.auth.admin.deleteUser(fixtureUserId);
-      if (deleted.error) console.error(`Fixture cleanup failed for ${fixtureUserId}: ${deleted.error.message}`);
+      if (deleted.error) {
+        console.error("MFA_FIXTURE_CLEANUP=failed");
+        process.exitCode = 1;
+      }
     }
   }
 }
 
-await main();
+await main().catch(() => {
+  console.error("MFA_PRIVILEGED_STEP_UP=failed; see last completed checkpoint");
+  process.exitCode = 1;
+});

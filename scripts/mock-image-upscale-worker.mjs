@@ -128,10 +128,10 @@ const server = http.createServer(async (request, response) => {
     }
 
     return json(response, 404, { error: "not found" });
-  } catch (error) {
+  } catch {
     return json(response, 400, {
       code: "INVALID_UPSCALE_TEST_REQUEST",
-      error: error instanceof Error ? error.message : String(error),
+      error: "invalid upscale test request",
     });
   }
 });
