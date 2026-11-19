@@ -3,11 +3,13 @@ import os
 
 import modal
 
-from modal_native_smoke import app as render_app, render
+from modal_native_renderer import app as render_app, render
 
 app = modal.App("renderlab-fibo-native-candidate").include(render_app)
 gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi==0.137.2")
-gateway_image = gateway_image.add_local_python_source("native_gateway", "native_graph", "native_generated_vgl")
+gateway_image = gateway_image.add_local_python_source(
+    "modal_native_renderer", "native_gateway", "native_graph", "native_generated_vgl"
+)
 
 
 @app.function(image=gateway_image, secrets=[modal.Secret.from_name("renderlab-fibo-native-gateway")])

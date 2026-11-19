@@ -3,7 +3,7 @@ import os
 
 import modal
 
-from modal_native_smoke import app as render_app, render
+from modal_native_renderer import app as render_app, render
 
 app = modal.App("renderlab-fibo-native-gateway").include(render_app)
 gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi==0.137.2")
@@ -11,7 +11,7 @@ gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install("fast
 # The included render app is a separate function; include its defining module in
 # the gateway image as well so that the top-level import resolves on cold start.
 gateway_image = gateway_image.add_local_python_source(
-    "modal_native_smoke", "native_gateway", "native_graph", "native_generated_vgl"
+    "modal_native_renderer", "native_gateway", "native_graph", "native_generated_vgl"
 )
 
 

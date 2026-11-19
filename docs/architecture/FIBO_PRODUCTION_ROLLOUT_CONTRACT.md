@@ -100,6 +100,10 @@ After implementation and required verification, obtain fresh provider read-back 
 
 ## Production gateway startup incident — 2026-11-19
 
-Production smoke [44449988372](https://github.com/faresmohamed260/renderlab/actions/runs/44449988372) failed at generation submission (HTTP 502); DB/Auth/R2 fixture cleanup passed. The retained Modal gateway failed before serving requests because its image did not package the entrypoint's top-level dependency, `modal_native_smoke`. The production image definition now explicitly includes that module. This changes packaging only, not the render graph, gateway credentials, or ambiguous-submit no-retry policy. See [#429](https://github.com/faresmohamed260/renderlab/issues/429).
+Production smoke [44449988372](https://github.com/faresmohamed260/renderlab/actions/runs/44449988372) failed at generation submission (HTTP 502); DB/Auth/R2 fixture cleanup passed. The retained Modal gateway failed before serving requests because its image did not package the entrypoint's top-level dependency, `modal_native_smoke`. The original packaging fix explicitly bundled that module. This changes packaging only, not the render graph, gateway credentials, or ambiguous-submit no-retry policy. See [#429](https://github.com/faresmohamed260/renderlab/issues/429).
 
 Repository-level packaging validation is not live restoration. Verify an authorized worker rollout with an authenticated non-rendering gateway request before running a separately authorized one-image production smoke. Vercel application and alias changes are not required by this worker-only patch.
+
+### Shared renderer and smoke runner
+
+`workers/fibo-studio/modal_native_renderer.py` owns the existing GPU render function and its image. Both gateway entrypoints include that app and explicitly bundle the renderer module in their CPU gateway images. `modal_native_smoke.py` retains the opt-in validation entrypoint and consumes the same renderer; gateways no longer import the smoke runner. No graph, worker protocol, provider credentials, or live deployment changed as part of this source cleanup. The production gateway remains on the previously deployed build until a separately authorized rollout.
