@@ -28,6 +28,8 @@ import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
 import { isMediaUploadConfigured } from "@/server/media/media-uploads";
 import { isR2Configured } from "@/server/storage/r2";
 
+export const dynamic = "force-dynamic";
+
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function firstValue(value: string | string[] | undefined) {
