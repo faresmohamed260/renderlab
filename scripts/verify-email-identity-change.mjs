@@ -1,3 +1,4 @@
+import { emailChangeLink, scannerSafeConfirmation } from "./lib/email-change-verifier-link.mjs";
 import { chromium } from "@playwright/test";
 import { createHash, createHmac } from "node:crypto";
 import { mkdir } from "node:fs/promises";
@@ -297,37 +298,6 @@ async function verifyTotp(client, factorId, secret) {
   throw lastError ?? new Error("TOTP verification failed.");
 }
 
-function htmlDecode(value) {
-  return value
-    .replaceAll("&amp;", "&")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#39;", "'")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">");
-}
-
-function emailChangeLink(html) {
-  if (typeof html !== "string") return null;
-  const hrefs = [...html.matchAll(/href=["']([^"']+)["']/gi)].map((match) => htmlDecode(match[1]));
-  for (const href of [...new Set(hrefs)]) {
-    let url;
-    try { url = new URL(href); } catch { continue; }
-    const type = url.searchParams.get("type");
-    if (type !== "email_change") continue;
-    const tokenHash = url.searchParams.get("token_hash") || url.searchParams.get("token");
-    if (!tokenHash) continue;
-    return { url, tokenHash };
-  }
-  return null;
-}
-
-function scannerSafeConfirmation(link) {
-  return link.url.origin === "https://renderlab.faresuniform.uk"
-    && link.url.pathname === "/auth/confirm"
-    && link.url.searchParams.get("type") === "email_change"
-    && Boolean(link.url.searchParams.get("token_hash"));
-}
-
 function assertMailBaseline(message, label) {
   assert(message?.last_event === "delivered", `${label} did not reach delivered state.`);
   assert(typeof message?.html === "string" && message.html.includes("RenderLab"), `${label} is missing RenderLab branding.`);
@@ -354,7 +324,8 @@ async function waitForConfirmationMail(recipient, startedAtMs, excludedIds = new
       if (!link) continue;
       if (message.last_event !== "delivered") continue;
       assertMailBaseline(message, "Email-change confirmation mail");
-      return { id: row.id, message, link, scannerSafe: scannerSafeConfirmation(link) };
+      assert(scannerSafeConfirmation(link), "Email-change mail must contain the exact RenderLab token-hash confirmation URL.");
+      return { id: row.id, message, link, scannerSafe: true };
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }

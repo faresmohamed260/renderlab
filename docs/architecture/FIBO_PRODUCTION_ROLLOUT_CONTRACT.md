@@ -1,11 +1,11 @@
 # FIBO Workspace — Production Implementation Contract
 
-> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+> **Current scope (2026-11-19):** The web Create and Library routes are present on protected main and deployed. The original deletion note no longer describes the restored tree. Basic signed-in text-to-image and Library reopen were verified on Modal gateway v2; this does not establish full Studio parity. See #429 for rollout and verification evidence.
 
 **Approved product direction:** 2026-11-18 (owner's FIBO-only workspace instruction and attached implementation plan).
 **Execution:** IN PROGRESS — contract and WANDA design-reference work exist; production implementation/acceptance is not complete.
-**Repository:** UNMERGED (production workspace implementation).
-**Deployment:** NOT DEPLOYED. **Provider mutation:** NOT AUTHORIZED by this contract alone.
+The restored web Create/Library and native gateway code are merged; remaining Studio parity work is open.
+FIBO-only Create is live on Vercel; see the canonical web record and the separate Modal gateway record below. **Provider mutation:** NOT AUTHORIZED by this contract alone.
 **Previous bounded model-selection contract:** historical record at `docs/history/contracts/FIBO_MODEL_ROLLOUT_CONTRACT_2026-11-18.md`; its FLUX-default/model-selector scope and exclusion of the Studio workspace are superseded.
 
 ## Goal and release boundary
@@ -106,4 +106,4 @@ Repository-level packaging validation is not live restoration. Verify an authori
 
 ### Shared renderer and smoke runner
 
-`workers/fibo-studio/modal_native_renderer.py` owns the existing GPU render function and its image. Both gateway entrypoints include that app and explicitly bundle the renderer module in their CPU gateway images. `modal_native_smoke.py` retains the opt-in validation entrypoint and consumes the same renderer; gateways no longer import the smoke runner. No graph, worker protocol, provider credentials, or live deployment changed as part of this source cleanup. The production gateway remains on the previously deployed build until a separately authorized rollout.
+`workers/fibo-studio/modal_native_renderer.py` owns the existing GPU render function and its image. Both gateway entrypoints include that app and explicitly bundle the renderer module in their CPU gateway images. `modal_native_smoke.py` retains the opt-in validation entrypoint and consumes the same renderer; gateways no longer import the smoke runner. No graph, worker protocol, provider credentials, or live deployment changed as part of this source cleanup. The separately authorized rollout of #454 deployed gateway v3 at 06:02 Cairo (04:02 UTC) from `94f5576ec1d9f205f07d7897e8d253f7e5c0ba84`. Modal history confirms v3; the rollback anchor is v2. The unauthenticated proxy returned 401. Authenticated startup and a render on v3 have not been qualified. No Vercel or candidate gateway deployment was part of that rollout.

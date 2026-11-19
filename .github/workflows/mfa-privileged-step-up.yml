@@ -1,31 +1,20 @@
 name: MFA Privileged Step-Up
 
 on:
-  pull_request:
-    paths:
-      - "src/lib/auth/mfa-assurance.ts"
-      - "src/lib/supabase/**"
-      - "src/server/admin/**"
-      - "src/app/api/admin/**"
-      - "src/app/api/account/email-change/**"
-      - "src/app/auth/confirm/**"
-      - "src/app/(app)/admin/**"
-      - "src/app/(app)/settings/mfa/**"
-      - "src/app/(app)/settings/password/**"
-      - "src/app/(app)/settings/email/**"
-      - "src/features/account/account-mfa-*.tsx"
-      - "src/features/account/account-password-form.tsx"
-      - "src/features/account/account-email-form.tsx"
-      - "scripts/verify-mfa-privileged-step-up.mjs"
-      - "scripts/verify-email-identity-change.mjs"
-      - ".github/workflows/mfa-privileged-step-up.yml"
   workflow_dispatch:
+    inputs:
+      confirm_hosted_fixture:
+        description: Confirm this run may create and remove a hosted Auth test fixture
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   configured-mfa:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.confirm_hosted_fixture == true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -41,7 +30,7 @@ jobs:
       - name: Checkout exact head
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Validate required auth fixture secret
         shell: bash
