@@ -4,6 +4,8 @@
 
 > **History separation:** the full UI migration/phase journal that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`. It is historical evidence, not a competing current tracker.
 
+> **Verified Create cutover (2026-11-19):** The custom domain renderlab.faresuniform.uk now serves the Create workspace from main application commit 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 (Vercel dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP; previous alias target dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV). Deployment Readiness run 44442391493 and all six protected-branch checks passed at the release SHA. Live /create serves the new canvas; /library and /settings return 200, the private preview worker route returns 404, and generation and upload readiness report available. Signed-in generation was not exercised. The legacy production manifest still requires an exact-SHA Release Candidate Matrix run, but the workflow was retired; its schema and current-production mirrors still need reconciliation and must not be populated with fabricated matrix evidence.
+
 ## Objective
 
 Build RenderLab as a fresh, extensible product using Saga only as behavioral/backend reference. Preserve proven capabilities where useful; re-evaluate UI, architecture and product structure deliberately.
