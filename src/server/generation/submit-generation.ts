@@ -7,7 +7,7 @@ import { workersForEcosystem } from "@/server/generation/worker-fleet";
 import { getMediaAsset } from "@/server/media/media-assets";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { fiboMaskUsage } from "@/lib/capabilities/fibo-mask";
-import { getReadyFiboMaskSource } from "@/server/media/reference-uploads";
+import { getReadyFiboMaskSource, getReadyReferenceSource } from "@/server/media/reference-uploads";
 import { correlationIdForGenerationJob, createDiagnosticCorrelationId, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 import {
   bindGenerationAdmission,
@@ -34,8 +34,8 @@ export function isFiboMaskGenerationAvailable() {
   return process.env.RENDERLAB_FIBO_MASK_ENABLED === "true" && isFiboGenerationAvailable();
 }
 
-/** Do not route source-free generated-VGL requests to the older deployed
- * PNG-only gateway until the signed result sidecar has been qualified.
+/** Do not route generated-VGL requests to the older deployed PNG-only gateway
+ * until the retained Studio bridge and signed result sidecar are qualified.
  */
 export function isFiboAutoVglAvailable() {
   return process.env.RENDERLAB_FIBO_AUTOVGL_ENABLED === "true" && isFiboGenerationAvailable();
@@ -91,7 +91,12 @@ export async function generationImageInputsAvailable(ownerId: string, request: G
     return source?.status === "ready" && source.mime_type.startsWith("image/") && source.metadata?.usage !== fiboMaskUsage;
   }));
   if (!available.every(Boolean)) return false;
-  return !request.mask || Boolean(await getReadyFiboMaskSource(ownerId, request.mask.id));
+  if (request.mask && !await getReadyFiboMaskSource(ownerId, request.mask.id)) return false;
+  if (!request.inspiration) return true;
+  if (request.inspiration.type === "media-asset") {
+    return (await getMediaAsset(ownerId, request.inspiration.id))?.kind === "image";
+  }
+  return Boolean(await getReadyReferenceSource(ownerId, request.inspiration.id));
 }
 
 async function submitToRenderLabBackend(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {

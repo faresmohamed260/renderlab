@@ -203,8 +203,10 @@ export type GenerationRequest = {
   prompt: string;
   /** Validated manual FIBO JSON caption/instruction; omitted for ordinary prompts. */
   vgl?: string;
-  /** Generate a structured scene using the FIBO Qwen3-VL public-node writer. */
+  /** Ask the retained FIBO Studio writer for structured scene/edit VGL. */
   autoVgl?: true;
+  /** Separate owner-scoped visual inspiration for source-free automatic VGL. */
+  inspiration?: GenerationInputSource;
   /** Separate ready owner-scoped PNG mask; only for a single FIBO edit source. */
   mask?: { type: "temporary-source"; id: string };
   output: {

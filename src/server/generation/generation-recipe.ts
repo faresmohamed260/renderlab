@@ -8,6 +8,7 @@ import { parseGenerationRequest } from "@/lib/api/generation-contract";
 import { persistedUpscaleSourceAssetId } from "@/lib/capabilities/upscale";
 import { comparisonSourceAssetId } from "@/lib/capabilities/generation-comparison";
 import { splitPersistedFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
+import { splitPersistedFiboInspirationInputs } from "@/lib/capabilities/fibo-inspiration";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { generationImageInputsAvailable } from "@/server/generation/submit-generation";
@@ -61,15 +62,18 @@ export function reconstructGenerationRecipeRequest(
 
   const persisted = splitPersistedFiboMaskInputs(row.inputs);
   if (!persisted) return null;
+  const withInspiration = splitPersistedFiboInspirationInputs(persisted.inputs);
+  if (!withInspiration) return null;
   const parsed = parseGenerationRequest({
     model: row.parameters.model,
     prompt: row.prompt,
     output,
-    inputs: persisted.inputs,
+    inputs: withInspiration.inputs,
     ...(advanced === undefined ? {} : { advanced }),
     ...(Object.hasOwn(row.parameters, "vgl") ? { vgl: row.parameters.vgl } : {}),
     ...(row.parameters.autoVgl === true ? { autoVgl: true } : {}),
     ...(persisted.mask ? { mask: persisted.mask } : {}),
+    ...(withInspiration.inspiration ? { inspiration: withInspiration.inspiration } : {}),
   });
   if (!parsed.ok) return null;
   if (parsed.request.output.kind !== row.output_kind) return null;
@@ -134,10 +138,10 @@ export async function loadInitialGenerationRecipe(
 
   const request = await reconstructAvailableGenerationRecipeRequest(ownerId, row);
   if (!request) return null;
-  // Until the normal Create composer supports displaying and preserving masks,
-  // do not open a masked recipe as an unmasked draft. Server-owned retry still
-  // reconstructs and revalidates the mask through this same request parser.
-  if (request.mask || request.autoVgl) return null;
+  // Until Create displays every advanced FIBO input, do not open one as a
+  // silently reduced draft. Server-owned retry still reconstructs and
+  // revalidates the complete request through this same parser.
+  if (request.mask || request.autoVgl || request.inspiration) return null;
 
   const references = await Promise.all(request.inputs.map(async (input) => {
     if (input.source.type === "media-asset") {

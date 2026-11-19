@@ -42,14 +42,26 @@ test("autoVgl source-free FIBO request is explicit, bounded and separate from ma
   assert.equal(JSON.parse(buildFiboWorkerPayload(plain.request, []).body).generate_vgl, undefined);
 });
 
-test("autoVgl rejects edited image inputs, masked, manual, blank or retired modes", () => {
+test("autoVgl accepts ordered edits and masks but rejects manual, blank or retired modes", () => {
+  assert.equal(parseGenerationRequest({ ...base, inputs: [primary], autoVgl: true }).ok, true);
+  assert.equal(parseGenerationRequest({ ...base, inputs: [primary], mask, autoVgl: true }).ok, true);
+  const four = [primary, ...[2, 3, 4].map((index) => ({
+    alias: `image${index}`,
+    role: "reference",
+    source: { type: "media-asset", id: `00000000-0000-4000-8000-00000000000${index}` },
+  }))];
+  const fourParsed = parseGenerationRequest({ ...base, inputs: four, autoVgl: true });
+  assert.equal(fourParsed.ok, true);
+  const fourBytes = four.map((_, index) => ({ bytes: Buffer.from(`source-${index + 1}`) }));
+  assert.deepEqual(
+    JSON.parse(buildFiboWorkerPayload(fourParsed.request, fourBytes).body).images,
+    fourBytes.map(({ bytes }) => bytes.toString("base64")),
+  );
   for (const overrides of [
     { autoVgl: false },
     { autoVgl: "true" },
     { autoVgl: 1 },
     { autoVgl: true, vgl: '{"short_description":"manual"}' },
-    { autoVgl: true, inputs: [primary] },
-    { autoVgl: true, inputs: [primary], mask },
     { autoVgl: true, prompt: "" },
     { autoVgl: true, output: { kind: "image", aspectRatio: "original" } },
     { autoVgl: true, output: { kind: "video", aspectRatio: "1:1" } },
@@ -61,10 +73,20 @@ test("autoVgl rejects edited image inputs, masked, manual, blank or retired mode
   }
 });
 
-test("wire fails closed for unsupported auto-VGL source, mask, or geometry", () => {
+test("wire preserves image-aware auto-VGL and fails closed for manual VGL or geometry", () => {
   const req = parseGenerationRequest({ ...base, autoVgl: true }).request;
-  assert.throws(() => buildFiboWorkerPayload(req, [{ bytes: Buffer.from("source") }]), /source-free/);
-  assert.throws(() => buildFiboWorkerPayload({ ...req, vgl: '{"short_description":"manual"}' }, []), /source-free/);
+  const edit = parseGenerationRequest({ ...base, inputs: [primary], autoVgl: true }).request;
+  const wire = JSON.parse(buildFiboWorkerPayload(edit, [{ bytes: Buffer.from("source") }]).body);
+  assert.equal(wire.generate_vgl, true);
+  assert.deepEqual(wire.images, [Buffer.from("source").toString("base64")]);
+  const original = parseGenerationRequest({
+    ...base,
+    inputs: [primary],
+    autoVgl: true,
+    output: { kind: "image", aspectRatio: "original" },
+  }).request;
+  assert.equal(JSON.parse(buildFiboWorkerPayload(original, [{ bytes: Buffer.from("source") }]).body).width, 0);
+  assert.throws(() => buildFiboWorkerPayload({ ...req, vgl: '{"short_description":"manual"}' }, []), /manual VGL/);
   assert.throws(() => buildFiboWorkerPayload({ ...req, output: { kind: "image", aspectRatio: "original" } }, []));
 });
 
@@ -86,6 +108,11 @@ test("signed JSON VGL sidecar must contain precisely one bounded structured capt
   ]) {
     assert.equal(parseGeneratedFiboSidecar(item), null, JSON.stringify(item)?.slice(0, 60));
   }
+  const editVgl = '{"edit_instruction":"Make the selected coat blue"}';
+  assert.equal(normalizeGeneratedFiboVgl(editVgl, "edit"), editVgl);
+  assert.equal(parseGeneratedFiboSidecar({ vgl: editVgl }, "edit"), editVgl);
+  assert.equal(normalizeGeneratedFiboVgl(editVgl, "scene"), null);
+  assert.equal(normalizeGeneratedFiboVgl('{"short_description":"not an edit"}', "edit"), null);
 });
 
 test("auto-VGL remains default-off and is captured before durable image finalization", () => {
@@ -96,11 +123,11 @@ test("auto-VGL remains default-off and is captured before durable image finaliza
   assert.match(admission, /process\.env\.RENDERLAB_FIBO_AUTOVGL_ENABLED === "true"/);
   assert.match(admission, /request\.autoVgl && !isFiboAutoVglAvailable\(\)/);
   assert.match(route, /fiboAutoVglAvailable: true/);
-  assert.match(engine, /getGeneratedFiboCaption\(worker, row\.provider_job_id\)/);
+  assert.match(engine, /getGeneratedFiboCaption\(/);
   assert.match(engine, /parameters: \{ \.\.\.row\.parameters, generatedVgl, generatedVglSource:/);
   assert.match(engine, /generatedVgl: row\.parameters\.generatedVgl/);
   assert.match(engine, /generation_vgl_invalid/);
   assert.match(engine, /generation_vgl_stalled/);
   assert.match(engine, /InvalidGeneratedFiboSidecarError/);
-  assert.match(recipe, /request\.mask \|\| request\.autoVgl/);
+  assert.match(recipe, /request\.mask \|\| request\.autoVgl \|\| request\.inspiration/);
 });

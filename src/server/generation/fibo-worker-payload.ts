@@ -9,6 +9,7 @@ export function buildFiboWorkerPayload(
   request: GenerationRequest,
   sources: readonly { bytes: Buffer }[],
   maskBytes?: Buffer,
+  inspirationBytes?: Buffer,
 ) {
   if (request.model !== fiboGenerationModel) throw new Error("FIBO worker protocol requires the FIBO model.");
   const sizes = { original: [0, 0], "1:1": [1024, 1024], "4:3": [1152, 864],
@@ -23,9 +24,15 @@ export function buildFiboWorkerPayload(
     || (maskBytes && (sources.length !== 1 || maskBytes.length < 8 || maskBytes.length > fiboMaskMaxBytes))) {
     throw new Error("FIBO mask payload is missing or incompatible with source slots.");
   }
-  if (request.autoVgl && (sources.length !== 0 || request.vgl || request.mask
-    || !request.prompt.trim() || request.output.aspectRatio === "original")) {
-    throw new Error("Generated VGL requires a source-free bounded image request.");
+  if (Boolean(request.inspiration) !== Boolean(inspirationBytes)
+    || (request.inspiration && !request.autoVgl)
+    || (inspirationBytes && (sources.length !== 0 || inspirationBytes.length < 1
+      || inspirationBytes.length > 16 * 1024 * 1024))) {
+    throw new Error("FIBO inspiration payload is missing or incompatible with edit slots.");
+  }
+  if (request.autoVgl && (request.vgl || !request.prompt.trim()
+    || (request.output.aspectRatio === "original" && sources.length === 0))) {
+    throw new Error("Generated VGL requires a bounded image request without manual VGL.");
   }
   const inputAliases = request.inputs.map((input) => input.alias);
   const indices = new Map<string, number>(inputAliases.map((alias, index) => [alias, index + 1]));
@@ -43,6 +50,7 @@ export function buildFiboWorkerPayload(
       ...(vgl ? { vgl } : {}),
       ...(request.autoVgl ? { generate_vgl: true } : {}),
       ...(maskBytes ? { mask: maskBytes.toString("base64") } : {}),
+      ...(inspirationBytes ? { inspiration: inspirationBytes.toString("base64") } : {}),
       images: sources.map((source) => source.bytes.toString("base64")),
     }),
   };

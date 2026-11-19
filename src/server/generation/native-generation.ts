@@ -1,8 +1,9 @@
 import { buildFiboWorkerPayload } from "@/server/generation/fibo-worker-payload";
 import { parseGeneratedFiboSidecar } from "@/lib/capabilities/fibo-generated-vgl";
 import { fiboMaskMaxBytes, fiboMaskUsage, persistFiboMaskInputs, splitPersistedFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
+import { persistFiboInspirationInputs, splitPersistedFiboInspirationInputs } from "@/lib/capabilities/fibo-inspiration";
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
-import { getReadyFiboMaskSource } from "@/server/media/reference-uploads";
+import { getReadyFiboMaskSource, getReadyReferenceSource } from "@/server/media/reference-uploads";
 import type {
   CreativeOperation,
   GenerationJob,
@@ -200,7 +201,10 @@ async function insertJob(ownerId: string, request: GenerationRequest, workflow: 
       workflow_id: workflow.id,
       model: workflow.model,
       ecosystem: workflow.ecosystem,
-      inputs: persistFiboMaskInputs(request.inputs, request.mask),
+      inputs: persistFiboMaskInputs(
+        persistFiboInspirationInputs(request.inputs, request.inspiration),
+        request.mask,
+      ),
       parameters: { model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {},
         ...(request.vgl ? { vgl: request.vgl } : {}),
         ...(request.autoVgl ? { autoVgl: true } : {}) },
@@ -272,6 +276,27 @@ async function resolveMaskBytes(ownerId: string, request: GenerationRequest): Pr
     throw new Error("The stored FIBO PNG mask is invalid.");
   }
   return bytes;
+}
+
+async function resolveInspirationBytes(ownerId: string, request: GenerationRequest): Promise<Buffer | undefined> {
+  if (!request.inspiration) return undefined;
+  if (request.model !== fiboGenerationModel || request.inputs.length !== 0 || !request.autoVgl) {
+    throw new Error("FIBO inspiration requires source-free automatic VGL.");
+  }
+  if (request.inspiration.type === "temporary-source") {
+    const source = await getReadyReferenceSource(ownerId, request.inspiration.id);
+    if (!source) throw new Error("The owner-scoped inspiration source is unavailable.");
+    const object = await readR2Object(source.storage_key);
+    return Buffer.from(object.bytes);
+  }
+  const assets = await supabaseRest<Array<{ storage_key: string; mime_type: string }>>(
+    `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(request.inspiration.id)}&select=storage_key,mime_type&limit=1`,
+    { method: "GET" },
+  );
+  const asset = assets?.[0];
+  if (!asset || !asset.mime_type.startsWith("image/")) throw new Error("The owner-scoped inspiration asset is unavailable.");
+  const object = await readR2Object(asset.storage_key);
+  return Buffer.from(object.bytes);
 }
 
 type PreparedWorkerPayload = {
@@ -378,13 +403,13 @@ function gatewayUrlForWorker(worker: GenerationWorker) {
   return worker.gatewayUrl;
 }
 
-async function prepareWorkerSubmission(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[], maskBytes?: Buffer): Promise<{ body: string | FormData; contentType?: string }> {
+async function prepareWorkerSubmission(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[], maskBytes?: Buffer, inspirationBytes?: Buffer): Promise<{ body: string | FormData; contentType?: string }> {
   if (Boolean(request.mask) !== Boolean(maskBytes)
     || (maskBytes && (workflow.ecosystem !== fiboGenerationModel || sources.length !== 1))) {
     throw new Error("FIBO masked edit payload is incomplete or has invalid source slots.");
   }
   if (workflow.ecosystem === fiboGenerationModel) {
-    return buildFiboWorkerPayload(request, sources, maskBytes);
+    return buildFiboWorkerPayload(request, sources, maskBytes, inspirationBytes);
   }
   const prepared = await prepareWorkerPayload(request, workflow, sources);
   return { body: buildForm(request, workflow, prepared) };
@@ -400,8 +425,8 @@ function dispatchWorker(worker: GenerationWorker, workflow: WorkflowConfig, subm
   });
 }
 
-async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[], maskBytes?: Buffer) {
-  const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes);
+async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[], maskBytes?: Buffer, inspirationBytes?: Buffer) {
+  const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes, inspirationBytes);
   const failures: Array<Record<string, unknown>> = [];
   for (const worker of workersForEcosystem(workflow.ecosystem)) {
     try {
@@ -442,7 +467,8 @@ export async function submitNativeGeneration(ownerId: string, request: Generatio
     job = await insertJob(ownerId, request, workflow);
     const sources = await resolveInputs(ownerId, request);
     const maskBytes = await resolveMaskBytes(ownerId, request);
-    const submitted = await submitWorker(workflow, request, sources, maskBytes);
+    const inspirationBytes = await resolveInspirationBytes(ownerId, request);
+    const submitted = await submitWorker(workflow, request, sources, maskBytes, inspirationBytes);
     job = await patchJob(ownerId, job.id, {
       status: "running",
       worker_id: submitted.worker.id,
@@ -694,7 +720,7 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
  */
 class InvalidGeneratedFiboSidecarError extends Error {}
 
-async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string): Promise<string> {
+async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string, mode: "scene" | "edit"): Promise<string> {
   const options = workerGatewayOptions(worker);
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
@@ -707,7 +733,7 @@ async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string)
   }
   if (!response.ok) throw new Error("Generated FIBO VGL sidecar is temporarily unavailable.");
   const payload: unknown = await response.json().catch(() => null);
-  const caption = parseGeneratedFiboSidecar(payload);
+  const caption = parseGeneratedFiboSidecar(payload, mode);
   if (!caption) throw new InvalidGeneratedFiboSidecarError("Generated FIBO VGL sidecar returned invalid JSON.");
   return caption;
 }
@@ -732,15 +758,18 @@ function requestFromJobRow(row: JobRow): GenerationRequest {
   // recovery. The mask is an internal job input, not an image-reference slot.
   const persisted = splitPersistedFiboMaskInputs(row.inputs);
   if (!persisted) throw new Error("Stored FIBO mask source is invalid.");
+  const withInspiration = splitPersistedFiboInspirationInputs(persisted.inputs);
+  if (!withInspiration) throw new Error("Stored FIBO inspiration source is invalid.");
   const parsed = parseGenerationRequest({
     model: row.parameters.model,
     prompt: row.prompt,
     output: row.parameters.output,
-    inputs: persisted.inputs,
+    inputs: withInspiration.inputs,
     advanced: row.parameters.advanced,
     ...(Object.hasOwn(row.parameters, "vgl") ? { vgl: row.parameters.vgl } : {}),
     ...(row.parameters.autoVgl === true ? { autoVgl: true } : {}),
     ...(persisted.mask ? { mask: persisted.mask } : {}),
+    ...(withInspiration.inspiration ? { inspiration: withInspiration.inspiration } : {}),
   });
   if (!parsed.ok || parsed.request.output.kind !== row.output_kind
     || resolveCreativeOperation(parsed.request) !== row.operation) {
@@ -776,7 +805,8 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
 
   const sources = await resolveInputs(row.owner_id, request);
   const maskBytes = await resolveMaskBytes(row.owner_id, request);
-  const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes);
+  const inspirationBytes = await resolveInspirationBytes(row.owner_id, request);
+  const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes, inspirationBytes);
   const excluded = attemptedWorkerIds(row);
   const candidate = workersForEcosystem(workflow.ecosystem).find((worker) => !excluded.has(worker.id));
   if (!candidate) return null;
@@ -999,7 +1029,11 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   let generatedVgl: string | null = null;
   if (row.parameters.autoVgl === true) {
     try {
-      generatedVgl = await getGeneratedFiboCaption(worker, row.provider_job_id);
+      generatedVgl = await getGeneratedFiboCaption(
+        worker,
+        row.provider_job_id,
+        row.operation === "edit-image" ? "edit" : "scene",
+      );
     } catch (error) {
       if (error instanceof InvalidGeneratedFiboSidecarError) {
         const failed = await failJob(row, "generation_vgl_invalid", "Generated FIBO scene JSON could not be verified.");

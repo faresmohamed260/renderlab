@@ -1,5 +1,6 @@
 import { normalizeFiboVgl } from "@/lib/capabilities/fibo-vgl";
 import { parseFiboMaskSource } from "@/lib/capabilities/fibo-mask";
+import { parseFiboInspirationSource } from "@/lib/capabilities/fibo-inspiration";
 import {
   generationNegativePromptWithinLimit,
   generationPromptWithinLimit,
@@ -229,6 +230,16 @@ export function parseGenerationRequest(value: unknown):
   )) {
     return { ok: false, error: { code: "invalid_request", message: "FIBO masks require one distinct owner-scoped PNG source and one edit image." } };
   }
+  const inspiration = value.inspiration === undefined
+    ? undefined
+    : parseFiboInspirationSource(value.inspiration);
+  const occupiedSourceIds = new Set(inputs.map((input) => `${input.source.type}:${input.source.id.toLowerCase()}`));
+  if (mask) occupiedSourceIds.add(`${mask.type}:${mask.id.toLowerCase()}`);
+  if (value.inspiration !== undefined && (
+    !inspiration || occupiedSourceIds.has(`${inspiration?.type}:${inspiration?.id.toLowerCase()}`)
+  )) {
+    return { ok: false, error: { code: "invalid_request", message: "FIBO inspiration must be one distinct owner-scoped image." } };
+  }
   const aliases = inputs.map((input) => input.alias);
   const vgl = value.vgl === undefined ? undefined : normalizeFiboVgl(value.vgl, aliases);
   if (value.vgl !== undefined && vgl === null) {
@@ -238,8 +249,11 @@ export function parseGenerationRequest(value: unknown):
   if (value.autoVgl !== undefined && !autoVgl || "generatedVgl" in value) {
     return { ok: false, error: { code: "invalid_request", message: "Generated VGL mode must be an explicit supported boolean." } };
   }
-  if (autoVgl && (inputs.length !== 0 || mask || vgl || !textPrompt)) {
-    return { ok: false, error: { code: "invalid_request", message: "Automatic VGL requires source-free text generation without a mask or manually supplied VGL." } };
+  if (inspiration && (!autoVgl || inputs.length !== 0 || mask || vgl)) {
+    return { ok: false, error: { code: "invalid_request", message: "FIBO inspiration is only supported for source-free automatic VGL." } };
+  }
+  if (autoVgl && (vgl || !textPrompt)) {
+    return { ok: false, error: { code: "invalid_request", message: "Automatic VGL requires a text instruction and cannot include manually supplied VGL." } };
   }
   if (!textPrompt && !vgl) {
     return { ok: false, error: { code: "invalid_request", message: "A prompt or VGL JSON is required." } };
@@ -306,6 +320,7 @@ export function parseGenerationRequest(value: unknown):
       inputs,
       ...(vgl ? { vgl } : {}),
       ...(autoVgl ? { autoVgl: true as const } : {}),
+      ...(inspiration ? { inspiration } : {}),
       ...(mask ? { mask } : {}),
       ...(advanced ? { advanced } : {}),
     },
