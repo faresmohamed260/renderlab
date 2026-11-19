@@ -96,3 +96,10 @@ After implementation and required verification, obtain fresh provider read-back 
 - Bria FIBO 2.0 Edit Turbo model notes: https://huggingface.co/briaai/Fibo-2.0-edit-turbo/blob/main/README.md
 - Official ComfyUI FIBO `TextEncodeFibo2` node: https://github.com/Comfy-Org/ComfyUI/blob/master/comfy_extras/nodes_fibo2.py
 - Public ComfyUI FIBO template retained in `workers/fibo-studio/COMFY_TEMPLATE_LICENSE.txt`.
+
+
+## Production gateway startup incident — 2026-11-19
+
+Production smoke [44449988372](https://github.com/faresmohamed260/renderlab/actions/runs/44449988372) failed at generation submission (HTTP 502); DB/Auth/R2 fixture cleanup passed. The retained Modal gateway failed before serving requests because its image did not package the entrypoint's top-level dependency, `modal_native_smoke`. The production image definition now explicitly includes that module. This changes packaging only, not the render graph, gateway credentials, or ambiguous-submit no-retry policy. See [#429](https://github.com/faresmohamed260/renderlab/issues/429).
+
+Repository-level packaging validation is not live restoration. Verify an authorized worker rollout with an authenticated non-rendering gateway request before running a separately authorized one-image production smoke. Vercel application and alias changes are not required by this worker-only patch.
