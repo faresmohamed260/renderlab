@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 import type { GenerationJob, GenerationJobStatus } from "@/lib/capabilities/generation";
+import { parseFiboBatchSummary, summarizeFiboBatchSlots } from "@/lib/capabilities/fibo-batch";
 import type { CancelGenerationResponse } from "@/lib/api/generation-cancel-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
+import {
+  getFiboBatchOutputSlots,
+  patchFiboBatchOutputSlot,
+  type FiboBatchOutputRow,
+} from "@/server/generation/fibo-batch-output-store";
 import { releaseBoundGenerationAdmission } from "@/server/generation/generation-admission";
 import {
   claimGenerationReconciliation,
@@ -21,6 +27,7 @@ type CancellationRow = {
   worker_state: string | null;
   failover_history: Array<Record<string, unknown>>;
   output_asset_ids: string[];
+  parameters: Record<string, unknown>;
   error_code: string | null;
   error_message: string | null;
   reconcile_token: string | null;
@@ -39,8 +46,10 @@ const terminalStatuses = new Set<GenerationJobStatus>(["succeeded", "failed", "c
 const cancellationGraceMs = 10 * 60 * 1000;
 const providerCancellationTimeoutMs = 10_000;
 const cancellationClaimRetryDelaysMs = [75, 150] as const;
+const cancellationSelect = "id,owner_id,status,operation,worker_id,provider_job_id,worker_state,failover_history,output_asset_ids,parameters,error_code,error_message,reconcile_token,created_at,updated_at,completed_at";
 
 function toGenerationJob(row: CancellationRow): GenerationJob {
+  const batch = parseFiboBatchSummary(row.parameters.batchSummary);
   return {
     id: row.id,
     status: row.status,
@@ -48,6 +57,7 @@ function toGenerationJob(row: CancellationRow): GenerationJob {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     outputAssetIds: row.output_asset_ids ?? [],
+    ...(batch ? { batch } : {}),
     ...(row.error_message
       ? { error: { code: row.error_code || "generation_failed", message: row.error_message } }
       : {}),
@@ -60,10 +70,24 @@ function cancellationError(message: string): CancelGenerationResponse {
 
 async function getCancellationRow(ownerId: string, jobId: string) {
   const rows = await supabaseRest<CancellationRow[]>(
-    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=id,owner_id,status,operation,worker_id,provider_job_id,worker_state,failover_history,output_asset_ids,error_code,error_message,reconcile_token,created_at,updated_at,completed_at&limit=1`,
+    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=${cancellationSelect}&limit=1`,
     { method: "GET" },
   );
   return rows?.[0] ?? null;
+}
+
+function batchCount(row: CancellationRow) {
+  const value = row.parameters.batchCount;
+  return typeof value === "number" && Number.isInteger(value) && value >= 2 && value <= 4 ? value : null;
+}
+
+function publicBatchSlot(row: FiboBatchOutputRow) {
+  return {
+    outputIndex: row.output_index,
+    status: row.status,
+    seed: row.seed,
+    outputAssetId: row.output_asset_id,
+  };
 }
 
 async function hasIndexedDurableOutput(ownerId: string, jobId: string) {
@@ -109,7 +133,9 @@ function delay(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancellationOutcome> {
+async function cancelProviderCall(
+  row: Pick<CancellationRow, "worker_id" | "provider_job_id">,
+): Promise<ProviderCancellationOutcome> {
   if (!row.worker_id || !row.provider_job_id) {
     return { kind: "retryable", status: null, reason: "missing-dispatch" };
   }
@@ -144,7 +170,7 @@ async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancell
 async function transitionToCancelling(row: CancellationRow, token: string) {
   const at = new Date().toISOString();
   const rows = await supabaseRest<CancellationRow[]>(
-    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=in.(queued,preparing,running)&reconcile_token=eq.${encodeURIComponent(token)}&select=id,owner_id,status,operation,worker_id,provider_job_id,worker_state,failover_history,output_asset_ids,error_code,error_message,reconcile_token,created_at,updated_at,completed_at`,
+    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=in.(queued,preparing,running)&reconcile_token=eq.${encodeURIComponent(token)}&select=${cancellationSelect}`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
@@ -166,7 +192,7 @@ async function transitionToCancelling(row: CancellationRow, token: string) {
 async function terminalizeCancelled(row: CancellationRow, token: string, diagnostic: Record<string, unknown>) {
   const at = new Date().toISOString();
   const rows = await supabaseRest<CancellationRow[]>(
-    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=eq.cancelling&reconcile_token=eq.${encodeURIComponent(token)}&select=id,owner_id,status,operation,worker_id,provider_job_id,worker_state,failover_history,output_asset_ids,error_code,error_message,reconcile_token,created_at,updated_at,completed_at`,
+    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=eq.cancelling&reconcile_token=eq.${encodeURIComponent(token)}&select=${cancellationSelect}`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
@@ -189,7 +215,7 @@ async function terminalizeCancelled(row: CancellationRow, token: string, diagnos
 async function recordCancellationRetry(row: CancellationRow, token: string, outcome: Extract<ProviderCancellationOutcome, { kind: "retryable" }>) {
   const at = new Date().toISOString();
   const rows = await supabaseRest<CancellationRow[]>(
-    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=eq.cancelling&reconcile_token=eq.${encodeURIComponent(token)}&select=id,owner_id,status,operation,worker_id,provider_job_id,worker_state,failover_history,output_asset_ids,error_code,error_message,reconcile_token,created_at,updated_at,completed_at`,
+    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=eq.cancelling&reconcile_token=eq.${encodeURIComponent(token)}&select=${cancellationSelect}`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
@@ -209,9 +235,122 @@ async function recordCancellationRetry(row: CancellationRow, token: string, outc
   return rows?.[0] ?? row;
 }
 
+async function batchCancellationAvailable(row: CancellationRow) {
+  const requested = batchCount(row);
+  if (!requested) return false;
+  const slots = await getFiboBatchOutputSlots(row.owner_id, row.id);
+  if (!summarizeFiboBatchSlots(slots.map(publicBatchSlot), requested)
+    || slots.some((slot) => slot.status === "persisting")) return false;
+  const active = slots.filter((slot) => slot.status === "queued" || slot.status === "running");
+  return active.length > 0 && active.every((slot) => (
+    (!slot.worker_id && !slot.provider_job_id)
+    || Boolean(slot.worker_id && slot.provider_job_id && isSupportedNativeCancellationWorker(slot.worker_id))
+  ));
+}
+
+async function finalizeBatchCancellation(
+  row: CancellationRow,
+  token: string,
+  slots: FiboBatchOutputRow[],
+) {
+  const requested = batchCount(row);
+  const summary = requested && summarizeFiboBatchSlots(slots.map(publicBatchSlot), requested);
+  if (!summary) throw new Error("Cancellation invariant violated: invalid FIBO batch slots.");
+  if (!summary.terminal) return null;
+
+  const at = new Date().toISOString();
+  const rows = await supabaseRest<CancellationRow[]>(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=eq.cancelling&reconcile_token=eq.${encodeURIComponent(token)}&select=${cancellationSelect}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        status: summary.status,
+        worker_state: "batch-complete",
+        output_asset_ids: summary.outputAssetIds,
+        parameters: {
+          ...row.parameters,
+          batchSummary: {
+            requested: summary.requested,
+            succeeded: summary.succeeded,
+            failed: summary.failed,
+            cancelled: summary.cancelled,
+            partial: summary.partial,
+          },
+        },
+        error_code: summary.status === "failed" ? "generation_batch_failed" : null,
+        error_message: summary.status === "failed"
+          ? "No requested FIBO batch output completed successfully."
+          : null,
+        completed_at: at,
+        updated_at: at,
+        failover_history: cancellationDiagnostic(row, {
+          phase: "cancel-batch-complete",
+          status: summary.status,
+          at,
+        }),
+      }),
+    },
+  );
+  const terminal = rows?.[0] ?? null;
+  if (terminal) await releaseBoundGenerationAdmission(terminal.owner_id, terminal.id);
+  return terminal;
+}
+
+async function reconcileBatchCancellation(row: CancellationRow, token: string) {
+  const requested = batchCount(row);
+  if (!requested) return null;
+  const slots = await getFiboBatchOutputSlots(row.owner_id, row.id);
+  if (!summarizeFiboBatchSlots(slots.map(publicBatchSlot), requested)
+    || slots.some((slot) => slot.status === "persisting")) {
+    throw new Error("Cancellation invariant violated: FIBO batch slots are incomplete or persisting.");
+  }
+
+  const elapsed = Date.now() - cancellationRequestedAt(row);
+  let retryable: Extract<ProviderCancellationOutcome, { kind: "retryable" }> | null = null;
+  for (const slot of slots) {
+    if (slot.status !== "queued" && slot.status !== "running") continue;
+    let outcome: ProviderCancellationOutcome;
+    if (!slot.worker_id && !slot.provider_job_id) {
+      outcome = { kind: "confirmed", status: 204 };
+    } else {
+      outcome = await cancelProviderCall(slot);
+    }
+    await emitDiagnosticEvent({
+      event: "generation.cancellation",
+      level: outcome.kind === "retryable" ? "warn" : "info",
+      correlationId: correlationIdForGenerationJob(row.id),
+      jobId: row.id,
+      operation: row.operation,
+      phase: "batch-provider-outcome",
+      status: row.status,
+      code: outcome.kind === "retryable" ? outcome.reason : outcome.kind,
+    });
+    if (outcome.kind === "retryable" && elapsed < cancellationGraceMs) {
+      retryable ??= outcome;
+      continue;
+    }
+    await patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+      status: "cancelled",
+      worker_state: "cancelled",
+      error_code: null,
+      error_message: null,
+      completed_at: new Date().toISOString(),
+    });
+  }
+
+  const currentSlots = await getFiboBatchOutputSlots(row.owner_id, row.id);
+  const terminal = await finalizeBatchCancellation(row, token, currentSlots);
+  if (terminal) return terminal;
+  if (retryable) return recordCancellationRetry(row, token, retryable);
+  throw new Error("Cancellation invariant violated: active FIBO slots remain without a retryable outcome.");
+}
+
 async function reconcileClaimedCancellationRow(ownerId: string, jobId: string, token: string) {
   const row = await getCancellationRow(ownerId, jobId);
   if (!row || row.status !== "cancelling" || row.reconcile_token !== token) return row;
+
+  if (batchCount(row)) return reconcileBatchCancellation(row, token);
 
   if (await hasIndexedDurableOutput(ownerId, jobId)) {
     throw new Error("Cancellation invariant violated: durable output already exists for a cancelling job.");
@@ -317,10 +456,14 @@ export async function requestGenerationCancellation(ownerId: string, jobId: stri
     }
 
     if (current.status !== "cancelling") {
-      if (!cancellableStatuses.has(current.status) || !isSupportedNativeCancellation(current)) {
+      const isBatch = Boolean(batchCount(current));
+      const supported = isBatch
+        ? await batchCancellationAvailable(current)
+        : isSupportedNativeCancellation(current);
+      if (!cancellableStatuses.has(current.status) || !supported) {
         return cancellationError("Cancellation is not available for this generation.");
       }
-      if (current.output_asset_ids.length > 0 || await hasIndexedDurableOutput(ownerId, jobId)) {
+      if (!isBatch && (current.output_asset_ids.length > 0 || await hasIndexedDurableOutput(ownerId, jobId))) {
         return cancellationError("This generation already has a durable result and cannot be cancelled.");
       }
       current = await transitionToCancelling(current, token);

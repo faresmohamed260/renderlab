@@ -47,6 +47,16 @@ test("zero-result terminal batches distinguish failure from cancellation", () =>
   assert.equal(summarizeFiboBatchSlots([slot(0, "cancelled"), slot(1, "cancelled")], 2).status, "cancelled");
 });
 
+test("cancelling remaining work preserves completed output identity", () => {
+  const cancelledRemainder = summarizeFiboBatchSlots([
+    slot(0, "succeeded", "asset-0"), slot(1, "cancelled"), slot(2, "cancelled"),
+  ], 3);
+  assert.deepEqual(cancelledRemainder, {
+    requested: 3, succeeded: 1, failed: 0, cancelled: 2, active: 0,
+    terminal: true, partial: true, status: "succeeded", outputAssetIds: ["asset-0"],
+  });
+});
+
 test("malformed, duplicate, missing, or mismatched durable slots fail closed", () => {
   for (const slots of [
     [slot(0, "queued")],

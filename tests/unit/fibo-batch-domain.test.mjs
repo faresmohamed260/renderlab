@@ -79,3 +79,17 @@ test("native batch orchestration owns dispatch, persistence, recovery, and publi
   assert.match(publicContract, /batch\?: FiboBatchSummary/);
   assert.doesNotMatch(publicContract, /providerJobId|workerId/);
 });
+
+test("batch cancellation preserves completed outputs and targets only active durable slots", () => {
+  const cancellation = fs.readFileSync("src/server/generation/cancel-generation.ts", "utf8");
+  const activity = fs.readFileSync("src/server/generation/generation-activity.ts", "utf8");
+  assert.match(cancellation, /getFiboBatchOutputSlots/);
+  assert.match(cancellation, /slot\.status === "persisting"/);
+  assert.match(cancellation, /slot\.status !== "queued" && slot\.status !== "running"/);
+  assert.match(cancellation, /cancelProviderCall\(slot\)/);
+  assert.match(cancellation, /patchFiboBatchOutputSlot[\s\S]*status: "cancelled"/);
+  assert.match(cancellation, /summarizeFiboBatchSlots\(slots\.map\(publicBatchSlot\), requested\)/);
+  assert.match(cancellation, /output_asset_ids: summary\.outputAssetIds/);
+  assert.match(cancellation, /if \(!isBatch && \(current\.output_asset_ids\.length > 0/);
+  assert.match(activity, /isFiboBatchParameters\(row\.parameters\) \|\| refreshed\.outputAssetIds\.length === 0/);
+});

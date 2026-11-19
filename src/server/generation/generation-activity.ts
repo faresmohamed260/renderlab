@@ -34,6 +34,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function isFiboBatchParameters(value: unknown) {
+  if (!isRecord(value)) return false;
+  return typeof value.batchCount === "number"
+    && Number.isInteger(value.batchCount)
+    && value.batchCount >= 2
+    && value.batchCount <= 4;
+}
+
 function activityError(row: Pick<GenerationActivityRow, "status" | "error_code" | "error_message">) {
   if (row.status !== "failed" || !row.error_message) return null;
   const code = row.error_code || "generation_failed";
@@ -47,7 +55,7 @@ function activityError(row: Pick<GenerationActivityRow, "status" | "error_code" 
 
 function canCancelActivity(row: GenerationActivityRow) {
   if (!cancellableStatuses.has(row.status) || !row.worker_id || !row.provider_job_id) return false;
-  if ((row.output_asset_ids ?? []).length > 0) return false;
+  if (!isFiboBatchParameters(row.parameters) && (row.output_asset_ids ?? []).length > 0) return false;
   return isSupportedNativeCancellationWorker(row.worker_id);
 }
 
@@ -122,7 +130,9 @@ export async function listGenerationActivity({
         updatedAt: refreshed.updatedAt,
         outputAssetIds: refreshed.outputAssetIds,
         ...(refreshed.batch ? { batch: refreshed.batch } : {}),
-        canCancel: fallback.canCancel && cancellableStatuses.has(refreshed.status) && refreshed.outputAssetIds.length === 0,
+        canCancel: fallback.canCancel
+          && cancellableStatuses.has(refreshed.status)
+          && (isFiboBatchParameters(row.parameters) || refreshed.outputAssetIds.length === 0),
         error: refreshed.status === "failed"
           ? activityError({
               status: "failed",
