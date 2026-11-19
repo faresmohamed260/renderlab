@@ -37,7 +37,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  ...(process.env.RENDERLAB_FIBO_PREVIEW === "1" ? { devIndicators: false as const } : {}),
+  ...(process.env.RENDERLAB_CREATE_PREVIEW === "1" ? { devIndicators: false as const } : {}),
   env: {
     // Supabase project URL + publishable key are intentionally public browser configuration.
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,

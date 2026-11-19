@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type K
 import { createPortal } from "react-dom";
 import { Download, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { buildFiboBatchZip } from "./fibo-preview-batch-zip";
+import { buildImageBatchZip } from "./create-preview-batch-zip";
 
 type StageResult = { image_data: string; aspect?: number; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
 export type StageTurn<T> = { id: string; prompt: string; input?: File; images?: T[]; error?: string };
@@ -22,7 +22,7 @@ function TurnImage({ url, label, disabled, onOpen, onReuse }: {
     event.currentTarget.style.removeProperty("--thread-swipe");
     if (reuse) onReuse();
   }
-  return <Button type="button" variant="ghost" className="fibo-preview-thread-image"
+  return <Button type="button" variant="ghost" className="create-preview-thread-image"
     aria-label={label} aria-haspopup="dialog" title={label + ". Swipe right to use as source."} disabled={disabled}
     onPointerDown={(event) => {
       if (!event.isPrimary || event.button !== 0) return;
@@ -94,7 +94,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function FiboPreviewStage<T extends StageResult>({ historySelection, desktopArrows, dropTarget, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function CreatePreviewStage<T extends StageResult>({ historySelection, desktopArrows, dropTarget, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -186,7 +186,7 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
       suppressClick = false;
       gesture = undefined;
       if (event.touches.length !== 1 || (inThread && region.scrollTop > 1)
-        || (event.target instanceof Element && event.target.closest(".fibo-preview-stage-batch"))) return;
+        || (event.target instanceof Element && event.target.closest(".create-preview-stage-batch"))) return;
       const { clientX: x, clientY: y } = event.touches[0];
       gesture = { x, y, distance: 0 };
     };
@@ -317,17 +317,17 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
 
   function media() {
     return shown && (
-      <div className="fibo-preview-stage-media" style={{ "--stage-media-ratio": ratio, "--stage-split": split + "%" } as CSSProperties}>
+      <div className="create-preview-stage-media" style={{ "--stage-media-ratio": ratio, "--stage-split": split + "%" } as CSSProperties}>
         <img key={shown} src={shown} alt={result && !reviewing ? "Generated result" : inputLabel} draggable={false}
           onLoad={(event) => {
             const image = event.currentTarget;
             if (image.naturalHeight) setDimensions({ url: shown, ratio: image.naturalWidth / image.naturalHeight });
           }} />
-        {reviewing && <div className="fibo-preview-stage-mask-overlay" role="img" aria-label="Selected region"
+        {reviewing && <div className="create-preview-stage-mask-overlay" role="img" aria-label="Selected region"
           style={{ maskImage: "url(" + overlay.url + ")" }} />}
-        {compare && <div className="fibo-preview-stage-before"><img src={before} alt="Source image" draggable={false} /></div>}
+        {compare && <div className="create-preview-stage-before"><img src={before} alt="Source image" draggable={false} /></div>}
         {compare && (
-          <div className="fibo-preview-stage-divider" role="slider" tabIndex={0} aria-label="Source and result comparison"
+          <div className="create-preview-stage-divider" role="slider" tabIndex={0} aria-label="Source and result comparison"
             aria-valuemin={3} aria-valuemax={97} aria-valuenow={Math.round(split)}
             onKeyDown={nudge}
             onPointerDown={(event) => {
@@ -355,10 +355,10 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
 
   function downloadBatch() {
     try {
-      const url = URL.createObjectURL(buildFiboBatchZip(batch));
+      const url = URL.createObjectURL(buildImageBatchZip(batch));
       const link = document.createElement("a");
       link.href = url;
-      link.download = "fibo-batch.zip";
+      link.download = "image-batch.zip";
       link.click();
       // Keep the URL alive until the browser has started reading the download.
       window.setTimeout(() => URL.revokeObjectURL(url), 15_000);
@@ -394,14 +394,14 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
 
   function tools() {
     if (maskAction && !result && !busy && !inputPending) return (
-      <div className="fibo-preview-stage-tools" role="group" aria-label="Mask actions" {...toolEvents}>
+      <div className="create-preview-stage-tools" role="group" aria-label="Mask actions" {...toolEvents}>
         <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="M" disabled={maskAction.blocked}
           aria-label={maskAction.mask ? "Edit mask" : "Paint mask"}
           title={maskAction.blocked ? "Remove references to use a mask" : "Paint a mask on the source image"}
           onClick={() => { if (viewerOpen) dialog.current?.close(); maskAction.open(); }}>{maskAction.mask ? "Edit mask" : "Mask"}</Button>
-        {maskAction.blocked && <span className="fibo-preview-stage-mask-status">Remove references to use a mask</span>}
+        {maskAction.blocked && <span className="create-preview-stage-mask-status">Remove references to use a mask</span>}
         {maskAction.mask && <>
-          <span className="fibo-preview-stage-mask-status">Mask applied</span>
+          <span className="create-preview-stage-mask-status">Mask applied</span>
           <Button type="button" variant="ghost" size="sm" aria-pressed={reviewing}
             onClick={() => { setCompared(undefined); setHiddenMask(reviewing ? savedMask : undefined); }}>{reviewing ? "Hide overlay" : "Show overlay"}</Button>
           <Button type="button" variant="ghost" size="sm" onClick={() => { setHiddenMask(undefined); maskAction.clear(); }}>Clear mask</Button>
@@ -409,7 +409,7 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
       </div>
     );
     return result && (
-      <div className="fibo-preview-stage-tools" role="group" aria-label="Stage tools" {...toolEvents}>
+      <div className="create-preview-stage-tools" role="group" aria-label="Stage tools" {...toolEvents}>
         {inspecting ? <Button type="button" variant="ghost" size="sm" onClick={returnToProgress}>Live preview</Button> : <>
         {canCompare && <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="C" aria-pressed={compare} title="Compare before and after"
           onClick={(event) => {
@@ -423,7 +423,7 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
         }}><Undo2 aria-hidden="true" />Use as source</Button>
         {batch.length > 1 && <Button type="button" variant="ghost" size="sm" title="Download all batch images as a ZIP"
           onClick={downloadBatch}>Download batch</Button>}
-        <a href={result.image_data} download={result.filename ?? "fibo-result.png"} aria-keyshortcuts="D" aria-label="Download image" title="Download image"><Download size={15} aria-hidden="true" /></a>
+        <a href={result.image_data} download={result.filename ?? "result.png"} aria-keyshortcuts="D" aria-label="Download image" title="Download image"><Download size={15} aria-hidden="true" /></a>
         </>}
       </div>
     );
@@ -444,7 +444,7 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
       onRestore(result, reopen);
     };
     return (
-      <div className="fibo-preview-stage-run-actions" role="group" aria-label="Result settings">
+      <div className="create-preview-stage-run-actions" role="group" aria-label="Result settings">
         <Button type="button" variant="ghost" size="sm" onClick={() => restore(false)}>Reuse settings</Button>
         {result.run.mode === "edit" && <Button type="button" variant="ghost" size="sm" onClick={() => restore(true)}>Reopen edit</Button>}
         {result.run.mode === "edit" && onSaveEdit && <Button type="button" variant="ghost" size="sm" disabled={savingEdit}
@@ -460,7 +460,7 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
     const key = event.key.toLowerCase();
     const scope = viewerOpen ? dialog.current : frame.current;
     if ((key === "arrowleft" || key === "arrowright") && batch.length + Number(pending) > 1) {
-      const chips = [...(scope?.querySelectorAll<HTMLButtonElement>(".fibo-preview-stage-batch button") ?? [])];
+      const chips = [...(scope?.querySelectorAll<HTMLButtonElement>(".create-preview-stage-batch button") ?? [])];
       if (!chips.length) return;
       const queued = pendingImage.current ? batch.indexOf(pendingImage.current) : -1;
       const current = queued >= 0 ? queued : chips.findIndex((chip) => chip.getAttribute("aria-current") === "true");
@@ -497,7 +497,7 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
     if (!desktopArrows) return;
     const keydown = (event: globalThis.KeyboardEvent) => {
       if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
-      if (event.target instanceof Element && event.target.closest("dialog, details[open], [data-fibo-history-image]")) return;
+      if (event.target instanceof Element && event.target.closest("dialog, details[open], [data-create-history-image]")) return;
       if (document.querySelector("dialog[open]")) return;
       stageKeys(event);
     };
@@ -507,7 +507,7 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
 
   function carousel() {
     return showBatch && (
-      <div className="fibo-preview-stage-batch" role="group" aria-label="Batch results" tabIndex={0}
+      <div className="create-preview-stage-batch" role="group" aria-label="Batch results" tabIndex={0}
         aria-keyshortcuts="ArrowLeft ArrowRight"
         ref={setBatchRow}>
         {batch.map((image, index) => (
@@ -517,7 +517,7 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
             <img src={image.image_data} alt="" draggable={false} />
           </Button>
         ))}
-        {pending && <Button type="button" variant="ghost" className="fibo-preview-stage-pending"
+        {pending && <Button type="button" variant="ghost" className="create-preview-stage-pending"
           aria-label="View image in progress" aria-current={!inspecting} onClick={returnToProgress}>Rendering…</Button>}
       </div>
     );
@@ -525,8 +525,8 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
 
   function stageDocument() {
     return (
-        <div className="fibo-preview-stage-document">
-        <div className="fibo-preview-stage-surface" {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
+        <div className="create-preview-stage-document">
+        <div className="create-preview-stage-surface" {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
           aria-label={label} aria-busy={busy || inputPending} data-portrait={ratio < 1}
           onClick={(event) => {
             if (event.target === event.currentTarget || event.target instanceof HTMLImageElement) {
@@ -534,19 +534,19 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
             }
           }}>
           {inlineMask || (showingProgress ? <>
-            <div className="fibo-preview-stage-backdrop" aria-hidden="true" />
-            {liveFrame && decodedFrame && <img className="fibo-preview-stage-live" src={decodedFrame.url} style={decodedFrame.blur === undefined ? undefined : { filter: "blur(" + decodedFrame.blur + "px)" }} alt="" draggable={false} />}
-            <div className="fibo-preview-stage-shimmer" aria-hidden="true" />
-            <div className="fibo-preview-stage-notice" role="status"><span>{status || "Rendering…"}</span></div>
+            <div className="create-preview-stage-backdrop" aria-hidden="true" />
+            {liveFrame && decodedFrame && <img className="create-preview-stage-live" src={decodedFrame.url} style={decodedFrame.blur === undefined ? undefined : { filter: "blur(" + decodedFrame.blur + "px)" }} alt="" draggable={false} />}
+            <div className="create-preview-stage-shimmer" aria-hidden="true" />
+            <div className="create-preview-stage-notice" role="status"><span>{status || "Rendering…"}</span></div>
           </>
             : shown ? <>
               {!viewerOpen && media()}
               {!viewerOpen && tools()}
-              <Button ref={opener} type="button" className="fibo-preview-stage-open" variant="ghost" size="icon-sm"
+              <Button ref={opener} type="button" className="create-preview-stage-open" variant="ghost" size="icon-sm"
                 aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => openViewer()} />
-            </> : <Button type="button" variant="ghost" className="fibo-preview-canvas-upload"
+            </> : <Button type="button" variant="ghost" className="create-preview-canvas-upload"
               disabled={browseDisabled || inputPending} title={browseDisabled ? "Sign in to upload an image" : "Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
-              <svg className="fibo-preview-stage-empty-icon" width="25" height="25" viewBox="0 0 24 24" fill="none"
+              <svg className="create-preview-stage-empty-icon" width="25" height="25" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="16" rx="3" /><path d="m4 17 5-5 4 4 3-3 4 4" /><circle cx="16" cy="9" r="1.5" />
               </svg>
@@ -561,45 +561,45 @@ export function FiboPreviewStage<T extends StageResult>({ historySelection, desk
 
   return (
     <>
-      <div ref={frame} className="fibo-preview-stage-frame" onKeyDown={stageKeys} data-batch={showBatch} data-pull-ready={phone && !busy && !viewerOpen}
+      <div ref={frame} className="create-preview-stage-frame" onKeyDown={stageKeys} data-batch={showBatch} data-pull-ready={phone && !busy && !viewerOpen}
         style={{ "--stage-media-ratio": ratio } as CSSProperties}>
-        {pull >= 12 && <div className="fibo-preview-stage-pull" style={{ translate: "0 " + Math.min(32, (pull - 12) / 2) + "px" }}>
+        {pull >= 12 && <div className="create-preview-stage-pull" style={{ translate: "0 " + Math.min(32, (pull - 12) / 2) + "px" }}>
           {pull >= 76 ? "Release to refresh" : "Pull to refresh"}
         </div>}
-        {inThread ? <div ref={thread} className="fibo-preview-thread" aria-label="Render conversation" tabIndex={0}>
+        {inThread ? <div ref={thread} className="create-preview-thread" aria-label="Render conversation" tabIndex={0}>
           {turns.map((turn, index) => (
-            <article className="fibo-preview-thread-turn" key={turn.id}>
-              <div className="fibo-preview-thread-sent">
+            <article className="create-preview-thread-turn" key={turn.id}>
+              <div className="create-preview-thread-sent">
                 {turn.input && <TurnInput file={turn.input} busy={busy} onOpen={openViewer} onReuse={(file) => onUseInput?.(file)} />}
                 {turn.prompt && <p>{turn.prompt}</p>}
               </div>
-              <div className="fibo-preview-thread-reply">
+              <div className="create-preview-thread-reply">
                 {turn.images?.map((image, itemIndex) =>
                   <TurnImage key={image.filename ?? itemIndex} url={image.image_data}
                     label={"View generated image " + (itemIndex + 1)} disabled={busy}
                     onOpen={() => void select(image, true)} onReuse={() => onUseSource(image)} />)}
                 {turn.error && <p role="status">{turn.error}</p>}
               </div>
-              {busy && index === turns.length - 1 && <div className="fibo-preview-thread-live">{stageDocument()}</div>}
+              {busy && index === turns.length - 1 && <div className="create-preview-thread-live">{stageDocument()}</div>}
             </article>
           ))}
-          {!busy && input && (!result || reviewing) && <div className="fibo-preview-thread-live">{stageDocument()}</div>}
+          {!busy && input && (!result || reviewing) && <div className="create-preview-thread-live">{stageDocument()}</div>}
         </div> : stageDocument()}
-        {notice && !viewerOpen && <p className="fibo-preview-stage-notice" role="status">{notice}</p>}
+        {notice && !viewerOpen && <p className="create-preview-stage-notice" role="status">{notice}</p>}
       </div>
       {!viewerOpen && desktopResultActions && createPortal(runActions(), desktopResultActions)}
-      <dialog ref={dialog} className="fibo-preview-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer" onKeyDown={submittedImage ? undefined : stageKeys}
+      <dialog ref={dialog} className="create-preview-stage-viewer" data-batch={batch.length > 1} aria-label="Image viewer" onKeyDown={submittedImage ? undefined : stageKeys}
         onClose={() => { setViewerOpen(false); setSubmittedImage(undefined); setCompared(undefined); if (!restoring.current) (viewerOrigin.current?.isConnected ? viewerOrigin.current : opener.current)?.focus({ preventScroll: true }); restoring.current = false; }}>
         {viewerOpen && <>
-          <Button type="button" variant="ghost" size="icon-sm" className="fibo-preview-stage-close"
+          <Button type="button" variant="ghost" size="icon-sm" className="create-preview-stage-close"
             aria-label="Close image viewer" onClick={() => dialog.current?.close()}><X aria-hidden="true" /></Button>
-          {submittedImage ? <img className="fibo-preview-thread-viewer-input" src={submittedImage} alt="Submitted image" /> : <>
+          {submittedImage ? <img className="create-preview-thread-viewer-input" src={submittedImage} alt="Submitted image" /> : <>
             {media()}
             {tools()}
             {carousel()}
             {runActions()}
           </>}
-          {notice && <p className="fibo-preview-stage-notice" role="status">{notice}</p>}
+          {notice && <p className="create-preview-stage-notice" role="status">{notice}</p>}
         </>}
       </dialog>
     </>

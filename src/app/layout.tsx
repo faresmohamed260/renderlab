@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
-import { isFiboPreview } from "@/server/fibo-preview-mode";
+import { isCreatePreview } from "@/server/create-preview-mode";
 
 import "./globals.css";
 import "./renderlab-background.css";
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const preview = await isFiboPreview();
+  const preview = await isCreatePreview();
   const account = preview ? await getCurrentRenderLabIdentity().catch(() => null) : null;
   return (
     <html lang="en">
