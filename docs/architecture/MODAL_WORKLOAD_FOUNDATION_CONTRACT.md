@@ -1,41 +1,41 @@
-# Modal workload foundation — phase contract
+# Modal workload architecture — implementation requirements
 
-**Status: Proposed for review.** This contract does not authorize deployment, cloud resource creation, GPU usage, or product scope changes.
+**Status: Proposed for review.** All requirements below are mandatory for architecture completion. Implementation may be verified in sequence to isolate failures; the stages are not optional follow-ups. This PR records the contract, not an implementation or approval to create cloud resources, use GPUs, or cut over production.
 
 ## Goal and starting point
 
-Prepare reusable Modal app and worker scaffolding so the next supported capability can focus on its model, workflow, and integration, rather than recreating deployment and operational plumbing. Start from repository main at `2595cd4` and [the recorded production release](../production/current.json). The private `renderlab-generation-gateway` currently includes a GPU render function, and the only live model is FIBO. The production route, worker identity, existing weights and supported features stay unchanged. Existing ComfyUI and upscale source files are not evidence of additional live capabilities. Reverify the production alias and provider resource inventory before any hosted work.
+Deploy by workload rather than by model, and make it possible to add compatible models without rewriting worker plumbing. At repository main `2595cd4` and the [recorded production release](../production/current.json), the private gateway deployment includes the GPU renderer, FIBO is the only live model, and the renderer starts and stops ComfyUI per job. Reverify live state and dependencies before any hosted work.
 
-## Scope
+## Required app layout
 
-| App | Foundation scope |
+| App | Required role |
 | --- | --- |
-| `renderlab-generation-gateway` | Reuse the existing private gateway. Document where future workload backends plug in; do not change live routes or create a second gateway. |
-| `renderlab-image-generation` | Add a deployable shell for image creation and editing. Do not move the current renderer or connect the shell to production traffic in this phase. |
-| `renderlab-video-generation` | Add a deployable shell for future video generation and editing. No video workflows or models. |
-| `renderlab-image-tools` | Add a deployable shell for future image utilities. No tool implementations or model runtimes. |
-| `renderlab-video-tools` | Add a deployable shell for future video utilities. No tool implementations or model runtimes. |
+| `renderlab-generation-gateway` | Keep the existing private front door and job API. Dispatch to the separate image-generation app; do not expose the renderer publicly. |
+| `renderlab-image-generation` | Host the active, reusable image worker and the existing FIBO adapter. Move rendering out of the gateway deployment. |
+| `renderlab-video-generation` | Deploy an inactive shell for video generation and editing. |
+| `renderlab-image-tools` | Deploy an inactive shell for image utilities. |
+| `renderlab-video-tools` | Deploy an inactive shell for video utilities. |
 
-Use workload-oriented app names, not one app per feature or model. Give each shell an internal, CPU-only readiness function that reports the app identity and that no workload is configured. No web endpoints, scheduled functions, GPU allocations, warm instances, model loading, or user job admission. An inactive shell must never accept or advertise a generation capability. A readiness response is not model qualification.
+The three inactive apps require internal CPU-only readiness that reports the app identity and its unconfigured status. No GPU, warm instances, public endpoints, schedules, production secrets or weights, capability advertisement, or job admission for those apps. App scaffolding and hosted deploys are separately evidenced. Dashboard creation requires explicit authorization for the exact workspace and environment; no new persistent dev or staging environment is assumed.
 
-Share the small pieces that are genuinely common: configuration and a checked app inventory, structured logging with non-secret correlation IDs, a minimal base image for shells, and explicit build/deploy commands that verify workspace and environment before making changes. Provide starter templates for a reusable ComfyUI runner and a direct Python runner, without starting either in a shell. Identify how a future worker would mount environment-local volumes and attach only the secrets it needs. Shells need neither. Do not clone production credentials, mount production weights in another environment, or create broadly shared credentials for placeholders. Follow the existing [Modal ownership contract](MODAL_PROJECT_ISOLATION_CONTRACT.md).
+## Required model switching and universal worker
 
-The app definitions can be reviewed in GitHub before they appear in Modal. Dashboard creation requires a separately approved deploy to an exact workspace/environment; do not create or recreate persistent development or staging environments as part of this PR. Any later dashboard-only deployment must verify the new names are unoccupied, leave the live gateway untouched, and have a separate stop procedure for the new apps.
+- **Catalog and switcher:** Implement a server-side allowlist of model versions, supported operations, adapter, and backend. Resolve the requested or default model before dispatch; reject unknown models, unsupported operations and inactive backends before GPU work. Do not silently substitute a model. Keep FIBO as the only production entry and default; prove the switcher with two synthetic adapters in local/CI tests. No new user-facing model picker is required.
+- **Universal worker contract:** Implement reusable, model-neutral worker code for dispatch, lifecycle, file isolation and cleanup, result/error handling, and correlation. FIBO-specific graph construction, validation and weight configuration belong to the FIBO adapter. Provide a backend interface for ComfyUI and direct-Python adapters; prove the latter with a lightweight test adapter, not a real new feature. Universal means shared code and contracts across pools, not one process, GPU type or dependency image for every workload. Keep public request and result behavior unchanged.
+- **Job continuity:** Bind each accepted job to its exact backend, model version and execution handle for status, results and Cancel; a catalog change must not alter an existing job. Preserve compatibility with pre-cutover handles, drain old work through result saving, and verify a rollback that can still render. Do not retire the old execution path until the new path and recovery are verified.
 
-## Not in scope
+## Required renderer move and lifecycle
 
-No new features, weights, task workflows, custom nodes, external providers, UI, database or storage-schema changes, public routes, production switch, or changes to FIBO behavior. Keeping ComfyUI alive across calls, GPU/idle tuning, and the deferred audit fixes are separate work. Adding a real task later still needs task-specific validation, inputs and outputs, capability routing, appropriate hardware and dependencies, and qualification of results and cancellation; a workflow and weights alone do not enable a feature.
+First qualify the renderer in `renderlab-image-generation` with unchanged FIBO workflows, weights, A10, and behavior. Then qualify container-level ComfyUI reuse as part of the same architecture delivery: start it once per GPU container, keep it private, run one job at a time, isolate and delete per-job files, and reuse model weights when memory allows. Retain one GPU slot, zero always-on GPUs, and a short measured idle window before scaling to zero. Do not add a separate CPU ComfyUI server.
 
-## Follow-up: move the existing image renderer
+Cancel must interrupt the specific active render, not merely hide its output. Verify the render is no longer executing and its files and queued work cannot contaminate the next job. Apply the same safety gate after timeouts or crashes. Recycle a worker if it cannot be confirmed clean. Preserve Library saving and existing authorization throughout.
 
-After the shells are ready, a separate PR should move the existing FIBO renderer out of the gateway deployment into the workload-oriented `renderlab-image-generation` app. Keep the gateway as the private front door and leave FIBO as the only supported model. Reuse the existing renderer, workflows and weights without changing render behavior.
+## Acceptance and release gates
 
-Before a separately approved cutover, verify text-to-image, reference and masked edits, job status, Cancel, and Library saving on the new path. Keep in-flight jobs bound to their original backend until they finish and save results. Keep the old path available as a verified rollback until the new one passes.
+- **Repository:** Verify catalog selection/defaults/rejections, backend binding across catalog changes, shared runner behavior with both test adapters, and app isolation. Check deployment commands fail closed for unexpected workspace/environment and verify actual app identities after deployment. Use environment-local volumes and least-privilege credentials in line with the [Modal ownership contract](MODAL_PROJECT_ISOLATION_CONTRACT.md). Use non-secret correlation IDs in logs.
+- **Hosted, only with separate approval:** Verify dashboard apps and dormant readiness without starting GPU work in the empty apps. Qualify the moved renderer and the reusable worker against text-to-image, reference editing, masked editing, job status, active render interruption, next-job recovery, and Library saving. Measure cold startup, a warm follow-up, and idle GPU time; verify scale-to-zero and record latency/cost evidence before approving the idle window. Do not run performance experiments in production by default.
+- **Cutover and handoff:** Verify a working rollback, reconcile old in-flight jobs, make the separately approved routing switch, and verify production without assuming a merge deployed it. Record exact source, deployed app/function versions, route, qualification evidence, and recovery procedure in the existing infrastructure authority. Do not mark the architecture complete while any requirement remains unverified.
 
-Reusing ComfyUI and loaded weights between jobs is a later optimization, not part of the move. Qualify cancellation and clean reuse of the worker before enabling it.
+## Out of scope
 
-## Validation and exit criteria
-
-- **Repository:** Check that the four shells import and register distinct names, have CPU-only internal readiness, and declare no GPU, model volume, secret, public endpoint, activation route, or schedule. Test that deployment commands reject unexpected workspace/environment and that inactive shells cannot be selected for a job. Preserve the FIBO routing and packaging checks; no visual review is needed because no UI changes.
-- **Hosting, only with separate approval:** Verify each approved shell appears in the target Modal environment under the intended name, reports unconfigured through its internal readiness function, allocates no GPU, and leaves the current production app and aliases unchanged. Check existing image capability read-only; no production GPU smoke is part of the shell deploy.
-- **Handoff:** Record the verified source/tree, validation and any non-production or production resource changes in the existing infrastructure authority. Mark repo scaffolding and hosted shells separately; do not mark deployment complete based on code. Any later FIBO move requires separate release approval, preserved job status/cancel behavior, and a verified recovery path.
+No additional production models, weights, features, workflows, provider integrations, or UI changes. Existing FIBO behavior remains supported. No unrelated audit remediation or database/storage redesign; document any minimal job-binding compatibility changes required by implementation. None of the architecture requirements above are deferred.
