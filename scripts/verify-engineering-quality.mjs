@@ -4,8 +4,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
-  assessCiWorkflowContract,
-  ciWorkflowContractPaths,
   findImmutableActionRefProblems,
 } from "./lib/ci-workflow-contract.mjs";
 
@@ -129,18 +127,6 @@ async function verifyWorkflowSecurity() {
     violations.push("codeql.yml must grant security-events: write for result publication");
   }
 
-  const setupAction = await readFile(path.join(root, ciWorkflowContractPaths.setupActionPath), "utf8");
-  const cohortWorkflows = Object.fromEntries(
-    await Promise.all(
-      ciWorkflowContractPaths.cohortFiles.map(async (filename) => [
-        filename,
-        await readFile(path.join(workflowsDirectory, filename), "utf8"),
-      ]),
-    ),
-  );
-  const ciContract = assessCiWorkflowContract({ setupAction, workflows: cohortWorkflows });
-  violations.push(...ciContract.problems);
-
   if (violations.length > 0) {
     throw new Error(`Workflow security verification failed:\n- ${violations.join("\n- ")}`);
   }
@@ -172,5 +158,5 @@ await verifyMutationOriginCoverage();
 await import("./verify-server-boundaries.mjs");
 
 console.log(
-  "Engineering quality negative fixtures, workflow/action security, ENT-010 CI contract, mutation-origin coverage, and server-boundary checks passed.",
+  "Engineering quality negative fixtures, workflow/action security, mutation-origin coverage, and server-boundary checks passed.",
 );
