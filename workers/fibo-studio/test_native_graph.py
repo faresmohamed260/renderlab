@@ -12,6 +12,19 @@ class NativeGraphTests(unittest.TestCase):
         self.assertEqual(graph["output"]["inputs"]["images"], ["decode", 0])
         self.assertEqual(len(graph), 7)
 
+    def test_negative_prompt_cfg_matches_proven_wanda_studio_behavior(self):
+        # WANDA comfy_backend.py (verified 2026-11-19) uses CFG 2 with a
+        # negative prompt and 1 without; shipping the negative text with CFG 1
+        # unconditionally was not parity with that Studio runtime.
+        empty = build_graph(prompt="A red vase", seed=42, negative_prompt="")
+        self.assertEqual(empty["sample"]["inputs"]["cfg"], 1.0)
+        spaces = build_graph(prompt="A red vase", seed=42, negative_prompt="   ")
+        self.assertEqual(spaces["sample"]["inputs"]["cfg"], 1.0)
+        negative = build_graph(prompt="A red vase", seed=42, negative_prompt="No blue background")
+        self.assertEqual(negative["sample"]["inputs"]["cfg"], 2.0)
+        self.assertEqual(negative["encode"]["inputs"]["negative_prompt"], "No blue background")
+        self.assertEqual(empty["sample"]["inputs"]["sampler_name"], negative["sample"]["inputs"]["sampler_name"])
+
     def test_edit_graph_preserves_reference_slots_and_vgl(self):
         vgl = '{"edit_instruction":"Change the coat"}'
         graph = build_graph(prompt="", seed=0, images=["a" * 32 + ".png", "b" * 32 + ".png"], vgl=vgl)
