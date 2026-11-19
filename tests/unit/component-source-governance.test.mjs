@@ -23,7 +23,7 @@ function clone(value) {
 test("checked-in component source registry matches catalog, package manifest, and lockfile", async () => {
   const result = await verifyComponentSourceRegistry({ rootDir });
   assert.equal(result.sources, 10);
-  assert.equal(result.activeSources, 5);
+  assert.equal(result.activeSources, 0);
 });
 
 test("component source registry rejects missing catalog coverage and unknown catalog headings", async () => {
@@ -61,6 +61,9 @@ test("component source registry rejects dependency version and license drift", a
   const packageLock = await json("package-lock.json");
   const catalogBody = await readFile(path.join(rootDir, COMPONENT_CATALOG_PATH), "utf8");
   const motion = registry.sources.find((source) => source.id === "motion");
+  Object.assign(motion, { adoptionMode: "package-dependency", packageName: "motion", licenseStatus: "lockfile-verified" });
+  packageJson.dependencies.motion = "13.1.1";
+  packageLock.packages["node_modules/motion"] = { version: "13.1.1", license: "MIT" };
   motion.expectedVersion = "0.0.0";
   motion.licenseSpdx = "Apache-2.0";
 

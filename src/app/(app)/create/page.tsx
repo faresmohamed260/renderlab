@@ -1,19 +1,19 @@
 import { createHash } from "node:crypto";
 import { Suspense } from "react";
-import { FiboPreviewWorkspace } from "@/features/create/fibo-preview-workspace";
+import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspace";
 import {
-  getFiboPreviewOwner,
+  getCreatePreviewOwner,
   getHostedCreateMedia,
   getHostedCreatePreferences,
   getHostedCreateState,
 } from "@/server/hosted-create";
-import { isFiboPreview } from "@/server/fibo-preview-mode";
+import { isCreatePreview } from "@/server/create-preview-mode";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
 import type { ContinuationAction } from "@/lib/capabilities/generation";
 import {
   continuationActionForMedia,
+  fiboGenerationModel,
   defaultGenerationModelForOutput,
-  fiboPreferenceAspectRatio,
 } from "@/lib/capabilities/generation";
 import { CreateWorkspace } from "@/features/create/create-workspace";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
@@ -23,10 +23,12 @@ import {
 } from "@/server/account/account-preferences";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { loadInitialGenerationRecipe } from "@/server/generation/generation-recipe";
-import { isGenerationBackendConfigured } from "@/server/generation/submit-generation";
+import { isFiboGenerationAvailable, isGenerationBackendConfigured } from "@/server/generation/submit-generation";
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
 import { isMediaUploadConfigured } from "@/server/media/media-uploads";
 import { isR2Configured } from "@/server/storage/r2";
+
+export const dynamic = "force-dynamic";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -39,17 +41,26 @@ function isContinuationActionId(value: string): value is ContinuationAction["id"
 }
 
 function preferenceSeedRecipe(preferences: RenderLabCreatePreferences): InitialGenerationRecipe {
-  // Retired Video defaults remain readable in account history but must not
-  // resurrect a non-FIBO Create mode or create an unsubmit-able Image ratio.
-  const ratio = fiboPreferenceAspectRatio(preferences.imageAspectRatio);
+  const kind = preferences.outputKind;
   return {
     jobId: "account-preferences",
     references: [],
     request: {
-      model: defaultGenerationModelForOutput("image"),
+      model: defaultGenerationModelForOutput(kind),
       prompt: "",
       inputs: [],
-      output: { kind: "image", aspectRatio: ratio },
+      output: kind === "image"
+        ? {
+            kind,
+            aspectRatio: preferences.imageAspectRatio,
+          }
+        : {
+            kind,
+            aspectRatio: "16:9",
+            resolution: preferences.videoResolution,
+            durationSeconds: preferences.videoDurationSeconds,
+            audioEnabled: preferences.videoAudioEnabled,
+          },
     },
   };
 }
@@ -59,7 +70,8 @@ export default async function CreatePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (await isFiboPreview()) return <Suspense fallback={<p className="fibo-preview-create-loading" role="status">Loading Create…</p>}><FiboPreviewCreate /></Suspense>;
+  if (process.env.NODE_ENV === "production") return <ProductionCreatePage />;
+  if (await isCreatePreview()) return <Suspense fallback={<p className="create-preview-create-loading" role="status">Loading Create…</p>}><CreatePreviewCreate /></Suspense>;
 
   const params = await searchParams;
   const hosted = await getHostedCreateState();
@@ -141,12 +153,29 @@ export default async function CreatePage({
   );
 }
 
-async function FiboPreviewCreate() {
+async function CreatePreviewCreate() {
   const hostedOnly = process.env.RENDERLAB_HOSTED_CREATE === "1";
-  const owner = await getFiboPreviewOwner().catch(() => null);
+  const owner = await getCreatePreviewOwner().catch(() => null);
   const hosted = hostedOnly && owner ? await getHostedCreateState().catch(() => null) : null;
-  const hostedFibo = !!(hosted?.fiboAvailable && hosted.mediaUploadAvailable && hosted.accountAvailable && owner);
-  const accountKey = owner && hostedFibo ? createHash("sha256").update("fibo-hosted-stage:" + owner).digest("hex") : undefined;
+  const hostedReady = !!(hosted?.fiboAvailable && hosted.mediaUploadAvailable && hosted.accountAvailable && owner);
+  const accountKey = owner && hostedReady ? createHash("sha256").update("fibo-hosted-stage:" + owner).digest("hex") : undefined;
   const savedEditsAccount = owner && !hostedOnly ? createHash("sha256").update("fibo-preview-edits:" + owner).digest("hex") : undefined;
-  return <FiboPreviewWorkspace key={accountKey ?? savedEditsAccount ?? "guest"} hostedFibo={hostedFibo} hostedAccountKey={accountKey} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={!hostedOnly && process.env.RENDERLAB_FIBO_PREVIEW_MASKS === "1"} advancedPrompt={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_ADVANCED_PROMPT === "1"} variableSteps={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_VARIABLE_STEPS === "1"} extendedSetup={hostedFibo || process.env.RENDERLAB_FIBO_PREVIEW_EXTENDED === "1"} />;
+  return <CreatePreviewWorkspace key={accountKey ?? savedEditsAccount ?? "guest"} hostedModel={hostedReady ? { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" } : undefined} hostedAccountKey={accountKey} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={!hostedOnly && process.env.RENDERLAB_CREATE_PREVIEW_MASKS === "1"} advancedPrompt={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT === "1"} variableSteps={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS === "1"} extendedSetup={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_EXTENDED === "1"} />;
+}
+
+const model = { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" };
+
+function ProductionCreatePage() {
+  return <Suspense fallback={<p className="create-preview-create-loading" role="status">Loading Create…</p>}>
+    <Create />
+  </Suspense>;
+}
+
+async function Create() {
+  const account = await getCurrentRenderLabAccount();
+  const accountKey = account ? createHash("sha256").update("create-stage:" + account.id).digest("hex") : undefined;
+  const ready = !!account && isFiboGenerationAvailable() && isMediaUploadConfigured();
+  return <CreatePreviewWorkspace key={accountKey ?? "guest"} admitted={!!account} hostedOnly
+    hostedModel={ready ? model : undefined} hostedAccountKey={accountKey}
+    advancedPrompt={ready} variableSteps={ready} extendedSetup={ready} />;
 }

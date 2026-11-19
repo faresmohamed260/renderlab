@@ -130,7 +130,7 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
   const name = accountId ? displayName || "RenderLab account" : "Guest";
   // Start the private thumbnail request from the server-rendered header, not after
   // hydration and a second profile lookup. The thumbnail route authorizes every read.
-  const avatarSrc = accountId && hostedProfile && !avatarUnavailable ? profileEndpoint + "/avatar" : null;
+  const avatarSrc = accountId && !avatarUnavailable ? (hostedProfile ? profileEndpoint : "/api/account/profile") + "/avatar" : null;
   const id = useId();
   const card = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
