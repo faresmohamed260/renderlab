@@ -458,6 +458,8 @@ The former configured Library lifecycle was hardened at both orchestration and i
 
 `faresmohamed260` is the only retained Modal workspace for RenderLab. The only deployed RenderLab generation service is `renderlab-fibo-native-gateway` (`ap-vNAFxva6ugq40CkXOkR9Lk`). The legacy FLUX, Qwen, LTX/video, and image-upscale applications were stopped; their registrations have been removed from the new-submission fleet. The server accepts only FIBO image requests. Historical worker/job records remain readable and do not reactivate a provider route.
 
+The app and deployment verifier prefer the model-neutral `RENDERLAB_GENERATION_GATEWAY_URL` setting and accept the existing `RENDERLAB_FIBO_GATEWAY_URL` as a compatibility fallback. This names the configuration, not the Modal deployment: the live app name, endpoint, signing secret, and worker ID are unchanged. Do not deploy under a new Modal name to perform an in-place rename; Modal identifies a deployment by name. FIBO model storage and workflow names remain model-specific.
+
 The obsolete repository-wide `SAGA_MODAL_TOKENS_JSON`, protected-environment Modal deployment tokens, and Production upscale gateway setting were removed on 2026-11-18. The retained FIBO proxy credentials are server-only Vercel Production secrets; they are not GitHub Actions, browser, or client credentials.
 
 ### Native FIBO mask worker candidate (not deployed; 2026-11-18)

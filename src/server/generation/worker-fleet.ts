@@ -23,7 +23,8 @@ const modalGatewayOriginPattern = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
 export const generationWorkers: GenerationWorker[] = [];
 
 function configuredFiboWorker(): GenerationWorker | null {
-  const url = process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim().replace(/\/$/, "");
+  const url = (process.env.RENDERLAB_GENERATION_GATEWAY_URL?.trim() ||
+    process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim())?.replace(/\/$/, "");
   const key = process.env.RENDERLAB_FIBO_MODAL_KEY?.trim();
   const secret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
   if (!url || !key || !secret || !modalGatewayOriginPattern.test(url)) return null;
