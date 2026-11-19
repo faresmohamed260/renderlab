@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
   "applicationSha": "b956e24337b329d9e89d06d8f60f24e8acac0328",
-  "deploymentId": "dpl_CGVGzxDnytgReTHYiAZ5nJPXXyhG",
-  "deploymentUrl": "https://renderlab-m7dia8kws-faresmohamed260-6733s-projects.vercel.app",
+  "deploymentId": "dpl_F7sm9bab5FPL5dJBLEpc1Uk7pAiw",
+  "deploymentUrl": "https://renderlab-1vq76u6fx-faresmohamed260-6733s-projects.vercel.app",
   "domain": "renderlab.faresuniform.uk",
-  "rollbackDeploymentId": "dpl_HPbUn6U2j3DjUFg4c4UWHvZzwa9w",
-  "rollbackApplicationSha": "0d9fd8cf5bb2103352ea84fd6fcb63585ca22ce9",
+  "rollbackDeploymentId": "dpl_CGVGzxDnytgReTHYiAZ5nJPXXyhG",
+  "rollbackApplicationSha": "b956e24337b329d9e89d06d8f60f24e8acac0328",
   "releaseQualification": {
     "type": "protected-main-checks",
     "deploymentReadinessRunId": 44460963340,
@@ -19,5 +19,5 @@
     },
     "qualifiedAt": "2026-11-19T04:51:27.000Z"
   },
-  "cutoverAt": "2026-11-19T04:52:16.536Z"
+  "cutoverAt": "2026-11-19T14:58:15.912Z"
 }

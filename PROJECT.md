@@ -61,11 +61,11 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 ## Current production - 2026-11-19
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: b956e24337b329d9e89d06d8f60f24e8acac0328 -->
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source b956e24337b329d9e89d06d8f60f24e8acac0328 from deployment dpl_CGVGzxDnytgReTHYiAZ5nJPXXyhG (https://renderlab-m7dia8kws-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T04:52:16.536Z. This release adds hosted manual VGL submission and capability-gated mask wiring. The live API does not advertise masks.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source b956e24337b329d9e89d06d8f60f24e8acac0328 from deployment dpl_F7sm9bab5FPL5dJBLEpc1Uk7pAiw (https://renderlab-1vq76u6fx-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T14:58:15.912Z. This configuration-only redeploy enables masked editing on the same qualified source. The live API advertises masks.
 
 Exact-source CI completed at 2026-11-19T04:51:27.000Z: Deployment Readiness 44460963340; protected check runs 135347347470, 135347346941, 135347347569, 135347347981, 135347349157, 135347348884. The prior release verified Use as source in signed-in Brave without a render.
 
-Previous alias target: dpl_HPbUn6U2j3DjUFg4c4UWHvZzwa9w at source 0d9fd8cf5bb2103352ea84fd6fcb63585ca22ce9. The prior hosted-source cutover record is retained in docs/production/2026-11-19-hosted-source.json. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
+Previous alias target: dpl_CGVGzxDnytgReTHYiAZ5nJPXXyhG at source b956e24337b329d9e89d06d8f60f24e8acac0328. The same-source mask-disabled release is retained in docs/production/2026-11-19-before-masks.json. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Current product and engineering state
 
