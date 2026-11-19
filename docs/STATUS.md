@@ -8,11 +8,11 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity 
 
 ## Production
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 86ac1da4b3b91bb259900692a976217c0ff62982 from deployment dpl_1276bdeNZvGzrX8Ahm5dr9zuLLgf (https://renderlab-igrgd8lzh-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T02:56:17.550Z. This release ships Next.js 16.4.5 and the development-only minimatch advisory fix.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source b956e24337b329d9e89d06d8f60f24e8acac0328 from deployment dpl_CGVGzxDnytgReTHYiAZ5nJPXXyhG (https://renderlab-m7dia8kws-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T04:52:16.536Z. This release adds hosted manual VGL submission and capability-gated mask wiring. The live API does not advertise masks.
 
-Exact-source CI completed at 2026-11-19T02:50:17.000Z: Deployment Readiness 44446978242; protected check runs 135301382789, 135301383072, 135301383373, 135301383403, 135301383116, 135301382776. Public smoke returned HTTP 200 for /api/health, /create, /library, and /settings. Signed-in generation was not exercised.
+Exact-source CI completed at 2026-11-19T04:51:27.000Z: Deployment Readiness 44460963340; protected check runs 135347347470, 135347346941, 135347347569, 135347347981, 135347349157, 135347348884. The prior release verified Use as source in signed-in Brave without a render.
 
-Previous alias target: dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP at source 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13. Restoring it would also restore the older vulnerable Next.js version. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
+Previous alias target: dpl_HPbUn6U2j3DjUFg4c4UWHvZzwa9w at source 0d9fd8cf5bb2103352ea84fd6fcb63585ca22ce9. The prior hosted-source cutover record is retained in docs/production/2026-11-19-hosted-source.json. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Product capabilities
 
