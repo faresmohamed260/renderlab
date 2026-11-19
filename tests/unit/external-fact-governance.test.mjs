@@ -11,7 +11,7 @@ import {
 } from "../../scripts/lib/external-fact-governance.mjs";
 
 const rootDir = process.cwd();
-const now = new Date("2026-10-15T12:00:00Z");
+const now = new Date("2026-11-20T12:00:00Z");
 
 async function json(repoPath) {
   return JSON.parse((await readFile(path.join(rootDir, repoPath), "utf8")).replace(/^\uFEFF/, ""));

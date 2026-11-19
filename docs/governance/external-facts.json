@@ -44,7 +44,7 @@
       "id": "modal-direct-cutover-baseline",
       "authority_path": "docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md",
       "subject": "Direct production Modal cutover baseline and recovery anchors",
-      "claim": "The faresmohamed260 Modal main environment has one deployed renderlab-generation-gateway app with zero tasks, the existing gateway secret and model volume, no split image-worker app, and the shared Supabase project has zero active generation jobs with migration 0030 unapplied; the recorded Vercel production deployment and exact recovery source remain the rollback pair.",
+      "claim": "The faresmohamed260 Modal main environment has one deployed renderlab-generation-gateway app with zero tasks, the existing gateway secret and model volume, no split image-worker app, and the shared Supabase project has zero in-flight generation jobs with migration 0030 unapplied; the recorded Vercel production deployment and exact recovery source remain the rollback pair.",
       "source": "Read-only Modal CLI app/history/secret/volume inspection, read-only Supabase SQL inspection, and docs/production/current.json on 2026-11-20 Africa/Cairo.",
       "verified_at": "2026-11-19T22:18:12.101Z",
       "reverify_before_action": true,
