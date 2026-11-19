@@ -18,13 +18,13 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Preserve approved surfaces in Integration Mode unless the user explicitly reopens a named surface for redesign.
 
 ## Current production - 2026-11-19
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 86ac1da4b3b91bb259900692a976217c0ff62982 -->
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 0d9fd8cf5bb2103352ea84fd6fcb63585ca22ce9 -->
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 86ac1da4b3b91bb259900692a976217c0ff62982 from deployment dpl_1276bdeNZvGzrX8Ahm5dr9zuLLgf (https://renderlab-igrgd8lzh-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T02:56:17.550Z. This release ships Next.js 16.4.5 and the development-only minimatch advisory fix.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 0d9fd8cf5bb2103352ea84fd6fcb63585ca22ce9 from deployment dpl_HPbUn6U2j3DjUFg4c4UWHvZzwa9w (https://renderlab-an63q37fh-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T04:46:28.577Z. This release fixes reuse of hosted Create results as editing sources.
 
-Exact-source CI completed at 2026-11-19T02:50:17.000Z: Deployment Readiness 44446978242; protected check runs 135301382789, 135301383072, 135301383373, 135301383403, 135301383116, 135301382776. Public smoke returned HTTP 200 for /api/health, /create, /library, and /settings. Signed-in generation was not exercised.
+Exact-source CI completed at 2026-11-19T04:45:59.000Z: Deployment Readiness 44460346190; protected check runs 135345188460, 135345183609, 135345182930, 135345183425, 135345182790, 135345183063. The signed-in Use as source action populated the Source slot in Brave without submitting a render.
 
-Previous alias target: dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP at source 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13. Restoring it would also restore the older vulnerable Next.js version. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
+Previous alias target: dpl_1276bdeNZvGzrX8Ahm5dr9zuLLgf at source 86ac1da4b3b91bb259900692a976217c0ff62982. The prior security cutover record is retained in docs/production/2026-11-19-security.json. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Current UI foundation
 
