@@ -59,13 +59,13 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current production - 2026-11-19
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 -->
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 86ac1da4b3b91bb259900692a976217c0ff62982 -->
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves application 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 from dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP (https://renderlab-kifsx4bv0-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T02:13:34.966Z.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 86ac1da4b3b91bb259900692a976217c0ff62982 from deployment dpl_1276bdeNZvGzrX8Ahm5dr9zuLLgf (https://renderlab-igrgd8lzh-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T02:56:17.550Z. This release ships Next.js 16.4.5 and the development-only minimatch advisory fix.
 
-Exact-source CI completed at 2026-11-19T02:12:40.000Z: Deployment Readiness 44442391493; protected check runs 135286156860, 135286156260, 135286156283, 135286156346, 135286157177, 135286156805. This evidence verifies the build and required checks, not signed-in generation.
+Exact-source CI completed at 2026-11-19T02:50:17.000Z: Deployment Readiness 44446978242; protected check runs 135301382789, 135301383072, 135301383373, 135301383403, 135301383116, 135301382776. Public smoke returned HTTP 200 for /api/health, /create, /library, and /settings. Signed-in generation was not exercised.
 
-Previous alias target: dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV (READY, source SHA unverified). Do not treat it as a source-verified rollback. The October matrix-qualified record is retained in docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
+Previous alias target: dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP at source 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13. Restoring it would also restore the older vulnerable Next.js version. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Current product and engineering state
 
