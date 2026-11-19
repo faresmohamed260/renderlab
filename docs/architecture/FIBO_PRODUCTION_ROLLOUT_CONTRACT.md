@@ -115,3 +115,7 @@ The signed-in `Use as source` action loads the owner-scoped image through the me
 ### Hosted mask and manual VGL submission
 
 The hosted Create composer submits manual VGL via the existing bounded generation JSON contract. Drawn masks use the separate owner-scoped temporary PNG upload path and are sent by verified source ID, never as inline bytes. Mask controls remain gated by the backend capability flag; this change does not enable that flag in any environment. Generated VGL and live qualification are separate work. Production verification must cover localized edit behavior and persisted manual VGL, not merely successful HTTP admission.
+
+### Direct production mask smoke
+
+The owner selected a bounded signed-in production test instead of a staging copy. Keep the general mask flag off. The optional server-only `RENDERLAB_FIBO_MASK_TEST_SCOPE` is one authenticated owner UUID followed by a comma and a UTC expiry (ISO seconds, ending in Z). Access is denied unless the expiry is within the next hour; unset, invalid, or expired scopes fail closed. Create and generation admission use the same check, including retries through normal admission. The unauthenticated capability endpoint continues to report only public availability. Remove the test scope after the single synthetic-image smoke; a passing test is not general rollout approval.

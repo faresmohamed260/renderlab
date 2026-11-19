@@ -1,3 +1,4 @@
+import { allowsFiboMaskTest } from "@/lib/capabilities/fibo-mask-test-access";
 import "server-only";
 
 import { fiboGenerationModel, resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
@@ -26,12 +27,10 @@ export function isFiboGenerationAvailable() {
   return workersForEcosystem(fiboGenerationModel).length > 0 && isNativeGenerationConfigured();
 }
 
-/** The approved worker has not been redeployed with mask support. Do not
- * accept masked jobs until the owner separately authorizes qualification and
- * a backend operator explicitly enables this server-only gate.
- */
-export function isFiboMaskGenerationAvailable() {
-  return process.env.RENDERLAB_FIBO_MASK_ENABLED === "true" && isFiboGenerationAvailable();
+/** Keep the public flag independent of the account-scoped smoke gate. */
+export function isFiboMaskGenerationAvailable(ownerId?: string | null) {
+  return isFiboGenerationAvailable() && (process.env.RENDERLAB_FIBO_MASK_ENABLED === "true"
+    || allowsFiboMaskTest(ownerId, process.env.RENDERLAB_FIBO_MASK_TEST_SCOPE, Date.now()));
 }
 
 /** Do not route source-free generated-VGL requests to the older deployed
@@ -154,7 +153,7 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
   if (request.autoVgl && !isFiboAutoVglAvailable()) {
     return reject({ ok: false, error: { code: "generation_disabled", message: "Generated FIBO VGL has not been qualified for this environment." } });
   }
-  if (request.mask && !isFiboMaskGenerationAvailable()) {
+  if (request.mask && !isFiboMaskGenerationAvailable(ownerId)) {
     return reject({ ok: false, error: { code: "generation_disabled", message: "FIBO masked editing has not been qualified for this environment." } });
   }
   if (isFibo && !isFiboGenerationAvailable()) {

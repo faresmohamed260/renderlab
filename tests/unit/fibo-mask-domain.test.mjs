@@ -115,7 +115,7 @@ test("masked generation requires separately enabled server-only FIBO qualificati
   const server = fs.readFileSync("src/server/generation/submit-generation.ts", "utf8");
   const api = fs.readFileSync("src/app/api/generation/jobs/route.ts", "utf8");
   assert.match(server, /process\.env\.RENDERLAB_FIBO_MASK_ENABLED === "true"/);
-  assert.match(server, /request\.mask && !isFiboMaskGenerationAvailable\(\)/);
+  assert.match(server, /request\.mask && !isFiboMaskGenerationAvailable\(ownerId\)/);
   assert.match(server, /code: "generation_disabled"/);
   assert.match(api, /isFiboMaskGenerationAvailable\(\) \? \{ fiboMaskAvailable: true \}/);
 });

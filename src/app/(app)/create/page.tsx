@@ -160,7 +160,7 @@ async function CreatePreviewCreate() {
   const hostedReady = !!(hosted?.fiboAvailable && hosted.mediaUploadAvailable && hosted.accountAvailable && owner);
   const accountKey = owner && hostedReady ? createHash("sha256").update("fibo-hosted-stage:" + owner).digest("hex") : undefined;
   const savedEditsAccount = owner && !hostedOnly ? createHash("sha256").update("fibo-preview-edits:" + owner).digest("hex") : undefined;
-  return <CreatePreviewWorkspace key={accountKey ?? savedEditsAccount ?? "guest"} hostedModel={hostedReady ? { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" } : undefined} hostedAccountKey={accountKey} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={hostedOnly ? hostedReady && isFiboMaskGenerationAvailable() : process.env.RENDERLAB_CREATE_PREVIEW_MASKS === "1"} advancedPrompt={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT === "1"} variableSteps={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS === "1"} extendedSetup={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_EXTENDED === "1"} />;
+  return <CreatePreviewWorkspace key={accountKey ?? savedEditsAccount ?? "guest"} hostedModel={hostedReady ? { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" } : undefined} hostedAccountKey={accountKey} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={hostedOnly ? hostedReady && isFiboMaskGenerationAvailable(owner) : process.env.RENDERLAB_CREATE_PREVIEW_MASKS === "1"} advancedPrompt={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT === "1"} variableSteps={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS === "1"} extendedSetup={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_EXTENDED === "1"} />;
 }
 
 const model = { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" };
@@ -177,6 +177,6 @@ async function Create() {
   const ready = !!account && isFiboGenerationAvailable() && isMediaUploadConfigured();
   return <CreatePreviewWorkspace key={accountKey ?? "guest"} admitted={!!account} hostedOnly
     hostedModel={ready ? model : undefined} hostedAccountKey={accountKey}
-    masksEnabled={ready && isFiboMaskGenerationAvailable()}
+    masksEnabled={ready && isFiboMaskGenerationAvailable(account?.id)}
     advancedPrompt={ready} variableSteps={ready} extendedSetup={ready} />;
 }
