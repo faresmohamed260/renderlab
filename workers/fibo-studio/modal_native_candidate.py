@@ -3,19 +3,36 @@ import os
 
 import modal
 
-from modal_native_renderer import app as render_app, render
+from workload_environment import APP_NAMES
 
-app = modal.App("renderlab-fibo-native-candidate").include(render_app)
+app = modal.App("renderlab-generation-gateway-candidate")
 gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi==0.137.2")
 gateway_image = gateway_image.add_local_python_source(
-    "modal_native_renderer", "native_gateway", "native_graph", "native_generated_vgl"
+    "native_gateway", "native_graph", "native_generated_vgl", "workload_environment"
 )
 
 
-@app.function(image=gateway_image, secrets=[modal.Secret.from_name("renderlab-fibo-native-gateway")])
+def deployment_resource(name):
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"{name} must be explicit")
+    return value
+
+
+def image_render():
+    environment = deployment_resource("RENDERLAB_MODAL_ENVIRONMENT")
+    return modal.Function.from_name(APP_NAMES["image"], "render", environment_name=environment)
+
+
+@app.function(image=gateway_image, secrets=[modal.Secret.from_name(
+    deployment_resource("RENDERLAB_MODAL_GATEWAY_SECRET"),
+    environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
+)])
 @modal.asgi_app(requires_proxy_auth=True)
 def web():
     from native_gateway import create_gateway
+
+    render = image_render()
 
     return create_gateway(
         spawn=lambda **payload: render.spawn(**payload).object_id,

@@ -30,9 +30,11 @@ case "$*" in
     else echo '[{"name":"renderlab-fibo-native-gateway"}]'; fi ;;
   '-m modal deploy -e main workers/fibo-studio/modal_native_candidate.py')
     touch "$RUNNER_TEMP/dispatched" ;;
+  '-m modal deploy -e main workers/fibo-studio/modal_native_renderer.py')
+    touch "$RUNNER_TEMP/worker-dispatched" ;;
   '-m modal app list -e main --json')
     if [[ "$SCENARIO" = absent-app ]]; then echo '[]'
-    else echo '[{"description":"renderlab-fibo-native-candidate","state":"deployed","app_id":"ap-fixture"}]'; fi ;;
+    else echo '[{"description":"renderlab-image-generation","state":"deployed","app_id":"ap-worker"},{"description":"renderlab-generation-gateway-candidate","state":"deployed","app_id":"ap-gateway"}]'; fi ;;
   *) exit 99 ;;
 esac
 """, encoding="utf-8")
@@ -58,7 +60,8 @@ esac
         result, dispatched = self.run_case("success")
         self.assertTrue(dispatched)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("ap-fixture", result.stdout)
+        self.assertIn("ap-worker", result.stdout)
+        self.assertIn("ap-gateway", result.stdout)
 
 
 if __name__ == "__main__":
