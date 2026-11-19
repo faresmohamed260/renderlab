@@ -231,7 +231,8 @@ class FiboStudio:
             if type(generated) is not str:
                 raise RuntimeError("Studio render did not return VGL")
             from native_generated_vgl import validate_generated_vgl
-            return {"image_png": png, "generated_vgl": validate_generated_vgl(generated)}
+            return {"image_png": png, "generated_vgl": validate_generated_vgl(
+                generated, "edit" if sources else "scene")}
         return png
 
     def _edit_image(self, images: list[bytes], instruction: str, seed: int = 1, steps: int = 4,

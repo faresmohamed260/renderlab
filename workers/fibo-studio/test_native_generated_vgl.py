@@ -43,6 +43,13 @@ class NativeGeneratedVglTests(unittest.TestCase):
             with self.subTest(value=str(value)[:80]), self.assertRaises(ValueError):
                 validate_generated_vgl(value)
 
+    def test_generated_edit_vgl_has_a_distinct_bounded_instruction(self):
+        edit = '{"edit_instruction":"Make the selected jacket blue"}'
+        self.assertEqual(validate_generated_vgl(edit, "edit"), edit)
+        self.assertEqual(validate_generated_vgl(edit, None), edit)
+        with self.assertRaises(ValueError):
+            validate_generated_vgl('{"short_description":"A jacket"}', "edit")
+
     def test_generated_vgl_cannot_eat_edit_references_manual_vgl_or_mask(self):
         source = "a" * 32 + ".png"
         for overrides in (

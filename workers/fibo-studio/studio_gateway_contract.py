@@ -40,7 +40,7 @@ def validate_studio_options(*, prompt, seed, width=0, height=0, steps=4,
         raise ValueError("Invalid FIBO input mode")
     if has_mask and source_count != 1:
         raise ValueError("A mask requires exactly one edit source")
-    if has_inspiration and (source_count or has_mask or vgl):
+    if has_inspiration and (not generate_vgl or source_count or has_mask or vgl):
         raise ValueError("Inspiration is only supported for generated text-to-image")
     if any(type(side) is not int for side in (width, height)):
         raise ValueError("FIBO dimensions must be integers")

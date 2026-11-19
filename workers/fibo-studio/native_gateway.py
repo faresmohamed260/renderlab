@@ -26,7 +26,10 @@ def validated_worker_result(result):
     if type(result) is dict:
         if set(result) != {"image_png", "generated_vgl"}:
             raise ValueError("Unexpected generated VGL result fields")
-        generated_vgl = validate_generated_vgl(result["generated_vgl"])
+        # The signed token intentionally carries no user-readable mode. Accept
+        # either bounded Studio dialect here; RenderLab validates the expected
+        # scene/edit dialect against its durable owner-scoped job before finalizing.
+        generated_vgl = validate_generated_vgl(result["generated_vgl"], None)
         result = result["image_png"]
     if type(result) is not bytes or not result.startswith(PNG_HEADER) or len(result) > 16 * 1024 * 1024:
         raise ValueError("Invalid FIBO image result")
@@ -75,10 +78,6 @@ def validate_payload(payload):
         generate_vgl=options.get("generate_vgl", False), source_count=len(sources),
         has_mask=mask is not None, has_inspiration=inspiration is not None,
     )
-    # Preserve the current public API boundary: its `generate_vgl` field is
-    # source-free until the image-aware product request shape is introduced.
-    if options.get("generate_vgl") and (sources or mask is not None or inspiration is not None):
-        raise ValueError("Generated VGL currently requires source-free text-to-image")
     return {**options, "sources": sources, **({"mask": mask} if mask is not None else {}),
             **({"inspiration": inspiration} if inspiration is not None else {})}
 

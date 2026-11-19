@@ -75,7 +75,6 @@ class GatewayTests(unittest.TestCase):
         for invalid in (
             {"image_png": png, "generated_vgl": "not json"},
             {"image_png": png, "generated_vgl": '{"short_description":""}'},
-            {"image_png": png, "generated_vgl": '{"short_description":"ok","edit_instruction":"bad"}'},
             {"image_png": b"not-png", "generated_vgl": '{"short_description":"ok"}'},
             {"image_png": png, "generated_vgl": '{"short_description":"ok"}', "unexpected": "field"},
         ):
@@ -83,6 +82,10 @@ class GatewayTests(unittest.TestCase):
                 self.result = invalid
                 self.assertEqual(self.client.get(path).status_code, 502)
                 self.assertEqual(self.client.get(path + "/vgl").status_code, 502)
+
+        edit = '{"short_description":"Blue jacket","edit_instruction":"Make the jacket blue"}'
+        self.result = {"image_png": png, "generated_vgl": edit}
+        self.assertEqual(self.client.get(path + "/vgl").json(), {"vgl": edit})
 
     def test_manual_vgl_is_worker_input_for_source_free_and_reference_edits(self):
         # FIBO Studio already uses Edit Turbo to generate with no references.
@@ -137,7 +140,6 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(self.spawns[-1]["generate_vgl"], True)
         self.assertEqual(self.spawns[-1]["sources"], [])
         for invalid in (
-            {"images": [base64.b64encode(b"source").decode()]},
             {"generate_vgl": 1},
             {"generate_vgl": "true"},
             {"vgl": '{"short_description":"manual"}'},
@@ -148,6 +150,33 @@ class GatewayTests(unittest.TestCase):
                        "width": 256, "height": 256, "images": [], "generate_vgl": True}
             with self.subTest(invalid=invalid):
                 self.assertEqual(self.client.post("/jobs/fibo", json={**payload, **invalid}).status_code, 422)
+
+    def test_image_aware_generated_vgl_keeps_edit_mask_and_inspiration_distinct(self):
+        source = base64.b64encode(b"source").decode()
+        mask = bytes.fromhex("89504e470d0a1a0a") + b"mask"
+        edit = self.client.post("/jobs/fibo", json={
+            "prompt": "Make it blue", "seed": 42, "width": 0, "height": 0,
+            "images": [source], "generate_vgl": True,
+        })
+        self.assertEqual(edit.status_code, 202)
+        self.assertEqual(self.spawns[-1]["sources"], [b"source"])
+        masked = self.client.post("/jobs/fibo", json={
+            "prompt": "Make it blue", "seed": 42, "width": 0, "height": 0,
+            "images": [source], "mask": base64.b64encode(mask).decode(), "generate_vgl": True,
+        })
+        self.assertEqual(masked.status_code, 202)
+        self.assertEqual(self.spawns[-1]["mask"], mask)
+        inspired = self.client.post("/jobs/fibo", json={
+            "prompt": "A new courtyard", "seed": 42, "width": 1024, "height": 1024,
+            "images": [], "inspiration": base64.b64encode(b"guide").decode(), "generate_vgl": True,
+        })
+        self.assertEqual(inspired.status_code, 202)
+        self.assertEqual(self.spawns[-1]["inspiration"], b"guide")
+        rejected = self.client.post("/jobs/fibo", json={
+            "prompt": "A new courtyard", "seed": 42, "width": 1024, "height": 1024,
+            "images": [], "inspiration": base64.b64encode(b"guide").decode(),
+        })
+        self.assertEqual(rejected.status_code, 422)
 
     def test_unknown_and_modified_ids_never_reach_modal(self):
         path = self.submit()

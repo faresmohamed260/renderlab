@@ -101,6 +101,21 @@ class ModalAppGatewayBridgeTests(unittest.TestCase):
         self.assertIs(operation, studio._text_to_image_with_setup)
         self.assertEqual(args, ("A new garden", 42, 1024, 1024, b"inspiration", 4, "", ""))
 
+    def test_edit_generated_vgl_requires_and_returns_edit_instruction(self):
+        vgl = '{"edit_instruction":"Make the jacket blue"}'
+        studio = FakeStudio({"png": b"png", "prompt": vgl})
+        result = self.module.FiboStudio.render_gateway(
+            studio, prompt="Make the jacket blue", seed=42, sources=[b"source"],
+            width=0, height=0, generate_vgl=True,
+        )
+        self.assertEqual(result, {"image_png": b"png", "generated_vgl": vgl})
+        with self.assertRaises(ValueError):
+            self.module.FiboStudio.render_gateway(
+                FakeStudio({"png": b"png", "prompt": '{"short_description":"wrong mode"}'}),
+                prompt="Make the jacket blue", seed=42, sources=[b"source"],
+                width=0, height=0, generate_vgl=True,
+            )
+
     def test_cancellation_and_invalid_worker_outputs_fail_closed(self):
         cancelled = FakeStudio({"cancelled": True})
         self.assertEqual(self.module.FiboStudio.render_gateway(

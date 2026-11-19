@@ -28,7 +28,7 @@ def generated_vgl_instruction(prompt):
     )
 
 
-def validate_generated_vgl(value):
+def validate_generated_vgl(value, mode="scene"):
     """Fail closed on arbitrary or malformed LLM text before treating it as VGL.
 
     The existing FIBO TextEncode node accepts object-shaped JSON captions.
@@ -43,9 +43,19 @@ def validate_generated_vgl(value):
         raise ValueError("Generated VGL is not JSON") from exc
     if not isinstance(parsed, dict) or not parsed:
         raise ValueError("Generated VGL must be a nonempty JSON object")
-    desc = parsed.get("short_description")
-    if not isinstance(desc, str) or not desc.strip() or len(desc) > MAX_DESCRIPTION_CHARS:
-        raise ValueError("Generated VGL needs a bounded scene description")
-    if "edit_instruction" in parsed:
-        raise ValueError("Generated source-free VGL must not request an edit")
+    if mode not in ("scene", "edit", None):
+        raise ValueError("Unknown generated VGL mode")
+    required = "edit_instruction" if mode == "edit" else "short_description"
+    if mode is None:
+        fields = [key for key in ("short_description", "edit_instruction")
+                  if isinstance(parsed.get(key), str) and parsed[key].strip()
+                  and len(parsed[key]) <= MAX_DESCRIPTION_CHARS]
+        if not fields:
+            raise ValueError("Generated VGL needs bounded scene or edit text")
+    else:
+        text = parsed.get(required)
+        if not isinstance(text, str) or not text.strip() or len(text) > MAX_DESCRIPTION_CHARS:
+            raise ValueError("Generated VGL needs bounded " + required.replace("_", " "))
+    if mode == "scene" and "edit_instruction" in parsed:
+        raise ValueError("Generated scene VGL must not request an edit")
     return value
