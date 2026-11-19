@@ -7,13 +7,13 @@ Records durable RenderLab infrastructure decisions and verified shared-resource 
 ## Current production - 2026-11-19
 
 <!-- EXTERNAL_FACT: vercel-release-boundary -->
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 0d9fd8cf5bb2103352ea84fd6fcb63585ca22ce9 -->
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: b956e24337b329d9e89d06d8f60f24e8acac0328 -->
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 0d9fd8cf5bb2103352ea84fd6fcb63585ca22ce9 from deployment dpl_HPbUn6U2j3DjUFg4c4UWHvZzwa9w (https://renderlab-an63q37fh-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T04:46:28.577Z. This release fixes reuse of hosted Create results as editing sources.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source b956e24337b329d9e89d06d8f60f24e8acac0328 from deployment dpl_CGVGzxDnytgReTHYiAZ5nJPXXyhG (https://renderlab-m7dia8kws-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T04:52:16.536Z. This release adds hosted manual VGL submission and capability-gated mask wiring. The live API does not advertise masks.
 
-Exact-source CI completed at 2026-11-19T04:45:59.000Z: Deployment Readiness 44460346190; protected check runs 135345188460, 135345183609, 135345182930, 135345183425, 135345182790, 135345183063. The signed-in Use as source action populated the Source slot in Brave without submitting a render.
+Exact-source CI completed at 2026-11-19T04:51:27.000Z: Deployment Readiness 44460963340; protected check runs 135347347470, 135347346941, 135347347569, 135347347981, 135347349157, 135347348884. The prior release verified Use as source in signed-in Brave without a render.
 
-Previous alias target: dpl_1276bdeNZvGzrX8Ahm5dr9zuLLgf at source 86ac1da4b3b91bb259900692a976217c0ff62982. The prior security cutover record is retained in docs/production/2026-11-19-security.json. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
+Previous alias target: dpl_HPbUn6U2j3DjUFg4c4UWHvZzwa9w at source 0d9fd8cf5bb2103352ea84fd6fcb63585ca22ce9. The prior hosted-source cutover record is retained in docs/production/2026-11-19-hosted-source.json. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
 
 ## Documentation governance linting — 2026-10-10
 - `npm run verify:docs-governance` is a credential-free repository check. It validates `docs/governance/documents.json` against the local schema contract, enforces reciprocal document/UI-decision supersession, canonical structured status enums, current-document review intervals, closed-contract checklist closure, unique normalized `Current ...` H2 sections, local documentation references, and checked-in production-manifest/mirror consistency.
