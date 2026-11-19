@@ -3,6 +3,13 @@ name: Production FIBO Smoke
 on:
   workflow_dispatch:
     inputs:
+      scenario:
+        description: Run a basic generation or the reference-edit Library journey
+        type: choice
+        options:
+          - text-to-image
+          - reference-edit
+        default: text-to-image
       expected_production_sha:
         description: Exact 40-character Git SHA independently verified as production-live
         required: true
@@ -29,6 +36,7 @@ jobs:
     timeout-minutes: 50
     env:
       RENDERLAB_FIBO_SMOKE: "true"
+      RENDERLAB_FIBO_SMOKE_SCENARIO: ${{ inputs.scenario }}
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co

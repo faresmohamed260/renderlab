@@ -48,3 +48,15 @@ test("FIBO smoke is manually bounded, checks the live SHA before fixtures, and r
   assert.match(verifier, /expectedGenerations = smoke \? 1 : 4/);
   assert.match(workflow, /if: \$\{\{ false \}\}/);
 });
+
+test("FIBO reference-edit scenario stays within the single-job smoke and checks the saved asset", () => {
+  const smoke = readFileSync(".github/workflows/production-fibo-smoke.yml", "utf8");
+  assert.match(smoke, /default: text-to-image/);
+  assert.match(smoke, /- reference-edit/);
+  assert.match(verifier, /smoke && smokeScenario === "reference-edit"/);
+  assert.match(verifier, /name: "Choose source image"/);
+  assert.match(verifier, /source\?\.role === "primary-image"/);
+  assert.match(verifier, /jobs.length === 1 && jobs\[0\].id === image.jobId/);
+  assert.match(verifier, /name: "Favorited", exact: true, pressed: true/);
+  assert.match(verifier, /name: "Favorite", exact: true, pressed: false/);
+});
