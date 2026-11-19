@@ -96,7 +96,7 @@
     {
       "path": "docs/architecture/MODAL_WORKLOAD_FOUNDATION_CONTRACT.md",
       "kind": "implementation-contract",
-      "authority": "reference",
+      "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "engineering",
       "lastReviewed": "2026-11-19",

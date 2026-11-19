@@ -1,6 +1,6 @@
 # Modal workload architecture — implementation requirements
 
-**Status: Proposed for review; not implementation authority.** This contract describes the requirements that would be mandatory if approved. Before implementation, record [ADR-005](./ARCHITECTURE_DECISIONS.md#adr-005--separate-modal-workloads-and-recover-durable-generation-dispatch) as Accepted with explicit architecture approval, update this contract's status and governance metadata to normative, and merge the approved records. Once accepted, verification may proceed in sequence to isolate failures; no stage is an optional follow-up. Neither acceptance nor merge authorizes cloud resources, GPU use, or production cutover.
+**Status: Accepted by the project owner on 2026-11-19; effective on merge.** This engineering-owned contract is normative for implementation once merged to protected main with [ADR-005](./ARCHITECTURE_DECISIONS.md#adr-005--separate-modal-workloads-and-recover-durable-generation-dispatch). All requirements are mandatory for completion. Verification may proceed in sequence to isolate failures; no stage is an optional follow-up. Neither acceptance nor merge authorizes cloud resources, GPU use, or production cutover.
 
 ## Goal and starting point
 
