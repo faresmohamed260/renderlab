@@ -1,6 +1,6 @@
 # QA-002 Permanent Production User Journey Contract
 
-**Status:** legacy scope historically verified; current FIBO reference-edit automation pending live qualification
+**Status:** legacy scope historically verified; FIBO reference edit and favorite lifecycle production-verified; Delete extension pending live qualification
 **Tracker:** #278  
 **Planning baseline:** repository `main` `023d21637fd59e4da8f664ea047c7d04a5102fc8`  
 **Historical production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`
@@ -10,6 +10,8 @@
 ## Current FIBO-only lane
 
 The legacy video/Animate workflow stays disabled. Select `reference-edit` in the existing manual Production FIBO Smoke workflow to run the supported QA-002 edit slice against the verified live deployment. A disposable account uploads one synthetic PNG in Create's Image Editing mode, submits exactly one FIBO edit, observes Activity completion, and opens the exact saved image in Library. The harness checks owner-scoped source persistence, one successful job and output, and that favoriting and unfavoriting persist across viewer reloads. The existing independent cleanup checks cover fixture database rows, Auth, and tracked R2 objects.
+
+[Run 44558540316](https://github.com/faresmohamed260/renderlab/actions/runs/44558540316) passed the reference-edit and favorite lifecycle against deployed source `b956e24337b329d9e89d06d8f60f24e8acac0328`. The Delete extension uses the same one output and the actual Library confirmation. Before account teardown it verifies the output is hidden after reload, unavailable through its owned asset API, purged from R2, and that its successful job remains in history. The historical cleanup pass was not evidence for this new assertion.
 
 The default `text-to-image` release smoke is unchanged. Neither choice runs automatically or expands the one-job budget. Reference-edit automation checks the end-to-end data flow, not subjective rendering quality, other asset-management actions, or the historical full journey. Track current live evidence on #452.
 

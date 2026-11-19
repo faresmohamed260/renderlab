@@ -60,3 +60,12 @@ test("FIBO reference-edit scenario stays within the single-job smoke and checks 
   assert.match(verifier, /name: "Favorited", exact: true, pressed: true/);
   assert.match(verifier, /name: "Favorite", exact: true, pressed: false/);
 });
+
+test("QA-002 asserts user-facing deletion independently of account cleanup", () => {
+  assert.match(verifier, /name: "Delete permanently", exact: true/);
+  assert.match(verifier, /unavailableStatus === 404/);
+  assert.match(verifier, /tombstone\?\.deleted_at && tombstone.purged_at/);
+  assert.match(verifier, /Library Delete left a fixture output object in storage/);
+  assert.match(verifier, /Library Delete did not preserve terminal generation history/);
+  assert.match(verifier, /libraryDeletion = await verifyLibraryDeletion\(page, account.id, image\)/);
+});
