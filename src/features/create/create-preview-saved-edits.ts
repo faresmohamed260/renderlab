@@ -32,10 +32,10 @@ async function access<T>(account: string, update?: (rows: T[]) => T[]): Promise<
   } finally { db.close(); }
 }
 
-export function readFiboEdits<T>(account: string) { return access<T>(account); }
-export function clearFiboEdits(account: string) { return access(account, () => []); }
+export function readSavedEdits<T>(account: string) { return access<T>(account); }
+export function clearSavedEdits(account: string) { return access(account, () => []); }
 
-export function saveFiboEdits<T extends SavedImage>(account: string, additions: T[]) {
+export function saveEdits<T extends SavedImage>(account: string, additions: T[]) {
   return access<T>(account, (rows) => {
     let bytes = 0;
     const seen = new Set<File>();

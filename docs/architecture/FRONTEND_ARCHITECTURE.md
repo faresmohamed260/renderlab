@@ -1,5 +1,7 @@
 # Frontend Architecture
 
+> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+
 > **Decision boundary:** durable non-UI cross-cutting architecture decisions and supersession are recorded in `ARCHITECTURE_DECISIONS.md`. This document remains authoritative for current frontend architecture, implementation boundaries, and detailed domain contracts.
 
 Defines approved RenderLab frontend architecture and verified implementation state.

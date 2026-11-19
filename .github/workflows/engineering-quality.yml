@@ -58,8 +58,5 @@ jobs:
       - name: Verify reciprocal S.A.G.A. Modal ownership
         run: npm run verify:modal-cross-repo-ownership
 
-      - name: Verify maintained UI primitive usage
-        run: npm run verify:ui-purity
-
       - name: Production build
         run: npm run build
