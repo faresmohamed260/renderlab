@@ -28,7 +28,7 @@ test("all routed workers are explicitly active", () => {
 });
 
 test("FIBO gateway fails closed without complete credentials or a Modal HTTPS origin", () => {
-  const names = ["RENDERLAB_FIBO_GENERATION", "RENDERLAB_FIBO_GATEWAY_URL", "RENDERLAB_FIBO_MODAL_KEY", "RENDERLAB_FIBO_MODAL_SECRET"];
+  const names = ["RENDERLAB_GENERATION_GATEWAY_URL", "RENDERLAB_FIBO_GENERATION", "RENDERLAB_FIBO_GATEWAY_URL", "RENDERLAB_FIBO_MODAL_KEY", "RENDERLAB_FIBO_MODAL_SECRET"];
   const before = names.map((name) => process.env[name]);
   try {
     for (const name of names) delete process.env[name];
@@ -40,6 +40,12 @@ test("FIBO gateway fails closed without complete credentials or a Modal HTTPS or
       assert.equal(findWorker("renderlab-fibo-native-01"), null);
     }
     process.env.RENDERLAB_FIBO_GATEWAY_URL = "https://test-worker.modal.run/";
+    assert.equal(findWorker("renderlab-fibo-native-01")?.gatewayUrl, "https://test-worker.modal.run");
+    process.env.RENDERLAB_GENERATION_GATEWAY_URL = "https://invalid.example.org";
+    assert.equal(findWorker("renderlab-fibo-native-01"), null);
+    process.env.RENDERLAB_GENERATION_GATEWAY_URL = "https://neutral-config.modal.run/";
+    assert.equal(findWorker("renderlab-fibo-native-01")?.gatewayUrl, "https://neutral-config.modal.run");
+    delete process.env.RENDERLAB_GENERATION_GATEWAY_URL;
     const worker = findWorker("renderlab-fibo-native-01");
     assert.equal(worker?.gatewayUrl, "https://test-worker.modal.run");
     assert.doesNotMatch(JSON.stringify(worker), /test-secret|test-key/);

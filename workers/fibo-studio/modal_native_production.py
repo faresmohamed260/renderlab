@@ -5,7 +5,7 @@ import modal
 
 from modal_native_renderer import app as render_app, render
 
-app = modal.App("renderlab-fibo-native-gateway").include(render_app)
+app = modal.App("renderlab-generation-gateway").include(render_app)
 gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi==0.137.2")
 # Modal imports this entrypoint inside the CPU gateway before calling web().
 # The included render app is a separate function; include its defining module in

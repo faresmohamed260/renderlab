@@ -30,7 +30,8 @@ if (supabaseUrl !== expectedSupabaseUrl) {
 }
 
 const fiboEnabled = process.env.RENDERLAB_FIBO_GENERATION?.trim() === "1";
-const fiboUrl = process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim();
+const fiboUrl = (process.env.RENDERLAB_GENERATION_GATEWAY_URL?.trim() ||
+  process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim())?.replace(/\/$/, "");
 const fiboKey = process.env.RENDERLAB_FIBO_MODAL_KEY?.trim();
 const fiboSecret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
 if (fiboEnabled && (!fiboUrl || !fiboKey || !fiboSecret)) {
