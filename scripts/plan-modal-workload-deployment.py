@@ -11,9 +11,6 @@ SAFE = re.compile(r"[a-z][a-z0-9-]{0,62}")
 ENTRYPOINTS = (
     "workers/fibo-studio/modal_native_renderer.py",
     "workers/fibo-studio/modal_native_production.py",
-    "workers/fibo-studio/modal_video_generation.py",
-    "workers/fibo-studio/modal_image_tools.py",
-    "workers/fibo-studio/modal_video_tools.py",
 )
 
 

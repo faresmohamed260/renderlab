@@ -23,6 +23,11 @@ class ModalWorkloadDeploymentPlanTest(unittest.TestCase):
         result = self.run_plan()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("modal deploy -e qualification", result.stdout)
+        self.assertIn("modal_native_renderer.py", result.stdout)
+        self.assertIn("modal_native_production.py", result.stdout)
+        self.assertNotIn("modal_video_generation.py", result.stdout)
+        self.assertNotIn("modal_image_tools.py", result.stdout)
+        self.assertNotIn("modal_video_tools.py", result.stdout)
         self.assertIn('"mutatesProvider": false', result.stdout)
         self.assertNotIn(" -e main ", result.stdout)
 
