@@ -110,8 +110,14 @@ Repository-level packaging validation is not live restoration. Verify an authori
 
 ### Reuse a hosted result as an editing source
 
-The signed-in `Use as source` action loads the owner-scoped image through the media content route's same-origin source response. Hosted results are URLs, not the inline PNG data used by the private preview. Create attaches a local File for editor previews and retains the existing asset ID for generation, avoiding another upload. The regular viewer retains its redirect behavior. Browser verification of this source fix requires a deployment; the current live hosted Create path does not submit masks or VGL. See #429 and #452.
+The signed-in `Use as source` action loads the owner-scoped image through the media content route's same-origin source response. Hosted results are URLs, not the inline PNG data used by the private preview. Create attaches a local File for editor previews and retains the existing asset ID for generation, avoiding another upload. The regular viewer retains its redirect behavior. Signed-in Brave verification confirmed the Source slot was populated without an extra render. Subsequent hosted Create releases wired manual VGL and masked editing. See #429 and #452.
 
 ### Hosted mask and manual VGL submission
 
 The hosted Create composer submits manual VGL via the existing bounded generation JSON contract. Drawn masks use the separate owner-scoped temporary PNG upload path and are sent by verified source ID, never as inline bytes. Mask controls remain gated by the backend capability flag; this change does not enable that flag in any environment. Generated VGL and live qualification are separate work. Production verification must cover localized edit behavior and persisted manual VGL, not merely successful HTTP admission.
+
+### Production mask enablement and verification — 2026-11-19
+
+The owner approved general production enablement, not the proposed test-account gate (PR #460 was closed unmerged). Vercel enabled the production-only server flag `RENDERLAB_FIBO_MASK_ENABLED=true` on a configuration-only redeploy of the exact qualified `b956e24337b329d9e89d06d8f60f24e8acac0328` source. The live capabilities endpoint advertised masks. No worker redeploy or schema change was needed. The canonical manifest records the preceding same-source deployment with masks disabled as the rollback anchor.
+
+In signed-in Brave on WANDA, one edit selected the red right half of a synthetic 1024x1024 image. Create returned a lime-green right half. The same result reopened in Library and its original PNG was downloaded from the viewer. An RGB comparison against the uploaded source counted 0 changed pixels out of 524,288 outside the mask and 524,288 changed pixels out of 524,288 inside it. This verifies one production browser-to-Library case; it does not qualify all image sizes or mask shapes. The feature was left enabled. See #452.
