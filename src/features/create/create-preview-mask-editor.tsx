@@ -21,7 +21,7 @@ type Props = {
   onSave: (mask?: File) => void;
 };
 
-export function FiboPreviewMaskEditor({ source, mask, enabled, inline = false, onClose, onSave }: Props) {
+export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false, onClose, onSave }: Props) {
   const root = useRef<HTMLElement>(null);
   const outline = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -228,7 +228,7 @@ export function FiboPreviewMaskEditor({ source, mask, enabled, inline = false, o
     output.getContext("2d")!.putImageData(pixels, 0, 0);
     setSaving(true);
     output.toBlob((blob) => {
-      if (blob) onSave(new File([blob], "fibo-mask.png", { type: "image/png" }));
+      if (blob) onSave(new File([blob], "image-mask.png", { type: "image/png" }));
       else { setSaving(false); setError("Could not save the mask."); }
     }, "image/png");
   }
@@ -270,7 +270,7 @@ export function FiboPreviewMaskEditor({ source, mask, enabled, inline = false, o
 
   const Root = inline ? "div" : "dialog";
   return (
-    <Root ref={(node: HTMLElement | null) => { root.current = node; }} className={inline ? "fibo-preview-mask-inline" : "fibo-preview-mask-dialog"}
+    <Root ref={(node: HTMLElement | null) => { root.current = node; }} className={inline ? "create-preview-mask-inline" : "create-preview-mask-dialog"}
       role={inline ? "group" : undefined} aria-label="Edit source mask"
       onCancel={(event) => { event.preventDefault(); if (!saving) onClose(); }}
       onKeyUp={(event) => { if (event.code === "Space") setSpace(false); }}
@@ -290,8 +290,8 @@ export function FiboPreviewMaskEditor({ source, mask, enabled, inline = false, o
           if (key === "i") setTool("color");
         }
       }}>
-      <div className="fibo-preview-mask-toolset">
-        <div className="fibo-preview-mask-toolbar" role="group" aria-label="Mask tools">
+      <div className="create-preview-mask-toolset">
+        <div className="create-preview-mask-toolbar" role="group" aria-label="Mask tools">
           <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "brush"} onClick={() => { setReview(false); setHand(false); setTool("brush"); }}>Brush</Button>
           <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "eraser"} onClick={() => { setReview(false); setHand(false); setTool("eraser"); }}>Eraser</Button>
           <Button type="button" size="sm" variant="ghost" aria-pressed={tool === "fill"} onClick={() => { setReview(false); setHand(false); setTool("fill"); }}>Fill</Button>
@@ -308,15 +308,15 @@ export function FiboPreviewMaskEditor({ source, mask, enabled, inline = false, o
           <Button type="button" size="sm" variant="ghost" disabled={!ready || drawing || saving} onClick={() => modify(false)}>Clear</Button>
           <Button type="button" size="sm" variant="ghost" aria-pressed={review} onClick={() => setReview(!review)}>{review ? "Show overlay" : "Hide overlay"}</Button>
         </div>
-        <div className="fibo-preview-mask-toolbar" role="group" aria-label="Mask zoom">
+        <div className="create-preview-mask-toolbar" role="group" aria-label="Mask zoom">
           <Button type="button" size="sm" variant="ghost" aria-label="Zoom out" disabled={!ready || drawing || panning || view.zoom <= 1} onClick={() => zoomBy(1 / Math.SQRT2)}>−</Button>
           <Button type="button" size="sm" variant="ghost" title="Reset zoom" aria-label="Reset zoom" disabled={drawing || panning} onClick={() => setView(initialView)}>{Math.round(view.zoom * 100)}%</Button>
           <Button type="button" size="sm" variant="ghost" aria-label="Zoom in" disabled={!ready || drawing || panning || view.zoom >= 4} onClick={() => zoomBy(Math.SQRT2)}>+</Button>
           <Button type="button" size="sm" variant="ghost" aria-pressed={hand} onClick={() => setHand(!hand)}>Hand</Button>
         </div>
       </div>
-      <div ref={viewport} className="fibo-preview-mask-viewport" tabIndex={0} aria-label="Mask canvas">
-      <div className="fibo-preview-mask-plane" style={{ transform: `translate(${view.x * 100}%, ${view.y * 100}%) scale(${view.zoom})` }}>
+      <div ref={viewport} className="create-preview-mask-viewport" tabIndex={0} aria-label="Mask canvas">
+      <div className="create-preview-mask-plane" style={{ transform: `translate(${view.x * 100}%, ${view.y * 100}%) scale(${view.zoom})` }}>
         <img src={source} alt="Source image" draggable={false} />
         <canvas ref={canvas} aria-label="Paint the selected region" style={{ opacity: review ? 0 : overlay / 100, cursor: panning ? "grabbing" : hand || space ? "grab" : "crosshair" }}
           onPointerDown={(event) => {
@@ -370,11 +370,11 @@ export function FiboPreviewMaskEditor({ source, mask, enabled, inline = false, o
             setDrawing(false);
           }} />
       </div>
-        {inline && <div ref={outline} className="fibo-preview-mask-outline" data-square={square} aria-hidden="true" hidden />}
+        {inline && <div ref={outline} className="create-preview-mask-outline" data-square={square} aria-hidden="true" hidden />}
       </div>
       {!enabled && <p>Mask editing is available here. Rendering a masked edit requires the private worker update.</p>}
       {error && <p role="alert">{error}</p>}
-      <div className="fibo-preview-mask-toolbar">
+      <div className="create-preview-mask-toolbar">
         <Button type="button" size="sm" variant="ghost" disabled={saving} onClick={onClose}>Cancel</Button>
         <Button type="button" size="sm" disabled={!ready || drawing || saving} onClick={finish}>Done masking</Button>
       </div>
