@@ -1,6 +1,16 @@
 # Modal direct-production cutover
 
-**Status:** Corrected implementation merged and exact-source verified; hosted execution awaits renewed approval. The earlier Scope D/G approval was bound to superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` and expired without any hosted mutation or GPU run when preflight found that Supabase API keys cannot assume custom PostgreSQL roles. The corrected least-privilege database-login implementation merged as `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. This runbook becomes executable only after this exact-source record merges and the project owner renews both scopes for that source.
+**Status:** Replacement gateway deployment stopped before the Vercel alias moved. The exact recovery gateway has been redeployed; recovery rendering is not yet confirmed. Do not resume at the replacement gateway as if the candidate worker and its credentials were still active.
+
+## 2026-11-20 execution and recovery checkpoint
+
+The owner confirmed prior Scope D and G approval for runtime `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. The earlier approval for superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` did not carry to the corrected source.
+
+- Supabase migration `0030` was applied as hosted version `20261119230644`. It remains in place for recovery. Before the gateway attempt, the outbox was empty and the database had 70 generation jobs, two sources, and zero active jobs.
+- The candidate image worker deployed as `ap-k9SzNTtsmQKGV1d7r1V7Yk` v1. Codex's deployment command used the candidate checkout, which was later read back clean at the exact approved SHA. The candidate gateway deployment exited nonzero during the CPU image build, and Modal reported app `ap-om9ZYUJL5WyBiTbABEKMHm` stopped without an active replacement. The underlying build failure was not established.
+- Recovery gateway `ap-n7OgOpn4QFu3B97PyoQG7E` v1 was deployed from clean source `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb`. The Modal endpoint responded with the expected unauthenticated 401; this does not qualify rendering. Vercel remained at recovery deployment `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH`; no alias movement occurred.
+- The separate candidate worker was stopped, the dispatcher and worker DB roles were restored to `NOLOGIN` with passwords cleared, and only the two candidate secrets were removed. The existing gateway secret and model volume were not modified.
+- One authorized recovery smoke was dispatched as [run 44639143236](https://github.com/faresmohamed260/renderlab/actions/runs/44639143236). Before closing recovery, verify its terminal save, Library reopen, exact fixture cleanup, queue drain, and A10 usage. Do not treat the candidate split or the three-smoke acceptance sequence as complete. Investigate the gateway build failure, refresh the production and recovery identities, and reconcile approval and remaining GPU allowance before another cutover attempt.
 
 ## Purpose and one-time exception
 
