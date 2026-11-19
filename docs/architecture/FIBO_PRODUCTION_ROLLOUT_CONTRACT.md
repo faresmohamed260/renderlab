@@ -110,8 +110,16 @@ Repository-level packaging validation is not live restoration. Verify an authori
 
 ### Reuse a hosted result as an editing source
 
-The signed-in `Use as source` action loads the owner-scoped image through the media content route's same-origin source response. Hosted results are URLs, not the inline PNG data used by the private preview. Create attaches a local File for editor previews and retains the existing asset ID for generation, avoiding another upload. The regular viewer retains its redirect behavior. Browser verification of this source fix requires a deployment; the current live hosted Create path does not submit masks or VGL. See #429 and #452.
+The signed-in `Use as source` action loads the owner-scoped image through the media content route's same-origin source response. Hosted results are URLs, not the inline PNG data used by the private preview. Create attaches a local File for editor previews and retains the existing asset ID for generation, avoiding another upload. The regular viewer retains its redirect behavior. Signed-in Brave verification on #456 confirmed the Source slot is populated without submitting a render. #457 subsequently deployed manual VGL submission and capability-gated mask wiring. See #429 and #452.
 
 ### Hosted mask and manual VGL submission
 
 The hosted Create composer submits manual VGL via the existing bounded generation JSON contract. Drawn masks use the separate owner-scoped temporary PNG upload path and are sent by verified source ID, never as inline bytes. Mask controls remain gated by the backend capability flag; this change does not enable that flag in any environment. Generated VGL and live qualification are separate work. Production verification must cover localized edit behavior and persisted manual VGL, not merely successful HTTP admission.
+
+### Isolated Modal mask qualification — 2026-11-19
+
+The pinned renderer, graph, and gateway from protected main `826abb9fff31a2253f4aaedade1f91b2596c2682` were exercised without enabling production masks. The actual gateway ran in-process on WANDA; its spawn/poll callbacks invoked the checked-in GPU renderer in an ephemeral Modal app. The first probe rendered but the test asserted that Original meant exact input dimensions. Original preserves aspect ratio at the model's supported size, not necessarily source pixel dimensions.
+
+The corrected [ephemeral probe](https://modal.com/apps/faresmohamed260/main/ap-tNTHW97beRjotzQfGq70dH) used one 1024x1024 two-color RGB source, a binary right-half selection, Original geometry, seed 42, and four steps. The gateway accepted the one call (HTTP 202), then returned a decodable 1024x1024 PNG (HTTP 200). Every pixel outside the selection was identical to the source. Mean absolute RGB difference inside the mask was 63.5182 on a 0–255 scale. The Modal app completed. The 11 mask domain, upload-validation, and payload tests and 15 Python gateway, graph, and mask tests also passed.
+
+This qualifies the hosted GPU mask operation for this fixture. It does not qualify a deployed gateway proxy, signed-in Create, hosted owner-scoped upload and persistence, or other geometries. Production still does not advertise masks, and no production flag, deployment, or shared data was changed. #452 tracks the remaining browser-to-Library qualification.
