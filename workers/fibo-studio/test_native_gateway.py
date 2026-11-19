@@ -13,6 +13,7 @@ class GatewayTests(unittest.TestCase):
         self.spawns = []
         self.cancels = []
         self.reads = []
+        self.wakes = []
 
         def spawn(**payload):
             self.spawns.append(payload)
@@ -27,6 +28,7 @@ class GatewayTests(unittest.TestCase):
         self.client = TestClient(create_gateway(
             spawn=spawn, poll=poll, cancel=self.cancels.append,
             signing_key=b"test-only-signing-key" * 2, expired_errors=(KeyError,),
+            wake_dispatcher=lambda: self.wakes.append("wake"),
         ))
 
     def submit(self):
@@ -48,6 +50,21 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(response.content, self.result)
         self.assertEqual(self.client.delete(path).json(), {"status": "cancelled"})
         self.assertEqual(self.cancels, [self.call_id])
+
+    def test_dispatch_wake_carries_no_render_payload(self):
+        response = self.client.post("/dispatch/wake", content=b"")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.json(), {"status": "accepted"})
+        self.assertEqual(self.wakes, ["wake"])
+
+    def test_durable_gateway_disables_direct_submission_but_keeps_poll_compatibility(self):
+        client = TestClient(create_gateway(
+            spawn=lambda **_: self.call_id, poll=lambda _: TimeoutError(), cancel=lambda _: None,
+            signing_key=b"test-only-signing-key" * 2, expired_errors=(KeyError,),
+            wake_dispatcher=lambda: None, allow_direct_submit=False,
+        ))
+        self.assertEqual(client.post("/jobs/fibo", json={"prompt": "x", "seed": 1}).status_code, 405)
+        self.assertEqual(client.post("/dispatch/wake").status_code, 202)
 
     def test_generated_vgl_sidecar_retains_plain_png_results_and_signed_access(self):
         path = self.submit()

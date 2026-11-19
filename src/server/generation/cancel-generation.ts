@@ -286,6 +286,16 @@ export async function requestGenerationCancellation(ownerId: string, jobId: stri
   if (initial.status !== "cancelling" && !cancellableStatuses.has(initial.status)) {
     return cancellationError("This generation is not in a cancellable state.");
   }
+  if (initial.status === "queued" && !initial.provider_job_id) {
+    const cancelled = await supabaseRest<CancellationRow[]>("rpc/renderlab_cancel_queued_generation_dispatch", {
+      method: "POST",
+      body: JSON.stringify({ p_owner_id: ownerId, p_job_id: jobId }),
+    }).catch(() => []);
+    if (cancelled?.[0]) {
+      await releaseBoundGenerationAdmission(ownerId, jobId);
+      return { ok: true, job: toGenerationJob(cancelled[0]) };
+    }
+  }
 
   const token = randomUUID();
   const acquisition = await acquireCancellationClaim(ownerId, jobId, token);

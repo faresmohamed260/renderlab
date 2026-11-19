@@ -59,6 +59,7 @@ jobs:
           python3 workers/fibo-studio/test_workload_environment.py
           python3 workers/fibo-studio/test_modal_app_isolation.py
           python3 workers/fibo-studio/test_production_gateway_packaging.py
+          python3 workers/fibo-studio/test_dispatch_core.py
 
       - name: Verify reciprocal S.A.G.A. Modal ownership
         run: npm run verify:modal-cross-repo-ownership

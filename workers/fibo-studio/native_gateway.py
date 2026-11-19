@@ -70,7 +70,8 @@ def validate_payload(payload):
     return {**options, "sources": sources, **({"mask": mask} if mask is not None else {})}
 
 
-def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors):
+def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dispatcher=None,
+                   allow_direct_submit=True):
     if not isinstance(signing_key, bytes) or len(signing_key) < 32:
         raise RuntimeError("FIBO gateway requires a dedicated signing key")
     api = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
@@ -92,26 +93,36 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors):
         response.headers["Cache-Control"] = "private, no-store"
         return response
 
-    @api.post("/jobs/fibo", status_code=202)
-    async def submit(request: Request):
-        if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
-            raise HTTPException(415, "Expected JSON")
-        raw = bytearray()
-        async for chunk in request.stream():
-            if len(raw) + len(chunk) > MAX_BODY:
-                raise HTTPException(413, "FIBO request exceeds the byte limit")
-            raw.extend(chunk)
-        try:
-            inputs = await run_in_threadpool(lambda: validate_payload(json.loads(raw)))
-        except (ValueError, TypeError, binascii.Error, RecursionError) as exc:
-            raise HTTPException(422, "Invalid or unsupported FIBO request") from exc
-        try:
-            call_id = await run_in_threadpool(spawn, **inputs)
-            if not CALL_ID.fullmatch(call_id):
-                raise RuntimeError("Malformed Modal call ID")
-        except Exception as exc:
-            raise HTTPException(503, "FIBO submission was not confirmed") from exc
-        return {"call_id": f"{call_id}.{signature(call_id)}", "worker_state": "queued"}
+    if allow_direct_submit:
+        @api.post("/jobs/fibo", status_code=202)
+        async def submit(request: Request):
+            if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+                raise HTTPException(415, "Expected JSON")
+            raw = bytearray()
+            async for chunk in request.stream():
+                if len(raw) + len(chunk) > MAX_BODY:
+                    raise HTTPException(413, "FIBO request exceeds the byte limit")
+                raw.extend(chunk)
+            try:
+                inputs = await run_in_threadpool(lambda: validate_payload(json.loads(raw)))
+            except (ValueError, TypeError, binascii.Error, RecursionError) as exc:
+                raise HTTPException(422, "Invalid or unsupported FIBO request") from exc
+            try:
+                call_id = await run_in_threadpool(spawn, **inputs)
+                if not CALL_ID.fullmatch(call_id):
+                    raise RuntimeError("Malformed Modal call ID")
+            except Exception as exc:
+                raise HTTPException(503, "FIBO submission was not confirmed") from exc
+            return {"call_id": f"{call_id}.{signature(call_id)}", "worker_state": "queued"}
+
+    if wake_dispatcher is not None:
+        @api.post("/dispatch/wake", status_code=202)
+        async def wake():
+            try:
+                await run_in_threadpool(wake_dispatcher)
+            except Exception as exc:
+                raise HTTPException(503, "Dispatcher wake was not confirmed") from exc
+            return {"status": "accepted"}
 
     @api.get("/jobs/{token}")
     async def status(token: str):

@@ -23,6 +23,7 @@ def parser():
     result.add_argument("--environment", required=True)
     result.add_argument("--gateway-secret", required=True)
     result.add_argument("--dispatcher-secret", required=True)
+    result.add_argument("--worker-secret", required=True)
     result.add_argument("--model-volume", required=True)
     return result
 
@@ -30,20 +31,21 @@ def parser():
 def plan(values):
     if values.workspace_id != WORKSPACE_ID:
         raise ValueError("Unexpected Modal workspace")
-    resources = (values.environment, values.gateway_secret, values.dispatcher_secret, values.model_volume)
+    resources = (values.environment, values.gateway_secret, values.dispatcher_secret, values.worker_secret, values.model_volume)
     if any(not SAFE.fullmatch(value) for value in resources):
         raise ValueError("Environment resources must be explicit safe names")
     exports = {
         "RENDERLAB_MODAL_ENVIRONMENT": values.environment,
         "RENDERLAB_MODAL_GATEWAY_SECRET": values.gateway_secret,
         "RENDERLAB_MODAL_DISPATCHER_SECRET": values.dispatcher_secret,
+        "RENDERLAB_MODAL_WORKER_SECRET": values.worker_secret,
         "RENDERLAB_MODAL_MODEL_VOLUME": values.model_volume,
     }
     return {
         "workspaceId": values.workspace_id,
         "environment": values.environment,
         "requiredResources": {
-            "secrets": [values.gateway_secret, values.dispatcher_secret],
+            "secrets": [values.gateway_secret, values.dispatcher_secret, values.worker_secret],
             "volumes": [values.model_volume],
         },
         "environmentVariables": exports,

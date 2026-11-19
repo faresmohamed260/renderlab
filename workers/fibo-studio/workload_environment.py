@@ -23,6 +23,7 @@ class WorkloadEnvironment:
     environment: str
     gateway_secret: str
     dispatcher_secret: str
+    worker_secret: str
     model_volume: str
 
     @classmethod
@@ -33,14 +34,15 @@ class WorkloadEnvironment:
         environment: str,
         gateway_secret: str,
         dispatcher_secret: str,
+        worker_secret: str,
         model_volume: str,
     ) -> "WorkloadEnvironment":
-        values = (environment, gateway_secret, dispatcher_secret, model_volume)
+        values = (environment, gateway_secret, dispatcher_secret, worker_secret, model_volume)
         if workspace_id != WORKSPACE_ID:
             raise ValueError("Unexpected Modal workspace")
         if any(not value or not _SAFE_NAME.fullmatch(value) for value in values):
             raise ValueError("Modal environment resources must be explicit safe names")
-        return cls(workspace_id, environment, gateway_secret, dispatcher_secret, model_volume)
+        return cls(workspace_id, environment, gateway_secret, dispatcher_secret, worker_secret, model_volume)
 
     def assert_same_environment(self, resource_environment: str) -> None:
         if resource_environment != self.environment:
