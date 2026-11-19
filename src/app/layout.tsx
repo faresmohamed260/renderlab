@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const preview = await isCreatePreview();
+  const preview = process.env.NODE_ENV === "production" || await isCreatePreview();
   const account = preview ? await getCurrentRenderLabIdentity().catch(() => null) : null;
   return (
     <html lang="en">
@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {preview && <div className="renderlab-reference-atmosphere" aria-hidden="true">
           <div className="renderlab-reference-wash" />
         </div>}
-        {preview ? <PreviewNavigationShell accountId={account?.id ?? null} hostedProfile={process.env.RENDERLAB_HOSTED_CREATE === "1"}>{children}</PreviewNavigationShell> : children}
+        {preview ? <PreviewNavigationShell accountId={account?.id ?? null} hostedProfile={process.env.NODE_ENV === "development" && process.env.RENDERLAB_HOSTED_CREATE === "1"}>{children}</PreviewNavigationShell> : children}
       </body>
     </html>
   );
