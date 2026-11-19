@@ -207,6 +207,8 @@ export type GenerationRequest = {
   autoVgl?: true;
   /** Separate ready owner-scoped PNG mask; only for a single FIBO edit source. */
   mask?: { type: "temporary-source"; id: string };
+  /** One durable job may request 1–4 independently recoverable FIBO outputs. */
+  batchCount?: 2 | 3 | 4;
   output: {
     kind: OutputKind;
     aspectRatio: AspectRatio;

@@ -36,6 +36,8 @@ Phase A's bounded production contract merged through PR #422 at `1bcd92f3dc90be2
 
 **Still not completed:** hosted signed-in manual/generated VGL qualification and its full Create UI, production-qualified masking UI/runtime, separate inspiration, multi-output durable batches, live cancellation/partial retries, complete workspace UI parity, staged smoke tests and release. Negative-prompt effectiveness remains unresolved at the existing guidance setting. Do not expose or mark these controls production-functional on the strength of request parsing or local mocks.
 
+**Durable batch domain/schema candidate (2026-11-19):** The public FIBO request domain now validates an optional 2–4 output count while keeping one output as the backward-compatible default. A pending additive `generation_job_outputs` migration defines four owner-bound slot identities, per-slot seed/provider/lifecycle/error/generated-VGL state, deterministic media linkage, active-slot lookup, RLS, browser grant revocation and same-owner job/media enforcement. Retry and server recovery reconstruct the requested count; the current Create recipe loader fails closed rather than reducing a batch to one output. Multi-output admission remains unconditionally disabled until the orchestration/finalization/cancellation implementation and exact migration application are separately reviewed and qualified. The migration is checked in only; it has not been applied to shared Supabase.
+
 ## Feature and contract inventory
 
 | Surface/operation | Required production behavior |

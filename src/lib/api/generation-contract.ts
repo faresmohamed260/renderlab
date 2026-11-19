@@ -293,6 +293,10 @@ export function parseGenerationRequest(value: unknown):
   )) {
     return { ok: false, error: { code: "invalid_request", message: "Unsupported FIBO size, inputs, or tuning." } };
   }
+  const batchCount = value.batchCount === undefined ? 1 : value.batchCount;
+  if (!Number.isInteger(batchCount) || (batchCount as number) < 1 || (batchCount as number) > 4) {
+    return { ok: false, error: { code: "invalid_request", message: "FIBO batches require between one and four outputs." } };
+  }
 
   return {
     ok: true,
@@ -307,6 +311,7 @@ export function parseGenerationRequest(value: unknown):
       ...(vgl ? { vgl } : {}),
       ...(autoVgl ? { autoVgl: true as const } : {}),
       ...(mask ? { mask } : {}),
+      ...((batchCount as number) > 1 ? { batchCount: batchCount as 2 | 3 | 4 } : {}),
       ...(advanced ? { advanced } : {}),
     },
   };

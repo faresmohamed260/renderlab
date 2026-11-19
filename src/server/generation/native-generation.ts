@@ -203,7 +203,8 @@ async function insertJob(ownerId: string, request: GenerationRequest, workflow: 
       inputs: persistFiboMaskInputs(request.inputs, request.mask),
       parameters: { model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {},
         ...(request.vgl ? { vgl: request.vgl } : {}),
-        ...(request.autoVgl ? { autoVgl: true } : {}) },
+        ...(request.autoVgl ? { autoVgl: true } : {}),
+        ...(request.batchCount ? { batchCount: request.batchCount } : {}) },
     }),
   });
   if (!rows?.[0]) throw new Error("Generation job could not be created.");
@@ -740,6 +741,7 @@ function requestFromJobRow(row: JobRow): GenerationRequest {
     advanced: row.parameters.advanced,
     ...(Object.hasOwn(row.parameters, "vgl") ? { vgl: row.parameters.vgl } : {}),
     ...(row.parameters.autoVgl === true ? { autoVgl: true } : {}),
+    ...(typeof row.parameters.batchCount === "number" ? { batchCount: row.parameters.batchCount } : {}),
     ...(persisted.mask ? { mask: persisted.mask } : {}),
   });
   if (!parsed.ok || parsed.request.output.kind !== row.output_kind

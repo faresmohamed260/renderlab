@@ -151,6 +151,9 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
   };
 
   const isFibo = request.model === fiboGenerationModel;
+  if ((request.batchCount ?? 1) > 1) {
+    return reject({ ok: false, error: { code: "generation_disabled", message: "Durable FIBO batches are not enabled until per-output lifecycle qualification is complete." } });
+  }
   if (request.autoVgl && !isFiboAutoVglAvailable()) {
     return reject({ ok: false, error: { code: "generation_disabled", message: "Generated FIBO VGL has not been qualified for this environment." } });
   }
