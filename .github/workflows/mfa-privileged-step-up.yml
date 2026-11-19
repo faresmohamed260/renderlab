@@ -19,7 +19,6 @@ on:
       - "scripts/verify-mfa-privileged-step-up.mjs"
       - "scripts/verify-email-identity-change.mjs"
       - ".github/workflows/mfa-privileged-step-up.yml"
-      - ".github/workflows/email-identity-change.yml"
   workflow_dispatch:
 
 permissions:
