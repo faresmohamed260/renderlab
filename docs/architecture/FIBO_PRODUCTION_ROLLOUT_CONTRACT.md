@@ -107,3 +107,7 @@ Repository-level packaging validation is not live restoration. Verify an authori
 ### Shared renderer and smoke runner
 
 `workers/fibo-studio/modal_native_renderer.py` owns the existing GPU render function and its image. Both gateway entrypoints include that app and explicitly bundle the renderer module in their CPU gateway images. `modal_native_smoke.py` retains the opt-in validation entrypoint and consumes the same renderer; gateways no longer import the smoke runner. No graph, worker protocol, provider credentials, or live deployment changed as part of this source cleanup. The separately authorized rollout of #454 deployed gateway v3 at 06:02 Cairo (04:02 UTC) from `94f5576ec1d9f205f07d7897e8d253f7e5c0ba84`. Modal history confirms v3; the rollback anchor is v2. The unauthenticated proxy returned 401. Authenticated startup and a render on v3 have not been qualified. No Vercel or candidate gateway deployment was part of that rollout.
+
+### Reuse a hosted result as an editing source
+
+The signed-in `Use as source` action loads the owner-scoped image through the media content route's same-origin source response. Hosted results are URLs, not the inline PNG data used by the private preview. Create attaches a local File for editor previews and retains the existing asset ID for generation, avoiding another upload. The regular viewer retains its redirect behavior. Browser verification of this source fix requires a deployment; the current live hosted Create path does not submit masks or VGL. See #429 and #452.
