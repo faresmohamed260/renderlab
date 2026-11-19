@@ -18,6 +18,8 @@ import { loadCreateResultSource } from "./create-result-source";
 import { type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
 import { isMediaUploadMimeType } from "@/lib/api/media-upload-contract";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
+import { uploadFiboMaskFile } from "@/lib/browser/fibo-mask-upload-client";
+import { normalizeFiboVgl, resolveFiboVglReferences } from "@/lib/capabilities/fibo-vgl";
 import { uploadPersistentImageFile } from "@/lib/browser/media-upload-client";
 
 const hostedJobId = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
@@ -412,9 +414,21 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           const alias = aliases.get(Number(index));
           return alias ? "@" + alias : original;
         });
+        let hostedVgl: string | undefined;
+        if (manualVgl) {
+          const slotAliases = [...aliases.keys()].map((index) => "image" + index);
+          const normalized = normalizeFiboVgl(manualVgl, slotAliases);
+          if (!normalized) throw new Error("Enter valid VGL JSON using only attached image references.");
+          // Resolve named source-slot tags before the API compacts the inputs.
+          hostedVgl = [...aliases].some(([index, alias]) => alias !== "image" + index)
+            ? resolveFiboVglReferences(normalized, slotAliases) : normalized;
+        }
+        const hostedMask = mode === "edit" && mask ? await uploadFiboMaskFile(mask, signal) : undefined;
         const response = await hostedRequest<{ job: GenerationJob }>("/api/generation/jobs", {
           method: "POST", signal, headers: { "content-type": "application/json" },
           body: JSON.stringify({ model: hostedModel.id, prompt: hostedPrompt, inputs,
+            ...(hostedVgl ? { vgl: hostedVgl } : {}),
+            ...(hostedMask ? { mask: hostedMask } : {}),
             output: { kind: "image", aspectRatio: mode === "edit" ? "original" : hostedRatios[sizeIndex] },
             advanced: { steps, negativePrompt: negativePrompt.trim(),
               seed: randomize ? (crypto.getRandomValues(new Uint32Array(1))[0]! & 0x7fffffff) : Number(seed) } }),
@@ -914,14 +928,14 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   })();
   const hostedBlocker = hostedOnly && !hostedModel
     ? "This Create preview cannot render until production supports the selected workflow."
-    : hostedModel && (manualVgl || mask || inspiration && mode === "generate" || imageCount !== "1")
-      ? "The hosted workflow supports one image per job, without masks, VGL, or inspiration." : "";
+    : hostedModel && (inspiration && mode === "generate" || imageCount !== "1")
+      ? "The hosted workflow supports one image per job and does not use inspiration images." : "";
   const blocker = hostedBlocker || (!admitted ? "Sign in with an account that has Create access."
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
     : !variableSteps && steps !== 4 ? "The current worker supports 4 steps. Select 4 to generate."
     : mode === "edit" && !files[0] && !result ? "Add a source image to edit."
     : mask && files.slice(1).some(Boolean) ? "Remove references to use a mask."
-    : mask && !masksEnabled ? "Masked edits need the private worker update."
+    : mask && !masksEnabled ? "Masked edits are not enabled on the current worker."
     : !vglValid ? "Enter a non-empty VGL JSON object."
     : !advancedPrompt && (manualVgl || negativePrompt.trim()) ? "Advanced prompts need the private worker update."
     : !manualVgl && missingPromptImage ? "Restore the missing image or remove its prompt tag."
