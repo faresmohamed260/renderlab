@@ -91,6 +91,8 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
                         "--input-directory", str(root / "input"), "--output-directory", str(root / "output"),
                         "--extra-model-paths-config", str(config), "--disable-all-custom-nodes",
                         "--disable-api-nodes", "--disable-auto-launch", "--lowvram", "--reserve-vram", "1"], cwd=COMFY)
+        modal_cancelled = False
+        job = None
         try:
             for _ in range(90):
                 if server.poll() is not None:
@@ -132,6 +134,9 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
             # Existing image-only jobs preserve the exact historical PNG return.
             # Only explicit source-free auto-VGL jobs provide a typed sidecar.
             return {"image_png": image_bytes, "generated_vgl": generated_vgl} if generate_vgl else image_bytes
+        except modal.exception.InputCancellation:
+            modal_cancelled = True
+            raise
         finally:
             server.terminate()
             try:
@@ -139,3 +144,12 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
             except TimeoutExpired:
                 server.kill()
                 server.wait()
+            if modal_cancelled:
+                # Modal tags this line and the ComfyUI sampler progress with the
+                # same function-call ID. This is evidence of process exit, not
+                # by itself proof that sampling was in progress at cancellation.
+                print(
+                    f"renderlab_fibo_cancel_process_reaped input_id={modal.current_input_id()} "
+                    f"prompt_id={job or 'not-submitted'} exit_code={server.returncode}",
+                    flush=True,
+                )

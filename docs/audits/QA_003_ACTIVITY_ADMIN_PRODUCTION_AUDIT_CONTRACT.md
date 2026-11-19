@@ -83,3 +83,9 @@ The earlier automated pass recorded above does not qualify the current FIBO rele
 
 ## Next-phase dependency
 After QA-003, expand QA-004 only from the evidence then available. QA-004 owns the remaining isolated account/security/data production submissions; QA-005 owns bounded reconciliation/error presentation.
+
+## Active GPU interruption evidence (open)
+
+The existing production pass proves application-level cancellation, not interrupted denoising. On the v3 production worker, read-only Modal logs show per-call ComfyUI sampler progress (e.g. 1/4 through 4/4) and a completion line. The gateway uses `FunctionCall.cancel(terminate_containers=False)`; an accepted cancellation request alone does not prove the ComfyUI subprocess stopped. The renderer now emits a marker after handling Modal input cancellation and reaping that subprocess. This change does not alter worker cancellation policy and is unqualified until a reviewed worker revision has been tested.
+
+For one explicitly authorized disposable generation, verify the exact app and worker revisions first. Correlate the signed provider job handle to the Modal call without publishing the handle. Capture an intermediate sampler step for that call, request Cancel through Activity before the last step, then capture the same call's `renderlab_fibo_cancel_process_reaped` marker (or equivalent positive provider-side termination evidence). Require no final step, completed inference, output, or retried invocation for that call; verify durable Cancelled and fixture cleanup independently. A queued cancellation, missing log line, normal completion, or an app/provider acknowledgment alone is not a pass. Do not stop an entire shared container or change production routing as part of observing cancellation.
