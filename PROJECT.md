@@ -1,6 +1,6 @@
 # Project
 
-> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+> **November 19 Create release:** Vercel read-back confirms the custom domain serves application commit 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13. The October production manifest below is the last release recorded under the retired matrix-based schema, not the current alias target. The UI migration tracker records the cutover and qualification gaps.
 
 RenderLab is an AI image/video creation platform using cloud-hosted ComfyUI workflows as the generation backend.
 
@@ -20,9 +20,9 @@ Users interact with understandable creative goals rather than ComfyUI graphs, wo
 
 ## Stack
 
-### API runtime
+### Web and API runtime
 
-Next.js App Router hosts API and authentication route handlers only. No web pages, client components, or public web assets are shipped from the current source.
+Next.js App Router serves the public landing page, authenticated web workspace, and same-origin API and authentication handlers. The Create workspace targets FIBO image generation and editing. Private Studio qualification is not evidence of production worker parity.
 
 ### Infrastructure
 
@@ -43,7 +43,7 @@ Generation inputs and media actions use opaque product identities. R2 storage ke
 
 The application must not require a browser session to complete accepted backend work. Once RenderLab accepts a generation, server-owned lifecycle machinery must be able to reconcile it to a truthful terminal state and durable output without relying on the initiating tab remaining open.
 
-## Historical web product areas
+## Web product areas
 
 Public:
 - **Brand / Landing** `/`
@@ -60,7 +60,7 @@ Contextual/utility:
 
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
-## Current production - 2026-10-09
+## Last manifest-recorded production release - 2026-10-09
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
 
 **Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
