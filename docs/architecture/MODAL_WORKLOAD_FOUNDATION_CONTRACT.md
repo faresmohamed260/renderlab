@@ -18,6 +18,16 @@ Deploy by workload rather than by model, and make it possible to add compatible 
 
 The three inactive apps require internal CPU-only readiness that reports the app identity and its unconfigured status. No GPU, warm instances, public endpoints, schedules, production secrets or weights, capability advertisement, or job admission for those apps. App scaffolding and hosted deploys are separately evidenced. Dashboard creation requires explicit authorization for the exact workspace and environment; no new persistent dev or staging environment is assumed.
 
+## Required Modal support for separate environments
+
+**Gateway and worker.** Make `renderlab-generation-gateway` and `renderlab-image-generation` deployable as a separate pair in a future Modal staging environment. Use the same gateway and worker code as production, with environment-specific configuration rather than a separate test implementation. The staging gateway must call only the image worker in its own environment. No Modal development app or staging copies of the inactive video and tools apps are required.
+
+**Resource isolation.** Resolve the gateway, worker, secrets, and model volume within the intended Modal environment. Remove hard-coded production resource references from the reusable deployment path. Reject missing resources and cross-environment references with a clear error. Never fall back to production credentials, volumes, or workers.
+
+**Deployment readiness.** Provide deployment commands that require an explicit workspace and environment, verify the target before making changes, and document the resources that must already exist. Add automated checks for staging target selection, missing resources, and cross-environment references. These checks must run without deploying an app or starting a GPU.
+
+**Scope boundary.** Deliver the Modal code, configuration, deployment commands, and checks for later staging setup. Do not create the staging environment, deploy its gateway or worker, provision secrets or volumes, copy weights, or run staging GPU jobs as part of this requirement. Web previews, UI mocks, test accounts, databases, and file storage are outside this requirement. Existing production release and validation gates still apply.
+
 ## Required model switching and universal worker
 
 - **Catalog and switcher:** Implement a server-side allowlist of model versions, supported operations, adapter, and backend. Resolve the requested or default model before dispatch; reject unknown models, unsupported operations and inactive backends before GPU work. Do not silently substitute a model. Keep FIBO as the only production entry and default; prove the switcher with two synthetic adapters in local/CI tests. No new user-facing model picker is required.
