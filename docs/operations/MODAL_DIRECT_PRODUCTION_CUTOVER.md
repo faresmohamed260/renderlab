@@ -1,6 +1,6 @@
 # Modal direct-production cutover
 
-**Status:** Credential correction authorized by the project owner on 2026-11-20; hosted execution paused. The earlier Scope D/G approval was bound to superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` and expired without any hosted mutation or GPU run when preflight found that Supabase API keys cannot assume custom PostgreSQL roles. This runbook becomes executable only after the corrected implementation merges, its exact source is recorded here, and the project owner renews both scopes for that source.
+**Status:** Corrected implementation merged and exact-source verified; hosted execution awaits renewed approval. The earlier Scope D/G approval was bound to superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` and expired without any hosted mutation or GPU run when preflight found that Supabase API keys cannot assume custom PostgreSQL roles. The corrected least-privilege database-login implementation merged as `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. This runbook becomes executable only after this exact-source record merges and the project owner renews both scopes for that source.
 
 ## Purpose and one-time exception
 
@@ -21,7 +21,7 @@ It does **not** waive exact-source CI, zero-in-flight verification, least privil
 
 | Boundary | Exact target |
 | --- | --- |
-| Replacement application and Modal source | Pending corrected implementation merge; `e47d3ae7e1928b563cec5adb14678cb712c3beaf` is superseded and must not be deployed |
+| Replacement application and Modal source | `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`; supersedes `e47d3ae7e1928b563cec5adb14678cb712c3beaf` |
 | Recovery application and combined Modal source | `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` |
 | Modal workspace | `faresmohamed260` / `ac-88wJ5dCXYBOywnXXaGmUoV` |
 | Modal environment | existing `main`; no new environment |
