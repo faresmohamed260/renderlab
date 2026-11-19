@@ -8,11 +8,11 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity 
 
 ## Production
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source b956e24337b329d9e89d06d8f60f24e8acac0328 from deployment dpl_F7sm9bab5FPL5dJBLEpc1Uk7pAiw (https://renderlab-1vq76u6fx-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T14:58:15.912Z. This configuration-only redeploy enables masked editing on the same qualified source. The live API advertises masks.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 4f8efb7f52e7c43f5425c7a4aa3375f2292992cb from deployment dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH (https://renderlab-cyqfm4jcs-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T18:09:29.041Z. This release routes FIBO through the model-neutral Modal gateway with mask capability unchanged. Provider-backed smoke is pending.
 
-Exact-source CI completed at 2026-11-19T04:51:27.000Z: Deployment Readiness 44460963340; protected check runs 135347347470, 135347346941, 135347347569, 135347347981, 135347349157, 135347348884. The prior release verified Use as source in signed-in Brave without a render.
+Exact-source CI completed at 2026-11-19T18:08:10.000Z: Deployment Readiness 44584232207; protected check runs 135772709934, 135772709967, 135772710031, 135772709907, 135772710064, 135772710036.
 
-Previous alias target: dpl_CGVGzxDnytgReTHYiAZ5nJPXXyhG at source b956e24337b329d9e89d06d8f60f24e8acac0328. The same-source mask-disabled release is retained in docs/production/2026-11-19-before-masks.json. Prior release evidence remains in docs/production/2026-11-19-create.json and docs/production/2026-10-09.json. Automatic Git-to-production deployment remains disabled.
+Previous alias target: dpl_F7sm9bab5FPL5dJBLEpc1Uk7pAiw at source b956e24337b329d9e89d06d8f60f24e8acac0328. Its release record is retained in docs/production/2026-11-19-before-generation-gateway.json. The old Modal app remains deployed for rollback pending smoke and drain. Automatic Git-to-production deployment remains disabled.
 
 ## Product capabilities
 
