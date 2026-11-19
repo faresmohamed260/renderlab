@@ -369,6 +369,44 @@ async function submitCurrentCreate(page, { kind, prompt, label, submitViewport, 
   return { assetId, jobId: payload.job.id };
 }
 
+async function verifyLibraryDeletion(page, ownerId, { assetId, jobId }) {
+  const scope = "owner_id=eq." + encodeURIComponent(ownerId);
+  const target = "media_assets?" + scope + "&id=eq." + encodeURIComponent(assetId);
+  const [asset] = await serviceRows(target + "&select=id,storage_key,thumbnail_storage_key,deleted_at");
+  assert(asset?.id === assetId && !asset.deleted_at && asset.storage_key, "Missing live fixture output before deletion.");
+  const keys = [...new Set([asset.storage_key, asset.thumbnail_storage_key].filter(Boolean))];
+  for (const key of keys) {
+    trackedStorageKeys.add(key);
+    assert(await objectExists(key), "Fixture output storage object was absent before deletion.");
+  }
+
+  await page.getByRole("button", { name: "Manage", exact: true }).click();
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  const dialog = page.getByRole("alertdialog", { name: "Delete media?" });
+  const endpoint = "/api/media/assets/" + encodeURIComponent(assetId);
+  const deleted = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === endpoint && response.request().method() === "DELETE");
+  await dialog.getByRole("button", { name: "Delete permanently", exact: true }).click();
+  const response = await deleted;
+  const payload = await response.json().catch(() => null);
+  assert(response.status() === 200 && payload?.deleted && payload.cleanupPending === false,
+    "Library Delete did not confirm permanent removal of the fixture output.");
+  await page.waitForURL(baseUrl + "/library");
+  await page.reload({ waitUntil: "domcontentloaded" });
+  assert(await page.locator('a[href="/library/' + assetId + '"]').count() === 0,
+    "Deleted fixture output is still listed after reload.");
+  const unavailable = await page.request.get(baseUrl + endpoint);
+  assert(unavailable.status() === 404, "Deleted fixture output is still accessible through the asset API.");
+
+  const [tombstone] = await serviceRows(target + "&select=deleted_at,purged_at");
+  assert(tombstone?.deleted_at && tombstone.purged_at, "Library Delete did not commit the asset tombstone and purge.");
+  for (const key of keys) assert(!(await objectExists(key)), "Library Delete left a fixture output object in storage.");
+  const [job] = await serviceRows("generation_jobs?" + scope + "&id=eq." + encodeURIComponent(jobId) + "&select=status");
+  assert(job?.status === "succeeded", "Library Delete did not preserve terminal generation history.");
+  await screenshot(page, "06-library-after-delete");
+  return { verified: true, outputObjectsRemoved: keys.length, historyPreserved: true };
+}
+
 async function beginContinuation(page, action, expectedMode) {
   await page.setViewportSize(desktop);
   const link = page.getByRole("link", { name: action, exact: true });
@@ -400,6 +438,7 @@ let primaryError = null;
 let cleanup = null;
 let publicRoutes = [];
 let accountRoutes = [];
+let libraryDeletion = null;
 const generations = [];
 const expectedGenerations = smoke ? 1 : 4;
 
@@ -526,6 +565,11 @@ try {
     await assertReadOnlyAccountMetadata(account.id);
   }
 
+  if (referenceEdit) {
+    await page.setViewportSize(desktop);
+    libraryDeletion = await verifyLibraryDeletion(page, account.id, image);
+  }
+
   console.log("Complete production user journey passed owner=" + account.id + " generations=" + generations.length + ".");
 } catch (error) {
   primaryError = error;
@@ -557,6 +601,7 @@ const manifest = {
   providerGenerationCount: generations.length,
   fixtureAccountId: ownerIdentity.id,
   generations,
+  libraryDeletion,
   publicRoutes,
   accountRoutes,
   cleanup,
