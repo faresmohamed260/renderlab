@@ -6,7 +6,6 @@ on:
   push:
     branches: [main]
     paths:
-      - ".github/release-candidate"
       - "vercel.json"
       - "next.config.ts"
       - "package.json"
@@ -16,7 +15,6 @@ on:
       - ".github/workflows/deployment-readiness.yml"
   pull_request:
     paths:
-      - ".github/release-candidate"
       - "vercel.json"
       - "next.config.ts"
       - "package.json"
@@ -83,7 +81,6 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY_ID: "test-access-key"
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: "test-secret-key"
           CLOUDFLARE_R2_BUCKET: "test-bucket"
-          RENDERLAB_UPSCALE_WORKER_GATEWAY_URL: "https://upscale.example.invalid"
           RESEND_API_KEY: "re_test_renderlab"
           CRON_SECRET: "renderlab-test-cron-secret"
         run: node scripts/verify-vercel-env.mjs
@@ -98,7 +95,6 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY_ID: "test-access-key"
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: "test-secret-key"
           CLOUDFLARE_R2_BUCKET: "test-bucket"
-          RENDERLAB_UPSCALE_WORKER_GATEWAY_URL: "https://upscale.example.invalid"
           RESEND_API_KEY: "re_test_renderlab"
           CRON_SECRET: "renderlab-test-cron-secret"
         run: npm run build
