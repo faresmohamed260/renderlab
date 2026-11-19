@@ -1,5 +1,7 @@
 # Screen Registry
 
+> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+
 Tracks approved product surfaces and actual route/status/component composition.
 
 ## UI maturity statuses
