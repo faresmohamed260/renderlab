@@ -1,10 +1,10 @@
 # RenderLab Product & UI Foundation
 
-> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+> **November 19 Create release:** Vercel read-back confirms the custom domain serves application commit 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13. The October production manifest below is the last release recorded under the retired matrix-based schema, not the current alias target. The UI migration tracker records the cutover and qualification gaps.
 
 > **History separation:** the full UI migration/phase journal that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`. It is historical evidence, not a competing current tracker.
 
-> **Verified Create cutover (2026-11-19):** The custom domain renderlab.faresuniform.uk now serves the Create workspace from main application commit 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 (Vercel dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP; previous alias target dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV). Deployment Readiness run 44442391493 and all six protected-branch checks passed at the release SHA. Live /create serves the new canvas; /library and /settings return 200, the private preview worker route returns 404, and generation and upload readiness report available. Signed-in generation was not exercised. The legacy production manifest still requires an exact-SHA Release Candidate Matrix run, but the workflow was retired; its schema and current-production mirrors still need reconciliation and must not be populated with fabricated matrix evidence.
+> **Verified Create cutover (2026-11-19):** The custom domain renderlab.faresuniform.uk now serves the Create workspace from main application commit 8f913a97fcc03cdfba885a14a4d5e6d51ed7ee13 (Vercel dpl_3TTBYVbtC3cKhcffWZ7Uf5A1FvEP; previous alias target dpl_BNimvAcwgCLXLZNUgLvtJDPmtqZV). Deployment Readiness run 44442391493 and all six protected-branch checks passed at the release SHA. Live /create serves the new canvas; /library and /settings return 200, the private preview worker route returns 404, and generation and upload readiness report available. Signed-in generation was not exercised. The legacy production manifest still requires an exact-SHA Release Candidate Matrix run, but the workflow was retired; its schema and current-production mirrors still need reconciliation and must not be populated with fabricated matrix evidence. Provider read-back confirmed the alias target and the previous deployment in READY state. The previous deployment was created via CLI and Vercel did not return its Git SHA; the provenance must be established independently or explicitly modeled as unavailable before updating the canonical manifest.
 
 ## Objective
 
@@ -21,7 +21,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Keep repository documentation synchronized with verified implementation.
 - Preserve approved surfaces in Integration Mode unless the user explicitly reopens a named surface for redesign.
 
-## Current production and whole-product audit - 2026-10-09
+## Last manifest-recorded production and whole-product audit - 2026-10-09
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: d7571a230b3f1c5719552628db020823adb4da73 -->
 
 **Canonical production manifest:** `docs/production/current.json`. Release qualification completed at `2026-10-09T13:22:15.000Z`; the verified custom-domain cutover occurred at `2026-10-09T13:25:40.464Z`.
@@ -71,9 +71,9 @@ When a new UI phase or redesign is explicitly authorized:
 4. Validate exact-head behavior, responsiveness, accessibility/reduced motion and rendered fidelity as applicable.
 5. After closure, keep only the current outcome/constraint needed for future work here; move detailed run chronology and closed checklists to historical evidence rather than growing this file into another journal.
 
-## Web frontend removal
+## Historical frontend removal
 
-The FIBO web Create rollout is closed. Its backend implementation and deployment qualification are separate from this removal.
+PR #437 removed the web frontend from source. PRs #441 and #443 subsequently restored the web application and made the Create workspace the release UI. This does not imply signed-in flow qualification.
 
 ## Historical evidence
 
