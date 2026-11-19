@@ -63,7 +63,7 @@ test("FIBO reference-edit scenario stays within the single-job smoke and checks 
 
 test("QA-002 asserts user-facing deletion independently of account cleanup", () => {
   assert.match(verifier, /name: "Delete permanently", exact: true/);
-  assert.match(verifier, /unavailable.status\(\) === 404/);
+  assert.match(verifier, /unavailableStatus === 404/);
   assert.match(verifier, /tombstone\?\.deleted_at && tombstone.purged_at/);
   assert.match(verifier, /Library Delete left a fixture output object in storage/);
   assert.match(verifier, /Library Delete did not preserve terminal generation history/);

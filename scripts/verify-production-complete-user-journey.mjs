@@ -395,8 +395,9 @@ async function verifyLibraryDeletion(page, ownerId, { assetId, jobId }) {
   await page.reload({ waitUntil: "domcontentloaded" });
   assert(await page.locator('a[href="/library/' + assetId + '"]').count() === 0,
     "Deleted fixture output is still listed after reload.");
-  const unavailable = await page.request.get(baseUrl + endpoint);
-  assert(unavailable.status() === 404, "Deleted fixture output is still accessible through the asset API.");
+  // Use the browser fetch so the fixture authorization route applies.
+  const unavailableStatus = await page.evaluate(async (path) => (await fetch(path, { cache: "no-store" })).status, endpoint);
+  assert(unavailableStatus === 404, "Deleted fixture output is still accessible through the asset API.");
 
   const [tombstone] = await serviceRows(target + "&select=deleted_at,purged_at");
   assert(tombstone?.deleted_at && tombstone.purged_at, "Library Delete did not commit the asset tombstone and purge.");
