@@ -133,14 +133,14 @@ async function seedFailedRetryJob(ownerId, prompt) {
         operation: "create-image",
         output_kind: "image",
         prompt,
-        workflow_id: "flux2-klein-image-generate",
-        model: "FLUX.2 Klein 9B · DarkBeast V2 BFS",
-        ecosystem: "flux2-klein-9b",
+        workflow_id: "fibo2-turbo-text",
+        model: "Bria FIBO 2.0 Edit Turbo",
+        ecosystem: "fibo2-edit-turbo",
         inputs: [],
         parameters: {
-          model: "flux2-klein-9b",
+          model: "fibo2-edit-turbo",
           output: { kind: "image", aspectRatio: "1:1" },
-          advanced: { seed: 42, steps: 4, guidance: 1 },
+          advanced: { seed: 42, steps: 4, negativePrompt: "" },
         },
         worker_id: null,
         provider_job_id: null,
@@ -185,7 +185,9 @@ async function waitNewestPromptCount(page, prompt, minimumCount, timeout = 60_00
   const rows = page.locator("li").filter({ hasText: prompt });
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
-    if (await rows.count() >= minimumCount) return rows.first();
+    const count = await rows.count();
+    assert(count <= minimumCount, `Duplicate Activity rows for ${prompt}: expected ${minimumCount}, found ${count}.`);
+    if (count === minimumCount) return rows.first();
     await page.waitForTimeout(500);
   }
   throw new Error(`Activity never exposed ${minimumCount} rows for ${prompt}.`);
@@ -220,10 +222,9 @@ async function delayOneMutation(page, pathSuffix, delayMs = 1_800) {
 
 async function submitCancellableImage(page, prompt) {
   await page.setViewportSize(desktop);
-  await page.goto(`${baseUrl}/create`, { waitUntil: "networkidle", timeout: 60_000 });
-  const imageMode = page.getByRole("radio", { name: "Image", exact: true });
-  await imageMode.click();
-  await page.getByRole("textbox", { name: "Prompt" }).fill(prompt);
+  await page.goto(`${baseUrl}/create`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.getByRole("button", { name: "Text to Image", exact: true }).click();
+  await page.locator("#create-preview-prompt").fill(prompt);
   const responsePromise = page.waitForResponse((response) => {
     const url = new URL(response.url());
     return url.pathname === "/api/generation/jobs" && response.request().method() === "POST";
@@ -235,38 +236,27 @@ async function submitCancellableImage(page, prompt) {
   return payload.job.id;
 }
 
-async function exerciseCancel(page, prompt, jobId) {
-  await page.goto(`${baseUrl}/activity`, { waitUntil: "networkidle", timeout: 60_000 });
-  const row = page.locator("li").filter({ hasText: prompt }).first();
-  await row.waitFor({ state: "visible", timeout: 60_000 });
-  await row.getByRole("button", { name: "Cancel", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
-  await assertNoOverflow(page, "Activity Cancel desktop");
-  await screenshot(page, "activity-cancel-desktop-before");
-
-  await row.getByRole("button", { name: "Cancel", exact: true }).click();
-  await page.getByRole("alertdialog").waitFor({ state: "visible" });
-  await screenshot(page, "activity-cancel-desktop-dialog");
-  await page.getByRole("button", { name: "Keep running", exact: true }).click();
-
+async function exerciseCancel(page, prompt, jobId, ownerId) {
+  // Live FIBO can finish before a desktop/mobile screenshot sequence.
   await page.setViewportSize(mobile);
-  await row.getByRole("button", { name: "Cancel", exact: true }).click();
-  await page.getByRole("alertdialog").waitFor({ state: "visible" });
-  await assertNoOverflow(page, "Activity Cancel mobile dialog");
-  await screenshot(page, "activity-cancel-mobile-dialog");
-
+  await page.goto(`${baseUrl}/activity`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  const row = page.locator("li[data-activity-status]").filter({ hasText: prompt }).first();
+  await row.getByRole("button", { name: "Cancel", exact: true }).click({ timeout: 20_000 });
   const path = `/api/generation/jobs/${jobId}/cancel`;
-  const removeDelay = await delayOneMutation(page, path);
   const responsePromise = page.waitForResponse((response) => new URL(response.url()).pathname === path && response.request().method() === "POST", { timeout: 120_000 });
   await page.getByRole("alertdialog").getByRole("button", { name: "Cancel generation", exact: true }).click();
-  await page.getByRole("alertdialog").getByText("Cancelling…", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
-  await screenshot(page, "activity-cancel-mobile-submitting");
   const response = await responsePromise;
-  await removeDelay();
   const payload = await response.json().catch(() => null);
   assert((response.status() === 200 || response.status() === 202) && payload?.ok, `Cancel action failed: ${response.status()} ${JSON.stringify(payload)}`);
 
+  await page.reload({ waitUntil: "domcontentloaded" });
   const status = await observeNewestPromptTerminal(page, prompt, 1, "activity-cancel", 10 * 60_000);
   assert(status === "cancelled", `Cancel fixture terminalized as ${status} instead of cancelled.`);
+  assert(await row.getByRole("link", { name: "View result", exact: true }).count() === 0, "Cancelled job exposes a published result.");
+  const [cancelled, ...extra] = await serviceRows(`generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=status,ecosystem,output_asset_ids`);
+  assert(!extra.length && cancelled?.status === "cancelled" && cancelled.ecosystem === "fibo2-edit-turbo"
+    && cancelled.output_asset_ids?.length === 0, "Expected one cancelled FIBO job with no persisted result.");
+  await assertNoOverflow(page, "Activity Cancel mobile terminal");
   await screenshot(page, "activity-cancel-mobile-cancelled");
   await page.setViewportSize(desktop);
   await assertNoOverflow(page, "Activity Cancel desktop terminal");
@@ -299,6 +289,7 @@ async function exerciseRetryAndRunAgain(page, ownerId) {
   const retryPayload = await retryResponse.json().catch(() => null);
   assert(retryResponse.status() === 202 && retryPayload?.ok && retryPayload?.job?.id, `Retry failed: ${retryResponse.status()} ${JSON.stringify(retryPayload)}`);
 
+  await page.reload({ waitUntil: "domcontentloaded" });
   const retryStatus = await observeNewestPromptTerminal(page, prompt, 2, "activity-retry");
   assert(retryStatus === "succeeded", `Retry terminalized as ${retryStatus}.`);
   await screenshot(page, "activity-retry-mobile-completed");
@@ -323,11 +314,19 @@ async function exerciseRetryAndRunAgain(page, ownerId) {
   const runAgainPayload = await runAgainResponse.json().catch(() => null);
   assert(runAgainResponse.status() === 202 && runAgainPayload?.ok && runAgainPayload?.job?.id, `Run Again failed: ${runAgainResponse.status()} ${JSON.stringify(runAgainPayload)}`);
 
+  await page.reload({ waitUntil: "domcontentloaded" });
   const runAgainStatus = await observeNewestPromptTerminal(page, prompt, 3, "activity-run-again");
   assert(runAgainStatus === "succeeded", `Run Again terminalized as ${runAgainStatus}.`);
   await screenshot(page, "activity-run-again-mobile-completed");
   await page.setViewportSize(desktop);
   await screenshot(page, "activity-run-again-desktop-completed");
+
+  const jobs = await serviceRows(`generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&prompt=eq.${encodeURIComponent(prompt)}&select=id,status,ecosystem,output_asset_ids`);
+  const expected = new Map([[failedId, "failed"], [retryPayload.job.id, "succeeded"], [runAgainPayload.job.id, "succeeded"]]);
+  assert(expected.size === 3 && jobs.length === 3 && jobs.every((job) =>
+    job.ecosystem === "fibo2-edit-turbo" && expected.get(job.id) === job.status
+    && job.output_asset_ids?.length === (job.status === "succeeded" ? 1 : 0)
+  ), "Expected one failed FIBO fixture and exactly one saved output each from Retry and Run Again.");
 
   return { failedId, retryJobId: retryPayload.job.id, runAgainJobId: runAgainPayload.job.id };
 }
@@ -533,7 +532,7 @@ try {
 
   const cancelPrompt = `QA-003 cancel ${runToken}`;
   const cancelJobId = await submitCancellableImage(activityPage, cancelPrompt);
-  await exerciseCancel(activityPage, cancelPrompt, cancelJobId);
+  await exerciseCancel(activityPage, cancelPrompt, cancelJobId, activityAccount.id);
   const actionJobs = await exerciseRetryAndRunAgain(activityPage, activityAccount.id);
   manifest.activity = { cancelJobId, ...actionJobs, result: "passed" };
   await activityContext.close();

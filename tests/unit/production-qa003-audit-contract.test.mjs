@@ -22,3 +22,14 @@ test("QA-003 verifier requires a supplied production SHA and cannot hide cleanup
   assert.doesNotMatch(verifier, /deleteConfiguredTestAccount\([^\n]+\)\.catch/);
   assert.match(verifier, /exact DB\/Auth absence was verified/);
 });
+
+test("QA-003 protects production fixture work and exercises the FIBO-only lane", () => {
+  assert.match(workflow, /github.ref == 'refs\/heads\/main' && inputs.confirm_fixture_only_provider_work/);
+  const preflight = workflow.indexOf("node scripts/verify-production-live-state.mjs");
+  assert.ok(preflight >= 0 && preflight < workflow.indexOf("--cleanup-only"));
+  assert.match(verifier, /workflow_id: "fibo2-turbo-text"/);
+  assert.match(verifier, /name: "Text to Image"/);
+  assert.doesNotMatch(verifier, /flux2-klein/);
+  assert.match(verifier, /Expected one cancelled FIBO job with no persisted result/);
+  assert.match(verifier, /expected.size === 3 && jobs.length === 3/);
+});
