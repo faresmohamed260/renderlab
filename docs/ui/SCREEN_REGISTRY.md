@@ -24,11 +24,11 @@ Models, Workflows, separate Image/Video apps, separate Edit/Animate/Upscale apps
 ## Current production - 2026-11-19
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 4f8efb7f52e7c43f5425c7a4aa3375f2292992cb -->
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 4f8efb7f52e7c43f5425c7a4aa3375f2292992cb from deployment dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH (https://renderlab-cyqfm4jcs-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T18:09:29.041Z. This release routes FIBO through the model-neutral Modal gateway with mask capability unchanged. Provider-backed smoke is pending.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 4f8efb7f52e7c43f5425c7a4aa3375f2292992cb from deployment dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH (https://renderlab-cyqfm4jcs-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T18:09:29.041Z. This release routes FIBO through the model-neutral Modal gateway with mask capability unchanged. One disposable FIBO text-to-image job completed and reopened from Library in smoke run 44585394266; independent fixture cleanup passed.
 
 Exact-source CI completed at 2026-11-19T18:08:10.000Z: Deployment Readiness 44584232207; protected check runs 135772709934, 135772709967, 135772710031, 135772709907, 135772710064, 135772710036.
 
-Previous alias target: dpl_F7sm9bab5FPL5dJBLEpc1Uk7pAiw at source b956e24337b329d9e89d06d8f60f24e8acac0328. Its release record is retained in docs/production/2026-11-19-before-generation-gateway.json. The old Modal app remains deployed for rollback pending smoke and drain. Automatic Git-to-production deployment remains disabled.
+Previous alias target: dpl_F7sm9bab5FPL5dJBLEpc1Uk7pAiw at source b956e24337b329d9e89d06d8f60f24e8acac0328. Its release record is retained in docs/production/2026-11-19-before-generation-gateway.json. The old Modal app was stopped after smoke and drain. The previous deployment remains historical rollback evidence, but restoring its alias alone would not restore generation: a rollback must use a qualified deployment configured for the new gateway. Automatic Git-to-production deployment remains disabled.
 
 ## Application Shell
 **UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`.
