@@ -12,6 +12,8 @@ import {
 const baseUrl = (process.env.RENDERLAB_TEST_BASE_URL || "https://renderlab.faresuniform.uk").replace(/\/$/, "");
 const artifactDir = process.env.RENDERLAB_COMPLETE_JOURNEY_ARTIFACT_DIR || "artifacts/production-complete-user-journey";
 const smoke = process.env.RENDERLAB_FIBO_SMOKE === "true";
+const smokeScenario = process.env.RENDERLAB_FIBO_SMOKE_SCENARIO ?? "text-to-image";
+const referenceEdit = smoke && smokeScenario === "reference-edit";
 const recordWalkthrough = !smoke && process.env.RENDERLAB_RECORD_WALKTHROUGH === "true";
 const cleanupOnly = process.argv.includes("--cleanup-only");
 const namespace = smoke ? "production-fibo-smoke" : "production-complete-user-journey";
@@ -45,6 +47,7 @@ function slug(value) {
 }
 
 function requireAuditConfig() {
+  assert(!smoke || ["text-to-image", "reference-edit"].includes(smokeScenario), "Invalid FIBO smoke scenario.");
   const required = {
     SUPABASE_URL: supabaseUrl,
     SUPABASE_SERVICE_ROLE_KEY: serviceRoleKey,
@@ -324,7 +327,7 @@ async function verifyViewerBothViewports(page, kind, label) {
   await screenshot(page, `${label}-viewer-mobile`);
 }
 
-async function submitCurrentCreate(page, { kind, prompt, label, submitViewport }) {
+async function submitCurrentCreate(page, { kind, prompt, label, submitViewport, ownerId }) {
   await page.setViewportSize(submitViewport);
   const promptField = page.getByRole("textbox", { name: "Prompt" });
   await promptField.waitFor({ state: "visible", timeout: 60_000 });
@@ -343,6 +346,16 @@ async function submitCurrentCreate(page, { kind, prompt, label, submitViewport }
   const response = await responsePromise;
   const payload = await response.json().catch(() => null);
   assert(response.status() === 202 && payload?.ok && payload?.job?.id, `${label} submission failed (${response.status()}): ${JSON.stringify(payload)}`);
+  if (referenceEdit) {
+    const request = response.request().postDataJSON();
+    const source = request.inputs?.[0];
+    assert(request.model === "fibo2-edit-turbo" && request.inputs?.length === 1
+      && source?.role === "primary-image" && source.source?.type === "media-asset",
+    "Reference edit did not submit exactly one uploaded primary image to FIBO.");
+    const sourceRows = await serviceRows("media_assets?owner_id=eq." + encodeURIComponent(ownerId)
+      + "&id=eq." + encodeURIComponent(source.source.id) + "&select=id");
+    assert(sourceRows.length === 1, "Reference edit source was not persisted for the fixture owner.");
+  }
   console.log(`${label} accepted job=${payload.job.id}`);
 
   const active = page.locator("[data-create-lifecycle-state]");
@@ -420,15 +433,33 @@ try {
   await page.goto(baseUrl + "/create", { waitUntil: "networkidle", timeout: 60_000 });
   if (smoke) {
     const workspace = page.getByRole("region", { name: "Create with FIBO" });
-    await workspace.getByRole("button", { name: "Text to Image" }).click({ timeout: 30_000 });
+    await workspace.getByRole("button", { name: referenceEdit ? "Image Editing" : "Text to Image", exact: true }).click({ timeout: 30_000 });
+    if (referenceEdit) {
+      const buffer = await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#e8dfcc"/><rect x="115" y="115" width="282" height="282" fill="#228b22"/></svg>')).png().toBuffer();
+      const chooser = page.waitForEvent("filechooser");
+      await workspace.getByRole("button", { name: "Choose source image", exact: true }).click();
+      await (await chooser).setFiles({ name: "reference-edit-fixture.png", mimeType: "image/png", buffer });
+      await workspace.getByRole("button", { name: "Remove source image", exact: true }).waitFor({ state: "visible" });
+    }
   }
+  const operation = referenceEdit ? "edit-image" : "create-image";
   const image = await submitCurrentCreate(page, {
     kind: "image",
-    label: "01-create-image-desktop",
-    prompt: (smoke ? "FIBO smoke " + runId + ": " : "QA journey 01: ") + "a matte cobalt-blue sphere centered in a warm gray studio, soft light, no text",
+    label: referenceEdit ? "01-reference-edit-desktop" : "01-create-image-desktop",
+    prompt: referenceEdit
+      ? "Change the green square to vivid cobalt blue. Keep the square size and position and the flat beige background. No text."
+      : (smoke ? "FIBO smoke " + runId + ": " : "QA journey 01: ") + "a matte cobalt-blue sphere centered in a warm gray studio, soft light, no text",
     submitViewport: desktop,
+    ownerId: account.id,
   });
-  generations.push({ operation: "create-image", jobId: image.jobId, assetId: image.assetId });
+  generations.push({ operation, jobId: image.jobId, assetId: image.assetId });
+  if (referenceEdit) {
+    const jobs = await serviceRows("generation_jobs?owner_id=eq." + encodeURIComponent(account.id)
+      + "&select=id,status,operation,output_asset_ids");
+    assert(jobs.length === 1 && jobs[0].id === image.jobId && jobs[0].status === "succeeded"
+      && jobs[0].operation === operation && jobs[0].output_asset_ids?.length === 1
+      && jobs[0].output_asset_ids[0] === image.assetId, "Expected one persisted FIBO edit with one saved result.");
+  }
 
   if (!smoke) {
     await beginContinuation(page, "Edit", "image");
@@ -472,6 +503,17 @@ try {
       await waitForViewerMedia(page, "image");
     }
   }
+  if (referenceEdit) {
+    await page.getByRole("button", { name: "Favorite", exact: true }).click();
+    await page.getByRole("button", { name: "Favorited", exact: true, pressed: true }).waitFor();
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Favorited", exact: true, pressed: true }).waitFor();
+    await waitForViewerMedia(page, "image");
+    await page.getByRole("button", { name: "Favorited", exact: true }).click();
+    await page.getByRole("button", { name: "Favorite", exact: true, pressed: false }).waitFor();
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Favorite", exact: true, pressed: false }).waitFor();
+  }
   await assertNoOverflow(page, "Library desktop");
   await screenshot(page, "05-library-desktop");
   await page.setViewportSize(mobile);
@@ -506,6 +548,7 @@ try {
 const manifest = {
   audit: smoke ? "FIBO production smoke" : "QA-002",
   runId,
+  scenario: smoke ? smokeScenario : "legacy",
   runAttempt,
   baseUrl,
   expectedProductionSource: expectedSource,

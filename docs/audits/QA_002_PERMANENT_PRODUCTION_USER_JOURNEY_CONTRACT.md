@@ -1,11 +1,19 @@
 # QA-002 Permanent Production User Journey Contract
 
-**Status:** COMPLETE / PRODUCTION-VERIFIED / HUMAN-REVIEWED  
+**Status:** legacy scope historically verified; current FIBO reference-edit automation pending live qualification
 **Tracker:** #278  
 **Planning baseline:** repository `main` `023d21637fd59e4da8f664ea047c7d04a5102fc8`  
-**Current production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`  
+**Historical production application source:** `2fc64231f8aa0e5a2df8b2698824319a25c4e9f8`
 **Existing permanent workflow:** `.github/workflows/production-complete-user-journey.yml`  
 **Purpose:** finish the existing permanent production journey so it satisfies #278 with exact source/domain evidence, read-only account-surface coverage, and independently verified fixture cleanup.
+
+## Current FIBO-only lane
+
+The legacy video/Animate workflow stays disabled. Select `reference-edit` in the existing manual Production FIBO Smoke workflow to run the supported QA-002 edit slice against the verified live deployment. A disposable account uploads one synthetic PNG in Create's Image Editing mode, submits exactly one FIBO edit, observes Activity completion, and opens the exact saved image in Library. The harness checks owner-scoped source persistence, one successful job and output, and that favoriting and unfavoriting persist across viewer reloads. The existing independent cleanup checks cover fixture database rows, Auth, and tracked R2 objects.
+
+The default `text-to-image` release smoke is unchanged. Neither choice runs automatically or expands the one-job budget. Reference-edit automation checks the end-to-end data flow, not subjective rendering quality, other asset-management actions, or the historical full journey. Track current live evidence on #452.
+
+## Historical contract
 
 ## Goal and user value
 
