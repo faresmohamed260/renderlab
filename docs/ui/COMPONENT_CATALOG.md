@@ -1,5 +1,7 @@
 # Component Catalog
 
+> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+
 Authoritative index of reusable RenderLab UI components and approved external component sources. Populate actual RenderLab components from repository reality, not assumptions.
 
 `docs/ui/component-sources.json` is the machine-readable external-source registry. It is authoritative for source tier/search order, adoption mode, installed package/version mapping, active-use state, and license-review status; this catalog remains authoritative for RenderLab-owned component inventory and human reuse guidance. `npm run verify:docs-governance` rejects drift between the registry, this catalog, `package.json`, and `package-lock.json`.
