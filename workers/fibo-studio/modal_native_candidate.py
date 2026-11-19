@@ -8,7 +8,8 @@ from workload_environment import APP_NAMES
 app = modal.App("renderlab-generation-gateway-candidate")
 gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install("fastapi==0.137.2")
 gateway_image = gateway_image.add_local_python_source(
-    "native_gateway", "native_graph", "native_generated_vgl", "workload_environment"
+    "dispatch_core", "dispatch_supabase", "modal_dispatch_backend", "native_gateway", "native_graph",
+    "native_generated_vgl", "workload_contract", "workload_environment"
 )
 
 
@@ -22,6 +23,19 @@ def deployment_resource(name):
 def image_render():
     environment = deployment_resource("RENDERLAB_MODAL_ENVIRONMENT")
     return modal.Function.from_name(APP_NAMES["image"], "render", environment_name=environment)
+
+
+@app.function(image=gateway_image, secrets=[modal.Secret.from_name(
+    deployment_resource("RENDERLAB_MODAL_DISPATCHER_SECRET"),
+    environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
+)])
+def dispatch_tick():
+    from dispatch_core import Dispatcher
+    from dispatch_supabase import SupabaseDispatchStore
+    from modal_dispatch_backend import ModalImageBackend
+
+    store = SupabaseDispatchStore()
+    return Dispatcher(store, {"fibo": ModalImageBackend(store, image_render())}).tick().__dict__
 
 
 @app.function(image=gateway_image, secrets=[modal.Secret.from_name(
@@ -40,4 +54,6 @@ def web():
         cancel=lambda call_id: modal.FunctionCall.from_id(call_id).cancel(terminate_containers=False),
         signing_key=os.environ.get("RENDERLAB_FIBO_CALL_SIGNING_KEY", "").encode(),
         expired_errors=(modal.exception.OutputExpiredError, modal.exception.NotFoundError),
+        wake_dispatcher=lambda: dispatch_tick.spawn().object_id,
+        allow_direct_submit=False,
     )

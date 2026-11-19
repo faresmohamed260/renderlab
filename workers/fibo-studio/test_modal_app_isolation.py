@@ -32,6 +32,13 @@ class ModalAppIsolationTest(unittest.TestCase):
         self.assertIn('modal.App("renderlab-image-generation")', worker)
         self.assertNotIn(".include(", gateway)
 
+    def test_only_production_gateway_owns_the_recovery_schedule(self):
+        production = (ROOT / "modal_native_production.py").read_text(encoding="utf-8")
+        self.assertIn('schedule=modal.Cron("* * * * *")', production)
+        for module in ("modal_native_candidate", "modal_native_renderer", "modal_video_generation",
+                       "modal_image_tools", "modal_video_tools"):
+            self.assertNotIn("modal.Cron", (ROOT / f"{module}.py").read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

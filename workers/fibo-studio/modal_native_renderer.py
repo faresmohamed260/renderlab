@@ -28,6 +28,8 @@ image = (
     .add_local_file(str(Path(__file__).with_name("native_graph.py")), "/opt/renderlab/native_graph.py")
     .add_local_file(str(Path(__file__).with_name("native_mask.py")), "/opt/renderlab/native_mask.py")
     .add_local_file(str(Path(__file__).with_name("native_generated_vgl.py")), "/opt/renderlab/native_generated_vgl.py")
+    .add_local_file(str(Path(__file__).with_name("dispatch_core.py")), "/opt/renderlab/dispatch_core.py")
+    .add_local_file(str(Path(__file__).with_name("dispatch_supabase.py")), "/opt/renderlab/dispatch_supabase.py")
 )
 
 
@@ -46,16 +48,26 @@ def request(path, payload=None):
 
 @app.function(image=image, gpu="A10", cpu=2, memory=16384, timeout=420, max_containers=1,
               scaledown_window=60,
+              secrets=[modal.Secret.from_name(
+                  deployment_resource("RENDERLAB_MODAL_WORKER_SECRET"),
+                  environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
+              )],
               volumes={MODELS: modal.Volume.from_name(
                   deployment_resource("RENDERLAB_MODAL_MODEL_VOLUME"),
                   environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
               )})
 def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
-           negative_prompt="", vgl="", mask=None, generate_vgl=False):
+           negative_prompt="", vgl="", mask=None, generate_vgl=False,
+           dispatch_attempt_id=None, admission_deadline=None):
     """One isolated render. Do not send raw files from an unauthenticated client."""
     from PIL import Image
 
     sys.path.insert(0, "/opt/renderlab")
+    if dispatch_attempt_id is not None or admission_deadline is not None:
+        if not dispatch_attempt_id or not admission_deadline:
+            raise ValueError("Durable dispatch identity is incomplete")
+        from dispatch_supabase import begin_generation_attempt
+        begin_generation_attempt(dispatch_attempt_id, admission_deadline)
     from native_graph import build_graph
     from native_mask import normalize_mask_bytes
     from native_generated_vgl import validate_generated_vgl

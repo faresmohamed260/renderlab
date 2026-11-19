@@ -31,7 +31,7 @@ import {
   possibleGenerationOutputExtensions,
   possibleGenerationThumbnailExtensions,
 } from "@/server/generation/generation-storage-keys";
-import { classifyWorkerFailure, failureKind, type WorkerFailureClassification } from "@/server/generation/worker-failure";
+import { classifyWorkerFailure, type WorkerFailureClassification } from "@/server/generation/worker-failure";
 import { inspectUpscaleOutputMetadata, type UpscaleOutputMetadata } from "@/server/generation/upscale-output-metadata";
 import {
   IMAGE_THUMBNAIL_CONTENT_TYPE,
@@ -39,6 +39,7 @@ import {
   imageThumbnailStorageKey,
 } from "@/server/media/image-thumbnail";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
+import { randomUUID } from "node:crypto";
 
 type WorkflowConfig = {
   id: string;
@@ -186,28 +187,55 @@ export function toGenerationJob(row: JobRow): GenerationJob {
   };
 }
 
-async function insertJob(ownerId: string, request: GenerationRequest, workflow: WorkflowConfig) {
+async function acceptDurableDispatch(
+  ownerId: string,
+  request: GenerationRequest,
+  workflow: WorkflowConfig,
+  payload: Record<string, unknown>,
+) {
   const operation = resolveCreativeOperation(request);
-  const rows = await supabaseRest<JobRow[]>("generation_jobs?select=*", {
+  const rows = await supabaseRest<JobRow[]>("rpc/renderlab_accept_generation_dispatch", {
     method: "POST",
     headers: { Prefer: "return=representation" },
     body: JSON.stringify({
-      owner_id: ownerId,
-      status: "queued",
-      operation,
-      output_kind: request.output.kind,
-      prompt: request.prompt,
-      workflow_id: workflow.id,
-      model: workflow.model,
-      ecosystem: workflow.ecosystem,
-      inputs: persistFiboMaskInputs(request.inputs, request.mask),
-      parameters: { model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {},
+      p_attempt_id: randomUUID(),
+      p_owner_id: ownerId,
+      p_operation: operation,
+      p_output_kind: request.output.kind,
+      p_prompt: request.prompt,
+      p_workflow_id: workflow.id,
+      p_model: workflow.model,
+      p_ecosystem: workflow.ecosystem,
+      p_inputs: persistFiboMaskInputs(request.inputs, request.mask),
+      p_parameters: {
+        model: generationModelForRequest(request), output: request.output, advanced: request.advanced ?? {},
         ...(request.vgl ? { vgl: request.vgl } : {}),
-        ...(request.autoVgl ? { autoVgl: true } : {}) },
+        ...(request.autoVgl ? { autoVgl: true } : {}),
+      },
+      p_backend_key: "fibo",
+      p_model_key: "fibo-2.0-turbo",
+      p_model_version: "bria-fibo-2.0-turbo",
+      p_payload: payload,
+      p_admission_deadline: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
     }),
   });
-  if (!rows?.[0]) throw new Error("Generation job could not be created.");
+  if (!rows?.[0]) throw new Error("Generation job and dispatch intent could not be committed.");
   return rows[0];
+}
+
+async function requestDispatcherWake(workflow: WorkflowConfig) {
+  const worker = workersForEcosystem(workflow.ecosystem)[0];
+  if (!worker) return;
+  const options = workerGatewayOptions(worker);
+  const origin = worker.policy?.transport === "modal-proxy" ? worker.gatewayUrl : gatewayUrlForWorker(worker);
+  const response = await fetch(`${origin}/dispatch/wake`, {
+    ...options,
+    method: "POST",
+    headers: options.headers,
+    body: null,
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("Dispatcher wake was not accepted.");
 }
 
 export async function getJobRow(ownerId: string, jobId: string) {
@@ -400,69 +428,26 @@ function dispatchWorker(worker: GenerationWorker, workflow: WorkflowConfig, subm
   });
 }
 
-async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[], maskBytes?: Buffer) {
-  const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes);
-  const failures: Array<Record<string, unknown>> = [];
-  for (const worker of workersForEcosystem(workflow.ecosystem)) {
-    try {
-      const response = await dispatchWorker(worker, workflow, submission);
-      if (!response.ok) {
-        const body = await errorBody(response);
-        const kind = failureKind(response.status, body);
-        failures.push({ workerId: worker.id, kind, status: response.status, at: new Date().toISOString() });
-        if (worker.policy?.retryAmbiguousSubmit === false || kind === "failed") throw new Error(String(body.error || body.detail || `Worker rejected generation (${response.status}).`));
-        continue;
-      }
-      const payload = await response.json() as { call_id?: string; worker_state?: string; workerState?: string };
-      if (!acceptedWorkerCallId(worker, response.status, payload.call_id)) {
-        throw new Error("Generation worker did not return a valid call ID.");
-      }
-      return {
-        worker,
-        callId: payload.call_id,
-        workerState: payload.worker_state || payload.workerState || "queued",
-        failures,
-      };
-    } catch (error) {
-      if (worker.policy?.retryAmbiguousSubmit === false) throw new Error("Worker submission could not be confirmed; it was not retried.");
-      failures.push({ workerId: worker.id, kind: "unavailable", message: error instanceof Error ? error.message : String(error), at: new Date().toISOString() });
-    }
-  }
-  throw new Error("No configured generation worker is currently available.");
-}
-
 export async function submitNativeGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
   if (!isNativeGenerationConfigured()) {
     return { ok: false, error: { code: "generation_backend_unavailable", message: "Native generation infrastructure is not configured." } };
   }
 
   const workflow = workflowFor(request);
-  let job: JobRow | null = null;
   try {
-    job = await insertJob(ownerId, request, workflow);
     const sources = await resolveInputs(ownerId, request);
     const maskBytes = await resolveMaskBytes(ownerId, request);
-    const submitted = await submitWorker(workflow, request, sources, maskBytes);
-    job = await patchJob(ownerId, job.id, {
-      status: "running",
-      worker_id: submitted.worker.id,
-      provider_job_id: submitted.callId,
-      worker_state: submitted.workerState,
-      failover_history: submitted.failures,
-      started_at: new Date().toISOString(),
-    });
+    const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes);
+    if (workflow.ecosystem !== fiboGenerationModel || typeof submission.body !== "string") {
+      throw new Error("Durable dispatch accepts the FIBO JSON protocol only.");
+    }
+    const payload = JSON.parse(submission.body) as Record<string, unknown>;
+    const job = await acceptDurableDispatch(ownerId, request, workflow, payload);
+    // The committed outbox is authoritative. A failed immediate wake is recovered
+    // by the scheduled dispatcher and must not turn an accepted job into an error.
+    await requestDispatcherWake(workflow).catch(() => undefined);
     return { ok: true, job: toGenerationJob(job) };
   } catch (error) {
-    if (job) {
-      try {
-        job = await patchJob(ownerId, job.id, {
-          status: "failed",
-          error_code: "generation_submission_failed",
-          error_message: error instanceof Error ? error.message : "Generation submission failed.",
-          completed_at: new Date().toISOString(),
-        });
-      } catch {}
-    }
     return {
       ok: false,
       error: {

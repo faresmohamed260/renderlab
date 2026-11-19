@@ -18,6 +18,8 @@ A distinct **worker-only source-free generated-VGL candidate** now uses MIT-lice
 
 The FIBO-only production Create workspace is an **in-progress implementation**, governed by `docs/architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md` and UI-084. Its manually supplied VGL JSON path now has request validation, per-slot reference validation, worker mapping, durable job parameter persistence and recipe/retry reconstruction in the current candidate code. This is an implementation statement, **not** a live hosted-provider qualification or a claim that the full workspace, masks, generated VGL, inspiration or 1–4 output batches are functional in production. The working WANDA FIBO Studio's source-free Edit Turbo generation is the parity reference, without substituting FIBO Dev.
 
+ADR-005 now has a repository-only release candidate for FIBO dispatch. The candidate commits each accepted job and dispatch intent together, returns the queued job even if the best-effort wake fails, recovers missed wakes and expired claims through the same scheduled dispatcher, suppresses duplicate rendering with a stable attempt/admission boundary, and supports cancellation before worker execution. FIBO remains the only active catalog entry; the synthetic ComfyUI/direct-Python adapters exist only in credential-free tests. Migration application, Modal deployment, schedule activation, GPU qualification, and production cutover remain unperformed and separately authorized.
+
 ## Authority and Scope
 - `renderlab` is the product source of truth.
 - Saga is a reference implementation, not the RenderLab specification.

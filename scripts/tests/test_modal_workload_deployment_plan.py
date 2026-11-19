@@ -15,6 +15,7 @@ class ModalWorkloadDeploymentPlanTest(unittest.TestCase):
             "--environment", environment,
             "--gateway-secret", f"renderlab-gateway-{environment}",
             "--dispatcher-secret", f"renderlab-dispatcher-{environment}",
+            "--worker-secret", f"renderlab-worker-{environment}",
             "--model-volume", f"renderlab-fibo-models-{environment}",
         ], capture_output=True, text=True, timeout=10)
 
