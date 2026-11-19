@@ -1,5 +1,7 @@
 # Component Catalog
 
+> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+
 Authoritative index of reusable RenderLab UI components and approved external component sources. Populate actual RenderLab components from repository reality, not assumptions.
 
 `docs/ui/component-sources.json` is the machine-readable external-source registry. It is authoritative for source tier/search order, adoption mode, installed package/version mapping, active-use state, and license-review status; this catalog remains authoritative for RenderLab-owned component inventory and human reuse guidance. `npm run verify:docs-governance` rejects drift between the registry, this catalog, `package.json`, and `package-lock.json`.

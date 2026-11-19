@@ -58,19 +58,6 @@ test("Admin diagnostic projection omits server-only job identity", async () => {
   assert(!projection.includes("jobId"));
 });
 
-test("diagnostic filters are allowlisted before PostgREST query construction", async () => {
-  const page = await source("src/app/(app)/admin/page.tsx");
-  assert.match(page, /isDiagnosticEventName\(event\)/);
-  assert.match(page, /isDiagnosticLevel\(level\)/);
-  assert.match(page, /isDiagnosticCode\(code\)/);
-  assert.match(page, /getAdminDashboard\(admin\.identity\.id, diagnosticQuery\)/);
-});
-
-test("Admin renders dotted diagnostic machine identifiers as readable labels", async () => {
-  const adminUi = await source("src/features/admin/admin-operations.tsx");
-  assert(adminUi.includes('.replace(/[-_.]/g, " ")'));
-});
-
 test("configured Admin observability stays run-owned behind the test cleanup RPC", async () => {
   const store = await source("src/server/observability/diagnostic-store.ts");
   const verifier = await source("scripts/verify-admin-operations.mjs");

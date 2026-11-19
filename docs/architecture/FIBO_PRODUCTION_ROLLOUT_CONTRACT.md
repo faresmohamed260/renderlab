@@ -1,5 +1,7 @@
 # FIBO Workspace — Production Implementation Contract
 
+> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+
 **Approved product direction:** 2026-11-18 (owner's FIBO-only workspace instruction and attached implementation plan).
 **Execution:** IN PROGRESS — contract and WANDA design-reference work exist; production implementation/acceptance is not complete.
 **Repository:** UNMERGED (production workspace implementation).

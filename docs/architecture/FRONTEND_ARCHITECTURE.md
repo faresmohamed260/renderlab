@@ -1,5 +1,7 @@
 # Frontend Architecture
 
+> **Repository scope (2026-11-19):** The web frontend is removed from the repository tree. UI descriptions below are historical or describe separately deployed versions, not current source. The web Create rollout is closed without a frontend replacement. Next.js remains to host API and authentication route handlers. Previously deployed versions are not changed by this source deletion.
+
 > **Decision boundary:** durable non-UI cross-cutting architecture decisions and supersession are recorded in `ARCHITECTURE_DECISIONS.md`. This document remains authoritative for current frontend architecture, implementation boundaries, and detailed domain contracts.
 
 Defines approved RenderLab frontend architecture and verified implementation state.
