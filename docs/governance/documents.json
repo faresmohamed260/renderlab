@@ -88,7 +88,7 @@
       "authority": "current-state",
       "lifecycle": "current",
       "ownerRole": "infrastructure",
-      "lastReviewed": "2026-11-17",
+      "lastReviewed": "2026-11-19",
       "reviewIntervalDays": 30,
       "supersedes": [],
       "supersededBy": []
@@ -110,7 +110,7 @@
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "engineering",
-      "lastReviewed": "2026-10-14",
+      "lastReviewed": "2026-11-19",
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []
@@ -155,6 +155,17 @@
       "lifecycle": "current",
       "ownerRole": "product",
       "lastReviewed": "2026-11-17",
+      "reviewIntervalDays": 30,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md",
+      "kind": "operations-runbook",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "infrastructure",
+      "lastReviewed": "2026-11-19",
       "reviewIntervalDays": 30,
       "supersedes": [],
       "supersededBy": []

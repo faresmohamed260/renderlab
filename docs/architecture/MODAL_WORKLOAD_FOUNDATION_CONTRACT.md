@@ -71,6 +71,12 @@ Make it possible to tell from job status and logs whether work is queued, runnin
 
 Verify changes in an isolated test setup before cutover and keep a tested rollback that can still render. A permanent staging environment is not required. Document where the current job inputs and outputs are stored or temporarily retained. Before adding any future model or provider, verify that its license permits the intended closed-demo use and review where it sends or retains media.
 
+### One-time direct-production cutover exception
+
+On 2026-11-20 the project owner approved a change in rollout direction, but no hosted action: the first gateway/worker split may be qualified during a planned production outage in the existing Modal `main` environment instead of creating a parallel `qualification` environment. The binding execution sequence, exact identities, recovery drill, separate production/GPU approval scopes, and expiry are defined in [`MODAL_DIRECT_PRODUCTION_CUTOVER.md`](../operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md).
+
+This one-time exception does not change the required environment-aware implementation, remove future separate-environment deployability, waive the zero-in-flight or recovery gates, authorize any hosted mutation, or establish precedent. It expires after the direct cutover either closes successfully in the repository or is abandoned and reconciled. All later hosted releases return to the isolated-qualification rule unless another explicit owner-approved exception is merged first.
+
 ## Acceptance and release gates
 
 - **Repository checks:** Verify catalog selection/defaults/rejections, backend binding across catalog changes, shared runner behavior with both test adapters, and app isolation. Check deployment commands fail closed for unexpected workspace/environment and verify actual app identities after deployment. Use environment-local volumes and least-privilege credentials in line with the [Modal ownership contract](MODAL_PROJECT_ISOLATION_CONTRACT.md). Use non-secret correlation IDs in logs.
