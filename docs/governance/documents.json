@@ -94,6 +94,17 @@
       "supersededBy": []
     },
     {
+      "path": "docs/architecture/MODAL_WORKLOAD_FOUNDATION_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "reference",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-19",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
       "path": "docs/architecture/ARCHITECTURE_DECISIONS.md",
       "kind": "normative-policy",
       "authority": "normative",
