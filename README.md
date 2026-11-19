@@ -2,16 +2,16 @@
   <img src="public/renderlab-mark-color.svg" alt="RenderLab mark" width="88" />
 </p>
 
-> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+> **Current scope:** The web workspace focuses on FIBO image creation and editing. Earlier releases supported additional models and media operations; historical captures are not current feature promises.
 
 <h1 align="center">RenderLab</h1>
 
 <p align="center">
-  <strong>A production AI media workspace that turns complex ComfyUI pipelines into durable image and video workflows.</strong>
+  <strong>A production AI media workspace that turns complex ComfyUI pipelines into durable image workflows.</strong>
 </p>
 
 <p align="center">
-  Create, edit, animate, organize, and continue from generated media while RenderLab handles workers, job state, storage, retries, and provider complexity.
+  Create, edit, organize, and continue from generated media while RenderLab handles workers, job state, storage, retries, and provider complexity.
 </p>
 
 <p align="center">
@@ -33,32 +33,32 @@
 
 ## What RenderLab is
 
-RenderLab is the product layer between a creator and a cloud-hosted generation stack. Users work with understandable operations—generate an image, edit with references, animate a still, create video, organize results, and continue from an existing asset—while RenderLab owns provider routing, job state, durable persistence, retries, cancellation, and authorization.
+RenderLab is the product layer between a creator and a cloud-hosted generation stack. Users work with understandable operations—generate an image, edit with references, organize results, and continue from an existing asset—while RenderLab owns provider routing, job state, durable persistence, retries, cancellation, and authorization.
 
 ### Why RenderLab
 
 - **Durable creative lifecycle.** Accepted work becomes a server-owned job and does not depend on the initiating browser remaining open.
 - **Provider complexity stays behind product contracts.** ComfyUI graphs, worker identifiers, storage keys, and backend routing are not exposed as the user experience.
-- **Media stays actionable.** A finished asset remains connected to prompt/provenance context and compatible next steps such as edit, animate, upscale, or reuse.
+- **Media stays actionable.** A finished asset remains connected to prompt/provenance context and compatible next steps such as edit or reuse.
 
 ## Product surfaces
 
 | Surface | Production role |
 | --- | --- |
-| **Create** | Image generation, reference-backed editing, animation, video generation, model choice, and contextual advanced controls. |
+| **Create** | FIBO image generation and reference-backed editing, with contextual controls. |
 | **Activity** | Truthful queued/running/persisting/terminal job state with retry, rerun, cancellation, and result access. |
 | **Media Viewer** | Asset inspection, provenance, prompt context, download/favorite actions, and compatible continuation paths. |
 | **Library** | Durable generated media and uploads with search, favorites, collections, ordering, rename, download, deletion, and reuse. |
 | **Settings** | Profile, preferences, credentials, sessions, MFA, export, and account lifecycle. |
 | **Admin** | Authorized closed-beta operations with recent-authentication boundaries where required. |
 
-## Product in action
+## Historical product captures
 
 ### Create
 
 ![RenderLab Create screen editing an explorer reference image](docs/readme/screenshots/create.png)
 
-Create keeps creative intent, references, model choice, aspect ratio, and advanced controls in one focused workspace.
+This capture shows an earlier Create release, not the current workspace.
 
 <details>
 <summary><strong>See Activity, Media Viewer, and Library</strong></summary>
