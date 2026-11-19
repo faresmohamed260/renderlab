@@ -1,5 +1,7 @@
 # RenderLab Product & UI Foundation
 
+> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+
 > **History separation:** the full UI migration/phase journal that existed immediately before governance hardening Checkpoint 6 is preserved as a content snapshot in `docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md`. It is historical evidence, not a competing current tracker.
 
 ## Objective
@@ -67,17 +69,9 @@ When a new UI phase or redesign is explicitly authorized:
 4. Validate exact-head behavior, responsiveness, accessibility/reduced motion and rendered fidelity as applicable.
 5. After closure, keep only the current outcome/constraint needed for future work here; move detailed run chronology and closed checklists to historical evidence rather than growing this file into another journal.
 
-## Active phase — FIBO-only production Create workspace (2026-11-18)
+## Web frontend removal
 
-**Execution:** IN PROGRESS. **Repository:** UNMERGED. **Deployment:** NOT DEPLOYED.
-
-**Normative contract:** docs/architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md supersedes the earlier model-selector-only rollout. The owner directs that /create become the full FIBO image/edit workspace, preserving the WANDA-authored presentation while implementing every image control against the retained production FIBO gateway. No retired generation model, video/animation/upscale, private preview relay or unverified Studio worker is authorized.
-
-**Starting state:** Protected main at 8c02102c6b94be61da04f963b74fac82948c80cb is FIBO-only. The native worker accepts one output and does not implement masks; the API rejects VGL and lacks a multi-output durable job. WANDA feature/fibo-create-port at 09299d3b8aa7e03996a9b576e678752b9d5b25d3 contains reference UI modules but is diverged from main. Use selective import onto current main, not an indiscriminate merge. WANDA-only visual and hosted-relay experiments are preserved at docs/history/ui/FIBO_WANDA_VISUAL_PORT_2026-11-18.md.
-
-**Next gate:** The bounded production contract merged as PR #422 and manual VGL API/persistence merged as PR #423. The native masked-worker implementation is merged in PR #424 and owner-scoped mask upload/API/persistence merged in PR #425 with masked submission default-off. A public-node source-free auto-VGL worker candidate (merged PR #426) passed a pinned local GPU test; its follow-up signed sidecar/API/job-provenance persistence candidate is default-off, unhosted and not wired into Create. Inspiration failed visual-conditioning verification. No hosted or UI-backed mask/auto-VGL operation is production-qualified; the remaining work must qualify hosted signed-in generation, masks, generated VGL, inspiration, batch persistence, negative prompting and full FIBO Create lifecycle before enabling those controls. Tests must prove responsive, keyboard, touch, reduced-motion and full worker-backed runtime behavior. Release or provider mutation requires separate owner authorization.
-
-**Reporting:** Keep the implementation inventory and status in the contract and current capability/screen registries; do not turn this tracker into another run journal.
+The FIBO web Create rollout is closed. Its backend implementation and deployment qualification are separate from this removal.
 
 ## Historical evidence
 
