@@ -26,6 +26,14 @@ The app definitions can be reviewed in GitHub before they appear in Modal. Dashb
 
 No new features, weights, task workflows, custom nodes, external providers, UI, database or storage-schema changes, public routes, production switch, or changes to FIBO behavior. Keeping ComfyUI alive across calls, GPU/idle tuning, and the deferred audit fixes are separate work. Adding a real task later still needs task-specific validation, inputs and outputs, capability routing, appropriate hardware and dependencies, and qualification of results and cancellation; a workflow and weights alone do not enable a feature.
 
+## Follow-up: move the existing image renderer
+
+After the shells are ready, a separate PR should move the existing FIBO renderer out of the gateway deployment into the workload-oriented `renderlab-image-generation` app. Keep the gateway as the private front door and leave FIBO as the only supported model. Reuse the existing renderer, workflows and weights without changing render behavior.
+
+Before a separately approved cutover, verify text-to-image, reference and masked edits, job status, Cancel, and Library saving on the new path. Keep in-flight jobs bound to their original backend until they finish and save results. Keep the old path available as a verified rollback until the new one passes.
+
+Reusing ComfyUI and loaded weights between jobs is a later optimization, not part of the move. Qualify cancellation and clean reuse of the worker before enabling it.
+
 ## Validation and exit criteria
 
 - **Repository:** Check that the four shells import and register distinct names, have CPU-only internal readiness, and declare no GPU, model volume, secret, public endpoint, activation route, or schedule. Test that deployment commands reject unexpected workspace/environment and that inactive shells cannot be selected for a job. Preserve the FIBO routing and packaging checks; no visual review is needed because no UI changes.
